@@ -228,16 +228,21 @@ extension ContextMenuManager {
 
     private func handleSearchWebItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
         let isSummarizationAvailable = shouldShowTextSummarization
+        let isAttachSelectionAvailable = shouldShowAttachSelection
         let isTranslationAvailable = shouldShowTextTranslation
 
         var currentIndex = index
-        if isSummarizationAvailable || isTranslationAvailable {
+        if isSummarizationAvailable || isAttachSelectionAvailable || isTranslationAvailable {
             menu.insertItem(.separator(), at: currentIndex)
             currentIndex += 1
         }
         menu.replaceItem(at: currentIndex, with: self.searchMenuItem(makeBurner: isCurrentWindowBurner))
         if isSummarizationAvailable {
             menu.insertItem(summarizeMenuItem(), at: currentIndex + 1)
+            currentIndex += 1
+        }
+        if isAttachSelectionAvailable {
+            menu.insertItem(attachToDuckAIMenuItem(), at: currentIndex + 1)
             currentIndex += 1
         }
         if isTranslationAvailable {
@@ -274,6 +279,15 @@ extension ContextMenuManager {
             return false
         default:
             return aiChatMenuConfiguration.shouldDisplayTranslationMenuItem
+        }
+    }
+
+    private var shouldShowAttachSelection: Bool {
+        switch tabContent {
+        case .aiChat:
+            return false
+        default:
+            return aiChatMenuConfiguration.shouldDisplaySelectionContextMenuItem
         }
     }
 }
@@ -425,6 +439,11 @@ private extension ContextMenuManager {
         NSMenuItem(title: UserText.aiChatTranslate, action: #selector(translate), target: self).withImage(DesignSystemImages.Glyphs.Size12.translateAi)
     }
 
+    func attachToDuckAIMenuItem() -> NSMenuItem {
+        NSMenuItem(title: UserText.aiChatAttachSelection, action: #selector(attachToDuckAI), target: self)
+            .withImage(DesignSystemImages.Glyphs.Size12.textSelectedRight)
+    }
+
     private func makeMenuItem(withTitle title: String, action: Selector, from item: NSMenuItem, with identifier: WKMenuItemIdentifier, keyEquivalent: String? = nil) -> NSMenuItem {
         return makeMenuItem(withTitle: title, action: action, from: item, withIdentifierIn: [identifier], keyEquivalent: keyEquivalent)
     }
@@ -489,6 +508,15 @@ private extension ContextMenuManager {
 
         let request = AIChatTextSummarizationRequest(text: selectedText, websiteURL: webView?.url, websiteTitle: webView?.title, source: .contextMenu)
         mainViewController?.aiChatSummarizer.summarize(request)
+    }
+
+    func attachToDuckAI(_ sender: NSMenuItem) {
+        guard let selectedText else {
+            assertionFailure("Failed to get selected text")
+            return
+        }
+
+        mainViewController?.aiChatSelectionContextAttacher.attach(text: selectedText, url: webView?.url)
     }
 
     func translate(_ sender: NSMenuItem) {

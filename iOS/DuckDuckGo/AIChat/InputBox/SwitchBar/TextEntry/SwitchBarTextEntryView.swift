@@ -37,15 +37,6 @@ class SwitchBarTextEntryView: UIView {
         case compact
         case tallTopAlignedAIChat
 
-        var minHeight: CGFloat {
-            switch self {
-            case .compact:
-                return Constants.minHeight
-            case .tallTopAlignedAIChat:
-                return Constants.minHeightAIChat
-            }
-        }
-
         var usesTopAlignedPlaceholder: Bool {
             switch self {
             case .compact:
@@ -60,17 +51,22 @@ class SwitchBarTextEntryView: UIView {
         static let maxHeight: CGFloat = 120
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
         static let minHeight: CGFloat = 44
-        static let minHeightAIChat: CGFloat = 68
+        static let minHeightAIChat: CGFloat = 51
         static let fontSize: CGFloat = 16
+
+        // Legacy Layout
+        static let legacyMinHeightAIChat: CGFloat = 68
+        static let legacyTextHorizontalInset: CGFloat = 12
+        static let legacyPlaceholderHorizontalOffset: CGFloat = 16
 
         // Text container insets
         static let textTopInset: CGFloat = 12
         static let textBottomInset: CGFloat = 12
-        static let textHorizontalInset: CGFloat = 12
+        static let textHorizontalInset: CGFloat = 16
 
         // Placeholder positioning
         static let placeholderTopOffset: CGFloat = 12
-        static let placeholderHorizontalOffset: CGFloat = 16
+        static let placeholderHorizontalOffset: CGFloat = 20
 
         // Increased buttons spacing
         static let additionalVerticalButtonsPadding: CGFloat = 6
@@ -86,6 +82,49 @@ class SwitchBarTextEntryView: UIView {
     private let handler: SwitchBarHandling
     private(set) var voiceButtonAppearance: VoiceButtonAppearance
 
+    enum Style {
+        /// Single-line UITextField with native horizontal scroll. Used when there is no
+        /// Search↔Duck.ai toggle (search-only mode).
+        case singleLine
+        /// Expanding UITextView composer. Used when the toggle is present.
+        case multiLine
+    }
+
+    var style: Style = .multiLine {
+        didSet {
+            guard style != oldValue else { return }
+            let wasFirstResponder = textView.isFirstResponder || textField.isFirstResponder
+
+            // Unhide and populate the incoming control before touching first responder.
+            if style == .singleLine {
+                textField.text = handler.currentText
+                textField.isHidden = false
+            } else {
+                textView.text = handler.currentText
+                textView.isHidden = false
+            }
+
+            // Transfer FR while both controls are visible so UIKit keeps the keyboard alive
+            // without a dismiss/re-present cycle.
+            if wasFirstResponder { _ = becomeFirstResponder() }
+
+            // If becomeFirstResponder() returned false the outgoing control is still FR.
+            // Resign it explicitly so it is never hidden while holding keyboard focus.
+            if style == .singleLine && textView.isFirstResponder { _ = textView.resignFirstResponder() }
+            if style == .multiLine && textField.isFirstResponder { _ = textField.resignFirstResponder() }
+
+            // Hide the outgoing control — it has now lost first responder.
+            syncActiveControl()
+
+            updatePlaceholderVisibility()
+            updateKeyboardConfiguration()
+            updateTextViewHeight()
+            adjustTextViewContentInset()
+        }
+    }
+
+    private var usesTextField: Bool { style == .singleLine }
+
     /// Pass `animated: false` when the caller drives its own animation — the snapshot crossfade
     /// would otherwise capture the old layout and drift as the parent moves.
     func setVoiceButtonAppearance(_ appearance: VoiceButtonAppearance, animated: Bool = true) {
@@ -95,6 +134,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private let textView = SwitchBarTextView()
+    private let textField = SwitchBarTextField()
     private let placeholderLabel = UILabel()
     private var buttonsView = SwitchBarButtonsView()
     private var currentButtonState: SwitchBarButtonState {
@@ -114,9 +154,25 @@ class SwitchBarTextEntryView: UIView {
         return .compact
     }
 
+    // The tall AIChat height is shared by both the UTI and the legacy iPhone path, so it tracks
+    // `usesExpandedAIChatTextEntryLayout` (true for both).
+    private var minHeightAIChat: CGFloat {
+        handler.usesLegacyLayoutMetrics ? Constants.legacyMinHeightAIChat : Constants.minHeightAIChat
+    }
+
+    // The horizontal insets/offsets only revert on the legacy (non-UTI) path. The UTI keeps the new
+    // metrics even though it also reports `usesExpandedAIChatTextEntryLayout == true`.
+    private var textHorizontalInset: CGFloat {
+        handler.usesLegacyLayoutMetrics ? Constants.legacyTextHorizontalInset : Constants.textHorizontalInset
+    }
+
+    private var placeholderHorizontalOffset: CGFloat {
+        handler.usesLegacyLayoutMetrics ? Constants.legacyPlaceholderHorizontalOffset : Constants.placeholderHorizontalOffset
+    }
+
     private var currentMinHeight: CGFloat {
         if currentPose == .tallTopAlignedAIChat {
-            return currentPose.minHeight
+            return minHeightAIChat
         }
 
         guard handler.isUsingFadeOutAnimation else {
@@ -128,7 +184,7 @@ class SwitchBarTextEntryView: UIView {
         }
 
         if currentMode == .aiChat {
-            return handler.isTopBarPosition ? Constants.minHeightAIChat : Constants.minHeight
+            return handler.isTopBarPosition ? minHeightAIChat : Constants.minHeight
         }
 
         return Constants.minHeight
@@ -174,8 +230,8 @@ class SwitchBarTextEntryView: UIView {
 
     var hasBeenInteractedWith = false
     var isURL: Bool {
-        // TODO some kind of text length check?
-        URL(string: textView.text)?.navigationalScheme != nil
+        let text = usesTextField ? (textField.text ?? "") : (textView.text ?? "")
+        return URL(string: text)?.navigationalScheme != nil
     }
 
     var onTextInputActivated: (() -> Void)?
@@ -207,8 +263,14 @@ class SwitchBarTextEntryView: UIView {
     }
 
     var currentTextSelection: UITextRange? {
-        get { textView.selectedTextRange }
-        set { textView.selectedTextRange = newValue }
+        get { usesTextField ? textField.selectedTextRange : textView.selectedTextRange }
+        set {
+            if usesTextField {
+                textField.selectedTextRange = newValue
+            } else {
+                textView.selectedTextRange = newValue
+            }
+        }
     }
 
     var placeholderTextColor: UIColor {
@@ -217,7 +279,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     override var isFirstResponder: Bool {
-        textView.isFirstResponder
+        usesTextField ? textField.isFirstResponder : textView.isFirstResponder
     }
 
     // MARK: - Initialization
@@ -249,7 +311,6 @@ class SwitchBarTextEntryView: UIView {
         textView.delegate = self
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
-        textView.accessibilityIdentifier = "searchEntry"
 
         placeholderLabel.font = textFont
         placeholderLabel.adjustsFontForContentSizeCategory = true
@@ -262,11 +323,13 @@ class SwitchBarTextEntryView: UIView {
         setupButtonsView()
 
         addSubview(textView)
+        addSubview(textField)
         addSubview(placeholderLabel)
         addSubview(buttonsView)
 
         buttonsView.translatesAutoresizingMaskIntoConstraints = false
         textView.translatesAutoresizingMaskIntoConstraints = false
+        textField.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
 
         heightConstraint = heightAnchor.constraint(equalToConstant: currentMinHeight)
@@ -280,6 +343,21 @@ class SwitchBarTextEntryView: UIView {
         updateButtonsPadding()
 
         textView.onTouchesBeganHandler = self.onTextViewTouchesBegan
+
+        let tintColor: UIColor = handler.isFireTab
+            ? UIColor(singleUseColor: .fireModeAccent)
+            : UIColor(designSystemColor: .accentPrimary)
+        textField.font = textFont
+        textField.adjustsFontForContentSizeCategory = true
+        textField.textColor = UIColor(designSystemColor: .textPrimary)
+        textField.tintColor = tintColor
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
+        textField.keyboardType = .webSearch
+        textField.returnKeyType = .search
+        textField.delegate = self
+        textField.addTarget(self, action: #selector(textFieldEditingChanged), for: .editingChanged)
+        syncActiveControl()
     }
 
     // MARK: - Setup Methods
@@ -296,7 +374,11 @@ class SwitchBarTextEntryView: UIView {
             self.hasBeenInteractedWith = true
             self.fireClearButtonPressedPixel()
 
-            self.textView.text = ""
+            if self.usesTextField {
+                self.textField.text = ""
+            } else {
+                self.textView.text = ""
+            }
             self.updatePlaceholderVisibility()
             self.updateButtonState(animated: false)
             self.updateTextViewHeight()
@@ -341,13 +423,19 @@ class SwitchBarTextEntryView: UIView {
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
             textView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
+            textField.topAnchor.constraint(equalTo: topAnchor),
+            textField.leadingAnchor.constraint(equalTo: leadingAnchor),
+            textField.bottomAnchor.constraint(equalTo: bottomAnchor),
+            textField.trailingAnchor.constraint(equalTo: trailingAnchor),
+
             placeholderCenterYConstraint,
-            placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
+            placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: placeholderHorizontalOffset),
             // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
             // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
             placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
 
-            buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor)
+            // Pin to the top row so the button stays top-right when the field grows multi-line.
+            buttonsView.centerYAnchor.constraint(equalTo: topAnchor, constant: Constants.minHeight / 2)
         ])
     }
 
@@ -358,7 +446,11 @@ class SwitchBarTextEntryView: UIView {
     /// dispatch, so clearing it here would clobber `textView.text` mid-collapse. The real handler
     /// reset happens at dismiss completion via the coordinator's `clearText()`.
     func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
-        textView.text = snapshot.text
+        if usesTextField {
+            textField.text = snapshot.text
+        } else {
+            textView.text = snapshot.text
+        }
         setPlaceholderText(placeholderText(for: snapshot.placeholderMode))
         updatePlaceholderVisibility()
         // State lags dismiss — hide non-chip buttons explicitly so they don't collide with the
@@ -375,10 +467,30 @@ class SwitchBarTextEntryView: UIView {
         buttonsView.setNonChipButtonsAlpha(1)
         buttonsView.setAIChatShortcutDismissed(false, duration: Constants.buttonStateAnimationDuration)
         setPlaceholderText(placeholderText(for: currentMode))
-        if textView.text != handler.currentText {
-            textView.text = handler.currentText
-            updatePlaceholderVisibility()
+        let currentText = handler.currentText
+        if usesTextField {
+            if textField.text != currentText {
+                textField.text = currentText
+                updatePlaceholderVisibility()
+            }
+            // Sync button state to handler so textRightInset reflects any text already set
+            // by the coordinator before this method was called.
+            updateButtonState(animated: false)
+        } else {
+            if textView.text != currentText {
+                textView.text = currentText
+                updatePlaceholderVisibility()
+            }
+            updateButtonState(animated: false)
         }
+    }
+
+    private func syncActiveControl() {
+        let useField = usesTextField
+        textView.isHidden = useField
+        textField.isHidden = !useField
+        textView.accessibilityIdentifier = useField ? nil : "searchEntry"
+        textField.accessibilityIdentifier = useField ? "searchEntry" : nil
     }
 
     // Keeps in-flight color-transition overlays in sync so their captured text doesn't
@@ -422,7 +534,7 @@ class SwitchBarTextEntryView: UIView {
             if handler.isUsingFadeOutAnimation {
                 DispatchQueue.main.async { [weak self] in
                     guard let self, self.window != nil else { return }
-                    self.textView.becomeFirstResponder()
+                    self.becomeFirstResponder()
                 }
             }
         }
@@ -433,6 +545,12 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateKeyboardConfiguration() {
+        if usesTextField {
+            textField.keyboardType = .webSearch
+            textField.returnKeyType = .search
+            textField.reloadInputViews()
+            return
+        }
         switch currentMode {
         case .search:
             textView.keyboardType = .webSearch
@@ -452,7 +570,8 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updatePlaceholderVisibility() {
-        placeholderLabel.isHidden = !textView.text.isEmpty
+        let text = usesTextField ? (textField.text ?? "") : (textView.text ?? "")
+        placeholderLabel.isHidden = !text.isEmpty
     }
 
     private func updateButtonState(animated: Bool = true) {
@@ -472,10 +591,20 @@ class SwitchBarTextEntryView: UIView {
         }
 
         if animated {
-            UIView.transition(with: buttonsView,
-                              duration: Constants.buttonStateAnimationDuration,
-                              options: .transitionCrossDissolve,
-                              animations: apply)
+            if usesTextField {
+                // Apply inset before crossfade so UITextField's editingRect is at its final width
+                // when the button fades in — the change is instant and visible otherwise.
+                apply()
+                UIView.transition(with: buttonsView,
+                                  duration: Constants.buttonStateAnimationDuration,
+                                  options: .transitionCrossDissolve,
+                                  animations: {})
+            } else {
+                UIView.transition(with: buttonsView,
+                                  duration: Constants.buttonStateAnimationDuration,
+                                  options: .transitionCrossDissolve,
+                                  animations: apply)
+            }
         } else {
             apply()
         }
@@ -513,23 +642,36 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func adjustTextViewContentInset() {
-        let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
+        // lineFragmentPadding (5pt default, never overridden) pads the glyph from the container
+        // edge. UITextField uses textRect insets to match UITextView's effective glyph start.
+        let fragmentPadding = textView.textContainer.lineFragmentPadding
 
-        // Use default inset or the amount of how buttons interset with the view + required spacing
-        let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
-
-        textView.textContainerInset = UIEdgeInsets(
-            top: Constants.textTopInset,
-            left: Constants.textHorizontalInset,
-            bottom: Constants.textBottomInset,
-            right: rightInset
-        )
+        if usesTextField {
+            let fittingWidth = buttonsView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
+            let buttonsWidth = currentButtonState.showsAnyButton ? fittingWidth : 0
+            let rightInset = buttonsWidth > 0 ? buttonsWidth : textHorizontalInset
+            textField.textLeftInset = textHorizontalInset + fragmentPadding
+            textField.textRightInset = rightInset + fragmentPadding
+        } else {
+            let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
+            let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : textHorizontalInset
+            textView.textContainerInset = UIEdgeInsets(
+                top: Constants.textTopInset,
+                left: textHorizontalInset,
+                bottom: Constants.textBottomInset,
+                right: rightInset
+            )
+        }
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        adjustTextViewContentInset()
+        // UITextField inset is pre-computed from intrinsic button sizes and only changes when
+        // button state changes — skip recomputing on every animation-frame layout pass.
+        if !usesTextField {
+            adjustTextViewContentInset()
+        }
         if !hasBeenInteractedWith {
             updateTextViewHeight()
         }
@@ -545,12 +687,11 @@ class SwitchBarTextEntryView: UIView {
     }
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
-    /// A URL is single-line only before the user interacts; once tapped it expands to multiple lines
-    /// so the caret can reach the end to edit (the original behaviour, restored after #5373/#5429
-    /// made long URLs single-line and therefore not editable to the end).
+    /// UITextField (search-only) returns before reaching this method. Only reached when
+    /// toggle is present — URL stays single-line until the user has actively interacted.
     private func isUnexpandedURL() -> Bool {
         guard isURL else { return false }
-        return currentMode == .search || !handler.isToggleEnabled || !hasBeenInteractedWith
+        return !hasBeenInteractedWith
     }
 
     private func updateTextViewHeight() {
@@ -560,6 +701,12 @@ class SwitchBarTextEntryView: UIView {
             if currentHeight != heightConstraint?.constant {
                 textHeightChangeSubject.send()
             }
+        }
+
+        if usesTextField {
+            let requiredHeight = requiredHeightForSingleLineContent()
+            heightConstraint?.constant = max(currentMinHeight, min(currentMaxHeight, requiredHeight))
+            return
         }
 
         // Reset defaults
@@ -629,7 +776,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func adjustScrollPosition() {
 
-        guard !hasBeenInteractedWith, !textView.text.isEmpty else {
+        guard !usesTextField, !hasBeenInteractedWith, !textView.text.isEmpty else {
             return
         }
 
@@ -651,9 +798,11 @@ class SwitchBarTextEntryView: UIView {
 
     private func applyFireModeAppearance(isFireTab: Bool) {
         overrideUserInterfaceStyle = isFireTab ? .dark : .unspecified
-        textView.tintColor = isFireTab
+        let tintColor: UIColor = isFireTab
             ? UIColor(singleUseColor: .fireModeAccent)
-            : UIColor(designSystemColor: .accent)
+            : UIColor(designSystemColor: .accentPrimary)
+        textView.tintColor = tintColor
+        textField.tintColor = tintColor
     }
 
     private func setupSubscriptions() {
@@ -676,22 +825,33 @@ class SwitchBarTextEntryView: UIView {
             .removeDuplicates()
             .sink { [weak self] text in
                 guard let self = self else { return }
-                
-                if self.textView.text != text {
-                    // Don't overwrite text while user is actively typing - the publisher
-                    // may deliver stale values due to async scheduling, which would
-                    // interfere with iOS autocomplete.
-                    // Note: Clear button updates textView directly to avoid race conditions.
-                    let isUserActivelyTyping = self.textView.isFirstResponder && self.hasBeenInteractedWith
-                    let isNewLineInsertion = text == (self.textView.text ?? "") + "\n"
-                    
-                    guard !isUserActivelyTyping || isNewLineInsertion else { return }
-                    self.textView.text = text
-                    self.updatePlaceholderVisibility()
-                    self.updateTextViewHeight()
+
+                if self.usesTextField {
+                    if (self.textField.text ?? "") != text {
+                        // Don't overwrite text while user is actively typing.
+                        let isUserActivelyTyping = self.textField.isFirstResponder && self.hasBeenInteractedWith
+                        guard !isUserActivelyTyping else { return }
+                        self.textField.text = text
+                        self.updatePlaceholderVisibility()
+                        self.updateTextViewHeight()
+                    }
+                } else {
+                    if self.textView.text != text {
+                        // Don't overwrite text while user is actively typing - the publisher
+                        // may deliver stale values due to async scheduling, which would
+                        // interfere with iOS autocomplete.
+                        // Note: Clear button updates textView directly to avoid race conditions.
+                        let isUserActivelyTyping = self.textView.isFirstResponder && self.hasBeenInteractedWith
+                        let isNewLineInsertion = text == (self.textView.text ?? "") + "\n"
+
+                        guard !isUserActivelyTyping || isNewLineInsertion else { return }
+                        self.textView.text = text
+                        self.updatePlaceholderVisibility()
+                        self.updateTextViewHeight()
+                    }
+
+                    self.updateAutoCorrectionSetupForAIChat(for: self.textView.text ?? "")
                 }
-                
-                self.updateAutoCorrectionSetupForAIChat(for: self.textView.text ?? "")
             }
             .store(in: &cancellables)
 
@@ -724,7 +884,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateAutoCorrectionSetupForAIChat(for text: String) {
-        guard handler.shouldDisableAutocorrectOnEmpty, currentMode == .aiChat else { return }
+        guard !usesTextField, handler.shouldDisableAutocorrectOnEmpty, currentMode == .aiChat else { return }
 
         let isTextEmpty = text.isEmpty
         let stateChanged = isTextEmpty != wasTextEmptyForAutocorrection
@@ -745,12 +905,12 @@ class SwitchBarTextEntryView: UIView {
 
     @discardableResult
     override func becomeFirstResponder() -> Bool {
-        return textView.becomeFirstResponder()
+        return usesTextField ? textField.becomeFirstResponder() : textView.becomeFirstResponder()
     }
 
     @discardableResult
     override func resignFirstResponder() -> Bool {
-        return textView.resignFirstResponder()
+        return usesTextField ? textField.resignFirstResponder() : textView.resignFirstResponder()
     }
 
     func selectAllText() {
@@ -758,12 +918,22 @@ class SwitchBarTextEntryView: UIView {
             hasBeenInteractedWith = true
             updateTextViewHeight()
         }
-        textView.selectAll(nil)
-        canExpandOnSelectionChange = true
+        if usesTextField {
+            // UIResponder.selectAll(_:) is unreliable on UITextField — use selectedTextRange directly.
+            textField.selectedTextRange = textField.textRange(from: textField.beginningOfDocument,
+                                                               to: textField.endOfDocument)
+        } else {
+            textView.selectAll(nil)
+            canExpandOnSelectionChange = true
+        }
     }
 
     func setQueryText(_ text: String) {
-        textView.text = text
+        if usesTextField {
+            textField.text = text
+        } else {
+            textView.text = text
+        }
         updatePlaceholderVisibility()
         // Handler first so `updateButtonState` reads the fresh state synchronously.
         handler.updateCurrentText(text)
@@ -772,6 +942,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func insertNewlineAtCursor() {
+        guard !usesTextField else { return }
         let selectedRange = textView.selectedTextRange
             ?? textView.textRange(from: textView.endOfDocument, to: textView.endOfDocument)
         if let selectedRange {
@@ -837,7 +1008,11 @@ class SwitchBarTextEntryView: UIView {
 
     func setTextHorizontalShift(_ shift: CGFloat) {
         let transform = shift == 0 ? .identity : CGAffineTransform(translationX: shift, y: 0)
-        textView.transform = transform
+        if usesTextField {
+            textField.transform = transform
+        } else {
+            textView.transform = transform
+        }
         placeholderLabel.transform = transform
     }
 
@@ -853,12 +1028,26 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private var visibleTextLeadingWindowX: CGFloat {
-        if placeholderLabel.isHidden,
-           let end = textView.position(from: textView.beginningOfDocument, offset: 1),
-           let range = textView.textRange(from: textView.beginningOfDocument, to: end) {
-            return textView.convert(textView.firstRect(for: range).origin, to: nil).x
+        if placeholderLabel.isHidden {
+            if usesTextField {
+                // Use textLeftInset, not firstRect — firstRect reflects internal scroll state
+                // and gives wrong values during the dismiss animation.
+                return textField.convert(CGPoint(x: textField.textLeftInset, y: 0), to: nil).x
+            } else if let end = textView.position(from: textView.beginningOfDocument, offset: 1),
+                      let range = textView.textRange(from: textView.beginningOfDocument, to: end) {
+                return textView.convert(textView.firstRect(for: range).origin, to: nil).x
+            }
         }
         return placeholderLabel.convert(CGPoint.zero, to: nil).x
+    }
+
+    @objc private func textFieldEditingChanged() {
+        hasBeenInteractedWith = true
+        updatePlaceholderVisibility()
+        handler.updateCurrentText((textField.text ?? "").strippingDictationPlaceholder)
+        updateButtonState()
+        updateTextViewHeight()
+        handler.markUserInteraction()
     }
 
     private func disableAutoCorrectionAndSpellChecking() {
@@ -923,6 +1112,25 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
             return false
         }
         return true
+    }
+}
+
+extension SwitchBarTextEntryView: UITextFieldDelegate {
+
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        hasBeenInteractedWith = true
+        onTextInputActivated?()
+        fireTextAreaFocusedPixel()
+    }
+
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        guard usesTextField else { return false }
+        fireKeyboardGoPressedPixel()
+        let currentText = textField.text ?? ""
+        if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            handler.submitText(currentText)
+        }
+        return false
     }
 }
 

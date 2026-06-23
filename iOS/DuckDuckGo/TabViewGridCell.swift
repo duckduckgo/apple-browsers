@@ -74,7 +74,6 @@ final class TabViewGridCell: TabViewCell {
         previewClipView.clipsToBounds = true
         previewClipView.layer.cornerRadius = TabViewCell.Constants.previewCornerRadius
         previewClipView.layer.cornerCurve = .continuous
-        previewClipView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         background.addSubview(previewClipView)
 
         let previewImageView = UIImageView()

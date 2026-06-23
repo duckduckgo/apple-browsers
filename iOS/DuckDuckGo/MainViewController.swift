@@ -1849,10 +1849,7 @@ class MainViewController: UIViewController {
         if isExperimentDuckAIFireFlow {
             // Keep this path scoped to the onboarding experiment: single "Delete This Chat" action only,
             // whether the contextual dialog has already appeared or is still pending.
-            // Fire experiment pixel only if flow is default.
-            if onboardingManager.currentOnboardingFlow == .default {
-                contextualOnboardingPixelReporter.measureDuckAIExperimentFireButtonCTAAction()
-            }
+            contextualOnboardingPixelReporter.measureDuckAIFireButtonCTAAction()
             presentExperimentDuckAIFireConfirmation()
             performCancel()
             return
@@ -2573,6 +2570,8 @@ class MainViewController: UIViewController {
             }
             // If tabs have been udpated, do this async to make sure size calcs are current
             self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel)
+            // Keep the current tab in view after a resize/rotation reflows the strip.
+            self.tabsBarController?.scrollCurrentTabIntoView()
             self.swipeTabsCoordinator?.refresh(tabsModel: self.tabManager.currentTabsModel)
             
             // Do this on the next UI thread pass so we definitely have the right width
@@ -3558,6 +3557,8 @@ class MainViewController: UIViewController {
             ) == .openInNewTab
         }()
         if shouldOpenInNewTab, let currentTab {
+            // Dismiss contextual onboarding before opening duck.ai via UTI.
+            currentTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: currentTab)
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
             // Mirror the in-place `.barUsed` so the new-tab branch keeps idle-session parity.
             // Gated on `!fromDeepLink` so external entries aren't reclassified as address-bar submissions.
@@ -3826,6 +3827,10 @@ extension MainViewController: BrowserChromeDelegate {
         )
         switch decision {
         case .openInNewTab:
+            // Dismiss contextual onboarding before duck.ai opens via UTI.
+            if let tab = currentTab {
+                tab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: tab)
+            }
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
         case .loadInPlace:
             loadUrl(url, fromExternalLink: fromExternalLink)
@@ -5146,7 +5151,7 @@ extension MainViewController: TabDelegate {
     var isEmailProtectionSignedIn: Bool {
         emailManager.isSignedIn
     }
-    
+
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {
         newEmailAddress()
     }
@@ -5369,7 +5374,7 @@ extension MainViewController: TabDelegate {
     private func presentChatPathOnboardingCompletionIfNeeded() {
         guard daxDialogsManager.chatPathPhase == .trackerToEOJ,
               aiChatSettings.isAIChatEnabled else { return }
-        let message = UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
+        let message = UserText.Onboarding.DuckAIQuery.completionOnboardingMessage
         // Hide the NTP synchronously, before any frame is rendered, so its empty-state Dax can't
         // flash before the editing-state transition begins. Restored by NewTabPageViewController
         // on every dismissal path.
@@ -6480,8 +6485,7 @@ extension MainViewController: OnboardingDelegate {
 
         appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
 
-        // Now that linear onboarding has finished, any experiment cohort
-        // enrollment that occurred is in place. Run the unified-toggle-input
+        // Now that linear onboarding has finished, run the unified-toggle-input
         // setup that was deferred at viewDidLoad.
         setUpUnifiedToggleInputIfNeeded()
         if experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse {
@@ -6542,10 +6546,8 @@ extension MainViewController: OnboardingNavigationDelegate {
     }
 
     func searchFromOnboarding(for query: String) {
-        if featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) {
-            // suppress the Search onboarding dialog for the Search path
-            daxDialogsManager.setTryAnonymousSearchMessageSeen()
-        }
+        // Suppress the Search onboarding dialog when the user came from the duck.ai query selection step.
+        daxDialogsManager.setTryAnonymousSearchMessageSeen()
         self.loadQuery(query)
     }
 }

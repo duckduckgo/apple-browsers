@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Adatmennyiség";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Ajánlott kikapcsolni, hogy az összes forgalmad a VPN-en keresztül menjen. Ha problémáid vannak olyan funkciókkal, mint a Wi-Fi-hívás, az üzenetküldés vagy a hangposta, próbáld meg bekapcsolni.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Szolgáltatói szolgáltatások kizárása";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Engedd, hogy a helyi forgalom megkerülje a VPN-t, és csatlakozz a helyi hálózaton található eszközökhöz úgy, mint egy nyomtatóhoz.";
 
@@ -3049,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "A DuckDuckGo a saját DNS-kiszolgálóin keresztül irányítja át a DNS-lekérdezéseket, így az internetszolgáltatód nem láthatja, hogy milyen webhelyeket látogatsz meg.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "VPN-diagnosztikai adatok másolása";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Amikor kapcsolatba lépsz az Ügyfélszolgálattal, mellékeld ezeknek az anonimizált VPN-diagnosztikai adatoknak a másolatát, hogy segíteni tudjunk a kapcsolat hibaelhárításában.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Vágólapra másolva";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Nem sikerült a vágólapra másolni";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "GYIK és segítségnyújtás";
 
@@ -3060,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Gyorsparancsok";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Nem megbízható hálózatokon ajánlott, pl. nyilvános wifi szállodákban, bárokban stb. Ha problémákat tapasztalsz a funkciókkal (például a CarPlay, az AirDrop stb.) vagy más eszközökhöz való csatlakozással, próbáld meg kikapcsolni. [További információk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Szigorú útvonalvezetés";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Megerősítés";
@@ -4846,6 +4870,12 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Nem sikerült hozzáadni a névjegyet. Próbálkozz inkább a Letöltések mappában található névjegyfájl megnyitásával.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Névjegy hozzáadva";
+
 /* No comment provided by engineer. */
 "Version: %@" = "Verzió: %@";
 
@@ -5245,3 +5275,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Nincs találat a következőre: „%@”";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "A címsor segítségével kereshetsz és látogathatsz meg webhelyeket, vagy a Duck.ai oldalra válthatsz a privát AI-csevegéshez.\n\nA Duck.ai-t bárhol használhatod, ahol látod a csevegés ikonját: [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "A privát AI csevegéseket bármikor törölheted a Fire Button segítségével. Próbáld ki! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Ez a Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Kérdezz bármit privátban";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Privát keresés";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Magyarázd el a tőzsdét úgy, mintha 10 éves lennék";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Tervezz meg egy tökéletes napot Londonban";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Milyen tíz lenyűgöző tényt tudnál említeni a tudomány, a természet és a történelem területéről?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Készen állsz a kezdésre?\nPróbálkozz kereséssel vagy AI-csevegéssel!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Kérdezd az AI-t";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kód másolva";

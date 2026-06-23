@@ -178,7 +178,7 @@ private struct ToggleRow: View {
                 .labelsHidden()
                 .disabled(isDisabled)
                 .padding(.trailing, Constants.toggleTrailingPadding)
-                .tint(Color(designSystemColor: .accent))
+                .tint(Color(designSystemColor: .accentPrimary))
         }
     }
     

@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datamængde";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Anbefales slået fra, så al din trafik går gennem VPN. Hvis du har problemer med funktioner som wi-fi-opkald, beskeder eller telefonsvarer, kan du prøve at aktivere det.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Udeluk Carrier Services";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Lad lokal trafik omgå VPN'en og oprette forbindelse til enheder på dit lokale netværk, f.eks. en printer.";
 
@@ -3049,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo dirigerer DNS-forespørgsler gennem vores DNS-servere, så din internetudbyder ikke kan se, hvilke hjemmesider du besøger.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Kopiér VPN-diagnostik";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Vedhæft en kopi af disse anonymiserede VPN-diagnosticeringsdata, når du kontakter supporten, så vi kan hjælpe med at fejlfinde din forbindelse.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Kopieret til udklipsholder";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Kunne ikke kopiere til udklipsholder";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "Ofte stillede spørgsmål og support";
 
@@ -3060,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Genveje";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Anbefales på netværk, du ikke har tillid til, f.eks. offentligt wi-fi på hoteller, barer osv. Hvis du har problemer med funktioner (som CarPlay, AirDrop osv.) eller med at forbinde til andre enheder, så prøv at slå det fra. [Læs mere](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Streng routing";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bekræft";
@@ -4846,6 +4870,12 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAdvarsler";
 
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kan ikke tilføje kontakt. Prøv i stedet at åbne kontaktfilen fra downloads.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontakt tilføjet";
+
 /* No comment provided by engineer. */
 "Version: %@" = "Version: %@";
 
@@ -5245,3 +5275,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hvad vil du importere?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Ingen resultater for \"%@\"";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Brug adresselinjen til at søge efter og besøge websteder, eller skift til privat AI-chat med Duck.ai.\n\nDu kan bruge Duck.ai alle steder, hvor du ser chatikonet [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Private AI-chats du kan slette når som helst med Fire Button. Prøv det! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Sådan er Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Spørg om hvad som helst privat";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Søg privat";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Forklar aktiemarkedet, som om jeg er 10 år gammel";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planlæg en perfekt dag i London";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Giv mig 10 fascinerende fakta på tværs af videnskab, natur og historie?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Er du klar til at komme i gang?\nPrøv at søge eller AI-chat!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Spørg AI";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kode kopieret";

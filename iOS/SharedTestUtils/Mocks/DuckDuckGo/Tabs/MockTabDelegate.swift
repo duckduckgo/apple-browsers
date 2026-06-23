@@ -198,7 +198,7 @@ extension TabViewController {
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
             featureDiscovery: MockFeatureDiscovery(),
             keyValueStore: MockKeyValueFileStore(),
-            daxDialogsManager: DummyDaxDialogsManager(),
+            daxDialogsManager: MockDaxDialogsManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             privacyStats: MockPrivacyStats(),

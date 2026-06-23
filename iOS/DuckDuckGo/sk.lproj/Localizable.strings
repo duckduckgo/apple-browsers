@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Dátový objem";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Odporúča sa vypnúť, aby všetok prenos prechádzal cez VPN. Ak máš problémy s funkciami, ako sú volania cez Wi-Fi, správy alebo hlasová schránka, skús ich zapnúť.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Vylúčiť služby operátora";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Umožnite miestnej prevádzke obísť sieť VPN sieť a pripojiť sa k zariadeniam v miestnej sieti, napríklad k tlačiarni.";
 
@@ -3049,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo smeruje dopyty DNS cez naše servery DNS, aby tvoj poskytovateľ internetu nemohol vidieť, ktoré webové stránky navštevuješ.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Kopírovanie diagnostiky VPN";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Pri kontaktovaní podpory prilož kópiu týchto anonymizovaných diagnostických údajov o VPN, aby sme mohli vyriešiť problémy s tvojím pripojením.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Skopírované do schránky";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Nepodarilo sa skopírovať do schránky";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "Často kladené otázky a podpora";
 
@@ -3060,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Skratky";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Odporúčané v sieťach, ktorým nedôveruješ, napr. verejné wifi v hoteloch, baroch atď. Ak máš problémy s funkciami (ako napríklad CarPlay, AirDrop, atď.) alebo s pripojením k iným zariadeniam, skús ich vypnúť. [Viac informácií](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Prísne smerovanie";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potvrdiť";
@@ -4846,6 +4870,12 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kontakt sa nedá pridať. Skús radšej otvoriť súbor s kontaktom zo stiahnutých súborov.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontakt bol pridaný";
+
 /* No comment provided by engineer. */
 "Version: %@" = "Verzia: %@";
 
@@ -5245,3 +5275,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Čo chceš importovať?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Žiadne zhody pre \"%@\"";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Použi panel s adresou na vyhľadávanie a otváranie stránok alebo prepni na Duck.ai, ak chceš súkromne četovať s umelou inteligenciou.\n\nDuck.ai môžeš použiť kdekoľvek, kde vidíš ikonu četu [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Súkromné čety s umelou inteligenciou, ktoré môžeš kedykoľvek odstrániť pomocou Fire Button. Vyskúšaj to! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "To je Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Spýtaj sa na čokoľvek súkromne";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Vyhľadávanie v súkromí";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Vysvetli mi akciový trh, akoby som mal 10 rokov.";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Naplánuj perfektný deň v Londýne";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Akých je 10 fascinujúcich faktov z oblasti vedy, prírody a histórie?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Si pripravený/-á začať?\nSkús vyhľadávanie alebo čet s umelou inteligenciou!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Spýtaj sa AI";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kód bol skopírovaný";

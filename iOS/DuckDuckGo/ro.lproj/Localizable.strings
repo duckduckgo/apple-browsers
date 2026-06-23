@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Volum de date";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Recomandat dezactivat, astfel încât tot traficul să treacă prin VPN. Dacă ai probleme cu funcții precum apelurile prin Wi-Fi, mesageria sau mesageria vocală, încearcă să le activezi.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Exclude serviciile operatorului de telefonie mobilă";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Lasă traficul local să ocolească VPN-ul și să se conecteze la dispozitivele din rețeaua locală, cum ar fi o imprimantă.";
 
@@ -3049,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo direcționează interogările DNS prin serverele noastre DNS, astfel încât furnizorul tău de internet să nu poată vedea ce site-uri web vizitezi.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Copiază diagnosticul VPN";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Include o copie a acestor diagnostice VPN anonimizate când contactezi Serviciul de asistență pentru a ne ajuta să-ți reparăm conexiunea.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Copiat în clipboard";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Nu s-a putut copia în clipboard";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "Întrebări frecvente și asistență";
 
@@ -3060,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Scurtături";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Recomandat pentru rețele în care nu ai încredere, de ex. Wi-Fi public în hoteluri, baruri etc. Dacă ai probleme cu unele funcții (cum ar fi CarPlay, AirDrop etc.) sau cu conectarea la alte dispozitive, încearcă să dezactivezi. [Află mai multe](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Rutare strictă";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirmare";
@@ -4846,6 +4870,12 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Nu se poate adăuga contactul. Încearcă să deschizi fișierul contactului din Descărcări.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Contact adăugat";
+
 /* No comment provided by engineer. */
 "Version: %@" = "Versiune: %@";
 
@@ -5245,3 +5275,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Nu există potriviri pentru „%@”";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Folosește bara de adrese pentru a căuta și vizita site-uri sau comută la Duck.ai pentru chat privat cu IA.\n\nPoți folosi Duck.ai de oriunde vezi pictograma de chat [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Chaturi private cu IA pe care le poți șterge oricând cu butonul „Fire Button”. Încearcă! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Acesta este Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Întreabă orice în mod privat";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Caută în mod privat";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Explică-mi piața bursieră ca și cum aș avea 10 ani";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planifică o zi perfectă în Londra";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Care sunt 10 lucruri fascinante despre știință, natură și istorie?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Ești gata să începi?\nÎncearcă o căutare sau un chat IA!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Întreabă IA";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Cod copiat";

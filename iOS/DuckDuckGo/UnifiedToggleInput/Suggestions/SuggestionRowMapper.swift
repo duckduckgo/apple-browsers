@@ -111,7 +111,7 @@ enum SuggestionRowMapper {
     static func row(for chat: AIChatSuggestion, includesFireDelete: Bool = false) -> SuggestionRow {
         SuggestionRow(
             id: "chat-\(chat.id)",
-            icon: chat.isPinned ? .pin : .aiChat,
+            icon: chat.isPinned ? .aiChatPinned : .aiChat,
             title: chat.title,
             accessory: includesFireDelete ? .fire : .none,
             accessibilityID: "DuckAISuggestions.Chat-\(chat.id)")

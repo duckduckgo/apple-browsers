@@ -79,6 +79,8 @@ struct Launching: LaunchingHandling {
             featureFlagger.isFeatureOn(.appRebranding)
         }
 
+        DesignSystemPalette.current = featureFlagger.isFeatureOn(.appRebranding) ? .rebranded : .default
+
         favicons = Favicons(fireproofing: fireproofing)
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
@@ -412,7 +414,8 @@ struct Launching: LaunchingHandling {
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
                     label: .default,
                     keyValueStore: keyValueStore,
-                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter(),
+                    lockedLaunchFixEnabled: featureFlagger.isFeatureOn(.duckAINativeStorageMigrationLockedLaunchFix)
                 ).run()
                 if outcome == .skip {
                     return nil

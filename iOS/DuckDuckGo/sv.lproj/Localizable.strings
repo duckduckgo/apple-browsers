@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datavolym";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Rekommenderas att avaktiveras så att all din trafik går via VPN. Prova att aktivera det om du har problem med funktioner såsom Wi-Fi-samtal, meddelanden eller röstbrevlåda.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Exkludera operatörstjänster";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Låt lokal trafik kringgå VPN och ansluta till enheter i ditt lokala nätverk, t.ex. skrivare.";
 
@@ -3049,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo dirigerar DNS-förfrågningar via våra DNS-servrar så att din internetleverantör inte kan se vilka webbplatser du besöker.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Kopiera VPN-diagnostik";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Bifoga en kopia av den här anonymiserade VPN-diagnostiken när du kontaktar supporten. Det hjälper oss att felsöka anslutningen.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Kopierat till urklipp";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Kunde inte kopiera till urklipp";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "Vanliga frågor och support";
 
@@ -3060,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Genvägar";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Rekommenderas på nätverk du inte litar på, t.ex. offentlig wifi på hotell, barer etc. Prova att avaktivera det om du har problem med funktioner (t.ex. CarPlay, AirDrop, etc.) eller med att ansluta till andra enheter. [Läs mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Strikt routning";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bekräfta";
@@ -4846,6 +4870,12 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Det går inte att lägga till kontakten. Prova med att öppna kontaktfilen från hämtade filer istället.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontakt tillagd";
+
 /* No comment provided by engineer. */
 "Version: %@" = "Version: %@";
 
@@ -5245,3 +5275,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Inga träffar för \"%@\"";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Använd adressfältet för att söka efter och besöka webbplatser eller växla till Duck.ai för privat AI-chatt.\n\nDu kan använda Duck.ai överallt där du ser chattikonen [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Privata AI-chattar som du kan radera när som helst med Fire Button. Prova! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Det är Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Fråga vad som helst privat";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Sök privat";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Förklara aktiemarknaden som om jag vore 10 år";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planera en perfekt dag i London";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Vad är 10 fascinerande fakta inom vetenskap, natur och historia?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Är du redo att komma igång?\nTesta en sökning eller AI-chatt!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Fråga AI";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kod kopierad";

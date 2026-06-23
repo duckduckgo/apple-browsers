@@ -307,7 +307,8 @@ final class AIChatHistoryViewModel: ObservableObject {
         case (.discussion, false): image = DesignSystemImages.Glyphs.Size24.chat
         case (.voice, true): image = DesignSystemImages.Glyphs.Size24.voicePinned
         case (.voice, false): image = DesignSystemImages.Glyphs.Size24.voice
-        case (.imageGeneration, _): image = DesignSystemImages.Glyphs.Size24.image
+        case (.imageGeneration, true): image = DesignSystemImages.Glyphs.Size24.imagesPinned
+        case (.imageGeneration, false): image = DesignSystemImages.Glyphs.Size24.images
         }
         // The chat-family glyph assets aren't marked `template-rendering-intent` in their
         // Contents.json, so without forcing template mode they render in their own

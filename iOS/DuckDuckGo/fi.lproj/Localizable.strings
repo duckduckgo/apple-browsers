@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datamäärä";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Suositellaan pitämään pois päältä, jotta kaikki liikenteesi kulkee VPN:n kautta. Jos sinulla on ongelmia ominaisuuksien, kuten Wi-Fi-puheluiden, viestien tai vastaajaviestien, kanssa, kokeile ottaa sen käyttöön.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Sulje pois operaattoripalvelut";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Anna paikallisen liikenteen ohittaa VPN ja muodosta yhteys lähiverkkosi laitteisiin, kuten tulostimeen.";
 
@@ -3049,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo reitittää DNS-kyselyt DNS-palvelimiemme kautta, jotta internetpalveluntarjoajasi ei näe, millä verkkosivustoilla vierailet.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Kopioi VPN-diagnostiikka";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Liitä kopio näistä anonymisoiduista VPN-diagnostiikkatiedoista, kun otat yhteyttä tukeen, jotta voimme auttaa yhteytesi vianmäärityksessä.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Kopioitu leikepöydälle";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Leikepöydälle kopiointi epäonnistui";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "Usein kysytyt kysymykset ja tuki";
 
@@ -3060,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Pikavalinnat";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Suositellaan verkoissa, joihin et luota, esim. julkinen wifi hotelleissa, baareissa, jne. Jos sinulla on ongelmia ominaisuuksien (kuten CarPlayn, AirDropin jne.) tai muihin laitteisiin yhdistämisen kanssa, kokeile kytkeä se pois päältä. [Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Tiukka reititys";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Vahvista";
@@ -4846,6 +4870,12 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Yhteystiedon lisääminen epäonnistui. Kokeile avata yhteystietotiedosto sen sijaan latauksista.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Yhteystieto lisätty";
+
 /* No comment provided by engineer. */
 "Version: %@" = "Versio: %@";
 
@@ -5245,3 +5275,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mitä haluat tuoda?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Ei osumia haulle \"%@\"";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Hae sivustoja ja vieraile niillä osoiteriviltä tai aloita yksityinen tekoälykeskustelu siirtymällä Duck.ai:hin.\n\nVoit käyttää Duck.ai:ta missä tahansa, missä näet chat-kuvakkeen [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Yksityiset tekoälykeskustelut, jotka voit poistaa milloin tahansa Fire Button -painikkeella. Kokeile nyt! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Se on Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Kysy mitä tahansa yksityisesti";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Yksityinen selaus";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Selitä osakemarkkinat kuin olisin 10-vuotias";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Suunnittele täydellinen päivä Lontoossa";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Mitkä ovat 10 kiehtovaa faktaa tieteestä, luonnosta ja historiasta?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Oletko valmis aloittamaan?\nKokeile hakua tai tekoälykeskustelua!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Kysy tekoälyltä";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Koodi kopioitu";

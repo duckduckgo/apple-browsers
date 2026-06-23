@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Datenvolumen";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Es wird empfohlen, diese Option zu deaktivieren, damit dein gesamter Datenverkehr über das VPN läuft. Solltest du Probleme mit Funktionen wie WLAN-Anrufen, Nachrichten oder Voicemail haben, versuche, diese zu aktivieren.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Dienste von Netzbetreibern ausschließen";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Lass den lokalen Datenverkehr das VPN umgehen und dich mit Geräten in deinem lokalen Netzwerk verbinden, beispielsweise einem Drucker.";
 
@@ -3049,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo leitet DNS-Anfragen über seine eigenen DNS-Server, damit dein Internetanbieter nicht sehen kann, welche Websites du besuchst.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "VPN-Diagnosen kopieren";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Reiche eine Kopie dieser anonymisierten VPN-Diagnosen beim Support mit ein, wenn du uns wegen der Fehlersuche bei deiner Verbindung kontaktierst.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "In Zwischenablage kopiert";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Konnte nicht in die Zwischenablage kopiert werden";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "F&A und Support";
 
@@ -3060,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Shortcuts";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Empfohlen in Netzwerken, denen du nicht vertraust, z. B. öffentliches WLAN in Hotels, Bars usw. Solltest du Probleme mit Funktionen (wie CarPlay, AirDrop usw.) oder der Verbindung zu anderen Geräten haben, versuche, diese zu deaktivieren. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Striktes Routing";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Bestätigen";
@@ -4846,6 +4870,12 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kontakt kann nicht hinzugefügt werden. Versuche stattdessen, die Kontaktdatei aus den Downloads zu öffnen.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontakt hinzugefügt";
+
 /* No comment provided by engineer. */
 "Version: %@" = "Version: %@";
 
@@ -5245,3 +5275,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Was möchtest du importieren?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Keine Treffer für \"%@\"";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Verwende die Adressleiste, um zu suchen und Websites zu besuchen oder für private KI-Chats zu Duck.ai zu wechseln.\n\nDu kannst Duck.ai überall dort nutzen, wo du das Chat-Symbol [[chat_icon]] siehst";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Private KI-Chats, die du jederzeit mit dem Fire Button löschen kannst. Probier’s doch mal aus! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Das ist Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Alles privat fragen";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Privat suchen";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Erkläre den Aktienmarkt, als wäre ich 10";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Plane einen perfekten Tag in London";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Was sind 10 faszinierende Fakten aus Wissenschaft, Natur und Geschichte?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Bereit anzufangen?\nProbier die Suchfunktion oder den KI-Chat!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Frag die KI";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Code kopiert";

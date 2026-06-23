@@ -138,6 +138,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User removes page context from the prompt using a button in the input field
     case aiChatPageContextRemoved(automaticEnabled: Bool)
 
+    /// Event Trigger: User attaches selected text as page context via the "Attach to Duck.ai" context-menu action
+    case aiChatAttachSelection
+
     // MARK: - Deleting chat history
 
     /// Event Trigger: User requests to delete Duck.ai chat history from the fire button or history delete dialog
@@ -404,6 +407,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: Duck.ai tab WebKit process terminates
     case aiChatTabDidTerminate(error: Error)
 
+    /// Event Trigger: Duck.ai tab enters a WebKit content-process crash loop (repeated terminations within the crash-loop window)
+    case aiChatTabTerminationLoop(error: Error)
+
     // MARK: - Daily
 
     /// Event Trigger: Fires daily when the app becomes active, reporting whether AI Chat features are enabled or disabled
@@ -483,6 +489,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_page_context_added"
         case .aiChatPageContextRemoved:
             return "aichat_page_context_removed"
+        case .aiChatAttachSelection:
+            return "aichat_attach_selection"
         case let .aiChatAutoClearHistorySettingToggled(enabled):
             if enabled {
                 return "m_mac_aichat_history_autoclear_enabled"
@@ -650,6 +658,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_view_all_chats_more_options_menu"
         case .aiChatTabDidTerminate:
             return "aichat_tab_did_terminate"
+        case .aiChatTabTerminationLoop:
+            return "aichat_tab_termination_loop"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
         case .aiChatVoiceChatStartFailed:
@@ -684,6 +694,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
                 .aiChatPageContextSourceLinkClicked,
+                .aiChatAttachSelection,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
@@ -754,7 +765,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatDeleteAllChatsMoreOptionsMenu,
                 .aiChatViewAllChatsMainMenu,
                 .aiChatViewAllChatsMoreOptionsMenu,
-                .aiChatTabDidTerminate:
+                .aiChatTabDidTerminate,
+                .aiChatTabTerminationLoop:
             return nil
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
@@ -833,6 +845,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatPageContextSourceLinkClicked,
                 .aiChatPageContextAdded,
                 .aiChatPageContextRemoved,
+                .aiChatAttachSelection,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
                 .aiChatDeleteHistoryFailed,
@@ -914,7 +927,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarWebSearchSubmitted,
                 .aiChatIsEnabled,
                 .aiChatVoiceChatStartFailed,
-                .aiChatTabDidTerminate:
+                .aiChatTabDidTerminate,
+                .aiChatTabTerminationLoop:
             return [.pixelSource]
         }
     }
@@ -935,6 +949,7 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
     case serp = "serp"
     case contextMenu = "context-menu"
     case translation = "translation"
+    case attachSelection = "attach-selection"
     case tabbarButton = "tabbar-button"
 }
 

@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Contacts
 import GRDB
 import DesignResourcesKit
 import DesignResourcesKitIcons
@@ -31,6 +32,7 @@ private struct ShareButtonFramePreferenceKey: PreferenceKey {
 private struct DownloadPreview: Identifiable {
     let id = UUID()
     let event: PreparedCalendarEvent?
+    let contact: CNContact?
 }
 
 struct CompleteDownloadRow: View {
@@ -44,7 +46,7 @@ struct CompleteDownloadRow: View {
     var body: some View {
         HStack {
             Button {
-                preview = DownloadPreview(event: rowModel.preparePreviewEvent())
+                preview = DownloadPreview(event: rowModel.preparePreviewEvent(), contact: rowModel.preparePreviewContact())
             } label: {
                 VStack(alignment: .leading) {
                     Text(rowModel.filename)
@@ -83,6 +85,18 @@ struct CompleteDownloadRow: View {
                 },
                 onDismiss: { self.preview = nil }
             )
+        } else if let contact = preview.contact {
+            ContactCardView(
+                contact: contact,
+                onSaved: {
+                    ActionMessageView.present(
+                        message: UserText.vcardContactAdded,
+                        presentationLocation: .withBottomBar(andAddressBarBottom: false)
+                    )
+                },
+                onDismiss: { self.preview = nil }
+            )
+            .edgesIgnoringSafeArea(.all)
         } else {
             QuickLookPreviewView(localFileURL: rowModel.fileURL)
                 .edgesIgnoringSafeArea(.all)

@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Količina podataka";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Preporučuje se biti isključeno kako bi sav tvoj promet prolazio kroz VPN. Ako imaš problema sa značajkama poput Wi-Fi poziva, slanja poruka ili govorne pošte, pokušaj uključiti ovu postavku.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Isključi usluge operatera";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Neka lokalni promet zaobiđe VPN i poveže se s uređajima na tvojoj lokalnoj mreži, poput pisača.";
 
@@ -3049,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo usmjerava DNS upite putem naših DNS poslužitelja tako da tvoj davatelj internetskih usluga ne može vidjeti koje web stranice posjećuješ.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Kopiraj VPN dijagnostiku";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Priloži kopiju ovih anonimiziranih VPN dijagnostičkih podataka kad kontaktiraš podršku da nam pomogneš riješiti problem s vezom.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Kopirano u međuspremnik";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Nije moguće kopirati u međuspremnik";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "Često postavljana pitanja i podrška";
 
@@ -3060,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Prečaci";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Preporučuje se na mrežama kojima ne vjerujete, npr. javni Wi-Fi u hotelima, barovima itd. Ako imaš problema s funkcijama (poput CarPlaya, AirDropa itd.) ili povezivanjem s drugim uređajima, pokušaj ih isključiti. [Saznaj više](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Strogo usmjeravanje";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potvrdi";
@@ -3200,7 +3224,7 @@
 "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "naprednom, privatnom umjetnom inteligencijom";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "neobaveznom plaćenom pretplatom";
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "neobaveznu plaćenu pretplatu";
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
 "onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
@@ -4846,6 +4870,12 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kontakt se ne može dodati. Pokušaj umjesto toga otvoriti datoteku kontakta iz preuzimanja.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontakt je dodan";
+
 /* No comment provided by engineer. */
 "Version: %@" = "Verzija: %@";
 
@@ -5245,3 +5275,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Što želiš uvesti?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Nema rezultata za \"%@\"";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Koristi adresnu traku za pretraživanje i posjećivanje web-mjesta ili se prebaci na Duck.ai za privatno AI čavrljanje.\n\nDuck.ai s možeš koristiti bilo kojeg mjesta na kojem vidiš ikonu za čavrljanje [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Privatna AI čavrljanja koja možeš izbrisati u bilo kojem trenutku pomoću Fire Buttona. Pokušaj! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "To je Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Privatno pitaj bilo što";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Pretražuj privatno";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Objasni mi burzu kao da imam 10 godina";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Isplaniraj savršen dan u Londonu";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Koje su 10 zanimljivih činjenica iz znanosti, prirode i povijesti?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Spreman za početak?\nProbaj pretraživanje ili AI čavrljanje!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Pitaj AI";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kôd je kopiran";

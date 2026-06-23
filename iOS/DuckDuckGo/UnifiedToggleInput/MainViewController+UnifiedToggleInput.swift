@@ -48,9 +48,6 @@ extension MainViewController {
 
         /// Stretch the icon fade-in past UTI's collapse so the build-up reads rather than front-loading.
         static let omnibarIconFadeInDurationMultiplier: Double = 1.2
-
-        static let bottomDaxLogoTransitionYOffset: CGFloat = -DefaultOmniBarView.expectedHeight / 2
-        static let topDaxLogoTransitionYOffset: CGFloat = 2
     }
 
     enum UnifiedInputChromeBackgroundState: String {
@@ -68,7 +65,6 @@ extension MainViewController {
         // `unifiedToggleInputFeature.isAvailable` before we wire up the coordinator.
         // Duck.ai tailored-flow users are need UTI during the linear onboarding otherwise they will not see the new UI in the Duck.ai page that is shown during the linear onboarding interlude.
         // Returning users (who skip linear onboarding) fall through immediately.
-        guard !(needsToShowOnboardingIntro() && onboardingManager.currentOnboardingFlow == .default) else { return }
         guard unifiedToggleInputFeature.isAvailable else { return }
 
         let aiChatPreferences = AIChatPreferencesPersistor()
@@ -127,6 +123,14 @@ extension MainViewController {
         subscribeToModeChanges(coordinator)
         subscribeToSystemEvents()
         subscribeToToggleSettings()
+
+        // Immediately reconcile chrome for the already-selected tab. If a tab was
+        // selected before UTI existed (e.g. a duck.ai tab opened from onboarding
+        // before linear onboarding completed), the legacy nav bar would otherwise
+        // remain visible until the next tab-change event triggered a refresh.
+        if let currentTab {
+            refreshUnifiedToggleInput(for: currentTab)
+        }
     }
 
     func updateUnifiedToggleInputKeyboardVisibility(_ keyboardVisible: Bool) {
@@ -530,27 +534,12 @@ private extension MainViewController {
     }
 
     func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
-        let previousLottieProgress = coordinator.contentViewController.daxLogoManager.lottieProgress
-        let wasLogoVisible = coordinator.contentViewController.daxLogoManager.isLogoVisible
-        // If the swipe gesture already drove progress to the target, skip the
-        // programmatic animation — the swipe handled the visual transition.
-        let swipeProgress = coordinator.contentViewController.daxLogoManager.currentProgress
-        let targetProgress: CGFloat = mode == .aiChat ? 1 : 0
-        let wasSwipeDriven = abs(swipeProgress - targetProgress) < 0.01
-
+        // The empty-state logo morph is driven by the SwiftUI host (`FocusedLogoModel`) off the committed
+        // mode — no manager animation here.
         updateUnifiedInputContentVisibility(for: coordinator)
         syncBottomOmnibarAnchorIfNeeded(for: coordinator)
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
-        // Gate on whether the logo is active for the committed state — not its current alpha, which
-        // is `currentProgress`-scrubbed and reads 0 for the AI logo until the morph drives progress.
-        let shouldAnimateLogoTransition = coordinator.contentViewController.daxLogoManager.isLogoActiveForCurrentState
-        if !wasSwipeDriven && shouldAnimateLogoTransition {
-            coordinator.contentViewController.daxLogoManager.animateLogoTransition(
-                toMode: mode,
-                fromProgress: previousLottieProgress,
-                wasLogoVisible: wasLogoVisible)
-        }
         updateFloatingReturnKeyVisibility()
     }
 
@@ -1024,44 +1013,21 @@ extension MainViewController {
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
 
-        let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
-        let utiStartCenterY = coordinator.contentViewController.daxLogoManager.logoWindowCenterY
-        let ntpStartCenterY = ntpLogoWindowCenterY()
-        let isBottom = coordinator.cardPosition.isBottom
+        // Pick the NTP handoff from the host's current content + the NTP's *resting* content (the NTP's
+        // `isShowing*` is unreliable here — the focus handoff hid one for the session). logo→logo morphs
+        // to the Dax mark, favorites→favorites hands the embedded copy over, everything else fades.
+        let isLogoToLogo = coordinator.contentViewController.isShowingLogoContent
+            && newTabPageViewController?.restingContentIsLogo == true
+        let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
+            && newTabPageViewController?.restingContentIsFavorites == true
 
-        // For logo-to-logo: keep the UTI Logo visible and animate it to the NTP Logo's
-        // natural (post-dismiss) position.
-        if isLogoToLogo,
-           let utiY = utiStartCenterY {
-            let ntpNaturalY: CGFloat
-            if isBottom {
-                // The bottom UTI logo is centered against a guide ending one omnibar-height
-                // below the keyboard; compensate by half that height to match the NTP logo.
-                ntpNaturalY = (ntpStartCenterY ?? utiY) + Constants.bottomDaxLogoTransitionYOffset
-            } else {
-                // Top bar: the nav bar shrinks back to standard height, making the
-                // contentContainer taller and shifting the NTP Logo center up by half the delta.
-                let navHeightDelta = viewCoordinator.constraints.navigationBarContainerHeight.constant
-                    - viewCoordinator.standardNavigationBarContainerHeight
-                ntpNaturalY = (ntpStartCenterY ?? utiY) - navHeightDelta / 2 + Constants.topDaxLogoTransitionYOffset
-            }
-
-            // How far the UTI Logo needs to move to land at the NTP Logo's final position.
-            let offset = ntpNaturalY - utiY
-
-            // Hide the NTP Logo — the UTI Logo takes over for the duration of the animation.
+        if isLogoToLogo {
             newTabPageViewController?.setLogoHidden(true)
-
-            // If the UTI Logo is showing the duck.ai state, morph it to the search state
-            // so it matches the NTP Logo by the time the swap happens.
-            if coordinator.contentViewController.daxLogoManager.lottieProgress > 0 {
-                coordinator.contentViewController.daxLogoManager.animateProgress(to: 0)
-            }
-
-            // Shift the UTI Logo's centering constraint so the dismiss animation drives it
-            // to the NTP Logo's post-dismiss position.
-            let currentOffset = coordinator.contentViewController.daxLogoManager.logoYOffset
-            coordinator.contentViewController.daxLogoManager.setLogoYOffset(currentOffset + offset)
+            coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
+        } else if isFavoritesToFavorites {
+            newTabPageViewController?.setFavoritesHidden(true)
+        } else {
+            coordinator.contentViewController.beginDismissFade()
         }
 
         viewCoordinator.prepareOmnibarForInlineDismissReveal()
@@ -1075,12 +1041,13 @@ extension MainViewController {
                 guard let self else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout()
-                // Mirror the focus path: push updated content insets so the suggestion
-                // tray content (including the escape hatch) animates with the bar collapse.
+                // Mirror the focus path: settle the collapsed bar layout first so `pushContentInsets`
+                // reads the *target* (collapsed) height, then push insets so the favorites/hatch
+                // animate with the collapse instead of snapping.
+                self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
-                if !isLogoToLogo {
-                    self.viewCoordinator.unifiedInputContentContainer.alpha = 0
-                }
+                // (Favorites case no longer fades the container — the embedded favorites stay visible
+                // and animate; the real NTP favorites, hidden above, are revealed at completion.)
                 if let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
@@ -1091,12 +1058,11 @@ extension MainViewController {
                 // content container, so the NTP Logo is rendered in the same frame
                 // and there's no one-frame gap where neither logo is visible.
                 self.newTabPageViewController?.setLogoHidden(false)
+                self.newTabPageViewController?.setFavoritesHidden(false)
                 self.newTabPageViewController?.view.setNeedsLayout()
                 self.newTabPageViewController?.view.layoutIfNeeded()
                 self.viewCoordinator.unifiedInputContentContainer.isHidden = true
                 self.viewCoordinator.unifiedInputContentContainer.alpha = 1
-                coordinator.contentViewController.daxLogoManager.setLogoYOffset(0)
-                coordinator.contentViewController.setLogoHidden(false)
                 coordinator.viewController.setTextHorizontalShift(0)
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
                 coordinator.viewController.finalizeOmnibarEditingDismiss()

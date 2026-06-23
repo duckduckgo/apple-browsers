@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Όγκος δεδομένων";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Συνιστάται να απενεργοποιηθεί, ώστε το σύνολο της επισκεψιμότητάς σας να περνάει μέσω του VPN. Εάν αντιμετωπίζετε προβλήματα με λειτουργίες όπως κλήσεις Wi-Fi, ανταλλαγή μηνυμάτων ή φωνητικά μηνύματα, δοκιμάστε να προβείτε σε ενεργοποίηση.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Εξαίρεση Υπηρεσιών Παρόχου";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Επιτρέψτε στην τοπική κυκλοφορία να παρακάμψει το VPN και να συνδεθεί σε συσκευές του τοπικού δικτύου σας, όπως ένας εκτυπωτής.";
 
@@ -3049,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "Το DuckDuckGo δρομολογεί τα ερωτήματα DNS μέσω των διακομιστών DNS μας, ώστε ο πάροχος διαδικτύου σας να μην μπορεί να δει ποιους ιστότοπους επισκέπτεστε.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Αντιγραφή διαγνωστικών VPN";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Συμπεριλάβετε ένα αντίγραφο αυτών των ανώνυμων διαγνωστικών VPN όταν επικοινωνείτε με την Υποστήριξη για να μας βοηθήσετε να αντιμετωπίσουμε το πρόβλημα της σύνδεσής σας.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Έγινε αντιγραφή στο πρόχειρο";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Δεν ήταν δυνατή η αντιγραφή στο πρόχειρο";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "Συχνές ερωτήσεις και υποστήριξη";
 
@@ -3060,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Συντομευσεις";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Συνιστάται σε δίκτυα που δεν εμπιστεύεσαι, π.χ. δημόσιο wifi σε ξενοδοχεία, μπαρ κ.λπ. Εάν αντιμετωπίζεις προβλήματα με λειτουργίες (όπως CarPlay, AirDrop κ.λπ.) ή με τη σύνδεση σε άλλες συσκευές, δοκίμασε να το απενεργοποιήσεις. [Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Αυστηρή δρομολόγηση";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Επιβεβαίωση";
@@ -4846,6 +4870,12 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Δεν είναι δυνατή η προσθήκη επαφής. Δοκίμασε να ανοίξεις το αρχείο επαφής από τις Λήψεις.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Προστέθηκε επαφή";
+
 /* No comment provided by engineer. */
 "Version: %@" = "Έκδοση: %@";
 
@@ -5245,3 +5275,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Δεν υπάρχουν αντιστοιχίες για το «%@»";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Χρησιμοποιήστε τη γραμμή διευθύνσεων για αναζήτηση και επίσκεψη σε ιστότοπους ή μεταβείτε στο Duck.ai για ιδιωτική συνομιλία AI.\n\nΜπορείτε να χρησιμοποιήσετε το Duck.ai από οπουδήποτε βλέπετε το εικονίδιο συνομιλίας [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Ιδιωτικές συνομιλίες με τεχνητή νοημοσύνη που μπορείς να διαγράψεις ανά πάσα στιγμή με το Fire Button. Δοκίμασέ το! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Αυτό είναι το Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Ρωτήστε οτιδήποτε ιδιωτικά";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Ιδιωτική αναζήτηση";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Εξήγησέ μου την χρηματιστηριακή αγορά σαν να είμαι 10 χρονών";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Σχεδίασε μια τέλεια μέρα στο Λονδίνο";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Μπορείς να μου πεις 10 συναρπαστικά γεγονότα από την επιστήμη, τη φύση και την ιστορία;";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Έτοιμος να αρχίσεις;\nΔοκίμασε μια αναζήτηση ή μια συνομιλία με τεχνητή νοημοσύνη!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Ρωτήστε AI";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Ο κώδικας αντιγράφηκε";

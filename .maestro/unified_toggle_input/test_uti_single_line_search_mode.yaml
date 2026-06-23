@@ -1,0 +1,55 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_uti_single_line_search_mode
+
+---
+
+# Verifies that with Search↔Duck.ai toggle present and Search selected, the UTI uses a
+# single-line UITextField — the AI toolbar does not appear and the field does not expand.
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+        ff.experimentalAddressBar: "true"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+# Open UTI from NTP omnibar — toggle is present
+- tapOn:
+    id: "searchEntry"
+- assertVisible:
+    id: "AddressBar.Button.Search"
+- assertVisible:
+    id: "AddressBar.Button.DuckAI"
+
+# Ensure Search mode is active
+- tapOn:
+    id: "AddressBar.Button.Search"
+
+# Type a long URL — single-line field scrolls horizontally, does not expand vertically
+- inputText: "https://en.wikipedia.org/wiki/Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch"
+
+# Search mode: no AI toolbar
+- assertNotVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Field is active and receiving input
+- assertVisible:
+    id: "searchEntry"
+
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml

@@ -124,6 +124,7 @@ public extension DesignSystemImages {
             public static var subscription: DesignSystemImage { .init(resource: .subscription12) }
             public static var sync: DesignSystemImage { .init(resource: .sync12) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew12) }
+            public static var textSelectedRight: DesignSystemImage { .init(resource: .textSelectedRight12) }
             public static var thumbsDown: DesignSystemImage { .init(resource: .thumbsDown12) }
             public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUp12) }
             public static var toolbar: DesignSystemImage { .init(resource: .toolbar12) }
@@ -297,6 +298,7 @@ public extension DesignSystemImages {
             public static var pin: DesignSystemImage { .init(resource: .pin16) }
             public static var platformApple: DesignSystemImage { .init(resource: .platformApple16) }
             public static var platformMacOS: DesignSystemImage { .init(resource: .platformMacOS16) }
+            public static var playSolid: DesignSystemImage { .init(resource: .playSolid16) }
             public static var permissionAutoplay: DesignSystemImage { .init(resource: .playerVideo16) }
             public static var pointUpSolid: DesignSystemImage { .init(resource: .pointUpSolid16) }
             public static var popupBlocked: DesignSystemImage { .init(resource: .popupBlocked16) }
@@ -539,6 +541,7 @@ public extension DesignSystemImages {
             public static var image: DesignSystemImage { .init(resource: .image24) }
             public static var images: DesignSystemImage { .init(resource: .images24) }
             public static var imageAIHide: DesignSystemImage { .init(resource: .imageAIHide24) }
+            public static var imagesPinned: DesignSystemImage { .init(resource: .imagesPinned24) }
             public static var info: DesignSystemImage { .init(resource: .info24) }
             public static var infoSolid: DesignSystemImage { .init(resource: .infoSolid24) }
             public static var key: DesignSystemImage { .init(resource: .key24) }
@@ -608,6 +611,7 @@ public extension DesignSystemImages {
             public static var timer: DesignSystemImage { .init(resource: .timer24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize24) }
+            public static var unpin: DesignSystemImage { .init(resource: .unpin24) }
             public static var uploadFile: DesignSystemImage { .init(resource: .uploadFile24) }
             public static var vpn: DesignSystemImage { .init(resource: .VPN_24) }
             public static var vpnUnlocked: DesignSystemImage { .init(resource: .vpnUnlocked24) }

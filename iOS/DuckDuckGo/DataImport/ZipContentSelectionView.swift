@@ -144,7 +144,7 @@ private struct DataTypeRow: View {
                             .renderingMode(.template)
                             .resizable()
                             .frame(width: 22, height: 22)
-                            .foregroundStyle(Color(designSystemColor: .accent))
+                            .foregroundStyle(Color(designSystemColor: .accentPrimary))
                     } else {
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle)
                             .frame(width: 24, height: 24)

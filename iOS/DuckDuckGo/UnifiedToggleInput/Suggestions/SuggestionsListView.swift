@@ -36,6 +36,9 @@ struct SuggestionsListView: View {
         static let rowVerticalPaddingWithSubtitle: CGFloat = 14
         static let rowLeftInset: CGFloat = 12
         static let rowRightInset: CGFloat = 13
+        /// List's horizontal content margin (cell edge). Reduced 8pt from the NTP's 24pt regularPadding
+        /// to widen the cells in step with the narrower input card.
+        static let listHorizontalContentMargin: CGFloat = 16
     }
 
     var body: some View {
@@ -53,7 +56,8 @@ struct SuggestionsListView: View {
             .modifier(CompactSectionSpacingModifier())
             // Replace insetGrouped's variable top margin with the design's list top inset (6pt below the
             // input on the top bar; 0 on the bottom bar, where the input sits below the list).
-            .modifier(ListTopContentMarginModifier(top: isAddressBarAtBottom ? 0 : Metrics.listTopInset))
+            .modifier(ListTopContentMarginModifier(top: isAddressBarAtBottom ? 0 : Metrics.listTopInset,
+                                                   horizontal: Metrics.listHorizontalContentMargin))
             .hideScrollContentBackground()
             .background(Color(designSystemColor: .background))
             .scrollDismissesKeyboardIfAvailable()
@@ -99,11 +103,11 @@ struct SuggestionsListView: View {
     /// `selectedRowID` stays nil on iPhone (no arrow-key navigation), so this is inert there.
     private func rowBackground(for row: SuggestionRow) -> Color {
         row.id == viewModel.selectedRowID
-            ? Color(designSystemColor: .accent)
+            ? Color(designSystemColor: .accentPrimary)
             : Color(designSystemColor: .surface)
     }
 
-    /// Vertical padding per Figma; horizontal inset (on top of the list's 24pt content margin) keeps
+    /// Vertical padding per Figma; horizontal inset (on top of the list's content margin) keeps
     /// the rows aligned with the input's text + X clear button.
     private func rowInsets(for row: SuggestionRow) -> EdgeInsets {
         let vertical = row.subtitle == nil ? Metrics.rowVerticalPaddingSingleLine : Metrics.rowVerticalPaddingWithSubtitle
@@ -123,15 +127,16 @@ struct SuggestionsListView: View {
 }
 
 /// insetGrouped reserves a large variable top inset above the first section; replace it with the
-/// design's `top` inset, and pin the horizontal margin to the NTP's content margin (regularPadding,
-/// 24) so the rows align with the escape hatch and favorites grid in every orientation.
+/// design's `top` inset, and set the `horizontal` content margin (the cell edge) explicitly so the
+/// rows align with the escape hatch and favorites grid in every orientation.
 private struct ListTopContentMarginModifier: ViewModifier {
     let top: CGFloat
+    let horizontal: CGFloat
     func body(content: Content) -> some View {
         if #available(iOS 17, *) {
             content
                 .contentMargins(.top, top, for: .scrollContent)
-                .contentMargins(.horizontal, 24, for: .scrollContent)
+                .contentMargins(.horizontal, horizontal, for: .scrollContent)
         } else {
             content
         }

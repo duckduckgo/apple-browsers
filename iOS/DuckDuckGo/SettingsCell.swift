@@ -216,7 +216,7 @@ struct SettingsCellView: View, Identifiable {
                 .layoutPriority(1)
         case .toggle(let isOn):
             Toggle("", isOn: isOn)
-                .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accent)))
+                .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accentPrimary)))
                 .fixedSize()
                 .accessibilityIdentifier(accessoryAccessibilityIdentifier)
         case .image(let image):

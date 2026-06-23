@@ -146,7 +146,7 @@ private struct SuggestionsSection: View {
     var onSuggestionSelected: (AutocompleteViewModel.SuggestionModel) -> Void
     var onSuggestionDeleted: (AutocompleteViewModel.SuggestionModel) -> Void
 
-    let selectedColor = Color(designSystemColor: .accent)
+    let selectedColor = Color(designSystemColor: .accentPrimary)
 
     let unselectedColor = Color(designSystemColor: .surface)
 

@@ -3001,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "データ量";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "すべてのトラフィックがVPNを通るように、オフにすることをおすすめします。Wi-Fi通話、メッセージ、留守番電話などの機能に問題がある場合は、オンにしてみてください。";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "キャリアサービスを除外";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "ローカルトラフィックがVPNをバイパスし、プリンターなどのローカルネットワーク上のデバイスに接続できるようにします。";
 
@@ -3049,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGoは当社のDNSサーバーを介してDNSクエリをルーティングするため、インターネットプロバイダーはお客様がアクセスしたウェブサイトを見ることができません。";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "VPN診断をコピー";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "接続の問題解決を支援するため、サポートにお問い合わせいただく際はこれらの匿名化されたVPN診断情報のコピーを添付してください。";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "クリップボードにコピーされました";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "クリップボードにコピーできませんでした";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "よくある質問とサポート";
 
@@ -3060,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "ショートカット";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "ホテルやバーなどの公共Wi-Fiなど、信頼できないネットワークでの使用をおすすめします。CarPlayやAirDropなどの機能に問題がある場合や、他のデバイスとの接続に問題がある場合は、この機能をオフにしてみてください。[詳細](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "厳格なルーティング";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "確認";
@@ -4846,6 +4870,12 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "連絡先を追加できません。代わりにダウンロードから連絡先ファイルを開いてみてください。";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "連絡先が追加されました";
+
 /* No comment provided by engineer. */
 "Version: %@" = "バージョン：%@";
 
@@ -5245,3 +5275,39 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "何をインポートしますか？";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "「%@」に一致するものはありません";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "サイトを検索してアクセスするにはアドレスバーを使用するか、Duck.aiに切り替えてプライベートなAIチャットを利用してください。\n\nDuck.aiはチャットアイコン[[chat_icon]]が表示されている場所ならどこからでも使えます";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "プライベートなAIチャットは、Fire Buttonを使っていつでも削除できます。ぜひお試しください！🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "それがDuck.aiです！";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "非公開でなんでも聞いてください";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "検索時にプライバシーを保護する";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "株式市場を10歳の子どもにも分かるように説明してください";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "ロンドンで完璧な一日を計画しましょう";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "科学、自然、歴史に関する興味深い事実を10個教えてください";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "開始する準備はできていますか？\n検索またはAIチャットをお試しください！";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "AIに聞いてみよう";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "コードがコピーされました";

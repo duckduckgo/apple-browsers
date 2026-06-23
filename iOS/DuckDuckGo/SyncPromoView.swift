@@ -70,23 +70,13 @@ struct SyncPromoView: View {
             .padding(.bottom, ButtonStackMetrics.containerPadding)
             .padding(.horizontal, ButtonStackMetrics.containerPadding)
 
-            VStack {
-                HStack {
-                    Spacer()
-                    Button {
-                        viewModel.dismissButtonAction?()
-                    } label: {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
-                            .foregroundColor(.primary)
-                    }
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-                    .padding(0)
-                }
+            Button {
+                viewModel.dismissButtonAction?()
+            } label: {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
             }
-            .alignmentGuide(.top) { dimension in
-                dimension[.top]
-            }
+            .buttonStyle(CloseButtonStyle())
+            .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
             .accessibilityHidden(true)
         }
         .background(

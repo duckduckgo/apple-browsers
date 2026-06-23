@@ -886,6 +886,7 @@ class TabViewController: UIViewController {
             webViewBottomAnchorConstraint?.constant = 0
         }
         if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+            webViewBottomAnchorConstraint?.constant = 0
             borderView.bottomAlpha = 0
             borderView.isHidden = true
             borderView.isTopVisible = false

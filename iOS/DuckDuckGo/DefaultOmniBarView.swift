@@ -888,7 +888,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     func moveTransitionCompleted() {
-        backgroundColor = defaultBackgroundColor
+        backgroundColor = isFloatingUIEnabled ? .clear : defaultBackgroundColor
     }
 
     private func addOmniBarLongPressInteractionIfNeeded() {

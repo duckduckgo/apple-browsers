@@ -759,12 +759,19 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func updateFireModeAppearance() {
-        if fireMode {
-            searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeCardBackground)
-            activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
+        if shouldUseFloatingTopGlass {
+            makeGlass()
+            activeOutlineView.layer.borderColor = fireMode
+                ? UIColor(singleUseColor: .fireModeAccent).cgColor
+                : UIColor(designSystemColor: .accentPrimary).cgColor
         } else {
-            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
-            activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accentPrimary).cgColor
+            if fireMode {
+                searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeCardBackground)
+                activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
+            } else {
+                searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+                activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accentPrimary).cgColor
+            }
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
@@ -1083,6 +1090,13 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private struct Constant {
         static let accessibilityPrefix = "Browser.OmniBar"
+    }
+}
+
+private extension DefaultOmniBarView {
+    /// Bottom omnibar uses small top spacing. Top position keeps regular spacing.
+    var shouldUseFloatingTopGlass: Bool {
+        isFloatingUIEnabled && !isUsingSmallTopSpacing
     }
 }
 

@@ -57,58 +57,12 @@ final class DuckAIGridCardView: UIView {
     /// Apply the supplied grid item to the view.
     /// Callers pass `nil` when they want the screenshot fallback
     func configure(with item: DuckAIGridItem) {
-        // Reset to the default light appearance; the `.voice` arm overrides for the dark card.
-        backgroundColor = UIColor(designSystemColor: .backgroundPromptMessage)
-        overrideUserInterfaceStyle = .unspecified
-        setMascotVisible(false)
-
-        // TODO: - Consider reducing repitition
-        switch item {
-        case .text(let title, let snippet):
-            titleLabel.text = title
-            snippetLabel.text = snippet
-            snippetLabel.isHidden = false
-            configureChatChip()
-            setThumbnailVisible(false)
-
-        case .transcript(let title, let snippet):
-            // A finished voice chat: same light layout as `.text`, distinguished by the
-            // "Transcript" chip.
-            titleLabel.text = title
-            snippetLabel.text = snippet
-            snippetLabel.isHidden = false
-            configureTranscriptChip()
-            setThumbnailVisible(false)
-
-        case .image(let title, _):
-            titleLabel.text = title
-            snippetLabel.text = nil
-            snippetLabel.isHidden = true
-            configureChatChip()
-            setThumbnailVisible(true)
-
-        case .voice:
-            // Dark, static live-voice card: "Listening…" status + centred mascot + "Voice" chip.
-            // Forcing the subtree to `.dark` flips the reused DRK colours to light-on-dark.
-            backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
-            overrideUserInterfaceStyle = .dark
-            titleLabel.text = UserText.aiChatTabSwitcherCardVoiceListening
-            snippetLabel.text = nil
-            snippetLabel.isHidden = true
-            setThumbnailVisible(false)
-            setMascotVisible(true)
-            configureVoiceChip()
-
-        case .empty(let title):
-            // Dedicated content view for the empty state is not built yet; render the title
-            // only so the cell scaffold still has something meaningful.
-            titleLabel.text = title
-            snippetLabel.text = nil
-            snippetLabel.isHidden = true
-            chipView.isHidden = true
-            setThumbnailVisible(false)
-        }
-
+        resetAppearance() // the `.voice` arm overrides for the dark card
+        configureSnippet(for: item)
+        configureTitle(for: item)
+        configureThumbnail(for: item)
+        configureChip(for: item)
+        configureVoiceUIIfNeeded(for: item)
         updateAccessibility(for: item)
     }
 
@@ -118,22 +72,71 @@ final class DuckAIGridCardView: UIView {
         thumbnailImageView.image = image
     }
 
-    private func configureChatChip() {
-        chipView.configure(icon: DesignSystemImages.Glyphs.Size12.chat,
-                           label: UserText.aiChatTabSwitcherCardChipChat)
-        chipView.isHidden = false
+    /// Resets to the default light appearance. Called on cell reuse so a recycled `.voice` (dark)
+    /// card never lingers in dark state if shown before the next `configure(with:)`.
+    func resetAppearance() {
+        backgroundColor = UIColor(designSystemColor: .backgroundPromptMessage)
+        overrideUserInterfaceStyle = .unspecified
+        setMascotVisible(false)
     }
+    
+    private func configureTitle(for item: DuckAIGridItem) {
+        titleLabel.isHidden = false
+        switch item {
+        case .text(let title, _), .transcript(let title, _), .image(let title, _):
+            titleLabel.text = title
+        case .voice:
+            titleLabel.text = UserText.aiChatTabSwitcherCardVoiceListening
+        case .empty:
+            titleLabel.isHidden = true
 
-    private func configureTranscriptChip() {
-        chipView.configure(icon: DesignSystemImages.Glyphs.Size12.voice,
-                           label: UserText.aiChatTabSwitcherCardChipTranscript)
-        chipView.isHidden = false
+        }
     }
-
-    private func configureVoiceChip() {
-        chipView.configure(icon: DesignSystemImages.Glyphs.Size12.voice,
-                           label: UserText.aiChatTabSwitcherCardChipVoice)
+    
+    private func configureSnippet(for item: DuckAIGridItem) {
+        switch item {
+        case .text(_, let snippet), .transcript(_, let snippet):
+            snippetLabel.text = snippet
+            snippetLabel.isHidden = false
+        default:
+            snippetLabel.text = nil
+            snippetLabel.isHidden = true
+        }
+    }
+    
+    private func configureThumbnail(for item: DuckAIGridItem) {
+        switch item {
+        case .image:
+            setThumbnailVisible(true)
+        default:
+            setThumbnailVisible(false)
+        }
+    }
+    
+    private func configureChip(for item: DuckAIGridItem) {
         chipView.isHidden = false
+        switch item {
+        case .text, .image:
+            chipView.configure(icon: DesignSystemImages.Glyphs.Size12.chat,
+                               label: UserText.aiChatTabSwitcherCardChipChat)
+        case .transcript:
+            chipView.configure(icon: DesignSystemImages.Glyphs.Size12.voice,
+                               label: UserText.aiChatTabSwitcherCardChipTranscript)
+        case .voice:
+            chipView.configure(icon: DesignSystemImages.Glyphs.Size12.voice,
+                               label: UserText.aiChatTabSwitcherCardChipVoice)
+        case .empty:
+            chipView.isHidden = true
+        }
+    }
+    
+    private func configureVoiceUIIfNeeded(for item: DuckAIGridItem) {
+        guard item == .voice else { return }
+        // Dark, static live-voice card: "Listening…" status + centred mascot + "Voice" chip.
+        // Forcing the subtree to `.dark` flips the reused DRK colours to light-on-dark.
+        backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+        overrideUserInterfaceStyle = .dark
+        setMascotVisible(true)
     }
 
     private func setThumbnailVisible(_ visible: Bool) {
@@ -234,12 +237,15 @@ final class DuckAIGridCardView: UIView {
         case .text(let title, let snippet), .transcript(let title, let snippet):
             accessibilityLabel = title
             accessibilityValue = snippet
-        case .image(let title, _), .empty(let title):
+        case .image(let title, _):
             accessibilityLabel = title
             accessibilityValue = nil
         case .voice:
             accessibilityLabel = UserText.aiChatTabSwitcherCardVoiceListeningAccessibilityLabel
             accessibilityValue = nil
+        case .empty:
+            // TODO: - Add handing for empty chat
+            break
         }
     }
 }

@@ -42,7 +42,7 @@ enum DuckAIGridItem: Equatable {
 
     /// Empty-state card (centered Dax logo + "Duck.ai" label): a chat exists in
     /// native storage but has no assistant messages yet.
-    case empty(title: String)
+    case empty
 }
 
 extension DuckAIGridItem {

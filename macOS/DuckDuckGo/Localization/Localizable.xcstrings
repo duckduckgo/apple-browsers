@@ -29049,7 +29049,7 @@
       }
     },
     "duckai.disable.button" : {
-      "comment" : "Button to disable Duck.ai feature (opens a confirmation dialog)",
+      "comment" : "Button to disable Duck.ai feature",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

@@ -449,9 +449,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar onboarding for AI Chat
     case omnibarOnboarding
 
-    /// Enables the omnibar cluster for AI Chat
-    case omnibarCluster
-
     /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
     case omnibarTools
 

@@ -28911,7 +28911,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Disables Duck.ai, hides AI-assisted answers in search, and hides AI-generated images in image search results."
+            "value" : "Disables Duck.ai, hides AI-assisted answers in search, and filters known AI spam sites in image search results."
           }
         }
       }
@@ -28923,7 +28923,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers or AI-generated images in image search results."
+            "value" : "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers and see fewer AI-generated images in image search results."
           }
         }
       }
@@ -29480,6 +29480,30 @@
         }
       }
     },
+    "duckai.enabled.off" : {
+      "comment" : "Duck.ai dropdown option: off (Duck.ai disabled)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "duckai.enabled.on" : {
+      "comment" : "Duck.ai dropdown option: on (Duck.ai enabled)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On"
+          }
+        }
+      }
+    },
     "duckai.hide-ai-generated-images-settings" : {
       "comment" : "The section name in preferences for Hide AI-Generated Images Settings",
       "extractionState" : "extracted_with_value",
@@ -29541,7 +29565,7 @@
       }
     },
     "duckai.hide-ai-generated-images-settings.description" : {
-      "comment" : "Description of the section in Settings",
+      "comment" : "Footnote for the Hide AI-Generated Images setting; a separate Learn More button links to the help page",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -29553,7 +29577,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Filters out AI-generated images from image search results"
+            "value" : "Filters out known AI spam sites from image search results."
           }
         },
         "es" : {
@@ -29596,30 +29620,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Исключать из результатов поиска изображения, созданные нейросетью"
-          }
-        }
-      }
-    },
-    "duckai.enabled.off" : {
-      "comment" : "Duck.ai dropdown option: off (Duck.ai disabled)",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Off"
-          }
-        }
-      }
-    },
-    "duckai.enabled.on" : {
-      "comment" : "Duck.ai dropdown option: on (Duck.ai enabled)",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "On"
           }
         }
       }

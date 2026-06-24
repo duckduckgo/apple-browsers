@@ -271,6 +271,10 @@ final class AIChatPreferences: ObservableObject {
         windowControllersManager.show(url: URL.aiChatSettings, source: .ui, newTab: true, selected: true)
     }
 
+    @MainActor func openHideAIGeneratedImagesLearnMore() {
+        windowControllersManager.show(url: URL.hideAIGeneratedImagesLearnMore, source: .ui, newTab: true, selected: true)
+    }
+
     /// Opens duck.ai in a new tab and triggers the Duck.ai Settings modal once the page
     /// has wired up its message subscriptions.
     @MainActor func openDuckAiSettings() {

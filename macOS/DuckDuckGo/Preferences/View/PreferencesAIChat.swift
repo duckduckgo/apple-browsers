@@ -125,6 +125,9 @@ extension Preferences {
                                                            image: Image(nsImage: DesignSystemImages.Color.Size16.hideAIGeneratedImages),
                                                            bottomPadding: 2)
                                 TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
+                                TextButton(UserText.learnMore) {
+                                    model.openHideAIGeneratedImagesLearnMore()
+                                }
                             }
                             Spacer()
                             Picker("", selection: model.hideAIImagesBinding) {

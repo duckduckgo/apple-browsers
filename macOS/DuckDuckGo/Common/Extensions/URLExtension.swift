@@ -622,6 +622,10 @@ extension URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai")!
     }
 
+    static var hideAIGeneratedImagesLearnMore: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results")!
+    }
+
     // MARK: - Search Settings
 
     static var moreSearchSettings: URL {

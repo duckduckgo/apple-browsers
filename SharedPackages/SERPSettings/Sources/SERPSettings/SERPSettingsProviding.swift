@@ -228,7 +228,7 @@ public extension SERPSettingsProviding {
             }
             guard let frequency = SearchAssistFrequency(rawValue: rawValue) else {
                 // Key is present but holds a value the native enum doesn't recognize (contract mismatch).
-                eventMapper?.fire(.unrecognizedValue(key: SERPSettingsConstants.searchAssistKey, value: rawValue))
+                eventMapper?.fire(.unrecognizedValue)
                 return .defaultValue
             }
             return frequency
@@ -250,7 +250,7 @@ public extension SERPSettingsProviding {
             }
             guard let hidden = HideAIGeneratedImages.isHidden(fromRawValue: rawValue) else {
                 // Key is present but holds a value the native side doesn't recognize (contract mismatch).
-                eventMapper?.fire(.unrecognizedValue(key: SERPSettingsConstants.hideAIGeneratedImagesKey, value: rawValue))
+                eventMapper?.fire(.unrecognizedValue)
                 return HideAIGeneratedImages.defaultValue
             }
             return hidden

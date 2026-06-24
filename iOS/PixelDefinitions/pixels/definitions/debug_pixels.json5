@@ -92,9 +92,14 @@
                 "description": "Dominant drag direction across the failed attempts.",
                 "type": "string",
                 "enum": ["up", "down", "mixed"]
+            },
+            {
+                "key": "mechanism",
+                "description": "Gesture-environment state at the moment the freeze is confirmed. 'wedged:<type>' means a recognizer is stuck active with no touches (e.g. wedged:swipe_tabs); 'none_wedged' means no stuck recognizer was found, consistent with the phantom-touch hypothesis.",
+                "type": "string"
             }
         ],
-        "expires": "2026-07-11"
+        "expires": "2026-09-21"
     },
     "m_debug_interaction_wedged_recognizer": {
         "description": "Fires when a non-scroll gesture recognizer is found in an active (began/changed) state with no touches down, and is still wedged on a re-check ~1s later, while a web page is shown. Reliable mechanism signal for a recognizer that may be starving the web scroll pan.",
@@ -110,6 +115,6 @@
                 "enum": ["web_scroll_pan", "pull_to_refresh_pan", "swipe_tabs", "edge_pan", "tap", "long_press", "other_pan", "other"]
             }
         ],
-        "expires": "2026-07-11"
+        "expires": "2026-09-21"
     }
 }

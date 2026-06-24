@@ -88,6 +88,12 @@ protocol AIChatMenuVisibilityConfigurable {
     /// - Returns: `true` if the text translation menu action should be displayed; otherwise, `false`.
     var shouldDisplayTranslationMenuItem: Bool { get }
 
+    /// This property validates user settings and the `selectionContext` subfeature to determine
+    /// whether the "Attach to Duck.ai" context-menu action should be presented to the user.
+    ///
+    /// - Returns: `true` if the attach-selection menu action should be displayed; otherwise, `false`.
+    var shouldDisplaySelectionContextMenuItem: Bool { get }
+
     /// A publisher that emits a value when either the `shouldDisplayApplicationMenuShortcut`  settings, backed by storage, are changed.
     ///
     /// This allows subscribers to react to changes in the visibility settings of the application menu
@@ -128,6 +134,10 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
 
     var shouldDisplayTranslationMenuItem: Bool {
         shouldDisplayAnyAIChatFeature
+    }
+
+    var shouldDisplaySelectionContextMenuItem: Bool {
+        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatSelectionContext)
     }
 
     var shouldDisplayApplicationMenuShortcut: Bool {

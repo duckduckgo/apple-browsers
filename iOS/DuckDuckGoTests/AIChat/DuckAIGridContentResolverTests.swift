@@ -102,7 +102,7 @@ final class DuckAIGridContentResolverTests: XCTestCase {
         let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: storage)
         let tab = Tab(link: Link(title: nil, url: URL(string: "https://duckduckgo.com/?ia=chat&chatID=chat-1")!))
 
-        XCTAssertNil(sut.gridItem(for: tab))
+        XCTAssertNil(sut.gridItem(for: tab, liveVoiceActive: false))
     }
 
     func testWhenTabHasNoChatIDThenReturnsNil() {
@@ -111,7 +111,7 @@ final class DuckAIGridContentResolverTests: XCTestCase {
         let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: storage)
         let tab = Tab(link: Link(title: nil, url: URL(string: "https://example.com")!))
 
-        XCTAssertNil(sut.gridItem(for: tab))
+        XCTAssertNil(sut.gridItem(for: tab, liveVoiceActive: false))
     }
 
     func testWhenTabIsAIChatWithChatIDThenReturnsTextItem() throws {
@@ -124,7 +124,38 @@ final class DuckAIGridContentResolverTests: XCTestCase {
         let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: storage)
         let tab = Tab(link: Link(title: nil, url: URL(string: "https://duckduckgo.com/?ia=chat&chatID=chat-1")!))
 
-        XCTAssertEqual(sut.gridItem(for: tab), .text(title: "Cute ducks", snippet: "hi there!"))
+        XCTAssertEqual(sut.gridItem(for: tab, liveVoiceActive: false), .text(title: "Cute ducks", snippet: "hi there!"))
+    }
+
+    // MARK: - Live voice override
+
+    func testWhenLiveVoiceActiveThenReturnsVoiceItemOverridingPersistedClassification() throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNativeDataAccess, .aiChatTabSwitcherRichCard])
+        let storage = makeStorageWithMigrationsDone()
+        // Persisted as a text chat — the live-voice override must win over it.
+        try storage.putChat(chatId: "chat-1", data: validChatData(chatId: "chat-1", title: "Cute ducks"))
+        let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: storage)
+        let tab = Tab(link: Link(title: nil, url: URL(string: "https://duckduckgo.com/?ia=chat&chatID=chat-1")!))
+
+        XCTAssertEqual(sut.gridItem(for: tab, liveVoiceActive: true), .voice)
+    }
+
+    func testWhenLiveVoiceActiveAndTabHasNoChatIDThenStillReturnsVoiceItem() {
+        // In-flight voice chats may have no persisted blob and no chatID yet.
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNativeDataAccess, .aiChatTabSwitcherRichCard])
+        let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: makeStorageWithMigrationsDone())
+        let tab = Tab(link: Link(title: nil, url: URL(string: "https://duckduckgo.com/?ia=chat")!))
+
+        XCTAssertEqual(sut.gridItem(for: tab, liveVoiceActive: true), .voice)
+    }
+
+    func testWhenLiveVoiceActiveButFeatureFlagOffThenReturnsNil() {
+        // The rich-card flag gate precedes the live-voice override.
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNativeDataAccess])
+        let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: makeStorageWithMigrationsDone())
+        let tab = Tab(link: Link(title: nil, url: URL(string: "https://duckduckgo.com/?ia=chat&chatID=chat-1")!))
+
+        XCTAssertNil(sut.gridItem(for: tab, liveVoiceActive: true))
     }
 
     // MARK: - loadImage

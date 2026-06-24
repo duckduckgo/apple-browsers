@@ -20,6 +20,7 @@
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 import SwiftUI
 
 struct AutofillSurveyView: View {
@@ -62,23 +63,13 @@ struct AutofillSurveyView: View {
             .padding(.vertical)
             .padding(.horizontal, 8)
 
-            VStack {
-                HStack {
-                    Spacer()
-                    Button {
-                        dismissButtonAction?()
-                    } label: {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.clear)
-                            .foregroundColor(.primary)
-                    }
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-                    .padding(0)
-                }
+            Button {
+                dismissButtonAction?()
+            } label: {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
             }
-            .alignmentGuide(.top) { dimension in
-                dimension[.top]
-            }
+            .buttonStyle(CloseButtonStyle())
+            .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
         .background(RoundedRectangle(cornerRadius: 8.0)
             .foregroundColor(Color(designSystemColor: .surface))

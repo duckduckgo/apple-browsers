@@ -27,7 +27,9 @@ import os.log
 /// data unavailable, decode failure, …).
 @MainActor
 protocol DuckAIGridItemProviding: AnyObject {
-    func gridItem(for tab: Tab) -> DuckAIGridItem?
+    /// - Parameter liveVoiceActive: when `true`, the tab has a live voice session in progress
+    /// and must render the live voice card regardless of any persisted classification.
+    func gridItem(for tab: Tab, liveVoiceActive: Bool) -> DuckAIGridItem?
 }
 
 /// Loads thumbnail images for `DuckAIGridItem.image` cards.
@@ -64,8 +66,12 @@ final class DuckAIGridContentResolver: DuckAIGridContentProviding {
     /// `DuckAIGridItemProviding` entry point. Applies the outer feature-flag gate
     /// and the no-chat-ID gate, then defers to `gridItem(forChatID:)`. Returns
     /// `nil` when any gate fails — the caller falls back to the screenshot path.
-    func gridItem(for tab: Tab) -> DuckAIGridItem? {
+    func gridItem(for tab: Tab, liveVoiceActive: Bool) -> DuckAIGridItem? {
         guard featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) else { return nil }
+        // A live voice session overrides any persisted classification
+        if liveVoiceActive {
+            return .voice
+        }
         guard let chatID = tab.link?.url.duckAIChatID else { return nil }
         return gridItem(forChatID: chatID)
     }

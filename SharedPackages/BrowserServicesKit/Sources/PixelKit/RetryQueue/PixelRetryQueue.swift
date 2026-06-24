@@ -44,12 +44,6 @@ final class PixelRetryQueue {
 #endif
     }
 
-    /// Wire parameter keys, matching iOS so the backend sees identical data.
-    enum Parameters {
-        static let originalPixelTimestamp = "originalPixelTimestamp"
-        static let retriedPixel = "retriedPixel"
-    }
-
     private let underlyingFireRequest: PixelKit.FireRequest
     private let store: PixelRetryQueueStoring
     private let lastProcessingDateStorage: ThrowingKeyValueStoring
@@ -65,12 +59,6 @@ final class PixelRetryQueue {
 
     private let workQueue = DispatchQueue(label: "PixelKit Retry Queue")
     private let logger = Logger(subsystem: "PixelKit", category: "PixelRetryQueue")
-
-    private let dateFormatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
 
     init(fireRequest: @escaping PixelKit.FireRequest,
          store: PixelRetryQueueStoring = PixelRetryQueueFileStore(),
@@ -113,8 +101,6 @@ final class PixelRetryQueue {
                                     parameters: [String: String],
                                     allowedQueryReservedCharacters: CharacterSet?) {
         let now = dateGenerator()
-        var parameters = parameters
-        parameters[Parameters.originalPixelTimestamp] = dateFormatter.string(from: now)
 
         let item = PixelRetryQueueItem(pixelName: pixelName,
                                        headers: headers,
@@ -204,8 +190,10 @@ final class PixelRetryQueue {
                 continue
             }
 
-            var parameters = item.parameters
-            parameters[Parameters.retriedPixel] = "1"
+            // Strip the legacy retry timestamp that older builds baked into the persisted parameters, so
+            // items queued before this key was dropped don't keep sending it on replay.
+            // For more info see https://app.asana.com/1/137249556945/task/1215909080171360?focus=true
+            let parameters = item.parameters.filter { $0.key != "originalPixelTimestamp" }
 
             dispatchGroup.enter()
             underlyingFireRequest(item.pixelName, item.headers, parameters, item.allowedQueryReservedCharacters, false) { success, _ in

@@ -311,10 +311,14 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(handler.currentText, "he\nllo")
     }
 
-    func test_topAIChatTextEntryDoesNotGrowOnFirstFloatingReturnNewline() {
+    func test_topAIChatTextEntryDoesNotGrowOnFirstFloatingReturnNewlineAndLegacyUXIsEnabled() {
         let expectedTopAIChatMinimumHeight: CGFloat = 68
-        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
-        handler.updateBarPosition(isTop: true)
+        let handler = LegacyTextEntryMockHandler(
+            currentToggleState: .aiChat,
+            isTopBarPosition: true,
+            isUsingFadeOutAnimation: false,
+            usesExpandedAIChatTextEntryLayout: true
+        )
         let sut = SwitchBarTextEntryView(handler: handler)
         sut.isExpandable = true
         prepareForFitting(sut)
@@ -342,6 +346,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         XCTAssertFalse(placeholderLabel.isHidden)
         XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+        XCTAssertEqual(textView.textContainerInset.left, 16, accuracy: 1)
     }
 
     func test_collapsedAIChatPlaceholderStaysVerticallyCenteredInPill() throws {
@@ -425,6 +430,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(height, 68, accuracy: 1)
         XCTAssertFalse(placeholderLabel.isHidden)
         XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+        XCTAssertEqual(textView.textContainerInset.left, 12, accuracy: 1)
     }
 
     func test_barPositionChangeRefreshesExpandedAIChatPose() {
@@ -439,7 +445,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         handler.updateBarPosition(isTop: true)
         sut.updatePoseForCurrentState()
 
-        XCTAssertEqual(applyFittingHeight(to: sut), 68, accuracy: 1)
+        XCTAssertEqual(applyFittingHeight(to: sut), 51, accuracy: 1)
     }
 
     func test_expandedPlaceholderAlignmentUpdatesWhenToggleSwitchesMode() throws {
@@ -737,6 +743,7 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var isUsingExpandedBottomBarHeight: Bool = false
     var isUsingFadeOutAnimation: Bool
     var usesExpandedAIChatTextEntryLayout: Bool
+    var usesLegacyLayoutMetrics: Bool
     var shouldDisableAutocorrectOnEmpty: Bool = false
     var hidesVoiceButton: Bool = false
     var hasSubmittedPrompt: Bool = false
@@ -755,11 +762,13 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     init(currentToggleState: TextEntryMode,
          isTopBarPosition: Bool,
          isUsingFadeOutAnimation: Bool,
-         usesExpandedAIChatTextEntryLayout: Bool = false) {
+         usesExpandedAIChatTextEntryLayout: Bool = false,
+         usesLegacyLayoutMetrics: Bool = true) {
         self.currentToggleState = currentToggleState
         self.isTopBarPosition = isTopBarPosition
         self.isUsingFadeOutAnimation = isUsingFadeOutAnimation
         self.usesExpandedAIChatTextEntryLayout = usesExpandedAIChatTextEntryLayout
+        self.usesLegacyLayoutMetrics = usesLegacyLayoutMetrics
     }
 
     func updateCurrentText(_ text: String) {

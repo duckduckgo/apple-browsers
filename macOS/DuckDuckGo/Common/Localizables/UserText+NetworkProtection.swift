@@ -70,6 +70,26 @@ extension UserText {
         value: "Send Feedback",
         comment: "The VPN status view's 'Send Feedback' menu item for our main app")
 
+    static let vpnSettingsCopyDiagnosticsButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics.button.title",
+        value: "Copy VPN Diagnostics",
+        comment: "The VPN settings button that copies VPN diagnostic information to the clipboard.")
+
+    static let vpnSettingsCopyDiagnosticsCaption = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics.caption",
+        value: "Include a copy of these anonymized VPN diagnostics when contacting Support to help us troubleshoot your connection.",
+        comment: "Caption beneath the Copy VPN Diagnostics button in VPN settings, explaining what the button does.")
+
+    static let vpnSettingsCopyDiagnosticsCopiedButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics-copied.button.title",
+        value: "Copied to clipboard",
+        comment: "Temporary VPN settings button title shown after VPN diagnostic information is copied to the clipboard.")
+
+    static let vpnSettingsCopyDiagnosticsFailedButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics-failed.button.title",
+        value: "Couldn't copy to clipboard",
+        comment: "Temporary VPN settings button title shown when VPN diagnostic information could not be copied to the clipboard.")
+
     static let vpnStatusViewFAQMenuItemTitle = NSLocalizedString(
         "vpn.status-view.faq.menu-item.title",
         value: "FAQs and Support",

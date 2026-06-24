@@ -620,6 +620,8 @@ struct UserText {
 
     static let aiChatSummarize = NSLocalizedString("duckai.summarize.context-menu-action", value: "Summarize with Duck.ai", comment: "Context menu option that triggers Duck.ai-assisted summarization of selected text")
     static let aiChatTranslate = NSLocalizedString("duckai.translate.context-menu-action", value: "Translate with Duck.ai", comment: "Context menu option that triggers Duck.ai-assisted translation of selected text")
+    static let aiChatAttachSelection = NSLocalizedString("duckai.attach-selection.context-menu-action", value: "Ask Duck.ai About Selected Content", comment: "Context menu option that attaches the selected text to Duck.ai as page context")
+    static let aiChatTextSelection = NSLocalizedString("duckai.text-selection.context-title", value: "Text selection", comment: "Generic title shown on the Duck.ai sidebar attachment chip when the attached content is a user text selection rather than a full web page")
 
     static let aiChatOpenNewTabButton = NSLocalizedString("aichat.address-bar.open-new-tab-button", value: "Open new Duck.ai tab", comment: "Button to open Duck.ai in a new tab")
     static let aiChatToggleSidebarButton = NSLocalizedString("aichat.address-bar.toggle-sidebar-button", value: "Toggle Duck.ai Sidebar", comment: "Button to toggle Duck.ai sidebar")

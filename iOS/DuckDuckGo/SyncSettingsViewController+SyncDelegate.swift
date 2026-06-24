@@ -485,14 +485,20 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showPreparingSync(context: SimplifiedConnectingSheetView.Context = .syncingDevices, _ completion: (() -> Void)?) {
+        guard let navigationController, navigationController.view.window != nil else {
+            Logger.sync.error("Unable to present preparing sync UI because Sync settings navigation controller is not in the window hierarchy")
+            completion?()
+            return
+        }
+
         if useSimplifiedLayout {
             let controller = UIHostingController(rootView: SimplifiedConnectingSheetView(context: context))
             controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
             controller.sheetPresentationController?.detents = [.large()]
-            navigationController?.present(controller, animated: true, completion: completion)
+            navigationController.present(controller, animated: true, completion: completion)
         } else {
             let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
-            navigationController?.present(controller, animated: true, completion: completion)
+            navigationController.present(controller, animated: true, completion: completion)
         }
     }
 

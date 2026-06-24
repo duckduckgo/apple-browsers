@@ -731,7 +731,10 @@ extension MainCoordinator: URLHandling {
 
         fireMediumWidgetPixelIfNeeded(url: url)
 
-        if url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
+        let syncPairingInfo = featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls) ? PairingInfo(url: url) : nil
+
+        if syncPairingInfo == nil
+            && url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
@@ -767,8 +770,8 @@ extension MainCoordinator: URLHandling {
         case .customProductPage:
             AppStoreCustomProductPageDeepLinkHandler().handleDeepLink(url, on: controller)
         default:
-            if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
-                controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
+            if let syncPairingInfo {
+                controller.segueToSettingsSync(with: nil, pairingInfo: syncPairingInfo)
                 return true
             }
             return false

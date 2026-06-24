@@ -59,13 +59,8 @@ extension MainViewController {
     func setUpUnifiedToggleInputIfNeeded() {
         // Idempotent: callable from viewDidLoad, MainCoordinator.startOnboardingFlowIfNotSeenBefore,
         // and onboardingCompleted — first call that passes the gates wins.
-        guard unifiedToggleInputCoordinator == nil else { return }
-        // Defer setup until linear onboarding for the default flow has completed, so that any
-        // feature flag evaluation that happens during onboarding is reflected in
-        // `unifiedToggleInputFeature.isAvailable` before we wire up the coordinator.
-        // Duck.ai tailored-flow users are need UTI during the linear onboarding otherwise they will not see the new UI in the Duck.ai page that is shown during the linear onboarding interlude.
-        // Returning users (who skip linear onboarding) fall through immediately.
-        guard unifiedToggleInputFeature.isAvailable else { return }
+        guard unifiedToggleInputCoordinator == nil,
+              unifiedToggleInputFeature.isAvailable else { return }
 
         let aiChatPreferences = AIChatPreferencesPersistor()
         let stateStore = UnifiedInputStateStore(

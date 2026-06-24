@@ -51,6 +51,7 @@ import AIChat
 import PixelKit
 import PrivacyConfig
 import WebExtensions
+import DesignResourcesKitIcons
 
 class TabViewController: UIViewController {
 
@@ -1008,10 +1009,17 @@ class TabViewController: UIViewController {
             self?.handlePullToRefresh()
         })
 
+        // Symptom detection + pixels ship to production behind the `webScrollFreezeObservability` kill switch
+        // (on by default). The heavy on-device freeze capture is injected only when `webScrollFreezeCapture`
+        // (internal-only) is on — in production `captureFreeze` is a no-op.
         if webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) {
+            let captureEnabled = featureFlagger.isFeatureOn(.webScrollFreezeCapture)
             webScrollObserver = WebScrollObserver(container: webViewContainer,
                                                   scrollView: { [weak self] in self?.webView?.scrollView },
-                                                  currentURL: { [weak self] in self?.webView?.url })
+                                                  currentURL: { [weak self] in self?.webView?.url },
+                                                  captureFreeze: captureEnabled
+                                                    ? { FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow()) }
+                                                    : {})
             webScrollObserver?.install()
         }
 
@@ -1476,7 +1484,7 @@ class TabViewController: UIViewController {
         webpageDidFailToLoad()
     }
 
-    private func setErrorInfoImage(resource: ImageResource = .errorInfoUniversal) {
+    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy) {
         errorInfoImage.image = UIImage(resource: resource)
         errorInfoImage.isHidden = false
     }
@@ -2249,6 +2257,10 @@ extension TabViewController: WKNavigationDelegate {
               !url.isDuckAIURL,
               !url.isDuckPlayer,
               !(url.isYoutube && duckPlayerNavigationHandler.duckPlayer.settings.mode != .disabled) else {
+            // Do not dismiss while the fire onboarding dialog is up
+            if !contextualOnboardingLogic.isShowingFireDialog {
+                dismissContextualOnboardingIfNeeded()
+            }
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
@@ -2282,26 +2294,29 @@ extension TabViewController: WKNavigationDelegate {
         // In new onboarding we do not highlight the address bar so collapsing is default to true.
         scheduleTrackerNetworksAnimation(collapsing: true)
         let daxDialogSourceURL = self.url
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self else { return }
-            // https://app.asana.com/0/414709148257752/1201620790053163/f
-            if self.url != daxDialogSourceURL && self.url?.isSameDuckDuckGoSearchURL(other: daxDialogSourceURL) == false {
-                daxDialogsManager.overrideShownFlagFor(spec, flag: false)
-                self.isShowingFullScreenDaxDialog = false
-                return
-            }
+            self?.presentContextualOnboardingIfURLUnchanged(spec: spec, sourceURL: daxDialogSourceURL)
+        }
+    }
 
-            self.chromeDelegate?.omniBar.endEditing()
-            self.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
+    private func presentContextualOnboardingIfURLUnchanged(spec: DaxDialogs.BrowsingSpec, sourceURL: URL?) {
+        // https://app.asana.com/0/414709148257752/1201620790053163/f
+        if self.url != sourceURL && self.url?.isSameDuckDuckGoSearchURL(other: sourceURL) == false {
+            daxDialogsManager.overrideShownFlagFor(spec, flag: false)
+            self.isShowingFullScreenDaxDialog = false
+            return
+        }
 
-            // Present the contextual onboarding
-            presentContextualOnboarding(for: spec)
+        self.chromeDelegate?.omniBar.endEditing()
+        self.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
 
-            if spec == DaxDialogs.BrowsingSpec.withoutTrackers {
-                self.woShownRecently = true
-                self.fireWoFollowUp = true
-            }
+        // Present the contextual onboarding
+        presentContextualOnboarding(for: spec)
+
+        if spec == DaxDialogs.BrowsingSpec.withoutTrackers {
+            self.woShownRecently = true
+            self.fireWoFollowUp = true
         }
     }
 

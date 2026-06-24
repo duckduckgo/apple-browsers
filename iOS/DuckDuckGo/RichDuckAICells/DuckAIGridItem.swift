@@ -26,17 +26,23 @@ enum DuckAIGridItem: Equatable {
     /// A text conversation: title plus the snippet of the last assistant message.
     case text(title: String, snippet: String)
 
+    /// A finished voice chat converted to a transcript: title plus the transcript
+    /// snippet. Renders as a light card identical to `.text`, distinguished only by
+    /// a "Transcript" chip. The live (in-progress) voice state is `.voice` instead.
+    case transcript(title: String, snippet: String)
+
     /// A conversation whose last assistant message is an image: title plus the file
     /// ref used to load the thumbnail from the native file store.
     case image(title: String, imageFileRef: String)
 
-    /// A voice-mode chat (`chat.model == "voice-mode"`): title only; the dark
-    /// voice-AI card variant from Figma is rendered around it.
-    case voice(title: String)
+    /// A live (in-progress) voice session — surfaced by the resolver's live-voice override,
+    /// not the persisted classifier. Rendered as the dark voice card. Carries no payload: the
+    /// card is fully static ("Listening…" status + mascot + "Voice" chip).
+    case voice
 
     /// Empty-state card (centered Dax logo + "Duck.ai" label): a chat exists in
     /// native storage but has no assistant messages yet.
-    case empty(title: String)
+    case empty
 }
 
 extension DuckAIGridItem {
@@ -53,15 +59,24 @@ extension DuckAIGridItem {
 
         switch chat.chatType {
         case .discussion:
-            let trimmed = lastMessageContent?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            guard !trimmed.isEmpty else { return nil }
-            let snippet = String(trimmed.prefix(snippetCharacterCap))
+            guard let snippet = snippet(from: lastMessageContent) else { return nil }
             return .text(title: title, snippet: snippet)
         case .imageGeneration:
             guard let fileRef = chat.fileRefs.last else { return nil }
             return .image(title: title, imageFileRef: fileRef)
         case .voice:
-            return nil
+            // A voice chat is only persisted after the session ends and is converted
+            // to a transcript, so a persisted `.voice` chat carries its transcript in
+            // `lastMessageContent`.
+            guard let snippet = snippet(from: lastMessageContent) else { return nil }
+            return .transcript(title: title, snippet: snippet)
         }
+    }
+
+    /// Trims and caps `content`, returning `nil` when there's nothing meaningful to show.
+    private static func snippet(from content: String?) -> String? {
+        let trimmed = content?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else { return nil }
+        return String(trimmed.prefix(snippetCharacterCap))
     }
 }

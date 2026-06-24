@@ -138,6 +138,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User removes page context from the prompt using a button in the input field
     case aiChatPageContextRemoved(automaticEnabled: Bool)
 
+    /// Event Trigger: User attaches selected text as page context via the "Attach to Duck.ai" context-menu action
+    case aiChatAttachSelection
+
     // MARK: - Deleting chat history
 
     /// Event Trigger: User requests to delete Duck.ai chat history from the fire button or history delete dialog
@@ -486,6 +489,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_page_context_added"
         case .aiChatPageContextRemoved:
             return "aichat_page_context_removed"
+        case .aiChatAttachSelection:
+            return "aichat_attach_selection"
         case let .aiChatAutoClearHistorySettingToggled(enabled):
             if enabled {
                 return "m_mac_aichat_history_autoclear_enabled"
@@ -689,6 +694,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
                 .aiChatPageContextSourceLinkClicked,
+                .aiChatAttachSelection,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
@@ -839,6 +845,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatPageContextSourceLinkClicked,
                 .aiChatPageContextAdded,
                 .aiChatPageContextRemoved,
+                .aiChatAttachSelection,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
                 .aiChatDeleteHistoryFailed,
@@ -942,6 +949,7 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
     case serp = "serp"
     case contextMenu = "context-menu"
     case translation = "translation"
+    case attachSelection = "attach-selection"
     case tabbarButton = "tabbar-button"
 }
 

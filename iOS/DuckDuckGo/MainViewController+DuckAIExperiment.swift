@@ -72,14 +72,6 @@ private enum ExperimentDuckAIFireOnboardingMetrics {
 
 extension MainViewController {
 
-    /// True when the Duck.ai Fire onboarding (query → Fire dialog) should run for the current user.
-    ///
-    /// Both the `onboardingDuckAIQueryTrackersDemoExperiment` experiment in the default flow and the Duck.ai tailored flow
-    /// drive the same Fire-onboarding code path; either being active is sufficient.
-    var isDuckAIFireFlowEnabled: Bool {
-        featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) || onboardingManager.currentOnboardingFlow == .duckAI
-    }
-
     // MARK: Session setup
 
     func enforceSingleTabAfterOnboardingIfNeeded() {
@@ -100,14 +92,6 @@ extension MainViewController {
     // MARK: Fire dialog triggering
 
     func showExperimentFireDialogAfterAIChatResponseIfReady() {
-        guard isDuckAIFireFlowEnabled else {
-            if experimentDuckAIFireOnboardingFlow.state != .completed {
-                experimentDuckAIFireOnboardingFlow.state = .idle
-            }
-            setExperimentFireControlsLocked(false)
-            return
-        }
-
         guard experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse,
               currentTab?.isAITab == true else {
             return
@@ -189,7 +173,12 @@ extension MainViewController {
         // The experiment path skips fireButtonPulseStarted() so no timer auto-hides the highlight.
         // Dismiss it explicitly now that the fire step is complete.
         ViewHighlighter.hideAll()
-        daxDialogsManager.setAsChatFirstPath()
+        // The tracker-blocking demo post-fire sequence (visit-site -> tracker-blocked -> EOJ) is
+        // feature-flagged. When enabled, mark this as a chat-first path so DaxDialogs drives that
+        // sequence. When disabled, fall back to the standard contextual dialog flow.
+        if featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) {
+            daxDialogsManager.setAsChatFirstPath()
+        }
         daxDialogsManager.setFireEducationMessageSeen()
         setExperimentFireControlsLocked(false)
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
@@ -251,13 +240,6 @@ extension MainViewController {
     // MARK: App resume
 
     func restorePendingDuckAIAnswerStepIfNeeded() {
-        guard isDuckAIFireFlowEnabled else {
-            // Stale checkpoints — clear them so a future session doesn't try to resume into a dead path.
-            if [.duckAIAnswerStep, .duckAIQuerySelection, .interludeDuckAI].contains(onboardingResumeStepStore.resumeStep) {
-                OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
-            }
-            return
-        }
         // `.duckAIAnswerStep` (experiment flow) and `.interludeDuckAI` (tailored flow) describe the same
         // physical state — the Fire onboarding is mid-flight and needs its AI tab + Fire dialog restored.
         guard

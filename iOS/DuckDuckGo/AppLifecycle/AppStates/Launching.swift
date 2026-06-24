@@ -414,7 +414,8 @@ struct Launching: LaunchingHandling {
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
                     label: .default,
                     keyValueStore: keyValueStore,
-                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter(),
+                    lockedLaunchFixEnabled: featureFlagger.isFeatureOn(.duckAINativeStorageMigrationLockedLaunchFix)
                 ).run()
                 if outcome == .skip {
                     return nil

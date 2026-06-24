@@ -37,15 +37,6 @@ class SwitchBarTextEntryView: UIView {
         case compact
         case tallTopAlignedAIChat
 
-        var minHeight: CGFloat {
-            switch self {
-            case .compact:
-                return Constants.minHeight
-            case .tallTopAlignedAIChat:
-                return Constants.minHeightAIChat
-            }
-        }
-
         var usesTopAlignedPlaceholder: Bool {
             switch self {
             case .compact:
@@ -60,17 +51,22 @@ class SwitchBarTextEntryView: UIView {
         static let maxHeight: CGFloat = 120
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
         static let minHeight: CGFloat = 44
-        static let minHeightAIChat: CGFloat = 68
+        static let minHeightAIChat: CGFloat = 51
         static let fontSize: CGFloat = 16
+
+        // Legacy Layout
+        static let legacyMinHeightAIChat: CGFloat = 68
+        static let legacyTextHorizontalInset: CGFloat = 12
+        static let legacyPlaceholderHorizontalOffset: CGFloat = 16
 
         // Text container insets
         static let textTopInset: CGFloat = 12
         static let textBottomInset: CGFloat = 12
-        static let textHorizontalInset: CGFloat = 12
+        static let textHorizontalInset: CGFloat = 16
 
         // Placeholder positioning
         static let placeholderTopOffset: CGFloat = 12
-        static let placeholderHorizontalOffset: CGFloat = 16
+        static let placeholderHorizontalOffset: CGFloat = 20
 
         // Increased buttons spacing
         static let additionalVerticalButtonsPadding: CGFloat = 6
@@ -158,9 +154,25 @@ class SwitchBarTextEntryView: UIView {
         return .compact
     }
 
+    // The tall AIChat height is shared by both the UTI and the legacy iPhone path, so it tracks
+    // `usesExpandedAIChatTextEntryLayout` (true for both).
+    private var minHeightAIChat: CGFloat {
+        handler.usesLegacyLayoutMetrics ? Constants.legacyMinHeightAIChat : Constants.minHeightAIChat
+    }
+
+    // The horizontal insets/offsets only revert on the legacy (non-UTI) path. The UTI keeps the new
+    // metrics even though it also reports `usesExpandedAIChatTextEntryLayout == true`.
+    private var textHorizontalInset: CGFloat {
+        handler.usesLegacyLayoutMetrics ? Constants.legacyTextHorizontalInset : Constants.textHorizontalInset
+    }
+
+    private var placeholderHorizontalOffset: CGFloat {
+        handler.usesLegacyLayoutMetrics ? Constants.legacyPlaceholderHorizontalOffset : Constants.placeholderHorizontalOffset
+    }
+
     private var currentMinHeight: CGFloat {
         if currentPose == .tallTopAlignedAIChat {
-            return currentPose.minHeight
+            return minHeightAIChat
         }
 
         guard handler.isUsingFadeOutAnimation else {
@@ -172,7 +184,7 @@ class SwitchBarTextEntryView: UIView {
         }
 
         if currentMode == .aiChat {
-            return handler.isTopBarPosition ? Constants.minHeightAIChat : Constants.minHeight
+            return handler.isTopBarPosition ? minHeightAIChat : Constants.minHeight
         }
 
         return Constants.minHeight
@@ -417,7 +429,7 @@ class SwitchBarTextEntryView: UIView {
             textField.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             placeholderCenterYConstraint,
-            placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
+            placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: placeholderHorizontalOffset),
             // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
             // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
             placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
@@ -637,15 +649,15 @@ class SwitchBarTextEntryView: UIView {
         if usesTextField {
             let fittingWidth = buttonsView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
             let buttonsWidth = currentButtonState.showsAnyButton ? fittingWidth : 0
-            let rightInset = buttonsWidth > 0 ? buttonsWidth : Constants.textHorizontalInset
-            textField.textLeftInset = Constants.textHorizontalInset + fragmentPadding
+            let rightInset = buttonsWidth > 0 ? buttonsWidth : textHorizontalInset
+            textField.textLeftInset = textHorizontalInset + fragmentPadding
             textField.textRightInset = rightInset + fragmentPadding
         } else {
             let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
-            let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
+            let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : textHorizontalInset
             textView.textContainerInset = UIEdgeInsets(
                 top: Constants.textTopInset,
-                left: Constants.textHorizontalInset,
+                left: textHorizontalInset,
                 bottom: Constants.textBottomInset,
                 right: rightInset
             )

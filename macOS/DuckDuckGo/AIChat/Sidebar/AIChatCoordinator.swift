@@ -86,6 +86,14 @@ protocol AIChatCoordinating {
     /// - Sidebar: keeps sidebar visible
     /// - Floating: keeps floating presentation and focuses its window
     func revealChat(for prompt: AIChatNativePrompt)
+
+    /// Reveals AI Chat for the active tab without submitting a prompt. Used when context is
+    /// attached out-of-band via the page-context channel (e.g. "Attach to Duck.ai").
+    ///
+    /// - Hidden: opens sidebar
+    /// - Sidebar: keeps sidebar visible
+    /// - Floating: focuses its window
+    func revealChat()
 }
 
 final class AIChatCoordinator: AIChatCoordinating {
@@ -277,6 +285,16 @@ final class AIChatCoordinator: AIChatCoordinating {
         }
 
         presentSidebar(for: prompt)
+    }
+
+    func revealChat() {
+        guard let currentTabID = sidebarHost.currentTabID else { return }
+        if isChatFloating(for: currentTabID) {
+            focusFloatingWindow(for: currentTabID)
+            return
+        }
+        guard !isSidebarOpen(for: currentTabID) else { return }
+        showSidebar(for: currentTabID, animated: true)
     }
 
     // MARK: - Show / Hide / Collapse

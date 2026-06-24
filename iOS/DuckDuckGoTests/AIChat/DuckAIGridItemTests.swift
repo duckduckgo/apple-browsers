@@ -99,6 +99,50 @@ final class DuckAIGridItemTests: XCTestCase {
         XCTAssertEqual(item, .image(title: UserText.aiChatTabSwitcherCardUntitledChat, imageFileRef: "uuid-1"))
     }
 
+    // MARK: - Voice / transcript branch
+
+    func testWhenChatIsVoiceKindAndHasTranscriptThenReturnsTranscriptItem() {
+        let chat = makeChat(title: "Weekend plans", model: "voice-mode")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: "Let's go hiking on Saturday.")
+
+        XCTAssertEqual(item, .transcript(title: "Weekend plans", snippet: "Let's go hiking on Saturday."))
+    }
+
+    func testWhenChatIsVoiceKindAndTranscriptHasWhitespaceThenSnippetIsTrimmed() {
+        let chat = makeChat(title: "Weekend plans", model: "voice-mode")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: "  Let's go hiking\n")
+
+        XCTAssertEqual(item, .transcript(title: "Weekend plans", snippet: "Let's go hiking"))
+    }
+
+    func testWhenChatIsVoiceKindAndTranscriptExceedsSnippetCapThenSnippetIsTruncatedToCap() {
+        let chat = makeChat(title: "Weekend plans", model: "voice-mode")
+        let longTranscript = String(repeating: "a", count: DuckAIGridItem.snippetCharacterCap + 100)
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: longTranscript)
+
+        let expectedSnippet = String(repeating: "a", count: DuckAIGridItem.snippetCharacterCap)
+        XCTAssertEqual(item, .transcript(title: "Weekend plans", snippet: expectedSnippet))
+    }
+
+    func testWhenChatIsVoiceKindAndTitleIsEmptyThenFallsBackToUntitledChatPlaceholder() {
+        let chat = makeChat(title: "", model: "voice-mode")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: "Hi")
+
+        XCTAssertEqual(item, .transcript(title: UserText.aiChatTabSwitcherCardUntitledChat, snippet: "Hi"))
+    }
+
+    func testWhenChatIsVoiceKindAndTranscriptIsNilThenReturnsNil() {
+        let chat = makeChat(title: "Weekend plans", model: "voice-mode")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: nil)
+
+        XCTAssertNil(item)
+    }
+
     // MARK: - Helpers
 
     private func makeChat(title: String,

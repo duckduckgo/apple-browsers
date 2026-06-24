@@ -267,6 +267,11 @@ struct NTPAfterIdleEnabledMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct EscapeHatchVisibleMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
 struct WinBackOfferUrgencyMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?

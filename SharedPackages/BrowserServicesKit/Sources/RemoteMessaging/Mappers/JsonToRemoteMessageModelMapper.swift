@@ -63,6 +63,7 @@ private enum AttributesKey: String, CaseIterable {
     case allFeatureFlagsEnabled
     case syncEnabled
     case isNTPAfterIdleEnabled
+    case isEscapeHatchVisible
     case shouldShowWinBackOfferUrgencyMessage
     case daysSinceDuckAiUsed
 
@@ -111,6 +112,7 @@ private enum AttributesKey: String, CaseIterable {
         case .allFeatureFlagsEnabled: return AllFeatureFlagsEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .syncEnabled: return SyncEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isNTPAfterIdleEnabled: return NTPAfterIdleEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .isEscapeHatchVisible: return EscapeHatchVisibleMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .shouldShowWinBackOfferUrgencyMessage: return WinBackOfferUrgencyMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .daysSinceDuckAiUsed: return DaysSinceDuckAIUsedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         }

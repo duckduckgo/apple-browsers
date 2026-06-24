@@ -42,6 +42,7 @@ private final class MockIdleReturnEligibilityManager: IdleReturnEligibilityManag
     func isEligibleForNTPAfterIdle() -> Bool { false }
     func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
     func idleThresholdSeconds() -> Int { 60 }
+    func isEscapeHatchVisible() -> Bool { true }
 }
 
 final class OnboardingNavigationDelegateTests: XCTestCase {

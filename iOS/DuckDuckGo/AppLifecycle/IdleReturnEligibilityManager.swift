@@ -33,6 +33,10 @@ protocol IdleReturnEligibilityManaging {
     func effectiveAfterInactivityOption() -> AfterInactivityOption
 
     func idleThresholdSeconds() -> Int
+
+    /// True when the last-used-tab shortcut (escape hatch return-to-tab) is enabled,
+    /// i.e. the user hasn't hidden it. Used to vary message copy.
+    func isEscapeHatchVisible() -> Bool
 }
 
 final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
@@ -42,6 +46,7 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
     private let thresholdResolver: IdleReturnThresholdResolver
     private let tutorialSettings: TutorialSettings
     private let isStillOnboarding: () -> Bool
+    private let escapeHatchVisibleProvider: () -> Bool
 
     init(featureFlagger: FeatureFlagger,
          keyValueStore: ThrowingKeyValueStoring,
@@ -53,6 +58,7 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
         self.tutorialSettings = tutorialSettings
         self.isStillOnboarding = isStillOnboarding
         let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
+        self.escapeHatchVisibleProvider = { (try? storage.lastTabShortcutEnabled) ?? true }
         self.effectiveOptionResolver = AfterInactivityEffectiveOptionResolver(storage: storage, featureFlagger: featureFlagger)
         self.thresholdResolver = IdleReturnThresholdResolver(
             privacyConfigurationManager: privacyConfigurationManager,
@@ -65,12 +71,14 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
          effectiveOptionResolver: AfterInactivityEffectiveOptionResolving,
          thresholdResolver: IdleReturnThresholdResolver,
          tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
-         isStillOnboarding: @escaping () -> Bool = { false }) {
+         isStillOnboarding: @escaping () -> Bool = { false },
+         escapeHatchVisible: @escaping () -> Bool = { true }) {
         self.featureFlagger = featureFlagger
         self.effectiveOptionResolver = effectiveOptionResolver
         self.thresholdResolver = thresholdResolver
         self.tutorialSettings = tutorialSettings
         self.isStillOnboarding = isStillOnboarding
+        self.escapeHatchVisibleProvider = escapeHatchVisible
     }
 
     func isFeatureAvailable() -> Bool {
@@ -89,5 +97,9 @@ final class IdleReturnEligibilityManager: IdleReturnEligibilityManaging {
 
     func idleThresholdSeconds() -> Int {
         thresholdResolver.thresholdSeconds()
+    }
+
+    func isEscapeHatchVisible() -> Bool {
+        escapeHatchVisibleProvider()
     }
 }

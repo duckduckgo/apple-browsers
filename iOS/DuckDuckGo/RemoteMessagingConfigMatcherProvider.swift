@@ -165,6 +165,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }.map(\.rawValue)
 
         let isNTPAfterIdleEnabled = idleReturnEligibilityManager.isEligibleForNTPAfterIdle()
+        let isEscapeHatchVisible = idleReturnEligibilityManager.isEscapeHatchVisible()
 
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
@@ -198,7 +199,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isFreemiumPIRActivated: didActivateFreemiumPIR,
                                                        freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
                                                        isCurrentPIRUser: isCurrentPIRUser,
-                                                       isNTPAfterIdleEnabled: isNTPAfterIdleEnabled),
+                                                       isNTPAfterIdleEnabled: isNTPAfterIdleEnabled,
+                                                       isEscapeHatchVisible: isEscapeHatchVisible),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds

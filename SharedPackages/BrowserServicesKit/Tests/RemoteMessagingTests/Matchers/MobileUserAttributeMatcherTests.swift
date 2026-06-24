@@ -127,6 +127,32 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
+    // MARK: - EscapeHatchVisible
+
+    func testWhenEscapeHatchVisibleMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isEscapeHatchVisible: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: EscapeHatchVisibleMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenEscapeHatchVisibleDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isEscapeHatchVisible: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: EscapeHatchVisibleMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenEscapeHatchHiddenMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isEscapeHatchVisible: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: EscapeHatchVisibleMatchingAttribute(value: false, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenEscapeHatchHiddenDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isEscapeHatchVisible: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: EscapeHatchVisibleMatchingAttribute(value: false, fallback: nil)),
+                       .fail)
+    }
+
     // MARK: - FreemiumPIREligible
 
     func testWhenIsFreemiumPIREligibleMatchesThenReturnMatch() throws {
@@ -219,7 +245,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                                            isFreemiumPIRActivated: Bool = false,
                                            freemiumPIRFirstScanResult: String? = nil,
                                            isCurrentPIRUser: Bool = false,
-                                           isNTPAfterIdleEnabled: Bool = false) {
+                                           isNTPAfterIdleEnabled: Bool = false,
+                                           isEscapeHatchVisible: Bool = false) {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             featureDiscovery: mockFeatureDiscovery,
@@ -250,7 +277,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             isFreemiumPIRActivated: isFreemiumPIRActivated,
             freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
             isCurrentPIRUser: isCurrentPIRUser,
-            isNTPAfterIdleEnabled: isNTPAfterIdleEnabled
+            isNTPAfterIdleEnabled: isNTPAfterIdleEnabled,
+            isEscapeHatchVisible: isEscapeHatchVisible
         )
     }
 }

@@ -43,6 +43,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
     private let freemiumPIRFirstScanResult: String?
     private let isCurrentPIRUser: Bool
     private let isNTPAfterIdleEnabled: Bool
+    private let isEscapeHatchVisible: Bool
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
@@ -75,7 +76,8 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 isFreemiumPIRActivated: Bool = false,
                 freemiumPIRFirstScanResult: String? = nil,
                 isCurrentPIRUser: Bool = false,
-                isNTPAfterIdleEnabled: Bool = false
+                isNTPAfterIdleEnabled: Bool = false,
+                isEscapeHatchVisible: Bool = false
     ) {
         self.isWidgetInstalled = isWidgetInstalled
         self.isSyncEnabled = isSyncEnabled
@@ -85,6 +87,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
         self.freemiumPIRFirstScanResult = freemiumPIRFirstScanResult
         self.isCurrentPIRUser = isCurrentPIRUser
         self.isNTPAfterIdleEnabled = isNTPAfterIdleEnabled
+        self.isEscapeHatchVisible = isEscapeHatchVisible
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
@@ -120,6 +123,8 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: isSyncEnabled)
         case let matchingAttribute as NTPAfterIdleEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: isNTPAfterIdleEnabled)
+        case let matchingAttribute as EscapeHatchVisibleMatchingAttribute:
+            return matchingAttribute.evaluate(for: isEscapeHatchVisible)
         case let matchingAttribute as WinBackOfferUrgencyMatchingAttribute:
             return matchingAttribute.evaluate(for: shouldShowWinBackOfferUrgencyMessage)
         case let matchingAttribute as FreemiumPIREligibleMatchingAttribute:

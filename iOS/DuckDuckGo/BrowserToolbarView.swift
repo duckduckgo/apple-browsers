@@ -341,6 +341,7 @@ final class BrowserToolbarView: UIView {
     }
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        guard !isHidden, alpha >= 0.01, isUserInteractionEnabled else { return false }
         if super.point(inside: point, with: event) {
             return true
         }
@@ -351,6 +352,10 @@ final class BrowserToolbarView: UIView {
     }
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        // Mirror UIKit's standard hit-test preconditions so hidden/disabled toolbar states
+        // (e.g. minimal chrome) don't leak taps to child controls.
+        guard !isHidden, alpha >= 0.01, isUserInteractionEnabled else { return nil }
+
         if let omnibarView = hostedOmnibarView {
             let location = convert(point, to: omnibarView)
             if let hit = omnibarView.hitTest(location, with: event) {

@@ -87,18 +87,6 @@
         "owners": ["dus7"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "key",
-                "description": "The SERP setting key whose stored value was unrecognized.",
-                "type": "string"
-            },
-            {
-                "key": "value",
-                "description": "The unrecognized stored value.",
-                "type": "string"
-            }
-        ]
+        "parameters": ["appVersion"]
     }
 }

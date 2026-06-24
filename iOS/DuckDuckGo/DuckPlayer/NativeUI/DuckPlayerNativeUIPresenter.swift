@@ -18,7 +18,6 @@
 //
 
 import Combine
-import DesignResourcesKit
 import Foundation
 import SwiftUI
 import UIKit
@@ -80,8 +79,6 @@ final class DuckPlayerNativeUIPresenter {
         static let height: CGFloat = 50
         static let fadeAnimationDuration: TimeInterval = 0.2
         static let visibleDuration: TimeInterval = 3.0
-        static let toolbarExpandedHeightWithTopAddressBar: CGFloat = 84
-        static let toolbarExpandedHeightWithBottomAddressBar: CGFloat = 76
     }
 
     /// The container view model for the entry pill
@@ -146,8 +143,6 @@ final class DuckPlayerNativeUIPresenter {
 
     // State management for pill presentation
     private var presentedPillType: PillType?
-    private var shouldShowToolbarExpansion = false
-    private weak var toolbarForExpansion: BrowserToolbarView?
 
     // Content Scripts dependencies
     private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
@@ -210,132 +205,6 @@ final class DuckPlayerNativeUIPresenter {
         
         // Position pill above address bar when it's at bottom, or at screen bottom when address bar is at top
         bottomConstraint.constant = addressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0
-    }
-
-    @MainActor
-    private func resolveToolbar(for hostViewController: DuckPlayerHosting) -> BrowserToolbarView? {
-        guard let tabViewController = hostViewController as? TabViewController,
-              let mainViewController = tabViewController.chromeDelegate as? MainViewController else {
-            return nil
-        }
-        return mainViewController.viewCoordinator.toolbar
-    }
-
-    @MainActor
-    private func makeToolbarExpansionView(for pillType: PillType, openAction: @escaping () -> Void) -> UIView {
-        let containerCornerRadius: CGFloat = 16
-        let container = UIView()
-        container.backgroundColor = UIColor(designSystemColor: .panel)
-        if #available(iOS 26, *) {
-            container.cornerConfiguration = .corners(radius: UICornerRadius.containerConcentric(minimum: containerCornerRadius))
-        } else {
-            container.layer.cornerCurve = .continuous
-            container.layer.cornerRadius = containerCornerRadius
-        }
-        container.layer.borderWidth = 1
-        container.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
-        container.layer.shadowColor = UIColor.black.cgColor
-        container.layer.shadowOpacity = 0.2
-        container.layer.shadowRadius = 8
-        container.layer.shadowOffset = CGSize(width: 0, height: 4)
-
-        let titleLabel = UILabel()
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = UIFont.daxSubheadSemibold()
-        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        titleLabel.numberOfLines = 1
-
-        let subtitleLabel = UILabel()
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleLabel.font = UIFont.daxCaption()
-        subtitleLabel.textColor = UIColor.secondaryLabel
-        subtitleLabel.numberOfLines = 1
-        switch pillType {
-        case .welcome:
-            titleLabel.text = "Welcome to DuckPlayer"
-            subtitleLabel.text = "Polished toolbar expansion prototype"
-        case .entry:
-            titleLabel.text = "Open in DuckPlayer"
-            subtitleLabel.text = "Try the smoother toolbar animation"
-        case .reEntry:
-            titleLabel.text = "Resume in DuckPlayer"
-            subtitleLabel.text = "Continue where you left off"
-        }
-
-        let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
-        textStack.translatesAutoresizingMaskIntoConstraints = false
-        textStack.axis = .vertical
-        textStack.alignment = .leading
-        textStack.spacing = 2
-
-        let openButton = UIButton(type: .system, primaryAction: UIAction { _ in
-            openAction()
-        })
-        openButton.translatesAutoresizingMaskIntoConstraints = false
-        openButton.setTitle("Open", for: .normal)
-        openButton.titleLabel?.font = UIFont.daxSubheadSemibold()
-        openButton.setTitleColor(.white, for: .normal)
-        openButton.backgroundColor = .systemBlue
-        openButton.layer.cornerCurve = .continuous
-        openButton.layer.cornerRadius = 12
-        openButton.contentEdgeInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
-
-        let indicator = UIView()
-        indicator.translatesAutoresizingMaskIntoConstraints = false
-        indicator.backgroundColor = .systemBlue
-        indicator.layer.cornerCurve = .continuous
-        indicator.layer.cornerRadius = 3
-
-        container.addSubview(indicator)
-        container.addSubview(textStack)
-        container.addSubview(openButton)
-
-        NSLayoutConstraint.activate([
-            indicator.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
-            indicator.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            indicator.widthAnchor.constraint(equalToConstant: 6),
-            indicator.heightAnchor.constraint(equalToConstant: 32),
-            textStack.leadingAnchor.constraint(equalTo: indicator.trailingAnchor, constant: 12),
-            textStack.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            openButton.leadingAnchor.constraint(greaterThanOrEqualTo: textStack.trailingAnchor, constant: 12),
-            openButton.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
-            openButton.centerYAnchor.constraint(equalTo: container.centerYAnchor)
-        ])
-
-        return container
-    }
-
-    @MainActor
-    @discardableResult
-    private func presentToolbarExpansion(
-        for pillType: PillType,
-        videoID: String,
-        timestamp: TimeInterval?,
-        in hostViewController: DuckPlayerHosting
-    ) -> Bool {
-        guard FloatingUIManager().isFloatingUIEnabled else {
-            return false
-        }
-
-        guard let toolbar = resolveToolbar(for: hostViewController) else {
-            return false
-        }
-
-        toolbarForExpansion = toolbar
-        shouldShowToolbarExpansion = true
-        let isBottomAddressBar = appSettings.currentAddressBarPosition == .bottom
-        let expansionHeight = isBottomAddressBar ? Constants.toolbarExpandedHeightWithBottomAddressBar : Constants.toolbarExpandedHeightWithTopAddressBar
-        let expansionView = makeToolbarExpansionView(for: pillType) { [weak self] in
-            guard let self = self else { return }
-            self.videoPlaybackRequest.send((videoID, timestamp, pillType))
-        }
-        toolbar.setExpandedContentView(expansionView, height: expansionHeight, animated: true)
-        return true
-    }
-
-    @MainActor
-    private func hideToolbarExpansion(animated: Bool) {
-        toolbarForExpansion?.setExpandedContentView(nil, height: 0, animated: animated)
     }
 
         /// Updates the UI based on Ombibar Notification
@@ -697,11 +566,6 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
             return
         }
 
-        if presentToolbarExpansion(for: pillType, videoID: videoID, timestamp: timestamp, in: hostViewController) {
-            postPillVisibilityNotification(isVisible: true)
-            return
-        }
-
         self.hostView = hostViewController
         guard let hostView = self.hostView else { return }
 
@@ -780,8 +644,6 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     func dismissPill(reset: Bool = false, animated: Bool = true, programatic: Bool = true, skipTransition: Bool = false) {
         // First reset constraints immediately
         resetWebViewConstraint()
-        shouldShowToolbarExpansion = false
-        hideToolbarExpansion(animated: animated)
 
         postPillVisibilityNotification(isVisible: false)
 
@@ -936,9 +798,6 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     /// Hides the bottom sheet when browser chrome is hidden
     @MainActor
     func hideBottomSheetForHiddenChrome() {
-        if shouldShowToolbarExpansion {
-            hideToolbarExpansion(animated: true)
-        }
         containerViewModel?.dismiss()
         resetWebViewConstraint()
         containerViewController?.view.isUserInteractionEnabled = false
@@ -948,16 +807,6 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     /// Shows the bottom sheet when browser chrome is visible
     @MainActor
     func showBottomSheetForVisibleChrome() {
-        if shouldShowToolbarExpansion, let toolbarForExpansion {
-            let isBottomAddressBar = appSettings.currentAddressBarPosition == .bottom
-            let expansionHeight = isBottomAddressBar ? Constants.toolbarExpandedHeightWithBottomAddressBar : Constants.toolbarExpandedHeightWithTopAddressBar
-            let expansionView = makeToolbarExpansionView(for: presentedPillType ?? .entry) { [weak self] in
-                guard let self = self,
-                      let videoID = self.state.videoID else { return }
-                self.videoPlaybackRequest.send((videoID, self.state.timestamp, self.presentedPillType ?? .entry))
-            }
-            toolbarForExpansion.setExpandedContentView(expansionView, height: expansionHeight, animated: true)
-        }
         containerViewModel?.show()
         containerViewController?.view.isUserInteractionEnabled = true
         postPillVisibilityNotification(isVisible: true)

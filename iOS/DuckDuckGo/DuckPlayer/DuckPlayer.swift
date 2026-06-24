@@ -845,8 +845,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     @objc private func handleChromeVisibilityChange(_ notification: Notification) {
-        if hostView?.isTabCurrentlyPresented() == true,
-            let url = hostView?.webView.url,
+        if let url = hostView?.webView.url,
             url.isYoutubeWatch,
             let isHidden = notification.userInfo?["isHidden"] as? Bool {
 

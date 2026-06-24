@@ -73,17 +73,7 @@ struct NetworkProtectionStatusView: View {
 
             locationDetails()
 
-            // Placed after all other tips so it's the last piece of messaging the user sees.
-            Section {
-                if tipsModel.showStrictRoutingFallbackReminder {
-                    strictRoutingFallbackView()
-                } else if #available(iOS 18.0, *) {
-                    strictRoutingTipView()
-                        .tipImageSize(Self.defaultImageSize)
-                        .padding(.horizontal, 3)
-                }
-            }
-            .listRowBackground(Color(designSystemColor: .surface))
+            security()
 
             if statusModel.isNetPEnabled && statusModel.hasServerInfo && !statusModel.isSnoozing {
                 connectionDetails()
@@ -110,8 +100,6 @@ struct NetworkProtectionStatusView: View {
         .onAppear {
             if #available(iOS 18.0, *) {
                 tipsModel.handleStatusViewAppear()
-            } else {
-                tipsModel.handleStrictRoutingReminderViewAppear()
             }
         }
         .onDisappear {
@@ -287,6 +275,29 @@ struct NetworkProtectionStatusView: View {
             .onAppear {
                 statusModel.handleUserOpenedVPNLocations()
             }
+    }
+
+    @ViewBuilder
+    private func security() -> some View {
+        if statusModel.isStrictRoutingAvailable {
+            Section {
+                Toggle(isOn: $statusModel.enforceRoutes) {
+                    Text(UserText.netPStrictRoutingSettingTitle)
+                        .daxBodyRegular()
+                        .foregroundColor(.init(designSystemColor: .textPrimary))
+                }
+                .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
+            } header: {
+                Text(UserText.netPStatusViewSecuritySectionTitle).foregroundColor(.init(designSystemColor: .textSecondary))
+            } footer: {
+                Text(LocalizedStringKey(UserText.netPStrictRoutingSettingFooter))
+                    .foregroundColor(.init(designSystemColor: .textSecondary))
+                    .accentColor(Color(designSystemColor: .accentPrimary))
+                    .daxFootnoteRegular()
+                    .padding(.top, 6)
+            }
+            .listRowBackground(Color(designSystemColor: .surface))
+        }
     }
 
     @ViewBuilder
@@ -480,42 +491,6 @@ struct NetworkProtectionStatusView: View {
 
     // MARK: - Tips
 
-    @ViewBuilder
-    private func strictRoutingFallbackView() -> some View {
-        StrictRoutingReminderView(
-            onEnable: { tipsModel.handleStrictRoutingFallbackEnable() },
-            onDismiss: { tipsModel.handleStrictRoutingFallbackDismiss() }
-        )
-        .onAppear {
-            tipsModel.handleStrictRoutingFallbackShown()
-        }
-    }
-
-    @available(iOS 18.0, *)
-    @ViewBuilder
-    private func strictRoutingTipView() -> some View {
-        TipView(tipsModel.strictRoutingTip, action: tipsModel.strictRoutingTipActionHandler(_:))
-            .removeGroupedListStyleInsets()
-            .tipCornerRadius(0)
-            .tipBackground(Color(designSystemColor: .surface))
-            .onAppear {
-                tipsModel.handleStrictRoutingTipShown()
-            }
-            .task {
-                var previousStatus = tipsModel.strictRoutingTip.status
-
-                for await status in tipsModel.strictRoutingTip.statusUpdates {
-                    if case .invalidated(let reason) = status {
-                        if case .available = previousStatus {
-                            tipsModel.handleStrictRoutingTipInvalidated(reason)
-                        }
-                    }
-
-                    previousStatus = status
-                }
-            }
-    }
-
     @available(iOS 18.0, *)
     @ViewBuilder
     private func geoswitchingTipView() -> some View {
@@ -613,58 +588,6 @@ struct NetworkProtectionStatusView: View {
                     }
                 }
         }
-    }
-}
-
-/// A pre-iOS-18 stand-in for the Strict routing reminder, styled to match the TipKit tip used on
-/// newer systems (leading glyph, title, message, primary action, and a dismiss control).
-private struct StrictRoutingReminderView: View {
-    let onEnable: () -> Void
-    let onDismiss: () -> Void
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.shield)
-                .renderingMode(.template)
-                .resizable()
-                .scaledToFit()
-                .foregroundColor(.accentColor)
-                .frame(width: 32, height: 32)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(UserText.networkProtectionStrictRoutingTipTitle)
-                    .daxBodyBold()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-
-                Text(UserText.networkProtectionStrictRoutingTipMessage)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-
-                Button(action: onEnable) {
-                    Text(UserText.networkProtectionStrictRoutingTipAction)
-                        .daxBodyBold()
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(Color.accentColor)
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 2)
-            }
-
-            Spacer(minLength: 0)
-
-            Button(action: onDismiss) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 3)
-        .padding(.vertical, 4)
-        .listRowBackground(Color(designSystemColor: .surface))
     }
 }
 

@@ -99,10 +99,6 @@ final class UserText {
     static let networkProtectionDomainExclusionsTipTitle = NSLocalizedString("network.protection.domain.exclusion.tip.title", bundle: Bundle.module, value: "Website not working?", comment: "Title for tooltip about domain exclusion")
     static let networkProtectionDomainExclusionsTipMessage = NSLocalizedString("network.protection.domain.exclusion.tip.message", bundle: Bundle.module, value: "Exclude websites that block VPN traffic so you can use them without turning the VPN off.", comment: "Message for tooltip about domain exclusion")
 
-    static let networkProtectionStrictRoutingTipTitle = NSLocalizedString("network.protection.strict.routing.tip.title", bundle: Bundle.module, value: "Turn On Strict Routing", comment: "Title for tooltip reminding the user to re-enable the VPN Strict routing setting")
-    static let networkProtectionStrictRoutingTipMessage = NSLocalizedString("network.protection.strict.routing.tip.message", bundle: Bundle.module, value: "Strict routing is off. Turning it back on strengthens protection against traffic leaks on untrusted networks.", comment: "Message for tooltip reminding the user to re-enable the VPN Strict routing setting")
-    static let networkProtectionStrictRoutingTipAction = NSLocalizedString("network.protection.strict.routing.tip.action", bundle: Bundle.module, value: "Turn On Strict Routing", comment: "Action button title for tooltip reminding the user to re-enable the VPN Strict routing setting")
-
     // MARK: Report site issues
 
     static let networkProtectionReportSiteIssuesViewTitle = NSLocalizedString("network.protection.report.site.issues.title", bundle: Bundle.module, value: "Report an issue with %@?", comment: "Title for report site issues view for website “%@”")
@@ -117,6 +113,11 @@ final class UserText {
 
     static let networkProtectionSiteTroubleShootingViewTitle = NSLocalizedString("network.protection.site.troubleshooting.title", bundle: Bundle.module, value: "Website Preferences", comment: "Title for VPN website preferences view")
     static let networkProtectionSiteTroubleShootingViewExcludeWebsite = NSLocalizedString("network.protection.site.troubleshooting.exclude", bundle: Bundle.module, value: "Exclude %@ from VPN", comment: "Option to exclude a “%@” website from the VPN")
+
+    // MARK: Security
+
+    static let networkProtectionStatusViewSecuritySectionTitle = NSLocalizedString("network.protection.status.view.security.section.title", bundle: Bundle.module, value: "Security", comment: "Title for the Security section in the VPN status view")
+    static let networkProtectionStrictRoutingToggleTitle = NSLocalizedString("network.protection.status.view.strict.routing.toggle.title", bundle: Bundle.module, value: "Strict Routing", comment: "Title for the Strict routing toggle in the VPN status view")
 
     // MARK: Updating Appex to Sysex for App Store builds
 

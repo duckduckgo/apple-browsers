@@ -170,6 +170,22 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     @Published public var animationsOn: Bool = false
 
+    // MARK: Security
+
+    /// Whether the Strict routing toggle should be shown in the status view's Security section.
+    @Published public private(set) var isStrictRoutingAvailable: Bool
+
+    /// Backs the Strict routing toggle in the status view's Security section. Writing it routes the
+    /// change through `VPNSettings`, which restarts the tunnel to apply the new routing.
+    @Published public var enforceRoutes: Bool {
+        didSet {
+            guard settings.enforceRoutes != enforceRoutes else {
+                return
+            }
+            settings.enforceRoutes = enforceRoutes
+        }
+    }
+
     public let enablesUnifiedFeedbackForm: Bool
 
     public init(tunnelController: (TunnelController & TunnelSessionProvider),
@@ -196,11 +212,12 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.preferredLocation = NetworkProtectionLocationStatusModel(selectedLocation: settings.selectedLocation)
 
         self.dnsSettings = settings.dnsSettings
+        self.isStrictRoutingAvailable = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+        self.enforceRoutes = settings.enforceRoutes
 
         self.tipsModel = VPNTipsModel(
             statusObserver: statusObserver,
-            vpnSettings: settings,
-            strictRoutingReminderFeatureEnabled: AppDependencyProvider.shared.featureFlagger.isFeatureOn(.vpnStrictRoutingReminder))
+            vpnSettings: settings)
 
         let recentServerInfo = serverInfoObserver.recentValue
         if let attributes = recentServerInfo.serverLocation {
@@ -223,6 +240,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         setUpServerInfoPublishers()
         setUpLocationPublishers()
         setUpDNSSettingsPublisher()
+        setUpEnforceRoutesPublisher()
         setUpThroughputRefreshTimer()
         setUpErrorPublishers()
 
@@ -450,6 +468,15 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         settings.dnsSettingsPublisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.dnsSettings, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    /// Keeps the Strict routing toggle in sync when `enforceRoutes` changes elsewhere (e.g. the
+    /// toggle in VPN settings), so both surfaces always reflect the same value.
+    private func setUpEnforceRoutesPublisher() {
+        settings.enforceRoutesPublisher
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.enforceRoutes, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
 

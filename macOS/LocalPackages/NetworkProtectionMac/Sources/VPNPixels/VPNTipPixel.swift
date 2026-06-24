@@ -30,7 +30,6 @@ public enum VPNTipPixel: VPNPixel {
     case autoconnectTip(step: VPNTipStep)
     case domainExclusionsTip(step: VPNTipStep)
     case geoswitchingTip(step: VPNTipStep)
-    case strictRoutingTip(step: VPNTipStep)
 
     public var unscopedPixelName: String {
         switch self {
@@ -40,8 +39,6 @@ public enum VPNTipPixel: VPNPixel {
             return "tip_site-exclusion_\(step)"
         case .geoswitchingTip(let step):
             return "tip_geoswitching_\(step)"
-        case .strictRoutingTip(let step):
-            return "tip_strict-routing_\(step)"
         }
     }
 
@@ -51,8 +48,7 @@ public enum VPNTipPixel: VPNPixel {
         switch self {
         case .autoconnectTip,
                 .domainExclusionsTip,
-                .geoswitchingTip,
-                .strictRoutingTip:
+                .geoswitchingTip:
             return [.pixelSource]
         }
     }

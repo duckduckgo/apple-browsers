@@ -190,8 +190,6 @@ public final class StatusBarMenu: NSObject {
                                          vpnAppState: .init(defaults: userDefaults),
                                          vpnSettings: .init(defaults: userDefaults),
                                          proxySettings: .init(defaults: userDefaults),
-                                         strictRoutingReminderStore: DefaultVPNStrictRoutingReminderStore(userDefaults: userDefaults),
-                                         strictRoutingReminderFeatureEnabled: false,
                                          logger: Logger(subsystem: "DuckDuckGo", category: "TipKit"))
 
             let debugInformationViewModel = DebugInformationViewModel(showDebugInformation: isOptionKeyPressed)

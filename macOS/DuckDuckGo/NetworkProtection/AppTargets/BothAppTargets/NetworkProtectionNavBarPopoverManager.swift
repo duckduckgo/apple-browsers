@@ -243,6 +243,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 isMenuBarStatusView: false,
                 userDefaults: .netP,
                 locationFormatter: DefaultVPNLocationFormatter(),
+                isStrictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle),
                 uninstallHandler: { [weak self] reason in
 
                     let showNotification = reason == .expiration
@@ -265,8 +266,6 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                                          vpnAppState: vpnAppState,
                                          vpnSettings: vpnSettings,
                                          proxySettings: proxySettings,
-                                         strictRoutingReminderStore: DefaultVPNStrictRoutingReminderStore(userDefaults: .netP),
-                                         strictRoutingReminderFeatureEnabled: featureFlagger.isFeatureOn(.vpnStrictRoutingReminder),
                                          logger: Logger(subsystem: "DuckDuckGo", category: "TipKit"))
 
             let popover = NetworkProtectionPopover(

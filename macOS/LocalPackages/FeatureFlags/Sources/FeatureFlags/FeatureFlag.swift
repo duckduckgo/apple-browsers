@@ -50,10 +50,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates the "Strict routing" VPN toggle.
     case vpnStrictRoutingToggle
 
-    /// Gates the periodic reminder to turn "Strict routing" back on.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215912210278432?focus=true
-    case vpnStrictRoutingReminder
-
     /// Gates the "Exclude Carrier-Grade NAT" VPN toggle.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
     case vpnExcludeCGNATToggle
@@ -489,8 +485,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(NetworkProtectionSubfeature.appStoreSystemExtensionMessage), category: .vpn)
         case .vpnStrictRoutingToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle), category: .vpn)
-        case .vpnStrictRoutingReminder:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingReminder), category: .vpn)
         case .vpnExcludeCGNATToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT), category: .vpn)
         case .vpnOrphanProxyDetectionKillSwitch:

@@ -18,7 +18,6 @@
 
 import SwiftUI
 import SwiftUIExtensions
-import DesignResourcesKitIcons
 import Combine
 import VPN
 import Lottie
@@ -118,19 +117,16 @@ public struct TunnelControllerView: View {
 
             locationView()
 
+            securityView()
+
             if model.showServerDetails {
                 connectionStatusView()
                     .disabled(on: !isEnabled)
             }
-
-            // Placed after all other tips so it's the last piece of messaging the user sees.
-            strictRoutingTipView()
         }
         .onAppear {
             if #available(macOS 14.0, *) {
                 tipsModel.handleTunnelControllerAppear()
-            } else {
-                tipsModel.handleStrictRoutingReminderViewAppear()
             }
         }
         .onDisappear {
@@ -140,42 +136,33 @@ public struct TunnelControllerView: View {
         }
     }
 
+    // MARK: - Security
+
+    /// A persistent section letting the user turn Strict routing on or off without leaving the
+    /// status view. Mirrors the Website Preferences section above. Gated on the same feature flag
+    /// as the Strict routing toggle in VPN settings.
     @ViewBuilder
-    private func strictRoutingTipView() -> some View {
-        if tipsModel.showStrictRoutingFallbackReminder {
-            StrictRoutingReminderView(
-                onEnable: { tipsModel.handleStrictRoutingFallbackEnable() },
-                onDismiss: { tipsModel.handleStrictRoutingFallbackDismiss() }
-            )
-            .padding(.horizontal, 9)
-            .padding(.vertical, 6)
-            .onAppear {
-                tipsModel.handleStrictRoutingFallbackShown()
-            }
-        } else if #available(macOS 14.0, *),
-                  tipsModel.canShowStrictRoutingTip {
+    private func securityView() -> some View {
+        if model.isStrictRoutingAvailable {
+            VStack(alignment: .leading) {
+                Text(UserText.networkProtectionStatusViewSecuritySectionTitle)
+                    .applySectionHeaderAttributes(colorScheme: colorScheme)
+                    .padding(.vertical, 3)
+                    .padding(.horizontal, 9)
 
-            TipView(tipsModel.strictRoutingTip, action: tipsModel.strictRoutingTipActionHandler)
-                .tipImageSize(VPNTipsModel.imageSize)
-                .tipBackground(Color(.tipBackground))
-                .padding(.horizontal, 9)
-                .padding(.vertical, 6)
-                .onAppear {
-                    tipsModel.handleStrictRoutingTipShown()
-                }
-                .task {
-                    var previousStatus = tipsModel.strictRoutingTip.status
+                Toggle(isOn: $model.enforceRoutes) {
+                    HStack(spacing: 5) {
+                        Text(UserText.networkProtectionStrictRoutingToggleTitle)
+                            .applyLabelAttributes(colorScheme: colorScheme)
 
-                    for await status in tipsModel.strictRoutingTip.statusUpdates {
-                        if case .invalidated(let reason) = status {
-                            if case .available = previousStatus {
-                                tipsModel.handleStrictRoutingTipInvalidated(reason)
-                            }
-                        }
-
-                        previousStatus = status
+                        Spacer()
                     }
+                    .padding(.bottom, 5)
                 }
+                .padding(.horizontal, 9)
+            }
+
+            dividerRow()
         }
     }
 
@@ -408,57 +395,5 @@ public struct TunnelControllerView: View {
             .fixedSize()
         }
         .padding(EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 9))
-    }
-}
-
-/// A pre-macOS-14 stand-in for the Strict routing reminder, styled to match the TipKit tip used on
-/// newer systems (leading glyph, title, message, primary action, and a dismiss control).
-private struct StrictRoutingReminderView: View {
-    let onEnable: () -> Void
-    let onDismiss: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 10) {
-                Image(nsImage: DesignSystemImages.Glyphs.Size24.shield)
-                    .renderingMode(.template)
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundColor(.accentColor)
-                    .frame(width: 32, height: 32)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(UserText.networkProtectionStrictRoutingTipTitle)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.primary)
-
-                    Text(UserText.networkProtectionStrictRoutingTipMessage)
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
-
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-
-            Button(action: onEnable) {
-                Text(UserText.networkProtectionStrictRoutingTipAction)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-        }
-        .padding(12)
-        .background(Color(.tipBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }

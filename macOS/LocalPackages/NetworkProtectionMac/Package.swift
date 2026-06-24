@@ -38,7 +38,6 @@ let package = Package(
         .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.2"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
-        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../AppInfoRetriever"),
         .package(path: "../AppLauncher"),
         .package(path: "../UDSHelper"),
@@ -136,7 +135,6 @@ let package = Package(
                 .product(name: "VPN", package: "VPN"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
-                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
                 .product(name: "LoginItems", package: "LoginItems"),
                 .product(name: "SystemExtensionManager", package: "SystemExtensionManager"),
                 .product(name: "Lottie", package: "lottie-spm")

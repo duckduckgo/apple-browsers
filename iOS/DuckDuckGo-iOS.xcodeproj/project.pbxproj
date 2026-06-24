@@ -669,8 +669,6 @@
 		7BF78E022CA2CC3E0026A1FC /* TipKitAppEventHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF78E012CA2CC3E0026A1FC /* TipKitAppEventHandling.swift */; };
 		7BFD5FD52C9DA310000FF959 /* VPNAddWidgetTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD42C9DA310000FF959 /* VPNAddWidgetTip.swift */; };
 		7BFD5FD72C9DB9D7000FF959 /* VPNGeoswitchingTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD62C9DB9D7000FF959 /* VPNGeoswitchingTip.swift */; };
-		DDDD0000000000000000A002 /* VPNStrictRoutingTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0000000000000000A001 /* VPNStrictRoutingTip.swift */; };
-		DDDD0000000000000000B002 /* VPNStrictRoutingReminderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0000000000000000B001 /* VPNStrictRoutingReminderStore.swift */; };
 		7BFD5FD92C9DBC24000FF959 /* VPNSnoozeTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD82C9DBC24000FF959 /* VPNSnoozeTip.swift */; };
 		7C8A1B2D3E4F506172839405 /* AIChatTabChatHeaderViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4E5D6C7A8F9012345678901 /* AIChatTabChatHeaderViewTests.swift */; };
 		801870A92F86CD6800E2DC44 /* LastActiveTabStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 801870A82F86CD6800E2DC44 /* LastActiveTabStore.swift */; };
@@ -3328,8 +3326,6 @@
 		7BFC32AF2CB291BB007A8E17 /* VPNControlWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNControlWidget.swift; sourceTree = "<group>"; };
 		7BFD5FD42C9DA310000FF959 /* VPNAddWidgetTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAddWidgetTip.swift; sourceTree = "<group>"; };
 		7BFD5FD62C9DB9D7000FF959 /* VPNGeoswitchingTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNGeoswitchingTip.swift; sourceTree = "<group>"; };
-		DDDD0000000000000000A001 /* VPNStrictRoutingTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNStrictRoutingTip.swift; sourceTree = "<group>"; };
-		DDDD0000000000000000B001 /* VPNStrictRoutingReminderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNStrictRoutingReminderStore.swift; sourceTree = "<group>"; };
 		7BFD5FD82C9DBC24000FF959 /* VPNSnoozeTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNSnoozeTip.swift; sourceTree = "<group>"; };
 		801870A82F86CD6800E2DC44 /* LastActiveTabStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastActiveTabStore.swift; sourceTree = "<group>"; };
 		8026361D2F983C2A009FD281 /* TabSwitcherTitleBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherTitleBarView.swift; sourceTree = "<group>"; };
@@ -7285,8 +7281,6 @@
 			children = (
 				7BFD5FD42C9DA310000FF959 /* VPNAddWidgetTip.swift */,
 				7BFD5FD62C9DB9D7000FF959 /* VPNGeoswitchingTip.swift */,
-				DDDD0000000000000000A001 /* VPNStrictRoutingTip.swift */,
-				DDDD0000000000000000B001 /* VPNStrictRoutingReminderStore.swift */,
 				7BFD5FD82C9DBC24000FF959 /* VPNSnoozeTip.swift */,
 			);
 			name = TipKit;
@@ -12803,8 +12797,6 @@
 				9F465E1E2D3F5C2E00490109 /* Logger+MaliciousSiteProtection.swift in Sources */,
 				9FA30B0A2F6CC2FE00F5AA9D /* RebrandedOnboardingRadioIndicator.swift in Sources */,
 				7BFD5FD72C9DB9D7000FF959 /* VPNGeoswitchingTip.swift in Sources */,
-				DDDD0000000000000000A002 /* VPNStrictRoutingTip.swift in Sources */,
-				DDDD0000000000000000B002 /* VPNStrictRoutingReminderStore.swift in Sources */,
 				F1668BCE1E798081008CBA04 /* BookmarksViewController.swift in Sources */,
 				8590CB69268A4E190089F6BF /* DebugEtagStorage.swift in Sources */,
 				C1CDA3162AFB9C7F006D1476 /* AutofillNeverPromptWebsitesManager.swift in Sources */,

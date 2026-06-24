@@ -763,6 +763,7 @@ public struct UserText {
     static let netPStatusViewConnectionDetails = NSLocalizedString("network.protection.status.view.connection.details", value: "Connection Details", comment: "Connection details label shown in NetworkProtection's status view.")
     static let netPStatusViewCustomDNS = NSLocalizedString("network.protection.status.view.custom.dns", value: "DNS Server", comment: "Custom DNS label shown in NetworkProtection's status view.")
     static let netPStatusViewSettingsSectionTitle = NSLocalizedString("network.protection.status.view.settings.section.title", value: "Manage", comment: "Label shown on the title of the settings section in NetworkProtection's status view.")
+    static let netPStatusViewSecuritySectionTitle = NSLocalizedString("network.protection.status.view.security.section.title", value: "Security", comment: "Title for the Security section in NetworkProtection's status view.")
     static let netPVPNSettingsTitle = NSLocalizedString("network.protection.vpn.settings.title", value: "VPN Settings", comment: "Title for the VPN Settings screen.")
     static let netPVPNSettingsFAQ = NSLocalizedString("network.protection.vpn.settings.faq", value: "FAQs and Support", comment: "Title for the FAQ row in the VPN status screen.")
     static let netPVPNSettingsShareFeedback = NSLocalizedString("network.protection.vpn.settings.share-feedback", value: "Share VPN Feedback", comment: "Title for the feedback row in the VPN status screen.")
@@ -890,10 +891,6 @@ public struct UserText {
     static let networkProtectionSnoozeTipTitle = NSLocalizedString("network.protection.snooze.tip.title", value: "Avoid VPN Conflicts", comment: "Title for tooltip about VPN snooze mode")
     static let networkProtectionSnoozeTipMessage = NSLocalizedString("network.protection.snooze.tip.message", value: "You can use sites or apps that block VPN traffic by snoozing the VPN connection.", comment: "Message for tooltip about VPN snooze mode")
     static let networkProtectionSnoozeTipAction = NSLocalizedString("network.protection.snooze.tip.action", value: "Learn more", comment: "Button title for tooltip about VPN snooze mode")
-
-    static let networkProtectionStrictRoutingTipTitle = NSLocalizedString("network.protection.strict.routing.tip.title", value: "Turn On Strict Routing", comment: "Title for tip reminding the user to re-enable the VPN Strict routing setting")
-    static let networkProtectionStrictRoutingTipMessage = NSLocalizedString("network.protection.strict.routing.tip.message", value: "Strict routing is off. Turning it back on strengthens protection against traffic leaks on untrusted networks.", comment: "Message for tip reminding the user to re-enable the VPN Strict routing setting")
-    static let networkProtectionStrictRoutingTipAction = NSLocalizedString("network.protection.strict.routing.tip.action", value: "Turn On Strict Routing", comment: "Button title for tip reminding the user to re-enable the VPN Strict routing setting")
 
     // MARK: Unified Feedback Form
     static let browserFeedbackReportProblem = NSLocalizedString("send.browser.feedback.report-problem", value: "Report a problem", comment: "Name of the option the user can chose to give browser feedback about a problem they enountered")

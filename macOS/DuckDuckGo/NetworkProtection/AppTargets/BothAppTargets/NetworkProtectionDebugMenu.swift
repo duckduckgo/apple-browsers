@@ -23,7 +23,6 @@ import ConcurrencyExtensions
 import Foundation
 import FoundationExtensions
 import NetworkProtectionProxy
-import NetworkProtectionUI
 import os.log
 import Subscription
 import SwiftUI
@@ -62,11 +61,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
     private let excludeDeviceCommunicationMenuItem = NSMenuItem(title: "excludeDeviceCommunication", action: #selector(NetworkProtectionDebugMenu.toggleExcludeDeviceCommunication))
 
     private let resetTunnelSettingsMenuItem = NSMenuItem(title: "Reset to Defaults", action: #selector(NetworkProtectionDebugMenu.resetTunnelSettings))
-
-    private var strictRoutingReminderStore = DefaultVPNStrictRoutingReminderStore(userDefaults: .netP)
-    private let forceStrictRoutingFallbackMenuItem = NSMenuItem(title: "Force Fallback View", action: #selector(NetworkProtectionDebugMenu.toggleForceStrictRoutingFallback))
-    private let strictRoutingReminderIntervalDefaultMenuItem = NSMenuItem(title: "Interval: Default (7 days)", action: #selector(NetworkProtectionDebugMenu.setStrictRoutingReminderIntervalDefault))
-    private let strictRoutingReminderInterval30sMenuItem = NSMenuItem(title: "Interval: 30 seconds", action: #selector(NetworkProtectionDebugMenu.setStrictRoutingReminderInterval30s))
 
     private let networkProtectionDeviceManager: NetworkProtectionDeviceManager
     private let pinningManager: PinningManager
@@ -156,19 +150,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
                     .targetting(self)
 
                 excludeDeviceCommunicationMenuItem
-                    .targetting(self)
-            }
-
-            NSMenuItem(title: "Strict Routing Reminder") {
-                forceStrictRoutingFallbackMenuItem
-                    .targetting(self)
-
-                NSMenuItem.separator()
-
-                strictRoutingReminderIntervalDefaultMenuItem
-                    .targetting(self)
-
-                strictRoutingReminderInterval30sMenuItem
                     .targetting(self)
             }
 
@@ -443,18 +424,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
         }
     }
 
-    @objc func toggleForceStrictRoutingFallback(_ sender: Any?) {
-        strictRoutingReminderStore.forceFallbackReminder.toggle()
-    }
-
-    @objc func setStrictRoutingReminderIntervalDefault(_ sender: Any?) {
-        strictRoutingReminderStore.overriddenInterval = nil
-    }
-
-    @objc func setStrictRoutingReminderInterval30s(_ sender: Any?) {
-        strictRoutingReminderStore.overriddenInterval = 30
-    }
-
     @objc func toggleIncludeAllNetworks(_ sender: Any?) {
         settings.includeAllNetworks.toggle()
 
@@ -621,15 +590,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
         updateRekeyValidityMenu()
         updateNetworkProtectionMenuItemsState()
         updateUpsellMenuToggleTitle()
-        updateStrictRoutingReminderMenuItemsState()
-    }
-
-    private func updateStrictRoutingReminderMenuItemsState() {
-        forceStrictRoutingFallbackMenuItem.state = strictRoutingReminderStore.forceFallbackReminder ? .on : .off
-
-        let isOverridden = strictRoutingReminderStore.overriddenInterval != nil
-        strictRoutingReminderIntervalDefaultMenuItem.state = isOverridden ? .off : .on
-        strictRoutingReminderInterval30sMenuItem.state = isOverridden ? .on : .off
     }
 
     private func updateEnvironmentMenu() {

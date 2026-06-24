@@ -49,6 +49,7 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: "dbpBackgroundAgent",
+                       session: "dbp-agent",
                        channel: channel,
                        defaultHeaders: [:],
                        defaults: UserDefaults.standard) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping (Bool, Error?) -> Void) in
@@ -59,7 +60,7 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
             let request = APIRequest(configuration: configuration)
 
             request.fetch { _, error in
-                onComplete(true, error)
+                onComplete(error == nil, error)
             }
         }
 
@@ -134,7 +135,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
             featureFlagger: dbpFeatureFlagger,
             wideEvent: wideEvent,
             vpnBypassService: VPNBypassService(),
-            applicationNameForUserAgent: WebViewUserAgentProvider.applicationNameForUserAgent
+            applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent }
         )
         manager?.agentFinishedLaunching()
 

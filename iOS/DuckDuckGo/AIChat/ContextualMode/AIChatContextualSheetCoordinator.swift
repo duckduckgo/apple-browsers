@@ -44,6 +44,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     /// Called when the user taps expand to open duck.ai in a new tab with the given chat URL.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL)
 
+    /// Called when the user taps "View all chats" to open the native chat history page.
+    func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator)
+
     /// Called when the user requests to open AI Chat settings.
     func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator)
 
@@ -427,6 +430,15 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url)
         viewController.dismiss(animated: true)
         sessionState.cancelManualAttach()
+    }
+
+    func aiChatContextualSheetViewControllerDidRequestViewAllChats(_ viewController: AIChatContextualSheetViewController) {
+        sessionState.cancelManualAttach()
+        // Dismiss the sheet first, then open the native history page so it isn't presented over a dismissing sheet.
+        viewController.dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinatorDidRequestViewAllChats(self)
+        }
     }
 
     func aiChatContextualSheetViewControllerDidRequestOpenSettings(_ viewController: AIChatContextualSheetViewController) {

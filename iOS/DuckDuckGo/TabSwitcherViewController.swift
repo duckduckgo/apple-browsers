@@ -155,6 +155,8 @@ class TabSwitcherViewController: UIViewController {
     let privacyStats: PrivacyStatsProviding
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
+    private let duckAIGridContentProvider: DuckAIGridContentProviding?
+    private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
     var tabsModel: TabsModelManaging {
         tabManager.tabsModel(for: selectedBrowsingMode)
     }
@@ -203,7 +205,9 @@ class TabSwitcherViewController: UIViewController {
                    keyValueStore: ThrowingKeyValueStoring,
                    tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
                    daxDialogsManager: DaxDialogsManaging,
-                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State) {
+                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State,
+                   duckAIGridContentProvider: DuckAIGridContentProviding?,
+                   duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -221,6 +225,8 @@ class TabSwitcherViewController: UIViewController {
         self.tabSwitcherSettings = tabSwitcherSettings
         self.daxDialogsManager = daxDialogsManager
         self.initialTrackerCountState = initialTrackerCountState
+        self.duckAIGridContentProvider = duckAIGridContentProvider
+        self.duckAIVoiceSessionTracker = duckAIVoiceSessionTracker
         let tabCountModel = TabCountModel()
         self.tabCountModel = tabCountModel
         self.pickerItems = BrowsingMode.allCases.map { $0.segmentedPickerItem(tabCountModel: tabCountModel) }
@@ -484,7 +490,9 @@ class TabSwitcherViewController: UIViewController {
                 previewsSource: previewsSource,
                 tabSwitcherSettings: tabSwitcherSettings,
                 trackerCountViewModel: nil,
-                isFireModeEnabled: isFireModeEnabled)
+                isFireModeEnabled: isFireModeEnabled,
+                duckAIGridContentProvider: duckAIGridContentProvider,
+                duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
             firePageController?.pageDelegate = self
             firePageController?.onNewFireTab = { [weak self] in
                 self?.addNewTab()
@@ -504,7 +512,9 @@ class TabSwitcherViewController: UIViewController {
             previewsSource: previewsSource,
             tabSwitcherSettings: tabSwitcherSettings,
             trackerCountViewModel: trackerCountViewModel,
-            isFireModeEnabled: isFireModeEnabled)
+            isFireModeEnabled: isFireModeEnabled,
+            duckAIGridContentProvider: duckAIGridContentProvider,
+            duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
         normalPageController.pageDelegate = self
         embedPageController(normalPageController, in: normalPageContainer)
 

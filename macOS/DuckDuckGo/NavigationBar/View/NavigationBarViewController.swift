@@ -689,7 +689,11 @@ final class NavigationBarViewController: NSViewController {
         if pinningManager.isPinned(.autofill) && !isInPopUpWindow {
             passwordManagementButton.isHidden = false
         } else {
-            passwordManagementButton.isShown = popovers.isPasswordManagementPopoverShown || isAutoFillAutosaveMessageVisible
+            // Keep the button visible while the onboarding popover is anchored to it, otherwise hiding the button
+            // collapses the stack view and the popover detaches to a stray position.
+            passwordManagementButton.isShown = popovers.isPasswordManagementPopoverShown
+                || isAutoFillAutosaveMessageVisible
+                || popovers.isAutofillOnboardingPopoverShown
         }
 
         popovers.passwordManagementDomain = nil
@@ -1954,7 +1958,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 
         let downloadsTitle = pinningManager.shortcutTitle(for: .downloads)
         menu.addItem(withTitle: downloadsTitle, action: #selector(toggleDownloadsPanelPinning), keyEquivalent: "J")
-            .withImage(DesignSystemImages.Glyphs.Size12.downloads)
+            .withImage(DesignSystemImages.Glyphs.Size12.download)
 
         let autofillTitle = pinningManager.shortcutTitle(for: .autofill)
         menu.addItem(withTitle: autofillTitle, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "A")

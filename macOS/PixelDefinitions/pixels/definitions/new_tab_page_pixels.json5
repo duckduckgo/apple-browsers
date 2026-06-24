@@ -103,11 +103,6 @@
         "suffixes": [],
         "parameters": [
             "pixelSource",
-            {
-                "key": "osMajorVersion",
-                "type": "string",
-                "description": "Operating system major version"
-            },
             "appVersion",
             {
                 "key": "loadingTime",
@@ -123,17 +118,66 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_duckplayer_dismissed": {
         "description": "Fires when a user dismisses the DuckPlayer Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_duckplayer_shown": {
         "description": "Fires when the DuckPlayer Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["new_tab"],
+        "suffixes": [],
+        "parameters": ["channel"]
+    },
+    "m_mac_new-tab-page_next-steps_youtubeAdBlocking_clicked": {
+        "description": "Fires when a user clicks on the Youtube Ad Blocking Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
+    },
+    "m_mac_new-tab-page_next-steps_youtubeAdBlocking_dismissed": {
+        "description": "Fires when a user dismisses the Youtube Ad Blocking Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
+    },
+    "m_mac_new-tab-page_next-steps_youtubeAdBlocking_shown": {
+        "description": "Fires when the Youtube Ad Blocking Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
         "owners": ["rachelmcr"],
         "triggers": ["new_tab"],
         "suffixes": [],
@@ -144,14 +188,28 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_emailProtection_dismissed": {
         "description": "Fires when a user dismisses the Email Protection Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_emailProtection_shown": {
         "description": "Fires when the Email Protection Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
@@ -165,14 +223,28 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_bringStuff_dismissed": {
         "description": "Fires when a user dismisses the Import Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_bringStuff_shown": {
         "description": "Fires when the Import Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
@@ -186,14 +258,28 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_addAppToDockMac_dismissed": {
         "description": "Fires when a user dismisses the Add to Dock Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_addAppToDockMac_shown": {
         "description": "Fires when the Add to Dock Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
@@ -207,14 +293,28 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_defaultApp_dismissed": {
         "description": "Fires when a user dismisses the Set as Default Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_defaultApp_shown": {
         "description": "Fires when the Set as Default Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
@@ -228,14 +328,28 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_subscription_dismissed": {
         "description": "Fires when a user dismisses the Subscription Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_subscription_shown": {
         "description": "Fires when the Subscription Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
@@ -249,14 +363,28 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_personalizeBrowser_dismissed": {
         "description": "Fires when a user dismisses the Personalize Browser Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_personalizeBrowser_shown": {
         "description": "Fires when the Personalize Browser Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
@@ -270,14 +398,28 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_sync_dismissed": {
         "description": "Fires when a user dismisses the Sync Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            "nextStepsDaysSinceInstall",
+            "ntpImpressionCount",
+            "nextStepsCardImpressionCount",
+            "nextStepsActiveUsageDays"
+        ]
     },
     "m_mac_new-tab-page_next-steps_sync_shown": {
         "description": "Fires when the Sync Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",

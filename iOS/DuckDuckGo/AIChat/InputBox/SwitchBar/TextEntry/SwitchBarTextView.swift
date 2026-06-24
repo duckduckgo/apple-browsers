@@ -34,13 +34,19 @@ final class SwitchBarTextView: UITextView {
         onTouchesBeganHandler?()
     }
 
-    /// Block FR when any ancestor is hidden — covers iOS's modal-dismiss FR restoration path.
+    override var canBecomeFirstResponder: Bool {
+        !hasHiddenAncestor && super.canBecomeFirstResponder
+    }
+
     override func becomeFirstResponder() -> Bool {
         guard !hasHiddenAncestor else { return false }
         return super.becomeFirstResponder()
     }
 
-    private var hasHiddenAncestor: Bool {
+}
+
+extension UIView {
+    var hasHiddenAncestor: Bool {
         var view: UIView? = self
         while let current = view {
             if current.isHidden { return true }
@@ -48,5 +54,4 @@ final class SwitchBarTextView: UITextView {
         }
         return false
     }
-
 }

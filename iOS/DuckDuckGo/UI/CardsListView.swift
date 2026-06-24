@@ -287,12 +287,12 @@ extension RemoteMessagingUI {
                     .font(.system(size: Metrics.Card.FeaturedTwoLines.buttonTitleSize))
                     .underline(true)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Color(designSystemColor: .accent))
+                    .foregroundStyle(Color(designSystemColor: .accentPrimary))
 
                 Image(uiImage: DesignSystemImages.Glyphs.Size16.chevronMediumRight)
             }
             .frame(height: Metrics.Card.FeaturedTwoLines.buttonHeight)
-            .foregroundStyle(Color.init(designSystemColor: .accent))
+            .foregroundStyle(Color.init(designSystemColor: .accentPrimary))
         }
     }
 
@@ -327,7 +327,7 @@ private extension RemoteMessagingUI {
                         onImageLoadSuccess?()
                     }
             } else {
-                Image(placeholderIcon)
+                Image(rebrandable: placeholderIcon)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: size.width, height: size.height)
@@ -386,7 +386,7 @@ private extension RemoteMessagingUI.CardsListView {
                     .scaledToFit()
                     .frame(maxHeight: Metrics.CardsList.headerImageMaxHeight)
             } else if let icon {
-                Image(icon)
+                Image(rebrandable: icon)
                     .scaledToFit()
                     .task {
                         await loadRemoteImage()

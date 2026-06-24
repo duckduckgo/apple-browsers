@@ -17,6 +17,7 @@
 //
 
 import DDGSync
+import DuckAiDataStore
 import Foundation
 import os.log
 import Persistence
@@ -29,6 +30,8 @@ public protocol AIChatSyncCleaning: AnyObject {
     func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async
     func recordChatDeletion(chatID: String) async
     func deleteIfNeeded() async
+    func recordChatUpdate(chatID: String) async
+    func updateIfNeeded() async
     func scheduleSync()
 }
 
@@ -38,6 +41,7 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
         public static let lastClearTimestamp = "com.duckduckgo.aichat.sync.lastClearTimestamp"
         public static let autoClearBackgroundTimestamp = "com.duckduckgo.aichat.sync.autoClearBackgroundTimestamp"
         public static let chatIDsToDelete = "com.duckduckgo.aichat.sync.chatIDsToDelete"
+        public static let chatIDsToUpdate = "com.duckduckgo.aichat.sync.chatIDsToUpdate"
     }
 
     private let sync: DDGSyncing
@@ -45,6 +49,7 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
     private let featureFlagProvider: AIChatFeatureFlagProviding
     private let dateProvider: () -> Date
     private let state: AIChatSyncState
+    private let storageHandler: DuckAiNativeStorageHandling?
     private let httpRequestErrorHandler: ((Error) -> Void)?
 
     private var canUseAIChatSyncDelete: Bool {
@@ -63,6 +68,13 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
         return isChatHistoryEnabled
     }
 
+    private var canUseAIChatSyncUpdate: Bool {
+        guard featureFlagProvider.isAIChatSyncEnabled() else { return false }
+        guard featureFlagProvider.supportsSyncChatsUpdate() else { return false }
+        guard sync.authState != .inactive else { return false }
+        return isChatHistoryEnabled
+    }
+
     private var isChatHistoryEnabled: Bool {
         sync.isAIChatHistoryEnabled
     }
@@ -70,11 +82,13 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
     public init(sync: DDGSyncing,
                 keyValueStore: ThrowingKeyValueStoring,
                 featureFlagProvider: AIChatFeatureFlagProviding,
+                storageHandler: DuckAiNativeStorageHandling? = nil,
                 dateProvider: @escaping () -> Date = Date.init,
                 httpRequestErrorHandler: ((Error) -> Void)? = nil) {
         self.sync = sync
         self.keyValueStore = keyValueStore
         self.featureFlagProvider = featureFlagProvider
+        self.storageHandler = storageHandler
         self.dateProvider = dateProvider
         self.state = AIChatSyncState(store: keyValueStore)
         self.httpRequestErrorHandler = httpRequestErrorHandler
@@ -176,6 +190,56 @@ public final class AIChatSyncCleaner: AIChatSyncCleaning {
             Logger.aiChat.debug("Failed to delete pending ai chats: \(error.localizedDescription)")
         }
     }
+
+    // MARK: - Updates
+
+    public func recordChatUpdate(chatID: String) async {
+        guard canUseAIChatSyncUpdate else { return }
+        await state.addChatToBeUpdated(chatID: chatID)
+        sync.scheduler.notifyDataChanged()
+    }
+
+    public func updateIfNeeded() async {
+        guard canUseAIChatSyncUpdate, let storageHandler else { return }
+        let pending = await state.readChatIDsToBeUpdated() ?? []
+        guard !pending.isEmpty else { return }
+
+        // Delete-wins: skip ids that are also queued for deletion.
+        let pendingDeletes = Set((await state.readChatIDsToBeDeleted()) ?? [])
+        let candidates = Array(Set(pending).subtracting(pendingDeletes))
+        guard !candidates.isEmpty else { return }
+
+        let updates = buildPendingUpdates(for: candidates)
+        await dropUnresolvablePendingUpdates(candidates: Set(candidates), updates: updates)
+
+        guard !updates.isEmpty else { return }
+
+        let resolvedIDs = Set(updates.map(\.chatId))
+        do {
+            try await sync.patchAIChats(updates: updates)
+            await state.removeChatsFromPendingUpdates(chatIDs: resolvedIDs)
+        } catch {
+            httpRequestErrorHandler?(error)
+            Logger.aiChat.debug("Failed to patch pending ai chats: \(error.localizedDescription)")
+        }
+    }
+
+    private func buildPendingUpdates(for candidates: [String]) -> [AIChatUpdate] {
+        guard let storageHandler else { return [] }
+        return candidates.compactMap { chatId in
+            guard let record = try? storageHandler.getChat(chatId: chatId) else { return nil }
+            return AIChatUpdate(record: record)
+        }
+    }
+
+    private func dropUnresolvablePendingUpdates(candidates: Set<String>, updates: [AIChatUpdate]) async {
+        // Ids that no longer resolve in storage (e.g. chat deleted locally) can never be synced —
+        // drop them now so they don't linger in the queue and get retried on every cycle.
+        let resolvedIDs = Set(updates.map(\.chatId))
+        let unresolvableIDs = candidates.subtracting(resolvedIDs)
+        guard !unresolvableIDs.isEmpty else { return }
+        await state.removeChatsFromPendingUpdates(chatIDs: unresolvableIDs)
+    }
 }
 
 private actor AIChatSyncState {
@@ -231,5 +295,39 @@ private actor AIChatSyncState {
         } else {
             try? store.set(Array(currentIDs), forKey: AIChatSyncCleaner.Keys.chatIDsToDelete)
         }
+    }
+
+    // MARK: - Update queue
+
+    func addChatToBeUpdated(chatID: String) {
+        var current: Set<String> = Set((try? store.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]) ?? [])
+        current.insert(chatID)
+        try? store.set(Array(current), forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
+    }
+
+    func readChatIDsToBeUpdated() -> [String]? {
+        try? store.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]
+    }
+
+    func removeChatsFromPendingUpdates(chatIDs: Set<String>) {
+        var current = Set((try? store.object(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate) as? [String]) ?? [])
+        current.subtract(chatIDs)
+        if current.isEmpty {
+            try? store.removeObject(forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
+        } else {
+            try? store.set(Array(current), forKey: AIChatSyncCleaner.Keys.chatIDsToUpdate)
+        }
+    }
+}
+
+extension AIChatUpdate {
+
+    /// Builds an update from a stored chat record, reading the `pinned` flag from its raw JSON blob.
+    /// Returns `nil` when the blob can't be parsed as a JSON object.
+    init?(record: DuckAiChatRecord) {
+        guard let json = try? JSONSerialization.jsonObject(with: record.data) as? [String: Any] else {
+            return nil
+        }
+        self.init(chatId: record.chatId, pinned: (json["pinned"] as? Bool) ?? false)
     }
 }

@@ -69,6 +69,28 @@ extension Preferences {
                             spacing: 12
                         )
                     }
+
+                    if model.isStrictRoutingAvailable {
+                        SpacedCheckbox {
+                            ToggleMenuItemWithDescription(
+                                UserText.vpnStrictRoutingSettingTitle,
+                                UserText.vpnStrictRoutingSettingDescription,
+                                isOn: $model.enforceRoutes,
+                                spacing: 12
+                            )
+                        }
+                    }
+
+                    if model.isExcludeCGNATAvailable {
+                        SpacedCheckbox {
+                            ToggleMenuItemWithDescription(
+                                UserText.vpnExcludeCGNATSettingTitle,
+                                UserText.vpnExcludeCGNATSettingDescription,
+                                isOn: $model.excludeCGNAT,
+                                spacing: 12
+                            )
+                        }
+                    }
                 }
                 .padding(.bottom, 12)
 
@@ -182,6 +204,22 @@ extension Preferences {
                                              isSheetPresented: $showsCustomDNSServerPageSheet)
                 }
 
+                // SECTION: Diagnostics
+
+                if model.showsCopyDiagnosticsButton {
+                    PreferencePaneSection {
+                        Button(copyDiagnosticsButtonTitle) {
+                            Task { @MainActor in
+                                await model.copySupportInfo()
+                            }
+                        }
+                        .disabled(model.copySupportInfoState != .idle)
+
+                        TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
+                    }
+                    .padding(.bottom, 12)
+                }
+
                 // SECTION: Uninstall
 
                 if model.showUninstallVPN {
@@ -193,6 +231,20 @@ extension Preferences {
                         }
                     }
                 }
+            }
+            .onAppear {
+                model.onViewAppeared()
+            }
+        }
+
+        private var copyDiagnosticsButtonTitle: String {
+            switch model.copySupportInfoState {
+            case .idle, .copying:
+                return UserText.vpnSettingsCopyDiagnosticsButtonTitle
+            case .copied:
+                return UserText.vpnSettingsCopyDiagnosticsCopiedButtonTitle
+            case .failed:
+                return UserText.vpnSettingsCopyDiagnosticsFailedButtonTitle
             }
         }
 

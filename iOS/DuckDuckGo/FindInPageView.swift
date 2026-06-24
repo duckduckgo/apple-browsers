@@ -144,7 +144,7 @@ extension FindInPageView {
         counterLabel.textColor = theme.barTintColor
         searchBackground.backgroundColor = theme.searchBarBackgroundColor
         inputText.textColor = theme.searchBarTextColor
-        inputText.tintColor = UIColor(designSystemColor: .accent)
+        inputText.tintColor = UIColor(designSystemColor: .accentPrimary)
         inputText.keyboardAppearance = theme.keyboardAppearance
         searchLoupe.tintColor = theme.barTintColor.withAlphaComponent(0.5)
         doneButton.setTitleColor(theme.barTintColor, for: .normal)

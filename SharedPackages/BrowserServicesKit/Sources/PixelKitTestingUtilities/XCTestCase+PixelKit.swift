@@ -193,6 +193,8 @@ public extension XCTestCase {
             expectedPixelNames.append(originalName)
         case .sample(let percentage):
             expectedPixelNames.append(originalName.appending("_sample\(percentage)"))
+        case .debounce:
+            expectedPixelNames.append(originalName)
         }
         return expectedPixelNames
     }

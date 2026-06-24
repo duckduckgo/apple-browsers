@@ -45,7 +45,7 @@ public protocol AdBlockingAvailabilityProviding {
     /// Whether the `adBlockingExtensionEnabledByDefault` rollout has activated the new
     /// defaults regime for this user. Temporary helper for the rollout window —
     /// consumers compose this into their nil-fallbacks to derive the correct
-    /// `youTubeAdBlockingEnabled` / `duckPlayerMode` defaults.
+    /// `youTubeAdBlockingEnabled` default.
     var areAdBlockingDefaultsActive: Bool { get }
 
     /// Default value for `youTubeAdBlockingEnabled` when the user has no stored choice.

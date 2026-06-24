@@ -591,15 +591,18 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                          withAdditionalParameters: parameters)
         }
 
-        let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
-                                            authService: authService,
-                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+        let isAuthV2WideEventEnabled = {
 #if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
+            return true
 #else
             return authEnvironment == .production
 #endif
-        }))
+        }
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
+                                                                                    isFeatureEnabled: isAuthV2WideEventEnabled)
+        let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                            authService: authService,
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
 
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                              baseURL: subscriptionEnvironment.serviceEnvironment.url)
@@ -612,13 +615,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                              pixelHandler: pixelHandler,
                                                              initForPurchase: false,
                                                              wideEvent: wideEvent,
-                                                             isAuthV2WideEventEnabled: {
-#if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
-#else
-            return subscriptionEnvironment.serviceEnvironment == .production
-#endif
-        })
+                                                             isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
+                                                             authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
         entitlementsCheck = {
             Logger.networkProtection.log("Subscription Entitlements check...")
             do {
@@ -729,6 +727,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
             appVersion: AppVersion.shared.versionNumber,
             source: (UIDevice.current.userInterfaceIdiom == .phone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS).rawValue,
+            session: "ios-vpn-tunnel",
             defaultHeaders: [:],
             defaults: pixelKitDefaults
         ) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in

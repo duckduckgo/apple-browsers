@@ -151,6 +151,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarAIVoiceChatActive = newValue }
     }
 
+    var isSubmitBlockedByRecoveryCard: Bool {
+        get { inputBarView.isToolbarSubmitBlockedByRecoveryCard }
+        set { inputBarView.isToolbarSubmitBlockedByRecoveryCard = newValue }
+    }
+
     var isGenerating: Bool = false {
         didSet {
             guard isGenerating != oldValue else { return }
@@ -167,6 +172,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     var modelPickerMenu: UIMenu? {
         get { inputBarView.modelPickerMenu }
         set { inputBarView.modelPickerMenu = newValue }
+    }
+
+    @discardableResult
+    func presentModelPickerMenu() -> Bool {
+        inputBarView.presentModelPickerMenu()
     }
 
     var toolsMenu: UIMenu? {
@@ -274,6 +284,7 @@ final class UnifiedToggleInputViewController: UIViewController {
         isTopBarPosition = config.isTopBarPosition
         // Set before `applyCardLayout` reads the flag.
         inputBarView.isInlineDismissHidden = config.isAITab
+        inputBarView.isAITab = config.isAITab
         setInputMode(config.inputMode, animated: animated)
         setInactiveCardAppearance(config.inactiveAppearance)
         applyCardLayout(config.cardLayout, animated: animated)

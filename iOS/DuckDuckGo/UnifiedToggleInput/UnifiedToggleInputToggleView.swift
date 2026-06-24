@@ -82,11 +82,15 @@ final class UnifiedToggleInputToggleView: UIView {
         return view
     }()
 
-    private lazy var searchButton: UIButton = makeSegmentButton(
-        icon: DesignSystemImages.Glyphs.Size16.findSearch,
-        title: UserText.searchInputToggleSearchButtonTitle,
-        tag: 0
-    )
+    private lazy var searchButton: UIButton = {
+        let button = makeSegmentButton(
+            icon: DesignSystemImages.Glyphs.Size16.findSearch,
+            title: UserText.searchInputToggleSearchButtonTitle,
+            tag: 0
+        )
+        button.accessibilityIdentifier = "AddressBar.Button.Search"
+        return button
+    }()
 
     private lazy var duckAIButton: UIButton = {
         let button = makeSegmentButton(

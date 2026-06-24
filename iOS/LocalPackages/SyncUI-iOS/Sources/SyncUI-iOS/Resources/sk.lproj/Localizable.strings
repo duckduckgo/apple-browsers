@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Získajte DuckDuckGo na iných zariadeniach";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Vaše údaje sú synchronizované!";
+"device.synced.sheet.title" = "Zariadenie bolo zosynchronizované!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Hotovo";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Nastavenie synchronizácie a zálohovania";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Pripravuje sa na synchronizáciu";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Obnovenie synchronizovaných údajov";
@@ -388,8 +391,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Pripája sa...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Udržuj DuckDuckGo otvorený na oboch zariadeniach";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Maj otvorenú časť „Sync & Backup“ na oboch zariadeniach.";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Po vložení kódu sa vráť späť k tomuto zariadeniu.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Vlož kód na svojom druhom zariadení.";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Manuálne zadajte kód";
@@ -419,7 +428,7 @@
 "sync.simplified.scan-or-view-code.title" = "Synchronizuj svoje zariadenia";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Naskenuj alebo vlož tento kód v svojom druhom zariadení";
+"sync.simplified.scan-or-view-code.view.instructions" = "Naskenuj alebo vlož tento kód na druhom zariadení.";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Synchronizácia a zálohovanie";

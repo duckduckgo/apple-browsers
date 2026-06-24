@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Iegūt DuckDuckGo citās ierīcēs";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Tavi dati ir sinhronizēti!";
+"device.synced.sheet.title" = "Ierīce sinhronizēta!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Gatavs";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Sinhronizācijas un dublēšanas sagatavošana";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Sagatavojas sinhronizācijai";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Sinhronizēto datu atgūšana";
@@ -388,8 +391,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Savieno...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Atstāj DuckDuckGo atvērtu abās ierīcēs";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Atstāj Sync & Backup” atvērtu abās ierīcēs";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Pēc koda ielīmēšanas atgriezies pie šīs ierīces.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Ielīmē kodu otrā ierīcē";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Ievadīt kodu manuāli";
@@ -419,7 +428,7 @@
 "sync.simplified.scan-or-view-code.title" = "Sinhronizē savas ierīces";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Noskenē vai ielīmē šo kodu savā otrā ierīcē";
+"sync.simplified.scan-or-view-code.view.instructions" = "Noskenē vai ielīmē šo kodu otrā";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sinhronizācija un dublēšana";

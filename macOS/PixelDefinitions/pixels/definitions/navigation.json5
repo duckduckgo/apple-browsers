@@ -197,5 +197,12 @@
             },
             "channel"
         ]
+    },
+    "m_mac_navigation_search": {
+        "description": "Fires when the user performs a search via the DuckDuckGo SERP.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

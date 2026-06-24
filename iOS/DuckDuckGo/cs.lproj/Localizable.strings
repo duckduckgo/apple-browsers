@@ -25,6 +25,15 @@
 /* No comment provided by engineer. */
 "%@s" = "%@s";
 
+/* Accessibility label for the text half of the iPad Duck.ai chrome chip; tapping opens a new Duck.ai tab. The visible label reads \"Duck.ai\". */
+"accessibility.label.aiChat.openDuckAI" = "Spustit Duck.ai";
+
+/* Accessibility value when the Duck.ai contextual sheet is closed. */
+"accessibility.value.aiChat.contextualSheet.closed" = "Zavřeno";
+
+/* Accessibility value when the Duck.ai contextual sheet is open. */
+"accessibility.value.aiChat.contextualSheet.open" = "Otevřít";
+
 /* No comment provided by engineer. */
 "Account" = "account";
 
@@ -55,14 +64,32 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Přidat";
 
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
+"action.title.aiChat.hideContextualSheetButton" = "Zkratka pro skrytí spodního listu";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the Duck.ai (open) button half. */
+"action.title.aiChat.hideDuckAIButton" = "Skrýt zkratku Duck.ai";
+
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Chaty Duck.ai";
 
 /* Start new AI Chat action in the menu list */
 "action.title.aiChat.new" = "Nový chat";
 
+/* Title of the long-press menu item on the iPad Duck.ai chrome chip that deep-links to Settings → AI Features. */
+"action.title.aiChat.openSettings" = "Otevřít nastavení AI";
+
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Nastavení Duck.ai";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the bottom-sheet button half. */
+"action.title.aiChat.showContextualSheetButton" = "Zkratka pro zobrazení spodního listu";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the Duck.ai (open) button half. */
+"action.title.aiChat.showDuckAIButton" = "Zobrazit zkratku Duck.ai";
+
+/* Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. */
+"action.title.aiChat.toggleContextualSheet" = "Přepnout list Duck.ai";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Hesla";
@@ -220,6 +247,15 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Funkce AI";
 
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Chaty";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Historie chatu";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Nastavení chatu";
+
 /* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
 "aichat.attachment.file.count.limit" = "Počet souborů, které můžeš v jedné konverzaci přiložit: %d";
 
@@ -268,6 +304,21 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Tento typ souboru nepodporujeme. Podporované přílohy: %@.";
 
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Nový";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Nová karta Fire";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Nové vyhledávání";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Nová karta";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Nový hlasový chat";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Pro analytické úlohy";
 
@@ -307,6 +358,9 @@
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Získej přístup ke svým chatům napříč všemi zařízeními pomocí funkce Sync & Backup.";
 
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Nastavení tónu, délky a chování";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Přizpůsobit odpovědi";
 
@@ -325,6 +379,15 @@
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Existující záložky nebudou duplikovány.";
 
+/* Button title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-button" = "Mám to";
+
+/* Description for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-description" = "S tímto účtem jsi už spárován na obou zařízeních.";
+
+/* Title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-title" = "Již spárováno";
+
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Některé záložky jsou nesprávně naformátované nebo příliš dlouhé, takže jsme je nemohli synchronizovat.";
 
@@ -333,6 +396,21 @@
 
 /* Title for alert shown when sync bookmarks paused for too many items */
 "alert.sync-bookmarks-paused-title" = "Synchronizace záložek je pozastavená";
+
+/* Button title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-button" = "Mám to";
+
+/* Description for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-description" = "Zkus to znovu.";
+
+/* Title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-title" = "Synchronizace byla zrušena na tvém druhém zařízení.";
+
+/* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-description" = "V prohlížeči přejdi na duck.ai, přejdi do Nastavení a poté v části „Sync & Backup“ vyber „Zapnout“ a poté „Synchronizovat s jiným zařízením“.";
+
+/* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-title" = "Naskenuj tento kód v nastavení Duck.ai.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Některá hesla jsou nesprávně naformátovaná nebo příliš dlouhá, takže jsme je nemohli synchronizovat.";
@@ -357,6 +435,9 @@
 
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Nastavení synchronizace";
+
+/* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
+"alert.sync-from-another-connected-device-description" = "Synchronizuj toto zařízení z již připojeného prohlížeče DuckDuckGo na jiném zařízení.";
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synchronizace je pozastavená. Pokud chceš toto zařízení dál synchronizovat, znovu se připoj pomocí jiného zařízení nebo kódu pro obnovení.";
@@ -390,6 +471,12 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Funkce Sync & Backup je dočasně nedostupná.";
+
+/* Description for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-description" = "Tento kód není podporován v aktuální verzi aplikace.";
+
+/* Title for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-title" = "Aktualizuj prohlížeč DuckDuckGo a zkus to znovu.";
 
 /* Title of the warning message that tells the user that there was an error with the sync feature. */
 "alert.sync.warning.sync-error" = "Chyba synchronizace";
@@ -1756,8 +1843,14 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Menu prohlížeče";
 
+/* Subtitle for the Tab Bar toggle row in Manage Duck.ai Shortcuts settings */
+"duckai.settings.enable.tab-bar-subtitle" = "V závislosti na velikosti okna se zobrazí na panel karet prohlížeče nebo v adresním řádku.";
+
+/* Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar) */
+"duckai.settings.enable.tab-bar-toggle" = "Panel karet";
+
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Obrazovka s kartami";
+"duckai.settings.enable.tab-switcher-toggle" = "Obrazovka Správce karet";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Hlasové vyhledávání";
@@ -2602,11 +2695,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Načíst znovu";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Obnovit zoom";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Zvolit";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Zobrazit všechny karty";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Přiblížit";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Oddálit";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Naposledy zpracováno: %@";
@@ -2899,6 +3001,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Objem dat";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Doporučujeme vypnout, aby veškerý tvůj provoz procházel přes VPN. Pokud máš problémy s funkcemi, jako je volání přes Wi-Fi, zasílání zpráv nebo hlasová schránka, zkus toto nastavení zapnout.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Vyloučit služby operátorů";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Místní provoz může obejít síť VPN a připojit se k zařízením v místní síti, třeba k tiskárně.";
 
@@ -2947,6 +3055,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo směruje dotazy DNS přes naše DNS servery, takže tvůj poskytovatel internetu nevidí, jaké webové stránky navštěvuješ.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Kopírování diagnostiky VPN";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Při kontaktování podpory přilož kopii těchto anonymizovaných diagnostických údajů VPN, které nám pomohou vyřešit problém s tvým připojením.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Zkopírováno do schránky";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Nepodařilo se zkopírovat do schránky";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "Časté dotazy a podpora";
 
@@ -2958,6 +3078,12 @@
 
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Zkratky";
+
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Doporučeno v sítích, kterým nedůvěřujete, jako jsou veřejné wifi v hotelech, barech atd. Pokud máte problémy s funkcemi (jako je CarPlay, AirDrop atd.) nebo s připojením k jiným zařízením, zkuste tuto funkci vypnout. [Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Přísné směrování";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potvrdit";
@@ -3098,7 +3224,7 @@
 "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "pokročilou soukromou AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "volitelného předplatného";
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "volitelné předplatné";
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
 "onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
@@ -3672,6 +3798,9 @@
 
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Vyzkoušej novou možnost přepínání mezi vyhledáváním a Duck.ai v adresním řádku.";
+
+/* Settings row that opens Duck.ai in a new tab */
+"settings.aichat.duckai.settings" = "Nastavení Duck.ai";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Spravovat zkratky Duck.ai";
@@ -4507,6 +4636,21 @@
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Smazat data ze serveru?";
 
+/* Caption for a button to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.action" = "Synchronizovat";
+
+/* Message for the dialog to confirm sync setup with another DuckDuckGo device */
+"sync.pairing-v2.confirmation.ddg.message" = "\"%@\" bude mít přístup k tvým synchronizovaným heslům z DuckDuckGo, údajům pro automatické vyplňování a chatům v Duck.ai.";
+
+/* Message for the dialog to confirm sync setup with a third-party device */
+"sync.pairing-v2.confirmation.third-party.message" = "„%@“ bude mít přístup k tvým synchronizovaným chatům Duck.ai.";
+
+/* Title of the dialog to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.title" = "Synchronizovat nové zařízení?";
+
+/* Fallback device name for confirmation dialogs */
+"sync.pairing-v2.unknown-peer-name" = "druhé zařízení";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Není potřeba žádný účet. Šifrování end-to-end znamená, že tvoje záložky neuvidí nikdo jiný než ty – dokonce ani my.";
 
@@ -4569,9 +4713,6 @@
 
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Smazat zařízení?";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kód je zkopírovaný";
 
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Zařízení se úspěšně synchronizovalo.";
@@ -4728,6 +4869,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kontakt není možné přidat. Zkuste raději otevřít soubor s kontakty ze stažených souborů.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontakt byl přidán";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Verze: %@";
@@ -5128,26 +5275,85 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Co chceš importovat?";
 
-/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
-"aichat.appMenu.chats" = "Chaty";
 
-/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
-"aichat.appMenu.header.chatHistory" = "Historie chatu";
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Žádné shody pro \"%@\"";
 
-/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
-"aichat.appMenu.header.chatSettings" = "Nastavení chatu";
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Použij adresní řádek k vyhledávání a návštěvě webů nebo přepni na Duck.ai pro soukromý chat s umělou inteligencí.\n\nDuck.ai můžeš používat odkudkoli, kde vidíš ikonu chatu [[chat_icon]]";
 
-/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
-"aichat.header.plusMenu.a11y" = "Nový";
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Soukromé AI chaty, které můžeš kdykoli smazat pomocí tlačítka Fire Button. Zkus ji! 🔥";
 
-/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
-"aichat.header.plusMenu.newFireTab" = "Nová karta Fire";
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "To je Duck.ai!";
 
-/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
-"aichat.header.plusMenu.newSearch" = "Nové vyhledávání";
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Zeptej se soukromě na cokoli";
 
-/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
-"aichat.header.plusMenu.newTab" = "Nová karta";
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Soukromé vyhledávání";
 
-/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
-"aichat.header.plusMenu.newVoiceChat" = "Nový hlasový chat";
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Vysvětli mi akciový trh, jako kdyby mi bylo 10";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Naplánuj mi perfektní den v Londýně";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Řekni mi 10 fascinujících faktů z vědy, přírody a historie.";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Tak co, jdeš na to?\nZkus vyhledávání nebo AI chat!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Zeptej se AI";
+
+/* Toast message shown after copying sync code to clipboard */
+"sync.simplified.code.copied.toast" = "Kód je zkopírovaný";
+
+
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Chaty";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Žádné nedávné konverzace";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Spustit Duck.ai";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Hledat";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Připnuté";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Nedávné";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Nenalezeny žádné shody";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Nepodařilo se načíst chaty";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Při načítání vašich chatů na Duck.ai se něco pokazilo. Zkus to znovu později.";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Smazat chat";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Stáhnout chat";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Připnout chat";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Odepnout chat";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Smazat chaty";
+
+/* Do not translate - stringsdict entry */
+"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";

@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Scarica DuckDuckGo sugli altri dispositivi";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "I tuoi dati sono sincronizzati!";
+"device.synced.sheet.title" = "Dispositivo sincronizzato!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Fatto";
@@ -186,6 +186,9 @@
 
 /* Preparing To Sync Sheet - Title */
 "preparing.to.sync.sheet.title" = "Configurazione di Sincronizzazione e backup";
+
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Preparazione alla sincronizzazione";
 
 /* Link label for recovering synced data */
 "recover.synced.data.link" = "Recupera i dati sincronizzati";
@@ -388,8 +391,14 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Connessione in corso...";
 
-/* Instruction shown during sync setup flow */
-"sync.simplified.scan-or-view-code.connecting.title" = "Tieni DuckDuckGo aperto su entrambi i dispositivi";
+/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Mantieni aperto “Sync & Backup” su entrambi i dispositivi";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Torna su questo dispositivo dopo aver incollato il codice.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Incolla il codice sull'altro dispositivo";
 
 /* Button to navigate to manual sync code entry */
 "sync.simplified.scan-or-view-code.manually.enter.code" = "Inserisci manualmente il codice";
@@ -419,7 +428,7 @@
 "sync.simplified.scan-or-view-code.title" = "Sincronizza i tuoi dispositivi";
 
 /* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
-"sync.simplified.scan-or-view-code.view.instructions" = "Scansiona o incolla questo codice su un altro dispositivo";
+"sync.simplified.scan-or-view-code.view.instructions" = "Scansiona o incolla questo codice sul tuo altro dispositivo";
 
 /* Sync & Backup enabled / disabled toggle title */
 "sync.simplified.toggle.title" = "Sincronizzazione e backup";

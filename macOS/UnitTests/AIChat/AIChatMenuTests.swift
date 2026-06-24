@@ -393,6 +393,10 @@ private final class StubAIChatSyncCleaning: AIChatSyncCleaning {
 
     func deleteIfNeeded() async {}
 
+    func recordChatUpdate(chatID: String) async {}
+
+    func updateIfNeeded() async {}
+
     func scheduleSync() {}
 }
 

@@ -157,6 +157,10 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         autofillPopoverPresenter.popoverIsShown
     }
 
+    var isAutofillOnboardingPopoverShown: Bool {
+        autofillOnboardingPopover?.isShown ?? false
+    }
+
     var isSaveCredentialsPopoverShown: Bool {
         saveCredentialsPopover?.isShown ?? false
     }

@@ -769,6 +769,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     var displayMode: AIChatDisplayMode?
     var isFireModeProvider: (() -> Bool)?
+    var focusChatInputHandler: (@MainActor () -> Void)?
 
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?) {}
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {}
@@ -806,6 +807,10 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
 }
 // swiftlint:enable inclusive_language
 

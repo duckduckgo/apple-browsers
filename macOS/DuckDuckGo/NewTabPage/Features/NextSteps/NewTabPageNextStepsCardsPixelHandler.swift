@@ -18,6 +18,7 @@
 
 import NewTabPage
 import PixelKit
+import Foundation
 
 protocol NewTabPageNextStepsCardsPixelHandling {
 
@@ -50,9 +51,21 @@ protocol NewTabPageNextStepsCardsPixelHandling {
 
 final class NewTabPageNextStepsCardsPixelHandler: NewTabPageNextStepsCardsPixelHandling {
     private let pixelHandler: (PixelKitEvent, PixelKit.Frequency, Bool) -> Void
+    private let persistor: NewTabPageNextStepsCardsPersisting
+    private let appearancePreferences: AppearancePreferences
+    private let daysSinceInstallProvider: () -> Int?
 
-    init(pixelHandler: @escaping (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { PixelKit.fire($0, frequency: $1, includeAppVersionParameter: $2) }) {
+    init(persistor: NewTabPageNextStepsCardsPersisting,
+         appearancePreferences: AppearancePreferences,
+         installDateProvider: @escaping () -> Date?,
+         pixelHandler: @escaping (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { PixelKit.fire($0, frequency: $1, includeAppVersionParameter: $2) }) {
         self.pixelHandler = pixelHandler
+        self.persistor = persistor
+        self.appearancePreferences = appearancePreferences
+        self.daysSinceInstallProvider = {
+            guard let installDate = installDateProvider() else { return nil }
+            return Calendar.current.numberOfDaysBetween(installDate, and: Date())
+        }
     }
 
     func fireAddToDockPresentedPixelIfNeeded(_ cards: [NewTabPageDataModel.CardID]) {
@@ -70,11 +83,21 @@ final class NewTabPageNextStepsCardsPixelHandler: NewTabPageNextStepsCardsPixelH
     }
 
     func fireNextStepsCardClickedPixel(_ card: NewTabPage.NewTabPageDataModel.CardID) {
-        pixelHandler(NewTabPagePixel.nextStepsCardClicked(card.rawValue), .standard, true)
+        let clickedEvent = NewTabPagePixel.nextStepsCardClicked(card.rawValue,
+                                                                cardImpressionCount: persistor.timesShown(for: card),
+                                                                ntpImpressionCount: persistor.ntpImpressionCount,
+                                                                daysSinceInstall: daysSinceInstallProvider(),
+                                                                activeUsageDays: appearancePreferences.nextStepsCardsDemonstrationDays)
+        pixelHandler(clickedEvent, .standard, true)
     }
 
     func fireNextStepsCardDismissedPixel(_ card: NewTabPage.NewTabPageDataModel.CardID) {
-        pixelHandler(NewTabPagePixel.nextStepsCardDismissed(card.rawValue), .standard, true)
+        let dismissedEvent = NewTabPagePixel.nextStepsCardDismissed(card.rawValue,
+                                                                    cardImpressionCount: persistor.timesShown(for: card),
+                                                                    ntpImpressionCount: persistor.ntpImpressionCount,
+                                                                    daysSinceInstall: daysSinceInstallProvider(),
+                                                                    activeUsageDays: appearancePreferences.nextStepsCardsDemonstrationDays)
+        pixelHandler(dismissedEvent, .standard, true)
     }
 
     func fireAddedToDockPixel() {

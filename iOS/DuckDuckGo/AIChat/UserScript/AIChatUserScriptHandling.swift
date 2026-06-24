@@ -147,6 +147,7 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
 protocol AIChatUserScriptHandling: AnyObject {
     var displayMode: AIChatDisplayMode? { get set }
     var isFireModeProvider: (() -> Bool)? { get set }
+    var focusChatInputHandler: (@MainActor () -> Void)? { get set }
     func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
@@ -176,6 +177,10 @@ protocol AIChatUserScriptHandling: AnyObject {
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
+    func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable?
+    func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -216,6 +221,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Provider that returns whether the current context is fire mode.
     /// Each owner (tab, contextual sheet, modal) is responsible for setting this.
     var isFireModeProvider: (() -> Bool)?
+
+    /// Called when the FE requests focus on the native address bar via `focusChatInput`.
+    var focusChatInputHandler: (@MainActor () -> Void)?
 
     /// Closure that provides page context on getAIChatPageContext requests.
     /// Parameter is the request reason (e.g., `.userAction` for manual attach).
@@ -573,6 +581,35 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
         NotificationCenter.default.post(name: .aiChatNewImageGenerationChatStarted, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Model Picker
+
+    @MainActor
+    func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? {
+        NotificationCenter.default.post(name: .aiChatShowModelPicker, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Recovery-Card Submit Block
+
+    @MainActor
+    func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
+        inputBoxHandler?.isSubmitBlockedByRecoveryCard = true
+        return nil
+    }
+
+    @MainActor
+    func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
+        inputBoxHandler?.isSubmitBlockedByRecoveryCard = false
+        return nil
+    }
+
+    @MainActor
+    func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard unifiedToggleInputFeature.isAvailable else { return nil }
+        focusChatInputHandler?()
         return nil
     }
 

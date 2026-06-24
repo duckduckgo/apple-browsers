@@ -59,9 +59,32 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             return super.keyCommands
         }
 
+        var commands = super.keyCommands ?? []
         let shiftEnter = UIKeyCommand(action: #selector(handleShiftEnter), input: "\r", modifierFlags: .shift)
         shiftEnter.wantsPriorityOverSystemBehavior = true
-        return (super.keyCommands ?? []) + [shiftEnter]
+        commands.append(shiftEnter)
+
+        // The text view is multi-line, so only claim the arrows when navigating the list or when the caret has no
+        // line to move into; otherwise they fall through to normal caret movement.
+        if omniBarView.aiChatTextView.isFirstResponder {
+            let hasHighlight = omniDelegate?.hasAIChatSuggestionsHighlight() ?? false
+            let canEnterList = omniDelegate?.isAIChatSuggestionsNavigationAvailable() ?? false
+            if hasHighlight || (canEnterList && omniBarView.aiChatTextView.isCaretOnLastLine) {
+                commands.append(.prioritizedArrow(input: UIKeyCommand.inputDownArrow, action: #selector(handleAIChatArrowDown)))
+            }
+            if hasHighlight {
+                commands.append(.prioritizedArrow(input: UIKeyCommand.inputUpArrow, action: #selector(handleAIChatArrowUp)))
+            }
+        }
+        return commands
+    }
+
+    @objc private func handleAIChatArrowDown() {
+        omniDelegate?.onAIChatSuggestionsMoveSelectionDown()
+    }
+
+    @objc private func handleAIChatArrowUp() {
+        omniDelegate?.onAIChatSuggestionsMoveSelectionUp()
     }
 
     @objc private func handleShiftEnter() {
@@ -72,12 +95,24 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         }
     }
 
+    @objc private func aiChatTextViewTapped() {
+        omniDelegate?.onAIChatSuggestionsClearHighlight()
+    }
+
     // MARK: - Initialization
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         omniBarView.duckAITextViewDelegate = self
+
+        // A tap in the text view dismisses any keyboard suggestion highlight, even when the caret does not move
+        // (so `textViewDidChangeSelection` would not fire) such as tapping an empty field.
+        let highlightDismissTap = UITapGestureRecognizer(target: self, action: #selector(aiChatTextViewTapped))
+        highlightDismissTap.cancelsTouchesInView = false
+        highlightDismissTap.delegate = self
+        omniBarView.aiChatTextView.addGestureRecognizer(highlightDismissTap)
+
         omniBarView.isAIVoiceChatEnabled = DuckAIVoiceShortcutFeature(featureFlagger: dependencies.featureFlagger).isAvailable
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             self?.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
@@ -466,8 +501,9 @@ extension DefaultOmniBarViewController {
         }
 
         // When switching to duck.ai without editing the auto-selected URL, clear it so
-        // the expanded view starts empty.
+        // the expanded view starts empty — but remember it so search restores it on the way back.
         if mode == .aiChat && shouldClearTextWhenSwitchingToDuckAI() {
+            modeToggleTextModel.rememberSearchTextToRestore(omniBarView.textField.text ?? "")
             omniBarView.textField.text = ""
         }
 
@@ -477,10 +513,17 @@ extension DefaultOmniBarViewController {
         if shouldTransferKeyboard {
             modeToggleTextModel.beginTransition()
 
+            // The collapse carries the duck.ai field's text into the search field — seed it with the
+            // destination text so the search field shows it straight away, never the placeholder.
+            omniBarView.aiChatTextView.text = transition.text
+
             omniBarView.onCollapseAnimationCompleted = { [weak self] in
                 guard let self else { return }
                 self.beginEditing(animated: false, forTextEntryMode: .search)
                 self.updateQuery(transition.text)
+                if transition.selectAllText {
+                    self.omniBarView.textField?.selectAll(nil)
+                }
                 self.modeToggleTextModel.endTransition()
             }
         }
@@ -509,16 +552,9 @@ extension DefaultOmniBarViewController {
             return false
         }
 
-        // If we're not editing, this is page URL display text.
-        guard textField.isEditing else { return true }
-
-        // If full URL text remains selected, user hasn't interacted with it yet.
-        guard let selectedTextRange = textField.selectedTextRange,
-              let selectedText = textField.text(in: selectedTextRange) else {
-            return false
-        }
-
-        return selectedText == text
+        // Clear the auto-displayed page URL, but never once the user has typed — a tap doesn't count as
+        // editing, and typing-then-deleting back to the URL still counts (the flag is sticky).
+        return !userDidEditText
     }
 
 }
@@ -584,6 +620,14 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         }
     }
 
+    func onViewAllChatsSelected() {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
+            self.editingStateViewController = nil
+            self.omniDelegate?.onViewAllChatsSelected()
+        }
+    }
+
     func onDismissRequested() {
         // Restore the tab's committed mode — the user toggled but didn't submit.
         omniDelegate?.onExperimentalAddressBarCancelPressed()
@@ -591,7 +635,7 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
             selectedTextEntryMode = tabMode
         }
         editingStateViewController?.dismissAnimated { [weak self] in
-            // Fix address bar non-activation bug when cancelling the edit from the duck.ai experiment completion dialog.
+            // Fix address bar non-activation bug when cancelling the edit from the Duck.ai fire onboarding completion dialog.
             self?.editingStateViewController = nil
         }
     }
@@ -613,8 +657,7 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onToggleModeSwitched(to mode: TextEntryMode) {
-        // Sync the editing state's toggle back to selectedTextEntryMode so that
-        // commitToggleStateToCurrentTab reads the correct value on submission.
+        // Keep selectedTextEntryMode in sync with the editing state's toggle.
         selectedTextEntryMode = mode
         omniDelegate?.onToggleModeSwitched()
     }
@@ -638,6 +681,10 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
+            // A highlighted chat-history row claims Return instead of submitting the typed prompt.
+            if omniDelegate?.onAIChatSuggestionsActivateHighlight() == true {
+                return false
+            }
             submitIPadDuckAIText(from: textView)
             return false
         }
@@ -648,6 +695,10 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
         let newQuery = textView.text ?? ""
 
         modeToggleTextModel.updateText(newQuery)
+        userDidEditText = true
+        // The user is editing the duck.ai field — their text now governs, so don't resurrect the
+        // page URL we cleared on the way in when toggling back to search.
+        modeToggleTextModel.invalidateSearchTextToRestore()
 
         if modeToggleTextModel.isTransitioning, !omniBarView.isSearchAreaExpanded {
             omniBarView.textField.text = newQuery
@@ -666,6 +717,11 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
         omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
+    }
+
+    func textViewDidChangeSelection(_ textView: UITextView) {
+        // Moving the caret in the text (e.g. tapping back into the field) dismisses the keyboard suggestion highlight.
+        omniDelegate?.onAIChatSuggestionsClearHighlight()
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
@@ -714,4 +770,37 @@ extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
         UniversalOmniBarEditingStateTransition(isPresenting: false,
                                                addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
+}
+
+extension DefaultOmniBarViewController: UIGestureRecognizerDelegate {
+
+    // Observe taps without consuming them, so the text view's own caret/selection gestures still run.
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        true
+    }
+
+}
+
+private extension UITextView {
+
+    var isCaretOnLastLine: Bool {
+        // Subpixel tolerance absorbing rounding between the caret position and the end of the document.
+        let lastLineTolerance: CGFloat = 1
+        guard let selectedTextRange else { return true }
+        let caretMaxY = caretRect(for: selectedTextRange.end).maxY
+        let documentEndMaxY = caretRect(for: endOfDocument).maxY
+        return caretMaxY >= documentEndMaxY - lastLineTolerance
+    }
+
+}
+
+private extension UIKeyCommand {
+
+    static func prioritizedArrow(input: String, action: Selector) -> UIKeyCommand {
+        let command = UIKeyCommand(action: action, input: input, modifierFlags: [])
+        command.wantsPriorityOverSystemBehavior = true
+        return command
+    }
+
 }

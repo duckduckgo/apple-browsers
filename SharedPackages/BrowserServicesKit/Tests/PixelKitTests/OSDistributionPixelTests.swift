@@ -71,7 +71,8 @@ final class OSDistributionPixelTests: XCTestCase {
         XCTAssertNil(firedParameters?[PixelKit.Parameters.pixelSource], "pixelSource must not be added")
     }
 
-    /// A second fire within the same calendar month is suppressed (monthly frequency gating).
+    /// A second fire within the same calendar month is suppressed for monthly-frequency metrics
+    /// (`.client` / `.activeSubscriptions`). (`.searches` is per-event — see `testSearchesFiresEveryTime`.)
     func testSecondFireInSameMonthIsSuppressed() {
         var fireCount = 0
         let defaults = InMemoryThrowingKeyValueStore()
@@ -86,11 +87,37 @@ final class OSDistributionPixelTests: XCTestCase {
             }
         }
 
-        let event = OSDistributionPixel(metric: .searches, osMajorVersion: 15, platform: .macOS, formFactor: "desktop")
+        let event = OSDistributionPixel(metric: .client, osMajorVersion: 15, platform: .macOS, formFactor: "desktop")
         makePixelKit().fireOSDistributionPixel(event)
         makePixelKit().fireOSDistributionPixel(event)
 
         XCTAssertEqual(fireCount, 1, "Monthly pixel should only fire once per calendar month")
+    }
+
+    /// `.searches` is a per-event traffic pixel (`.standard` frequency): it fires every time, with no
+    /// monthly dedup — unlike the monthly `.client` / `.activeSubscriptions`.
+    func testSearchesFiresEveryTime() {
+        var firedNames: [String] = []
+        let defaults = InMemoryThrowingKeyValueStore()
+
+        let makePixelKit: () -> PixelKit = {
+            PixelKit(dryRun: false,
+                     appVersion: "1.2.3",
+                     defaultHeaders: [:],
+                     defaults: defaults) { name, _, _, _, _, onComplete in
+                firedNames.append(name)
+                onComplete(true, nil)
+            }
+        }
+
+        let event = OSDistributionPixel(metric: .searches, osMajorVersion: 15, platform: .macOS, formFactor: "desktop")
+        makePixelKit().fireOSDistributionPixel(event)
+        makePixelKit().fireOSDistributionPixel(event)
+
+        XCTAssertEqual(firedNames, [
+            "os_distribution_searches_major_version_15_macos_desktop",
+            "os_distribution_searches_major_version_15_macos_desktop"
+        ], "Searches is per-event: fires every time")
     }
 
     // MARK: - Metric-based firing

@@ -98,34 +98,35 @@ class AutocompleteViewModel: ObservableObject {
         delegate?.onTapAhead(model.suggestion)
     }
 
+    /// True when the highlighted suggestion is the first selectable row.
+    var isSelectionAtFirstRow: Bool {
+        guard let selection else { return false }
+        return (topHits + ddgSuggestions + localResults + aiChatSuggestions).first == selection
+    }
+
     func nextSelection() {
         let all = topHits + ddgSuggestions + localResults + aiChatSuggestions
-        guard let selection else {
-            selection = all.first
-            return
-        }
-
-        guard let index = all.firstIndex(of: selection) else {
-            return
-        }
-
-        let nextIndex = index + 1
-        if all.indices.contains(nextIndex) {
-            self.selection = all[nextIndex]
+        let updated = SuggestionListKeyboardSelection.next(after: selection, in: all)
+        // Assign only on change so a press at the edge doesn't re-fire onSuggestionHighlighted.
+        if updated != selection {
+            selection = updated
         }
     }
 
     func previousSelection() {
-        guard let selection else { return }
         let all = topHits + ddgSuggestions + localResults + aiChatSuggestions
-
-        guard let index = all.firstIndex(of: selection) else {
-            return
+        let updated = SuggestionListKeyboardSelection.previous(before: selection, in: all)
+        if updated != selection {
+            selection = updated
         }
+    }
 
-        let nextIndex = index - 1
-        if all.indices.contains(nextIndex) {
-            self.selection = all[nextIndex]
+    func clearSelection() {
+        selection = nil
+        // Highlighting overwrote the omnibar with the suggestion text, so on deselect restore the
+        // user's typed query via the existing highlight callback.
+        if let query {
+            delegate?.onSuggestionHighlighted(.phrase(phrase: query), forQuery: query)
         }
     }
 
@@ -141,6 +142,29 @@ class AutocompleteViewModel: ObservableObject {
         static func == (lhs: Self, rhs: Self) -> Bool {
             lhs.id == rhs.id
         }
+    }
+
+}
+
+/// Keyboard arrow selection math for the autocomplete suggestion list.
+enum SuggestionListKeyboardSelection {
+
+    /// From no selection, picks the first item; otherwise advances one, clamping at the end. A selection not
+    /// in `items` is left unchanged.
+    static func next<Element: Equatable>(after current: Element?, in items: [Element]) -> Element? {
+        guard let current else { return items.first }
+        guard let index = items.firstIndex(of: current) else { return current }
+        let nextIndex = index + 1
+        return items.indices.contains(nextIndex) ? items[nextIndex] : current
+    }
+
+    /// A no-op from no selection; otherwise retreats one, clamping at the start.
+    static func previous<Element: Equatable>(before current: Element?, in items: [Element]) -> Element? {
+        guard let current, let index = items.firstIndex(of: current) else {
+            return current
+        }
+        let previousIndex = index - 1
+        return items.indices.contains(previousIndex) ? items[previousIndex] : current
     }
 
 }

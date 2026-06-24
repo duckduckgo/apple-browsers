@@ -114,6 +114,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 return false
             }
         }
+
+        var preservesFailureRecoveryDuringReassertUpdate: Bool {
+            self == .failureRecovery
+        }
     }
 
     public enum ConnectionTesterStatus {
@@ -1102,7 +1106,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 }
             },
             stopMonitors: { [weak self] in
-                await self?.stopMonitors()
+                await self?.stopMonitorsForReconfiguration(preservingFailureRecovery: attemptSource.preservesFailureRecoveryDuringReassertUpdate)
             },
             updateAdapterConfiguration: { [weak self] tunnelConfiguration in
                 guard let self else { throw CancellationError() }
@@ -1187,6 +1191,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             configurationResult = try await deviceManager.generateTunnelConfiguration(
                 resolvedSelectionMethod: resolvedServerSelectionMethod,
                 excludeLocalNetworks: settings.excludeLocalNetworks,
+                excludeCGNAT: settings.excludeCGNAT,
                 dnsSettings: dnsSettings,
                 regenerateKey: regenerateKey
             )
@@ -1262,6 +1267,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 .setDNSSettings,
                 .setEnforceRoutes,
                 .setExcludeLocalNetworks,
+                .setExcludeCGNAT,
                 .setExcludeAPNs,
                 .setExcludeCellularServices,
                 .setExcludeDeviceCommunication,
@@ -1275,6 +1281,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             // Some of these don't require further action
             // Some may require an adapter restart, but it's best if that's taken care of by
             // the app that's coordinating the updates.
+            //
+            // enforceRoutes specifically is bound to the NECP session at creation time, so a
+            // network-settings re-push here can't change it. The controller re-saves the protocol
+            // and fully restarts the tunnel when this setting changes instead.
             break
         }
     }
@@ -1354,16 +1364,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         switch startReason {
         case .manual, .onDemand, .snoozeEnded:
             if leakCheckService == nil {
-                // Capture the interface name on the main actor; the resolver itself
-                // (which may consult NWPathMonitor) is safe to call off-main.
-                let fallbackInterfaceName = adapter.interfaceName
                 let service = VPNLeakCheckService(
                     configuration: .default,
                     egressInfo: { [weak self] in
                         await self?.currentEgressInfo()
                     },
                     tunnelInterface: { [weak self] in
-                        await self?.resolveTunnelInterface(fallbackInterfaceName: fallbackInterfaceName)
+                        guard let self else { return .unavailable }
+                        // Read the utun name live per check: the service outlives rekeys/reconnects/wake,
+                        // any of which can rebind the tunnel to a new utun. A stale name makes the
+                        // older-OS fallback (no `virtualInterface`) pin probes to the wrong interface → false leak.
+                        let currentInterfaceName = await self.tunnelInterfaceName
+                        return await self.resolveTunnelInterface(fallbackInterfaceName: currentInterfaceName)
                     },
                     tunnelPathGeneration: { [weak self] in
                         guard let self else { return 0 }
@@ -1463,6 +1475,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     public func stopMonitors() async {
         await tunnelMonitors.stop()
+    }
+
+    /// Stops the monitors during a reasserting config update. Failure recovery
+    /// is preserved only for the update it drives itself; other reassert updates
+    /// supersede any in-flight recovery.
+    @MainActor
+    private func stopMonitorsForReconfiguration(preservingFailureRecovery: Bool) async {
+        await tunnelMonitors.stop(includingFailureRecovery: !preservingFailureRecovery)
     }
 
     // MARK: - Connection Tester

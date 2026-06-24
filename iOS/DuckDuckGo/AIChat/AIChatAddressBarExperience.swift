@@ -76,7 +76,7 @@ struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
         if isIPadChromeShortcutInPlay {
             return DuckAIChromeShortcutVisibility.isAddressBarButtonVisibleOnIPad(
                 isLargeWidth: largeWidthProvider.isLargeWidth,
-                isAIChatTabBarUserSettingsEnabled: aiChatSettings.isAIChatTabBarUserSettingsEnabled
+                isTabBarShortcutEnabled: aiChatSettings.isAIChatTabBarUserSettingsEnabled
             )
         }
         return aiChatSettings.isAIChatAddressBarUserSettingsEnabled

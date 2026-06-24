@@ -19,7 +19,11 @@
 import Foundation
 import Common
 
-/// Monthly pixels for deciding when to end support for an operating system version.
+/// Pixels for deciding when to end support for an operating system version.
+///
+/// `.client` and `.activeSubscriptions` fire at most once per calendar month (monthly-active
+/// users / subscribers); `.searches` fires on every search or AI query, since the EOL policy's
+/// "low monthly search traffic" metric counts total search + AI-query *traffic*, not active users.
 ///
 /// Tech design: https://app.asana.com/1/137249556945/project/1208546505108826/task/1214950124367783?focus=true
 public struct OSDistributionPixel: PixelKitEvent {
@@ -49,6 +53,15 @@ public struct OSDistributionPixel: PixelKitEvent {
         "os_distribution_\(metric.rawValue)_major_version_\(osMajorVersion)_\(platform.rawValue.lowercased())_\(formFactor)"
     }
 
+    /// Per-metric firing frequency. `.searches` measures total search + AI-query traffic so it fires
+    /// on every event; `.client` and `.activeSubscriptions` measure monthly-active users / subscribers.
+    var frequency: PixelKit.Frequency {
+        switch metric {
+        case .searches: return .standard
+        case .client, .activeSubscriptions: return .monthly
+        }
+    }
+
     // Self-tags the pixel to route through the PETAL (timestamp-randomization) pipeline.
     public var parameters: [String: String]? { ["petal": "randomize"] }
 
@@ -59,10 +72,11 @@ public struct OSDistributionPixel: PixelKitEvent {
 public extension PixelKit {
 
     /// Fires an OS-distribution pixel with the fixed configuration these pixels require:
-    /// `.monthly` frequency, no `appVersion`, no `pixelSource`, and no platform-prefix enforcement.
+    /// the metric's `frequency` (see `OSDistributionPixel.frequency`), no `appVersion`,
+    /// no `pixelSource`, and no platform-prefix enforcement.
     func fireOSDistributionPixel(_ event: OSDistributionPixel) {
         fire(event,
-             frequency: .monthly,
+             frequency: event.frequency,
              includeAppVersionParameter: false,
              doNotEnforcePrefix: true)
     }

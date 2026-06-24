@@ -775,7 +775,7 @@ struct OnboardingIntroContentProviderTests {
             "Check duck.ai query title is correct per flow",
             arguments: zip(
                 [OnboardingFlowType.default, .duckAI],
-                [UserText.Onboarding.DuckAIQueryExperiment.title, UserText.Onboarding.DuckAICPP.DuckAIQuery.title]
+                [UserText.Onboarding.DuckAIQuery.title, UserText.Onboarding.DuckAICPP.DuckAIQuery.title]
             )
         )
         func checkDuckAIQueryTitle(flow: OnboardingFlowType, expectedTitle: String) {
@@ -801,7 +801,7 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.duckAIQueryContent
 
             // THEN
-            #expect(result.searchPlaceholder == UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder)
+            #expect(result.searchPlaceholder == UserText.Onboarding.DuckAIQuery.searchPlaceholder)
         }
 
         @Test(
@@ -816,7 +816,7 @@ struct OnboardingIntroContentProviderTests {
             let result = sut.duckAIQueryContent
 
             // THEN
-            #expect(result.aiPlaceholder == UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder)
+            #expect(result.aiPlaceholder == UserText.Onboarding.DuckAIQuery.aiPlaceholder)
         }
 
         @Test(

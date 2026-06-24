@@ -12,5 +12,12 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site": {
+        "description": "Fires when the Report Broken Site button is tapped on the Safari redirect loop error page",
+        "owners": ["dus7", "brindy"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

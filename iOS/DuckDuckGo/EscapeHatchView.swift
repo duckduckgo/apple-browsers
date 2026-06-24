@@ -24,20 +24,21 @@ struct EscapeHatchView: View {
     @ObservedObject var model: EscapeHatchModel
 
     var body: some View {
-        HStack(spacing: model.isTargetTabPresent ? Metrics.spacing : 0) {
+        HStack(spacing: model.isReturnToTabCardVisible ? Metrics.spacing : 0) {
             ReturnToTabCard(model: model)
-                .frame(maxWidth: model.isTargetTabPresent ? .infinity : 0)
+                .frame(maxWidth: model.isReturnToTabCardVisible ? .infinity : 0)
                 .clipped()
-                .opacity(model.isTargetTabPresent ? 1 : 0)
-                .allowsHitTesting(model.isTargetTabPresent)
+                .opacity(model.isReturnToTabCardVisible ? 1 : 0)
+                .allowsHitTesting(model.isReturnToTabCardVisible)
 
             TabSwitcherPill(count: model.openTabCount,
-                            isExpanded: !model.isTargetTabPresent,
+                            isExpanded: !model.isReturnToTabCardVisible,
+                            showsEndArrow: !model.isHideShortcutEnabled,
                             onTap: model.onTabSwitcherTap)
-                .frame(maxWidth: model.isTargetTabPresent ? TabSwitcherPill.compactSize : .infinity)
+                .frame(maxWidth: model.isReturnToTabCardVisible ? TabSwitcherPill.compactSize : .infinity)
                 .frame(height: TabSwitcherPill.compactSize)
         }
-        .animation(.easeInOut(duration: Metrics.collapseDuration), value: model.isTargetTabPresent)
+        .animation(.easeInOut(duration: Metrics.collapseDuration), value: model.isReturnToTabCardVisible)
         .frame(height: TabSwitcherPill.compactSize)
         .id(model.targetTab.uid)
     }

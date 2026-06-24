@@ -23,10 +23,16 @@ import SwiftUI
 public enum ContainerMetrics {
 
     private static let cornerRadiusMetric = MetricBuilder<CGFloat>(default: 26)
+    private static let closeButtonPaddingMetric = MetricBuilder<CGFloat>(default: 16)
 
     /// Corner radius for a container surface.
     @MainActor public static var cornerRadius: CGFloat {
         cornerRadiusMetric.build()
+    }
+
+    /// Inset of the close button from a container's top-trailing corner.
+    @MainActor public static var closeButtonPadding: CGFloat {
+        closeButtonPaddingMetric.build()
     }
 }
 #endif

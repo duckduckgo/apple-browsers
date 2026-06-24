@@ -37,6 +37,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     var mockAIChatSyncHandler: MockAIChatSyncHandling!
     var mockAIChatFullModeFeature: MockAIChatFullModeFeatureProviding!
     var mockAIChatContextualModeFeature: MockAIChatContextualModeFeatureProviding!
+    var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
     private var mockUserScriptErrorEventMapper: CapturingAIChatUserScriptErrorEventMapper!
     private var mockUserDefaults: UserDefaults!
 
@@ -51,6 +52,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockAIChatSyncHandler = MockAIChatSyncHandling()
         mockAIChatFullModeFeature = MockAIChatFullModeFeatureProviding()
         mockAIChatContextualModeFeature = MockAIChatContextualModeFeatureProviding()
+        mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
         mockUserScriptErrorEventMapper = CapturingAIChatUserScriptErrorEventMapper()
 
         mockUserDefaults = UserDefaults(suiteName: mockSuiteName)
@@ -67,6 +69,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockAIChatSyncHandler = nil
         mockAIChatFullModeFeature = nil
         mockAIChatContextualModeFeature = nil
+        mockUnifiedToggleInputFeature = nil
         mockUserScriptErrorEventMapper = nil
         PixelFiringMock.tearDown()
         super.tearDown()
@@ -84,6 +87,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             keyValueStore: mockUserDefaults,
             aichatFullModeFeature: mockAIChatFullModeFeature,
             aichatContextualModeFeature: mockAIChatContextualModeFeature,
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
             aiChatUserScriptErrorEventMapper: aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(),
             isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
             installDateProvider: installDateProvider,
@@ -744,6 +748,26 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertNil(response)
         XCTAssertEqual(mockAIChatSyncHandler.setAIChatHistoryEnabledCalls, [true])
     }
+
+    // MARK: - Push Message: submitChangeModelAction (native → FE active-chat model change)
+
+    func testChangeModelActionPushMessageUsesSubmitChangeModelActionMethodName() {
+        let message = AIChatUserScript.AIChatPushMessage.changeModelAction(modelId: "claude-haiku-4-5")
+        XCTAssertEqual(message.methodName, "submitChangeModelAction")
+    }
+
+    func testChangeModelActionPushMessageEncodesModelIdAsObject() throws {
+        let message = AIChatUserScript.AIChatPushMessage.changeModelAction(modelId: "claude-haiku-4-5")
+
+        let params = try XCTUnwrap(
+            message.params as? AIChatUserScript.AIChatPushMessage.ChangeModelActionParams,
+            "changeModelAction must carry a ChangeModelActionParams object, not a bare string"
+        )
+        let json = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(params)) as? [String: String]
+        )
+        XCTAssertEqual(json, ["modelId": "claude-haiku-4-5"])
+    }
 }
 
 private final class CapturingAIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> {
@@ -926,5 +950,62 @@ extension AIChatUserScriptHandlerTests {
 
         // Then
         XCTAssertEqual(mockUserDefaults.object(forKey: termsAcceptedKey) as? Bool, true)
+    }
+}
+
+// MARK: - focusChatInput Tests
+
+extension AIChatUserScriptHandlerTests {
+
+    @MainActor
+    func testWhenUnifiedToggleInputFeatureIsAvailableThenFocusChatInputCallsHandler() async {
+        // Given
+        mockUnifiedToggleInputFeature.isAvailable = true
+        var handlerCallCount = 0
+        aiChatUserScriptHandler.focusChatInputHandler = { handlerCallCount += 1 }
+
+        // When
+        let result = await aiChatUserScriptHandler.focusChatInput(
+            params: [],
+            message: MockUserScriptMessage(name: "test", body: [:])
+        )
+
+        // Then
+        XCTAssertNil(result)
+        XCTAssertEqual(handlerCallCount, 1)
+    }
+
+    @MainActor
+    func testWhenUnifiedToggleInputFeatureIsUnavailableThenFocusChatInputDoesNotCallHandler() async {
+        // Given
+        mockUnifiedToggleInputFeature.isAvailable = false
+        var handlerCallCount = 0
+        aiChatUserScriptHandler.focusChatInputHandler = { handlerCallCount += 1 }
+
+        // When
+        let result = await aiChatUserScriptHandler.focusChatInput(
+            params: [],
+            message: MockUserScriptMessage(name: "test", body: [:])
+        )
+
+        // Then
+        XCTAssertNil(result)
+        XCTAssertEqual(handlerCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenFocusChatInputHandlerIsNotSetThenFocusChatInputReturnsNilWithoutCrashing() async {
+        // Given
+        mockUnifiedToggleInputFeature.isAvailable = true
+        aiChatUserScriptHandler.focusChatInputHandler = nil
+
+        // When
+        let result = await aiChatUserScriptHandler.focusChatInput(
+            params: [],
+            message: MockUserScriptMessage(name: "test", body: [:])
+        )
+
+        // Then
+        XCTAssertNil(result)
     }
 }

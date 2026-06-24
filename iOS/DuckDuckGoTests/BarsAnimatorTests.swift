@@ -146,6 +146,49 @@ class BarsAnimatorTests: XCTestCase {
 
         XCTAssertEqual(delegate.receivedMessages, [])
     }
+
+    // Force-revealing must reset the state from .hidden back to .revealed. The error-page reveal
+    // relies on this (routed through chromeManager.reset) so the bars can't get stuck hidden.
+    func testRevealBarsResetsHiddenStateToRevealed() {
+        let (sut, delegate) = makeSUT()
+        let scrollView = mockScrollView()
+
+        scrollView.contentOffset.y = 100
+        sut.didStartScrolling(in: scrollView)
+        scrollView.contentOffset.y = 200
+        sut.didScroll(in: scrollView)
+        scrollView.contentOffset.y = 300
+        sut.didScroll(in: scrollView)
+        XCTAssertEqual(sut.barsState, .hidden)
+
+        sut.revealBars(animated: true)
+
+        XCTAssertEqual(sut.barsState, .revealed)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
+    }
+
+    // After a force-reveal a trailing scroll-end must not re-hide the bars (the stuck "no buttons" bug).
+    func testRevealedBarsAreNotReHiddenByTrailingScrollEnd() {
+        let (sut, delegate) = makeSUT()
+        let scrollView = mockScrollView()
+
+        scrollView.contentOffset.y = 100
+        sut.didStartScrolling(in: scrollView)
+        scrollView.contentOffset.y = 200
+        sut.didScroll(in: scrollView)
+        scrollView.contentOffset.y = 300
+        sut.didScroll(in: scrollView)
+        XCTAssertEqual(sut.barsState, .hidden)
+
+        sut.revealBars(animated: true)
+        XCTAssertEqual(sut.barsState, .revealed)
+
+        scrollView.contentOffset.y = 100
+        sut.didFinishScrolling(in: scrollView, velocity: 0)
+
+        XCTAssertEqual(sut.barsState, .revealed)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
+    }
 }
 
 // MARK: - Helpers
@@ -177,6 +220,7 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
 
     enum Message: Equatable {
         case setBarsHidden(Bool)
+        case resetBars
         case setNavigationBarHidden(Bool)
         case setBarsVisibility(CGFloat)
         case setRefreshControlEnabled(Bool)
@@ -195,6 +239,10 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
 
     func setBarsHidden(_ hidden: Bool, animated: Bool) {
         receivedMessages.append(.setBarsHidden(hidden))
+    }
+
+    func resetBars(animated: Bool) {
+        receivedMessages.append(.resetBars)
     }
 
     func setNavigationBarHidden(_ hidden: Bool) {

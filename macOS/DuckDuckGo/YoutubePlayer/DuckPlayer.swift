@@ -175,15 +175,13 @@ final class DuckPlayer {
     convenience init(
         preferencesPersistor: DuckPlayerPreferencesPersistor,
         privacyConfigurationManager: PrivacyConfigurationManaging,
-        internalUserDecider: InternalUserDecider,
-        featureFlagger: FeatureFlagger
+        internalUserDecider: InternalUserDecider
     ) {
         self.init(
             preferences: DuckPlayerPreferences(
                 persistor: preferencesPersistor,
                 privacyConfigurationManager: privacyConfigurationManager,
-                internalUserDecider: internalUserDecider,
-                featureFlagger: featureFlagger
+                internalUserDecider: internalUserDecider
             ),
             privacyConfigurationManager: privacyConfigurationManager
         )

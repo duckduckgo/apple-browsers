@@ -189,6 +189,7 @@ class MainViewController: UIViewController {
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
+    let lastTabShortcutAdapter: LastTabShortcutAdapter
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
     let idleReturnTabCountInstrumentation: IdleReturnTabCountInstrumentation
     let postIdleSessionInstrumentation: PostIdleSessionInstrumentation
@@ -261,8 +262,8 @@ class MainViewController: UIViewController {
     var keyModifierFlags: UIKeyModifierFlags?
     var showKeyboardAfterFireButton: DispatchWorkItem?
 
-    // Duck.ai query experiment fire onboarding flow — see MainViewController+DuckAIExperiment.swift
-    var experimentDuckAIFireOnboardingFlow = ExperimentDuckAIFireOnboardingFlowContext()
+    // Duck.ai fire onboarding flow — see MainViewController+DuckAIFireOnboarding.swift
+    var duckAIFireOnboardingFlow = DuckAIFireOnboardingFlowContext()
 
     // Skip SERP flow (focusing on autocomplete logic) and prepare for new navigation when selecting search bar
     private var skipSERPFlow = true
@@ -353,18 +354,12 @@ class MainViewController: UIViewController {
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
 
-    // MARK: - iPad Tab Mode Chat History
-    private lazy var iPadTabChatHistoryCoordinator = IPadTabChatHistoryCoordinator(
-        featureFlagger: featureFlagger,
-        privacyConfigurationManager: privacyConfigurationManager,
-        aiChatSettings: aiChatSettings,
-        aiChatSyncCleaner: aiChatSyncCleaner,
-        iPadTabFeature: aichatIPadTabFeature,
-        duckAiNativeStorageHandler: duckAiNativeStorageHandler
-    )
+    /// Tracks live Duck.ai voice sessions per tab. Created in `setUpDuckAIVoiceSessionTracker()`.
+    var duckAIVoiceSessionTracker: DuckAIVoiceSessionTracker?
+
     private var iPadAIChatQuery = ""
-    private var allowIPadAIAutocompleteShow = false
-    private var isAwaitingIPadHistoryRefreshAfterModeSwitch = false
+    /// Owns the iPad popover's suggestion decision + Duck.ai surface lifecycle (built in `loadSuggestionTray`).
+    private var popoverSuggestionsCoordinator: PopoverSuggestionsCoordinator?
 
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     func setWebExtensionEventsCoordinator(_ coordinator: WebExtensionEventsCoordinator?) {
@@ -374,6 +369,17 @@ class MainViewController: UIViewController {
     private(set) var webExtensionManager: WebExtensionManaging?
     func setWebExtensionManager(_ manager: WebExtensionManaging?) {
         self.webExtensionManager = manager
+    }
+
+    private var webExtensionLifecycleCoordinatorStorage: Any?
+    @available(iOS 18.4, *)
+    var webExtensionLifecycleCoordinator: WebExtensionLifecycleCoordinator? {
+        get { webExtensionLifecycleCoordinatorStorage as? WebExtensionLifecycleCoordinator }
+        set { webExtensionLifecycleCoordinatorStorage = newValue }
+    }
+    @available(iOS 18.4, *)
+    func setWebExtensionLifecycleCoordinator(_ coordinator: WebExtensionLifecycleCoordinator?) {
+        webExtensionLifecycleCoordinator = coordinator
     }
 
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
@@ -406,6 +412,7 @@ class MainViewController: UIViewController {
         featureFlagger: FeatureFlagger,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
         afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
+        lastTabShortcutAdapter: LastTabShortcutAdapter,
         lastActiveTabStore: LastActiveTabStoring = LastActiveTabStore(),
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
@@ -488,6 +495,7 @@ class MainViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
+        self.lastTabShortcutAdapter = lastTabShortcutAdapter
         self.lastActiveTabStore = lastActiveTabStore
         self.ntpAfterIdleInstrumentation = DefaultNTPAfterIdleInstrumentation(eligibilityManager: idleReturnEligibilityManager)
         self.idleReturnTabCountInstrumentation = DefaultIdleReturnTabCountInstrumentation(eligibilityManager: idleReturnEligibilityManager)
@@ -575,6 +583,10 @@ class MainViewController: UIViewController {
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
 
+    /// Watchdog for container pan gestures that arbitrate with web scrolling. Owned here (not a singleton)
+    /// and fed gesture state from `handleUnifiedInputSwipeTabsPan`.
+    let interactionIntegrityMonitor = InteractionIntegrityMonitor()
+
     /// Overlay used to render tab-swipe transitions. Hosts per-tab full-screen snapshots so
     /// the swipe moves chrome+content as a single visual unit instead of as N separately
     /// translated layers. Hidden when not swiping; populated and made visible by
@@ -624,6 +636,14 @@ class MainViewController: UIViewController {
             productSurfaceTelemetry: productSurfaceTelemetry)
     }()
 
+    /// Creates the voice-session tracker on launch so it catches sessions before the switcher opens.
+    /// Always created — the rich-card flag gates rendering (in the resolver), not tracking.
+    private func setUpDuckAIVoiceSessionTracker() {
+        duckAIVoiceSessionTracker = DuckAIVoiceSessionTracker(tabForWebView: { [weak self] webView in
+            self?.tabManager.controller(forWebView: webView)?.tabModel
+        })
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -662,6 +682,7 @@ class MainViewController: UIViewController {
         initTabButton()
         initBookmarksButton()
         setUpUnifiedToggleInputIfNeeded()
+        setUpDuckAIVoiceSessionTracker()
         configureStartupPresentation()
         previewsSource.prepare()
         addLaunchTabNotificationObserver()
@@ -681,7 +702,6 @@ class MainViewController: UIViewController {
         registerForKeyboardNotifications()
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
-        registerForWebExtensionNotifications()
         registerForAppBackgroundNotification()
 
         decorate()
@@ -707,11 +727,18 @@ class MainViewController: UIViewController {
     }
 
     private func configureStartupPresentation() {
+        let onboardingStatus = LaunchOptionsHandler().onboardingStatus
         let startupOnboardingDecision = StartupOnboardingDecision(
-            onboardingStatus: LaunchOptionsHandler().onboardingStatus,
+            onboardingStatus: onboardingStatus,
             tutorialSettings: tutorialSettings,
             resumeStepStore: onboardingResumeStepStore
         )
+
+        // Automation bypass: a UI-test override can mark onboarding already-completed without ever
+        // calling onboardingCompleted(controller:), so apply the rollout Duck Player defaults here too.
+        if case .overridden(.uiTests(completed: true)) = onboardingStatus {
+            appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
+        }
 
         isStartupOnboardingPending = startupOnboardingDecision.shouldShowOnboarding
 
@@ -934,6 +961,23 @@ class MainViewController: UIViewController {
         controller.dismissHandler = dismissSuggestionTray
         controller.autocompleteDelegate = self
         suggestionTrayController = controller
+
+        if isPad {
+            popoverSuggestionsCoordinator = PopoverSuggestionsCoordinator(
+                dependencies: .init(
+                    historyManager: historyManager,
+                    bookmarksDatabase: bookmarksDatabase,
+                    featureFlagger: featureFlagger,
+                    aiChatSettings: aiChatSettings,
+                    privacyConfigurationManager: privacyConfigurationManager,
+                    aiChatSyncCleaner: aiChatSyncCleaner,
+                    duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                    tabsModelProvider: { [weak self] in self?.tabManager.currentTabsModel },
+                    isFireTab: { [weak self] in self?.isCurrentTabFireTab() ?? false }),
+                tray: controller,
+                host: self,
+                navigationDelegate: self)
+        }
     }
 
     func loadTabsBarIfNeeded() {
@@ -1195,28 +1239,6 @@ class MainViewController: UIViewController {
                                                selector: #selector(refreshViewsBasedOnDuckPlayerPresentation),
                                                name: DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated,
                                                object: nil)
-    }
-
-    private func registerForWebExtensionNotifications() {
-        if #available(iOS 18.4, *) {
-            NotificationCenter.default.addObserver(
-                forName: .webExtensionAutoconsentDashboardStateRefresh,
-                object: nil,
-                queue: .main
-            ) { [weak self] notification in
-                self?.handleWebExtensionDashboardStateRefresh(notification)
-            }
-        }
-    }
-
-    @available(iOS 18.4, *)
-    @objc private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
-        guard let domain = notification.userInfo?[AutoconsentNotification.UserInfoKeys.domain] as? String,
-              let consentStatus = notification.userInfo?[AutoconsentNotification.UserInfoKeys.consentStatus] as? ConsentStatusInfo,
-              currentTab?.url?.host == domain else {
-            return
-        }
-        currentTab?.privacyInfo?.cookieConsentManaged = consentStatus.toCookieConsentInfo()
     }
 
     private func registerForAppBackgroundNotification() {
@@ -1574,70 +1596,57 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.omniDelegate = self
     }
     
-    private func makeEscapeHatchModel(targetTab: Tab) -> EscapeHatchModel? {
-        if targetTab.fireTab {
-            if targetTab.link != nil || targetTab.isAITab {
-                return EscapeHatchModel(
-                    title: UserText.escapeHatchFireTabTitle,
-                    subtitle: "",
-                    tabType: .fire,
-                    domain: nil,
-                    targetTab: targetTab,
-                    tabsSource: tabManager,
-                    router: self,
-                    featureFlagger: featureFlagger,
-                    afterInactivityOptionAdapter: afterInactivityOptionAdapter
-                )
-            }
-            return nil
+    private lazy var escapeHatchModelBuilder = EscapeHatchModelBuilder(
+        tabManager: tabManager,
+        lastActiveTabStore: lastActiveTabStore,
+        idleReturnEligibilityManager: idleReturnEligibilityManager,
+        featureFlagger: featureFlagger,
+        afterInactivityOptionAdapter: afterInactivityOptionAdapter,
+        lastTabShortcutAdapter: lastTabShortcutAdapter,
+        instrumentation: ntpAfterIdleInstrumentation
+    )
+
+    /// Re-presents the tab switcher after a burn. No-op when the feature is off or the user has left the NTP.
+    private func restoreTabSwitcherOnlyHatchAfterBurn() {
+        guard featureFlagger.isFeatureOn(.escapeHatchHideShortcut),
+              let controller = newTabPageViewController,
+              let currentTab = tabManager.currentTabsModel.currentTab,
+              currentTab.fireTab == false else {
+            return
         }
-        if targetTab.isAITab {
-            return EscapeHatchModel(
-                title: targetTab.aiChatConversationTitle ?? UserText.omnibarFullAIChatModeDisplayTitle,
-                subtitle: UserText.omnibarFullAIChatModeDisplayTitle,
-                tabType: .aiChat,
-                domain: nil,
-                targetTab: targetTab,
-                tabsSource: tabManager,
-                router: self,
-                featureFlagger: featureFlagger,
-                afterInactivityOptionAdapter: afterInactivityOptionAdapter
-            )
+        let model = escapeHatchModelBuilder.makeTabSwitcherOnly(targetTab: currentTab, router: self)
+        controller.setEscapeHatch(model)
+        currentNTPEscapeHatch = model
+        configureUnifiedInputEscapeHatch(model)
+    }
+
+    /// True when an escape hatch action runs in focus mode (reads the persistent omnibar-session state, which
+    /// survives the card tap that dismisses the keyboard).
+    private var isEscapeHatchInFocusMode: Bool {
+        omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true
+    }
+
+    /// Restores the keyboard after an escape-hatch burn that started in focus mode, using the unified-input
+    /// session when active (symmetric with `dismissOmniBar`) and the legacy omnibar otherwise.
+    private func restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: Bool) {
+        guard wasInFocusMode else { return }
+        if let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession {
+            coordinator.activateInput()
+        } else {
+            enterSearch()
         }
-        if let link = targetTab.link {
-            let subtitle = link.url.host?.droppingWwwPrefix() ?? link.url.absoluteString
-            return EscapeHatchModel(
-                title: link.displayTitle,
-                subtitle: subtitle,
-                tabType: .regular,
-                domain: link.url.host,
-                targetTab: targetTab,
-                tabsSource: tabManager,
-                router: self,
-                featureFlagger: featureFlagger,
-                afterInactivityOptionAdapter: afterInactivityOptionAdapter
-            )
-        }
-        return nil
+    }
+
+    /// True for escape-hatch burns while the hide feature is on — these handle focus themselves in
+    /// `restoreFocusModeAfterBurnIfNeeded`, so the generic post-fire keyboard fallback is skipped for them.
+    /// With the feature off, escape-hatch burns keep the original fire behaviour.
+    private func isEscapeHatchHideBurn(_ request: FireRequest) -> Bool {
+        request.source == .escapeHatch && featureFlagger.isFeatureOn(.escapeHatchHideShortcut)
     }
 
     private func buildEscapeHatch(openedAfterIdle: Bool) -> EscapeHatchModel? {
-        guard openedAfterIdle,
-              idleReturnEligibilityManager.isEligibleForNTPAfterIdle() else {
-            return nil
-        }
-        let currentTab = tabManager.currentTabsModel.currentTab
-        if currentTab?.fireTab == true {
-            // Avoid showing a hatch on fire tabs
-            return nil
-        }
-        guard let lastUID = lastActiveTabStore.lastActiveNonEmptyTabUID,
-              let targetTab = tabManager.allTabsModel.tabs.first(where: { $0.uid == lastUID }),
-              targetTab !== currentTab else {
-            // Couldn't find the last active tab
-            return nil
-        }
-        return makeEscapeHatchModel(targetTab: targetTab)
+        guard openedAfterIdle else { return nil }
+        return escapeHatchModelBuilder.makeAfterIdleHatch(router: self)
     }
 
     fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false, previousTab: TabViewController? = nil, openedAfterIdle: Bool = false) {
@@ -1745,7 +1754,7 @@ class MainViewController: UIViewController {
         // about to shown to the user.
         if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
             fireNewTabPixels()
-            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle)
+            fireNTPShownInstrumentation(openedAfterIdle: openedAfterIdle, hatch: hatch)
         }
 
         // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
@@ -1772,8 +1781,14 @@ class MainViewController: UIViewController {
         unifiedToggleInputCoordinator?.setEscapeHatch(hatch)
     }
 
-    private func fireNTPShownInstrumentation(openedAfterIdle: Bool) {
+    private func fireNTPShownInstrumentation(openedAfterIdle: Bool, hatch: EscapeHatchModel?) {
         ntpAfterIdleInstrumentation.ntpShown(afterIdle: openedAfterIdle)
+        // Fire the card impression once per presentation here (not from the card's onAppear): the same hatch
+        // model is mounted in several hosts — NTP, suggestions, AI-chat history — so a view-level hook counts
+        // once per mount.
+        if hatch?.isReturnToTabCardVisible == true {
+            ntpAfterIdleInstrumentation.escapeHatchShown()
+        }
         if openedAfterIdle {
             postIdleSessionInstrumentation.sessionStarted(surface: .ntp)
         }
@@ -1835,22 +1850,19 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
         wakeLazyFireButtonAnimator()
 
-        let isExperimentDuckAIFireFlow = experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse ||
-            experimentDuckAIFireOnboardingFlow.state == .active
-        // Keep the experiment fire onboarding dialog visible until the burn action is confirmed.
-        if !isExperimentDuckAIFireFlow {
+        let isDuckAIFireOnboardingFlow = duckAIFireOnboardingFlow.state == .awaitingFirstResponse ||
+            duckAIFireOnboardingFlow.state == .active
+        // Keep the fire onboarding dialog visible until the burn action is confirmed.
+        if !isDuckAIFireOnboardingFlow {
             currentTab?.dismissContextualDaxFireDialog()
         }
         ViewHighlighter.hideAll()
 
-        if isExperimentDuckAIFireFlow {
-            // Keep this path scoped to the onboarding experiment: single "Delete This Chat" action only,
+        if isDuckAIFireOnboardingFlow {
+            // During the Duck.ai fire onboarding: single "Delete This Chat" action only,
             // whether the contextual dialog has already appeared or is still pending.
-            // Fire experiment pixel only if flow is default.
-            if onboardingManager.currentOnboardingFlow == .default {
-                contextualOnboardingPixelReporter.measureDuckAIExperimentFireButtonCTAAction()
-            }
-            presentExperimentDuckAIFireConfirmation()
+            contextualOnboardingPixelReporter.measureDuckAIFireButtonCTAAction()
+            presentDuckAIFireConfirmation()
             performCancel()
             return
         }
@@ -2175,6 +2187,7 @@ class MainViewController: UIViewController {
 
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
         guard let tab else { return }
+        WebScrollFreezeDebugTransitionLog.note("mainVC.tabTransition")
         previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
         previousTab?.tabModel.openedAfterIdle = false
         previousTab?.dismiss()
@@ -2214,6 +2227,9 @@ class MainViewController: UIViewController {
         if hasCompletedInitialLoad {
             lastActiveTabStore.recordActiveTab(uid: tab.tabModel.uid)
         }
+        // Switching tabs invalidates the per-tab iPad suggestion surfaces; drop them so the next
+        // focus rebuilds fresh (avoids a stale/empty popover carried over from the previous tab).
+        teardownPopoverSuggestions()
         removeHomeScreen()
         updateFindInPage()
         hideNotificationBarIfBrokenSitePromptShown()
@@ -2240,6 +2256,7 @@ class MainViewController: UIViewController {
     private func addToContentContainer(controller: UIViewController) {
         viewCoordinator.contentContainer.isHidden = false
         addChild(controller)
+        WebScrollFreezeDebugTransitionLog.note("mainVC.contentContainer.swap")
         viewCoordinator.contentContainer.subviews.forEach { $0.removeFromSuperview() }
         viewCoordinator.contentContainer.addSubview(controller.view)
 
@@ -2317,7 +2334,8 @@ class MainViewController: UIViewController {
             resolved = aiChatSettings.defaultOmnibarMode
                 .resolvedTextEntryMode { self.toggleModeStorage.restore() }
         } else {
-            resolved = tab.isAITab ? .aiChat : .search
+            // iPad never auto-selects Duck.ai for an AI tab — the toggle starts in search.
+            resolved = (tab.isAITab && !isPad) ? .aiChat : .search
         }
         return resolved.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
@@ -2373,8 +2391,7 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
         if tab.isAITab && (aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable) {
-            // AI tabs use branding UI — skip setSelectedTextEntryMode to avoid
-            // flashing the "ask privately" placeholder before branding covers the text field.
+            // AI tabs use branding UI rather than the standard toggle setup.
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
@@ -2423,6 +2440,7 @@ class MainViewController: UIViewController {
 
     func dismissOmniBar() {
         hideSuggestionTray()
+        teardownPopoverSuggestions()
         viewCoordinator.omniBar.endEditing()
         deactivateUnifiedToggleInputOmnibarSession()
         refreshOmniBar()
@@ -2566,6 +2584,8 @@ class MainViewController: UIViewController {
             }
             // If tabs have been udpated, do this async to make sure size calcs are current
             self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel)
+            // Keep the current tab in view after a resize/rotation reflows the strip.
+            self.tabsBarController?.scrollCurrentTabIntoView()
             self.swipeTabsCoordinator?.refresh(tabsModel: self.tabManager.currentTabsModel)
             
             // Do this on the next UI thread pass so we definitely have the right width
@@ -2666,14 +2686,6 @@ class MainViewController: UIViewController {
     }
     
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
-        if iPadTabChatHistoryCoordinator.isInstalled {
-            if case .autocomplete = type,
-               isModeToggleInAIChatMode,
-               !allowIPadAIAutocompleteShow {
-                return
-            }
-        }
-
         suggestionTrayController?.show(for: type)
         applyWidthToTrayController()
         if !isUsingSingleBar {
@@ -3121,7 +3133,7 @@ class MainViewController: UIViewController {
         NotificationCenter.default.publisher(for: .aiChatResponseReceived)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.showExperimentFireDialogAfterAIChatResponseIfReady()
+                self?.showFireDialogAfterAIChatResponseIfReady()
             }
             .store(in: &aiChatCancellables)
     }
@@ -3559,6 +3571,8 @@ class MainViewController: UIViewController {
             ) == .openInNewTab
         }()
         if shouldOpenInNewTab, let currentTab {
+            // Dismiss contextual onboarding before opening duck.ai via UTI.
+            currentTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: currentTab)
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
             // Mirror the in-place `.barUsed` so the new-tab branch keeps idle-session parity.
             // Gated on `!fromDeepLink` so external entries aren't reclassified as address-bar submissions.
@@ -3650,6 +3664,10 @@ extension MainViewController: BrowserChromeDelegate {
 
         setBarsVisibility(hidden ? 0 : 1.0, animated: animated, animationDuration: customAnimationDuration)
     }
+
+    func resetBars(animated: Bool) {
+        chromeManager.reset(animated: animated)
+    }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
         if percent < 1 {
@@ -3723,6 +3741,8 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var canHideBars: Bool {
+        // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
+        if currentTab?.isError == true { return false }
         return !daxDialogsManager.shouldShowFireButtonPulse
     }
 
@@ -3821,6 +3841,10 @@ extension MainViewController: BrowserChromeDelegate {
         )
         switch decision {
         case .openInNewTab:
+            // Dismiss contextual onboarding before duck.ai opens via UTI.
+            if let tab = currentTab {
+                tab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: tab)
+            }
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink)
         case .loadInPlace:
             loadUrl(url, fromExternalLink: fromExternalLink)
@@ -3893,7 +3917,9 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
-        commitToggleStateToCurrentTab()
+        // A Duck.ai submission IS Duck.ai mode — commit that directly rather than re-reading the live
+        // toggle, which a refresh-on-submit can reset to the stored last-used before we read it.
+        commitToggleMode(.aiChat)
         openAIChat(query, autoSend: true, tools: tools)
     }
 
@@ -3903,10 +3929,41 @@ extension MainViewController: OmniBarDelegate {
         loadUrlRespectingAIBoundary(url)
     }
 
+    func onViewAllChatsSelected() {
+        openAIChatHistory(source: .addressBar)
+    }
+
     func onAIChatQueryUpdated(_ query: String) {
         iPadAIChatQuery = query
-        iPadTabChatHistoryCoordinator.updateQuery(query)
-        updateIPadURLFallbackSuggestions()
+        refreshPopoverSuggestions()
+    }
+
+    // Arrow keys in Duck.ai mode drive the unified Duck.ai popover (recents + URL hits + Search row).
+    func isAIChatSuggestionsNavigationAvailable() -> Bool {
+        guard isModeToggleInAIChatMode, !viewCoordinator.suggestionTrayContainer.isHidden else { return false }
+        return suggestionTrayController?.popoverMode == .duckAI
+            && suggestionTrayController?.popoverDuckAIHasContent == true
+    }
+
+    func hasAIChatSuggestionsHighlight() -> Bool {
+        suggestionTrayController?.hasDuckAIHighlight ?? false
+    }
+
+    func onAIChatSuggestionsMoveSelectionDown() {
+        suggestionTrayController?.duckAIKeyboardMoveSelectionDown()
+    }
+
+    func onAIChatSuggestionsMoveSelectionUp() {
+        suggestionTrayController?.duckAIKeyboardMoveSelectionUp()
+    }
+
+    func onAIChatSuggestionsActivateHighlight() -> Bool {
+        suggestionTrayController?.activateHighlightedDuckAISuggestion() ?? false
+    }
+
+    func onAIChatSuggestionsClearHighlight() {
+        guard isModeToggleInAIChatMode else { return }
+        suggestionTrayController?.clearDuckAIKeyboardSelection()
     }
 
     func didRequestCurrentURL() -> URL? {
@@ -3931,13 +3988,14 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQueryUpdated(_ updatedQuery: String) {
-        if iPadTabChatHistoryCoordinator.isInstalled {
-            iPadAIChatQuery = updatedQuery
-        }
-        // During iPad mode toggle transitions, text can be copied to the textField
-        // which triggers this method even in duck.ai mode — suppress suggestions.
+        // Duck.ai text changes arrive via onAIChatQueryUpdated; don't show search here.
         if isModeToggleInAIChatMode {
-            hideSuggestionTray()
+            return
+        }
+
+        if isPad {
+            // iPad: the single authority decides search content for the typed text.
+            refreshPopoverSuggestions()
             return
         }
 
@@ -3953,11 +4011,11 @@ extension MainViewController: OmniBarDelegate {
         } else {
             tryToShowSuggestionTray(.autocomplete(query: updatedQuery))
         }
-        
     }
 
     func onOmniQuerySubmitted(_ query: String) {
-        commitToggleStateToCurrentTab()
+        // A search submission IS search mode — commit directly (see onPromptSubmitted).
+        commitToggleMode(.search)
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -4224,8 +4282,15 @@ extension MainViewController: OmniBarDelegate {
         }
     }
 
+    /// Whether suggestions are actually on screen. The iPad popover's controllers persist across a focus
+    /// session even while hidden, so existence (`isShowingAutocompleteSuggestions`) isn't enough — gauge
+    /// by the popover container's visibility too.
+    private var areSuggestionsVisible: Bool {
+        isShowingAutocompleteSuggestions && !viewCoordinator.suggestionTrayContainer.isHidden
+    }
+
     func onEditingEnd() -> OmniBarEditingEndResult {
-        if isShowingAutocompleteSuggestions {
+        if areSuggestionsVisible {
             return .suspended
         } else {
             newTabPageViewController?.dismissDuckAICompletionDialogIfNeededOnEditingEnd()
@@ -4360,13 +4425,20 @@ extension MainViewController: OmniBarDelegate {
                                  serp: .addressBarClearPressedOnSERP,
                                  website: .addressBarClearPressedOnWebsite,
                                  aiChat: .addressBarClearPressedOnAIChat)
+
+        // The input is cleared programmatically, so its change delegate never fires; refresh so the
+        // popover drops to recents-only / favorites (or collapses) for the now-empty query.
+        if isPad {
+            iPadAIChatQuery = ""
+            refreshPopoverSuggestions()
+        }
     }
 
     private func newTabShortcutAction() {
         Pixel.fire(pixel: .tabSwitchLongPressNewTab, withAdditionalParameters: [
             PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue
         ])
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard !duckAIFireOnboardingFlow.controlsLocked else { return }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         performCancel()
         newTab()
@@ -4392,8 +4464,9 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool) {
-        // We don't want any action here if we're still in autocomplete context
-        guard !isShowingAutocompleteSuggestions else { return }
+        // We don't want any action here if suggestions are still visible (existence alone isn't enough
+        // on iPad, where the controllers persist hidden across the focus session).
+        guard !areSuggestionsVisible else { return }
 
         // Dismiss contextual AI chat sheet when omni bar becomes active
         if let currentTab, tapped {
@@ -4414,12 +4487,18 @@ extension MainViewController: OmniBarDelegate {
         }
 
         guard newTabPageViewController == nil else { return }
-        guard !isModeToggleInAIChatMode else { return }
 
-        if !skipSERPFlow, isSERPPresented, let query = omniBar.text {
-            tryToShowSuggestionTray(.autocomplete(query: query))
+        if isPad {
+            // iPad routes all suggestion show/hide through the focus model (favorites vs autocomplete
+            // vs recents is decided there from the live state).
+            refreshPopoverSuggestions()
         } else {
-            tryToShowSuggestionTray(.favorites)
+            guard !isModeToggleInAIChatMode else { return }
+            if !skipSERPFlow, isSERPPresented, let query = omniBar.text {
+                tryToShowSuggestionTray(.autocomplete(query: query))
+            } else {
+                tryToShowSuggestionTray(.favorites)
+            }
         }
         themeColorManager.updateThemeColor()
     }
@@ -4564,35 +4643,20 @@ extension MainViewController: OmniBarDelegate {
 
     func onOmniBarExpandedStateChanged(isExpanded: Bool) {
         if isExpanded {
-            hideSuggestionTray()
-
-            iPadTabChatHistoryCoordinator.delegate = self
-            iPadTabChatHistoryCoordinator.install(
-                in: view,
-                parentViewController: self,
-                searchContainer: viewCoordinator.omniBar.barView.searchContainer,
-                isFireTab: isCurrentTabFireTab(),
-                keyboardLayoutGuide: view.keyboardLayoutGuide
-            )
-            iPadTabChatHistoryCoordinator.onSuggestionsVisibilityChanged = { [weak self] _ in
-                guard let self else { return }
-                if self.isAwaitingIPadHistoryRefreshAfterModeSwitch {
-                    self.isAwaitingIPadHistoryRefreshAfterModeSwitch = false
-                }
-                self.updateIPadURLFallbackSuggestions()
-            }
-
+            // Entering the expanded Duck.ai input — show its suggestions. Toggling back to search is
+            // handled by `onToggleModeSwitched` and dismissing by the dismiss path.
+            refreshPopoverSuggestions()
             guard expandedOmniBarDismissTapGesture == nil else { return }
             let tap = UITapGestureRecognizer(target: self, action: #selector(dismissExpandedOmniBar))
             tap.cancelsTouchesInView = false
             viewCoordinator.contentContainer.addGestureRecognizer(tap)
             expandedOmniBarDismissTapGesture = tap
         } else {
-            iPadTabChatHistoryCoordinator.tearDown()
-            iPadAIChatQuery = ""
-            suggestionTrayController?.suggestionFilter = .all
-            suggestionTrayController?.additionalTopInset = 0
-
+            // The input collapsed while still in Duck.ai mode (e.g. a reload stole focus) — hide the
+            // now-orphaned popover. A toggle to search flips the mode first, so this skips it there.
+            if isModeToggleInAIChatMode {
+                popoverSuggestionsCoordinator?.present(.none)
+            }
             if let tap = expandedOmniBarDismissTapGesture {
                 viewCoordinator.contentContainer.removeGestureRecognizer(tap)
                 expandedOmniBarDismissTapGesture = nil
@@ -4600,48 +4664,50 @@ extension MainViewController: OmniBarDelegate {
         }
     }
 
+    /// Re-evaluates the iPad popover from the live omnibar state via the pure `IPadOmnibarFocusModel`
+    /// and applies its decision. All "what should show" rules live in the model; this only snapshots
+    /// state and hands the result to the coordinator.
+    private func refreshPopoverSuggestions() {
+        guard isPad else { return }
+        let surface = IPadOmnibarFocusModel.surface(for: currentOmnibarFocusContext())
+        popoverSuggestionsCoordinator?.present(surface)
+    }
+
+    /// Snapshots the omnibar/page state the focus model decides from.
+    private func currentOmnibarFocusContext() -> IPadOmnibarFocusModel.Context {
+        let mode: IPadOmnibarFocusModel.Mode = isModeToggleInAIChatMode ? .duckAI : .search
+        let fieldText = mode == .duckAI ? currentIPadAIQuery() : (viewCoordinator.omniBar.text ?? "")
+        return IPadOmnibarFocusModel.Context(
+            mode: mode,
+            pageKind: currentOmnibarPageKind(),
+            hasFavorites: suggestionTrayController?.canShow(for: .favorites) ?? false,
+            fieldText: fieldText,
+            pageURL: currentTab?.url?.absoluteString,
+            userHasEditedText: omnibarHasUserEdit)
+    }
+
+    private func currentOmnibarPageKind() -> IPadOmnibarFocusModel.PageKind {
+        if newTabPageViewController != nil { return .newTabPage }
+        if isSERPPresented { return .serp }
+        return .website
+    }
+
+    /// Whether the user has typed in the omnibar since the page URL was last displayed (a tap doesn't
+    /// count). False means the field shows the unedited page URL.
+    private var omnibarHasUserEdit: Bool {
+        (viewCoordinator.omniBar as? OmniBarViewController)?.userDidEditText ?? false
+    }
+
+    private func teardownPopoverSuggestions() {
+        guard isPad else { return }
+        popoverSuggestionsCoordinator?.teardown()
+    }
+
     @objc private func dismissExpandedOmniBar() {
         performCancel()
     }
 
-    /// Shows URL-only suggestions below the AI text input only when chat history has no matches.
-    private func updateIPadURLFallbackSuggestions() {
-        let effectiveQuery = currentIPadAIQuery()
-        iPadAIChatQuery = effectiveQuery
-
-        guard iPadTabChatHistoryCoordinator.isInstalled else {
-            suggestionTrayController?.suggestionFilter = .all
-            suggestionTrayController?.additionalTopInset = 0
-            return
-        }
-        guard isModeToggleInAIChatMode else {
-            suggestionTrayController?.suggestionFilter = .all
-            suggestionTrayController?.additionalTopInset = 0
-            return
-        }
-        if isAwaitingIPadHistoryRefreshAfterModeSwitch {
-            hideSuggestionTrayContainerForIPadAI()
-            return
-        }
-
-        let shouldShowURLFallback = !effectiveQuery.isBlank && !iPadTabChatHistoryCoordinator.hasSuggestions
-        if shouldShowURLFallback {
-            suggestionTrayController?.suggestionFilter = .urlsOnly
-            suggestionTrayController?.additionalTopInset = iPadURLFallbackTopInset()
-            allowIPadAIAutocompleteShow = true
-            let didShow = tryToShowSuggestionTray(.autocomplete(query: effectiveQuery))
-            allowIPadAIAutocompleteShow = false
-            if !didShow {
-                hideSuggestionTrayContainerForIPadAI()
-            }
-        } else {
-            suggestionTrayController?.suggestionFilter = .all
-            suggestionTrayController?.additionalTopInset = 0
-            hideSuggestionTrayContainerForIPadAI()
-        }
-    }
-
-    private func iPadURLFallbackTopInset() -> CGFloat {
+    private func duckAIPopoverTopInset() -> CGFloat {
         guard let searchContainer = viewCoordinator.omniBar.barView.searchContainer else {
             return 0
         }
@@ -4658,14 +4724,6 @@ extension MainViewController: OmniBarDelegate {
             return expandable.aiChatTextView.text ?? ""
         }
         return omniBarVC.text ?? iPadAIChatQuery
-    }
-
-    /// Hides only the tray container during iPad duck.ai transitions.
-    /// Keeps tray content alive to avoid remove/reinstall flicker when toggling modes.
-    private func hideSuggestionTrayContainerForIPadAI() {
-        viewCoordinator.omniBar.showSeparator()
-        viewCoordinator.suggestionTrayContainer.isHidden = true
-        currentTab?.webView.accessibilityElementsHidden = false
     }
 
     // MARK: - Experimental Address Bar (pixels only)
@@ -4764,21 +4822,7 @@ extension MainViewController: OmniBarDelegate {
         }
         postIdleSessionInstrumentation.toggleUsed()
         iPadAIChatQuery = currentIPadAIQuery()
-        guard iPadTabChatHistoryCoordinator.isInstalled else { return }
-        if isModeToggleInAIChatMode {
-            // Hide visible search suggestions immediately, but keep content alive
-            // to avoid raw teardown/reinstall flashes during quick mode toggles.
-            hideSuggestionTrayContainerForIPadAI()
-            isAwaitingIPadHistoryRefreshAfterModeSwitch = !iPadAIChatQuery.isBlank
-            iPadTabChatHistoryCoordinator.updateQuery(iPadAIChatQuery)
-            if !isAwaitingIPadHistoryRefreshAfterModeSwitch {
-                updateIPadURLFallbackSuggestions()
-            }
-        } else {
-            isAwaitingIPadHistoryRefreshAfterModeSwitch = false
-            suggestionTrayController?.suggestionFilter = .all
-            suggestionTrayController?.additionalTopInset = 0
-        }
+        refreshPopoverSuggestions()
     }
 
     func onTextEntryModeDidChange(_ mode: TextEntryMode) {
@@ -4787,13 +4831,6 @@ extension MainViewController: OmniBarDelegate {
 
     func preferredTextEntryModeForCurrentTab() -> TextEntryMode? {
         tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) }
-    }
-
-    /// Persists the current omnibar toggle state globally so "Last Used" mode picks it up
-    /// for new tabs. No per-tab persistence — existing tabs read from URL on next omnibar tap.
-    private func commitToggleStateToCurrentTab() {
-        guard let omniBarVC = viewCoordinator.omniBar as? OmniBarViewController else { return }
-        commitToggleMode(omniBarVC.selectedTextEntryMode)
     }
 
     /// Shared commit logic for all toggle paths (iPad, iPhone editing state, unified toggle input).
@@ -4811,6 +4848,78 @@ extension MainViewController: OmniBarDelegate {
 }
 
 // MARK: - AutocompleteViewControllerDelegate Methods
+extension MainViewController: PopoverSuggestionsHosting {
+
+    func showPopoverSearchList(query: String) {
+        // Animate the anchor only when the popover is already on screen (a mode toggle); a fresh show
+        // must snap to the inset, else it slides in from the previous session's Duck.ai position.
+        suggestionTrayController?.setAdditionalTopInset(0, animated: isPopoverVisible)
+        tryToShowSuggestionTray(.autocomplete(query: query))
+    }
+
+    func showPopoverDuckAIList(query: String) {
+        suggestionTrayController?.setAdditionalTopInset(duckAIPopoverTopInset(), animated: isPopoverVisible)
+        tryToShowSuggestionTray(.duckAISuggestions(query: query))
+    }
+
+    private var isPopoverVisible: Bool {
+        !viewCoordinator.suggestionTrayContainer.isHidden
+    }
+
+    @discardableResult
+    func showPopoverFavorites() -> Bool {
+        // Favorites anchor under the collapsed search bar — reset the Duck.ai inset or a gap remains.
+        suggestionTrayController?.setAdditionalTopInset(0, animated: isPopoverVisible)
+        return tryToShowSuggestionTray(.favorites)
+    }
+
+    /// Hides the container but keeps the list surfaces alive, avoiding remove/reinstall flicker on toggle.
+    func hidePopover() {
+        suggestionTrayController?.clearKeyboardSelections()
+        viewCoordinator.omniBar.showSeparator()
+        viewCoordinator.suggestionTrayContainer.isHidden = true
+        currentTab?.webView.accessibilityElementsHidden = false
+    }
+}
+
+extension MainViewController: SuggestionTrayDuckAINavigationDelegate {
+
+    func suggestionTrayDidSelectDuckAI(_ selection: DuckAISuggestionsSelection) {
+        switch selection {
+        case .chat(let chat):
+            DailyPixel.fireDailyAndCount(pixel: chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected)
+            if isPad {
+                DailyPixel.fireDailyAndCount(pixel: chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected)
+            }
+            Pixel.fire(pixel: .autocompleteDuckAIClickChatHistory)
+            onChatHistorySelected(url: aiChatSettings.aiChatURL.withChatID(chat.chatId))
+        case .url(let suggestion):
+            handleSuggestionSelected(suggestion)
+        case .searchDuckDuckGo(let query):
+            Pixel.fire(pixel: .autocompleteDuckAIClickSearchDuckDuckGo)
+            viewCoordinator.omniBar.setSelectedTextEntryMode(.search)
+            loadQuery(query)
+        case .viewAllChats:
+            onViewAllChatsSelected()
+        }
+    }
+
+    func suggestionTrayDidDeleteDuckAIURLSuggestion() {
+        // The Duck.ai surface already refetched its own URLs; the search surface re-fetches on next query.
+    }
+
+    func suggestionTrayRequestsDuckAIChatDeletionConfirmation(for chat: AIChatSuggestion,
+                                                              sourceRect: CGRect,
+                                                              onConfirm: @escaping () -> Void,
+                                                              onCancel: @escaping () -> Void) {
+        FireConfirmationPresenter.presentFireConfirmation(suggestion: chat,
+                                                          presenter: self,
+                                                          sourceRect: sourceRect,
+                                                          onCancel: onCancel,
+                                                          onConfirm: onConfirm)
+    }
+}
+
 extension MainViewController: AutocompleteViewControllerDelegate {
 
     func autocompleteDidEndWithUserQuery() {
@@ -4822,6 +4931,10 @@ extension MainViewController: AutocompleteViewControllerDelegate {
 
     func autocomplete(selectedSuggestion suggestion: Suggestion) {
         handleSuggestionSelected(suggestion)
+    }
+
+    func autocomplete(deletedSuggestion suggestion: Suggestion) {
+        // NO-OP
     }
 
     func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion) {
@@ -4845,6 +4958,9 @@ extension MainViewController: AutocompleteViewControllerDelegate {
     }
     
     func autocomplete(highlighted suggestion: Suggestion, for query: String) {
+        // In iPad duck.ai mode the visible editor is the chat text view, so keep the highlight on the
+        // suggestion row rather than writing the hidden search field.
+        guard !isModeToggleInAIChatMode else { return }
 
         switch suggestion {
         case .phrase(phrase: let phrase), .askAIChat(let phrase):
@@ -4909,6 +5025,12 @@ extension MainViewController: EscapeHatchActionRouter {
             return
         }
 
+        // Keep the hatch (and the current focus state) so the card collapses to the expanded pill,
+        // consistent with the delete flow which also preserves focus.
+        if featureFlagger.isFeatureOn(.escapeHatchHideShortcut) {
+            return
+        }
+
         /// # TODO: Invoking `closeTab` removes the Escape Hatch from screen
         clearEscapeHatch()
         dismissOmniBar()
@@ -4921,6 +5043,8 @@ extension MainViewController: EscapeHatchActionRouter {
             return
         }
 
+        // Captured before the confirmation dialog steals focus, so we can restore the keyboard afterwards.
+        let wasInFocusMode = isEscapeHatchInFocusMode
         let tabViewModel = tabManager.viewModel(for: tab)
         let presenter = FireConfirmationPresenter()
         presenter.presentFireConfirmation(
@@ -4931,8 +5055,15 @@ extension MainViewController: EscapeHatchActionRouter {
             fireContext: .singleTab,
             browsingMode: tab.mode,
             onConfirm: { [weak self] fireRequest in
-                self?.forgetAllWithAnimation(request: fireRequest) {}
-                self?.clearEscapeHatch()
+                if self?.featureFlagger.isFeatureOn(.escapeHatchHideShortcut) == true {
+                    self?.forgetAllWithAnimation(request: fireRequest) { [weak self] in
+                        self?.restoreTabSwitcherOnlyHatchAfterBurn()
+                        self?.restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: wasInFocusMode)
+                    }
+                } else {
+                    self?.forgetAllWithAnimation(request: fireRequest) {}
+                    self?.clearEscapeHatch()
+                }
                 self?.postIdleSessionInstrumentation.burnTabTapped()
             },
             onCancel: { }
@@ -4948,6 +5079,7 @@ extension MainViewController: EscapeHatchActionRouter {
             return
         }
 
+        let wasInFocusMode = isEscapeHatchInFocusMode
         let tabViewModel = tabManager.viewModel(for: tab)
         let request = FireRequest(
             options: .all,
@@ -4956,8 +5088,15 @@ extension MainViewController: EscapeHatchActionRouter {
             source: .escapeHatch
         )
 
-        forgetAllWithAnimation(request: request) {}
-        clearEscapeHatch()
+        if featureFlagger.isFeatureOn(.escapeHatchHideShortcut) {
+            forgetAllWithAnimation(request: request) { [weak self] in
+                self?.restoreTabSwitcherOnlyHatchAfterBurn()
+                self?.restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: wasInFocusMode)
+            }
+        } else {
+            forgetAllWithAnimation(request: request) {}
+            clearEscapeHatch()
+        }
         ntpAfterIdleInstrumentation.escapeHatchBurnTapped(requiredConfirmation: false)
         postIdleSessionInstrumentation.burnTabTapped()
     }
@@ -4971,6 +5110,7 @@ extension MainViewController: EscapeHatchActionRouter {
         ntpAfterIdleInstrumentation.escapeHatchOptionChanged(to: option)
         postIdleSessionInstrumentation.openingScreenChanged()
     }
+
 }
 
 extension MainViewController: NewTabPageControllerDelegate {
@@ -5010,8 +5150,8 @@ extension MainViewController: NewTabPageControllerDelegate {
         requestTabSwitcher()
     }
 
-    func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {
-        markSearchContextualOnboardingAsSeenForExperiment()
+    func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: NewTabPageViewController) {
+        markSearchContextualOnboardingAsSeen()
     }
 
     func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
@@ -5025,7 +5165,7 @@ extension MainViewController: TabDelegate {
     var isEmailProtectionSignedIn: Bool {
         emailManager.isSignedIn
     }
-    
+
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {
         newEmailAddress()
     }
@@ -5194,11 +5334,11 @@ extension MainViewController: TabDelegate {
 
     func tabLoadingStateDidChange(tab: TabViewController) {
         if tab.isLoading {
-            experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
-            experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
+            duckAIFireOnboardingFlow.triggerWorkItem?.cancel()
+            duckAIFireOnboardingFlow.triggerWorkItem = nil
         } else {
-            scheduleExperimentDuckAIFireOnboardingAfterLoadIfNeeded(for: tab)
-            if experimentDuckAIFireOnboardingFlow.shouldForcePostFireAddressBarPickerRestore && currentTab == tab {
+            scheduleDuckAIFireOnboardingAfterLoadIfNeeded(for: tab)
+            if duckAIFireOnboardingFlow.shouldForcePostFireAddressBarPickerRestore && currentTab == tab {
                 restorePostFireAddressBarPickerIfNeeded()
             }
         }
@@ -5248,7 +5388,7 @@ extension MainViewController: TabDelegate {
     private func presentChatPathOnboardingCompletionIfNeeded() {
         guard daxDialogsManager.chatPathPhase == .trackerToEOJ,
               aiChatSettings.isAIChatEnabled else { return }
-        let message = UserText.Onboarding.DuckAIQueryExperiment.completionOnboardingMessage
+        let message = UserText.Onboarding.DuckAIQuery.completionOnboardingMessage
         // Hide the NTP synchronously, before any frame is rendered, so its empty-state Dax can't
         // flash before the editing-state transition begins. Restored by NewTabPageViewController
         // on every dismissal path.
@@ -5352,20 +5492,43 @@ extension MainViewController: TabDelegate {
         openAIChat()
     }
 
-    func tabDidRequestAIChatHistory(tab: TabViewController) {
-        openAIChatHistory()
+    func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {
+        openAIChatHistory(source: source)
     }
 
-    func openAIChatHistory() {
+    func openAIChatHistory(source: AIChatHistorySource = .browserMenu) {
+        // The native chat history sheet is an iPhone-only experience; entrypoints are hidden on iPad,
+        // and this guard ensures the sheet can never be presented there.
+        guard UIDevice.current.userInterfaceIdiom != .pad else { return }
         // The disk-backed storage handler also conforms to `DuckAiNativeChatsObserving`
         // (forwarding to its GRDB `ValueObservation` backing). When storage failed to
         // configure at launch the cast yields `nil`, and the reader surfaces a
         // `.storageUnavailable` failure so the screen shows an error rather than a
         // misleading empty list.
         let reader = ChatHistoryReader(observer: duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)
-        let viewModel = AIChatHistoryViewModel(reader: reader)
+        // Snapshot the UTI model catalog for export header attribution. `uniquingKeysWith`
+        // rather than `uniqueKeysWithValues:` — the model list is server-supplied so we
+        // can't guarantee unique ids and the latter crashes on duplicates.
+        let modelDisplays = Dictionary(
+            (unifiedToggleInputCoordinator?.models ?? []).map { ($0.id, $0.toModelDisplay()) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let downloader = ChatHistoryDownloader(
+            storageHandler: duckAiNativeStorageHandler,
+            modelDisplays: modelDisplays
+        )
+        let pinner: ChatPinning? = duckAiNativeStorageHandler.map { storage in
+            ChatPinner(storageHandler: storage, syncCleaner: aiChatSyncCleaner)
+        }
+        let viewModel = AIChatHistoryViewModel(
+            reader: reader,
+            fireExecutor: fireExecutor,
+            downloader: downloader,
+            pinner: pinner,
+            source: source
+        )
         viewModel.delegate = self
-        let content = AIChatHistoryViewController(viewModel: viewModel)
+        let content = AIChatHistoryViewController(viewModel: viewModel, fireButtonAnimator: fireButtonAnimator)
         let navigationController = UINavigationController(rootViewController: content)
         navigationController.modalPresentationStyle = .automatic
         present(navigationController, animated: true)
@@ -5571,11 +5734,20 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         }
     }
 
-    func viewModelDidRequestDeleteChat(chatId: String) {
-        // The chat-history sheet shows persistent chats, so this is never a fire-mode burn.
-        Task { @MainActor in
-            await fireExecutor.burnChat(chatID: chatId, isFireMode: false)
-        }
+    func viewModelDidExportChat(filename: String) {
+        let message = DownloadActionMessageViewHelper.makeDownloadFinishedMessage(forFilename: filename)
+        let addressBarBottom = appSettings.currentAddressBarPosition.isBottom
+        ActionMessageView.present(
+            message: message,
+            numberOfLines: 2,
+            actionTitle: UserText.actionGenericShow,
+            presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+            onAction: { [weak self] in
+                self?.dismiss(animated: true) { [weak self] in
+                    self?.segueToDownloads()
+                }
+            }
+        )
     }
 }
 
@@ -5898,7 +6070,7 @@ extension MainViewController {
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: { [weak self] in
-            self?.presentPostBurnMessage(tabsCount: tabsCount)
+            self?.presentPostBurnMessage(tabsCount: tabsCount, request: request)
             transitionCompletion?()
         } completion: {
             self.subscriptionDataReporter.saveFireCount()
@@ -5906,7 +6078,8 @@ extension MainViewController {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab {
+            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchHideBurn(request) {
+                // With the hide feature on, escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
                 let showKeyboardAfterFireButton = DispatchWorkItem {
                     if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
                         self.enterSearch()
@@ -5934,10 +6107,13 @@ extension MainViewController {
     }
     
     @MainActor
-    private func presentPostBurnMessage(tabsCount: Int) {
+    private func presentPostBurnMessage(tabsCount: Int, request: FireRequest) {
         let message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: tabsCount)
-        ActionMessageView.present(message: message,
-                                  presentationLocation: .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom))
+        // Escape-hatch-hide burns restore the keyboard, which would cover a bottom toast — show it at the top.
+        let location: ActionMessageView.PresentationLocation = isEscapeHatchHideBurn(request)
+            ? .top
+            : .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom)
+        ActionMessageView.present(message: message, presentationLocation: location)
     }
     
     private func refreshUIAfterClear() {
@@ -5957,9 +6133,9 @@ extension MainViewController {
     }
     
     func showFireButtonPulse() {
-        // During experiment fire onboarding we control pulse lifecycle explicitly.
+        // During Duck.ai fire onboarding we control pulse lifecycle explicitly.
         // Avoid Dax pulse bookkeeping here, because it can immediately clear highlights.
-        if experimentDuckAIFireOnboardingFlow.state != .active {
+        if duckAIFireOnboardingFlow.state != .active {
             daxDialogsManager.fireButtonPulseStarted()
         }
         guard let window = view.window else { return }
@@ -6198,11 +6374,11 @@ extension MainViewController: FireExecutorDelegate {
         }
         if #available(iOS 18.4, *) {
             Task { @MainActor [weak self] in
-                guard let self else { return }
+                guard let self, let coordinator = self.webExtensionLifecycleCoordinator else { return }
                 if self.featureFlagger.isFeatureOn(.webExtensionLightweightReload) {
-                    await self.webExtensionManager?.reloadInstalledExtensions()
+                    await coordinator.reload().value
                 } else {
-                    await self.webExtensionManager?.loadInstalledExtensions()
+                    await coordinator.load().value
                 }
                 self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
             }
@@ -6320,12 +6496,15 @@ extension MainViewController: OnboardingDelegate {
 
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
-        // Now that linear onboarding has finished, any experiment cohort
-        // enrollment that occurred is in place. Run the unified-toggle-input
+
+        appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
+
+
+        // Now that linear onboarding has finished, run the unified-toggle-input
         // setup that was deferred at viewDidLoad.
         setUpUnifiedToggleInputIfNeeded()
-        if experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse {
-            onboardingCompletedWithExperimentTransition(controller: controller)
+        if duckAIFireOnboardingFlow.state == .awaitingFirstResponse {
+            onboardingCompletedWithDuckAITransition(controller: controller)
             return
         }
 
@@ -6333,7 +6512,7 @@ extension MainViewController: OnboardingDelegate {
         // which only installs when `shouldUseExperimentalEditingState` is true — itself gated on
         // `aiChatSettings.isAIChatSearchInputUserSettingsEnabled`.
         //
-        // IMPORTANT: Contrary to the Duck.ai experiment on the default flow we do not call `ensureDuckAiCompletionDialogPresentationPrerequisites()`.
+        // IMPORTANT: Contrary to the Duck.ai fire onboarding on the default flow we do not call `ensureDuckAiCompletionDialogPresentationPrerequisites()`.
         // The full prerequisite also calls `daxDialogsManager.disableContextualDaxDialogs()`, which would set
         // `isEnabled = false` before the tailored completion dialog is presented, breaking the subscription
         // chain inside the dialog's `onDismiss` (`nextHomeScreenMessageNew()` would return `nil` from its
@@ -6382,10 +6561,8 @@ extension MainViewController: OnboardingNavigationDelegate {
     }
 
     func searchFromOnboarding(for query: String) {
-        if featureFlagger.isFeatureOn(.onboardingDuckAIQueryTrackersDemoExperiment) {
-            // suppress the Search onboarding dialog for the Search path
-            daxDialogsManager.setTryAnonymousSearchMessageSeen()
-        }
+        // Suppress the Search onboarding dialog when the user came from the duck.ai query selection step.
+        daxDialogsManager.setTryAnonymousSearchMessageSeen()
         self.loadQuery(query)
     }
 }
@@ -6954,22 +7131,9 @@ extension MainViewController: AIChatHistoryManagerDelegate {
     func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL) {
         onChatHistorySelected(url: url)
     }
-}
 
-// MARK: - ConsentStatusInfo to CookieConsentInfo Conversion
-
-@available(iOS 18.4, *)
-extension ConsentStatusInfo {
-    func toCookieConsentInfo() -> CookieConsentInfo {
-        CookieConsentInfo(
-            consentManaged: consentManaged,
-            cosmetic: cosmetic,
-            optoutFailed: optoutFailed,
-            selftestFailed: selftestFailed,
-            consentReloadLoop: consentReloadLoop,
-            consentRule: consentRule,
-            consentHeuristicEnabled: consentHeuristicEnabled
-        )
+    func aiChatHistoryManagerDidSelectViewAllChats(_ manager: AIChatHistoryManager) {
+        openAIChatHistory(source: .addressBar)
     }
 }
 

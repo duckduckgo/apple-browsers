@@ -21,6 +21,11 @@ public enum SyncSetupRole {
     case sharer
 }
 
+public enum SyncSetupCodeVersion: String {
+    case v1
+    case v2
+}
+
 public enum SyncSetupSource: String {
     case recovery
     case exchange

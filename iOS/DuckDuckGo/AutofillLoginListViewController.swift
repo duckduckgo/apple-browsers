@@ -158,16 +158,6 @@ final class AutofillLoginListViewController: UIViewController {
     private var syncPromoPresented: Bool = false
     private var extensionPromoPresented: Bool = false
 
-    private lazy var lockedViewBottomConstraint: NSLayoutConstraint = {
-        NSLayoutConstraint(item: tableView,
-                           attribute: .bottom,
-                           relatedBy: .equal,
-                           toItem: lockedView,
-                           attribute: .bottom,
-                           multiplier: 1,
-                           constant: 144)
-    }()
-
     private lazy var emptySearchViewCenterYConstraint: NSLayoutConstraint = {
         NSLayoutConstraint(item: emptySearchView,
                            attribute: .centerY,
@@ -279,7 +269,6 @@ final class AutofillLoginListViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         coordinator.animate(alongsideTransition: { _ in
-            self.updateConstraintConstants()
             if self.view.subviews.contains(self.noAuthAvailableView) {
                 self.noAuthAvailableView.refreshConstraints()
             }
@@ -870,8 +859,6 @@ final class AutofillLoginListViewController: UIViewController {
         lockedView.translatesAutoresizingMaskIntoConstraints = false
         noAuthAvailableView.translatesAutoresizingMaskIntoConstraints = false
 
-        updateConstraintConstants()
-
         NSLayoutConstraint.activate([
             tableView.leftAnchor.constraint(equalTo: view.leftAnchor),
             tableView.rightAnchor.constraint(equalTo: view.rightAnchor),
@@ -884,24 +871,15 @@ final class AutofillLoginListViewController: UIViewController {
             emptySearchView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding),
 
             lockedView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            lockedView.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
             lockedView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.padding),
             lockedView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding),
-            lockedViewBottomConstraint,
 
             noAuthAvailableView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             noAuthAvailableView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             noAuthAvailableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.padding),
             noAuthAvailableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding)
         ])
-    }
-
-    private func updateConstraintConstants() {
-        let isIPhoneLandscape = traitCollection.containsTraits(in: UITraitCollection(verticalSizeClass: .compact))
-        if isIPhoneLandscape {
-            lockedViewBottomConstraint.constant = (view.frame.height / 2.0 - max(lockedView.frame.height, 120.0) / 2.0)
-        } else {
-            lockedViewBottomConstraint.constant = view.frame.height * 0.15
-        }
     }
 
     // MARK: Cell Methods

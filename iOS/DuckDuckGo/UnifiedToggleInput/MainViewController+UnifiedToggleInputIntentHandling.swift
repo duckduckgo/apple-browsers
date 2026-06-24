@@ -64,13 +64,6 @@ extension MainViewController {
               attributed.length > 0 else { return nil }
         return attributed.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
     }
-
-    /// Returns the NTP view's center Y in window coordinates, or nil if not available.
-    func ntpLogoWindowCenterY() -> CGFloat? {
-        guard let ntpView = newTabPageViewController?.view,
-              let window = ntpView.window else { return nil }
-        return ntpView.convert(CGPoint(x: 0, y: ntpView.bounds.midY), to: window).y
-    }
 }
 
 private extension MainViewController {
@@ -177,12 +170,16 @@ private extension MainViewController {
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
+        coordinator.contentViewController.refreshSuggestionsCaches()
+
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
 
         let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
-        let ntpStartCenterY = ntpLogoWindowCenterY()
+        // Favorites hand off seamlessly too: the embedded grid is already laid out where the NTP grid is,
+        // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
+        let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let isBottom = coordinator.cardPosition.isBottom
 
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
@@ -190,27 +187,23 @@ private extension MainViewController {
         updateUnifiedInputContentVisibility(for: coordinator)
 
         if !isLogoToLogo {
-            viewCoordinator.unifiedInputContentContainer.alpha = 0
+            // Hide the real NTP favorites while focusing so the UTI's embedded favorites don't
+            // cross-dissolve against them (mirrors the defocus hide-reveal). Revealed again on dismiss.
+            newTabPageViewController?.setFavoritesHidden(true)
         }
+        // Seamless handoffs (logo/favorites) show the content immediately; only other content fades in.
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        viewCoordinator.unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
 
         if let omnibarPlaceholderWindowX {
             coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
         }
 
-        // For logo-to-logo: place the UTI Logo at the NTP Logo's position, swap visibility
-        // in one frame, then let the animation drive the UTI Logo to its final position.
-        if isLogoToLogo,
-           let ntpY = ntpStartCenterY,
-           let utiY = coordinator.contentViewController.daxLogoManager.logoWindowCenterY {
-            let bottomLogoOffset = isBottom ? Constants.bottomDaxLogoTransitionYOffset : 0
-            let offset = ntpY - utiY + bottomLogoOffset
-            let naturalOffset = coordinator.contentViewController.daxLogoManager.logoYOffset
-            coordinator.contentViewController.daxLogoManager.setLogoYOffset(naturalOffset + offset)
-            coordinator.contentViewController.view.layoutIfNeeded()
-
-            coordinator.contentViewController.setLogoHidden(false)
+        if isLogoToLogo {
+            // Hide the NTP logo during the seamless logo→logo focus so it doesn't double with the
+            // focused SwiftUI logo; revealed again on dismiss. (Alpha is already 1 via the seamless
+            // handoff above — the focused logo rests at the NTP anchor by construction, no manual swap.)
             newTabPageViewController?.setLogoHidden(true)
-            viewCoordinator.unifiedInputContentContainer.alpha = 1
         }
 
         let duration = Constants.omnibarTransitionDuration(isBottom: isBottom)
@@ -227,15 +220,9 @@ private extension MainViewController {
                 if let pendingHeight {
                     self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
                 }
-                // Reset top-bar handoff so the animation interpolates the logo from its
-                // SWAP position to its natural position. Bottom bar keeps the offset and
-                // lets the keyboard guide handle final positioning.
-                if isLogoToLogo, !isBottom {
-                    coordinator.contentViewController.daxLogoManager.setLogoYOffset(0)
-                }
                 self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
-                if !isLogoToLogo {
+                if !isSeamlessHandoff {
                     self.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 }
                 coordinator.viewController.setTextHorizontalShift(0)

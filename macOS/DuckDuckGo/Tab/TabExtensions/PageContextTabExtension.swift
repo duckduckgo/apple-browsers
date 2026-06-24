@@ -157,17 +157,8 @@ final class PageContextTabExtension {
                 // chat VC exists after `showSidebar` finishes. Independent of page context below.
                 Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
 
-                /// This closure is responsible for passing cached page context to the newly displayed sidebar.
-                /// It's only called when sidebar for tabID is non-nil.
-                /// Additionally, we're only calling `handle` if there's a cached page context.
-                if let cachedPageContext, isContextCollectionEnabled {
-                    Task {
-                        await self.handle(cachedPageContext)
-                    }
-                } else {
-                    sendNonAttachableContextIfNeeded()
-                    requestSignalsOnlyCollectionIfNeeded()
-                }
+                // Pass page context to the sidebar that just appeared for this tab.
+                self.deliverContextToCurrentSidebar()
             }
             .store(in: &cancellables)
 
@@ -229,6 +220,16 @@ final class PageContextTabExtension {
             return
         }
 
+        // Re-deliver on VC recreation: hide/show rebuilds the webview while aiChatKeepSession keeps the session, so the session-existence sink won't re-fire; dropFirst skips the first VC, already handled above.
+        session.chatViewControllerPublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] chatViewController in
+                guard let self, chatViewController != nil else { return }
+                self.deliverContextToCurrentSidebar()
+            }
+            .store(in: &sidebarCancellables)
+
         session.pageContextRequestedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
@@ -280,6 +281,16 @@ final class PageContextTabExtension {
                 // won't clear it until the next prompt is submitted.
                 hasContextBeenConsumedByChat = false
             }
+        }
+    }
+
+    /// Delivers page context to the current sidebar VC: cached snapshot when auto-collect is on, else the non-attachable + signals-only payload.
+    private func deliverContextToCurrentSidebar() {
+        if let cachedPageContext, isContextCollectionEnabled {
+            Task { await self.handle(cachedPageContext) }
+        } else {
+            sendNonAttachableContextIfNeeded()
+            requestSignalsOnlyCollectionIfNeeded()
         }
     }
 

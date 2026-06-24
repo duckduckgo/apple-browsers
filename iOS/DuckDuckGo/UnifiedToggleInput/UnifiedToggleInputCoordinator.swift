@@ -1078,7 +1078,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// The collapsed AI-tab fire button. Exposed for `ViewHighlighter` targeting during onboarding.
     var aiTabFireButton: UIButton { viewController.aiTabFireButton }
 
-    /// Locks or unlocks the input bar during the Duck.ai onboarding experiment path.
+    /// Locks or unlocks the input bar during the Duck.ai fire onboarding path.
     /// When locked the text field cannot be activated and the collapsed bar ignores taps.
     func setOnboardingControlsLocked(_ locked: Bool) {
         isOnboardingLocked = locked
@@ -1956,6 +1956,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
             } else {
                 delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
+                recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
             }
         }
     }
@@ -2658,6 +2659,11 @@ extension UnifiedToggleInputCoordinator {
     func recordDuckAIPromptDelivered(wasQueued: Bool?, didSendBridgeMessage: Bool?) {
         guard let scope = currentDuckAIWideEventFlowScope else { return }
         duckAIWideEventInstrumentation?.promptDeliveryUpdated(scope: scope, wasQueued: wasQueued, didSendBridgeMessage: didSendBridgeMessage)
+    }
+
+    func recordDuckAIPromptInterpretedAsURL() {
+        guard let scope = currentDuckAIWideEventFlowScope else { return }
+        duckAIWideEventInstrumentation?.promptInterpretedAsURL(scope: scope)
     }
 
     /// Called by the contextual sheet's native-input path, which submits its initial prompt

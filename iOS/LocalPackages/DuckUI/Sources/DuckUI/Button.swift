@@ -138,7 +138,7 @@ private func makeRebrandedPrimaryBody(
         .lineLimit(nil)
         .font(rebrandedButtonFont(compact: compact))
         .foregroundColor(disabled ? colors.textDisabled : colors.text)
-        .padding(.vertical)
+        .padding(.vertical, compact ? Consts.rebrandedCompactVerticalPadding : nil)
         .padding(.horizontal, fullWidth ? nil : (compact ? 16 : 24))
         .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
         .background(disabled ? backgroundColor.opacity(Consts.disabledOpacity) : backgroundColor)
@@ -382,7 +382,7 @@ public struct SecondaryDestructiveButtonStyle: ButtonStyle {
             .lineLimit(nil)
             .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(foregroundColor)
-            .padding(.vertical)
+            .padding(.vertical, compact ? Consts.rebrandedCompactVerticalPadding : nil)
             .padding(.horizontal, fullWidth ? nil : (compact ? 16 : 24))
             .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .background(backgroundColor)
@@ -453,7 +453,8 @@ public struct DestructiveGhostButtonStyle: ButtonStyle {
         return configuration.label
             .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(isPressed ? pressedTextColor : destructiveColor)
-            .padding()
+            .padding(.vertical, compact ? Consts.rebrandedCompactVerticalPadding : nil)
+            .padding(.horizontal)
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .background(isPressed ? Color(designSystemColor: .destructiveGlowPrimary) : .clear)
             .clipShape(Capsule())
@@ -530,7 +531,8 @@ public struct SecondaryButtonStyle: ButtonStyle {
         return configuration.label
             .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(isPressed ? accent.opacity(Consts.pressedOpacity) : accent)
-            .padding()
+            .padding(.vertical, compact ? Consts.rebrandedCompactVerticalPadding : nil)
+            .padding(.horizontal)
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .contentShape(Capsule())
             .ddgButtonDynamicTypeCap()
@@ -629,7 +631,7 @@ public struct SecondaryFillButtonStyle: ButtonStyle {
             .foregroundColor(foregroundColor)
             .if(!isFreeform) { view in
                 view
-                    .padding(.vertical)
+                    .padding(.vertical, compact ? Consts.rebrandedCompactVerticalPadding : nil)
                     .padding(.horizontal, fullWidth ? nil : (compact ? 16 : 24))
                     .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             }
@@ -705,7 +707,8 @@ public struct GhostButtonStyle: ButtonStyle {
         return configuration.label
             .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(foregroundColor)
-            .padding()
+            .padding(.vertical, compact ? Consts.rebrandedCompactVerticalPadding : nil)
+            .padding(.horizontal)
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .background(backgroundColor(isPressed))
             .clipShape(Capsule())
@@ -773,7 +776,8 @@ public struct GhostAltButtonStyle: ButtonStyle {
         return configuration.label
             .font(rebrandedButtonFont(compact: compact))
             .foregroundColor(Color(singleUseColor: .rebranding(.textSecondary)))
-            .padding()
+            .padding(.vertical, compact ? Consts.rebrandedCompactVerticalPadding : nil)
+            .padding(.horizontal)
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: compact ? Consts.rebrandedHeightSmall : Consts.rebrandedHeightLarge)
             .background(backgroundColor(isPressed))
             .clipShape(Capsule())
@@ -793,6 +797,7 @@ private enum Consts {
     static let legacyHeight: CGFloat = 50
     static let rebrandedHeightLarge: CGFloat = 50
     static let rebrandedHeightSmall: CGFloat = 40
+    static let rebrandedCompactVerticalPadding: CGFloat = 8
     static let pressedOpacity: CGFloat = 0.7
     static let disabledOpacity: CGFloat = 0.36
 }

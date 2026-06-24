@@ -292,7 +292,7 @@ extension OnboardingIntroContentProvider {
 
 }
 
-// MARK: - Content Provider + Duck.ai Query Experiment (Ready to get started?)
+// MARK: - Content Provider + Duck.ai Query Selection (Ready to get started?)
 
 struct OnboardingDuckAIQueryContent: Equatable {
     let title: String
@@ -307,15 +307,15 @@ extension OnboardingIntroContentProvider {
     var duckAIQueryContent: OnboardingDuckAIQueryContent {
         let (title, isToggleVisible) = switch flowType {
         case .default:
-            (UserText.Onboarding.DuckAIQueryExperiment.title, true)
+            (UserText.Onboarding.DuckAIQuery.title, true)
         case .duckAI:
             (UserText.Onboarding.DuckAICPP.DuckAIQuery.title, false)
         }
 
         return OnboardingDuckAIQueryContent(
             title: title,
-            searchPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.searchPlaceholder,
-            aiPlaceholder: UserText.Onboarding.DuckAIQueryExperiment.aiPlaceholder,
+            searchPlaceholder: UserText.Onboarding.DuckAIQuery.searchPlaceholder,
+            aiPlaceholder: UserText.Onboarding.DuckAIQuery.aiPlaceholder,
             isToggleVisible: isToggleVisible
         )
     }

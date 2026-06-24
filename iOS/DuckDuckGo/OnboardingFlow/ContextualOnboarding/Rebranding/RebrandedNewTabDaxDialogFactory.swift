@@ -100,18 +100,16 @@ private extension RebrandedNewTabDaxDialogFactory {
 
 extension RebrandedNewTabDaxDialogFactory {
 
-    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+    func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         let onDismiss = { [weak self] in
-            if self?.onboardingFlowProvider.currentOnboardingFlow == .default {
-                self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogCTAAction()
-            }
+            self?.onboardingPixelReporter.measureDuckAIFinalDialogCTAAction()
             onDismiss()
         }
 
         return AnyView(
             FadeInView {
                 ScrollView(.vertical, showsIndicators: false) {
-                    // The Duck.ai experiment completion dialog reuses `OnboardingEndOfJourneyDialog`
+                    // The Duck.ai fire onboarding completion dialog reuses `OnboardingEndOfJourneyDialog`
                     // but is presented over the active address bar with the keyboard up — no room
                     // for the screen-bottom Dax animation, so suppress it explicitly here.
                     OnboardingRebranding.OnboardingEndOfJourneyDialog(
@@ -126,9 +124,7 @@ extension RebrandedNewTabDaxDialogFactory {
             .applyNewTabOnboardingBackground(backgroundType: .endOfJourneyNTPChat)
             .onFirstAppear { [weak self] in
                 self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-                if self?.onboardingFlowProvider.currentOnboardingFlow == .default {
-                    self?.onboardingPixelReporter.measureDuckAIExperimentFinalDialogImpression()
-                }
+                self?.onboardingPixelReporter.measureDuckAIFinalDialogImpression()
                 self?.onboardingPixelReporter.measureScreenImpression(.end(.shown))
             }
         )

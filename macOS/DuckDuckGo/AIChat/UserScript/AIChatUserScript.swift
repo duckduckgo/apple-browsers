@@ -94,6 +94,13 @@ final class AIChatUserScript: NSObject, Subfeature {
             }
             .store(in: &cancellables)
 
+        handler.selectionContextPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] selection in
+                self?.submitAIChatSelectionContext(selection)
+            }
+            .store(in: &cancellables)
+
         handler.syncStatusPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
@@ -115,6 +122,13 @@ final class AIChatUserScript: NSObject, Subfeature {
         }
         let response = PageContextResponse(pageContext: pageContextData)
         broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
+    }
+
+    private func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
+        guard let webView else {
+            return
+        }
+        broker?.push(method: AIChatUserScriptMessages.submitAIChatSelectionContext.rawValue, params: selection, for: self, into: webView)
     }
 
     private func submitOpenSettingsAction() {
@@ -182,6 +196,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openAIChatLink
         case .getAIChatPageContext:
             return handler.getAIChatPageContext
+        case .getAIChatSelectionContext:
+            return handler.getAIChatSelectionContext
         case .getAIChatOpenTabs:
             return handler.getAIChatOpenTabs
         case .getAIChatTabContent:

@@ -261,7 +261,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         }
         .onFirstAppear { [weak self] in
             // Fire the general dialog impression pixel for all users, plus an additional
-            // chat-path-specific pixel when the user is in the Duck.ai experiment flow.
+            // chat-path-specific pixel when the user is in the Duck.ai chat-first onboarding flow.
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
             if self?.contextualOnboardingSettings.chatPathPhase == .trackerToEOJ {
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingChatPathTrackersBlockedUnique)
@@ -291,7 +291,7 @@ final class DefaultContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                     self.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
                 case .duckAIOnboarding:
                     if self.onboardingManager.currentOnboardingFlow == .default {
-                        self.contextualOnboardingPixelReporter.measureDuckAIExperimentFireDialogImpression()
+                        self.contextualOnboardingPixelReporter.measureDuckAIFireDialogImpression()
                     }
                 }
                 self.contextualOnboardingPixelReporter.measureScreenImpression(.fireButton(.shown))

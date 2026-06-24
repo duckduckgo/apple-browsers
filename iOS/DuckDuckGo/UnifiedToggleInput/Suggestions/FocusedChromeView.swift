@@ -68,7 +68,8 @@ struct FocusedChromeView: View {
     }
 
     enum Metrics {
-        static let horizontalMargin: CGFloat = 24
+        /// Kept in step with `SuggestionsListView`'s cell edge so the hatch aligns with the rows.
+        static let horizontalMargin: CGFloat = 16
         static let bottomInset: CGFloat = 16
         static let interCardSpacing: CGFloat = 20
     }

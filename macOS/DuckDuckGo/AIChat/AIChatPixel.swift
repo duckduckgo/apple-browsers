@@ -433,7 +433,7 @@ enum AIChatPixel: PixelKitEvent {
     case aiFeaturesSearchAssistOften
     case aiFeaturesHideImagesOn
     case aiFeaturesHideImagesOff
-    case serpSettingsUnrecognizedValue(key: String, value: String)
+    case serpSettingsUnrecognizedValue
 
     // MARK: -
 
@@ -805,7 +805,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiFeaturesSearchAssistSometimes,
                 .aiFeaturesSearchAssistOften,
                 .aiFeaturesHideImagesOn,
-                .aiFeaturesHideImagesOff:
+                .aiFeaturesHideImagesOff,
+                .serpSettingsUnrecognizedValue:
             return nil
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
@@ -816,8 +817,6 @@ enum AIChatPixel: PixelKitEvent {
                 "hide_ai_images": hideAIImages ? "on" : "off",
                 "no_ai": noAI ? "true" : "false"
             ]
-        case .serpSettingsUnrecognizedValue(let key, let value):
-            return ["key": key, "value": value]
         case .aiChatAddressBarSubmitWithImage(let imageCount),
              .aiChatNtpSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]

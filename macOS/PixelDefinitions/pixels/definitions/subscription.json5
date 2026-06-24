@@ -654,9 +654,7 @@
                 "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed",
                 "enum": ["not_attempted", "succeeded", "failed"]
             },
-            "channel",
-            "originalPixelTimestamp",
-            "retriedPixel"
+            "channel"
         ]
     },
     "m_mac_wide_subscription_plan_change": {

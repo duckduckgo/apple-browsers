@@ -2420,12 +2420,11 @@ extension TabViewController: WKNavigationDelegate {
         linkProtection.setMainFrameUrl(nil)
         referrerTrimming.onFailedNavigation()
 
-        // Skip the site-loading failure pixel for download handoffs (WebKit error 102) and user
-        // cancellations (NSURLErrorCancelled) — same exclusions as `didFailProvisionalNavigation`.
+        // Skip the site-loading failure pixel for download handoffs (WebKit error 102) — same exclusion
+        // as `didFailProvisionalNavigation`.
         let nsError = error as NSError
         let isDownloadHandoff = nsError.code == 102 && nsError.domain == "WebKitErrorDomain"
-        let isCancellation = nsError.code == NSURLErrorCancelled && nsError.domain == NSURLErrorDomain
-        if !isDownloadHandoff && !isCancellation {
+        if !isDownloadHandoff {
             navigationPixelResponder.didFail(navigation, error: error)
         }
 
@@ -2473,6 +2472,10 @@ extension TabViewController: WKNavigationDelegate {
             self.url = webView.url
         }
 
+        // Fire the site-loading failure pixel after the download-handoff guard above so WebKit error 102
+        // isn't miscounted as a failure. User cancellations are counted intentionally.
+        navigationPixelResponder.didFail(navigation, error: error)
+
         // Bail out before showing error when navigation was cancelled by the user
         if error.code == NSURLErrorCancelled && error.domain == NSURLErrorDomain {
             webpageDidFailToLoad()
@@ -2481,10 +2484,6 @@ extension TabViewController: WKNavigationDelegate {
             self.url = webView.url
             return
         }
-
-        // Fire the site-loading failure pixel after the early-return guards above so download handoffs
-        // (WebKit error 102) and user cancellations (NSURLErrorCancelled) aren't miscounted as failures.
-        navigationPixelResponder.didFail(navigation, error: error)
 
         // wait before showing errors in case they recover automatically
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

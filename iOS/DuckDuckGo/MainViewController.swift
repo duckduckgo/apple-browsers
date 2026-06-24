@@ -218,6 +218,9 @@ class MainViewController: UIViewController {
     private var aiChatChromeChipCancellables = Set<AnyCancellable>()
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
+    private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
+        self?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
+    }
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
@@ -653,6 +656,7 @@ class MainViewController: UIViewController {
         }
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+        floatingDomainCapsuleController.install(in: view)
 
         setUpToolbarButtonsActions()
         installSwipeTabs()
@@ -1299,6 +1303,26 @@ class MainViewController: UIViewController {
         omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
+        updateFloatingDomainCapsuleVisibility(for: currentBarsVisibility)
+    }
+
+    private func currentFloatingDomainText() -> String? {
+        guard let host = currentTab?.url?.host?.lowercased(), !host.isEmpty else { return nil }
+        if host.hasPrefix("www.") {
+            return String(host.dropFirst(4))
+        }
+        return host
+    }
+
+    private func updateFloatingDomainCapsuleVisibility(for barsVisibilityPercent: CGFloat) {
+        floatingDomainCapsuleController.update(addressBarPosition: appSettings.currentAddressBarPosition,
+                                               isFloatingUIEnabled: isFloatingUIEnabled,
+                                               isUnifiedToggleInputActive: unifiedToggleInputCoordinator?.isActive == true,
+                                               isAITab: currentTab?.isAITab == true,
+                                               isMinimalChromeLayout: isInMinimalChromeLayout,
+                                               domain: currentFloatingDomainText(),
+                                               barsVisibilityPercent: barsVisibilityPercent,
+                                               in: view)
     }
 
     private func shouldResetNavBarContainerBottomForTopPosition() -> Bool {
@@ -2363,6 +2387,7 @@ class MainViewController: UIViewController {
                 viewCoordinator.hideAITabChrome()
                 applyUnifiedInputChromeBackground(.standardChrome)
             }
+            updateFloatingDomainCapsuleVisibility(for: currentBarsVisibility)
             return
         }
 
@@ -2396,6 +2421,7 @@ class MainViewController: UIViewController {
         }
 
         updateBrowsingMenuHeaderDataSource()
+        updateFloatingDomainCapsuleVisibility(for: currentBarsVisibility)
     }
 
     private func updateBrowsingMenuHeaderDataSource() {
@@ -3677,6 +3703,7 @@ extension MainViewController: BrowserChromeDelegate {
             self.viewCoordinator.navigationBarContainer.alpha = percent
             self.viewCoordinator.tabBarContainer.alpha = percent
             self.viewCoordinator.toolbar.alpha = percent
+            self.updateFloatingDomainCapsuleVisibility(for: percent)
             
             // Post notification only when bars are fully shown or hidden
             if percent == 0 || percent == 1 {
@@ -3734,6 +3761,7 @@ extension MainViewController: BrowserChromeDelegate {
         }
         viewCoordinator.tabBarContainer.alpha = hidden ? 0 : 1
         viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
+        updateFloatingDomainCapsuleVisibility(for: hidden ? 0 : 1)
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {

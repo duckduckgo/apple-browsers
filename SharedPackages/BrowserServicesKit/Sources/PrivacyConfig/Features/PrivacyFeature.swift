@@ -384,7 +384,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case goToMarket
     case webViewUserAgent
     case freemiumPIR
-    case contentBlocking
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {

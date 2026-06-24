@@ -118,9 +118,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1213609085394793
     case dbpWebViewUserAgent
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215031617586670
-    case dbpContentBlocking
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -620,8 +617,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.freemiumPIR))
         case .dbpWebViewUserAgent:
             Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true)
-        case .dbpContentBlocking:
-            Config(source: .remoteReleasable(DBPSubfeature.contentBlocking))
         case .crashReportOptInStatusResetting:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting), supportsLocalOverriding: false)
         case .syncSeamlessAccountSwitching:

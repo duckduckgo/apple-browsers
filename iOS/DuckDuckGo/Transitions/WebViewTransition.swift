@@ -115,6 +115,9 @@ class FromWebViewTransition: WebViewTransition {
         if tab.isAITab {
             tabSwitcherViewController.collectionView.layoutIfNeeded()
             if let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
+                // Force the .image thumbnail in synchronously — its async load won't finish
+                // before snapshotView captures the cell.
+                cell.prepareForSnapshot()
                 let currentBorderHidden = cell.border.isHidden
                 cell.border.isHidden = true
                 if let snapshot = cell.snapshotView(afterScreenUpdates: true) {

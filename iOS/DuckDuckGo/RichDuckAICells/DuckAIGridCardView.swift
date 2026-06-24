@@ -74,6 +74,7 @@ final class DuckAIGridCardView: UIView {
         thumbnailImageView.image = image
     }
 
+
     /// Resets to the default light appearance. Called on cell reuse so a recycled `.voice` (dark)
     /// card never lingers in dark state if shown before the next `configure(with:)`.
     func resetAppearance() {

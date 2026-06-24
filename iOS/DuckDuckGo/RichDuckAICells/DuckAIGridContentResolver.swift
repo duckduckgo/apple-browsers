@@ -36,6 +36,9 @@ protocol DuckAIGridItemProviding: AnyObject {
 @MainActor
 protocol DuckAIThumbnailLoading: AnyObject {
     func loadImage(fileRef: String) async -> UIImage?
+    /// Synchronous load for the tab-switcher transition, which must populate the destination
+    /// Decodes on the calling thread; only used for the single cell being snapshotted.
+    func loadImageSynchronously(fileRef: String) -> UIImage?
 }
 
 /// Composition of both grid-content capabilities.
@@ -111,6 +114,19 @@ final class DuckAIGridContentResolver: DuckAIGridContentProviding {
                 return nil
             }
         }.value
+    }
+
+    func loadImageSynchronously(fileRef: String) -> UIImage? {
+        guard let storageHandler, aiChatFeatureFlagProvider.isNativeDataAccessEnabled() else {
+            return nil
+        }
+        do {
+            guard let file = try storageHandler.getFile(uuid: fileRef) else { return nil }
+            return Self.decodeImage(from: file.data)
+        } catch {
+            Logger.aiChat.error("DuckAIGridContentResolver: failed to read file: \(error.localizedDescription)")
+            return nil
+        }
     }
 
     /// Native files may be raw image bytes OR a `{data: <base64>, mimeType: ...}` JSON

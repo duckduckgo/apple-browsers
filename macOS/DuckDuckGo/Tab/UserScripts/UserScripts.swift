@@ -137,14 +137,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                                            currentCohorts: currentCohorts,
                                            themeVariant: themeVariant)
         do {
-            let baseConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager, excludedFeatures: [PrivacyFeature.autoconsent.rawValue])
-            // DRAFT: force-enable the C-S-S `pageContext.includePageTypeSignals` setting when the
-            // sidebar suggested-prompts flag is on, so page-type signals flow in test builds without a
-            // privacy-config change. Remove once remote privacy config ships `includePageTypeSignals`.
-            let configGenerator = PageTypeSignalsConfigInjector(
-                base: baseConfigGenerator,
-                isEnabled: sourceProvider.featureFlagger.isFeatureOn(.sidebarSuggestedPrompts)
-            )
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager, excludedFeatures: [PrivacyFeature.autoconsent.rawValue])
             let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
@@ -409,30 +402,5 @@ struct HomepageSearchModeSeedUserDefaultsPersistor: HomepageSearchModeSeedPersis
                 try? keyValueStore.removeObject(forKey: Key.pendingShowSearchModeToggle.rawValue)
             }
         }
-    }
-}
-
-/// DRAFT: wraps a privacy-config JSON generator to force-enable the Content-Scope-Scripts
-/// `pageContext.includePageTypeSignals` setting, so page-type signals are collected in test builds
-/// while the suggested-prompts feature is gated locally. Remove once remote privacy config ships the
-/// setting. No-op when `isEnabled` is false or the JSON can't be parsed (falls back to the base).
-private struct PageTypeSignalsConfigInjector: CustomisedPrivacyConfigurationJSONGenerating {
-    let base: CustomisedPrivacyConfigurationJSONGenerating
-    let isEnabled: Bool
-
-    var privacyConfiguration: Data? {
-        let baseData = base.privacyConfiguration
-        guard isEnabled, let data = baseData,
-              var root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-            return baseData
-        }
-        var features = (root["features"] as? [String: Any]) ?? [:]
-        var pageContext = (features["pageContext"] as? [String: Any]) ?? ["state": "enabled", "exceptions": [Any]()]
-        var settings = (pageContext["settings"] as? [String: Any]) ?? [:]
-        settings["includePageTypeSignals"] = "enabled"
-        pageContext["settings"] = settings
-        features["pageContext"] = pageContext
-        root["features"] = features
-        return (try? JSONSerialization.data(withJSONObject: root)) ?? baseData
     }
 }

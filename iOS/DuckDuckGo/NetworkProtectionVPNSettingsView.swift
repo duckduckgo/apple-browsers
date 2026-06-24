@@ -17,12 +17,32 @@
 //  limitations under the License.
 //
 
+import Core
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UniformTypeIdentifiers
+import VPN
 
 struct NetworkProtectionVPNSettingsView: View {
+
+    private static let supportInfoPasteboardExpirationInterval: TimeInterval = 10 * 60
+    private static let supportInfoCopyConfirmationResetDelay: UInt64 = 2_000_000_000
+
+    private enum CopySupportInfoState: Equatable {
+        case idle
+        case copying
+        case copied
+        case failed
+    }
+
     @StateObject var viewModel = NetworkProtectionVPNSettingsViewModel()
+
+    @State private var copySupportInfoState = CopySupportInfoState.idle
+
+    private var showsCopyDiagnosticsButton: Bool {
+        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.vpnShowCopyDiagnosticsButton)
+    }
 
     var body: some View {
         VStack {
@@ -62,6 +82,10 @@ struct NetworkProtectionVPNSettingsView: View {
                 }
 
                 dnsSection()
+
+                if showsCopyDiagnosticsButton {
+                    diagnostics()
+                }
             }
         }
         .applyInsetGroupedListStyle()
@@ -99,6 +123,99 @@ struct NetworkProtectionVPNSettingsView: View {
             }
         }
         .listRowBackground(Color(designSystemColor: .surface))
+    }
+
+    @ViewBuilder
+    private func diagnostics() -> some View {
+        Section {
+            Button {
+                Task {
+                    await copyVPNSupportInfo()
+                }
+            } label: {
+                HStack {
+                    copySupportInfoIcon
+                    Text(copySupportInfoTitle)
+                        .id(copySupportInfoTitle)
+                    Spacer()
+                }
+                .daxBodyRegular()
+                .foregroundColor(.init(designSystemColor: .textPrimary))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(copySupportInfoState != .idle)
+            .animation(.easeInOut(duration: 0.18), value: copySupportInfoState)
+        } header: {
+            Text(UserText.netPStatusViewTroubleshootingSectionTitle).foregroundColor(.init(designSystemColor: .textSecondary))
+        } footer: {
+            Text(UserText.netPVPNSettingsCopyDiagnosticsCaption)
+                .daxFootnoteRegular()
+                .foregroundColor(.init(designSystemColor: .textSecondary))
+        }
+        .listRowBackground(Color(designSystemColor: .surface))
+    }
+
+    private var copySupportInfoIcon: Image {
+        switch copySupportInfoState {
+        case .copied:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.check)
+        case .failed:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.alertRecolorable)
+        case .idle, .copying:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.copy)
+        }
+    }
+
+    private var copySupportInfoTitle: String {
+        switch copySupportInfoState {
+        case .copied:
+            return UserText.netPVPNSettingsCopyDiagnosticsCopiedToClipboard
+        case .failed:
+            return UserText.netPVPNSettingsCopyDiagnosticsFailedToCopyToClipboard
+        case .idle, .copying:
+            return UserText.netPVPNSettingsCopyDiagnostics
+        }
+    }
+
+    @MainActor
+    private func copyVPNSupportInfo() async {
+        guard copySupportInfoState != .copying else {
+            return
+        }
+
+        copySupportInfoState = .copying
+
+        guard let metadata = await DefaultVPNMetadataCollector().collectMetadata(),
+              let supportInfo = metadata.toPrettyPrintedJSON() else {
+            showCopySupportInfoConfirmation(.failed)
+            return
+        }
+
+        UIPasteboard.general.setItems(
+            [[UTType.plainText.identifier: supportInfo]],
+            options: [.expirationDate: Date().addingTimeInterval(Self.supportInfoPasteboardExpirationInterval)]
+        )
+        showCopySupportInfoConfirmation(.copied)
+    }
+
+    @MainActor
+    private func showCopySupportInfoConfirmation(_ state: CopySupportInfoState) {
+        withAnimation(.easeInOut(duration: 0.18)) {
+            copySupportInfoState = state
+        }
+
+        Task {
+            try? await Task.sleep(nanoseconds: Self.supportInfoCopyConfirmationResetDelay)
+
+            guard copySupportInfoState == state else {
+                return
+            }
+
+            withAnimation(.easeInOut(duration: 0.18)) {
+                copySupportInfoState = .idle
+            }
+        }
     }
 
     @ViewBuilder

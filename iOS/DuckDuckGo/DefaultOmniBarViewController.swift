@@ -635,7 +635,7 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
             selectedTextEntryMode = tabMode
         }
         editingStateViewController?.dismissAnimated { [weak self] in
-            // Fix address bar non-activation bug when cancelling the edit from the duck.ai experiment completion dialog.
+            // Fix address bar non-activation bug when cancelling the edit from the Duck.ai fire onboarding completion dialog.
             self?.editingStateViewController = nil
         }
     }

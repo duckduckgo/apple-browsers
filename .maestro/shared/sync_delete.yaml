@@ -4,6 +4,6 @@ appId: com.duckduckgo.mobile.ios
 - assertVisible: Sync & Backup
 - scroll
 - tapOn: Turn Off and Delete Server Data...
-- assertVisible: Delete Server Data?
+- assertVisible: Delete server data?
 - tapOn: Delete Server Data
 - assertVisible: Begin Syncing

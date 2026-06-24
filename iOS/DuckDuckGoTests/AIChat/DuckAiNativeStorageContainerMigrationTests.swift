@@ -306,6 +306,73 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
         XCTAssertEqual(pixelSpy.firedEventNames, ["protectedDataUnavailable", "success"])
     }
 
+    func testWhenMigratedAndProtectedDataIsUnavailableThenProceedsAsNoOpWithoutDeferring() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try? keyValueStore.set(true, forKey: migratedKey)
+
+        let outcome = migrate(from: oldURL, to: newURL, isProtectedDataAvailable: { false })
+
+        XCTAssertEqual(outcome, .proceed)
+        XCTAssertTrue(pixelSpy.firedEventNames.isEmpty,
+                      "a completed migration must not fire protectedDataUnavailable on a locked launch")
+    }
+
+    func testWhenMigrationNotNeededAndProtectedDataIsUnavailableThenMarksDoneWithoutDeferring() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+
+        let outcome = migrate(from: oldURL, to: newURL, isProtectedDataAvailable: { false })
+
+        XCTAssertEqual(outcome, .proceed)
+        XCTAssertTrue(keyValueStore.bool(forKey: migratedKey))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["notNeeded"])
+    }
+
+    // MARK: - Locked-launch fix kill switch (lockedLaunchFixEnabled == false)
+
+    /// Rollback contract: with the fix disabled, a completed migration must
+    /// reproduce the legacy behavior — defer up front on a locked launch.
+    func testWhenFixDisabledAndMigratedAndProtectedDataIsUnavailableThenStillDefers() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try? keyValueStore.set(true, forKey: migratedKey)
+
+        let outcome = migrate(from: oldURL, to: newURL, isProtectedDataAvailable: { false }, lockedLaunchFixEnabled: false)
+
+        XCTAssertEqual(outcome, .skip)
+        XCTAssertEqual(pixelSpy.firedEventNames, ["protectedDataUnavailable"])
+    }
+
+    /// With the fix disabled, the not-needed case also defers up front rather than
+    /// marking done — the legacy behavior the rollout flips away from.
+    func testWhenFixDisabledAndNotNeededAndProtectedDataIsUnavailableThenStillDefers() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+
+        let outcome = migrate(from: oldURL, to: newURL, isProtectedDataAvailable: { false }, lockedLaunchFixEnabled: false)
+
+        XCTAssertEqual(outcome, .skip)
+        XCTAssertFalse(keyValueStore.bool(forKey: migratedKey))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["protectedDataUnavailable"])
+    }
+
+    /// With the fix disabled, an unlocked launch must still complete the move —
+    /// the gate moving location must not change the available-data path.
+    func testWhenFixDisabledAndProtectedDataIsAvailableThenMigrationCompletes() throws {
+        let oldURL = sandbox.appendingPathComponent("old/DuckAi")
+        let newURL = sandbox.appendingPathComponent("new/DuckAi")
+        try FileManager.default.createDirectory(at: oldURL, withIntermediateDirectories: true)
+        try Data("chats".utf8).write(to: oldURL.appendingPathComponent("chats.db"))
+
+        let outcome = migrate(from: oldURL, to: newURL, isProtectedDataAvailable: { true }, lockedLaunchFixEnabled: false)
+
+        XCTAssertEqual(outcome, .proceed)
+        XCTAssertTrue(keyValueStore.bool(forKey: migratedKey))
+        XCTAssertEqual(try Data(contentsOf: newURL.appendingPathComponent("chats.db")), Data("chats".utf8))
+        XCTAssertEqual(pixelSpy.firedEventNames, ["success"])
+    }
+
     // MARK: - Exhausted retry budget reset
 
     func testWhenAttemptsAreAtCapWithoutMigratedFlagThenBudgetResetsAndMigrationRuns() throws {
@@ -745,6 +812,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
                          fileManager: FileManager = .default,
                          isProtectedDataAvailable: @escaping () -> Bool = { true },
                          maxAttempts: Int = DuckAiNativeStorageContainerMigration.defaultMaxAttempts,
+                         lockedLaunchFixEnabled: Bool = true,
                          protectionDispatcher: @escaping DuckAiNativeStorageContainerMigration.ProtectionDispatcher = { $0() }) -> DuckAiNativeStorageContainerMigrationOutcome {
         DuckAiNativeStorageContainerMigration(
             oldURL: oldURL,
@@ -756,6 +824,7 @@ final class DuckAiNativeStorageContainerMigrationTests: XCTestCase {
             pixelFiring: pixelSpy,
             isProtectedDataAvailable: isProtectedDataAvailable,
             maxAttempts: maxAttempts,
+            lockedLaunchFixEnabled: lockedLaunchFixEnabled,
             protectionDispatcher: protectionDispatcher
         ).run()
     }

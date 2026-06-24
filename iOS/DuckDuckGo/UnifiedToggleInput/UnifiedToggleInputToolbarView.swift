@@ -29,7 +29,7 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     private enum Constants {
         static let topPadding: CGFloat = 4
-        static let bottomPadding: CGFloat = 8
+        static let bottomPadding: CGFloat = 4
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
         static let selectedToolIconSize: CGFloat = 24

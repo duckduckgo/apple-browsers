@@ -100,7 +100,7 @@ private extension RebrandedNewTabDaxDialogFactory {
 
 extension RebrandedNewTabDaxDialogFactory {
 
-    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+    func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         let onDismiss = { [weak self] in
             self?.onboardingPixelReporter.measureDuckAIFinalDialogCTAAction()
             onDismiss()
@@ -109,7 +109,7 @@ extension RebrandedNewTabDaxDialogFactory {
         return AnyView(
             FadeInView {
                 ScrollView(.vertical, showsIndicators: false) {
-                    // The Duck.ai experiment completion dialog reuses `OnboardingEndOfJourneyDialog`
+                    // The Duck.ai fire onboarding completion dialog reuses `OnboardingEndOfJourneyDialog`
                     // but is presented over the active address bar with the keyboard up — no room
                     // for the screen-bottom Dax animation, so suppress it explicitly here.
                     OnboardingRebranding.OnboardingEndOfJourneyDialog(

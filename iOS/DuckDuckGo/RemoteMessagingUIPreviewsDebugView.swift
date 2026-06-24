@@ -23,68 +23,63 @@ import RemoteMessaging
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-/// Renders a full remote-message card for every `RemotePlaceholder`, so the rebranded artwork can
-/// be reviewed in its real message UI rather than as a bare image. The artwork picker switches
-/// between the live `appRebranding` flag, the legacy artwork (`<name>-legacy`) and the rebranded
-/// artwork (`<name>`); the chosen image is supplied as the message's preloaded image, so the
-/// preview never mutates the global rebrand flag.
+/// Renders one full remote-message card per supported message type, so each layout can be reviewed in its real message UI.
+/// 
 struct RemoteMessagingUIPreviewsDebugView: View {
 
-    enum ArtworkMode: String, CaseIterable, Identifiable {
-        case live = "Live (flag)"
-        case legacy = "Legacy"
-        case rebranded = "Rebranded"
-        var id: String { rawValue }
-    }
-
-    @State private var artworkMode: ArtworkMode = .live
-
-    private let placeholders: [RemotePlaceholder] = RemotePlaceholder.allCases
-        .filter { UIImage(named: $0.rawValue) != nil || UIImage(named: "\($0.rawValue)-legacy") != nil }
-        .sorted { $0.rawValue < $1.rawValue }
+    private let samples: [(name: String, modelType: HomeSupportedMessageDisplayType)] = [
+        ("small", .small(titleText: "Small",
+                          descriptionText: "Description")),
+        ("medium", .medium(titleText: "Medium",
+                            descriptionText: "Description text",
+                            placeholder: .criticalUpdate,
+                            imageUrl: nil)),
+        ("bigSingleAction", .bigSingleAction(titleText: "Big Single",
+                                             descriptionText: "This is a description",
+                                             placeholder: .ddgAnnounce,
+                                             imageUrl: nil,
+                                             primaryActionText: "Primary",
+                                             primaryAction: .dismiss)),
+        ("bigTwoAction", .bigTwoAction(titleText: "Big Two",
+                                       descriptionText: "This is a <b>big</b> two style",
+                                       placeholder: .macComputer,
+                                       imageUrl: nil,
+                                       primaryActionText: "App Store",
+                                       primaryAction: .appStore,
+                                       secondaryActionText: "Dismiss",
+                                       secondaryAction: .dismiss)),
+        ("promoSingleAction", .promoSingleAction(titleText: "Promotional",
+                                                 descriptionText: "Description <b>with bold</b> to make a statement.",
+                                                 placeholder: .newForMacAndWindows,
+                                                 imageUrl: nil,
+                                                 actionText: "Share",
+                                                 action: .share(value: "value", title: "title")))
+    ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("Artwork", selection: $artworkMode) {
-                ForEach(ArtworkMode.allCases) { mode in
-                    Text(verbatim: mode.rawValue).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding()
-
-            ScrollView {
-                LazyVStack(spacing: 28) {
-                    ForEach(placeholders, id: \.self) { placeholder in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(verbatim: placeholder.rawValue)
-                                .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(Color(baseColor: .gray70))
-                            HomeMessageView(viewModel: viewModel(for: placeholder))
-                                .id("\(placeholder.rawValue)-\(artworkMode.rawValue)")
-                        }
+        ScrollView {
+            LazyVStack(spacing: 28) {
+                ForEach(samples, id: \.name) { sample in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(verbatim: sample.name)
+                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(Color(baseColor: .gray70))
+                        HomeMessageView(viewModel: viewModel(id: sample.name, modelType: sample.modelType))
                     }
                 }
-                .padding()
             }
+            .padding()
         }
         .background(Color(UIColor.systemGroupedBackground))
         .navigationTitle("RMF UI previews")
     }
 
-    private func viewModel(for placeholder: RemotePlaceholder) -> HomeMessageViewModel {
+    private func viewModel(id: String, modelType: HomeSupportedMessageDisplayType) -> HomeMessageViewModel {
         HomeMessageViewModel(
-            messageId: "preview-\(placeholder.rawValue)",
-            modelType: .bigSingleAction(
-                titleText: placeholder.rawValue,
-                descriptionText: "Sample remote message body used to preview the artwork inside a full message card.",
-                placeholder: placeholder,
-                imageUrl: nil,
-                primaryActionText: "Primary Action",
-                primaryAction: .appStore
-            ),
+            messageId: "preview-\(id)",
+            modelType: modelType,
             messageActionHandler: NoOpRemoteMessagingActionHandler(),
-            preloadedImage: image(for: placeholder),
+            preloadedImage: previewImage(for: modelType),
             loadRemoteImage: nil,
             onDidClose: { _ in },
             onDidAppear: {},
@@ -92,15 +87,16 @@ struct RemoteMessagingUIPreviewsDebugView: View {
         )
     }
 
-    private func image(for placeholder: RemotePlaceholder) -> UIImage? {
-        let name = placeholder.rawValue
-        switch artworkMode {
-        case .live:
-            return UIImage(rebrandable: name)
-        case .legacy:
-            return UIImage(named: "\(name)-legacy") ?? UIImage(named: name)
-        case .rebranded:
-            return UIImage(named: name)
+    /// Supplies the placeholder artwork for types that have one; `.small` has no pictogram.
+    private func previewImage(for modelType: HomeSupportedMessageDisplayType) -> UIImage? {
+        switch modelType {
+        case .small:
+            return nil
+        case .medium(_, _, let placeholder, _),
+             .bigSingleAction(_, _, let placeholder, _, _, _),
+             .bigTwoAction(_, _, let placeholder, _, _, _, _, _),
+             .promoSingleAction(_, _, let placeholder, _, _, _):
+            return UIImage(rebrandable: placeholder.rawValue)
         }
     }
 }

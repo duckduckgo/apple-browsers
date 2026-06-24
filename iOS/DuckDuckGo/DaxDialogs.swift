@@ -229,7 +229,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
                                        message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
 
         static let fireDuckAIOnboarding = BrowsingSpec(type: .fire(.duckAIOnboarding),
-                                                       pixelName: .onboardingDuckAIExperimentFireDialogShownUnique,
+                                                       pixelName: .onboardingDuckAIFireDialogShownUnique,
                                                        title: UserText.Onboarding.DuckAIQuery.fireOnboardingTitle,
                                                        message: UserText.Onboarding.DuckAIQuery.fireOnboardingMessage,
                                                        allowsManualDismiss: false)

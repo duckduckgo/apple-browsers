@@ -51,6 +51,7 @@ import AIChat
 import PixelKit
 import PrivacyConfig
 import WebExtensions
+import DesignResourcesKitIcons
 
 class TabViewController: UIViewController {
 
@@ -436,16 +437,17 @@ class TabViewController: UIViewController {
     private var canDisplayJavaScriptAlert: Bool {
         return presentedViewController == nil
             && delegate?.tabCheckIfItsBeingCurrentlyPresented(self) ?? false
-            && !self.jsAlertController.isShown
+            && !(jsAlertController?.isShown ?? false)
     }
 
     func present(_ alert: WebJSAlert) {
-        self.jsAlertController.present(alert)
+        setupJSAlertControllerIfNeeded()
+        jsAlertController.present(alert)
     }
 
     private func dismissJSAlertIfNeeded() {
-        if jsAlertController.isShown {
-            jsAlertController.dismiss(animated: false)
+        if jsAlertController?.isShown == true {
+            jsAlertController?.dismiss(animated: false)
         }
     }
 
@@ -750,7 +752,10 @@ class TabViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupJSAlertController()
+        // Note: JSAlertController is intentionally NOT set up here. Instantiating its
+        // storyboard eagerly triggers a first-time UIVisualEffectView/CoreMaterial bundle
+        // scan on the cold-launch critical path, which can trip the scene-create watchdog
+        // (0x8BADF00D). It is now lazily created on first use via setupJSAlertControllerIfNeeded().
 
         fireproofingWorker = FireproofingWorking(controller: self, fireproofing: fireproofing, favicons: favicons)
         initAttributionLogic()
@@ -1031,12 +1036,7 @@ class TabViewController: UIViewController {
             self?.handlePullToRefresh()
         })
 
-        if webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) {
-            webScrollObserver = WebScrollObserver(container: webViewContainer,
-                                                  scrollView: { [weak self] in self?.webView?.scrollView },
-                                                  currentURL: { [weak self] in self?.webView?.url })
-            webScrollObserver?.install()
-        }
+        attachScrollFreezeDiagnosticsIfNeeded()
 
         if isAITab {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(false)
@@ -1102,6 +1102,31 @@ class TabViewController: UIViewController {
         } else {
             borderView.isHidden = false
             borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        }
+    }
+
+    // Symptom detection + pixels ship to production behind the `webScrollFreezeObservability` kill switch
+    // (on by default). The heavy on-device freeze capture is injected only when `webScrollFreezeCapture`
+    // (internal-only) is on — in production `captureFreeze` is a no-op.
+    private func attachScrollFreezeDiagnosticsIfNeeded() {
+        guard webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) else { return }
+        let captureEnabled = featureFlagger.isFeatureOn(.webScrollFreezeCapture)
+        webScrollObserver = WebScrollObserver(container: webViewContainer,
+                                              scrollView: { [weak self] in self?.webView?.scrollView },
+                                              currentURL: { [weak self] in self?.webView?.url },
+                                              captureFreeze: captureEnabled
+                                                ? { WebScrollFreezeDebugCaptureStore.save(WebScrollFreezeDebugProbe.captureNow()) }
+                                                : {},
+                                              autoRecover: featureFlagger.isFeatureOn(.webScrollFreezeAutoRecovery)
+                                                ? { [weak self] in
+                                                    let ran = WebScrollFreezeRecovery.autoRecover(scrollView: self?.webView?.scrollView)
+                                                    if ran { DailyPixel.fireDailyAndCount(pixel: .debugInteractionRecoveryAttempted, withAdditionalParameters: [:]) }
+                                                    return ran
+                                                }
+                                                : { false })
+        webScrollObserver?.install()
+        if captureEnabled, let window = WebScrollFreezeDebugProbe.keyWindow() {
+            WebScrollFreezeDebugActiveTouchProbe.installIfNeeded(on: window)
         }
     }
 
@@ -1318,7 +1343,7 @@ class TabViewController: UIViewController {
         dismissContextualOnboardingIfNeeded()
     }
 
-    func presentExperimentContextualDaxFireDialog() {
+    func presentDuckAIOnboardingFireDialog() {
         contextualOnboardingLogic.setLastShownDialog(type: .fire(.duckAIOnboarding))
         let fireSpec = DaxDialogs.BrowsingSpec.fireDuckAIOnboarding
         presentContextualOnboarding(for: fireSpec)
@@ -1507,7 +1532,7 @@ class TabViewController: UIViewController {
         webpageDidFailToLoad()
     }
 
-    private func setErrorInfoImage(resource: ImageResource = .errorInfoUniversal) {
+    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy) {
         errorInfoImage.image = UIImage(resource: resource)
         errorInfoImage.isHidden = false
     }

@@ -476,7 +476,7 @@ extension NewTabPageViewController {
             })
         }
 
-        let root = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
+        let root = newTabDialogFactory.createDuckAIFireOnboardingCompletionDialog(message: message, onDismiss: onDismiss)
         let hostingController = UIHostingController(rootView: root)
         self.hostingController = hostingController
         hostingController.view.backgroundColor = .clear
@@ -590,7 +590,7 @@ extension NewTabPageViewController {
         // adding one _UIHostingView as a subview of another UIHostingController.view is
         // unsupported and triggers a UIKit warning. self.view.superview is the plain UIView
         // of UnifiedInputContentContainerViewController, so it is safe to host into.
-        let ntpRoot = newTabDialogFactory.createExperimentCompletionDialog(message: message, onDismiss: onDismiss)
+        let ntpRoot = newTabDialogFactory.createDuckAIFireOnboardingCompletionDialog(message: message, onDismiss: onDismiss)
         let ntpHC = UIHostingController(rootView: ntpRoot)
         ntpHC.view.backgroundColor = .clear
         ntpHC.view.translatesAutoresizingMaskIntoConstraints = false
@@ -755,7 +755,7 @@ extension NewTabPageViewController {
             // Restore NTP visibility that was muted during the chat-path handoff so the
             // empty-state Dax doesn't flash through the editing-state transition.
             view.alpha = 1
-            delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)
+            delegate?.newTabPageDidDismissDuckAIFireOnboardingCompletion(self)
         }
         if didFinishNTPOnboarding {
             self.newTabPageViewModel.finishOnboarding()
@@ -789,7 +789,7 @@ extension NewTabPageViewController {
             daxDialogsManager.dismiss()
         }
         view.alpha = 1
-        delegate?.newTabPageDidDismissDuckAIExperimentCompletion(self)
+        delegate?.newTabPageDidDismissDuckAIFireOnboardingCompletion(self)
     }
 }
 

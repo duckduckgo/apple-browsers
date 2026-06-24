@@ -238,9 +238,18 @@ final class BookmarksBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
+        // Favicon images are decoded lazily and `.faviconCacheUpdated` fires for every favicon that
+        // becomes available anywhere in the app. Reloading the bar on each post rebuilds every item and
+        // makes the bar's favicons flicker during the decode cascade. Reload only when an updated host
+        // belongs to a bookmark, using the notification payload (matches `BookmarksBarMenuViewController`).
         NotificationCenter.default.publisher(for: .faviconCacheUpdated)
-            .sink { [weak self] _ in
-                self?.refreshFavicons()
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let update = notification.faviconsCacheUpdate,
+                   update.hosts.isDisjoint(with: self.bookmarkManager.allHosts()) {
+                    return
+                }
+                self.refreshFavicons()
             }
             .store(in: &cancellables)
 

@@ -19,49 +19,93 @@
 
 import SwiftUI
 import UIKit
-import OSLog
 import Core
 
-/// Debug screen that captures a root-cause-agnostic snapshot of the current scroll / gesture /
-/// overlay state of the foreground web tab, plus recent `Logger.interaction` entries.
+/// Debug screen for the hard-to-reproduce "web view can't be scrolled but taps still work" freeze.
 ///
-/// Built to diagnose the hard-to-reproduce "web view can't be scrolled but taps still work" freeze
-/// seen on internal builds: when it happens, open this screen, tap Capture, then Copy and paste the
-/// report into the bug. The report is structural (it walks the live view tree) so it stays valid even
-/// though this screen is presented on top of the frozen tab.
+/// The freeze is PERSISTENT (it stays until the app is force-closed), so a capture taken minutes later
+/// is still valid. Dumps the web scroll view's drag state, the WKWebView's internal gesture recognizers,
+/// presentation/transition state, and a full window scan. Captures auto-persist to a ring buffer so
+/// they can be diffed against a healthy baseline after the fact.
 struct InteractionDiagnosticsDebugScreen: View {
 
     @StateObject private var model: InteractionDiagnosticsModel
 
-    init(tabManager: TabManager) {
-        _model = StateObject(wrappedValue: InteractionDiagnosticsModel(tabManager: tabManager))
+    init() {
+        _model = StateObject(wrappedValue: InteractionDiagnosticsModel())
     }
 
     var body: some View {
         List {
-            Section {
-                Button {
-                    model.capture()
-                } label: {
-                    Text(verbatim: "Capture Snapshot")
+            if !model.actionResult.isEmpty {
+                Section {
+                    Text(verbatim: model.actionResult).font(.footnote)
+                } header: {
+                    Text(verbatim: "Last action")
                 }
+            }
+            Section {
+                NavigationLink { InteractionCaptureView(model: model) } label: { Text(verbatim: "Capture & snapshot") }
+            } header: {
+                Text(verbatim: "Interaction Diagnostics")
+            } footer: {
+                Text(verbatim: "Capture is the focus — diff a freeze capture against a healthy baseline. Recovery is not a "
+                     + "shipping path (no reliable safe action found); the one safe scoped experiment lives under "
+                     + "Capture → Diagnostics. Each submenu is short so it fits even if the screen can't scroll.")
+            }
+            Section {
+                Button { model.injectStuckGesture() } label: { Text(verbatim: "Inject stuck gesture (freezes scroll)") }
+                Button(role: .destructive) { model.clearStuckGesture() } label: { Text(verbatim: "Clear stuck gesture") }
+            } header: {
+                Text(verbatim: "Pixel test (provocation, debug-only)")
+            } footer: {
+                Text(verbatim: "Verifies the production freeze pixel end-to-end. Arm this, leave the screen, then drag a long "
+                     + "web page a few times across the screen: scroll stays dead (taps stay alive) and "
+                     + "m_debug_interaction_repeated_failed_scroll fires (mechanism wedged:*) — confirm it in the pixel log. "
+                     + "It only CREATES the freeze and runs no recovery, so it can't brick taps. Clear (or force-quit) to recover.")
+            }
+        }
+        .navigationTitle("Interaction Diagnostics")
+    }
+}
 
+private struct InteractionCaptureView: View {
+    @ObservedObject var model: InteractionDiagnosticsModel
+    var body: some View {
+        List {
+            Section {
+                Button { model.capture() } label: { Text(verbatim: "Capture Snapshot") }
                 if !model.report.isEmpty {
-                    Button {
-                        model.copy()
-                    } label: {
-                        Text(verbatim: "Copy to Clipboard")
-                    }
+                    Button { model.copy() } label: { Text(verbatim: "Copy to Clipboard") }
+                }
+            } footer: {
+                Text(verbatim: "Reads the live view tree of the foreground tab. Auto-saved to the ring buffer.")
+            }
+            Section {
+                Button { model.probeProgrammaticScroll() } label: { Text(verbatim: "Scrollability probe (programmatic scroll ±400pt)") }
+                Button { model.runRecovery(.resetDeferringGates) } label: { Text(verbatim: "Reset WebKit deferring gates (scoped, self-skips on live touch)") }
+                Button { model.runRecovery(.resetScrollPan) } label: { Text(verbatim: "Reset web scroll pan only (scoped, self-skips on live touch)") }
+                if !model.actionResult.isEmpty {
+                    Text(verbatim: model.actionResult).font(.footnote)
                 }
             } header: {
-                Text(verbatim: "Actions")
+                Text(verbatim: "Diagnostics (safe)")
             } footer: {
-                Text(verbatim: "Capture reads the live view tree of the foreground tab. Persistent state "
-                     + "(isScrollEnabled, overlays, which recognizers are enabled) is reliable here. A gesture "
-                     + "recognizer's transient .state may reset when this screen is presented — for that, rely "
-                     + "on the live logs below / the Log Viewer (subsystem: Interaction).")
+                Text(verbatim: "All three are safe — no broad recogniser or window toggling. "
+                     + "Scrollability probe: setContentOffset (MOVES → block is in gesture delivery; doesn't → scroll view itself is stuck). "
+                     + "Both resets are scoped and self-skip if a touch is in flight. "
+                     + "Each reset AUTO-SAVES a pre- and post-reset capture to the ring buffer — compare those captures to see what changed. "
+                     + "If scrolling recovers after a reset, that supports (but does not prove) the corresponding hypothesis.")
             }
-
+            Section {
+                Text(verbatim: "Saved captures: \(model.savedCount)")
+                if model.savedCount > 0 {
+                    Button { model.copySaved() } label: { Text(verbatim: "Copy All Saved Captures") }
+                    Button(role: .destructive) { model.clearSaved() } label: { Text(verbatim: "Clear Saved Captures") }
+                }
+            } header: {
+                Text(verbatim: "Ring buffer")
+            }
             if !model.report.isEmpty {
                 Section {
                     TextEditor(text: .constant(model.report))
@@ -72,256 +116,144 @@ struct InteractionDiagnosticsDebugScreen: View {
                 }
             }
         }
-        .navigationTitle("Interaction Diagnostics")
+        .navigationTitle("Capture")
     }
 }
 
 final class InteractionDiagnosticsModel: ObservableObject {
 
     @Published var report = ""
+    @Published var actionResult = ""
+    @Published var savedCount = WebScrollFreezeDebugCaptureStore.count()
 
-    private let tabManager: TabManager
-
-    init(tabManager: TabManager) {
-        self.tabManager = tabManager
+    @MainActor
+    func capture() {
+        report = WebScrollFreezeDebugProbe.captureNow()
+        WebScrollFreezeDebugCaptureStore.save(report)
+        savedCount = WebScrollFreezeDebugCaptureStore.count()
     }
 
     func copy() {
         UIPasteboard.general.string = report
     }
 
-    @MainActor
-    func capture() {
-        report = buildSnapshot() + "\n\n## Recent interaction logs (last 5 min)\n" + Self.recentInteractionLogs()
+    func copySaved() {
+        UIPasteboard.general.string = WebScrollFreezeDebugCaptureStore.exportAll()
     }
 
-    // MARK: - Snapshot
-
-    @MainActor
-    private func buildSnapshot() -> String {
-        var out = "# Interaction Diagnostics — \(Date())\n"
-        out += "App: \(Self.appVersion)\n\n"
-        out += featureFlagsSection()
-        out += "\n" + currentTabSection()
-        return out
-    }
-
-    private func featureFlagsSection() -> String {
-        let flagger = AppDependencyProvider.shared.featureFlagger
-        var out = "## Feature flags\n"
-        out += "- unifiedToggleInput: \(flagger.isFeatureOn(.unifiedToggleInput))\n"
-        out += "- experimentalAddressBar: \(flagger.isFeatureOn(.experimentalAddressBar))\n"
-        out += "- showAIChatAddressBarChoiceScreen: \(flagger.isFeatureOn(.showAIChatAddressBarChoiceScreen))\n"
-        return out
+    func clearSaved() {
+        WebScrollFreezeDebugCaptureStore.clear()
+        savedCount = WebScrollFreezeDebugCaptureStore.count()
     }
 
     @MainActor
-    private func currentTabSection() -> String {
-        guard let tab = tabManager.current(createIfNeeded: false) else {
-            return "## Current tab\n- No current TabViewController\n"
-        }
-        guard let webView = tab.webView else {
-            return "## Current tab\n- TabViewController has no webView\n"
-        }
-
-        let scrollView = webView.scrollView
-        var out = "## Current tab\n"
-        out += "- URL host: \(webView.url?.host ?? "nil")\n"
-        out += "- TabViewController: \(Self.typeName(tab))\n"
-        out += "- scroll observer: \(tab.webScrollObserver?.recentStatus ?? "not installed")\n\n"
-
-        out += "## webView.scrollView\n"
-        out += "- isScrollEnabled: \(scrollView.isScrollEnabled)\(scrollView.isScrollEnabled ? "" : "  ⚠️ SCROLL DISABLED")\n"
-        out += "- isUserInteractionEnabled: \(scrollView.isUserInteractionEnabled)\n"
-        out += "- delaysContentTouches: \(scrollView.delaysContentTouches)  canCancelContentTouches: \(scrollView.canCancelContentTouches)\n"
-        out += "- bounces: \(scrollView.bounces)  alwaysBounceVertical: \(scrollView.alwaysBounceVertical)\n"
-        out += "- isDragging: \(scrollView.isDragging)  isDecelerating: \(scrollView.isDecelerating)"
-            + "  isTracking: \(scrollView.isTracking)  isZooming: \(scrollView.isZooming)\n"
-        out += "- contentOffset: \(scrollView.contentOffset)\n"
-        out += "- contentSize: \(scrollView.contentSize)\n"
-        out += "- bounds: \(scrollView.bounds)\n"
-        out += "- adjustedContentInset: \(scrollView.adjustedContentInset)\n"
-        out += "- zoomScale: \(scrollView.zoomScale) (min \(scrollView.minimumZoomScale) / max \(scrollView.maximumZoomScale))\n"
-        out += "- delegate: \(scrollView.delegate.map { Self.typeName($0) } ?? "nil")\n"
-
-        out += "\n" + Self.panGesture(of: scrollView)
-        out += "\n" + Self.gestureChainSection(from: webView)
-        out += "\n" + Self.competingRecognizersSection()
-        out += "\n" + Self.overlaySection(over: webView, boundary: Self.findMainViewController()?.view)
-        out += "\n" + coordinatorSection()
-        return out
+    func runRecovery(_ rung: WebScrollFreezeRecovery.Rung) {
+        actionResult = WebScrollFreezeRecovery.runRung(rung)
+        savedCount = WebScrollFreezeDebugCaptureStore.count()
     }
 
-    /// Window-wide scan for the swipe-tabs recognizers. They live on chrome containers (toolbar, UTI
-    /// container, chat header) that are siblings of the web view, so they never appear in the
-    /// webView→window chain above — but a wedge in one is the prime scroll-freeze suspect.
-    private static func competingRecognizersSection() -> String {
-        var out = "## Swipe-tabs recognizers (window-wide)\n"
-        var found = false
-        forEachWindowGestureRecognizer { recognizer in
-            guard recognizer is UnifiedInputSwipeTabsPanGestureRecognizer else { return }
-            found = true
-            let host = recognizer.view.map { typeName($0) } ?? "nil"
-            out += "• on \(host): \(describe(recognizer))\n"
-        }
-        if !found {
-            out += "- (none found)\n"
-        }
-        return out
-    }
-
-    /// The scroll view's own pan recognizer — the one that actually drives web scrolling.
-    private static func panGesture(of scrollView: UIScrollView) -> String {
-        var out = "## webView.scrollView.panGestureRecognizer\n"
-        out += "- \(describe(scrollView.panGestureRecognizer))\n"
-        return out
-    }
-
-    /// Walk webView → window collecting every gesture recognizer on the chain. A recognizer stuck in
-    /// `began`/`changed` on an ancestor, or a stray pan with `cancelsTouchesInView`, is the prime
-    /// scroll-blocking suspect and is flagged inline.
-    private static func gestureChainSection(from start: UIView) -> String {
-        var out = "## Gesture recognizers (webView → window)\n"
-        var view: UIView? = start
-        var found = false
-        while let current = view {
-            if let recognizers = current.gestureRecognizers, !recognizers.isEmpty {
-                found = true
-                out += "• \(typeName(current)) [\(current.frame)]\n"
-                for recognizer in recognizers {
-                    out += "    - \(describe(recognizer))\n"
-                }
-            }
-            view = current.superview
-        }
-        if !found {
-            out += "- (none)\n"
-        }
-        return out
-    }
-
-    /// Structural overlay check (modal-safe — does not use hitTest). Walks webView up to MainViewController's
-    /// view (so the presented debug screen isn't itself reported as a blocker) and flags any sibling drawn
-    /// above our branch that can receive touches and covers any of three sample points down the web view —
-    /// a leftover transition snapshot / scrim / cover left interactive would block pans here.
-    private static func overlaySection(over webView: UIView, boundary: UIView?) -> String {
-        var out = "## Potential blocking overlays over the web view\n"
-        let bounds = webView.bounds
-        let samples = [CGPoint(x: bounds.midX, y: bounds.minY + 20),
-                       CGPoint(x: bounds.midX, y: bounds.midY),
-                       CGPoint(x: bounds.midX, y: bounds.maxY - 20)].map { webView.convert($0, to: nil) }
-        var branch = webView
-        var found = false
-        while branch !== boundary, let container = branch.superview {
-            if let branchIndex = container.subviews.firstIndex(of: branch) {
-                for sibling in container.subviews[(branchIndex + 1)...] where sibling.isUserInteractionEnabled
-                    && !sibling.isHidden && sibling.alpha > 0.01 {
-                    let frameInWindow = sibling.convert(sibling.bounds, to: nil)
-                    if samples.contains(where: { frameInWindow.contains($0) }) {
-                        found = true
-                        out += "- ⚠️ \(typeName(sibling)) above \(typeName(container))"
-                            + " [\(sibling.frame)] alpha \(sibling.alpha)\n"
-                    }
-                }
-            }
-            branch = container
-        }
-        if !found {
-            out += "- (none over the web view)\n"
-        }
-        return out
-    }
-
-    /// Best-effort UTI / swipe-tabs coordinator state, reached by locating MainViewController in the tree.
     @MainActor
-    private func coordinatorSection() -> String {
-        guard let mainVC = Self.findMainViewController() else {
-            return "## Coordinator state\n- MainViewController not found\n"
-        }
-        var out = "## Coordinator state\n"
-        if let swipe = mainVC.swipeTabsCoordinator {
-            out += "- swipeTabsCoordinator.isEnabled: \(swipe.isEnabled)\n"
-            out += "- swipeTabsCoordinator.state: \(String(describing: swipe.state))\n"
-        } else {
-            out += "- swipeTabsCoordinator: nil\n"
-        }
-        if let uti = mainVC.unifiedToggleInputCoordinator {
-            out += "- unifiedToggleInputCoordinator.displayState: \(String(describing: uti.displayState))\n"
-        } else {
-            out += "- unifiedToggleInputCoordinator: nil\n"
-        }
-        return out
+    func injectStuckGesture() {
+        actionResult = WebScrollFreezeDebugStuckGesture.inject()
     }
 
-    // MARK: - Logs
+    @MainActor
+    func clearStuckGesture() {
+        actionResult = WebScrollFreezeDebugStuckGesture.clear()
+    }
 
-    private static func recentInteractionLogs() -> String {
-        guard let store = try? OSLogStore(scope: .currentProcessIdentifier) else {
-            return "(OSLogStore unavailable)"
+    /// Safe diagnostic: drive the scroll view directly via `setContentOffset` (no recogniser or
+    /// window-interaction changes, so it cannot make a freeze worse). Splits the field mystery in two:
+    /// if the page MOVES, the scroll view is healthy and the block is in gesture/touch delivery; if it
+    /// does NOT move, the scroll view / content itself is stuck.
+    @MainActor
+    func probeProgrammaticScroll() {
+        guard let scrollView = WebScrollFreezeDebugProbe.findMainViewController()?.currentTab?.webView?.scrollView else {
+            actionResult = "Scroll probe: no web scroll view found"
+            return
         }
-        let since = store.position(date: Date().addingTimeInterval(-300))
-        let predicate = NSPredicate(format: "subsystem == %@", "Interaction")
-        guard let entries = try? store.getEntries(at: since, matching: predicate) else {
-            return "(failed to read log store)"
+        let minY = -scrollView.adjustedContentInset.top
+        let maxY = max(minY, scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom)
+        guard maxY - minY > 64 else {
+            actionResult = "Scroll probe: page is not scrollable (vertical range ≤ 64pt) — nothing to test here."
+            return
         }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss.SSS"
-        let lines = entries.compactMap { $0 as? OSLogEntryLog }.suffix(300).map {
-            "\(formatter.string(from: $0.date)) \($0.composedMessage)"
-        }
-        return lines.isEmpty ? "(no interaction logs in window)" : lines.joined(separator: "\n")
+        let before = scrollView.contentOffset.y
+        let targetY = before < maxY - 1 ? min(before + 400, maxY) : max(minY, before - 400)
+        scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: targetY), animated: false)
+        let after = scrollView.contentOffset.y
+        let moved = abs(after - before) >= 1
+        actionResult = moved
+            ? "Scroll probe: offset \(Int(before)) → \(Int(after)) — MOVED ✅ scroll view is fine; block is in gesture/touch delivery."
+            : "Scroll probe: offset \(Int(before)) → \(Int(after)) (target \(Int(targetY))) — DID NOT MOVE ❌ scroll view / content itself is stuck."
+    }
+}
+
+// MARK: - Stuck-gesture provocation (debug-only — used to confirm the freeze pixel fires)
+
+/// Debug-only tool to verify the production freeze pixel end-to-end. Installs a window-level recognizer
+/// that wedges once a drag starts and then prevents pans (scroll) while leaving taps alive — the
+/// "scroll dead, taps alive" signature. With it armed, dragging a long page repeatedly drives the real
+/// detection path in `WebScrollObserver`, so `m_debug_interaction_repeated_failed_scroll` fires
+/// (mechanism `wedged:*`) and can be confirmed in the pixel log.
+///
+/// NOT a shipping path: it only CREATES the freeze (recoverable by `clear()` or force-quit). It runs no
+/// recovery, so it can't brick taps. Reachable only from the internal/debug-gated diagnostics screen.
+@MainActor
+enum WebScrollFreezeDebugStuckGesture {
+
+    private static var injected: WebScrollFreezeDebugStuckGestureRecognizer?
+
+    static func inject() -> String {
+        guard injected == nil else { return "Already armed — clear it first." }
+        guard let window = WebScrollFreezeDebugProbe.keyWindow() else { return "No key window." }
+        let recognizer = WebScrollFreezeDebugStuckGestureRecognizer()
+        recognizer.cancelsTouchesInView = false
+        window.addGestureRecognizer(recognizer)
+        injected = recognizer
+        return "Armed. Leave this screen, then DRAG a long web page a few times across the screen — scroll "
+            + "stays dead (taps stay alive) and the freeze pixel fires after 3 drags across 2+ regions. Then tap Clear."
     }
 
-    // MARK: - Helpers
+    static func clear() -> String {
+        guard let recognizer = injected else { return "Nothing armed." }
+        recognizer.isEnabled = false
+        recognizer.view?.removeGestureRecognizer(recognizer)
+        injected = nil
+        return "Cleared."
+    }
+}
 
-    private static var appVersion: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
-        return "\(short) (\(build))"
+/// Deliberately wedged recognizer for the stuck-gesture provocation. Never cancels touches (taps stay
+/// alive) and prevents only pans (scroll). Wedges once a DRAG starts (a tap never arms it), then stays in
+/// `.changed` with no touches.
+final class WebScrollFreezeDebugStuckGestureRecognizer: UIGestureRecognizer {
+
+    private var disarmed = false
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard !disarmed else { return }
+        state = (state == .possible) ? .began : .changed
     }
 
-    private static func typeName(_ object: Any) -> String {
-        String(describing: type(of: object))
+    /// Intentionally does not advance to a terminal state — that is the wedge under test.
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {}
+
+    /// Intentionally ignored — keeps the recognizer wedged.
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {}
+
+    /// Once an `isEnabled` toggle resets us, stay inert so a follow-up drag is unaffected — re-arm via the
+    /// debug screen to test again.
+    override func reset() {
+        super.reset()
+        disarmed = true
     }
 
-    private static func describe(_ recognizer: UIGestureRecognizer) -> String {
-        let active = (recognizer.state == .began || recognizer.state == .changed)
-        return "\(typeName(recognizer)) state=\(recognizer.state.diagnosticName)\(active ? " ⚠️ ACTIVE" : "")"
-            + " enabled=\(recognizer.isEnabled) cancelsTouchesInView=\(recognizer.cancelsTouchesInView)"
-            + " delaysTouchesBegan=\(recognizer.delaysTouchesBegan) touches=\(recognizer.numberOfTouches)"
+    /// Prevent only pans (the scroll view's pan is a `UIPanGestureRecognizer`) so scrolling freezes while
+    /// taps keep recognising.
+    override func canPrevent(_ preventedGestureRecognizer: UIGestureRecognizer) -> Bool {
+        preventedGestureRecognizer is UIPanGestureRecognizer
     }
 
-    private static func findMainViewController() -> MainViewController? {
-        let windows = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-        for window in windows {
-            if let root = window.rootViewController, let match = firstDescendant(MainViewController.self, in: root) {
-                return match
-            }
-        }
-        return nil
-    }
-
-    private static func firstDescendant<T: UIViewController>(_ type: T.Type, in viewController: UIViewController) -> T? {
-        if let match = viewController as? T { return match }
-        for child in viewController.children {
-            if let match = firstDescendant(type, in: child) { return match }
-        }
-        return nil
-    }
-
-    private static func forEachWindowGestureRecognizer(_ body: (UIGestureRecognizer) -> Void) {
-        let windows = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-        for window in windows {
-            walk(window, body)
-        }
-    }
-
-    private static func walk(_ view: UIView, _ body: (UIGestureRecognizer) -> Void) {
-        view.gestureRecognizers?.forEach(body)
-        view.subviews.forEach { walk($0, body) }
-    }
+    override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool { false }
 }

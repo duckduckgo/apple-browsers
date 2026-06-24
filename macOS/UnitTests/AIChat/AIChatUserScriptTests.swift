@@ -235,8 +235,11 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var didGetAIChatPageContext = false
     var didSubmitAIChatPageContext = false
+    var didGetAIChatSelectionContext = false
+    var didSubmitAIChatSelectionContext = false
     var didTogglePageContextTelemetry = false
     var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    var selectionContextSubject = PassthroughSubject<AIChatSelectionContextData, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     var chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     var syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
@@ -337,8 +340,17 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    func getAIChatSelectionContext(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didGetAIChatSelectionContext = true
+        return nil
+    }
+
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> {
         pageContextSubject.eraseToAnyPublisher()
+    }
+
+    var selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never> {
+        selectionContextSubject.eraseToAnyPublisher()
     }
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> {
@@ -376,6 +388,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         didSubmitAIChatPageContext = true
+    }
+
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
+        didSubmitAIChatSelectionContext = true
     }
 
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -470,4 +486,8 @@ private final class MockAIChatMessageHandling: AIChatMessageHandling {
     }
 
     func setData(_ data: Any?, forMessageType type: DuckDuckGo_Privacy_Browser.AIChatMessageType) {}
+
+    func appendSelectionContext(_ selection: AIChatSelectionContextData) {}
+    func getSelectionContexts() -> [AIChatSelectionContextData] { [] }
+    func clearSelectionContexts() {}
 }

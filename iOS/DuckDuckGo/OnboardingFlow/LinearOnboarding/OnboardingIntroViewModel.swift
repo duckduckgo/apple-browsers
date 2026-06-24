@@ -407,7 +407,7 @@ private extension OnboardingIntroViewModel {
                 let progressStep: OnboardingView.ViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
                 return .onboarding(
                     .init(
-                        type: .duckAIQueryExperimentDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
+                        type: .duckAIQueryDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
                         step: progressStep
                     )
                 )
@@ -497,7 +497,7 @@ private extension OnboardingIntroViewModel {
 
     func persistPendingOnboardingStep(for step: OnboardingIntroStep) {
         if step == .duckAIQuerySelection {
-            onboardingResumeStepStore.resumeExperimentPrompt = nil
+            onboardingResumeStepStore.resumeDuckAIQueryPrompt = nil
         }
         onboardingResumeStepStore.resumeStep = step.resumeStep
     }
@@ -520,7 +520,7 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureAddressBarPositionSelectionImpression()
         case .chooseSearchExperienceDialog:
             pixelReporter.measureSearchExperienceSelectionImpression()
-        case .duckAIQueryExperimentDialog:
+        case .duckAIQueryDialog:
             pixelReporter.measureDuckAIQuerySelectionImpression()
         }
     }

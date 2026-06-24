@@ -241,7 +241,8 @@ extension MainViewController {
                                       keyValueStore: self.keyValueStore,
                                       daxDialogsManager: self.daxDialogsManager,
                                       initialTrackerCountState: initialTrackerCountState,
-                                      duckAIGridContentProvider: duckAIGridContentProvider)
+                                      duckAIGridContentProvider: duckAIGridContentProvider,
+                                      duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker)
         }) else {
             assertionFailure()
             return

@@ -189,7 +189,7 @@ extension OnboardingRebranding {
         /// Currently-displayed animation. Updated explicitly so the old overlay stays alive
         /// (and can finish its exit) after the model has moved on.
         @State private var currentDaxAnimation: DaxAnimation?
-        @State private var isExperimentExitTransitionActive = false
+        @State private var isDuckAIQueryExitTransitionActive = false
 
         init(model: OnboardingIntroViewModel) {
             self.model = model
@@ -272,7 +272,7 @@ extension OnboardingRebranding {
 
         private func onboardingDialogView(state: ViewState.Intro) -> some View {
             let configuration = bubbleBackedDialogConfiguration(for: state.type)
-            let isExperimentSearchStep = if case .duckAIQueryExperimentDialog = state.type { true } else { false }
+            let isDuckAIQueryStep = if case .duckAIQueryDialog = state.type { true } else { false }
 
             return GeometryReader { geometry in
                 let defaultTopPadding = onboardingTheme.linearOnboardingMetrics.minTopMargin + configuration.additionalTopMargin
@@ -305,7 +305,7 @@ extension OnboardingRebranding {
                 }
             }
             .padding()
-            .opacity(isExperimentExitTransitionActive && isExperimentSearchStep ? 0 : 1)
+            .opacity(isDuckAIQueryExitTransitionActive && isDuckAIQueryStep ? 0 : 1)
         }
 
         private func landingView(content: OnboardingLandingContent) -> some View {
@@ -480,8 +480,8 @@ extension OnboardingRebranding {
                 addressBarPositionView(content: content)
             case let .chooseSearchExperienceDialog(content):
                 searchExperienceSelectionView(content: content)
-            case let .duckAIQueryExperimentDialog(content, defaultMode):
-                experimentSearchExperienceSelectionView(content: content, defaultMode: defaultMode)
+            case let .duckAIQueryDialog(content, defaultMode):
+                duckAIQuerySelectionView(content: content, defaultMode: defaultMode)
             }
         }
 
@@ -577,13 +577,13 @@ extension OnboardingRebranding {
             case .chooseAppIconDialog: return AppIconPickerContent.daxAnimation
             case .chooseAddressBarPositionDialog: return nil // Dax-Floating is embedded in ScrollableOnboardingBackground
             case .chooseSearchExperienceDialog: return SearchExperienceContent.daxAnimation
-            case .duckAIQueryExperimentDialog: return nil
+            case .duckAIQueryDialog: return nil
             }
         }
 
         /// Hide → action → show sequence prevents cross-fading between steps.
-        private func experimentSearchExperienceSelectionView(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode) -> some View {
-            LegacyOnboardingView.DuckAIExperimentSearchContent(
+        private func duckAIQuerySelectionView(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode) -> some View {
+            LegacyOnboardingView.DuckAIQuerySearchContent(
                 content: content,
                 defaultMode: defaultMode,
                 visualStyle: .rebranded,
@@ -592,7 +592,7 @@ extension OnboardingRebranding {
                 openSearchAction: model.searchFromOnboarding,
                 measureQuerySubmissionAction: model.measureDuckAIQuerySubmission,
                 startExitTransitionAction: {
-                    beginExperimentExitTransition()
+                    beginDuckAIQueryExitTransition()
                 }
             )
         }
@@ -663,12 +663,12 @@ extension OnboardingRebranding {
             }
         }
 
-        private func beginExperimentExitTransition() {
+        private func beginDuckAIQueryExitTransition() {
             if reduceMotion {
-                isExperimentExitTransitionActive = true
+                isDuckAIQueryExitTransitionActive = true
             } else {
                 withAnimation(.easeInOut(duration: 0.18)) {
-                    isExperimentExitTransitionActive = true
+                    isDuckAIQueryExitTransitionActive = true
                 }
             }
         }
@@ -740,7 +740,7 @@ private extension OnboardingRebranding.OnboardingView {
                 tailDirection: .leading,
                 isVisible: true
             )
-        case .duckAIQueryExperimentDialog:
+        case .duckAIQueryDialog:
             return BubbleBackedDialogConfiguration(
                 tail: nil,
                 additionalTopMargin: BubbleBackedDialogMetrics.searchExperienceAdditionalTopMargin,

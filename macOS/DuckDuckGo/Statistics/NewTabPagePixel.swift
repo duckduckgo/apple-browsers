@@ -162,7 +162,7 @@ enum NewTabPagePixel: PixelKitEvent {
     case aiChatRecentChatSelectedKeyboard
 
     // Parameter duration: Load time in **seconds** (will be converted to milliseconds in pixel).
-    case newTabPageLoadingTime(duration: TimeInterval, osMajorVersion: Int)
+    case newTabPageLoadingTime(duration: TimeInterval)
 
     // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
     case nextStepsCardClicked(_ card: String, cardImpressionCount: Int, ntpImpressionCount: Int, daysSinceInstall: Int?, activeUsageDays: Int)
@@ -222,11 +222,10 @@ enum NewTabPagePixel: PixelKitEvent {
             return [
                 "mode": mode.rawValue
             ]
-        case .newTabPageLoadingTime(let duration, let osMajorVersion):
+        case .newTabPageLoadingTime(let duration):
             // "loadingTime" is reported in **milliseconds**
             return [
-                "loadingTime": String(Int(duration * 1000)),
-                "osMajorVersion": "\(osMajorVersion)"
+                "loadingTime": String(Int(duration * 1000))
             ]
         case let .nextStepsCardClicked(_, cardImpressionCount, ntpImpressionCount, daysSinceInstall, activeUsageDays),
             let .nextStepsCardDismissed(_, cardImpressionCount, ntpImpressionCount, daysSinceInstall, activeUsageDays):

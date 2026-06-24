@@ -42,6 +42,12 @@ struct SettingsAIFeaturesView: View {
                 SettingsAILegacyFeaturesView()
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            if viewModel.isAIFeaturesNativeControlsEnabled,
+               UIDevice.current.userInterfaceIdiom == .pad {
+                Color.clear.frame(height: 8)
+            }
+        }
         .applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                     displayMode: .inline,
                                     viewModel: viewModel)
@@ -139,7 +145,7 @@ private struct SettingsAINativeFeaturesView: AIFeaturesSettingsRowProviding {
             } label: {
                 Text(UserText.settingsAiFeaturesDisableAIFeatures)
                     .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .accentTextPrimary))
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
                     .opacity(viewModel.isAllAIDisabled ? 0.4 : 1)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -238,11 +244,18 @@ private extension AIFeaturesSettingsRowProviding {
     @ViewBuilder
     var duckAISearchInputRows: some View {
         if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
-            HStack {
+            let pickerRow = HStack {
                 SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
                     .padding(.vertical, 8)
             }
             .frame(maxWidth: .infinity, alignment: .center)
+
+            // Custom row: keep its separator full-width like the standard cells above/below (iOS 16+).
+            if #available(iOS 16.0, *) {
+                pickerRow.alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+            } else {
+                pickerRow
+            }
 
             if viewModel.aiChatSearchInputEnabledBinding.wrappedValue,
                viewModel.isDefaultOmnibarModeEnabled {
@@ -334,7 +347,7 @@ private enum FooterAction {
     }
 }
 
-extension DefaultOmnibarMode: CustomStringConvertible {
+extension DefaultOmnibarMode: @retroactive CustomStringConvertible {
     public var description: String {
         switch self {
         case .search: return UserText.settingsDefaultOmnibarModeSearch
@@ -344,7 +357,7 @@ extension DefaultOmnibarMode: CustomStringConvertible {
     }
 }
 
-extension SearchAssistFrequency: CustomStringConvertible {
+extension SearchAssistFrequency: @retroactive CustomStringConvertible {
     public var description: String {
         switch self {
         case .never: return UserText.settingsAiFeaturesSearchAssistNever

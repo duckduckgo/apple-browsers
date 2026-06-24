@@ -3626,10 +3626,10 @@ Take back control of your personal information with the browser designed for dat
 "settings.aifeatures.disable.all" = "Use DuckDuckGo Without AI";
 
 /* Footer text below the disable all AI features button */
-"settings.aifeatures.disable.all.footer" = "Disables Duck.ai, hides AI-assisted answers in search, and hides AI-generated images.";
+"settings.aifeatures.disable.all.footer" = "Disables Duck.ai, hides AI-assisted answers in search, and hides AI-generated images in image search results.";
 
 /* Footer text shown once all AI features are already disabled */
-"settings.aifeatures.disable.all.footer.disabled" = "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers or AI-generated images in search results.";
+"settings.aifeatures.disable.all.footer.disabled" = "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers or AI-generated images in image search results.";
 
 /* Section header for the Duck.ai settings group on the AI Features screen */
 "settings.aifeatures.duckai.section.header" = "Duck.ai";

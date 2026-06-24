@@ -70,11 +70,7 @@ struct SettingsAIExperimentalPickerView: View {
     }
 
     private var shouldUseIPadAssets: Bool {
-        isIPadAIToggleOn && UIDevice.current.userInterfaceIdiom == .pad
-    }
-
-    private var isIPadAIToggleOn: Bool {
-        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.iPadAIToggle)
+        UIDevice.current.userInterfaceIdiom == .pad
     }
 
     private func rebrandableImage(_ rebranded: ImageResource, legacy: ImageResource) -> ImageResource {

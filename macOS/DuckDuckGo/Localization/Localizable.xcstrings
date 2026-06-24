@@ -115769,6 +115769,18 @@
         }
       }
     },
+    "vpn.troubleshooting.title" : {
+      "comment" : "Troubleshooting section title in VPN settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Troubleshooting"
+          }
+        }
+      }
+    },
     "vpn.uninstall.alert.informative.text" : {
       "comment" : "Informative text for the alert that comes up when the user decides to uninstall our VPN",
       "extractionState" : "extracted_with_value",

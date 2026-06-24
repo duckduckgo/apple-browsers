@@ -2815,6 +2815,9 @@ https://duckduckgo.com/mac";
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
 
+/* Title of the Troubleshooting section in the VPN status screen. */
+"network.protection.status.view.troubleshooting.section.title" = "Troubleshooting";
+
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPN is On. Your location and online activity are protected.";
 

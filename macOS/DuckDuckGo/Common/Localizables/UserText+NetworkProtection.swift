@@ -240,6 +240,8 @@ extension UserText {
 
     static let vpnShortcutsSettingsTitle = NSLocalizedString("vpn.shortcuts.settings.title", value: "Shortcuts", comment: "Shortcuts section title in VPN settings")
 
+    static let vpnTroubleshootingTitle = NSLocalizedString("vpn.troubleshooting.title", value: "Troubleshooting", comment: "Troubleshooting section title in VPN settings")
+
     static let vpnNotificationsSettingsTitle = NSLocalizedString("vpn.notifications.settings.title", value: "Notifications", comment: "Notifications section title in VPN settings")
 
     static let vpnAdvancedSettingsTitle = NSLocalizedString("vpn.advanced.settings.title", value: "Advanced", comment: "VPN Advanced section title in VPN settings")

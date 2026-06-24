@@ -39,7 +39,10 @@ final class SystemSettingsPiPTutorialService {
         return (playerView, videoPlayerCoordinator)
     }()
 
-    init() {
+    private let featureFlagger: FeatureFlagger
+
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
         // Register PiP Video URL providers
         registerAllURLProviders()
     }
@@ -52,7 +55,7 @@ private extension SystemSettingsPiPTutorialService {
 
     func registerAllURLProviders() {
         // Register PiP URL Tutorial Provider for 'Set As Default' Browser destination.
-        manager.register(DefaultBrowserPiPTutorialURLProvider(), for: .defaultBrowser)
+        manager.register(DefaultBrowserPiPTutorialURLProvider(featureFlagger: featureFlagger), for: .defaultBrowser)
     }
 }
 

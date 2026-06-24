@@ -1568,6 +1568,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyFireWindowConfigurationPixels()
         fireDailyAIChatEnabledPixel()
         fireDailyAdBlockingPixel()
+        fireDailyAutoClearOnExitEnabledPixel()
 
         fireAutoconsentDailyPixel()
         fireThemeDailyPixel()
@@ -1616,6 +1617,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyAIChatEnabledPixel() {
         PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
+    }
+
+    private func fireDailyAutoClearOnExitEnabledPixel() {
+        guard dataClearingPreferences.isAutoClearEnabled else { return }
+        PixelKit.fire(GeneralPixel.dailyAutoClearOnExitEnabled, frequency: .daily, doNotEnforcePrefix: true)
     }
 
     private func fireDailyAdBlockingPixel() {

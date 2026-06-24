@@ -323,18 +323,18 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     }
 
     func measureDuckAIQuerySelectionImpression() {
-        fire(event: .onboardingIntroDuckAIExperimentToggleImpressionUnique, unique: true)
+        fire(event: .onboardingIntroDuckAIToggleImpressionUnique, unique: true)
         sharedPixelHandler.fire(.searchChatToggle(.shown),
                                 source: sharedPixelsStorage.onboardingSource,
                                 flow: sharedPixelsStorage.onboardingFlow)
     }
 
     func measureDuckAIQueryChooseSearchOnly() {
-        fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedSearch, unique: false)
+        fire(event: .onboardingIntroDuckAIToggleContinuePressedSearch, unique: false)
     }
 
     func measureDuckAIQueryChooseAIChat() {
-        fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedAI, unique: false)
+        fire(event: .onboardingIntroDuckAIToggleContinuePressedAI, unique: false)
     }
 
     func measureDuckAIQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
@@ -532,15 +532,15 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     }
 
     func measureDuckAIFireButtonCTAAction() {
-        fire(event: .onboardingDuckAIExperimentFireButtonCTAPressed, unique: false)
+        fire(event: .onboardingDuckAIFireButtonCTAPressed, unique: false)
     }
 
     func measureDuckAIFireDialogImpression() {
-        fire(event: .onboardingDuckAIExperimentFireDialogShownUnique, unique: true)
+        fire(event: .onboardingDuckAIFireDialogShownUnique, unique: true)
     }
 
     func measureDuckAIFinalDialogImpression() {
-        fire(event: .onboardingDuckAIExperimentFinalDialogShownUnique, unique: true)
+        fire(event: .onboardingDuckAIFinalDialogShownUnique, unique: true)
     }
 
     func measureDuckAIFinalDialogCTAAction() {

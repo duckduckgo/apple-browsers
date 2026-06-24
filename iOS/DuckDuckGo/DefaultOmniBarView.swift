@@ -721,6 +721,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         updateShadows()
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        applyOmnibarCornerStyle()
+    }
+
     private func setUpCallbacks() {
         searchAreaView.dismissButtonView.addTarget(self, action: #selector(dismissButtonTap), for: .touchUpInside)
         searchAreaView.voiceSearchButton.addTarget(self, action: #selector(voiceSearchButtonTap), for: .touchUpInside)
@@ -871,8 +876,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func updateActiveState() {
         // This is needed so progress bar is clipped properly
-        omniBarProgressView.layer.cornerRadius = Metrics.cornerRadius
-        searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
+        applyOmnibarCornerStyle()
         updateShadows()
     }
 
@@ -1090,6 +1094,20 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private struct Constant {
         static let accessibilityPrefix = "Browser.OmniBar"
+    }
+
+    private func applyOmnibarCornerStyle() {
+        let cornerRadius: CGFloat
+        if isFloatingUIEnabled && isUsingSmallTopSpacing {
+            cornerRadius = searchAreaContainerView.bounds.height / 2
+        } else {
+            cornerRadius = Metrics.cornerRadius
+        }
+
+        omniBarProgressView.layer.cornerRadius = cornerRadius
+        searchAreaContainerView.layer.cornerRadius = cornerRadius
+        searchAreaView.layer.cornerRadius = cornerRadius
+        activeOutlineView.layer.cornerRadius = cornerRadius + Metrics.activeBorderWidth
     }
 }
 

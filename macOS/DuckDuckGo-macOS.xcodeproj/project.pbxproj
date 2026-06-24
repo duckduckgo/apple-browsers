@@ -3939,6 +3939,16 @@
 		C5965506B4FA4A4E92FD11C9 /* ContextMenuSubfeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91BBCD4E443448C19C16F91E /* ContextMenuSubfeatureTests.swift */; };
 		C8C8050EED40EF171CC2784D /* QuickFeedbackDiagnosticsCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F511D9CB8F68D9D9B0341314 /* QuickFeedbackDiagnosticsCollector.swift */; };
 		C8E4E6A94A9FA76E5ABF3A2A /* QuickFeedbackTipController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76403F87E9F53E2C9FFA007 /* QuickFeedbackTipController.swift */; };
+		C8F1A3D52B6E4C7091D4E8F0 /* DDGChromeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B0 /* DDGChromeExtension.swift */; };
+		C8F1A3D52B6E4C7091D4E8F1 /* DDGChromeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B0 /* DDGChromeExtension.swift */; };
+		C8F1A3D52B6E4C7091D4E8F2 /* ThirdPartyBrowserExtensionInstalling.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B1 /* ThirdPartyBrowserExtensionInstalling.swift */; };
+		C8F1A3D52B6E4C7091D4E8F3 /* ThirdPartyBrowserExtensionInstalling.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B1 /* ThirdPartyBrowserExtensionInstalling.swift */; };
+		C8F1A3D52B6E4C7091D4E8F4 /* ChromeExtensionInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B2 /* ChromeExtensionInstaller.swift */; };
+		C8F1A3D52B6E4C7091D4E8F5 /* ChromeExtensionInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B2 /* ChromeExtensionInstaller.swift */; };
+		C8F1A3D52B6E4C7091D4E8F6 /* ChromeExtensionInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B3 /* ChromeExtensionInstallerTests.swift */; };
+		C8F1A3D52B6E4C7091D4E8F7 /* ChromeExtensionInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B3 /* ChromeExtensionInstallerTests.swift */; };
+		C8F1A3D52B6E4C7091D4E8F8 /* ChromeExtensionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B4 /* ChromeExtensionDebugMenu.swift */; };
+		C8F1A3D52B6E4C7091D4E8F9 /* ChromeExtensionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E7C4B12D8F4A6C93E5F1B4 /* ChromeExtensionDebugMenu.swift */; };
 		CB24F70C29A3D9CB006DCC58 /* AppConfigurationURLProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB24F70B29A3D9CB006DCC58 /* AppConfigurationURLProvider.swift */; };
 		CB24F70D29A3D9CB006DCC58 /* AppConfigurationURLProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB24F70B29A3D9CB006DCC58 /* AppConfigurationURLProvider.swift */; };
 		CB63DECB2CDC0BBE0097986A /* PageRefreshMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB63DECA2CDC0BB80097986A /* PageRefreshMonitor.swift */; };
@@ -6075,6 +6085,11 @@
 		A3E61483DDA440CEAD33A5C5 /* AIChatDeleteChatsDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatDeleteChatsDialog.swift; sourceTree = "<group>"; };
 		A5A7430C39C716A6A3A1F654 /* WebNotificationPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebNotificationPixel.swift; sourceTree = "<group>"; };
 		A86EE9A7B2E24D47BACF8241 /* AdBlockingAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdBlockingAvailability.swift; sourceTree = "<group>"; };
+		A9E7C4B12D8F4A6C93E5F1B0 /* DDGChromeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDGChromeExtension.swift; sourceTree = "<group>"; };
+		A9E7C4B12D8F4A6C93E5F1B1 /* ThirdPartyBrowserExtensionInstalling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThirdPartyBrowserExtensionInstalling.swift; sourceTree = "<group>"; };
+		A9E7C4B12D8F4A6C93E5F1B2 /* ChromeExtensionInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeExtensionInstaller.swift; sourceTree = "<group>"; };
+		A9E7C4B12D8F4A6C93E5F1B3 /* ChromeExtensionInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeExtensionInstallerTests.swift; sourceTree = "<group>"; };
+		A9E7C4B12D8F4A6C93E5F1B4 /* ChromeExtensionDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeExtensionDebugMenu.swift; sourceTree = "<group>"; };
 		AA0000012F00000100000001 /* TabRestorationData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabRestorationData.swift; sourceTree = "<group>"; };
 		AA0877B726D5160D00B05660 /* SafariVersionReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariVersionReaderTests.swift; sourceTree = "<group>"; };
 		AA0877B926D5161D00B05660 /* WebKitVersionProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebKitVersionProviderTests.swift; sourceTree = "<group>"; };
@@ -10192,6 +10207,7 @@
 			isa = PBXGroup;
 			children = (
 				560EB9302C78943E0080DBC8 /* ContextualOnboarding */,
+				A9E7C4B12D8F4A6C93E5F1B5 /* ThirdPartyBrowserExtensions */,
 				56A053FB2C19E8F7007D8FAB /* OnboardingActionsManager.swift */,
 				56A054012C1AFA5D007D8FAB /* OnboardingConfiguration.swift */,
 				56A0543D2C215FB3007D8FAB /* OnboardingUserScript.swift */,
@@ -10288,6 +10304,7 @@
 			children = (
 				567A23D92C8894840010F66C /* ContextualOnboarding */,
 				56A054062C1B4772007D8FAB /* Mocks */,
+				A9E7C4B12D8F4A6C93E5F1B3 /* ChromeExtensionInstallerTests.swift */,
 				56A053FE2C1AEFA1007D8FAB /* OnboardingManagerTests.swift */,
 				56A054432C2252CE007D8FAB /* OnboardingUserScriptTests.swift */,
 			);
@@ -10530,6 +10547,17 @@
 				C76403F87E9F53E2C9FFA007 /* QuickFeedbackTipController.swift */,
 			);
 			path = QuickFeedback;
+			sourceTree = "<group>";
+		};
+		A9E7C4B12D8F4A6C93E5F1B5 /* ThirdPartyBrowserExtensions */ = {
+			isa = PBXGroup;
+			children = (
+				A9E7C4B12D8F4A6C93E5F1B0 /* DDGChromeExtension.swift */,
+				A9E7C4B12D8F4A6C93E5F1B1 /* ThirdPartyBrowserExtensionInstalling.swift */,
+				A9E7C4B12D8F4A6C93E5F1B2 /* ChromeExtensionInstaller.swift */,
+				A9E7C4B12D8F4A6C93E5F1B4 /* ChromeExtensionDebugMenu.swift */,
+			);
+			path = ThirdPartyBrowserExtensions;
 			sourceTree = "<group>";
 		};
 		AA0877B626D515EE00B05660 /* UserAgent */ = {
@@ -15504,6 +15532,10 @@
 				7BA64F682EE1E86B00289E30 /* ContentScopeExperimentsMenu.swift in Sources */,
 				37E13B8F2D54B03D002ECD62 /* HistoryViewDataProvider.swift in Sources */,
 				56A053FD2C1A0AC9007D8FAB /* OnboardingActionsManager.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F1 /* DDGChromeExtension.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F3 /* ThirdPartyBrowserExtensionInstalling.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F5 /* ChromeExtensionInstaller.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F9 /* ChromeExtensionDebugMenu.swift in Sources */,
 				B626A76E29928B1600053070 /* TestsClosureNavigationResponder.swift in Sources */,
 				3707C71A294B5D0F00682A9F /* TabExtensions.swift in Sources */,
 				B66260DE29AC5D4300E9E3EE /* NavigationProtectionTabExtension.swift in Sources */,
@@ -16429,6 +16461,7 @@
 				7BAB1A0100000000A00000B1 /* AIChatMentionPickerViewControllerTests.swift in Sources */,
 				1A77VST00000000000000006 /* VoiceSessionTrackerTests.swift in Sources */,
 				56A054482C22536A007D8FAB /* CapturingOnboardingActionsManager.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F7 /* ChromeExtensionInstallerTests.swift in Sources */,
 				3706FE3D293F661700E42796 /* DataEncryptionTests.swift in Sources */,
 				1D39F7292DCA2C9200F258F0 /* InitialWindowFrameProviderTests.swift in Sources */,
 				BB72939E2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */,
@@ -18278,6 +18311,10 @@
 				B65E6B9E26D9EC0800095F96 /* CircularProgressView.swift in Sources */,
 				BB3229052D08644400DA92E9 /* TabBarRemoteMessageView.swift in Sources */,
 				56A053FC2C19E8F7007D8FAB /* OnboardingActionsManager.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F0 /* DDGChromeExtension.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F2 /* ThirdPartyBrowserExtensionInstalling.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F4 /* ChromeExtensionInstaller.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F8 /* ChromeExtensionDebugMenu.swift in Sources */,
 				EEE50C292C38249C003DD7FF /* OptionalExtension.swift in Sources */,
 				AABEE69C24A902BB0043105B /* SuggestionContainer.swift in Sources */,
 				1D68604F2D36BD28006FC53E /* WebExtensionsDebugMenu.swift in Sources */,
@@ -18698,6 +18735,7 @@
 				B63ED0DC26AE7B1E00A9DAD1 /* WebViewMock.swift in Sources */,
 				1D39F7282DCA2C9200F258F0 /* InitialWindowFrameProviderTests.swift in Sources */,
 				56A053FF2C1AEFA1007D8FAB /* OnboardingManagerTests.swift in Sources */,
+				C8F1A3D52B6E4C7091D4E8F6 /* ChromeExtensionInstallerTests.swift in Sources */,
 				BB9BA2212D10BC72009229F3 /* TabBarRemoteMessageViewModelTests.swift in Sources */,
 				CC26B6762F0D269D00D380B6 /* NewTabPageNextStepsCardsActionHandlerTests.swift in Sources */,
 				C172E7332C93759C00521D9A /* SyncPromoManagerTests.swift in Sources */,

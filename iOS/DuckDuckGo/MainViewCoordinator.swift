@@ -175,7 +175,7 @@ class MainViewCoordinator {
             navigationBarContainer.alpha = 0
             navigationBarContainer.isUserInteractionEnabled = false
             superview.bringSubviewToFront(toolbar)
-            setContentContainerBottomAnchorMode(.toolbar)
+            setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
             isOmnibarInToolbar = true
         }
     }
@@ -280,7 +280,7 @@ class MainViewCoordinator {
         if isNavigationChromeHidden {
             setContentContainerBottomAnchorMode(.unifiedToggleInput)
         } else {
-            setContentContainerBottomAnchorMode(.toolbar)
+            setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
         }
     }
 
@@ -586,7 +586,7 @@ class MainViewCoordinator {
             if navigationBarContainer.isHidden {
                 setContentContainerBottomAnchorMode(.safeArea)
             } else {
-                setContentContainerBottomAnchorMode(.toolbar)
+                setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
             }
         }
     }
@@ -673,6 +673,15 @@ class MainViewCoordinator {
         constraints.contentContainerBottomToToolbarTop.isActive = mode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = mode == .unifiedToggleInput
         constraints.contentContainerBottomToSafeArea.isActive = mode == .safeArea
+    }
+
+    /// Floating-bottom chrome is overlaid above the page surface, so content should extend to
+    /// the safe area floor. Legacy and non-floating bottom chrome remains toolbar-anchored.
+    private func preferredBottomContentAnchorModeForVisibleChrome() -> ContentContainerBottomAnchorMode {
+        if isFloatingUIEnabled, addressBarPosition.isBottom {
+            return .safeArea
+        }
+        return .toolbar
     }
 
     private func setNavBarContainerBottomToToolbar(active: Bool = true) {

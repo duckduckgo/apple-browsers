@@ -83,12 +83,12 @@ final class DuckAIGridItemTests: XCTestCase {
         XCTAssertEqual(item, .image(title: "A duck wearing sunglasses", imageFileRef: "uuid-latest"))
     }
 
-    func testWhenChatIsImageGenerationModelAndHasNoFileRefsThenReturnsNil() {
+    func testWhenChatIsImageGenerationModelAndHasNoFileRefsThenReturnsEmptyWithChatChip() {
         let chat = makeChat(title: "A duck wearing sunglasses", model: "image-generation", fileRefs: [])
 
         let item = DuckAIGridItem.from(chat: chat, lastMessageContent: nil)
 
-        XCTAssertNil(item)
+        XCTAssertEqual(item, .empty(title: "A duck wearing sunglasses", chip: .chat))
     }
 
     func testWhenChatIsImageGenerationAndTitleIsEmptyThenFallsBackToUntitledChatPlaceholder() {
@@ -135,12 +135,41 @@ final class DuckAIGridItemTests: XCTestCase {
         XCTAssertEqual(item, .transcript(title: UserText.aiChatTabSwitcherCardUntitledChat, snippet: "Hi"))
     }
 
-    func testWhenChatIsVoiceKindAndTranscriptIsNilThenReturnsNil() {
+    func testWhenChatIsVoiceKindAndTranscriptIsNilThenReturnsEmptyWithTranscriptChip() {
         let chat = makeChat(title: "Weekend plans", model: "voice-mode")
 
         let item = DuckAIGridItem.from(chat: chat, lastMessageContent: nil)
 
-        XCTAssertNil(item)
+        XCTAssertEqual(item, .empty(title: "Weekend plans", chip: .transcript))
+    }
+
+    // MARK: - Empty-content branch
+
+    func testWhenChatIsTextKindAndContentIsEmptyThenReturnsEmptyWithChatChip() {
+        let chat = makeChat(title: "Cute ducks", model: "gpt-4o-mini")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: "   \n")
+
+        XCTAssertEqual(item, .empty(title: "Cute ducks", chip: .chat))
+    }
+
+    func testWhenContentIsEmptyAndTitleIsEmptyThenFallsBackToUntitledChatPlaceholder() {
+        let chat = makeChat(title: "", model: "gpt-4o-mini")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: nil)
+
+        XCTAssertEqual(item, .empty(title: UserText.aiChatTabSwitcherCardUntitledChat, chip: .chat))
+    }
+
+    // MARK: - chipKind
+
+    func testChipKindMapping() {
+        XCTAssertEqual(DuckAIGridItem.text(title: "t", snippet: "s").chipKind, .chat)
+        XCTAssertEqual(DuckAIGridItem.image(title: "t", imageFileRef: "r").chipKind, .chat)
+        XCTAssertEqual(DuckAIGridItem.transcript(title: "t", snippet: "s").chipKind, .transcript)
+        XCTAssertEqual(DuckAIGridItem.voice.chipKind, .voice)
+        XCTAssertEqual(DuckAIGridItem.empty(title: "t", chip: .chat).chipKind, .chat)
+        XCTAssertNil(DuckAIGridItem.empty(title: nil, chip: nil).chipKind)
     }
 
     // MARK: - Helpers

@@ -656,7 +656,7 @@ class MainViewController: UIViewController {
         }
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
-        floatingDomainCapsuleController.install(in: view)
+        floatingDomainCapsuleController.install(in: view, addressBarPosition: appSettings.currentAddressBarPosition)
 
         setUpToolbarButtonsActions()
         installSwipeTabs()

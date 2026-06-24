@@ -47,7 +47,7 @@ final class FloatingDomainCapsuleController {
         self.onTap = onTap
     }
 
-    func install(in view: UIView) {
+    func install(in view: UIView, addressBarPosition: AddressBarPosition) {
         guard button.superview == nil else { return }
 
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
@@ -72,6 +72,11 @@ final class FloatingDomainCapsuleController {
         NSLayoutConstraint.activate([
             button.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
+
+        // Avoid an ambiguous first layout pass before the first `update(...)` call.
+        let useTopAnchor = addressBarPosition == .top
+        topConstraint?.isActive = useTopAnchor
+        bottomConstraint?.isActive = !useTopAnchor
     }
 
     func update(addressBarPosition: AddressBarPosition,

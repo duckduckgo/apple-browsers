@@ -139,7 +139,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
     }
 
     @discardableResult
-    func restoreLastSessionState(interactive: Bool, includeRegularTabs: Bool) -> WindowManagerStateRestoration? {
+    func restoreLastSessionState(interactive: Bool, includeRegularTabs: Bool, isRelaunchingAutomatically: Bool = false) -> WindowManagerStateRestoration? {
         var state: WindowManagerStateRestoration?
         do {
             let isCalledAtStartup = !interactive
@@ -148,6 +148,13 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
             })
             // rename loaded app state file
             service.didLoadState()
+            // The user's session is only considered restored when their regular tabs come back.
+            // At startup `restoreLastSessionState` also runs to restore pinned tabs (which persist
+            // regardless of the session-restore setting), so a decoded state alone isn't a restore.
+            let didRestoreSession = includeRegularTabs && state != nil
+            if didRestoreSession {
+                PixelKit.fire(GeneralPixel.appStateRestored(trigger: isRelaunchingAutomatically ? .appUpdate : .standard), frequency: .dailyAndCount)
+            }
         } catch CocoaError.fileReadNoSuchFile {
             // ignore
         } catch {
@@ -180,7 +187,7 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         let restoreWindows = !service.isAppStateFileStale || isRelaunchingAutomatically
         let restoreRegularTabs = shouldRestoreRegularTabs || isRelaunchingAutomatically
         // don't automatically restore windows if relaunched 2nd time with no recently updated app session state
-        readLastSessionState(restoreWindows: restoreWindows, restoreRegularTabs: restoreRegularTabs)
+        readLastSessionState(restoreWindows: restoreWindows, restoreRegularTabs: restoreRegularTabs, isRelaunchingAutomatically: isRelaunchingAutomatically)
 
         let updateStatus = applicationUpdateDetecting.isApplicationUpdated()
         detectUnexpectedAppTermination(didRestoreRegularTabs: restoreRegularTabs, updateStatus: updateStatus)
@@ -209,10 +216,10 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         }
     }
 
-    private func readLastSessionState(restoreWindows: Bool, restoreRegularTabs: Bool) {
+    private func readLastSessionState(restoreWindows: Bool, restoreRegularTabs: Bool, isRelaunchingAutomatically: Bool) {
         service.loadLastSessionState()
         if restoreWindows {
-            let state = restoreLastSessionState(interactive: false, includeRegularTabs: restoreRegularTabs)
+            let state = restoreLastSessionState(interactive: false, includeRegularTabs: restoreRegularTabs, isRelaunchingAutomatically: isRelaunchingAutomatically)
             cleanTabSnapshots(state: state)
         } else {
             migratePinnedTabsSettingIfNecessary()

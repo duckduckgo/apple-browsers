@@ -68,24 +68,14 @@ struct ImportPromotionHeaderView: View {
             .padding(.top)
             .padding(.horizontal, 8)
             
-            VStack {
-                HStack {
-                    Spacer()
-                    Button {
-                        dismissButtonAction?()
-                    } label: {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                            .foregroundColor(.primary)
-                    }
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-                    .padding(0)
-                    .accessibilityIdentifier("Button_DismissImportPromo")
-                }
+            Button {
+                dismissButtonAction?()
+            } label: {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
             }
-            .alignmentGuide(.top) { dimension in
-                dimension[.top]
-            }
+            .buttonStyle(CloseButtonStyle())
+            .accessibilityIdentifier("Button_DismissImportPromo")
+            .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
         .background(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
             .foregroundColor(Color(designSystemColor: .surface))

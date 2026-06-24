@@ -62,13 +62,10 @@ struct AutofillExtensionPromotionHeaderView: View {
                 dismissButtonAction?()
             } label: {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                    .foregroundColor(.primary)
             }
-            .frame(width: 44, height: 44)
-            .contentShape(Rectangle())
-            .padding(.trailing, 4)
-            .padding(.top, 4)
+            .buttonStyle(CloseButtonStyle())
             .accessibilityIdentifier("Button_DismissExtensionPromo")
+            .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)

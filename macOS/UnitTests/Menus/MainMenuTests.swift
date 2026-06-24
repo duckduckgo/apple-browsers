@@ -763,6 +763,7 @@ class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldOpenAIChatInSidebar = false
     var shouldDisplaySummarizationMenuItem = false
     var shouldDisplayTranslationMenuItem = false
+    var shouldDisplaySelectionContextMenuItem = false
     var shouldAutomaticallySendPageContext = false
     var shouldAutomaticallySendPageContextTelemetryValue: Bool?
 

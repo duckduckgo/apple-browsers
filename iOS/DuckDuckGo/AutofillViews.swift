@@ -136,7 +136,7 @@ struct AutofillViews {
                         .daxButton()
                 }
             }
-            .buttonStyle(PrimaryButtonStyle())
+            .buttonStyle(PrimaryButtonStyle(fullWidth: true))
         }
     }
 

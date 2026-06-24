@@ -118,6 +118,10 @@ final class AIChatViewController: NSViewController {
         aiTab.aiChat?.submitAIChatPageContext(pageContext)
     }
 
+    public func submitSelectionContext(_ selection: AIChatSelectionContextData) {
+        aiTab.aiChat?.submitAIChatSelectionContext(selection)
+    }
+
     public func setAIChatRestorationData(_ restorationData: AIChatRestorationData?) {
         aiTab.aiChat?.setAIChatRestorationData(restorationData)
     }

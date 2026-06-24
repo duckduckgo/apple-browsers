@@ -196,6 +196,62 @@ public struct AIChatPageContextData: Codable, Equatable {
     }
 }
 
+// MARK: - Selection Context
+
+/// Accumulates user text selections attached to Duck.ai so a freshly-opened sidebar can pull the
+/// ones it missed (via `getAIChatSelectionContext`), mirroring how `AIChatPageContextHandler` backs
+/// `getAIChatPageContext`. Unlike the single-slot page-context handler, selections append and the
+/// list is read non-destructively (the FE dedupes by `id`); it's cleared when a prompt is submitted.
+public final class AIChatSelectionContextHandler {
+    private var selections: [AIChatSelectionContextData] = []
+
+    public init() {}
+
+    public func append(_ selection: AIChatSelectionContextData) {
+        selections.append(selection)
+    }
+
+    public func getAll() -> [AIChatSelectionContextData] {
+        selections
+    }
+
+    public func reset() {
+        selections = []
+    }
+}
+
+/// One user text selection attached to Duck.ai via "Attach to Duck.ai".
+///
+/// Selections live on their own dedicated channel (`submitAIChatSelectionContext`), independent of
+/// the single page-context slot: native appends items one at a time and the duck.ai web app owns the
+/// resulting list (chips, removal, max count, inclusion in the next prompt). `id` lets the FE address
+/// individual items.
+public struct AIChatSelectionContextData: Codable, Equatable {
+    public let id: String
+    public let title: String
+    /// The source page's favicon, base64-encoded the same way as `AIChatPageContextData.favicon`
+    /// (raw URLs get CSP-blocked in the sidebar). Empty when no favicon is cached.
+    public let favicon: [AIChatPageContextData.PageContextFavicon]
+    public let url: String
+    public let content: String
+    public let truncated: Bool
+    public let fullContentLength: Int
+    /// Word count of the *full* selection (before truncation), computed natively. The FE can't
+    /// derive this reliably from `content` because `content` is truncated, so native owns it.
+    public let wordCount: Int
+
+    public init(id: String, title: String, favicon: [AIChatPageContextData.PageContextFavicon] = [], url: String, content: String, truncated: Bool, fullContentLength: Int, wordCount: Int) {
+        self.id = id
+        self.title = title
+        self.favicon = favicon
+        self.url = url
+        self.content = content
+        self.truncated = truncated
+        self.fullContentLength = fullContentLength
+        self.wordCount = wordCount
+    }
+}
+
 // MARK: - Tab Picker Types
 
 /// Metadata for a single open browser tab, returned by `getAIChatOpenTabs`.

@@ -76,7 +76,7 @@ final class SuggestionRowMapperTests: XCTestCase {
         XCTAssertEqual(row.title, "Hello")
         XCTAssertNil(row.subtitle)
         XCTAssertEqual(row.accessory, .none)
-        XCTAssertEqual(row.icon, .pin)
+        XCTAssertEqual(row.icon, .aiChatPinned)
     }
 
     func test_searchRow_hasFindIcon_andSearchSubtitle() {

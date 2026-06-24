@@ -61,6 +61,8 @@ protocol ContextualOnboardingLogic {
 
     func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType)
 
+    var tryAnonymousSearchMessageSeen: Bool { get }
+
     func setTryAnonymousSearchMessageSeen()
     func setSearchMessageSeen()
 
@@ -228,8 +230,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
         static let fireDuckAIOnboarding = BrowsingSpec(type: .fire(.duckAIOnboarding),
                                                        pixelName: .onboardingDuckAIExperimentFireDialogShownUnique,
-                                                       title: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingTitle,
-                                                       message: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingMessage,
+                                                       title: UserText.Onboarding.DuckAIQuery.fireOnboardingTitle,
+                                                       message: UserText.Onboarding.DuckAIQuery.fireOnboardingMessage,
                                                        allowsManualDismiss: false)
 
         static let final = BrowsingSpec(type: .final,
@@ -297,6 +299,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
     private let aiChatSettings: AIChatSettingsProvider
+    private let onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
 
     public let isDismissedPublisher: PassthroughSubject<Bool, Never>
 
@@ -306,7 +309,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
          variantManager: VariantManager = DefaultVariantManager(),
          launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
          onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
-         aiChatSettings: AIChatSettingsProvider = AIChatSettings()
+         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
@@ -314,6 +318,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         self.launchOptionsHandler = launchOptionsHandler
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
         self.aiChatSettings = aiChatSettings
+        self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         self.isDismissedPublisher = PassthroughSubject<Bool, Never>()
     }
 
@@ -507,6 +512,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     func setTryAnonymousSearchMessageSeen() {
         settings.tryAnonymousSearchShown = true
+    }
+
+    var tryAnonymousSearchMessageSeen: Bool {
+        settings.tryAnonymousSearchShown
     }
 
     func setTryVisitSiteMessageSeen() {

@@ -18,6 +18,7 @@
 //
 
 import TipKit
+import DesignResourcesKitIcons
 
 /// A tip to suggest to the user to change their location using geo-switching
 ///
@@ -48,7 +49,7 @@ extension VPNGeoswitchingTip: Tip {
     }
 
     var image: Image? {
-        Image(.vpnChangeLocationTipIcon)
+        Image(rebrandable: "Map-24")
     }
 
     var rules: [Rule] {

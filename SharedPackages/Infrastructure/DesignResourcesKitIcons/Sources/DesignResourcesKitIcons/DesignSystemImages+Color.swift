@@ -425,6 +425,7 @@ public extension DesignSystemImages {
                     : .init(resource: .announcement96Legacy)
             }
             public static var duckAIDDGHero: DesignSystemImage { .init(resource: .duckAIDDGHeroColor96) }
+            public static var duckDuckGo: DesignSystemImage { .init(resource: .duckDuckGo96) }
             public static var extensionChrome: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .extensionChrome96)

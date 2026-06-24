@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import Foundation
 import Testing
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -116,5 +117,64 @@ struct ConsumedFlagResetTests {
     func explicitlyAttachableResets() {
         let context = AIChatPageContextData(title: "Test", favicon: [], url: "https://example.com", content: "content", truncated: false, fullContentLength: 100, attachable: true)
         #expect(shouldResetConsumedFlag(pageContext: context) == true)
+    }
+}
+
+// MARK: - Selection Context ("Attach to Duck.ai") Tests
+
+struct SelectionContextTests {
+
+    /// Mirrors `AIChatSelectionContextAttacher.Constants.maxSelectionContextLength`.
+    private static let maxSelectionContextLength = 9500
+
+    /// Mirrors `AIChatSelectionContextAttacher` payload construction.
+    private func buildSelectionItem(text: String, url: String) -> AIChatSelectionContextData {
+        let truncated = text.count > Self.maxSelectionContextLength
+        let content = truncated ? String(text.prefix(Self.maxSelectionContextLength)) : text
+        return AIChatSelectionContextData(
+            id: UUID().uuidString,
+            title: "Text selection",
+            url: url,
+            content: content,
+            truncated: truncated,
+            fullContentLength: text.count,
+            wordCount: text.split(whereSeparator: \.isWhitespace).count
+        )
+    }
+
+    @Test("Short selection carries the generic title and is not truncated")
+    func shortSelectionIsTaggedAndNotTruncated() {
+        let item = buildSelectionItem(text: "hello world", url: "https://example.com")
+        #expect(item.content == "hello world")
+        #expect(item.title == "Text selection")
+        #expect(item.url == "https://example.com")
+        #expect(item.truncated == false)
+        #expect(item.fullContentLength == 11)
+        #expect(item.wordCount == 2)
+    }
+
+    @Test("Word count covers the full selection even when truncated")
+    func wordCountReflectsFullSelection() {
+        // 6000 two-char words separated by spaces → 11999 chars, truncated at 9500, but wordCount is the full 6000.
+        let longText = Array(repeating: "ab", count: 6000).joined(separator: " ")
+        let item = buildSelectionItem(text: longText, url: "https://example.com")
+        #expect(item.truncated == true)
+        #expect(item.wordCount == 6000)
+    }
+
+    @Test("Long selection is truncated to the max length and reports the original length")
+    func longSelectionIsTruncated() {
+        let longText = String(repeating: "x", count: Self.maxSelectionContextLength + 500)
+        let item = buildSelectionItem(text: longText, url: "https://example.com")
+        #expect(item.content.count == Self.maxSelectionContextLength)
+        #expect(item.truncated == true)
+        #expect(item.fullContentLength == longText.count)
+    }
+
+    @Test("Each attached selection gets a unique id")
+    func eachSelectionHasUniqueID() {
+        let first = buildSelectionItem(text: "a", url: "https://example.com")
+        let second = buildSelectionItem(text: "a", url: "https://example.com")
+        #expect(first.id != second.id)
     }
 }

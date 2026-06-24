@@ -25,6 +25,14 @@ import PixelKit
 import Suggestions
 import enum UserScript.UserScriptError
 
+/// Describes why the app session was restored, reported by the `m.mac.session.restored` pixel.
+enum AppStateRestorationTrigger {
+    /// Normal session restoration (the user has session restore enabled, or accepted the restore prompt).
+    case standard
+    /// Restoration forced by an automatic restart-to-update relaunch, regardless of the session-restore setting.
+    case appUpdate
+}
+
 enum GeneralPixel: PixelKitEvent {
 
     case crash(appIdentifier: CrashPixelAppIdentifier?)
@@ -431,6 +439,7 @@ enum GeneralPixel: PixelKitEvent {
     case suggestionsFetchFailed
     case appOpenURLFailed
     case appStateRestorationFailed
+    case appStateRestored(trigger: AppStateRestorationTrigger)
 
     case contentBlockingErrorReportingIssue
 
@@ -1153,6 +1162,8 @@ enum GeneralPixel: PixelKitEvent {
             return "url"
         case .appStateRestorationFailed:
             return "srf"
+        case .appStateRestored:
+            return "m_mac_session_restored"
 
         case .contentBlockingErrorReportingIssue:
             return "content_blocking_error_reporting_issue"
@@ -1392,6 +1403,9 @@ enum GeneralPixel: PixelKitEvent {
 
         case .navigation(let kind):
             return ["kind": kind.description]
+
+        case .appStateRestored(let trigger):
+            return ["isRestartToUpdate": String(trigger == .appUpdate)]
 
         case .dataImportFailed(source: _, sourceVersion: let version, error: let error):
             var params = error.pixelParameters
@@ -1832,6 +1846,7 @@ enum GeneralPixel: PixelKitEvent {
                 .suggestionsFetchFailed,
                 .appOpenURLFailed,
                 .appStateRestorationFailed,
+                .appStateRestored,
                 .contentBlockingErrorReportingIssue,
                 .contentBlockingCompilationFailed,
                 .contentBlockingCompilationTime,

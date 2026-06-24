@@ -20,6 +20,7 @@
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DuckUI
 import Networking
 import SwiftUI
 import TipKit
@@ -57,7 +58,7 @@ struct NetworkProtectionStatusView: View {
 
             locationDetails()
 
-            security()
+            strictRoutingNotice()
 
             if statusModel.isNetPEnabled && statusModel.hasServerInfo && !statusModel.isSnoozing {
                 connectionDetails()
@@ -258,24 +259,36 @@ struct NetworkProtectionStatusView: View {
             }
     }
 
+    /// A state-driven notice prompting the user to turn Strict routing back on. Shown only while the
+    /// VPN is on and Strict routing is off; it disappears as soon as Strict routing is enabled.
     @ViewBuilder
-    private func security() -> some View {
-        if statusModel.isStrictRoutingAvailable {
+    private func strictRoutingNotice() -> some View {
+        if statusModel.isStrictRoutingAvailable,
+           statusModel.isNetPEnabled,
+           !statusModel.enforceRoutes {
             Section {
-                Toggle(isOn: $statusModel.enforceRoutes) {
-                    Text(UserText.netPStrictRoutingSettingTitle)
-                        .daxBodyRegular()
-                        .foregroundColor(.init(designSystemColor: .textPrimary))
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.shield)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(UserText.netPStrictRoutingNoticeTitle)
+                                .daxBodyBold()
+                                .foregroundColor(.init(designSystemColor: .textPrimary))
+
+                            Text(UserText.netPStrictRoutingNoticeMessage)
+                                .daxFootnoteRegular()
+                                .foregroundColor(.init(designSystemColor: .textSecondary))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    Button(UserText.netPStrictRoutingNoticeActionTitle) {
+                        statusModel.enforceRoutes = true
+                    }
+                    .buttonStyle(PrimaryButtonStyle(compact: true))
                 }
-                .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
-            } header: {
-                Text(UserText.netPStatusViewSecuritySectionTitle).foregroundColor(.init(designSystemColor: .textSecondary))
-            } footer: {
-                Text(LocalizedStringKey(UserText.netPStrictRoutingSettingFooter))
-                    .foregroundColor(.init(designSystemColor: .textSecondary))
-                    .accentColor(Color(designSystemColor: .accentPrimary))
-                    .daxFootnoteRegular()
-                    .padding(.top, 6)
+                .padding(.vertical, 4)
             }
             .listRowBackground(Color(designSystemColor: .surface))
         }

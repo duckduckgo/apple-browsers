@@ -117,7 +117,7 @@ public struct TunnelControllerView: View {
 
             locationView()
 
-            securityView()
+            strictRoutingNoticeView()
 
             if model.showServerDetails {
                 connectionStatusView()
@@ -138,31 +138,19 @@ public struct TunnelControllerView: View {
 
     // MARK: - Security
 
-    /// A persistent section letting the user turn Strict routing on or off without leaving the
-    /// status view. Mirrors the Website Preferences section above. Gated on the same feature flag
-    /// as the Strict routing toggle in VPN settings.
+    /// A state-driven notice prompting the user to turn Strict routing back on. Shown only while the
+    /// VPN is on and Strict routing is off; it disappears as soon as Strict routing is enabled.
     @ViewBuilder
-    private func securityView() -> some View {
-        if model.isStrictRoutingAvailable {
-            VStack(alignment: .leading) {
-                Text(UserText.networkProtectionStatusViewSecuritySectionTitle)
-                    .applySectionHeaderAttributes(colorScheme: colorScheme)
-                    .padding(.vertical, 3)
-                    .padding(.horizontal, 9)
+    private func strictRoutingNoticeView() -> some View {
+        if model.isStrictRoutingAvailable,
+           model.isConnectedOrConnecting,
+           !model.enforceRoutes {
 
-                Toggle(isOn: $model.enforceRoutes) {
-                    HStack(spacing: 5) {
-                        Text(UserText.networkProtectionStrictRoutingToggleTitle)
-                            .applyLabelAttributes(colorScheme: colorScheme)
-
-                        Spacer()
-                    }
-                    .padding(.bottom, 5)
-                }
-                .padding(.horizontal, 9)
+            StrictRoutingNoticeView {
+                model.enforceRoutes = true
             }
-
-            dividerRow()
+            .padding(.horizontal, 9)
+            .padding(.bottom, 6)
         }
     }
 

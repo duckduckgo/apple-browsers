@@ -2806,11 +2806,17 @@ https://duckduckgo.com/mac";
 /* Location label shown in NetworkProtection's status view. */
 "network.protection.status.view.location" = "Location";
 
-/* Title for the Security section in NetworkProtection's status view. */
-"network.protection.status.view.security.section.title" = "Security";
-
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Manage";
+
+/* Action button title for the notice prompting the user to turn the VPN Strict routing setting back on */
+"network.protection.status.view.strict.routing.notice.action" = "Turn On Strict Routing";
+
+/* Message for the notice prompting the user to turn the VPN Strict routing setting back on */
+"network.protection.status.view.strict.routing.notice.message" = "Enforce Strict Routing is off. Turning it on strengthens protection against traffic leaks on untrusted networks.";
+
+/* Title for the notice prompting the user to turn the VPN Strict routing setting back on */
+"network.protection.status.view.strict.routing.notice.title" = "Allow DuckDuckGo VPN to Enforce Strict Routing";
 
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
@@ -2849,7 +2855,7 @@ https://duckduckgo.com/mac";
 "network.protection.vpn.data-volume" = "Data Volume";
 
 /* Footer text for the Exclude CGNAT setting item. */
-"network.protection.vpn.exclude.cgnat.setting.footer" = "Recommended off so all your traffic goes through the VPN. If you have problems with features like Wi-Fi calling, messaging, or voicemail, try turning it on.";
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Bypass the VPN for carrier services, such as Wi-Fi calling and voicemail.";
 
 /* Title for the Exclude CGNAT setting item. */
 "network.protection.vpn.exclude.cgnat.setting.title" = "Exclude Carrier Services";
@@ -2930,7 +2936,7 @@ https://duckduckgo.com/mac";
 "network.protection.vpn.strict.routing.setting.footer" = "Recommended on networks you don’t trust, e.g. public wifi in hotels, bars, etc. If you have problems with features (like CarPlay, AirDrop, etc.) or connecting to other devices, try turning it off. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
 
 /* Title for the Strict Routing setting item. */
-"network.protection.vpn.strict.routing.setting.title" = "Strict Routing";
+"network.protection.vpn.strict.routing.setting.title" = "Enforce Strict Routing (Recommended)";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirm";

@@ -116,8 +116,9 @@ final class UserText {
 
     // MARK: Security
 
-    static let networkProtectionStatusViewSecuritySectionTitle = NSLocalizedString("network.protection.status.view.security.section.title", bundle: Bundle.module, value: "Security", comment: "Title for the Security section in the VPN status view")
-    static let networkProtectionStrictRoutingToggleTitle = NSLocalizedString("network.protection.status.view.strict.routing.toggle.title", bundle: Bundle.module, value: "Strict Routing", comment: "Title for the Strict routing toggle in the VPN status view")
+    static let networkProtectionStrictRoutingNoticeTitle = NSLocalizedString("network.protection.status.view.strict.routing.notice.title", bundle: Bundle.module, value: "Allow DuckDuckGo VPN to Enforce Strict Routing", comment: "Title for the notice prompting the user to turn the VPN Strict routing setting back on")
+    static let networkProtectionStrictRoutingNoticeMessage = NSLocalizedString("network.protection.status.view.strict.routing.notice.message", bundle: Bundle.module, value: "Enforce Strict Routing is off. Turning it on strengthens protection against traffic leaks on untrusted networks.", comment: "Message for the notice prompting the user to turn the VPN Strict routing setting back on")
+    static let networkProtectionStrictRoutingNoticeActionTitle = NSLocalizedString("network.protection.status.view.strict.routing.notice.action", bundle: Bundle.module, value: "Turn On Strict Routing", comment: "Action button title for the notice prompting the user to turn the VPN Strict routing setting back on")
 
     // MARK: Updating Appex to Sysex for App Store builds
 

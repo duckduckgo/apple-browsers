@@ -25,7 +25,6 @@ import DesignResourcesKitIcons
 final class DuckAIGridCardView: UIView {
 
     private enum Metrics {
-        static let cornerRadius: CGFloat = 12
         static let contentTopInset: CGFloat = 12
         static let contentHorizontalInset: CGFloat = 8
         static let contentBottomInset: CGFloat = 8
@@ -167,8 +166,9 @@ final class DuckAIGridCardView: UIView {
     }
 
     private func setupSubviews() {
+        // Corner radius is owned by the host cell (`TabViewGridCell`), which matches it to the
+        // screenshot preview's slot. Only the curve + clipping live here.
         backgroundColor = UIColor(designSystemColor: .backgroundPromptMessage)
-        layer.cornerRadius = Metrics.cornerRadius
         layer.cornerCurve = .continuous
         clipsToBounds = true
 

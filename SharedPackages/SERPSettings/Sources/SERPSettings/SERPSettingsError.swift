@@ -46,5 +46,5 @@ public enum SERPSettingsError: Error {
     ///
     /// Signals a SERP/native contract mismatch: the SERP persisted a value outside the
     /// range the native side recognizes. The native getter falls back to its default.
-    case unrecognizedValue(key: String, value: String)
+    case unrecognizedValue
 }

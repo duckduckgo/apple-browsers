@@ -39,7 +39,7 @@ struct OnboardingView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var model: OnboardingIntroViewModel
-    @State private var isExperimentExitTransitionActive = false
+    @State private var isDuckAIQueryExitTransitionActive = false
 
     init(model: OnboardingIntroViewModel) {
         self.model = model
@@ -75,8 +75,8 @@ struct OnboardingView: View {
                     logoPosition: .top,
                     matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
                     showDialogBox: $model.introState.showDaxDialogBox,
-                    showLogo: !state.type.isExperimentSearchScreen,
-                    showBubbleArrow: !state.type.isExperimentSearchScreen,
+                    showLogo: !state.type.isDuckAIQueryScreen,
+                    showBubbleArrow: !state.type.isDuckAIQueryScreen,
                     onTapGesture: {
                         withAnimation {
                             model.tapped()
@@ -99,8 +99,8 @@ struct OnboardingView: View {
                                 addressBarPreferenceSelectionView
                             case .chooseSearchExperienceDialog:
                                 searchExperienceSelectionView
-                            case .duckAIQueryExperimentDialog(_, let defaultMode):
-                                experimentSearchExperienceSelectionView(defaultMode: defaultMode)
+                            case .duckAIQueryDialog(_, let defaultMode):
+                                duckAIQuerySelectionView(defaultMode: defaultMode)
                             }
                         }
                     }
@@ -108,10 +108,10 @@ struct OnboardingView: View {
                 .onboardingProgressIndicator(
                     currentStep: state.step.currentStep,
                     totalSteps: state.step.totalSteps,
-                    isVisible: !state.type.isExperimentSearchScreen
+                    isVisible: !state.type.isDuckAIQueryScreen
                 )
             }
-            .opacity(isExperimentExitTransitionActive && state.type.isExperimentSearchScreen ? 0 : 1)
+            .opacity(isDuckAIQueryExitTransitionActive && state.type.isDuckAIQueryScreen ? 0 : 1)
             .frame(width: geometry.size.width, alignment: .center)
             .offset(y: geometry.size.height * Metrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass))
             .onAppear {
@@ -259,8 +259,8 @@ struct OnboardingView: View {
         .onboardingDaxDialogStyle()
     }
 
-    private func experimentSearchExperienceSelectionView(defaultMode: DuckAIQueryMode) -> some View {
-        DuckAIExperimentSearchContent(
+    private func duckAIQuerySelectionView(defaultMode: DuckAIQueryMode) -> some View {
+        DuckAIQuerySearchContent(
             defaultMode: defaultMode,
             animateTitle: $model.introState.animateIntroText,
             onModeConfirmed: model.selectDuckAIQueryAction(selection:),
@@ -268,15 +268,15 @@ struct OnboardingView: View {
             openSearchAction: model.searchFromOnboarding,
             measureQuerySubmissionAction: model.measureDuckAIQuerySubmission,
             startExitTransitionAction: {
-                beginExperimentExitTransition()
+                beginDuckAIQueryExitTransition()
             }
         )
         .onboardingDaxDialogStyle()
     }
 
-    private func beginExperimentExitTransition() {
+    private func beginDuckAIQueryExitTransition() {
         withAnimation(.easeInOut(duration: 0.18)) {
-            isExperimentExitTransitionActive = true
+            isDuckAIQueryExitTransitionActive = true
         }
     }
 
@@ -353,7 +353,7 @@ extension OnboardingView.ViewState.Intro {
         case chooseAppIconDialog(content: OnboardingAppIconColorContent)
         case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
         case chooseSearchExperienceDialog(content: OnboardingSearchExperienceContent)
-        case duckAIQueryExperimentDialog(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode)
+        case duckAIQueryDialog(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode)
     }
 
     struct StepInfo: Equatable {
@@ -366,8 +366,8 @@ extension OnboardingView.ViewState.Intro {
 }
 
 private extension OnboardingView.ViewState.Intro.IntroType {
-    var isExperimentSearchScreen: Bool {
-        if case .duckAIQueryExperimentDialog = self {
+    var isDuckAIQueryScreen: Bool {
+        if case .duckAIQueryDialog = self {
             return true
         } else {
             return false

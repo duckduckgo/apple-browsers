@@ -604,6 +604,7 @@ class TabViewCell: UICollectionViewCell {
         super.prepareForReuse()
         cancelThumbnailLoad()
         richCardContainer?.setThumbnail(nil)
+        richCardContainer?.resetAppearance()
     }
 
     private func cancelThumbnailLoad() {

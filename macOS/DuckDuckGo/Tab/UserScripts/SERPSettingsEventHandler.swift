@@ -61,6 +61,9 @@ final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
             case .keyValueStoreWriteError:
                 // Fires when writing to persistent storage fails.
                 PixelKit.fire(GeneralPixel.serpSettingsKeyValueStoreWriteError, frequency: .dailyAndCount)
+            case .unrecognizedValue:
+                // No op - will be added later
+                break
             }
         }
     }

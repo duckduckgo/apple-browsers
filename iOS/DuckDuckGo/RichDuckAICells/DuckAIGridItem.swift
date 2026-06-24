@@ -66,11 +66,10 @@ extension DuckAIGridItem {
     /// Chat content can be huge and we only need a few lines worth of content anyway for the snippet
     static let snippetCharacterCap = 500
 
-    /// Maps a decoded chat (+ the text of its last message) to a grid item, or
-    /// `nil` when the chat shouldn't be rendered as a rich card (callers fall back
-    /// to the existing screenshot path). Pure; storage reads live in
-    /// `DuckAIGridContentResolver`.
-    static func from(chat: DuckAiChat, lastMessageContent: String?) -> DuckAIGridItem? {
+    /// Maps a decoded chat (+ the text of its last message) to a grid item. Always succeeds: a chat
+    /// with no renderable content maps to an `.empty` card rather than falling back to the screenshot.
+    /// Pure; storage reads live in `DuckAIGridContentResolver`.
+    static func from(chat: DuckAiChat, lastMessageContent: String?) -> DuckAIGridItem {
         let title = chat.title.isEmpty ? UserText.aiChatTabSwitcherCardUntitledChat : chat.title
 
         // Empty content keeps the card (title + type chip) but shows the Duck.ai logo instead of

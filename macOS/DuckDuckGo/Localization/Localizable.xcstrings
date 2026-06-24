@@ -29553,7 +29553,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hides AI-generated images from image search results"
+            "value" : "Filters out AI-generated images from image search results"
           }
         },
         "es" : {

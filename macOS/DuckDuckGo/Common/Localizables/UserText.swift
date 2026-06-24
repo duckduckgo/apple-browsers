@@ -644,7 +644,7 @@ struct UserText {
     static let searchAssistSettingsDescription = NSLocalizedString("duckai.search-assist-settings.description", value: "Choose how often you want AI-Assisted answers to appear in your searches", comment: "Description of the section in Settings")
     static let searchAssistSettingsLink = NSLocalizedString("duckai.search-assist-settings.link", value: "Open Search Assist Settings", comment: "Button to open the Search Assist Settings")
     static let hideAIGeneratedImagesSettings = NSLocalizedString("duckai.hide-ai-generated-images-settings", value: "Hide AI-Generated Images", comment: "The section name in preferences for Hide AI-Generated Images Settings")
-    static let hideAIGeneratedImagesSettingsDescription = NSLocalizedString("duckai.hide-ai-generated-images-settings.description", value: "Hides AI-generated images from image search results", comment: "Description of the section in Settings")
+    static let hideAIGeneratedImagesSettingsDescription = NSLocalizedString("duckai.hide-ai-generated-images-settings.description", value: "Filters out AI-generated images from image search results", comment: "Description of the section in Settings")
     static let searchAIFeaturesSettingsLink = NSLocalizedString("duckai.search-ai-features-settings.link", value: "Open Search AI Features", comment: "Button to open the Search AI Features Settings")
     static let searchAssistNever = NSLocalizedString("duckai.search-assist.never", value: "Never", comment: "Search Assist frequency option: never show AI-assisted answers")
     static let searchAssistOnDemand = NSLocalizedString("duckai.search-assist.on-demand", value: "On demand", comment: "Search Assist frequency option: show AI-assisted answers on demand")

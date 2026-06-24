@@ -327,8 +327,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1215895676655232
     case webScrollFreezeCapture
 
-    /// SPECULATIVE, scoped auto-recovery that fires when a confirmed freeze is detected. Skips during live touch.
-    /// Default internal/off — not shipped to production without explicit sign-off. Mirrors `webScrollFreezeCapture`.
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1214241865640178
     case webScrollFreezeAutoRecovery
 

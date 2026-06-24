@@ -530,9 +530,7 @@ enum WebScrollFreezeDebugCaptureStore {
     }
 
     /// Monotonic counter so back-to-back saves (e.g. a recovery's pre + post captures, written within the
-    /// same wall-clock second) get distinct filenames instead of the second-granularity name colliding and
-    /// the post-capture overwriting the pre-capture. Zero-padded so the string sort in `files()` stays
-    /// chronological within a second.
+    /// same wall-clock second) get distinct filenames.
     private static var sequence = 0
 
     static func save(_ text: String) {

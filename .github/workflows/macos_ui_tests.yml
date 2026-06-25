@@ -275,6 +275,29 @@ jobs:
       if: matrix.os-version != '14'
       run: screenresolution set 1920x1080x32@60
 
+    # Compute the SPM cache key up front so the restore below can start before code signing.
+    - name: Set cache key hash
+      run: |
+        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+        if [[ "$has_only_tags" == "true" ]]; then
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+        else
+          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
+        fi
+
+    # Restore the SPM cache in the background so the download overlaps code signing below
+    # (disjoint work: cache download vs fastlane match). Joined at `wait: cache-spm`.
+    - name: Cache SPM
+      id: cache-spm
+      background: true
+      if: env.cache_key_hash
+      uses: actions/cache@v4
+      with:
+        path: macOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
+        restore-keys: |
+          ${{ runner.os }}-macos-
+
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
       with:
@@ -308,7 +331,11 @@ jobs:
         echo "First attempt to sync code signing assets failed. Retrying..."
         bundle exec fastlane sync_signing_ci
 
+    # Background the (large) notarized-app download so it overlaps code signing, package
+    # resolution and the compilation-cache restore. Joined at `wait: download-app`.
     - name: Download and unzip artifact
+      id: download-app
+      background: true
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
@@ -335,24 +362,6 @@ jobs:
         echo "All download attempts failed"
         exit 1
 
-    - name: Set cache key hash
-      run: |
-        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
-        if [[ "$has_only_tags" == "true" ]]; then
-          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
-        else
-          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
-        fi
-
-    - name: Cache SPM
-      if: env.cache_key_hash
-      uses: actions/cache@v4
-      with:
-        path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
-        restore-keys: |
-          ${{ runner.os }}-macos-
-
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
       with:
@@ -369,6 +378,11 @@ jobs:
       run: |
         log stream --debug --info --predicate 'process == "${{ env.app-name }}" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
+
+    # Join the SPM cache before resolving packages: both write DerivedData/SourcePackages,
+    # so they must not run concurrently (and this ends the SPM cache before the foreground
+    # compilation-cache restore below, so the two cache actions never overlap).
+    - wait: [cache-spm]
 
     - name: Resolve package dependencies
       working-directory: macOS
@@ -401,6 +415,9 @@ jobs:
         key: xcode-compilation-cache-ui-tests
         restore-keys: |
           xcode-compilation-cache-ui-tests-
+
+    # Join the backgrounded app download before building/using it.
+    - wait: [download-app]
 
     - name: Build for testing
       working-directory: macOS

@@ -146,6 +146,20 @@ jobs:
            echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
          fi
 
+    # Select Xcode before booting the simulator so simctl resolves against the active
+    # toolchain rather than racing the switch.
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+
+    # Boot the simulator in the background so its (CPU-idle) boot overlaps the two cache
+    # restores below. Joined at `wait: select-simulator` before the build.
+    - name: Select iOS Simulator
+      id: select-simulator
+      background: true
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "26.4"
+
     - name: Cache SPM
       if: env.cache_key_hash
       uses: actions/cache@v4
@@ -155,9 +169,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-ios-
 
-    - name: Select Xcode
-      uses: ./.github/actions/select-xcode-version
-
     - name: Restore Xcode Compilation Cache
       uses: actions/cache/restore@v4
       with:
@@ -166,11 +177,7 @@ jobs:
         restore-keys: |
           xcode-compilation-cache-ios-unit-tests-
 
-    - name: Select iOS Simulator
-      id: select-simulator
-      uses: ./.github/actions/select-ios-simulator
-      with:
-        preferred-versions: "26.4"
+    - wait: [select-simulator]
 
     - name: Build and test
       id: run-unit-tests

@@ -200,6 +200,30 @@ jobs:
       with:
         mode: start
 
+    # Compute the SPM cache key up front so the restore below can start before code signing.
+    - name: Set cache key hash
+      run: |
+        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+        if [[ "$has_only_tags" == "true" ]]; then
+          # hashFiles does not respect the working directory, so the full path must be specified
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+        else
+          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
+        fi
+
+    # Restore the SPM cache in the background so the download overlaps code signing below
+    # (disjoint work: cache download vs fastlane match). Joined at `wait: cache-spm`.
+    - name: Cache SPM
+      id: cache-spm
+      background: true
+      if: env.cache_key_hash
+      uses: actions/cache@v4
+      with:
+        path: macOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-macos-${{ matrix.cache-key }}${{ env.cache_key_hash }}
+        restore-keys: |
+          ${{ runner.os }}-macos-${{ matrix.cache-key }}
+
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
       with:
@@ -229,27 +253,12 @@ jobs:
         echo "First attempt to sync code signing assets failed. Retrying..."
         bundle exec fastlane sync_signing_ci
 
-    - name: Set cache key hash
-      run: |
-        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
-        if [[ "$has_only_tags" == "true" ]]; then
-          # hashFiles does not respect the working directory, so the full path must be specified
-          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
-        else
-          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
-        fi
-
-    - name: Cache SPM
-      if: env.cache_key_hash
-      uses: actions/cache@v4
-      with:
-        path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-macos-${{ matrix.cache-key }}${{ env.cache_key_hash }}
-        restore-keys: |
-          ${{ runner.os }}-macos-${{ matrix.cache-key }}
-
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
+
+    # Join the backgrounded SPM cache restore here, before the compilation-cache restore,
+    # so the two cache actions never run concurrently.
+    - wait: [cache-spm]
 
     - name: Restore Xcode Compilation Cache
       uses: actions/cache/restore@v4

@@ -66,20 +66,16 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureSearchExperienceSelectionImpression = false
     private(set) var didCallMeasureChooseAIChat = false
     private(set) var didCallMeasureChooseSearchOnly = false
-    private(set) var didCallMeasureDuckAIQueryExperimentSelectionImpression = false
-    private(set) var didCallMeasureDuckAIQueryExperimentChooseSearchOnly = false
-    private(set) var didCallMeasureDuckAIQueryExperimentChooseAIChat = false
-    private(set) var didCallMeasureDuckAIQueryExperimentQuerySubmission = false
-    private(set) var didCaptureDuckAIQueryExperimentPromptSourceValue: String?
-    private(set) var didCaptureDuckAIQueryExperimentSelection: DuckAIQueryMode?
     private(set) var didCallMeasureDuckAIQuerySelectionImpression = false
-    private(set) var didCallMeasureDuckAIQuerySubmission = false
-    private(set) var capturedDuckAIQuerySubmissionPromptSourceValue: String?
-    private(set) var capturedDuckAIQuerySubmissionSelection: DuckAIQueryMode?
-    private(set) var didCallMeasureDuckAIExperimentFireButtonCTAAction = false
-    private(set) var didCallMeasureDuckAIExperimentFireDialogImpression = false
-    private(set) var didCallMeasureDuckAIExperimentFinalDialogImpression = false
-    private(set) var didCallMeasureDuckAIExperimentFinalDialogCTAAction = false
+    private(set) var didCallMeasureDuckAIQueryChooseSearchOnly = false
+    private(set) var didCallMeasureDuckAIQueryChooseAIChat = false
+    private(set) var didCallMeasureDuckAIQueryQuerySubmission = false
+    private(set) var didCaptureDuckAIQueryPromptSourceValue: String?
+    private(set) var didCaptureDuckAIQuerySelection: DuckAIQueryMode?
+    private(set) var didCallMeasureDuckAIFireButtonCTAAction = false
+    private(set) var didCallMeasureDuckAIFireDialogImpression = false
+    private(set) var didCallMeasureDuckAIFinalDialogImpression = false
+    private(set) var didCallMeasureDuckAIFinalDialogCTAAction = false
 
     private(set) var didCallMeasureTrySearchDialogNewTabDismissButtonTapped = false
     private(set) var didCallMeasureSearchResultDialogDismissButtonTapped = false
@@ -266,32 +262,22 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureChooseSearchOnly = true
     }
 
-    func measureDuckAIQueryExperimentSelectionImpression() {
-        didCallMeasureDuckAIQueryExperimentSelectionImpression = true
-    }
-
-    func measureDuckAIQueryExperimentChooseSearchOnly() {
-        didCallMeasureDuckAIQueryExperimentChooseSearchOnly = true
-    }
-
-    func measureDuckAIQueryExperimentChooseAIChat() {
-        didCallMeasureDuckAIQueryExperimentChooseAIChat = true
-    }
-
-    func measureDuckAIQueryExperimentQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
-        didCallMeasureDuckAIQueryExperimentQuerySubmission = true
-        didCaptureDuckAIQueryExperimentPromptSourceValue = promptSource.rawValue
-        didCaptureDuckAIQueryExperimentSelection = selection
-    }
-
     func measureDuckAIQuerySelectionImpression() {
         didCallMeasureDuckAIQuerySelectionImpression = true
     }
 
+    func measureDuckAIQueryChooseSearchOnly() {
+        didCallMeasureDuckAIQueryChooseSearchOnly = true
+    }
+
+    func measureDuckAIQueryChooseAIChat() {
+        didCallMeasureDuckAIQueryChooseAIChat = true
+    }
+
     func measureDuckAIQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
-        didCallMeasureDuckAIQuerySubmission = true
-        capturedDuckAIQuerySubmissionPromptSourceValue = promptSource.rawValue
-        capturedDuckAIQuerySubmissionSelection = selection
+        didCallMeasureDuckAIQueryQuerySubmission = true
+        didCaptureDuckAIQueryPromptSourceValue = promptSource.rawValue
+        didCaptureDuckAIQuerySelection = selection
     }
 
     func measureTrySearchDialogSuggestedSearchTapped() {
@@ -326,20 +312,20 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureFireDialogDismissButtonTapped = true
     }
 
-    func measureDuckAIExperimentFireButtonCTAAction() {
-        didCallMeasureDuckAIExperimentFireButtonCTAAction = true
+    func measureDuckAIFireButtonCTAAction() {
+        didCallMeasureDuckAIFireButtonCTAAction = true
     }
 
-    func measureDuckAIExperimentFireDialogImpression() {
-        didCallMeasureDuckAIExperimentFireDialogImpression = true
+    func measureDuckAIFireDialogImpression() {
+        didCallMeasureDuckAIFireDialogImpression = true
     }
 
-    func measureDuckAIExperimentFinalDialogImpression() {
-        didCallMeasureDuckAIExperimentFinalDialogImpression = true
+    func measureDuckAIFinalDialogImpression() {
+        didCallMeasureDuckAIFinalDialogImpression = true
     }
 
-    func measureDuckAIExperimentFinalDialogCTAAction() {
-        didCallMeasureDuckAIExperimentFinalDialogCTAAction = true
+    func measureDuckAIFinalDialogCTAAction() {
+        didCallMeasureDuckAIFinalDialogCTAAction = true
     }
 
     func measureEndOfJourneyDialogNewTabDismissButtonTapped() {

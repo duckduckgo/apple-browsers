@@ -574,8 +574,17 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
     }
 
     private func isExcludedDomain(_ hostname: String) -> Bool {
-        settings.excludedDomains.contains { excludedDomain in
-            hostname.hasSuffix(excludedDomain)
+        Self.isExcludedDomain(hostname, excludedDomains: settings.excludedDomains)
+    }
+
+    /// Whether `hostname` should be excluded from the VPN given the list of excluded domains.
+    ///
+    /// A hostname matches an excluded domain only when it's exactly equal to it or is a subdomain of it
+    /// (i.e. ends with `.<excludedDomain>`). This prevents an excluded `bank.com` from also matching an
+    /// unrelated `evilbank.com`, which would steer that traffic around the tunnel.
+    static func isExcludedDomain(_ hostname: String, excludedDomains: [String]) -> Bool {
+        excludedDomains.contains { excludedDomain in
+            hostname == excludedDomain || hostname.hasSuffix(".\(excludedDomain)")
         }
     }
 

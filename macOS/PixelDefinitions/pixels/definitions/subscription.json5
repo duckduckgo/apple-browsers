@@ -491,7 +491,8 @@
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
                 "description": "The funnel that led to the subscription flow"
-            }
+            },
+            "channel"
         ]
     },
     // Defined in https://app.asana.com/1/137249556945/task/1211354430557014
@@ -613,13 +614,21 @@
                 "key": "feature.data.ext.refresh_trigger",
                 "type": "string",
                 "description": "String representing what caused the token refresh to begin",
-                "enum": ["backend", "client", "token_adoption"]
+                "enum": ["backend", "client", "create_if_needed", "token_adoption"]
             },
             {
                 "key": "feature.data.ext.failing_step",
                 "type": "string",
                 "description": "The step at which the flow failed, when applicable",
-                "enum": ["token_read", "refresh_access_token", "fetch_jwks", "verify_access_token", "verify_refresh_token", "token_write"]
+                "enum": [
+                    "token_read",
+                    "refresh_access_token",
+                    "fetch_jwks",
+                    "verify_access_token",
+                    "verify_refresh_token",
+                    "token_write",
+                    "recover_invalid_token"
+                ]
             },
             {
                 "key": "feature.data.ext.refresh_token_latency_ms_bucketed",
@@ -632,6 +641,18 @@
                 "type": "integer",
                 "description": "Bucketed latency for fetch JWKS step (ms)",
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "feature.data.ext.recovery_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency from invalid-token detection to recovery outcome (ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "feature.data.ext.recovery_outcome",
+                "type": "string",
+                "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed",
+                "enum": ["not_attempted", "succeeded", "failed"]
             },
             "channel"
         ]
@@ -768,7 +789,13 @@
                 "key": "feature.data.ext.failing_step",
                 "type": "string",
                 "description": "The step at which the flow failed, when applicable",
-                "enum": ["token_refresh"]
+                "enum": ["token_adoption", "token_refresh"]
+            },
+            {
+                "key": "feature.data.ext.adoption_source",
+                "type": "string",
+                "description": "What caused the token to be adopted, when known",
+                "enum": ["web_restore", "vpn"]
             }
         ]
     },

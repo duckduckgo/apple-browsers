@@ -135,7 +135,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
             featureFlagger: dbpFeatureFlagger,
             wideEvent: wideEvent,
             vpnBypassService: VPNBypassService(),
-            applicationNameForUserAgent: WebViewUserAgentProvider.applicationNameForUserAgent
+            applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent }
         )
         manager?.agentFinishedLaunching()
 

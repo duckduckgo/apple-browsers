@@ -29,6 +29,11 @@ import Kingfisher
 private extension PrivacyIconView {
     /// Scale factor for dynamic Dax Easter Egg logos to match PDF default logo visual size (24/47 ≈ 0.51)
     static let daxLogoScaleFactor: CGFloat = 0.51
+
+    /// The legacy art uses a 32pt canvas; the rebranded art uses a 24pt canvas.
+    /// We need to render them to different sizes to ensure the rebranded icon isn't enlarged too much.
+    static let legacyShieldDotSize: CGFloat = 44
+    static let rebrandedShieldDotSize: CGFloat = 26
 }
 
 enum PrivacyIcon {
@@ -55,6 +60,9 @@ class PrivacyIconView: UIView {
     private(set) var shieldAnimationView: LottieAnimationView!
     private(set) var shieldDotAnimationView: LottieAnimationView!
     private var transitionPlaceholderView: UIView!
+
+    private var shieldDotWidthConstraint: NSLayoutConstraint!
+    private var shieldDotHeightConstraint: NSLayoutConstraint!
 
     private(set) var icon: PrivacyIcon = .shield
     private(set) var daxLogoURL: URL?
@@ -111,10 +119,12 @@ class PrivacyIconView: UIView {
             shieldAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
 
-        // Protextions Disable Animation
+        // Protections Disable Animation
+        shieldDotWidthConstraint = shieldDotAnimationView.widthAnchor.constraint(equalToConstant: Self.legacyShieldDotSize)
+        shieldDotHeightConstraint = shieldDotAnimationView.heightAnchor.constraint(equalToConstant: Self.legacyShieldDotSize)
         NSLayoutConstraint.activate([
-            shieldDotAnimationView.widthAnchor.constraint(equalToConstant: 44),
-            shieldDotAnimationView.heightAnchor.constraint(equalToConstant: 44),
+            shieldDotWidthConstraint,
+            shieldDotHeightConstraint,
             shieldDotAnimationView.centerXAnchor.constraint(equalTo: centerXAnchor),
             shieldDotAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
@@ -152,8 +162,19 @@ class PrivacyIconView: UIView {
     func loadAnimations(animationCache cache: AnimationCacheProvider = DefaultAnimationCache.sharedCache) {
         let useDarkStyle = traitCollection.userInterfaceStyle == .dark
 
-        let shieldAnimationName = "shield.new"
-        let shieldDotAnimationName = (useDarkStyle ? "dark-shield-dot" : "shield-dot")
+        let isRebranded = AppRebrand.isAppRebranded()
+
+        let shieldDotSize = isRebranded ? Self.rebrandedShieldDotSize : Self.legacyShieldDotSize
+        shieldDotWidthConstraint.constant = shieldDotSize
+        shieldDotHeightConstraint.constant = shieldDotSize
+
+        let shieldAnimationName = isRebranded ? "shield.new" : "shield.new-legacy"
+        let shieldDotAnimationName: String
+        if useDarkStyle {
+            shieldDotAnimationName = isRebranded ? "dark-shield-dot" : "dark-shield-dot-legacy"
+        } else {
+            shieldDotAnimationName = isRebranded ? "shield-dot" : "shield-dot-legacy"
+        }
 
         let shieldAnimation = LottieAnimation.named(shieldAnimationName, animationCache: cache)
         shieldAnimationView.animation = shieldAnimation
@@ -398,7 +419,7 @@ extension PrivacyIconView: UIPointerInteractionDelegate {
         if icon == .daxLogo {
             return nil
         }
-        return UIPointerStyle(effect: .automatic(.init(view: self)), shape: .roundedRect(frame, radius: 12))
+        return UIPointerStyle(effect: .lift(.init(view: self)))
     }
     
 }

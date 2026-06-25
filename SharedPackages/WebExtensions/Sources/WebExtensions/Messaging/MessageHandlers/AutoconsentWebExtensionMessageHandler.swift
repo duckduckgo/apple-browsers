@@ -21,7 +21,7 @@ import os.log
 import PrivacyConfig
 
 public protocol AutoconsentPreferencesProviding {
-    var isAutoconsentEnabled: Bool { get }
+    var cookiePopupPreference: CookiePopupPreference { get }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -36,6 +36,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         case isSubFeatureEnabled
         case getResourceIfNew
         case isAutoconsentSettingEnabled
+        case getCookiePopupPreference
         case extensionLog
     }
 
@@ -81,6 +82,8 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
             return handleGetResourceIfNew(message.params)
         case .isAutoconsentSettingEnabled:
             return handleIsAutoconsentSettingEnabled(message.params)
+        case .getCookiePopupPreference:
+            return handleGetCookiePopupPreference(message.params)
         case .extensionLog:
             return handleExtensionLog(message.params)
         }
@@ -108,16 +111,16 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         guard
             let urlString = params?["url"] as? String,
             let url = URL(string: urlString),
-            let domain = url.host,
+            url.host != nil,
             let consentStatusDict = params?["consentStatus"] as? [String: Any],
             let consentStatus = ConsentStatusInfo(from: consentStatusDict)
         else {
             return .failure(WebExtensionMessageHandlerError.missingParameter("url or consentStatus"))
         }
 
-        Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - domain: \(domain), consentManaged: \(consentStatus.consentManaged)")
+        Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - url: \(url.absoluteString), consentManaged: \(consentStatus.consentManaged)")
 
-        delegate?.refreshDashboardState(domain: domain, consentStatus: consentStatus)
+        delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
 
         return .success(Self.successResponse)
     }
@@ -247,10 +250,30 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
     }
 
     private func handleIsAutoconsentSettingEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
-        let isEnabled = autoconsentPreferences.isAutoconsentEnabled
-        Logger.webExtensions.debug("⚙️ Is Autoconsent Setting Enabled: \(isEnabled)")
+        let preference = autoconsentPreferences.cookiePopupPreference
+        let isEnabled = preference.isBlockingEnabled
+        let featureFlags = Dictionary(
+            uniqueKeysWithValues: AutoconsentSubfeature.allCases.map { subfeature in
+                (
+                    subfeature.rawValue,
+                    privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(subfeature)
+                )
+            }
+        )
+        Logger.webExtensions.debug("⚙️ Is Autoconsent Setting Enabled: \(isEnabled), userPreference: \(preference.rawValue)")
 
-        return .success(["enabled": isEnabled])
+        return .success([
+            "enabled": isEnabled,
+            "userPreference": preference.rawValue,
+            "featureFlags": featureFlags,
+        ])
+    }
+
+    private func handleGetCookiePopupPreference(_ params: [String: Any]?) -> WebExtensionMessageResult {
+        let preference = autoconsentPreferences.cookiePopupPreference
+        Logger.webExtensions.debug("⚙️ Get Cookie Popup Preference: \(preference.rawValue)")
+
+        return .success(["preference": preference.rawValue])
     }
 
     private func handleExtensionLog(_ params: [String: Any]?) -> WebExtensionMessageResult {

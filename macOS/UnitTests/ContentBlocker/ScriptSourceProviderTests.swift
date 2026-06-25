@@ -82,7 +82,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             privacyConfigurationManager: privacyConfigurationManager,
             webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
-            duckPlayer: DuckPlayer(preferencesPersistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger),
+            duckPlayer: DuckPlayer(preferencesPersistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider),
             contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
             trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
             experimentManager: experimentManager,

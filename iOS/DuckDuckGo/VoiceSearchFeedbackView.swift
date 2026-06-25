@@ -209,7 +209,7 @@ extension VoiceSearchFeedbackView {
     }
 
     private struct Colors {
-        static let innerCircle = Color(designSystemColor: .accent)
+        static let innerCircle = Color(designSystemColor: .accentPrimary)
         static let outerCircle = Color(designSystemColor: .accentGlowSecondary)
 
         static let footerText = Color(designSystemColor: .textSecondary)

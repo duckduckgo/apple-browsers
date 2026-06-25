@@ -375,9 +375,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         return ContentBlocking.shared.privacyConfigurationManager
     }
 
-    private func makeContentBlocking() -> DBPWebViewContentBlocking? {
-        guard featureFlagger.isContentBlockingOn else { return nil }
-        return DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
+    private func makeContentBlocking() -> DBPWebViewContentBlocking {
+        DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
     }
 
     private let contentScopeProperties: ContentScopeProperties
@@ -563,7 +562,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         emailConfirmationDataService: emailConfirmationDataService,
                         captchaService: captchaService,
                         featureFlagger: featureFlagger,
-                        applicationNameForUserAgent: nil,
+                        applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                         stageDurationCalculator: FakeStageDurationCalculator(),
                         pixelHandler: fakePixelHandler,
                         executionConfig: executionConfig,
@@ -696,7 +695,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
                     featureFlagger: featureFlagger,
-                    applicationNameForUserAgent: nil,
+                    applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,
@@ -870,7 +869,7 @@ extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
                     emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
                     featureFlagger: featureFlagger,
-                    applicationNameForUserAgent: nil,
+                    applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,

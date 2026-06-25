@@ -21,6 +21,26 @@ import WebKit
 @testable import WebExtensions
 
 @available(macOS 15.4, iOS 18.4, *)
+private final class SpyWebExtensionPixelFiring: WebExtensionPixelFiring {
+    private(set) var firedEvents: [WebExtensionPixelEvent] = []
+    func fire(_ event: WebExtensionPixelEvent) { firedEvents.append(event) }
+
+    var stateCheckedCount: Int {
+        firedEvents.filter { if case .stateChecked = $0 { return true }; return false }.count
+    }
+    var notLoadedTypes: Set<DuckDuckGoWebExtensionType> {
+        Set(firedEvents.compactMap { event in
+            if case .expectedExtensionNotLoaded(let type) = event { return type } else { return nil }
+        })
+    }
+    var scriptletNotFetchedFlags: [Bool] {
+        firedEvents.compactMap { event in
+            if case .adBlockingScriptletsNotFetched(let loaded) = event { return loaded } else { return nil }
+        }
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
 
     @MainActor
@@ -86,6 +106,149 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(manager.finished.isEmpty, "cancelAll must stop all queued operations before they run")
     }
+
+    @MainActor
+    func testLoadAndSyncReportsStateCheckedAndMissingTypes() async {
+        let manager = RecordingWebExtensionManager()
+        manager.stubbedLoadedTypes = [.embedded]
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [.embedded, .darkReader] }, pixelFiring: spy
+        )
+        await sut.loadAndSync().value
+        XCTAssertEqual(spy.stateCheckedCount, 1)
+        XCTAssertEqual(spy.notLoadedTypes, [.darkReader])
+    }
+
+    @MainActor
+    func testReportsOnlyStateCheckedWhenAllExpectedLoaded() async {
+        let manager = RecordingWebExtensionManager()
+        manager.stubbedLoadedTypes = [.embedded]
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [.embedded] }, pixelFiring: spy
+        )
+        await sut.sync().value
+        XCTAssertEqual(spy.stateCheckedCount, 1)
+        XCTAssertTrue(spy.notLoadedTypes.isEmpty)
+    }
+
+    @MainActor
+    func testLoadAndReloadEachReportAConsistencyCheck() async {
+        let manager = RecordingWebExtensionManager()
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [] }, pixelFiring: spy
+        )
+        await sut.load().value
+        await sut.reload().value
+        XCTAssertEqual(spy.stateCheckedCount, 2)
+    }
+
+    @MainActor
+    func testUnloadDoesNotReportConsistency() async {
+        let manager = RecordingWebExtensionManager()
+        manager.stubbedLoadedTypes = []
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [.embedded] }, pixelFiring: spy
+        )
+        await sut.unload().value
+        XCTAssertTrue(spy.firedEvents.isEmpty, "unload's intentional empty state must not be reported")
+    }
+
+    @MainActor
+    func testVerifyReportsOnDemand() async {
+        let manager = RecordingWebExtensionManager()
+        manager.stubbedLoadedTypes = []
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [.adBlockingExtension] }, pixelFiring: spy
+        )
+        await sut.verify().value
+        XCTAssertEqual(spy.stateCheckedCount, 1)
+        XCTAssertEqual(spy.notLoadedTypes, [.adBlockingExtension])
+    }
+
+    @MainActor
+    func testCancelAllPreventsQueuedVerifyFromReporting() async {
+        let manager = RecordingWebExtensionManager()
+        manager.opDelay = .milliseconds(50)
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [.embedded] }, pixelFiring: spy
+        )
+        let first = sut.load()
+        let queuedVerify = sut.verify()
+        sut.cancelAll()
+        await first.value
+        await queuedVerify.value
+        XCTAssertTrue(spy.firedEvents.isEmpty, "cancelAll must stop the queued check from firing")
+    }
+
+    @MainActor
+    func testNoScriptletPixelWhenAdBlockingScriptletsFetched() async {
+        let manager = RecordingWebExtensionManager()
+        manager.stubbedLoadedTypes = [.adBlockingExtension]
+        manager.stubbedAdBlockingScriptletsFetched = true
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [.adBlockingExtension] }, pixelFiring: spy
+        )
+        await sut.sync().value
+        XCTAssertTrue(spy.scriptletNotFetchedFlags.isEmpty)
+    }
+
+    @MainActor
+    func testScriptletPixelExtensionLoadedTrueWhenLoadedButScriptletsMissing() async {
+        let manager = RecordingWebExtensionManager()
+        manager.stubbedLoadedTypes = [.adBlockingExtension]
+        manager.stubbedAdBlockingScriptletsFetched = false
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [.adBlockingExtension] }, pixelFiring: spy
+        )
+        await sut.sync().value
+        XCTAssertEqual(spy.scriptletNotFetchedFlags, [true])
+    }
+
+    @MainActor
+    func testScriptletPixelExtensionLoadedFalseWhenExtensionAlsoMissing() async {
+        let manager = RecordingWebExtensionManager()
+        manager.stubbedLoadedTypes = []
+        manager.stubbedAdBlockingScriptletsFetched = false
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [.adBlockingExtension] }, pixelFiring: spy
+        )
+        await sut.sync().value
+        XCTAssertEqual(spy.scriptletNotFetchedFlags, [false])
+    }
+
+    @MainActor
+    func testNoScriptletPixelWhenAdBlockingNotExpected() async {
+        let manager = RecordingWebExtensionManager()
+        manager.stubbedAdBlockingScriptletsFetched = false
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [.embedded] }, pixelFiring: spy
+        )
+        await sut.sync().value
+        XCTAssertTrue(spy.scriptletNotFetchedFlags.isEmpty)
+    }
+
+    @MainActor
+    func testMultipleMissingTypesAllReported() async {
+        let manager = RecordingWebExtensionManager()
+        manager.stubbedLoadedTypes = []
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [.embedded, .darkReader] }, pixelFiring: spy
+        )
+        await sut.sync().value
+        XCTAssertEqual(spy.stateCheckedCount, 1)
+        XCTAssertEqual(spy.notLoadedTypes, [.embedded, .darkReader])
+    }
 }
 
 // MARK: - Mock
@@ -107,6 +270,11 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
 
     /// Delay inside each async op so that, were ops NOT serialized, overlap would be observable.
     var opDelay: Duration = .milliseconds(10)
+
+    /// Stubbed loaded embedded types, representing controller state after an op.
+    var stubbedLoadedTypes: Set<DuckDuckGoWebExtensionType> = []
+    /// Whether ad-blocking scriptlets are stubbed as fetched (non-nil cached version).
+    var stubbedAdBlockingScriptletsFetched = false
 
     private func begin(_ op: Operation) {
         started.append(op)
@@ -135,6 +303,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
 
     // Unused protocol requirements
     var loadedExtensions: Set<WKWebExtensionContext> { [] }
+    var loadedEmbeddedExtensionTypes: Set<DuckDuckGoWebExtensionType> { stubbedLoadedTypes }
     var webExtensionIdentifiers: [String] { [] }
     var controller: WKWebExtensionController { WKWebExtensionController() }
     var eventsListener: WebExtensionEventsListening { RecordingEventsListener() }
@@ -152,12 +321,17 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
     @MainActor func clearCachedScriptlets() {}
-    @MainActor func scriptletDebugInfo() -> [ScriptletDebugInfo] { [] }
+    @MainActor func scriptletDebugInfo() -> [ScriptletDebugInfo] {
+        stubbedAdBlockingScriptletsFetched
+            ? [ScriptletDebugInfo(extensionType: .adBlockingExtension, cachedVersion: "1.0", installedVersion: nil, scriptletPaths: [])]
+            : []
+    }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
 private final class RecordingEventsListener: WebExtensionEventsListening {
     var controller: WKWebExtensionController?
+    var droppedCallbacksCount = 0
     func didOpenWindow(_ window: WKWebExtensionWindow) {}
     func didCloseWindow(_ window: WKWebExtensionWindow) {}
     func didFocusWindow(_ window: WKWebExtensionWindow) {}

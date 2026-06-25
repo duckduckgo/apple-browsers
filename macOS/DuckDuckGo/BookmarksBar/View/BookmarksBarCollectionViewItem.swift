@@ -133,6 +133,19 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         titleLabel.alphaValue = isInteractionPrevented ? 0.3 : 1
     }
 
+    /// Re-resolves this bookmark's favicon and shows it in place if a decoded image is now available.
+    ///
+    /// Never downgrades an already-shown favicon back to the placeholder.
+    func refreshDisplayedFavicon() {
+        guard let bookmark = representedObject as? Bookmark else { return }
+        let host = URL(string: bookmark.url)?.host ?? ""
+        guard let favicon = (bookmark.favicon(.small) ?? NSApp.delegateTyped.faviconManager.getCachedFavicon(for: host, sizeCategory: .small)?.image)?.copy() as? NSImage else {
+            return
+        }
+        favicon.size = NSSize.faviconSize
+        faviconView.image = favicon
+    }
+
     @IBAction func mouseClickAction(_ sender: Any) {
         delegate?.bookmarksBarCollectionViewItemClicked(self)
     }

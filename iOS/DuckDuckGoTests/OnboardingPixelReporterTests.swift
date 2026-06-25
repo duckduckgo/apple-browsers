@@ -22,8 +22,6 @@ import Core
 import Onboarding
 import Persistence
 import PersistenceTestingUtils
-import PixelKit
-import PixelKitTestingUtilities
 import PrivacyConfig
 @testable import DuckDuckGo
 
@@ -45,14 +43,13 @@ final class OnboardingPixelReporterTests: XCTestCase {
         userDefaultsMock = UserDefaults(suiteName: Self.suiteName)
         sharedPixelHandlerMock = MockOnboardingSharedPixelHandling()
         initSharedPixelsStorageMock()
-        sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, experimentPixel: OnboardingExperimentPixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, sharedPixelHandler: sharedPixelHandlerMock, sharedPixelsStorage: sharedPixelsStorageMock)
+        sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, sharedPixelHandler: sharedPixelHandlerMock, sharedPixelsStorage: sharedPixelsStorageMock)
         try super.setUpWithError()
     }
 
     override func tearDownWithError() throws {
         OnboardingPixelFireMock.tearDown()
         OnboardingUniquePixelFireMock.tearDown()
-        OnboardingExperimentPixelFireMock.tearDown()
         sharedPixelsStorageMock = nil
         sharedPixelHandlerMock = nil
         statisticsStoreMock = nil
@@ -496,22 +493,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
     }
 
-    func testWhenMeasureDuckAIExperimentFireDialogImpressionThenLegacyFireDialogShownUniqueAndExperimentPixelsFire() {
+    func testWhenMeasureScreenImpressionWithDuckAIFireDialogEventThenLegacyFireDialogShownUniqueFires() {
         // GIVEN
-        let expectedPixel = Pixel.Event.onboardingDuckAIExperimentFireDialogShownUnique
+        let expectedPixel = Pixel.Event.onboardingDuckAIFireDialogShownUnique
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
-        sut.measureDuckAIExperimentFireDialogImpression()
+        sut.measureScreenImpression(event: expectedPixel)
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
-        XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 2)
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.allSatisfy {
-            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue
-                && $0.metric == "screen-impression"
-                && $0.value == "fire-dialog"
-        })
         XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
     }
 
@@ -665,49 +657,37 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .duckAISearch)
     }
 
-    func testWhenMeasureDuckAIExperimentFireButtonCTAActionThenLegacyCTAPressedAndExperimentPixelsFire() {
+    func testWhenMeasureDuckAIFireButtonCTAActionThenLegacyCTAPressedPixelFires() {
         // GIVEN
-        let expectedPixel = Pixel.Event.onboardingDuckAIExperimentFireButtonCTAPressed
+        let expectedPixel = Pixel.Event.onboardingDuckAIFireButtonCTAPressed
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
-        sut.measureDuckAIExperimentFireButtonCTAAction()
+        sut.measureDuckAIFireButtonCTAAction()
 
         // THEN
         XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
         XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
-        XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 2)
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.allSatisfy {
-            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue
-                && $0.metric == "cta-pressed"
-                && $0.value == "fire-button-pressed"
-        })
     }
 
-    func testWhenMeasureDuckAIExperimentFinalDialogImpressionThenLegacyFinalDialogShownUniqueAndExperimentPixelsFire() {
+    func testWhenMeasureDuckAIFinalDialogImpressionThenLegacyFinalDialogShownUniquePixelFires() {
         // GIVEN
-        let expectedPixel = Pixel.Event.onboardingDuckAIExperimentFinalDialogShownUnique
+        let expectedPixel = Pixel.Event.onboardingDuckAIFinalDialogShownUnique
 
         // WHEN
-        sut.measureDuckAIExperimentFinalDialogImpression()
+        sut.measureDuckAIFinalDialogImpression()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
-        XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 2)
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.allSatisfy {
-            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue
-                && $0.metric == "screen-impression"
-                && $0.value == "final-dialog"
-        })
     }
 
-    func testWhenMeasureDuckAIExperimentFinalDialogCTAActionThenEndEngageSharedPixelFires() {
+    func testWhenMeasureDuckAIFinalDialogCTAActionThenEndEngageSharedPixelFires() {
         // GIVEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
-        sut.measureDuckAIExperimentFinalDialogCTAAction()
+        sut.measureDuckAIFinalDialogCTAAction()
 
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.end(.clicked(.engage))])
@@ -716,38 +696,31 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .duckAISearch)
     }
 
-    // MARK: - Duck AI query experiment (linear onboarding)
+    // MARK: - Duck AI query selection (linear onboarding)
 
-    func testWhenMeasureDuckAIQueryExperimentSelectionImpressionThenLegacyToggleImpressionUniqueExperimentAndSearchShownSharedPixelsFire() {
+    func testWhenMeasureDuckAIQuerySelectionImpressionThenLegacyToggleImpressionUniqueAndSearchShownSharedPixelsFire() {
         // GIVEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
-        sut.measureDuckAIQueryExperimentSelectionImpression()
+        sut.measureDuckAIQuerySelectionImpression()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, .onboardingIntroDuckAIExperimentToggleImpressionUnique)
-        XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 2)
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.allSatisfy {
-            $0.subfeatureID == AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue
-                && $0.metric == "screen-impression"
-                && $0.value == "toggle-screen"
-        })
-
+        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, .onboardingIntroDuckAIToggleImpressionUnique)
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
         XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
     }
 
-    func testWhenMeasureDuckAIQueryExperimentQuerySubmissionWithCustomPromptThenSearchCustomSharedPixelFiresAndVariantIsPersisted() {
+    func testWhenMeasureDuckAIQuerySubmissionWithCustomPromptThenSearchCustomSharedPixelFiresAndVariantIsPersisted() {
         // GIVEN
         sharedPixelsStorageMock.onboardingVariant = nil
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
-        sut.measureDuckAIQueryExperimentQuerySubmission(selection: .search, promptSource: .custom)
+        sut.measureDuckAIQuerySubmission(selection: .search, promptSource: .custom)
 
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.clicked(.customSearch))])
@@ -757,13 +730,13 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, .duckAISearch)
     }
 
-    func testWhenMeasureDuckAIQueryExperimentQuerySubmissionWithSuggestedPromptThenSearchSuggestedSharedPixelFiresAndVariantIsPersisted() {
+    func testWhenMeasureDuckAIQuerySubmissionWithSuggestedPromptThenSearchSuggestedSharedPixelFiresAndVariantIsPersisted() {
         // GIVEN
         sharedPixelsStorageMock.onboardingVariant = nil
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
-        sut.measureDuckAIQueryExperimentQuerySubmission(selection: .duckAI, promptSource: .option1)
+        sut.measureDuckAIQuerySubmission(selection: .duckAI, promptSource: .option1)
 
         // THEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.clicked(.suggestedChat))])
@@ -771,84 +744,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
         XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
         XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, .duckAIChat)
-    }
-
-    // MARK: - Duck AI query (non-experiment)
-
-    func testWhenMeasureDuckAIQuerySelectionImpressionThenOnlySearchChatToggleShownSharedPixelFires() {
-        // GIVEN
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.isEmpty)
-
-        // WHEN
-        sut.measureDuckAIQuerySelectionImpression()
-
-        // THEN
-        // Non-experiment entry point: must not fire the experiment toggle-impression-unique pixel
-        // or any experiment metric pixel — only the shared search/chat toggle "shown" event.
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.isEmpty)
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.shown)])
-        XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
-        XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
-        XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
-    }
-
-    func testWhenMeasureDuckAIQuerySubmissionWithCustomDuckAIThenOnlyCustomChatSharedPixelFires() {
-        // GIVEN
-        let initialVariant = sharedPixelsStorageMock.onboardingVariant
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
-
-        // WHEN
-        sut.measureDuckAIQuerySubmission(selection: .duckAI, promptSource: .custom)
-
-        // THEN
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.isEmpty)
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.clicked(.customChat))])
-        XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, initialVariant)
-    }
-
-    func testWhenMeasureDuckAIQuerySubmissionWithCustomSearchThenOnlyCustomSearchSharedPixelFires() {
-        // GIVEN
-        let initialVariant = sharedPixelsStorageMock.onboardingVariant
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
-
-        // WHEN
-        sut.measureDuckAIQuerySubmission(selection: .search, promptSource: .custom)
-
-        // THEN
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.isEmpty)
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.clicked(.customSearch))])
-        XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, initialVariant)
-    }
-
-    func testWhenMeasureDuckAIQuerySubmissionWithSuggestedDuckAIThenOnlySuggestedChatSharedPixelFires() {
-        // GIVEN
-        let initialVariant = sharedPixelsStorageMock.onboardingVariant
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
-
-        // WHEN
-        sut.measureDuckAIQuerySubmission(selection: .duckAI, promptSource: .option2)
-
-        // THEN
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.isEmpty)
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.clicked(.suggestedChat))])
-        XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, initialVariant)
-    }
-
-    func testWhenMeasureDuckAIQuerySubmissionWithSuggestedSearchThenOnlySuggestedSearchSharedPixelFires() {
-        // GIVEN
-        let initialVariant = sharedPixelsStorageMock.onboardingVariant
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
-
-        // WHEN
-        sut.measureDuckAIQuerySubmission(selection: .search, promptSource: .option3)
-
-        // THEN
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.isEmpty)
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.clicked(.suggestedSearch))])
-        XCTAssertEqual(sharedPixelsStorageMock.onboardingVariant, initialVariant)
     }
 
     // MARK: - Manual Dismiss

@@ -263,6 +263,20 @@ final class BookmarksBarMenuViewController: NSViewController {
             }
             .store(in: &cancellables)
 
+        // Favicon images are decoded lazily; when new favicons are available, refresh cells in place.
+        // We aren't calling `reloadData()` as a full reload would dismiss the submenu.
+        NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let update = notification.faviconsCacheUpdate,
+                   update.hosts.isDisjoint(with: self.bookmarkManager.allHosts()) {
+                    return
+                }
+                self.refreshVisibleFavicons()
+            }
+            .store(in: &cancellables)
+
         subscribeToScrollingEvents()
         subscribeToMenuPopoverEvents()
         subscribeToDragDropEvents()
@@ -503,6 +517,20 @@ final class BookmarksBarMenuViewController: NSViewController {
 
         if outlineView.numberOfRows > 0 {
             updateHighlightedRowAfterReload(isChangingRootFolder: isChangingRootFolder)
+        }
+    }
+
+    /// Refresh favicons in place for the currently visible bookmark rows, without a full `reloadData()`.
+    private func refreshVisibleFavicons() {
+        let visibleRows = outlineView.rows(in: outlineView.visibleRect)
+        guard visibleRows.length > 0 else { return }
+        for row in visibleRows.location..<(visibleRows.location + visibleRows.length) {
+            guard let node = outlineView.item(atRow: row) as? BookmarkNode,
+                  let bookmark = node.representedObject as? Bookmark,
+                  let cell = outlineView.view(atColumn: 0, row: row, makeIfNecessary: false) as? BookmarkOutlineCellView else {
+                continue
+            }
+            cell.refreshFavicon(for: bookmark)
         }
     }
 

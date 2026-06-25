@@ -40,7 +40,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         case `default`(daxDialogsManager: DaxDialogsManaging)
         /// Contextual AI chat deletion with a single "Delete Chat" button.
         case contextualChat(onDelete: () -> Void)
-        /// Duck AI onboarding experiment: single "Delete Chat" button scoped to the AI tab.
+        /// Duck.ai fire onboarding: single "Delete Chat" button scoped to the AI tab.
         case duckAIOnboarding
         /// New-tab-page escape hatch single-tab burn: one "Delete Tab" button scoped to the target tab.
         case singleTab
@@ -150,7 +150,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     /// Builds the ordered list of action buttons for the confirmation sheet.
     ///
     /// - Contextual chat: single "Delete Chat" button
-    /// - Duck AI onboarding experiment: single "Delete Chat" button (primary) for AI tabs only
+    /// - Duck.ai fire onboarding: single "Delete Chat" button (primary) for AI tabs only
     /// - AI tab + refinements: single "Delete This Chat" (tab-scoped)
     /// - Normal tab + refinements: "Delete This Tab" (primary) then "Delete All" (secondary)
     /// - Default: "Delete All" (primary), optionally "Delete This Tab" (secondary) if tab supports history
@@ -187,7 +187,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             // "Delete All" (destructive) over a neutral "Cancel". The caller supplies the burn
             // action; the chat-history sheet only surfaces persistent chats.
             return [
-                FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteAllButton,
+                FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteChatsButton,
                                        style: .primary,
                                        action: onDelete,
                                        accessibilityIdentifier: AccessibilityIdentifiers.deleteAll),

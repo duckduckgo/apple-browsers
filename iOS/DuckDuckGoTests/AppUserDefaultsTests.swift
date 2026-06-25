@@ -191,32 +191,43 @@ class AppUserDefaultsTests: XCTestCase {
         XCTAssertFalse(appUserDefaults.autofillCredentialsEnabled)
     }
 
-    func testDefaultAutoconsentStateIsFalse_WhenNotInRollout() {
+    func testDefaultCookiePopupPreferenceIsBlockStandard_WhenNotInRollout() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
         appUserDefaults.featureFlagger = MockFeatureFlagger()
-        XCTAssertFalse(appUserDefaults.autoconsentEnabled)
+        XCTAssertEqual(appUserDefaults.cookiePopupPreference, .default)
+        XCTAssertTrue(appUserDefaults.autoconsentEnabled)
     }
 
-    func testDefaultAutoconsentStateIsTrue_WhenInRollout() {
+    func testDefaultCookiePopupPreferenceIsBlockStandard_WhenInRollout() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
         appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .autoconsentOnByDefault)
+        XCTAssertEqual(appUserDefaults.cookiePopupPreference, .default)
         XCTAssertTrue(appUserDefaults.autoconsentEnabled)
     }
 
     func testAutoconsentReadsUserStoredValue_RegardlessOfRolloutState() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-     
+
         // When setting disabled by user and rollout enabled
         appUserDefaults.autoconsentEnabled = false
         appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .autoconsentOnByDefault)
 
+        XCTAssertEqual(appUserDefaults.cookiePopupPreference, .off)
         XCTAssertFalse(appUserDefaults.autoconsentEnabled)
 
         // When setting enabled by user and rollout disabled
         appUserDefaults.autoconsentEnabled = true
         appUserDefaults.featureFlagger = MockFeatureFlagger()
 
+        XCTAssertEqual(appUserDefaults.cookiePopupPreference, .default)
         XCTAssertTrue(appUserDefaults.autoconsentEnabled)
+    }
+
+    func testWhenMigratingFromExplicitlyDisabledAutoconsentThenPreferenceIsDoNotBlock() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        customSuite.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autoconsentEnabled.rawValue)
+
+        XCTAssertEqual(appUserDefaults.cookiePopupPreference, .off)
     }
 
     func testWhenRefreshButtonPositionIsSetThenItIsPersisted() {
@@ -245,91 +256,23 @@ class AppUserDefaultsTests: XCTestCase {
         XCTAssertTrue(appUserDefaults.showTrackersBlockedAnimation)
     }
 
-    // MARK: - duckPlayerMode rollout-aware default
+    // MARK: - Ad-blocking rollout onboarding default
 
-    func testWhenDuckPlayerModeStorageIsNilAndRolloutOffThenReturnsAlwaysAsk() {
+    func testWhenAdBlockingRolloutInactiveThenOnboardingDefaultsKeepDuckPlayerAtDefaults() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = MockFeatureFlagger()
+
+        appUserDefaults.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: false)
 
         XCTAssertEqual(appUserDefaults.duckPlayerMode, .alwaysAsk)
+        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .ask)
     }
 
-    func testWhenDuckPlayerModeStorageIsNilAndRolloutOnAndFeatureSupportedThenReturnsDisabled() {
+    func testWhenAdBlockingRolloutActiveThenOnboardingDefaultsDisableDuckPlayer() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.adBlockingExtensionEnabledByDefault, .webExtensions])
 
-        if #available(iOS 18.4, *) {
-            XCTAssertEqual(appUserDefaults.duckPlayerMode, .disabled)
-        } else {
-            XCTAssertEqual(appUserDefaults.duckPlayerMode, .alwaysAsk)
-        }
-    }
-
-    func testWhenDuckPlayerModeStorageIsNilAndRolloutOnButFeatureUnsupportedThenReturnsAlwaysAsk() {
-        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        // Rollout flag on, but webExtensions off => feature unsupported => historical default.
-        appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .adBlockingExtensionEnabledByDefault)
-
-        XCTAssertEqual(appUserDefaults.duckPlayerMode, .alwaysAsk)
-    }
-
-    func testWhenDuckPlayerModeStorageIsExplicitEnabledThenRolloutDoesNotChangeReturnValue() {
-        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.adBlockingExtensionEnabledByDefault, .webExtensions])
-        appUserDefaults.duckPlayerMode = .enabled
-
-        XCTAssertEqual(appUserDefaults.duckPlayerMode, .enabled)
-    }
-
-    func testWhenDuckPlayerModeStorageIsExplicitDisabledThenRolloutOffDoesNotChangeReturnValue() {
-        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = MockFeatureFlagger()
-        appUserDefaults.duckPlayerMode = .disabled
+        appUserDefaults.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: true)
 
         XCTAssertEqual(appUserDefaults.duckPlayerMode, .disabled)
-    }
-
-    // MARK: - duckPlayerNativeYoutubeMode rollout-aware default
-
-    func testWhenDuckPlayerNativeYoutubeModeStorageIsNilAndRolloutOffThenReturnsAsk() {
-        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = MockFeatureFlagger()
-
-        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .ask)
-    }
-
-    func testWhenDuckPlayerNativeYoutubeModeStorageIsNilAndRolloutOnAndFeatureSupportedThenReturnsNever() {
-        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.adBlockingExtensionEnabledByDefault, .webExtensions])
-
-        if #available(iOS 18.4, *) {
-            XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .never)
-        } else {
-            XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .ask)
-        }
-    }
-
-    func testWhenDuckPlayerNativeYoutubeModeStorageIsNilAndRolloutOnButFeatureUnsupportedThenReturnsAsk() {
-        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        // Rollout flag on, but webExtensions off => feature unsupported => historical default.
-        appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .adBlockingExtensionEnabledByDefault)
-
-        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .ask)
-    }
-
-    func testWhenDuckPlayerNativeYoutubeModeStorageIsExplicitAutoThenRolloutDoesNotChangeReturnValue() {
-        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.adBlockingExtensionEnabledByDefault, .webExtensions])
-        appUserDefaults.duckPlayerNativeYoutubeMode = .auto
-
-        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .auto)
-    }
-
-    func testWhenDuckPlayerNativeYoutubeModeStorageIsExplicitNeverThenRolloutOffDoesNotChangeReturnValue() {
-        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = MockFeatureFlagger()
-        appUserDefaults.duckPlayerNativeYoutubeMode = .never
-
         XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .never)
     }
 

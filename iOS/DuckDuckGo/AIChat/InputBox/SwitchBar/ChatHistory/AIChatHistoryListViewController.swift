@@ -85,6 +85,7 @@ final class AIChatHistoryListViewController: UIViewController {
     private let viewModel: AIChatSuggestionsViewModel
     private let onChatSelected: (AIChatSuggestion) -> Void
     private let onChatDeleted: (AIChatSuggestion) -> Void
+    private let onViewAllSelected: () -> Void
     private let isIPadExperience: Bool
     private var cancellables = Set<AnyCancellable>()
 
@@ -141,12 +142,14 @@ final class AIChatHistoryListViewController: UIViewController {
          isIPadExperience: Bool,
          onChatSelected: @escaping (AIChatSuggestion) -> Void,
          onChatDeleted: @escaping (AIChatSuggestion) -> Void,
+         onViewAllSelected: @escaping () -> Void,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger)
     {
         self.viewModel = viewModel
         self.isIPadExperience = isIPadExperience
         self.onChatSelected = onChatSelected
         self.onChatDeleted = onChatDeleted
+        self.onViewAllSelected = onViewAllSelected
         self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
@@ -185,7 +188,7 @@ final class AIChatHistoryListViewController: UIViewController {
     }
 
     private func subscribeToViewModel() {
-        viewModel.$filteredSuggestions
+        Publishers.CombineLatest(viewModel.$filteredSuggestions, viewModel.$showViewAllChats)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.tableView.reloadData()
@@ -224,7 +227,7 @@ final class AIChatHistoryListViewController: UIViewController {
     }
 
     private func highlightBackgroundColor(isHighlighted: Bool) -> UIColor {
-        isHighlighted ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .surface)
+        isHighlighted ? UIColor(designSystemColor: .accentPrimary) : UIColor(designSystemColor: .surface)
     }
 
     func setScrollableTitle(_ title: String?) {
@@ -367,6 +370,42 @@ final class AIChatHistoryListViewController: UIViewController {
 
         configureDeleteActionIfNeeded(cell: cell, chat: chat)
     }
+
+    /// Index of the virtual "View all chats" row, shown after the last suggestion when the view model opts in.
+    private var viewAllChatsRowIndex: Int? {
+        viewModel.showViewAllChats ? chats.count : nil
+    }
+
+    private func configureViewAllChatsCell(_ cell: UITableViewCell) {
+        var config = cell.defaultContentConfiguration()
+
+        config.text = UserText.aiChatViewAllChats
+        config.textProperties.font = UIFont.preferredFont(forTextStyle: .body)
+        config.textProperties.color = UIColor(designSystemColor: .textPrimary)
+        config.textProperties.lineBreakMode = .byTruncatingTail
+        config.textProperties.numberOfLines = 1
+
+        config.image = DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
+        config.imageProperties.tintColor = UIColor(designSystemColor: .icons)
+        config.imageProperties.maximumSize = CGSize(width: Constants.iconSize, height: Constants.iconSize)
+
+        config.directionalLayoutMargins = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: Constants.horizontalInset,
+            bottom: 0,
+            trailing: Constants.horizontalInset
+        )
+        config.imageToTextPadding = Constants.iconTextSpacing
+
+        cell.contentConfiguration = config
+        cell.backgroundColor = UIColor(designSystemColor: .surface)
+
+        // The "View all chats" row never offers per-row deletion.
+        if let cell = cell as? DuckAISuggestionTableViewCell {
+            cell.displaysAccessoryButton = false
+            cell.onAccessoryButtonPressed = nil
+        }
+    }
 }
 
 // MARK: - Chat Deletion
@@ -403,20 +442,22 @@ private extension AIChatHistoryListViewController {
 extension AIChatHistoryListViewController: UITableViewDataSource {
 
     func numberOfSections(in tableView: UITableView) -> Int {
-        return chats.isEmpty ? 0 : 1
+        return (chats.isEmpty && !viewModel.showViewAllChats) ? 0 : 1
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return chats.count
+        return chats.count + (viewModel.showViewAllChats ? 1 : 0)
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: Constants.cellIdentifier, for: indexPath)
 
-        guard indexPath.row < chats.count else { return cell }
+        if indexPath.row == viewAllChatsRowIndex {
+            configureViewAllChatsCell(cell)
+        } else if indexPath.row < chats.count {
+            configureCell(cell, with: chats[indexPath.row])
+        }
 
-        let chat = chats[indexPath.row]
-        configureCell(cell, with: chat)
         // Re-apply the highlight so a reused cell renders correctly.
         cell.backgroundColor = highlightBackgroundColor(isHighlighted: viewModel.selectedIndex == indexPath.row)
 
@@ -438,6 +479,10 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        if indexPath.row == viewAllChatsRowIndex {
+            onViewAllSelected()
+            return
+        }
         guard indexPath.row < chats.count else { return }
         onChatSelected(chats[indexPath.row])
     }

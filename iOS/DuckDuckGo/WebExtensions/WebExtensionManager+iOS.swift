@@ -32,8 +32,8 @@ final class AutoconsentPreferencesAdapter: AutoconsentPreferencesProviding {
         self.preferences = preferences
     }
 
-    var isAutoconsentEnabled: Bool {
-        preferences.autoconsentEnabled
+    var cookiePopupPreference: CookiePopupPreference {
+        preferences.cookiePopupPreference
     }
 }
 

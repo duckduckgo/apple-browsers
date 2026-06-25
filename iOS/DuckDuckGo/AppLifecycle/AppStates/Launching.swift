@@ -79,6 +79,8 @@ struct Launching: LaunchingHandling {
             featureFlagger.isFeatureOn(.appRebranding)
         }
 
+        DesignSystemPalette.current = featureFlagger.isFeatureOn(.appRebranding) ? .rebranded : .default
+
         favicons = Favicons(fireproofing: fireproofing)
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
@@ -221,7 +223,7 @@ struct Launching: LaunchingHandling {
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
-        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
+        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager
@@ -412,7 +414,8 @@ struct Launching: LaunchingHandling {
                     migrationKey: "com.duckduckgo.duckai.nativeStorage.defaultMigratedFromAppGroup",
                     label: .default,
                     keyValueStore: keyValueStore,
-                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter()
+                    pixelFiring: DuckAiNativeStorageContainerMigrationPixelAdapter(),
+                    lockedLaunchFixEnabled: featureFlagger.isFeatureOn(.duckAINativeStorageMigrationLockedLaunchFix)
                 ).run()
                 if outcome == .skip {
                     return nil

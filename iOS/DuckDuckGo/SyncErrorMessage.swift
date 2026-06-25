@@ -40,6 +40,10 @@ enum SyncErrorMessage {
         switch self {
         case .alreadyPairedWithAccount:
             return UserText.syncAlreadyPairedWithAccountTitle
+        case .updateRequired:
+            return UserText.syncUpdateRequiredTitle
+        case .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncUnsupportedThirdPartyRecoveryCodeTitle
         case .syncCancelledFromOtherDevice:
             return UserText.syncCancelledFromOtherDeviceTitle
         default:

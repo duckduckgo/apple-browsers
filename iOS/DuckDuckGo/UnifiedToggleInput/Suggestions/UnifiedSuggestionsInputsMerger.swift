@@ -37,11 +37,22 @@ enum UnifiedSuggestionsInputsMerger {
 
     /// `duckAI` is nil when the duck.ai source isn't installed (its lazy lifecycle), which the
     /// resolver treats as no recents and nothing pending.
+    /// A pre-filled, unedited URL stays in the not-typing state (favorites until the user edits),
+    /// mirroring `SuggestionTrayManager.shouldDisplaySuggestionTray`.
+    /// Whether the user is actively typing a query. A pre-filled, unedited URL counts as not typing
+    /// (mirrors `SuggestionTrayManager.shouldDisplaySuggestionTray`). Shared so any consumer keying
+    /// off the not-typing state (e.g. the escape hatch) uses the same rule as the resolver.
+    static func isTyping(text: String, hasUserInteractedWithText: Bool) -> Bool {
+        let isURL = URL.isValidAddressBarURLInput(text)
+        return !text.isEmpty && (!isURL || hasUserInteractedWithText)
+    }
+
     static func merge(mode: TextEntryMode,
                       text: String,
+                      hasUserInteractedWithText: Bool,
                       search: SearchState,
                       duckAI: DuckAIState?) -> UnifiedSuggestionsInputs {
-        let isTyping = !text.isEmpty
+        let isTyping = isTyping(text: text, hasUserInteractedWithText: hasUserInteractedWithText)
         switch mode {
         case .search:
             return UnifiedSuggestionsInputs(

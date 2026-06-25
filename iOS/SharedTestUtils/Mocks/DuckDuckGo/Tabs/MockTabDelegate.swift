@@ -87,7 +87,7 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {}
 
-    func tabDidRequestAIChatHistory(tab: TabViewController) {}
+    func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {}
 
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {}
 
@@ -198,7 +198,7 @@ extension TabViewController {
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
             featureDiscovery: MockFeatureDiscovery(),
             keyValueStore: MockKeyValueFileStore(),
-            daxDialogsManager: DummyDaxDialogsManager(),
+            daxDialogsManager: MockDaxDialogsManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
             privacyStats: MockPrivacyStats(),

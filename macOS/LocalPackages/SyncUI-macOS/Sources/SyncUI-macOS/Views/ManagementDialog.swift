@@ -18,13 +18,18 @@
 
 import SwiftUI
 
+public enum PreparingToSyncMode: Equatable {
+    case singleDeviceOrRecovery
+    case twoDevicePairing
+}
+
 public enum ManagementDialogKind: Equatable {
     case deleteAccount(_ devices: [SyncDevice])
     case turnOffSync
     case deviceDetails(_ device: SyncDevice)
     case removeDevice(_ device: SyncDevice)
     case syncWithAnotherDevice(codeForDisplayOrPasting: String, stringForQRCode: String)
-    case prepareToSync
+    case prepareToSync(PreparingToSyncMode)
     case saveRecoveryCode(_ code: String)
     case nowSyncing
     case syncWithServer
@@ -96,8 +101,8 @@ public struct ManagementDialog: View {
                 DeleteAccountView(devices: devices)
             case .syncWithAnotherDevice(let codeForDisplayOrPasting, let stringForQRCode):
                 SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
-            case .prepareToSync:
-                PreparingToSyncView()
+            case .prepareToSync(let mode):
+                PreparingToSyncView(mode: mode)
             case .saveRecoveryCode(let code):
                 SaveRecoveryPDFView(code: code)
             case .nowSyncing:

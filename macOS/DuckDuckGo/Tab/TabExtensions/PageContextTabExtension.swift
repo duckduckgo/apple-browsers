@@ -49,6 +49,11 @@ final class PageContextTabExtension {
     private let faviconManagement: FaviconManagement
     private var cachedPageContext: AIChatPageContextData?
 
+    /// Text selections ("Attach to Duck.ai") buffered until the sidebar chat VC exists. Lives on
+    /// its own channel, independent of the single page-context slot above — it never touches
+    /// `cachedPageContext` or triggers page collection. Once flushed, the duck.ai web app owns the list.
+    private var pendingSelectionContexts: [AIChatSelectionContextData] = []
+
     /// Tracks whether a prompt has been submitted in the current chat session.
     /// When true, navigating with auto-collect OFF will send a nil signal so the
     /// frontend can show "Add page content" for the new page.
@@ -123,6 +128,8 @@ final class PageContextTabExtension {
                 if case .url = tabContent {
                     self.userRemovedContext = false
                     self.cachedPageContext = nil
+                    // Selections are tied to the page they were made on — drop any not-yet-flushed ones.
+                    self.pendingSelectionContexts = []
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
@@ -139,6 +146,10 @@ final class PageContextTabExtension {
                     return
                 }
                 session = aiChatSessionStore?.sessions[tabID]
+
+                // Flush any selections attached while the sidebar was opening. Deferred so the
+                // chat VC exists after `showSidebar` finishes. Independent of page context below.
+                Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
 
                 /// This closure is responsible for passing cached page context to the newly displayed sidebar.
                 /// It's only called when sidebar for tabID is non-nil.
@@ -264,6 +275,55 @@ final class PageContextTabExtension {
         pageContextUserScript?.collect()
     }
 
+    // MARK: - Selection Context ("Attach to Duck.ai")
+
+    /// Queues a selection item for the sidebar and flushes it. Independent of the page-context
+    /// slot — never touches `cachedPageContext` or triggers `collect()`. If the sidebar chat VC
+    /// isn't up yet, the item stays buffered and the `sessionsPublisher` sink flushes it once the
+    /// sidebar is shown.
+    @MainActor
+    func appendSelectionContext(_ selection: AIChatSelectionContextData) {
+        pendingSelectionContexts.append(selectionWithEncodedFavicon(selection))
+        // Defer so a just-revealed sidebar's chat VC exists before we push (matches page-context timing).
+        Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
+    }
+
+    /// Stamps the source page's base64-encoded favicon onto the selection (raw favicon URLs get
+    /// CSP-blocked in the sidebar). Mirrors `replaceFaviconURLWithEncodedData`; returns the item
+    /// unchanged when no favicon is cached.
+    @MainActor
+    private func selectionWithEncodedFavicon(_ selection: AIChatSelectionContextData) -> AIChatSelectionContextData {
+        guard let pageURL = URL(string: selection.url),
+              let favicon = faviconManagement.getCachedFavicon(for: pageURL, sizeCategory: .small)?.image,
+              let base64Favicon = favicon.base64PNGDataURL else {
+            return selection
+        }
+
+        let faviconEntry = AIChatPageContextData.PageContextFavicon(href: base64Favicon, rel: "icon")
+        return AIChatSelectionContextData(
+            id: selection.id,
+            title: selection.title,
+            favicon: [faviconEntry],
+            url: selection.url,
+            content: selection.content,
+            truncated: selection.truncated,
+            fullContentLength: selection.fullContentLength,
+            wordCount: selection.wordCount
+        )
+    }
+
+    /// Pushes buffered selection items to the sidebar chat VC (if it exists) and clears the buffer.
+    @MainActor
+    private func flushPendingSelectionContexts() {
+        guard !pendingSelectionContexts.isEmpty,
+              let chatViewController = aiChatSessionStore.sessions[tabID]?.chatViewController else {
+            return
+        }
+        let items = pendingSelectionContexts
+        pendingSelectionContexts = []
+        items.forEach { chatViewController.submitSelectionContext($0) }
+    }
+
     // MARK: - Multiple Page Contexts
 
     /// Determines the appropriate action when the browser tab navigates to a new URL
@@ -362,6 +422,9 @@ final class PageContextTabExtension {
 }
 
 protocol PageContextProtocol: AnyObject {
+    /// Appends a user text selection to the sidebar's selection-context list. See the
+    /// implementation in `PageContextTabExtension` for buffering/lifecycle semantics.
+    @MainActor func appendSelectionContext(_ selection: AIChatSelectionContextData)
 }
 
 extension PageContextTabExtension: PageContextProtocol, TabExtension {

@@ -87,17 +87,30 @@ final class UnifiedToggleInputView: UIView {
         // shorter than the 48pt fire/voice buttons that flank it.
         static let flankedCardTopMargin: CGFloat = 6
         static let flankedCardBottomMargin: CGFloat = 6
-        static let cardHorizontalMargin: CGFloat = 16
+        /// Outer horizontal padding for the whole `.flanked` row: the fire/menu accessory buttons'
+        /// distance from the view edges, and the base inset the flanked-pill card is laid out from
+        /// (see `flankedHorizontalInset` in `setupConstraints`). Keeps the flanked input's left/right
+        /// padding consistent end-to-end.
+        static let flankedCardHorizontalMargin: CGFloat = 16
+        /// Card container's outer horizontal margin in the non-flanked layouts.
+        static let cardHorizontalMargin: CGFloat = 8
         static let cardVerticalMargin: CGFloat = 8
+        /// Outer horizontal margin for the expanded card at the bottom-bar position.
         static let cardHorizontalMarginBottom: CGFloat = 8
         static let cardVerticalMarginBottom: CGFloat = 8
+        /// Page-context chip's leading inset within the card. Decoupled from `cardHorizontalMargin`
+        /// so the card's outer margin can change without shifting the chip.
+        static let pageContextChipLeadingInset: CGFloat = 16
+        /// Omnibar pill's horizontal inset; the card's hand-off start width so it animates to the
+        /// narrower editing margins. Mirrors `DefaultOmniBarView`'s portrait value (landscape/iPad differ).
+        static let omnibarMatchingHorizontalMargin: CGFloat = 16
         static let cardCornerRadiusExpanded: CGFloat = 28
         static let toggleTopPadding: CGFloat = 8
-        static let toggleBottomPadding: CGFloat = 4
+        static let toggleBottomPadding: CGFloat = 9
         /// Bottom padding between the input content and the card edge when the AI tools
         /// toolbar is hidden. Slightly larger than the matching top gap so the cursor doesn't
         /// crowd the card's bottom curve in Search mode.
-        static let inputBottomPadding: CGFloat = 8
+        static let inputBottomPadding: CGFloat = 10
         static let toggleHeight: CGFloat = 40
         static let toggleHorizontalPadding: CGFloat = 8
         static let animationDuration: TimeInterval = 0.25
@@ -109,6 +122,9 @@ final class UnifiedToggleInputView: UIView {
         static let inlineDismissLeadingPadding: CGFloat = 8
         static let toggleInlineDismissSpacing: CGFloat = 8
         static let aiTabCollapsedAccessorySize: CGFloat = 48
+        static let aiTabExpandedInputTopPadding: CGFloat = 9
+        static let aiTabExpandedInputBottomPadding: CGFloat = 6
+        static let aiTabExpandedWithToggleInputTopPadding: CGFloat = 0
         /// Spacing between the inline dismiss button and the field's leading content when the
         /// dismiss shares the field row (toggle disabled, top position).
         static let fieldRowInlineDismissSpacing: CGFloat = 4
@@ -128,6 +144,9 @@ final class UnifiedToggleInputView: UIView {
         // Fire / voice fade in once the pill has finished shrinking into its flanked frame.
         static let aiTabCollapsedAccessoryFadeDelay: TimeInterval = 0.18
         static let aiTabCollapsedAccessoryFadeDuration: TimeInterval = 0.12
+        // Subtler than the fire button (0.16) to match the visual weight of top-toolbar elements.
+        static let aiTabCollapsedMenuButtonShadowOpacity: Float = 0.04
+        static let aiTabCollapsedMenuButtonDisabledShadowOpacity: Float = 0.0
     }
 
     // MARK: - Hit Testing
@@ -158,6 +177,10 @@ final class UnifiedToggleInputView: UIView {
             refreshInlineDismissPresentation()
         }
     }
+
+    /// True when hosted by a Duck.ai tab. Drives the extra 3pt above/below the text view while
+    /// expanded. Set before `setInputMode`/`applyCardLayout` so the layout pass reads it.
+    var isAITab: Bool = false
 
     var text: String {
         get { handler.currentText }
@@ -494,6 +517,7 @@ final class UnifiedToggleInputView: UIView {
     private var inlineDismissTopConstraint: NSLayoutConstraint!
     private var inlineDismissCenterYConstraint: NSLayoutConstraint!
     private var inputTopConstraint: NSLayoutConstraint!
+    private var inputBottomConstraint: NSLayoutConstraint!
     private var textEntryViewLeadingConstraint: NSLayoutConstraint!
     private var textEntryViewTrailingConstraint: NSLayoutConstraint!
     private var toolbarBottomConstraint: NSLayoutConstraint!
@@ -508,6 +532,7 @@ final class UnifiedToggleInputView: UIView {
         self.isToggleEnabled = isToggleEnabled
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
+        textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
         setupUI()
         setupSubscriptions()
     }
@@ -570,7 +595,7 @@ final class UnifiedToggleInputView: UIView {
         textEntryView.isUserInteractionEnabled = !dimmed
         // Suppress the stop-generating button during onboarding — its red color is distracting even when dimmed.
         handler.isOnboardingLocked = dimmed
-        let shadowOpacity: Float = dimmed ? 0.04 : 0.16
+        let shadowOpacity = dimmed ? Constants.aiTabCollapsedMenuButtonDisabledShadowOpacity : Constants.aiTabCollapsedMenuButtonShadowOpacity
         Self.applyAITabAccessoryShadow(to: aiTabCollapsedMenuButton, opacity: shadowOpacity)
     }
 
@@ -651,6 +676,7 @@ final class UnifiedToggleInputView: UIView {
     func updateToggleEnabled(_ enabled: Bool, showsToolbar: Bool) {
         guard enabled != isToggleEnabled else { return }
         isToggleEnabled = enabled
+        textEntryView.style = enabled ? .multiLine : .singleLine
         if isExpanded {
             applyCardLayout(.collapsed, animated: false)
             applyCardLayout(.expanded(showsToggle: enabled, showsToolbar: showsToolbar), animated: false)
@@ -664,6 +690,7 @@ final class UnifiedToggleInputView: UIView {
         if isToggleEnabled {
             toggleView.setMode(mode, animated: animated)
         }
+        textEntryView.style = mode == .aiChat ? .multiLine : .singleLine
         // Drive textView pose synchronously inside the caller's UIView.animate so the
         // placeholder constraint switch animates rather than snapping when the publisher
         // subscriber fires after the animation transaction has already committed.
@@ -672,16 +699,33 @@ final class UnifiedToggleInputView: UIView {
         updateToggleDisabledSearchPadding(for: mode)
     }
 
+    /// Extra breathing room above the text view while expanded on a Duck.ai tab; zero otherwise.
+    private var inputExtraPaddingTop: CGFloat {
+        guard isExpanded && isAITab else {
+            return 0
+        }
+
+        return currentLayout.showsToggle ? Constants.aiTabExpandedWithToggleInputTopPadding : Constants.aiTabExpandedInputTopPadding
+    }
+
+    /// Extra breathing room below the text view while expanded on a Duck.ai tab; zero otherwise.
+    private var inputExtraPaddingBottom: CGFloat {
+        isExpanded && isAITab ? Constants.aiTabExpandedInputBottomPadding : 0
+    }
+
     private func updateToggleDisabledSearchPadding(for mode: TextEntryMode) {
         guard isExpanded else { return }
 
         let showToolbar = mode == .aiChat
+
         if isToggleEnabled {
-            inputTopConstraint.constant = Constants.toggleBottomPadding
+            inputTopConstraint.constant = Constants.toggleBottomPadding + inputExtraPaddingTop
+            inputBottomConstraint.constant = inputExtraPaddingBottom
             toolbarBottomConstraint.constant = showToolbar ? 0 : -Constants.inputBottomPadding
         } else {
             let padding = Constants.toggleDisabledSearchTopPadding
-            inputTopConstraint.constant = padding
+            inputTopConstraint.constant = padding + inputExtraPaddingTop
+            inputBottomConstraint.constant = 0
             toolbarBottomConstraint.constant = showToolbar ? 0 : -padding
         }
     }
@@ -769,9 +813,13 @@ final class UnifiedToggleInputView: UIView {
 
         let hLeadingMargin: CGFloat
         let hTrailingMargin: CGFloat
+
         if expanded && cardPosition == .bottom && !usesOmnibarMargins {
             hLeadingMargin = Constants.cardHorizontalMarginBottom
             hTrailingMargin = Constants.cardHorizontalMarginBottom
+        } else if layout == .collapsed {
+            hLeadingMargin = Constants.omnibarMatchingHorizontalMargin
+            hTrailingMargin = Constants.omnibarMatchingHorizontalMargin
         } else {
             hLeadingMargin = Constants.cardHorizontalMargin
             hTrailingMargin = cardTrailingMargin
@@ -828,7 +876,9 @@ final class UnifiedToggleInputView: UIView {
             // doesn't sit flush against the edges.
             let toggleDisabledPadding = expanded && !self.isToggleEnabled
             let toggleEnabledNoToolbarPadding = expanded && showsToggle && !showToolbar
-            self.inputTopConstraint.constant = (expanded && showsToggle) ? Constants.toggleBottomPadding : (toggleDisabledPadding ? Constants.toggleDisabledSearchTopPadding : 0)
+
+            self.inputTopConstraint.constant = ((expanded && showsToggle) ? Constants.toggleBottomPadding : (toggleDisabledPadding ? Constants.toggleDisabledSearchTopPadding : 0)) + self.inputExtraPaddingTop
+            self.inputBottomConstraint.constant = self.inputExtraPaddingBottom
             self.toolbarBottomConstraint.constant = toggleDisabledPadding
                 ? (showToolbar ? 0 : -Constants.toggleDisabledSearchTopPadding)
                 : (toggleEnabledNoToolbarPadding ? -Constants.inputBottomPadding : 0)
@@ -882,6 +932,16 @@ final class UnifiedToggleInputView: UIView {
             applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
         case (_, _):
             applyCardLayout(.collapsed, animated: false)
+            // Pre-apply the inline dismiss leading inset so the text area is already at its
+            // final width before animation — otherwise the width change animates with the card.
+            if !isToggleEnabled {
+                UIView.performWithoutAnimation {
+                    self.applyInlineDismissVerticalAnchor(useFieldRowAnchor: true)
+                    self.applyTextEntryViewLeadingInset(showFieldRowInlineDismiss: true)
+                    self.layoutIfNeeded()
+                }
+            }
+            textEntryView.clearDismissSnapshot()
         }
         alignWithOmnibarChrome()
     }
@@ -923,6 +983,10 @@ final class UnifiedToggleInputView: UIView {
             cardTopConstraint.constant = Constants.cardVerticalMargin
             cardBottomConstraint.constant = -Constants.cardVerticalMargin
         }
+        // Start width matches the omnibar so the expanded pose (set inside the animation block) can
+        // animate the card's width rather than snap it.
+        cardLeadingConstraint.constant = Constants.omnibarMatchingHorizontalMargin
+        cardTrailingConstraint.constant = -Constants.omnibarMatchingHorizontalMargin
         cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
         expandedShadowView.updateShadows(omnibarMatchingShadows)
         expandedShadowView.isHidden = false
@@ -948,6 +1012,9 @@ final class UnifiedToggleInputView: UIView {
     func applyToggleRevealChanges() {
         let showToolbar = toggleView.selectedMode == .aiChat
         cardView.layer.cornerRadius = Constants.cardCornerRadiusExpanded
+        // Width animation: this reveal path bypasses `applyCardLayout`, so set the expanded margins here.
+        cardLeadingConstraint.constant = Constants.cardHorizontalMargin
+        cardTrailingConstraint.constant = -cardTrailingMargin
         toggleTopConstraint.constant = Constants.toggleTopPadding
         toggleHeightConstraint.constant = Constants.toggleHeight
         toggleView.alpha = 1
@@ -1338,16 +1405,16 @@ private extension UnifiedToggleInputView {
         // need to match that initial layout exactly. AI-tab callers transition into `.flanked`
         // explicitly; `applyCardLayout(.flanked)` then writes the AI-tab-pose values.
         cardTopConstraint = cardView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.collapsedCardTopMargin)
-        cardLeadingConstraint = cardView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.cardHorizontalMargin)
+        cardLeadingConstraint = cardView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.omnibarMatchingHorizontalMargin)
         // Anchoring to self (not to the flank buttons) keeps voice/fire out of the card's
         // dependency chain. Inner content's intrinsic width pressure can no longer slide
         // voice — Auto Layout has to compress the content instead.
-        let flankedHorizontalInset = Constants.cardHorizontalMargin
+        let flankedHorizontalInset = Constants.flankedCardHorizontalMargin
             + Constants.aiTabCollapsedAccessorySize
             + Constants.aiTabCollapsedAccessorySpacing
         cardLeadingFlankedConstraint = cardView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: flankedHorizontalInset)
         cardLeadingFlankedConstraint.isActive = false
-        cardTrailingConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.cardHorizontalMargin)
+        cardTrailingConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.omnibarMatchingHorizontalMargin)
         cardTrailingFlankedConstraint = cardView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -flankedHorizontalInset)
         cardTrailingFlankedConstraint.isActive = false
         cardBottomConstraint = cardView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.collapsedCardBottomMargin)
@@ -1360,6 +1427,7 @@ private extension UnifiedToggleInputView {
         inlineDismissTopConstraint = inlineDismissButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: Constants.toggleTopPadding)
         inlineDismissCenterYConstraint = inlineDismissButton.centerYAnchor.constraint(equalTo: textEntryView.centerYAnchor)
         inputTopConstraint = textEntryView.topAnchor.constraint(equalTo: toggleView.bottomAnchor, constant: 0)
+        inputBottomConstraint = pageContextChip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor)
         textEntryViewLeadingConstraint = textEntryView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor)
         textEntryViewTrailingConstraint = textEntryView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor)
         toolbarBottomConstraint = toolsToolbar.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
@@ -1387,8 +1455,8 @@ private extension UnifiedToggleInputView {
             textEntryViewLeadingConstraint,
             textEntryViewTrailingConstraint,
 
-            pageContextChip.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
-            pageContextChip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.cardHorizontalMargin),
+            inputBottomConstraint,
+            pageContextChip.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: Constants.pageContextChipLeadingInset),
             pageContextChipHeightConstraint,
 
             attachmentsStrip.topAnchor.constraint(equalTo: pageContextChip.bottomAnchor),
@@ -1402,12 +1470,12 @@ private extension UnifiedToggleInputView {
             toolbarBottomConstraint,
             toolbarHeightConstraint,
 
-            aiTabCollapsedFireButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.cardHorizontalMargin),
+            aiTabCollapsedFireButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.flankedCardHorizontalMargin),
             aiTabCollapsedFireButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
             aiTabCollapsedFireButton.widthAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
             aiTabCollapsedFireButton.heightAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
 
-            aiTabCollapsedMenuButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.cardHorizontalMargin),
+            aiTabCollapsedMenuButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.flankedCardHorizontalMargin),
             aiTabCollapsedMenuButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
             aiTabCollapsedMenuButton.widthAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
             aiTabCollapsedMenuButton.heightAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),

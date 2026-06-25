@@ -105,7 +105,9 @@ protocol AIChatUserScriptHandling: AnyObject {
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
     func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
+    func getAIChatSelectionContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
+    var selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
@@ -118,6 +120,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData)
 
     @MainActor func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -154,6 +157,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
+    public let selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
     public let pageContextConsumedPublisher: AnyPublisher<Void, Never>
     public let pageContextRemovedPublisher: AnyPublisher<Void, Never>
@@ -162,6 +166,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    private let selectionContextSubject = PassthroughSubject<AIChatSelectionContextData, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let pageContextConsumedSubject = PassthroughSubject<Void, Never>()
     private let pageContextRemovedSubject = PassthroughSubject<Void, Never>()
@@ -219,6 +224,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         )
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
+        self.selectionContextPublisher = selectionContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         self.pageContextConsumedPublisher = pageContextConsumedSubject.eraseToAnyPublisher()
         self.pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
@@ -283,6 +289,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         return PageContextResponse(pageContext: pageContext)
+    }
+
+    func getAIChatSelectionContext(params: Any, message: any UserScriptMessage) -> Encodable? {
+        // Mirrors `getAIChatPageContext`: the FE pulls this on init to retrieve selections attached
+        // before it was ready to receive pushes. Returned non-destructively — the FE dedupes by `id`.
+        return SelectionContextResponse(selections: messageHandling.getSelectionContexts())
     }
 
     @MainActor
@@ -371,6 +383,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         pageContextSubject.send(pageContext)
     }
 
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
+        selectionContextSubject.send(selection)
+    }
+
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
         guard let paramsDict = params as? [String: Any] else {
             aiChatUserScriptErrorEventMapper.fire(.reportMetricDecodingFailed(
@@ -398,19 +414,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable? {
-        guard let mainVC = windowControllersManager.lastKeyMainWindowController?.mainViewController else {
+        // Source tabs from all windows (except Fire Windows) relative to the window the picker was
+        // opened in — see `AIChatTabPickerSource`. A Fire Window only sees its own tabs.
+        guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView, in: windowControllersManager) else {
             return AIChatOpenTabsResponse(tabs: [])
         }
-
-        let tabCollection = mainVC.tabCollectionViewModel.tabCollection
-        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []
-        let allTabs = pinnedTabs + tabCollection.tabs
-        let currentTabId = mainVC.tabCollectionViewModel.selectedTabViewModel?.tab.uuid
+        let currentTabId = origin.selectedTabViewModel?.tab.uuid
 
         let faviconManager = NSApp.delegateTyped.faviconManager
-        let tabMetadata: [AIChatTabMetadata] = allTabs.compactMap { tab in
+        let tabMetadata: [AIChatTabMetadata] = AIChatTabPickerSource.attachableTabs(forOrigin: origin, in: windowControllersManager).compactMap { tab in
             guard case .url(let url, _, _) = tab.content else { return nil }
-            guard !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
             let favicon: [AIChatPageContextData.PageContextFavicon]
             if let image = faviconManager.getCachedFavicon(for: url, sizeCategory: .small)?.image,
                let base64 = image.base64PNGDataURL {
@@ -436,22 +449,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatTabContentResponse(pageContext: nil)
         }
 
-        guard let mainVC = windowControllersManager.lastKeyMainWindowController?.mainViewController else {
+        guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView, in: windowControllersManager) else {
             return AIChatTabContentResponse(pageContext: nil)
         }
 
-        let tabCollection = mainVC.tabCollectionViewModel.tabCollection
-        let pinnedTabs = mainVC.tabCollectionViewModel.pinnedTabsCollection?.loadedTabs ?? []
-        let allLoadedTabs = pinnedTabs + tabCollection.loadedTabs
-
-        guard let tab = allLoadedTabs.first(where: { $0.uuid == params.tabId }) else {
-            return AIChatTabContentResponse(pageContext: nil)
-        }
-
-        // The JS-bridge consumer is always a tab-picker flow (sidebar's `@` picker), so the
-        // result is always a tab-picker context — stamp `tabId` so the duck.ai web app sees
-        // the discriminator and treats it as "additional context", not "current page".
-        let extracted = await Self.extractPageContext(from: tab)
+        // Wakes the tab if it's suspended so its content can be extracted instead of being dropped.
+        // The JS-bridge consumer is always a tab-picker flow (sidebar's `@` picker), so the result
+        // is always a tab-picker context — stamp `tabId` so the duck.ai web app sees the
+        // discriminator and treats it as "additional context", not "current page".
+        let extracted = await Self.extractPageContext(forTabId: params.tabId, origin: origin, in: windowControllersManager)
         return AIChatTabContentResponse(pageContext: extracted?.withTabId(params.tabId))
     }
 
@@ -502,6 +508,74 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 fullContentLength: ctx.fullContentLength,
                 attachable: ctx.attachable
             )
+        }
+    }
+
+    /// Resolves `tabId` to a live `Tab` within the origin scope — **waking a suspended/unloaded tab
+    /// if needed** — then extracts its page context. A freshly-woken tab's page isn't loaded yet, so
+    /// we trigger a load and wait (bounded) for navigation to finish before collecting; an
+    /// already-loaded tab (e.g. the current page) extracts immediately with no wait. Returns `nil`
+    /// if the tab can't be found, the wake fails, or the page doesn't load within the budget.
+    /// Never selects or focuses the tab.
+    @MainActor
+    static func extractPageContext(forTabId tabId: String,
+                                   origin: TabCollectionViewModel,
+                                   in windowControllersManager: WindowControllersManagerProtocol,
+                                   navigationTimeout: TimeInterval = 5,
+                                   collectTimeout: TimeInterval = 5) async -> AIChatPageContextData? {
+        guard let resolved = AIChatTabPickerSource.materializeAttachableTab(withId: tabId, forOrigin: origin, in: windowControllersManager) else {
+            return nil
+        }
+
+        if resolved.wasMaterialized {
+            // Mirror `resumeTab(at:)`: a just-materialized tab won't auto-load, so kick a reload and
+            // wait for navigation to finish before collecting — otherwise an early empty JS response
+            // could win the `collectAndWait` race.
+            let didNavigate = await waitForNavigationFinish(tab: resolved.tab, timeout: navigationTimeout) {
+                resolved.tab.reload()
+            }
+            guard didNavigate else { return nil }
+        }
+
+        return await extractPageContext(from: resolved.tab, timeout: collectTimeout)
+    }
+
+    /// Subscribes to the tab's first finished navigation, runs `start()` (e.g. `reload()`), and
+    /// awaits the navigation bounded by `timeout`. Subscribing before `start()` avoids missing a
+    /// fast-finishing navigation. Returns `true` if navigation finished, `false` on timeout.
+    ///
+    /// The navigation signal is bridged through an `AsyncStream` (not `withCheckedContinuation`) so
+    /// that cancelling the task group on timeout actually tears the waiter down — a bare
+    /// continuation isn't cancellation-aware, so the timeout loser would otherwise hang the group
+    /// forever and leak the continuation. Mirrors `PageContextUserScript.collectAndWait`.
+    @MainActor
+    private static func waitForNavigationFinish(tab: Tab,
+                                                timeout: TimeInterval,
+                                                start: @escaping @MainActor () -> Void) async -> Bool {
+        let navigationFinished = AsyncStream<Void> { continuation in
+            var cancellable: AnyCancellable?
+            cancellable = tab.webViewDidFinishNavigationPublisher
+                .first()
+                .sink { _ in
+                    continuation.yield(())
+                    continuation.finish()
+                }
+            continuation.onTermination = { _ in cancellable?.cancel() }
+            start()
+        }
+
+        return await withTaskGroup(of: Bool.self) { group in
+            group.addTask {
+                for await _ in navigationFinished { return true }
+                return false
+            }
+            group.addTask {
+                try? await Task.sleep(interval: timeout)
+                return false
+            }
+            let result = await group.next() ?? false
+            group.cancelAll()
+            return result
         }
     }
 
@@ -823,6 +897,8 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
+            // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
+            messageHandling.clearSelectionContexts()
             pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation, frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
@@ -831,6 +907,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
+            messageHandling.clearSelectionContexts()
             pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat, frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)

@@ -833,19 +833,19 @@ final class SyncDialogControllerTests: XCTestCase {
     func testControllerWillBeginTransmittingRecoveryKey_presentsPrepareDialog() async {
         await syncDialogController.controllerWillBeginTransmittingRecoveryKey()
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
     func testControllerDidReceiveRecoveryKey_presentsPrepareDialog() {
         syncDialogController.controllerDidReceiveRecoveryKey()
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
     func testControllerDidRecognizeCode_presentsPrepareDialog() async {
-        await syncDialogController.controllerDidRecognizeCode(setupSource: .exchange, codeSource: .pastedCode)
+        await syncDialogController.controllerDidRecognizeCode(setupSource: .exchange, codeSource: .pastedCode, codeVersion: .v1)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
     func testControllerDidCreateSyncAccount_presentsSaveRecoveryCodeDialog() {
@@ -939,12 +939,12 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(dialog.errorDescription, "\(SyncErrorType.unableToSyncToOtherDevice.description)\n\(detail)")
     }
 
-    func testControllerDidError_pollingTimeout_endsFlow() async {
+    func testControllerDidError_pollingTimeout_presentsUnableToSyncWithDeviceError() async {
         managementDialogModel.currentDialog = .syncWithServer
 
         await syncDialogController.controllerDidError(.pollingForRecoveryKeyTimedOut, underlyingError: nil, setupRole: .sharer)
 
-        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToSyncToOtherDevice)
     }
 
     func testDidEndFlow_notifiesDelegate() async {

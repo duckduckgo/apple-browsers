@@ -37,7 +37,7 @@ struct AutofillExtensionSettingsView: View {
                         HStack {
                             Text(UserText.autofillExtensionTurnOffButtonTitle)
                                 .daxBodyRegular()
-                                .foregroundStyle(Color(designSystemColor: .accent))
+                                .foregroundStyle(Color(designSystemColor: .accentPrimary))
                             Spacer()
                             Image(uiImage: DesignSystemImages.Glyphs.Size16.openIn)
                                 .foregroundStyle(Color(designSystemColor: .iconsTertiary))
@@ -49,7 +49,7 @@ struct AutofillExtensionSettingsView: View {
                     } label: {
                         Text(UserText.autofillExtensionTurnOnButtonTitle)
                             .daxBodyRegular()
-                            .foregroundStyle(Color(designSystemColor: .accent))
+                            .foregroundStyle(Color(designSystemColor: .accentPrimary))
                     }
                 }
 

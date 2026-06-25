@@ -542,9 +542,11 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEventsHandler: debugEvents)
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: self.wideEvent,
+                                                                                    isFeatureEnabled: { true })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStore,
                                             authService: authService,
-                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: { true }))
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
 
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)
@@ -556,7 +558,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                pixelHandler: pixelHandler,
                                                                initForPurchase: false,
                                                                wideEvent: self.wideEvent,
-                                                               isAuthV2WideEventEnabled: { return subscriptionEnvironment.serviceEnvironment == .production })
+                                                               isAuthV2WideEventEnabled: { return subscriptionEnvironment.serviceEnvironment == .production },
+                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
             Logger.networkProtection.log("Subscription Entitlements check...")

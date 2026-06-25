@@ -15,14 +15,12 @@
 | ⑥ App Icon Picker | reach ⑤/⑤b on iPhone, or ④ directly on iPad |
 | ⑦ Address Bar Position | reach ⑥ on **iPhone** + tap **Next** (iPad skips this) |
 | ⑧ Search Experience | reach ⑦ on iPhone + tap **Next** |
-| ⑨ Duck.ai Query Experiment | reach ⑧ + choose **AI Chat** + FF `onboardingDuckAIQueryExperiment = ON` + cohort `treatmentA` or `treatmentB` |
+| ⑨ Duck.ai Query Selection | reach ⑧ + choose **AI Chat** |
 
 ### Practical debug recipe
 1. Reset onboarding → Debug menu → "Reset Onboarding" (clears hasSeenOnboarding and the resume store).
 2. Rebrand flag → Debug menu → Feature Flags → onboardingRebranding = ON.
 3. User type → Debug menu → "Onboarding User Type" → .newUser or .returningUser (only works on DEBUG/ALPHA builds; see OnboardingManager.swift:80-86).
-4. For the Duck.ai experiment page (⑨) → also flip onboardingDuckAIQueryExperiment ON and force cohort treatmentA/treatmentB via the experiment override.
-5. Cold launch and walk through.
+4. Cold launch and walk through.
 
 Skip ahead via resume store: OnboardingResumeStep (OnboardingManager.swift:158) is in UserDefaults. Setting resumeStep = .searchExperienceSelection and relaunching jumps you straight to ⑧, etc. The Debug menu may already expose this — search DebugScreens for resume.
-

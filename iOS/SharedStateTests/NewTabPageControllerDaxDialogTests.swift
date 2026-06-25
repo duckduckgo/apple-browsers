@@ -42,7 +42,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
     var variantManager: CapturingVariantManager!
     var dialogFactory: CapturingNewTabDaxDialogProvider!
-    var specProvider: MockNewTabDialogSpecProvider!
+    var specProvider: MockDaxDialogsManager!
     var flowProvider: MockOnboardingFlowProvider!
     var tutorialSettings: MockTutorialSettings!
     var hvc: NewTabPageViewController!
@@ -50,7 +50,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     override func setUpWithError() throws {
         variantManager = CapturingVariantManager()
         dialogFactory = CapturingNewTabDaxDialogProvider()
-        specProvider = MockNewTabDialogSpecProvider()
+        specProvider = MockDaxDialogsManager()
         flowProvider = MockOnboardingFlowProvider()
         tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
 
@@ -222,38 +222,8 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
         return EmptyView()
     }
 
-    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+    func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         AnyView(EmptyView())
-    }
-}
-
-
-class MockNewTabDialogSpecProvider: NewTabDialogSpecProvider, SubscriptionPromotionCoordinating {
-    var nextHomeScreenMessageCalled = false
-    var nextHomeScreenMessageNewCalled = false
-    var dismissCalled = false
-    var setFinalOnboardingDialogSeenCalled = false
-    var specToReturn: DaxDialogs.HomeScreenSpec?
-    var isShowingSubscriptionPromotion = false
-    var subscriptionPromotionDialogSeen = false
-    var subscriptionPromotionPending = false
-
-    func nextHomeScreenMessage() -> DaxDialogs.HomeScreenSpec? {
-        nextHomeScreenMessageCalled = true
-        return specToReturn
-    }
-
-    func nextHomeScreenMessageNew() -> DaxDialogs.HomeScreenSpec? {
-        nextHomeScreenMessageNewCalled = true
-        return specToReturn
-    }
-
-    func setFinalOnboardingDialogSeen() {
-        setFinalOnboardingDialogSeenCalled = true
-    }
-
-    func dismiss() {
-        dismissCalled = true
     }
 }
 

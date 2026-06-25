@@ -68,6 +68,7 @@ private final class MockUnifiedInputContentContainerDelegate: UnifiedInputConten
     func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion) {}
     func unifiedInputEditingStateDidRequestTextUpdate(_ text: String) {}
     func unifiedInputEditingStateDidSelectChatHistory(url: URL) {}
+    func unifiedInputEditingStateDidSelectViewAllChats() {}
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab) {}
     func unifiedInputEditingStateDidRequestTabSwitcher() {}
     func unifiedInputEditingStateDidRequestTryFireMode() {}

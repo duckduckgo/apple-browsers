@@ -30,10 +30,44 @@ extension TabViewController {
         buttonConfiguration.background.cornerRadius = 8
         buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var transformed = incoming
-            transformed.font = UIFont.daxSubheadSemibold()
+            transformed.font = UIFont.daxButton()
+            transformed.kern = -0.23
             return transformed
         }
         errorActionButton.configuration = buttonConfiguration
+        errorActionButton.configurationUpdateHandler = { button in
+            guard var configuration = button.configuration else { return }
+            if !button.isEnabled {
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryTextDisabled)
+                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDisabled)
+            } else if button.isHighlighted {
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
+                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryPressed)
+            } else {
+                configuration.baseForegroundColor = UIColor(designSystemColor: .buttonsPrimaryText)
+                configuration.baseBackgroundColor = UIColor(designSystemColor: .buttonsPrimaryDefault)
+            }
+            button.configuration = configuration
+        }
+    }
+
+    func setupErrorReportBrokenSiteButton() {
+        var buttonConfiguration = UIButton.Configuration.plain()
+        buttonConfiguration.baseForegroundColor = UIColor(designSystemColor: .accentTextPrimary)
+        buttonConfiguration.contentInsets = .zero
+        buttonConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var transformed = incoming
+            transformed.font = UIFont.daxBodyRegular()
+            return transformed
+        }
+        errorReportBrokenSiteButton.configuration = buttonConfiguration
+        errorReportBrokenSiteButton.contentHorizontalAlignment = .center
+        errorReportBrokenSiteButton.configurationUpdateHandler = { button in
+            guard var configuration = button.configuration else { return }
+            configuration.baseForegroundColor = UIColor(designSystemColor: .accentTextPrimary).withAlphaComponent(button.isHighlighted ? 0.7 : 1)
+            configuration.background.backgroundColor = .clear
+            button.configuration = configuration
+        }
     }
 
     func configureRootView() {
@@ -86,6 +120,10 @@ extension TabViewController {
 
         jsAlertContainerView = UIView()
         jsAlertContainerView.translatesAutoresizingMaskIntoConstraints = false
+        // Hidden until a JS alert is presented. This fills rootView and sits above the web view,
+        // so leaving it visible would swallow all touches/scrolls. Previously JSAlertController's
+        // viewDidAppear hid it during eager setup; now that setup is deferred, hide it explicitly.
+        jsAlertContainerView.isHidden = true
         rootView.addSubview(jsAlertContainerView)
         NSLayoutConstraint.activate([
             jsAlertContainerView.topAnchor.constraint(equalTo: rootView.topAnchor),
@@ -112,7 +150,7 @@ extension TabViewController {
         errorContentStack.translatesAutoresizingMaskIntoConstraints = false
         error.addSubview(errorContentStack)
 
-        errorInfoImage = UIImageView(image: UIImage(resource: .errorInfoUniversal))
+        errorInfoImage = UIImageView(image: UIImage(rebrandable: "Dax-Accident"))
         errorInfoImage.contentMode = .scaleAspectFit
         errorInfoImage.translatesAutoresizingMaskIntoConstraints = false
 
@@ -140,11 +178,16 @@ extension TabViewController {
         labelsStack.addArrangedSubview(errorMessage)
         errorContentStack.addArrangedSubview(errorInfoImage)
         errorContentStack.addArrangedSubview(labelsStack)
+        errorContentStack.addArrangedSubview(errorReportBrokenSiteButton)
         errorContentStack.addArrangedSubview(errorActionButton)
+        errorContentStack.setCustomSpacing(8, after: labelsStack)
+        errorContentStack.setCustomSpacing(32, after: errorReportBrokenSiteButton)
 
         let safeArea = rootView.safeAreaLayoutGuide
         let minHeightConstraint = error.heightAnchor.constraint(equalToConstant: 400)
         minHeightConstraint.priority = .defaultLow
+        let errorActionButtonFillWidthConstraint = errorActionButton.widthAnchor.constraint(equalTo: error.widthAnchor, constant: -64)
+        errorActionButtonFillWidthConstraint.priority = .defaultHigh
         NSLayoutConstraint.activate([
             error.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
             error.centerYAnchor.constraint(equalTo: safeArea.centerYAnchor),
@@ -159,12 +202,26 @@ extension TabViewController {
             errorContentStack.bottomAnchor.constraint(lessThanOrEqualTo: error.bottomAnchor),
 
             labelsStack.widthAnchor.constraint(lessThanOrEqualToConstant: 400),
-            errorActionButton.leadingAnchor.constraint(greaterThanOrEqualTo: error.leadingAnchor, constant: 24),
-            errorActionButton.trailingAnchor.constraint(lessThanOrEqualTo: error.trailingAnchor, constant: -24)
+            errorActionButtonFillWidthConstraint,
+            errorActionButton.widthAnchor.constraint(lessThanOrEqualToConstant: 360),
+            errorActionButton.heightAnchor.constraint(equalToConstant: 50),
+            errorActionButton.centerXAnchor.constraint(equalTo: errorContentStack.centerXAnchor),
+            errorActionButton.leadingAnchor.constraint(greaterThanOrEqualTo: error.leadingAnchor, constant: 32),
+            errorActionButton.trailingAnchor.constraint(lessThanOrEqualTo: error.trailingAnchor, constant: -32),
+            errorReportBrokenSiteButton.centerXAnchor.constraint(equalTo: errorContentStack.centerXAnchor)
         ])
     }
 
-    func setupJSAlertController() {
+    /// Lazily instantiates the JSAlertController storyboard on first use.
+    ///
+    /// This is deliberately not called from `viewDidLoad`: the storyboard contains a
+    /// `UIVisualEffectView`/`UIBlurEffect` whose first decode triggers a synchronous
+    /// CoreMaterial recipe-bundle scan. Doing that for every tab on the cold-launch path
+    /// could exhaust the scene-create CPU budget and trip the watchdog (SIGKILL 0x8BADF00D).
+    /// Deferring it to the first presented JS alert keeps that work off the launch path.
+    func setupJSAlertControllerIfNeeded() {
+        guard jsAlertController == nil else { return }
+
         let storyboard = UIStoryboard(name: "JSAlertController", bundle: nil)
         guard let controller = storyboard.instantiateInitialViewController() as? JSAlertController else {
             fatalError("Failed to instantiate JSAlertController")

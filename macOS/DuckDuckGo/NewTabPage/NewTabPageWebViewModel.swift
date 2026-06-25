@@ -97,7 +97,7 @@ extension NewTabPageWebViewModel: WKUIDelegate {
         openPanel.canChooseFiles = true
         openPanel.canChooseDirectories = parameters.allowsDirectories
         openPanel.allowsMultipleSelection = true
-        openPanel.allowedContentTypes = [.jpeg, .png, .webP]
+        openPanel.allowedContentTypes = [.jpeg, .png, .webP, .pdf]
         openPanel.beginSheetModal(for: window) { response in
             completionHandler(response == .OK ? openPanel.urls : nil)
         }

@@ -61,6 +61,8 @@ protocol ContextualOnboardingLogic {
 
     func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType)
 
+    var tryAnonymousSearchMessageSeen: Bool { get }
+
     func setTryAnonymousSearchMessageSeen()
     func setSearchMessageSeen()
 
@@ -70,6 +72,8 @@ protocol ContextualOnboardingLogic {
     func setFireEducationMessageSeen()
     func fireButtonPulseStarted()
     func fireButtonPulseCancelled()
+
+    func setDialogsPriorFinalSeen()
 
     func setFinalOnboardingDialogSeen()
 
@@ -225,9 +229,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
                                        message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
 
         static let fireDuckAIOnboarding = BrowsingSpec(type: .fire(.duckAIOnboarding),
-                                                       pixelName: .onboardingDuckAIExperimentFireDialogShownUnique,
-                                                       title: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingTitle,
-                                                       message: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingMessage,
+                                                       pixelName: .onboardingDuckAIFireDialogShownUnique,
+                                                       title: UserText.Onboarding.DuckAIQuery.fireOnboardingTitle,
+                                                       message: UserText.Onboarding.DuckAIQuery.fireOnboardingMessage,
                                                        allowsManualDismiss: false)
 
         static let final = BrowsingSpec(type: .final,
@@ -295,6 +299,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
     private let aiChatSettings: AIChatSettingsProvider
+    private let onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
 
     public let isDismissedPublisher: PassthroughSubject<Bool, Never>
 
@@ -304,7 +309,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
          variantManager: VariantManager = DefaultVariantManager(),
          launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
          onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
-         aiChatSettings: AIChatSettingsProvider = AIChatSettings()
+         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
@@ -312,6 +318,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         self.launchOptionsHandler = launchOptionsHandler
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
         self.aiChatSettings = aiChatSettings
+        self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         self.isDismissedPublisher = PassthroughSubject<Bool, Never>()
     }
 
@@ -507,6 +514,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         settings.tryAnonymousSearchShown = true
     }
 
+    var tryAnonymousSearchMessageSeen: Bool {
+        settings.tryAnonymousSearchShown
+    }
+
     func setTryVisitSiteMessageSeen() {
         settings.tryVisitASiteShown = true
     }
@@ -532,6 +543,18 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     func setDaxDialogDismiss() {
         clearOnboardingBrowsingData()
+    }
+
+    func setDialogsPriorFinalSeen() {
+        settings.tryAnonymousSearchShown = true
+        settings.tryVisitASiteShown = true
+        settings.browsingAfterSearchShown = true
+        settings.browsingWithTrackersShown = true
+        settings.browsingWithoutTrackersShown = true
+        settings.browsingMajorTrackingSiteShown = true
+        settings.fireButtonEducationShownOrExpired = true
+        settings.fireMessageExperimentShown = true
+        settings.privacyButtonPulseShown = true
     }
 
     func setFinalOnboardingDialogSeen() {

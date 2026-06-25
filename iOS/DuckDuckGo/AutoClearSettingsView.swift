@@ -127,7 +127,7 @@ private struct TimingOptionRow: View {
                 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundColor(Color(designSystemColor: .accent))
+                        .foregroundColor(Color(designSystemColor: .accentPrimary))
                         .accessibilityHidden(true)
                 }
             }

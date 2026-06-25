@@ -101,55 +101,29 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
-    // MARK: - NTPAfterIdleEnabled
+    // MARK: - NTPAfterIdleState
 
-    func testWhenNTPAfterIdleEnabledMatchesThenReturnMatch() throws {
-        setUpUserAttributeMatcher(isNTPAfterIdleEnabled: true)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleEnabledMatchingAttribute(value: true, fallback: nil)),
+    func testWhenNTPAfterIdleStateMatchesSingleValueThenReturnMatch() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardShown")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown"], fallback: nil)),
                        .match)
     }
 
-    func testWhenNTPAfterIdleEnabledDoesNotMatchThenReturnFail() throws {
-        setUpUserAttributeMatcher(isNTPAfterIdleEnabled: false)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleEnabledMatchingAttribute(value: true, fallback: nil)),
+    func testWhenNTPAfterIdleStateDoesNotMatchSingleValueThenReturnFail() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardHidden")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown"], fallback: nil)),
                        .fail)
     }
 
-    func testWhenNTPAfterIdleDisabledMatchesThenReturnMatch() throws {
-        setUpUserAttributeMatcher(isNTPAfterIdleEnabled: false)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleEnabledMatchingAttribute(value: false, fallback: nil)),
+    func testWhenNTPAfterIdleStateMatchesAnyOfMultipleValuesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardHidden")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown", "eligibleCardHidden"], fallback: nil)),
                        .match)
     }
 
-    func testWhenNTPAfterIdleDisabledDoesNotMatchThenReturnFail() throws {
-        setUpUserAttributeMatcher(isNTPAfterIdleEnabled: true)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleEnabledMatchingAttribute(value: false, fallback: nil)),
-                       .fail)
-    }
-
-    // MARK: - EscapeHatchVisible
-
-    func testWhenEscapeHatchVisibleMatchesThenReturnMatch() throws {
-        setUpUserAttributeMatcher(isEscapeHatchVisible: true)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: EscapeHatchVisibleMatchingAttribute(value: true, fallback: nil)),
-                       .match)
-    }
-
-    func testWhenEscapeHatchVisibleDoesNotMatchThenReturnFail() throws {
-        setUpUserAttributeMatcher(isEscapeHatchVisible: false)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: EscapeHatchVisibleMatchingAttribute(value: true, fallback: nil)),
-                       .fail)
-    }
-
-    func testWhenEscapeHatchHiddenMatchesThenReturnMatch() throws {
-        setUpUserAttributeMatcher(isEscapeHatchVisible: false)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: EscapeHatchVisibleMatchingAttribute(value: false, fallback: nil)),
-                       .match)
-    }
-
-    func testWhenEscapeHatchHiddenDoesNotMatchThenReturnFail() throws {
-        setUpUserAttributeMatcher(isEscapeHatchVisible: true)
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: EscapeHatchVisibleMatchingAttribute(value: false, fallback: nil)),
+    func testWhenNTPAfterIdleStateNotEligibleDoesNotMatchEligibleValuesThenReturnFail() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "notEligible")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown", "eligibleCardHidden"], fallback: nil)),
                        .fail)
     }
 
@@ -245,8 +219,7 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                                            isFreemiumPIRActivated: Bool = false,
                                            freemiumPIRFirstScanResult: String? = nil,
                                            isCurrentPIRUser: Bool = false,
-                                           isNTPAfterIdleEnabled: Bool = false,
-                                           isEscapeHatchVisible: Bool = false) {
+                                           ntpAfterIdleState: String = "") {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             featureDiscovery: mockFeatureDiscovery,
@@ -277,8 +250,7 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             isFreemiumPIRActivated: isFreemiumPIRActivated,
             freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
             isCurrentPIRUser: isCurrentPIRUser,
-            isNTPAfterIdleEnabled: isNTPAfterIdleEnabled,
-            isEscapeHatchVisible: isEscapeHatchVisible
+            ntpAfterIdleState: ntpAfterIdleState
         )
     }
 }

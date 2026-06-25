@@ -42,8 +42,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
     private let isFreemiumPIRActivated: Bool
     private let freemiumPIRFirstScanResult: String?
     private let isCurrentPIRUser: Bool
-    private let isNTPAfterIdleEnabled: Bool
-    private let isEscapeHatchVisible: Bool
+    private let ntpAfterIdleState: String
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
@@ -76,8 +75,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 isFreemiumPIRActivated: Bool = false,
                 freemiumPIRFirstScanResult: String? = nil,
                 isCurrentPIRUser: Bool = false,
-                isNTPAfterIdleEnabled: Bool = false,
-                isEscapeHatchVisible: Bool = false
+                ntpAfterIdleState: String = ""
     ) {
         self.isWidgetInstalled = isWidgetInstalled
         self.isSyncEnabled = isSyncEnabled
@@ -86,8 +84,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
         self.isFreemiumPIRActivated = isFreemiumPIRActivated
         self.freemiumPIRFirstScanResult = freemiumPIRFirstScanResult
         self.isCurrentPIRUser = isCurrentPIRUser
-        self.isNTPAfterIdleEnabled = isNTPAfterIdleEnabled
-        self.isEscapeHatchVisible = isEscapeHatchVisible
+        self.ntpAfterIdleState = ntpAfterIdleState
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
@@ -121,10 +118,8 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: isWidgetInstalled)
         case let matchingAttribute as SyncEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: isSyncEnabled)
-        case let matchingAttribute as NTPAfterIdleEnabledMatchingAttribute:
-            return matchingAttribute.evaluate(for: isNTPAfterIdleEnabled)
-        case let matchingAttribute as EscapeHatchVisibleMatchingAttribute:
-            return matchingAttribute.evaluate(for: isEscapeHatchVisible)
+        case let matchingAttribute as NTPAfterIdleStateMatchingAttribute:
+            return matchingAttribute.evaluate(for: ntpAfterIdleState)
         case let matchingAttribute as WinBackOfferUrgencyMatchingAttribute:
             return matchingAttribute.evaluate(for: shouldShowWinBackOfferUrgencyMessage)
         case let matchingAttribute as FreemiumPIREligibleMatchingAttribute:

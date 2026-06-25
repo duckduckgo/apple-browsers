@@ -109,10 +109,10 @@ class FromWebViewTransition: WebViewTransition {
 
         // Duck.ai tabs land on a rich card, not a screenshot. Crossfade a snapshot of the
         // destination cell over the webview preview so the shrink ends on matching content
-        // instead of popping from screenshot to card. Non-AI tabs keep the screenshot-only
-        // shrink below. nil snapshot (cell not laid out) falls back to that path too.
+        // instead of popping from screenshot to card. Gated on the rich-card flag: with it off
+        // the AI cell is a screenshot, so there's nothing to crossfade to
         var cellSnapshot: UIView?
-        if tab.isAITab {
+        if tab.isAITab, mainViewController.featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) {
             tabSwitcherViewController.collectionView.layoutIfNeeded()
             if let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
                 // Force the .image thumbnail in synchronously — its async load won't finish

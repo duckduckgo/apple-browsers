@@ -28,7 +28,7 @@
                     },
                     "is_setup": {
                         "type": "string",
-                        "description": "Whether the VPN was already set up (configuration installed) when the connection began. `unknown` if it could not be determined.",
+                        "description": "Whether this connection is part of first-time VPN setup. `yes` = the VPN was not yet configured and this connection triggered setup (iOS: no tunnel configuration existed yet; macOS: onboarding not yet complete); `no` = the VPN was already set up before this connection began; `unknown` if it could not be determined.",
                         "enum": ["yes", "no", "unknown"]
                     },
                     "onboarding_status": {

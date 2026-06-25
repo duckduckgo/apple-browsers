@@ -21,6 +21,34 @@ import SwiftUI
 import Core
 import Onboarding
 
+// MARK: - ContextualOnboardingEventDelegate
+
+/// A delegate to inform about specific events happening during the contextual onboarding.
+protocol ContextualOnboardingEventDelegate: AnyObject {
+    func didAcknowledgeContextualOnboardingSearch()
+    /// Inform the delegate that a dialog for blocked trackers have been shown to the user.
+    func didShowContextualOnboardingTrackersDialog()
+    /// Inform the delegate that the user did acknowledge the dialog for blocked trackers.
+    func didAcknowledgeContextualOnboardingTrackersDialog()
+    /// Inform the delegate that the user dismissed the contextual dialog.
+    func didTapDismissContextualOnboardingAction()
+    /// Inform the delegate that the user advanced past the visit-site dialog by picking a
+    /// suggestion. Unlike `didTapDismissContextualOnboardingAction`, this only collapses the
+    /// dialog UI — it does **not** reset `lastShownDaxDialogType` / `lastVisitedOnboardingWebsiteURL`
+    /// — so the natural next contextual spec (e.g. trackers) can still surface once the chosen
+    /// page finishes loading.
+    func didNavigateAwayFromContextualOnboardingDialog()
+}
+
+// Composed delegate for Contextual Onboarding to decorate events also needed in New Tab Page.
+typealias ContextualOnboardingDelegate = OnboardingNavigationDelegate & ContextualOnboardingEventDelegate
+
+// MARK: - Contextual Dialogs Factory
+
+protocol ContextualDaxDialogsFactory {
+    func makeView(for spec: DaxDialogs.BrowsingSpec, delegate: ContextualOnboardingDelegate, onSizeUpdate: @escaping () -> Void) -> UIHostingController<AnyView>
+}
+
 final class RebrandedContextualDaxDialogFactory: ContextualDaxDialogsFactory {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let contextualOnboardingSettings: ContextualOnboardingSettings
@@ -364,6 +392,34 @@ private extension RebrandedContextualDaxDialogFactory {
             // Fallback to plain text if parsing fails
             return AttributedString(string)
         }
+    }
+
+}
+
+// MARK: - Contextual Onboarding Settings
+
+protocol ContextualOnboardingSettings {
+    var userHasSeenTrackersDialog: Bool { get }
+    var userHasSeenFireDialog: Bool { get }
+    var userHasSeenTryVisitSiteDialog: Bool { get }
+    /// The current phase of the Duck.ai chat-first onboarding path.
+    var chatPathPhase: DaxDialogs.ChatPathPhase { get }
+}
+
+extension DefaultDaxDialogsSettings: ContextualOnboardingSettings {
+
+    var userHasSeenTrackersDialog: Bool {
+        browsingWithTrackersShown ||
+        browsingWithoutTrackersShown ||
+        browsingMajorTrackingSiteShown
+    }
+
+    var userHasSeenFireDialog: Bool {
+        fireMessageExperimentShown
+    }
+
+    var userHasSeenTryVisitSiteDialog: Bool {
+        tryVisitASiteShown
     }
 
 }

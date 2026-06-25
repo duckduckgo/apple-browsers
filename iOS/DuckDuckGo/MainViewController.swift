@@ -614,12 +614,12 @@ class MainViewController: UIViewController {
 
     private var expandedOmniBarDismissTapGesture: UITapGestureRecognizer?
 
-    lazy var newTabDaxDialogFactory: NewTabDaxDialogsProvider = {
-        NewTabDaxDialogsProvider(
-            featureFlagger: featureFlagger,
+    lazy var newTabDaxDialogFactory: RebrandedNewTabDaxDialogFactory = {
+        RebrandedNewTabDaxDialogFactory(
             delegate: self,
             daxDialogsFlowCoordinator: daxDialogsManager,
-            onboardingPixelReporter: contextualOnboardingPixelReporter)
+            onboardingPixelReporter: contextualOnboardingPixelReporter
+        )
     }()
 
     lazy var newTabPageDependencies: SuggestionTrayViewController.NewTabPageDependencies = {
@@ -1828,7 +1828,7 @@ class MainViewController: UIViewController {
             tabManager.save()
         }
 
-        let newTabDaxDialogFactory = NewTabDaxDialogsProvider(featureFlagger: featureFlagger, delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let newTabDaxDialogFactory = RebrandedNewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
         let controller = NewTabPageViewController(isFocussedState: false,

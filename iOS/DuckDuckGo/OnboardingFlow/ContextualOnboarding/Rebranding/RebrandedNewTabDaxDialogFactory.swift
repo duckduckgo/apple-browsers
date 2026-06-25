@@ -25,6 +25,32 @@ import Common
 import FoundationExtensions
 import PrivacyConfig
 
+typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & SubscriptionPromotionCoordinating
+
+protocol NewTabDaxDialogProviding {
+    associatedtype DaxDialog: View
+
+    /// Creates a Dax dialog for a given home screen specification.
+    ///
+    /// - Parameters:
+    ///   - homeDialog: The specific `DaxDialogs.HomeScreenSpec` configuration that determines the dialog's content.
+    ///   - onCompletion: A closure that is executed when the dialog is dismissed when the onboarding is completed.
+    ///     - `activateSearch`: A Boolean value indicating whether the search should be activated after dismissal (i.e if the omnibar should become the first responder)
+    ///   - onManualDismiss: A closure that is executed when the dialog is dismissed manually by the user.
+    ///
+    /// - Returns: A view conforming to `DaxDialog` that represents the Dax dialog.
+    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> DaxDialog
+
+    /// Creates a completion dialog shown after Duck.ai fire onboarding.
+    ///
+    /// - Parameters:
+    ///   - message: Completion message to display.
+    ///   - onDismiss: Closure called when the dialog is dismissed.
+    ///
+    /// - Returns: Type-erased completion dialog view.
+    func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView
+}
+
 final class RebrandedNewTabDaxDialogFactory: NewTabDaxDialogProviding {
     private var delegate: OnboardingNavigationDelegate?
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator

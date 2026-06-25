@@ -445,7 +445,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
 // MARK: - iPad Duck.ai Mode Toggle
 //
-// On iPad, the address bar has a search/duck.ai toggle (gated by the iPadAIToggle feature flag).
+// On iPad, the address bar has a search/duck.ai toggle.
 // When the user switches between modes, the text must transfer seamlessly between the UITextField
 // (search mode) and the UITextView (duck.ai expanded mode) while keeping the keyboard visible.
 

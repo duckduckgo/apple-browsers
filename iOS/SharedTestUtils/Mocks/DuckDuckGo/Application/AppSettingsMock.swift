@@ -20,6 +20,7 @@
 import Bookmarks
 import Foundation
 import Onboarding
+import WebExtensions
 @testable import DuckDuckGo
 
 class AppSettingsMock: AppSettings {
@@ -87,7 +88,12 @@ class AppSettingsMock: AppSettings {
         widgetInstalled
     }
     
-    var autoconsentEnabled = true
+    var cookiePopupPreference: CookiePopupPreference = .default
+
+    var autoconsentEnabled: Bool {
+        get { cookiePopupPreference.isBlockingEnabled }
+        set { cookiePopupPreference = newValue ? .default : .off }
+    }
 
     var crashCollectionOptInStatus: CrashCollectionOptInStatus = .undetermined
     var crashCollectionShouldRevertOptedInStatusTrigger: Int = 0

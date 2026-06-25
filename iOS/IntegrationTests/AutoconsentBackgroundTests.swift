@@ -18,6 +18,7 @@
 //
 
 import Common
+import WebExtensions
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import WebKit
@@ -178,5 +179,5 @@ class MockEmbeddedDataProvider: EmbeddedDataProvider {
 }
 
 class MockAutoconsentPreferences: AutoconsentPreferences {
-    var autoconsentEnabled: Bool = true
+    var cookiePopupPreference: CookiePopupPreference = .default
 }

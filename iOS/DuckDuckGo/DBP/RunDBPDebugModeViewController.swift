@@ -375,9 +375,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         return ContentBlocking.shared.privacyConfigurationManager
     }
 
-    private func makeContentBlocking() -> DBPWebViewContentBlocking? {
-        guard featureFlagger.isContentBlockingOn else { return nil }
-        return DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
+    private func makeContentBlocking() -> DBPWebViewContentBlocking {
+        DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
     }
 
     private let contentScopeProperties: ContentScopeProperties

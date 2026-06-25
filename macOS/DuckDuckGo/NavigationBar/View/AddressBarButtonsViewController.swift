@@ -118,6 +118,9 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private var popupBlockedPopover: PopupBlockedPopover?
     private var systemDisabledInfoPopover: NSPopover?
+    /// Source of the most recent system-disabled popover, so the shield-tap reopen path
+    /// re-presents with matching copy (voice chat vs dictation) instead of the default.
+    private var lastSystemDisabledMicPromptSource: DuckAiMicPermissionSource = .voiceChat
 
     private func popupBlockedPopoverCreatingIfNeeded() -> PopupBlockedPopover {
         return popupBlockedPopover ?? {
@@ -662,6 +665,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
         let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
         let source = (notification.userInfo?[NotificationCenterPermissionCenterPresenter.sourceUserInfoKey] as? DuckAiMicPermissionSource) ?? .voiceChat
+        lastSystemDisabledMicPromptSource = source
         showSystemDisabledInfoPopover(for: domain, permissionType: .microphone, micPromptSource: source)
         // The micOsDenied pixel belongs to the voice-chat flow; don't fire it for dictation
         // (which currently has no dedicated telemetry).
@@ -2021,7 +2025,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 existing.close()
                 systemDisabledInfoPopover = nil
             } else {
-                showSystemDisabledInfoPopover(for: domain, permissionType: .microphone)
+                showSystemDisabledInfoPopover(for: domain, permissionType: .microphone, micPromptSource: lastSystemDisabledMicPromptSource)
             }
             return
         }

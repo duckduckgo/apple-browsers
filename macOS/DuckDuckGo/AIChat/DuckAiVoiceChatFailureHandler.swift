@@ -79,11 +79,19 @@ final class DuckAiVoiceChatFailureHandler: DuckAiVoiceChatFailureHandling {
 
     @MainActor
     private func handleStartFailed(reason: String, source: DuckAiMicPermissionSource, sourceWebView: WKWebView?) {
-        guard reason == Self.notAllowedErrorReason else {
+        // `aiChatVoiceChatStartFailed` is voice-chat-only telemetry; dictation has no dedicated
+        // pixel yet, so don't count its failures here (mirrors the `.micOsDenied` decision in
+        // `AddressBarButtonsViewController`).
+        func fireOtherFailureIfNeeded() {
+            guard source == .voiceChat else { return }
             pixelFiring?.fire(
                 AIChatPixel.aiChatVoiceChatStartFailed(reason: .other),
                 frequency: .dailyAndCount
             )
+        }
+
+        guard reason == Self.notAllowedErrorReason else {
+            fireOtherFailureIfNeeded()
             return
         }
 
@@ -96,10 +104,7 @@ final class DuckAiVoiceChatFailureHandler: DuckAiVoiceChatFailureHandling {
         }()
 
         guard isOSMicrophoneDenied else {
-            pixelFiring?.fire(
-                AIChatPixel.aiChatVoiceChatStartFailed(reason: .other),
-                frequency: .dailyAndCount
-            )
+            fireOtherFailureIfNeeded()
             return
         }
 

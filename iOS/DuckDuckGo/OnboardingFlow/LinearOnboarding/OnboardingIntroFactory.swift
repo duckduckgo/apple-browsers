@@ -62,10 +62,7 @@ enum OnboardingIntroFactory {
                 viewModel: viewModel
             )
         } else {
-            OnboardingIntroViewController(
-                rootView: OnboardingView(model: viewModel),
-                viewModel: viewModel
-            )
+           fatalError()
         }
         controller.delegate = delegate
         return controller

@@ -160,7 +160,7 @@ extension OnboardingRebranding {
 
     struct OnboardingView: View {
 
-        typealias ViewState = LegacyOnboardingViewState
+        typealias ViewState = OnboardingIntroViewState
 
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.horizontalSizeClass) private var horizontalSizeClass

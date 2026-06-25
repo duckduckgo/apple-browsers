@@ -77,6 +77,7 @@ final class BrowserTabViewController: NSViewController {
     private weak var webViewContainer: NSView?
     @Published private var webViewSnapshot: NSView?
     private var containerStackView: NSStackView
+    private var cookiePopupOptInHostingController: NSHostingController<CookiePopupProtectionOptInOverlayView>?
 
     weak var delegate: BrowserTabViewControllerDelegate?
     private(set) var tabViewModel: TabViewModel?
@@ -657,6 +658,57 @@ final class BrowserTabViewController: NSViewController {
             $0.removeFromSuperview()
         }
         presentedContextualOnboardingDialogType = nil
+    }
+
+    // TODO: Remember to remove it
+    /// Debug-only: presents the Cookie Pop-up Protection opt-in dialog as a centered overlay over the whole window.
+    /// ponytail: anchored to the window frame view (contentView.superview) so the dim covers the titlebar/tab bar
+    /// too, not just the content view. Autoresizing mask avoids fighting the private frame view's layout. Removed on Done.
+    func showCookiePopupProtectionOptInDialog() {
+        guard cookiePopupOptInHostingController == nil else { return }
+        guard let frameView = view.window?.contentView?.superview else { return }
+
+        let overlay = CookiePopupProtectionOptInOverlayView(onDone: { [weak self] in
+            self?.dismissCookiePopupProtectionOptInDialog()
+        })
+        let hostingController = NSHostingController(rootView: overlay)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = true
+        hostingController.view.frame = frameView.bounds
+        hostingController.view.autoresizingMask = [.width, .height]
+
+        // Wrap the SwiftUI overlay in a plain container that swallows every mouse/scroll event in its
+        // bounds. NSHostingView by itself lets clicks pass through its non-interactive areas, so without
+        // this the toolbar/web content behind the dim stays interactive. The dialog's own controls still
+        // work because they're subviews and claim their hits first.
+        let container = WindowModalOverlayView(frame: frameView.bounds)
+        container.autoresizingMask = [.width, .height]
+        container.addSubview(hostingController.view)
+
+        addChild(hostingController)
+        frameView.addSubview(container, positioned: .above, relativeTo: nil)
+        cookiePopupOptInHostingController = hostingController
+
+        // Clear keyboard focus from whatever field was active (e.g. the address bar / search box).
+        view.window?.makeFirstResponder(nil)
+    }
+
+    private func dismissCookiePopupProtectionOptInDialog() {
+        // The hosting view lives inside the WindowModalOverlayView container — remove the container.
+        cookiePopupOptInHostingController?.view.superview?.removeFromSuperview()
+        cookiePopupOptInHostingController?.removeFromParent()
+        cookiePopupOptInHostingController = nil
+    }
+
+    /// Plain overlay container that blocks all mouse/scroll interaction with the window behind it.
+    private final class WindowModalOverlayView: NSView {
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            let hit = super.hitTest(point)
+            // Never fall through to sibling views (toolbar, web content) behind the overlay.
+            if hit == nil, frame.contains(point) {
+                return self
+            }
+            return hit
+        }
     }
 
     private func presentContextualOnboarding(showLastDialog: Bool = false) {

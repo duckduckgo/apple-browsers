@@ -1798,6 +1798,16 @@ struct UserText {
     static let autoconsentFromSetUpModalConfirmButton = NSLocalizedString("autoconsent.from.setup.modal.cta.confirm", value: "Handle Pop-Ups For Me", comment: "Confirm button for modal asking the user to auto manage cookies")
     static let autoconsentModalDenyButton = NSLocalizedString("autoconsent.modal.cta.deny", value: "No Thanks", comment: "Deny button for modal asking the user to auto manage cookies")
 
+    // MARK: - Cookie Pop-up Protection Opt-In Dialog
+    static let cookiePopupProtectionOptInBadge = NSLocalizedString("cookie-popup-protection.opt-in.badge", value: "New", comment: "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header")
+    static let cookiePopupProtectionOptInHeader = NSLocalizedString("cookie-popup-protection.opt-in.header", value: "Cookie Pop-up Protection", comment: "Header of the Cookie Pop-up Protection opt-in dialog")
+    static let cookiePopupProtectionOptInTitle = NSLocalizedString("cookie-popup-protection.opt-in.title", value: "Block more Pop-ups", comment: "Title of the Cookie Pop-up Protection opt-in dialog")
+    static let cookiePopupProtectionOptInBody = NSLocalizedString("cookie-popup-protection.opt-in.body", value: "Some cookie pop-ups don't have a 'reject' option. DuckDuckGo can now block them if you wish.", comment: "Body text of the Cookie Pop-up Protection opt-in dialog")
+    static let cookiePopupProtectionOptInPreferenceTitle = NSLocalizedString("cookie-popup-protection.opt-in.preference-title", value: "Set your preference:", comment: "Label above the on/off radio options in the Cookie Pop-up Protection opt-in dialog")
+    static let cookiePopupProtectionOptInModeOn = NSLocalizedString("cookie-popup-protection.opt-in.mode-on", value: "Reject, Hide, or Accept", comment: "Radio option enabling the more aggressive cookie pop-up blocking")
+    static let cookiePopupProtectionOptInModeOff = NSLocalizedString("cookie-popup-protection.opt-in.mode-off", value: "Off", comment: "Radio option disabling the more aggressive cookie pop-up blocking")
+    static let cookiePopupProtectionOptInFooter = NSLocalizedString("cookie-popup-protection.opt-in.footer", value: "DuckDuckGo aims to protect your privacy as much as possible through a range of Web Tracking Protections.", comment: "Footer explanatory text in the Cookie Pop-up Protection opt-in dialog")
+
     static func autoconsentStatsPopoverTitle(count: Int) -> String {
         let localized = NSLocalizedString("autoconsent.stats.popover.title",
                                          value: "%d cookie pop-ups blocked",

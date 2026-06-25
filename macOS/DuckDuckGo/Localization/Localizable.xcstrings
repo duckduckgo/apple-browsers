@@ -22712,6 +22712,102 @@
         }
       }
     },
+    "cookie-popup-protection.opt-in.badge" : {
+      "comment" : "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.body" : {
+      "comment" : "Body text of the Cookie Pop-up Protection opt-in dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some cookie pop-ups don't have a 'reject' option. DuckDuckGo can now block them if you wish."
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.footer" : {
+      "comment" : "Footer explanatory text in the Cookie Pop-up Protection opt-in dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo aims to protect your privacy as much as possible through a range of Web Tracking Protections."
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.header" : {
+      "comment" : "Header of the Cookie Pop-up Protection opt-in dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cookie Pop-up Protection"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.mode-off" : {
+      "comment" : "Radio option disabling the more aggressive cookie pop-up blocking",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.mode-on" : {
+      "comment" : "Radio option enabling the more aggressive cookie pop-up blocking",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reject, Hide, or Accept"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.preference-title" : {
+      "comment" : "Label above the on/off radio options in the Cookie Pop-up Protection opt-in dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set your preference:"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.title" : {
+      "comment" : "Title of the Cookie Pop-up Protection opt-in dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Block more Pop-ups"
+          }
+        }
+      }
+    },
     "copy" : {
       "comment" : "Copy button",
       "extractionState" : "extracted_with_value",

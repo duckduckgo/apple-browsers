@@ -89421,7 +89421,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Reopen all windows from last session"
+            "value" : "Reopen all windows and tabs from last session"
           }
         },
         "es" : {
@@ -97014,7 +97014,7 @@
         }
       }
     },
-    "Reopen All Windows From Last Session" : {
+    "Reopen All Windows and Tabs From Last Session" : {
       "comment" : "Main Menu History item",
       "localizations" : {
         "de" : {

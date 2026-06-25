@@ -505,6 +505,16 @@ public struct UserText {
     public static let autoconsentDisabled = NSLocalizedString("autoconsent.disabled", value: "Disabled", comment: "Autoconsent for Cookie Management Setting state")
     public static let autoconsentInfoText = NSLocalizedString("autoconsent.info.header", value: "When DuckDuckGo detects cookie consent pop-ups on sites you visit, we can try to automatically set your cookie preferences to minimize cookies and maximize privacy, then close the pop-ups. Some sites don't provide an option to manage cookie preferences, so we can only hide pop-ups like these.", comment: "")
 
+    // MARK: - Cookie Pop-up Protection Opt-In Dialog
+    public static let cookiePopupProtectionOptInBadge = NSLocalizedString("cookie-popup-protection.opt-in.badge", value: "New", comment: "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header")
+    public static let cookiePopupProtectionOptInHeader = NSLocalizedString("cookie-popup-protection.opt-in.header", value: "Cookie Pop-up Protection", comment: "Header of the Cookie Pop-up Protection opt-in dialog")
+    public static let cookiePopupProtectionOptInTitle = NSLocalizedString("cookie-popup-protection.opt-in.title", value: "Block more Pop-ups", comment: "Title of the Cookie Pop-up Protection opt-in dialog")
+    public static let cookiePopupProtectionOptInBody = NSLocalizedString("cookie-popup-protection.opt-in.body", value: "Some cookie pop-ups don't have a 'reject' option. DuckDuckGo can now block them if you wish.", comment: "Body text of the Cookie Pop-up Protection opt-in dialog")
+    public static let cookiePopupProtectionOptInModeOn = NSLocalizedString("cookie-popup-protection.opt-in.mode-on", value: "Reject, Hide, or Accept", comment: "Radio option enabling the more aggressive cookie pop-up blocking")
+    public static let cookiePopupProtectionOptInModeOff = NSLocalizedString("cookie-popup-protection.opt-in.mode-off", value: "Off", comment: "Radio option disabling the more aggressive cookie pop-up blocking")
+    public static let cookiePopupProtectionOptInConfirm = NSLocalizedString("cookie-popup-protection.opt-in.confirm", value: "Confirm", comment: "Confirm button in the Cookie Pop-up Protection opt-in dialog")
+    public static let cookiePopupProtectionOptInFooter = NSLocalizedString("cookie-popup-protection.opt-in.footer", value: "DuckDuckGo aims to protect your privacy as much as possible through a range of Web Tracking Protections.", comment: "Footer explanatory text in the Cookie Pop-up Protection opt-in dialog")
+
     public static let emailBrowsingMenuUseNewDuckAddress = NSLocalizedString("email.browsingMenu.useNewDuckAddress", value: "Generate Private Duck Address", comment: "Email option title in the browsing menu")
     public static let emailBrowsingMenuAlert = NSLocalizedString("email.browsingMenu.alert", value: "New address copied to your clipboard", comment: "Title for the email copy browsing menu alert")
     public static let emailAliasPromptTitle = NSLocalizedString("email.aliasAlert.prompt.title", value: "Select email address", comment: "Title for the email alias selection prompt")

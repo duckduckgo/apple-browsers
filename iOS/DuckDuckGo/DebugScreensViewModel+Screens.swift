@@ -49,8 +49,8 @@ extension DebugScreensViewModel {
                     }
                 }
             }),
-            .action(title: "Reset Autoconsent Prompt", { _ in
-                AppUserDefaults().clearAutoconsentUserSetting()
+            .view(title: "CPM", { _ in
+                CPMDebugScreensView()
             }),
             .action(title: "Reset Sync Promos", { d in
                 let syncPromoPresenter = SyncPromoManager(syncService: d.syncService)
@@ -325,4 +325,46 @@ extension DebugScreensViewModel {
         }
     }
 
+}
+
+/// Sub-screen grouping the CPM (Cookie Pop-up Protection) debug actions.
+private struct CPMDebugScreensView: View {
+
+    var body: some View {
+        List {
+            Section {
+                Button("Show opt-in dialog") {
+                    Self.presentOptInDialog()
+                }
+                Button("Reset Autoconsent Prompt") {
+                    AppUserDefaults().clearAutoconsentUserSetting()
+                    ActionMessageView.present(message: "Reset Autoconsent Prompt - DONE")
+                }
+            }
+        }
+        .navigationTitle("CPM")
+    }
+
+    /// Presents the Cookie Pop-up Protection opt-in dialog as a sheet over the browser.
+    /// `isModalInPresentation` blocks swipe-to-dismiss — the dialog can only be dismissed via its own controls.
+    private static func presentOptInDialog() {
+        guard let window = UIApplication.shared.firstKeyWindow else { return }
+
+        weak var weakController: UIViewController?
+        let present = {
+            let controller = UIHostingController(rootView: CookiePopupProtectionOptInView(onConfirm: {
+                weakController?.dismiss(animated: true)
+            }))
+            weakController = controller
+            controller.isModalInPresentation = true
+            window.rootViewController?.present(controller, animated: true)
+        }
+
+        // Dismiss the Settings/debug stack first so the dialog appears over the browser.
+        if let presented = window.rootViewController?.presentedViewController {
+            presented.dismiss(animated: true, completion: present)
+        } else {
+            present()
+        }
+    }
 }

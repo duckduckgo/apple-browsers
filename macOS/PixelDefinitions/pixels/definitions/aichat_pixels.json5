@@ -96,21 +96,22 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_aichat_suggestion_invoked": {
-        "description": "Fired when the user taps a page suggestion in Duck.ai (a tailored prompt or \"Ask about this page\")",
+    "m_mac_aichat_suggestion_selected": {
+        "description": "Fired when the user taps a sidebar page-suggestion chip (including ask-about-page, which only attaches the page and does not submit a prompt)",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
             {
-                "key": "suggestion",
-                "description": "Fixed catalog key identifying which suggestion was tapped (e.g. summarize-page, translate-page, ask-about-page)",
+                "key": "suggestionId",
+                "description": "Catalog key of the selected suggestion (e.g. summarize-page, translate-page, ask-about-page). Bounded and PII-free.",
                 "type": "string"
             },
             {
-                "key": "page_type",
-                "description": "Coarse page classification derived by the FE from JSON-LD/OpenGraph (never the URL, domain, or content)",
+                "key": "pageType",
+                "description": "Coarse page-type bucket the frontend computes from page-type signals. Never a URL, domain or page content.",
                 "type": "string",
                 "enum": [
                     "recipe",

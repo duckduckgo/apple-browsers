@@ -926,11 +926,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             completion?()
         case .userDidSelectSuggestion:
             pixelFiring?.fire(
-                AIChatPixel.aiChatSuggestionInvoked(
-                    suggestion: metric.suggestionId ?? "",
+                AIChatPixel.aiChatSuggestionSelected(
+                    suggestionId: metric.suggestionId ?? "",
                     pageType: metric.pageType ?? "none"
                 ),
-                frequency: .standard
+                frequency: .dailyAndStandard
             )
             completion?()
         default:

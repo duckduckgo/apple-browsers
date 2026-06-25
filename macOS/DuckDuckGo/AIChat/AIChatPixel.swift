@@ -344,9 +344,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation
     case aiChatMetricSentPromptOngoingChat
 
-    /// Event Trigger: User taps a page suggestion in Duck.ai (a tailored prompt or "Ask about this page").
-    /// `suggestion` is the FE's fixed catalog key; `pageType` is the FE's coarse page classification.
-    case aiChatSuggestionInvoked(suggestion: String, pageType: String)
+    /// Event Trigger: User taps a sidebar page-suggestion chip (a tailored prompt or "Ask about this page").
+    /// `suggestionId` is the FE's fixed catalog key; `pageType` is the FE's coarse page classification.
+    case aiChatSuggestionSelected(suggestionId: String, pageType: String)
 
     // MARK: - Onboarding
 
@@ -646,8 +646,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_start_new_conversation"
         case .aiChatMetricSentPromptOngoingChat:
             return "aichat_sent_prompt_ongoing_chat"
-        case .aiChatSuggestionInvoked:
-            return "aichat_suggestion_invoked"
+        case .aiChatSuggestionSelected:
+            return "aichat_suggestion_selected"
         case .aiChatOpenDuckAiMainMenu:
             return "aichat_open_duck_ai_main_menu"
         case .aiChatNewChatMainMenu:
@@ -860,8 +860,8 @@ enum AIChatPixel: PixelKitEvent {
             return ["failureReason": failureReason.rawValue]
         case .aiChatVoiceChatStartFailed(let reason):
             return ["reason": reason.rawValue]
-        case .aiChatSuggestionInvoked(let suggestion, let pageType):
-            return ["suggestion": suggestion, "page_type": pageType]
+        case .aiChatSuggestionSelected(let suggestionId, let pageType):
+            return ["suggestionId": suggestionId, "pageType": pageType]
         }
     }
 
@@ -956,7 +956,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
-                .aiChatSuggestionInvoked,
+                .aiChatSuggestionSelected,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
                 .aiChatReportMetricDecodeError,

@@ -1006,7 +1006,9 @@ extension MainViewController {
         applyUnifiedInputChromeBackground(.standardChrome)
         // Resign up-front so the keyboard descent runs concurrent with the bar collapse.
         coordinator.viewController.deactivateInput()
-        let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
+        // Bottom floating: the omnibar is no longer in the toolbar, so live measurement is nil —
+        // fall back to the X captured at focus so the text lands on the omnibar's leading edge.
+        let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX() ?? coordinator.cachedOmnibarPlaceholderWindowX
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)

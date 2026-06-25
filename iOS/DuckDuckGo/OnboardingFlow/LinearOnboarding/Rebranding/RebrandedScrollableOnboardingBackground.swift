@@ -29,11 +29,11 @@ struct ScrollableOnboardingBackground: View {
         static let backgroundImageWidth: CGFloat = 1366
     }
 
-    let viewState: OnboardingView.ViewState.Intro
+    let viewState: OnboardingIntroViewState.Intro
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var previousViewState: OnboardingView.ViewState.Intro?
+    @State private var previousViewState: OnboardingIntroViewState.Intro?
     @State private var exitingTransitionProgress: CGFloat = 1.0  // 0.0 = start, 1.0 = end
     @State private var enteringTransitionProgress: CGFloat = 1.0  // 0.0 = start, 1.0 = end
 
@@ -125,7 +125,7 @@ struct ScrollableOnboardingBackground: View {
         }
     }
 
-    private func backgroundView(for state: OnboardingView.ViewState.Intro, width: CGFloat) -> some View {
+    private func backgroundView(for state: OnboardingIntroViewState.Intro, width: CGFloat) -> some View {
         VStack {
             Spacer()
             ZStack(alignment: .bottom) {
@@ -212,7 +212,7 @@ private struct ExitingBackgroundView<Content: View>: View, Animatable {
     }
 }
 
-private extension OnboardingView.ViewState.Intro.IntroType {
+private extension OnboardingIntroViewState.Intro.IntroType {
 
     var backgroundImage: Image {
         switch self {

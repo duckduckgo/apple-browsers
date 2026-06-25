@@ -28,6 +28,8 @@ extension OnboardingRebranding.OnboardingView {
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-31845
     struct LandingView: View {
 
+        static let daxGeometryEffectID = "DaxIcon"
+
         @Environment(\.colorScheme) private var colorScheme
 
         private enum Assets {
@@ -245,7 +247,7 @@ extension OnboardingRebranding.OnboardingView {
                                   ? .paused(at: .progress(1.0))
                                   : .playing(.fromProgress(0, toProgress: 1.0, loopMode: .playOnce)))
                     .resizable()
-                    .matchedGeometryEffect(id: OnboardingView.daxGeometryEffectID, in: animationNamespace)
+                    .matchedGeometryEffect(id: Self.daxGeometryEffectID, in: animationNamespace)
                     .frame(width: Metrics.logoSize, height: Metrics.logoSize)
                     .scaleEffect(logo.scale)
                     .opacity(logo.opacity)

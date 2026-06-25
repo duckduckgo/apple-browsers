@@ -68,7 +68,7 @@ struct OnboardingView: View {
         }
     }
 
-    private func onboardingDialogView(state: ViewState.Intro) -> some View {
+    private func onboardingDialogView(state: OnboardingIntroViewState.Intro) -> some View {
         GeometryReader { geometry in
             VStack(alignment: .center) {
                 DaxDialogView(
@@ -144,7 +144,7 @@ struct OnboardingView: View {
     }
 
     @ViewBuilder
-    private func introView(dialogType: ViewState.Intro.IntroDialogType) -> some View {
+    private func introView(dialogType: OnboardingIntroViewState.Intro.IntroDialogType) -> some View {
         let skipOnboardingView: AnyView? = if dialogType == .default {
             nil
         } else {
@@ -303,74 +303,6 @@ struct OnboardingView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
                 model.setDefaultBrowserState.animateComparisonText = true
             }
-        }
-    }
-
-}
-
-// MARK: - View State
-
-extension OnboardingView {
-
-    enum ViewState: Equatable {
-        case landing(OnboardingLandingContent)
-        case onboarding(Intro)
-
-        var intro: Intro? {
-            switch self {
-            case .landing:
-                return nil
-            case let .onboarding(intro):
-                return intro
-            }
-        }
-    }
-    
-}
-
-extension OnboardingView.ViewState {
-    
-    struct Intro: Equatable {
-        let type: IntroType
-        let step: StepInfo
-    }
-
-}
-
-extension OnboardingView.ViewState.Intro {
-
-    enum IntroDialogType: Equatable {
-        case `default`
-        case restoreData
-        case skipTutorial
-    }
-
-    enum IntroType: Equatable {
-        case startOnboardingDialog(content: OnboardingIntroStepContent, type: IntroDialogType)
-        case setDefaultBrowserDialog(content: OnboardingComparisonContent)
-        case aiIntroDialog(content: OnboardingComparisonContent)
-        case addToDockPromoDialog(content: OnboardingAddToDockContent)
-        case chooseAppIconDialog(content: OnboardingAppIconColorContent)
-        case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
-        case chooseSearchExperienceDialog(content: OnboardingSearchExperienceContent)
-        case duckAIQueryDialog(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode)
-    }
-
-    struct StepInfo: Equatable {
-        let currentStep: Int
-        let totalSteps: Int
-
-        static let hidden = StepInfo(currentStep: 0, totalSteps: 0)
-    }
-
-}
-
-private extension OnboardingView.ViewState.Intro.IntroType {
-    var isDuckAIQueryScreen: Bool {
-        if case .duckAIQueryDialog = self {
-            return true
-        } else {
-            return false
         }
     }
 

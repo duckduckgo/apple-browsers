@@ -21,7 +21,7 @@ import SwiftUI
 import Onboarding
 
 // Legacy view state used by the linear onboarding flow.
-typealias LegacyOnboardingViewState = OnboardingView.ViewState
+typealias LegacyOnboardingViewState = OnboardingIntroViewState
 typealias LegacyOnboardingView = OnboardingView
 
 typealias RebrandedOnboardingView = OnboardingRebranding.OnboardingView

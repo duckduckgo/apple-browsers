@@ -35,6 +35,10 @@ final class IPadOmnibarModelPickerController {
     private let menuFactory = UnifiedToggleInputModelMenuFactory()
     var onModelsUpdated: (() -> Void)?
 
+    /// The shared model store. Exposed so the sibling reasoning picker can read the same
+    /// selected model / subscription state and avoid a second `/models` fetch.
+    var modelStore: UTIModelStore { store }
+
     init(
         modelsService: AIChatModelsProviding? = nil,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),

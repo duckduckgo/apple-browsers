@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import UIKit
 import PrivacyDashboard
 
@@ -36,6 +37,7 @@ final class MockOmniBar: OmniBar {
     var isTextFieldEditing: Bool = false
     var text: String?
     var iPadDuckAISelectedModelId: String?
+    var iPadDuckAISelectedReasoningEffort: AIChatReasoningEffort?
 
     func updateQuery(_ query: String?) { }
     func refreshText(forUrl url: URL?, forceFullURL: Bool) { }

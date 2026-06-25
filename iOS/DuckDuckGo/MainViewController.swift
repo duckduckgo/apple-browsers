@@ -3935,7 +3935,8 @@ extension MainViewController: OmniBarDelegate {
         commitToggleMode(.aiChat)
         
         let modelId = viewCoordinator.omniBar.iPadDuckAISelectedModelId
-        openAIChat(query, autoSend: true, tools: tools, modelId: modelId)
+        let reasoningEffort = viewCoordinator.omniBar.iPadDuckAISelectedReasoningEffort
+        openAIChat(query, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort)
     }
 
     func onChatHistorySelected(url: URL) {

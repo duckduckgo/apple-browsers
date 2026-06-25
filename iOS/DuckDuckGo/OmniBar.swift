@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import PrivacyDashboard
 
@@ -96,6 +97,11 @@ protocol OmniBar: AnyObject {
     /// picker is not active (non-iPad, flag off). Forwarded into `openAIChat` on submission so
     /// Duck.ai honors the selection. Defaults to `nil` for omnibars without the iPad picker.
     var iPadDuckAISelectedModelId: String? { get }
+
+    /// The Duck.ai reasoning effort selected in the iPad address-bar reasoning picker, or `nil`
+    /// when the picker is not active or hidden. Forwarded into `openAIChat` on submission so
+    /// Duck.ai honors the selection. Defaults to `nil` for omnibars without the iPad picker.
+    var iPadDuckAISelectedReasoningEffort: AIChatReasoningEffort? { get }
 
     func prepareForMoveTransition()
     func moveTransitionCompleted()

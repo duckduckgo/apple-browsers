@@ -61,6 +61,16 @@ final class UTIModelStore {
         preferences.selectedReasoningMode
     }
 
+    /// The reasoning effort to forward to the back end at submission, shared by the iPhone
+    /// coordinator and the iPad reasoning picker. Returns `nil` (no `reasoning_effort` sent)
+    /// unless a mode was explicitly persisted or the model exposes a reasoning picker — so a
+    /// single-mode model with no user choice doesn't pin an effort the user never selected.
+    var submissionReasoningEffort: AIChatReasoningEffort? {
+        guard let selectedModel else { return nil }
+        guard selectedReasoningMode != nil || selectedModel.supportsReasoningPicker else { return nil }
+        return selectedModel.resolvedReasoningEffort(from: selectedReasoningMode)
+    }
+
     var selectedModel: AIChatModel? {
         guard let persistedModelId else { return nil }
         return models.first(where: { $0.id == persistedModelId })

@@ -38,6 +38,9 @@ class OmniBarViewController: UIViewController, OmniBar {
     /// Overridden by `DefaultOmniBarViewController` when the iPad model picker is active. `nil` here.
     var iPadDuckAISelectedModelId: String? { nil }
 
+    /// Overridden by `DefaultOmniBarViewController` when the iPad reasoning picker is active. `nil` here.
+    var iPadDuckAISelectedReasoningEffort: AIChatReasoningEffort? { nil }
+
     var isBackButtonEnabled: Bool {
         get { barView.backButton.isEnabled }
         set { barView.backButton.isEnabled = newValue }

@@ -131,14 +131,14 @@
         "description": "Fired when onboarding Chrome extension eligibility detection fails to read Application Support.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_mac_debug_onboarding_chrome-extension-install_install-failed": {
         "description": "Fired when onboarding Chrome extension install fails to write Application Support.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
+        "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

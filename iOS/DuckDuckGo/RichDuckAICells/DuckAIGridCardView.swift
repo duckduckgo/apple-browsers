@@ -103,7 +103,11 @@ final class DuckAIGridCardView: UIView {
     private func configureSnippet(for item: DuckAIGridItem) {
         switch item {
         case .text(_, let snippet), .transcript(_, let snippet):
-            snippetLabel.text = snippet
+            if let attributedString = try? AttributedString(markdown: snippet) {
+                snippetLabel.attributedText = NSAttributedString(attributedString)
+            } else {
+                snippetLabel.text = snippet
+            }
             snippetLabel.isHidden = false
         default:
             snippetLabel.text = nil

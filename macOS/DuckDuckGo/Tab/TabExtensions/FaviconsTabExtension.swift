@@ -78,7 +78,9 @@ final class FaviconsTabExtension {
             .sink { [weak self] _ in
                 Task { @MainActor in
                     guard let self, self.content != nil else { return }
-                    self.loadCachedFavicon(isBurner: false)
+                    // This is a cache refresh, not a navigation – only upgrade to a decoded image, never clear.
+                    // pass nil as `oldValue` since there's no navigation - no previous content to compare to.
+                    self.loadCachedFavicon(oldValue: nil, isBurner: false, error: nil, clearStaleFaviconOnHostChange: false)
                 }
             }
             .store(in: &cancellables)
@@ -89,10 +91,17 @@ final class FaviconsTabExtension {
         // the first display of a not-yet-decoded favicon would keep the
         // placeholder until the next navigation re-triggered resolution.
         NotificationCenter.default.publisher(for: .faviconCacheUpdated)
-            .sink { [weak self] _ in
+            .sink { [weak self] notification in
+                let updatedHosts = notification.faviconsCacheUpdate?.hosts
                 Task { @MainActor in
-                    guard let self, self.content != nil else { return }
-                    self.loadCachedFavicon(isBurner: false)
+                    guard let self, let content = self.content else { return }
+                    // only action cache updates for the current tab's host
+                    if let updatedHosts, let host = content.urlForWebView?.host,
+                       !updatedHosts.contains(where: { host == $0 || host.hasSuffix("." + $0) || $0.hasSuffix("." + host) }) {
+                        return
+                    }
+                    // Refresh, not navigation: only upgrade to a decoded image, never clear.
+                    self.loadCachedFavicon(oldValue: nil, isBurner: false, error: nil, clearStaleFaviconOnHostChange: false)
                 }
             }
             .store(in: &cancellables)
@@ -100,6 +109,18 @@ final class FaviconsTabExtension {
 
     @MainActor
     func loadCachedFavicon(oldValue: TabContent? = nil, isBurner: Bool, error: Error? = nil) {
+        loadCachedFavicon(oldValue: oldValue, isBurner: isBurner, error: error, clearStaleFaviconOnHostChange: true)
+    }
+
+    /// - Parameter clearStaleFaviconOnHostChange: When `true` (navigation), the favicon is cleared if
+    ///   the cache has no image for the new host, so a previous site's icon isn't left behind. When
+    ///   `false` (a cache-update / cache-loaded *refresh*, where `oldValue` is always `nil`), the
+    ///   favicon is only upgraded once a decoded image is available and is never cleared. Clearing on a
+    ///   refresh blanked the favicon to the LetterView placeholder during the lazy off-main decode
+    ///   window (`getCachedFavicon(…)?.image` is `nil` while decoding), which made favicons blink
+    ///   between placeholder and image as `.faviconCacheUpdated` fired repeatedly.
+    @MainActor
+    private func loadCachedFavicon(oldValue: TabContent?, isBurner: Bool, error: Error?, clearStaleFaviconOnHostChange: Bool) {
         guard let content, content.isExternalUrl, let url = content.urlForWebView, error == nil else {
             // Load default Favicon for SpecialURL(s) such as newtab
             favicon = content?.displayedFavicon(error: error, isBurner: isBurner)
@@ -112,7 +133,7 @@ final class FaviconsTabExtension {
             if cachedFavicon != favicon {
                 favicon = cachedFavicon
             }
-        } else if oldValue?.urlForWebView?.host != url.host {
+        } else if clearStaleFaviconOnHostChange, oldValue?.urlForWebView?.host != url.host {
             // If the domain matches the previous value, just keep the same favicon
             favicon = nil
         }

@@ -120,6 +120,10 @@ extension TabViewController {
 
         jsAlertContainerView = UIView()
         jsAlertContainerView.translatesAutoresizingMaskIntoConstraints = false
+        // Hidden until a JS alert is presented. This fills rootView and sits above the web view,
+        // so leaving it visible would swallow all touches/scrolls. Previously JSAlertController's
+        // viewDidAppear hid it during eager setup; now that setup is deferred, hide it explicitly.
+        jsAlertContainerView.isHidden = true
         rootView.addSubview(jsAlertContainerView)
         NSLayoutConstraint.activate([
             jsAlertContainerView.topAnchor.constraint(equalTo: rootView.topAnchor),
@@ -208,7 +212,16 @@ extension TabViewController {
         ])
     }
 
-    func setupJSAlertController() {
+    /// Lazily instantiates the JSAlertController storyboard on first use.
+    ///
+    /// This is deliberately not called from `viewDidLoad`: the storyboard contains a
+    /// `UIVisualEffectView`/`UIBlurEffect` whose first decode triggers a synchronous
+    /// CoreMaterial recipe-bundle scan. Doing that for every tab on the cold-launch path
+    /// could exhaust the scene-create CPU budget and trip the watchdog (SIGKILL 0x8BADF00D).
+    /// Deferring it to the first presented JS alert keeps that work off the launch path.
+    func setupJSAlertControllerIfNeeded() {
+        guard jsAlertController == nil else { return }
+
         let storyboard = UIStoryboard(name: "JSAlertController", bundle: nil)
         guard let controller = storyboard.instantiateInitialViewController() as? JSAlertController else {
             fatalError("Failed to instantiate JSAlertController")

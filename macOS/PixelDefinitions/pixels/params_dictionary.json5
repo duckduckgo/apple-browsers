@@ -371,5 +371,11 @@
         "type": "integer",
         "description": "Number of times a Next Steps card was shown (appeared at the top of the Next Steps card stack)",
         "maximum": 10
+    },
+    "consentHeuristicEnabled": {
+        "key": "consentHeuristicEnabled",
+        "description": "The mode of the consent heuristic feature: '', off, reject, tier1, tier2",
+        "type": "string",
+        "enum": ["", "off", "reject", "tier1", "tier2"]
     }
 }

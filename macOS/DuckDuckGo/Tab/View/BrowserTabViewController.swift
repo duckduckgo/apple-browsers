@@ -77,7 +77,8 @@ final class BrowserTabViewController: NSViewController {
     private weak var webViewContainer: NSView?
     @Published private var webViewSnapshot: NSView?
     private var containerStackView: NSStackView
-    private var cookiePopupOptInHostingController: NSHostingController<CookiePopupProtectionOptInOverlayView>?
+    private var cookiePopupOptInHostingController: NSHostingController<CookiePopupProtectionOptInView>?
+    private var cookiePopupOptInBackdrop: WindowDimmingBlockingView?
 
     weak var delegate: BrowserTabViewControllerDelegate?
     private(set) var tabViewModel: TabViewModel?
@@ -661,31 +662,42 @@ final class BrowserTabViewController: NSViewController {
     }
 
     // TODO: Remember to remove it
-    /// Debug-only: presents the Cookie Pop-up Protection opt-in dialog as a centered overlay over the whole window.
-    /// ponytail: anchored to the window frame view (contentView.superview) so the dim covers the titlebar/tab bar
-    /// too, not just the content view. Autoresizing mask avoids fighting the private frame view's layout. Removed on Done.
+    /// Debug-only: presents the Cookie Pop-up Protection opt-in dialog centered over the window.
+    /// ponytail: the dim/backdrop is a WindowDimmingBlockingView mounted on the window frame view
+    /// (contentView.superview) so it covers the WHOLE window — titlebar / tab bar included — and its local
+    /// event monitor blocks mouse/scroll from reaching anything behind it. The card is a sibling above the
+    /// backdrop so it receives events normally (no manual forwarding).
     func showCookiePopupProtectionOptInDialog() {
         guard cookiePopupOptInHostingController == nil else { return }
         guard let frameView = view.window?.contentView?.superview else { return }
 
-        let overlay = CookiePopupProtectionOptInOverlayView(onDone: { [weak self] in
-            self?.dismissCookiePopupProtectionOptInDialog()
-        })
-        let hostingController = NSHostingController(rootView: overlay)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = true
-        hostingController.view.frame = frameView.bounds
-        hostingController.view.autoresizingMask = [.width, .height]
+        // Autoresizing (not Auto Layout): the frame view is the private NSThemeFrame, which doesn't run the
+        // Auto Layout engine for views we add, so constraints against it never resolve. ColorView's init also
+        // sets translatesAutoresizingMaskIntoConstraints = false, so we flip it back on for frame-based layout.
+        let backdrop = WindowDimmingBlockingView()
+        backdrop.translatesAutoresizingMaskIntoConstraints = true
+        backdrop.backgroundColor = NSColor.black.withAlphaComponent(0.18)
+        backdrop.frame = frameView.bounds
+        backdrop.autoresizingMask = [.width, .height]
 
-        // Wrap the SwiftUI overlay in a plain container that swallows every mouse/scroll event in its
-        // bounds. NSHostingView by itself lets clicks pass through its non-interactive areas, so without
-        // this the toolbar/web content behind the dim stays interactive. The dialog's own controls still
-        // work because they're subviews and claim their hits first.
-        let container = WindowModalOverlayView(frame: frameView.bounds)
-        container.autoresizingMask = [.width, .height]
-        container.addSubview(hostingController.view)
+        let hostingController = NSHostingController(rootView: CookiePopupProtectionOptInView(onDone: { [weak self] in
+            self?.dismissCookiePopupProtectionOptInDialog()
+        }))
+        let cardSize = hostingController.view.fittingSize
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = true
+        hostingController.view.frame = NSRect(
+            x: ((frameView.bounds.width - cardSize.width) / 2).rounded(),
+            y: ((frameView.bounds.height - cardSize.height) / 2).rounded(),
+            width: cardSize.width,
+            height: cardSize.height
+        )
+        // Flexible margins on every side keep the card centered as the window resizes.
+        hostingController.view.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin, .maxYMargin]
 
         addChild(hostingController)
-        frameView.addSubview(container, positioned: .above, relativeTo: nil)
+        frameView.addSubview(backdrop, positioned: .above, relativeTo: nil)
+        frameView.addSubview(hostingController.view, positioned: .above, relativeTo: backdrop)
+        cookiePopupOptInBackdrop = backdrop
         cookiePopupOptInHostingController = hostingController
 
         // Clear keyboard focus from whatever field was active (e.g. the address bar / search box).
@@ -693,22 +705,12 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func dismissCookiePopupProtectionOptInDialog() {
-        // The hosting view lives inside the WindowModalOverlayView container — remove the container.
-        cookiePopupOptInHostingController?.view.superview?.removeFromSuperview()
+        cookiePopupOptInBackdrop?.stopListening()
+        cookiePopupOptInBackdrop?.removeFromSuperview()
+        cookiePopupOptInBackdrop = nil
+        cookiePopupOptInHostingController?.view.removeFromSuperview()
         cookiePopupOptInHostingController?.removeFromParent()
         cookiePopupOptInHostingController = nil
-    }
-
-    /// Plain overlay container that blocks all mouse/scroll interaction with the window behind it.
-    private final class WindowModalOverlayView: NSView {
-        override func hitTest(_ point: NSPoint) -> NSView? {
-            let hit = super.hitTest(point)
-            // Never fall through to sibling views (toolbar, web content) behind the overlay.
-            if hit == nil, frame.contains(point) {
-                return self
-            }
-            return hit
-        }
     }
 
     private func presentContextualOnboarding(showLastDialog: Bool = false) {

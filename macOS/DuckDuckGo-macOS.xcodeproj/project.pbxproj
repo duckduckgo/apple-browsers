@@ -292,7 +292,9 @@
 		1E68BC362ECF69ED0013A943 /* AutoconsentStatsPopoverCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E68BC352ECF69ED0013A943 /* AutoconsentStatsPopoverCoordinator.swift */; };
 		1E68BC372ECF69ED0013A943 /* AutoconsentStatsPopoverCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E68BC352ECF69ED0013A943 /* AutoconsentStatsPopoverCoordinator.swift */; };
 		1E75FA3E2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E75FA3C2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift */; };
+		D1D1D1D100000000000000F1 /* WindowDimmingBlockingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D1D1D100000000000000F0 /* WindowDimmingBlockingView.swift */; };
 		1E75FA3F2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E75FA3C2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift */; };
+		D1D1D1D100000000000000F2 /* WindowDimmingBlockingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D1D1D100000000000000F0 /* WindowDimmingBlockingView.swift */; };
 		1E7D3C302F2232620099611C /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1E7D3C2F2F2232620099611C /* WebExtensions */; };
 		1E7D3C322F2232690099611C /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1E7D3C312F2232690099611C /* WebExtensions */; };
 		1E7E2E9029029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7E2E8F29029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift */; };
@@ -4931,6 +4933,7 @@
 		1E6783F62E156DA200AE465A /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = NetworkProtectionSystemExtension/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
 		1E68BC352ECF69ED0013A943 /* AutoconsentStatsPopoverCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentStatsPopoverCoordinator.swift; sourceTree = "<group>"; };
 		1E75FA3C2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookiePopupProtectionOptInView.swift; sourceTree = "<group>"; };
+		D1D1D1D100000000000000F0 /* WindowDimmingBlockingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDimmingBlockingView.swift; sourceTree = "<group>"; };
 		1E7D3C332F2232890099611C /* WebExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = WebExtensions; path = ../SharedPackages/WebExtensions; sourceTree = SOURCE_ROOT; };
 		1E7E2E8F29029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlockingRulesUpdateObserver.swift; sourceTree = "<group>"; };
 		1E7E2E932902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardPermissionHandler.swift; sourceTree = "<group>"; };
@@ -7747,6 +7750,7 @@
 			isa = PBXGroup;
 			children = (
 				1E75FA3C2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift */,
+				D1D1D1D100000000000000F0 /* WindowDimmingBlockingView.swift */,
 			);
 			path = OptInDialog;
 			sourceTree = "<group>";
@@ -15501,6 +15505,7 @@
 				373C82512D8326E8004FBBBE /* FaviconsTabExtension.swift in Sources */,
 				A370E7706B30748FF9DEAD3F /* TabSuspensionExtension.swift in Sources */,
 				1E75FA3F2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift in Sources */,
+				D1D1D1D100000000000000F2 /* WindowDimmingBlockingView.swift in Sources */,
 				58407D61235669B6AEEFB850 /* TabSuspensionService.swift in Sources */,
 				B6AFE6BD29A5D621002FF962 /* HTTPSUpgradeTabExtension.swift in Sources */,
 				846F4CD22E04829D00266DB7 /* TabContent+DisplayedFavicon.swift in Sources */,
@@ -17135,6 +17140,7 @@
 				379858132D730EFB008773F6 /* DefaultHistoryViewDialogPresenter.swift in Sources */,
 				E274EFF62E1D55D500373C41 /* NewTabPageOmnibarSuggestionsProvider.swift in Sources */,
 				1E75FA3E2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift in Sources */,
+				D1D1D1D100000000000000F1 /* WindowDimmingBlockingView.swift in Sources */,
 				1D99CDDB2D929EC900656A84 /* PinnedTabsPixel.swift in Sources */,
 				7BD55D012E8F06010094A2B8 /* PermissionPixel.swift in Sources */,
 				63AC47CDA9BC3FA42B5B335A /* WebNotificationPixel.swift in Sources */,

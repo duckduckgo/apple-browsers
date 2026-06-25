@@ -101,27 +101,28 @@ final class DuckAIGridContentResolver: DuckAIGridContentProviding {
     }
 
     func loadImage(fileRef: String) async -> UIImage? {
-        guard let storageHandler, aiChatFeatureFlagProvider.isNativeDataAccessEnabled() else {
+        guard let storageHandler,
+              aiChatFeatureFlagProvider.isNativeDataAccessEnabled() else {
             return nil
         }
+        // Decode off the main thread — this path runs during normal grid scrolling.
         return await Task.detached {
-            do {
-                guard let file = try storageHandler.getFile(uuid: fileRef) else { return nil }
-                return Self.decodeImage(from: file.data)
-            } catch {
-                Logger.aiChat.error("DuckAIGridContentResolver: failed to read file: \(error.localizedDescription)")
-                return nil
-            }
+            Self.readAndDecodeImage(fileRef: fileRef, storageHandler: storageHandler)
         }.value
     }
 
     func loadImageSynchronously(fileRef: String) -> UIImage? {
-        guard let storageHandler, aiChatFeatureFlagProvider.isNativeDataAccessEnabled() else {
+        guard let storageHandler,
+              aiChatFeatureFlagProvider.isNativeDataAccessEnabled() else {
             return nil
         }
+        return Self.readAndDecodeImage(fileRef: fileRef, storageHandler: storageHandler)
+    }
+
+    nonisolated private static func readAndDecodeImage(fileRef: String, storageHandler: DuckAiNativeStorageHandling) -> UIImage? {
         do {
             guard let file = try storageHandler.getFile(uuid: fileRef) else { return nil }
-            return Self.decodeImage(from: file.data)
+            return decodeImage(from: file.data)
         } catch {
             Logger.aiChat.error("DuckAIGridContentResolver: failed to read file: \(error.localizedDescription)")
             return nil

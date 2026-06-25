@@ -564,7 +564,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess,
                 frequency: .dailyAndCount,
                 includeAppVersionParameter: true)
-        } catch let error where error.isCancellation {
+        } catch let error where error is CancellationError {
             throw StartError.cancelled(source: .systemExtensionActivation)
         } catch OSSystemExtensionError.requestCanceled {
             // The user cancelled the system extension approval — a cancellation, not a failure.
@@ -709,7 +709,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             let cancellationSource: VPNStartCancellationSource?
             if case StartError.cancelled(let source) = error {
                 cancellationSource = source
-            } else if error.isCancellation {
+            } else if error is CancellationError {
                 cancellationSource = .unknown
             } else {
                 cancellationSource = nil
@@ -788,7 +788,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 throw StartError.cancelled(source: .tunnelManagerLoad)
             }
 
-            if error.isCancellation {
+            if error is CancellationError {
                 throw StartError.cancelled(source: .tunnelManagerLoad)
             }
 
@@ -826,7 +826,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         let options: [String: NSObject]
         do {
             options = try await prepareStartupOptions()
-        } catch let error where error.isCancellation {
+        } catch let error where error is CancellationError {
             throw StartError.cancelled(source: .startupOptions)
         }
 
@@ -843,7 +843,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             try await self.enableOnDemand(tunnelManager: tunnelManager)
 
             self.connectionWideEventData?.tunnelStartDuration?.complete()
-        } catch let error where error.isCancellation {
+        } catch let error where error is CancellationError {
             Logger.networkProtection.log("VPN tunnel start cancelled")
             throw StartError.cancelled(source: .startTunnel)
         } catch {
@@ -1035,6 +1035,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             return tokenContainer
         } catch {
             switch error {
+            case is CancellationError:
+                // Don't disguise a cancellation as an auth failure — rethrow it bare so the start path
+                // recognises it as a cancellation.
+                throw error
             case SubscriptionManagerError.noTokenAvailable:
                 Logger.networkProtection.fault("🔴 TunnelController found no token container")
                 throw StartError.noAuthToken

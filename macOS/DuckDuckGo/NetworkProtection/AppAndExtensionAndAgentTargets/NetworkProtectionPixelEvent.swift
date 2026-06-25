@@ -29,7 +29,7 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
 
     case networkProtectionControllerStartAttempt
     case networkProtectionControllerStartSuccess
-    case networkProtectionControllerStartCancelled
+    case networkProtectionControllerStartCancelled(source: VPNStartCancellationSource)
     case networkProtectionControllerStartFailure(_ error: Error)
 
     case networkProtectionTunnelStartAttempt
@@ -361,6 +361,8 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
 
     var parameters: [String: String]? {
         switch self {
+        case .networkProtectionControllerStartCancelled(let source):
+            return [PixelKit.Parameters.reason: source.rawValue]
         case .networkProtectionConnectionTesterFailureDetected(let server),
                 .networkProtectionConnectionTesterExtendedFailureDetected(let server):
             return [PixelKit.Parameters.server: server]

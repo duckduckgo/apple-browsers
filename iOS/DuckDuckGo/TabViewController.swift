@@ -1013,19 +1013,7 @@ class TabViewController: UIViewController {
             self?.handlePullToRefresh()
         })
 
-        // Symptom detection + pixels ship to production behind the `webScrollFreezeObservability` kill switch
-        // (on by default). The heavy on-device freeze capture is injected only when `webScrollFreezeCapture`
-        // (internal-only) is on — in production `captureFreeze` is a no-op.
-        if webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) {
-            let captureEnabled = featureFlagger.isFeatureOn(.webScrollFreezeCapture)
-            webScrollObserver = WebScrollObserver(container: webViewContainer,
-                                                  scrollView: { [weak self] in self?.webView?.scrollView },
-                                                  currentURL: { [weak self] in self?.webView?.url },
-                                                  captureFreeze: captureEnabled
-                                                    ? { FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow()) }
-                                                    : {})
-            webScrollObserver?.install()
-        }
+        attachScrollFreezeDiagnosticsIfNeeded()
 
         if isAITab {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(false)
@@ -1084,6 +1072,31 @@ class TabViewController: UIViewController {
 
         borderView.insertSelf(into: webView)
         borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+    }
+
+    // Symptom detection + pixels ship to production behind the `webScrollFreezeObservability` kill switch
+    // (on by default). The heavy on-device freeze capture is injected only when `webScrollFreezeCapture`
+    // (internal-only) is on — in production `captureFreeze` is a no-op.
+    private func attachScrollFreezeDiagnosticsIfNeeded() {
+        guard webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) else { return }
+        let captureEnabled = featureFlagger.isFeatureOn(.webScrollFreezeCapture)
+        webScrollObserver = WebScrollObserver(container: webViewContainer,
+                                              scrollView: { [weak self] in self?.webView?.scrollView },
+                                              currentURL: { [weak self] in self?.webView?.url },
+                                              captureFreeze: captureEnabled
+                                                ? { WebScrollFreezeDebugCaptureStore.save(WebScrollFreezeDebugProbe.captureNow()) }
+                                                : {},
+                                              autoRecover: featureFlagger.isFeatureOn(.webScrollFreezeAutoRecovery)
+                                                ? { [weak self] in
+                                                    let ran = WebScrollFreezeRecovery.autoRecover(scrollView: self?.webView?.scrollView)
+                                                    if ran { DailyPixel.fireDailyAndCount(pixel: .debugInteractionRecoveryAttempted, withAdditionalParameters: [:]) }
+                                                    return ran
+                                                }
+                                                : { false })
+        webScrollObserver?.install()
+        if captureEnabled, let window = WebScrollFreezeDebugProbe.keyWindow() {
+            WebScrollFreezeDebugActiveTouchProbe.installIfNeeded(on: window)
+        }
     }
 
     private func addObservers() {

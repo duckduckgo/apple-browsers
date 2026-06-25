@@ -980,6 +980,9 @@ extension Pixel {
         case debugInteractionRepeatedFailedScroll
         case debugInteractionWedgedRecognizer
 
+        case debugInteractionRecoveryAttempted
+        case debugInteractionRecoveryOutcome
+
         case debugPromptCoordinationFailedToSaveLastPresentationDate
         case debugPromptCoordinationFailedToRetrieveLastPresentationDate
 
@@ -2975,6 +2978,8 @@ extension Pixel.Event {
 
         case .debugInteractionRepeatedFailedScroll: return "m_debug_interaction_repeated_failed_scroll"
         case .debugInteractionWedgedRecognizer: return "m_debug_interaction_wedged_recognizer"
+        case .debugInteractionRecoveryAttempted: return "m_debug_interaction_recovery_attempted"
+        case .debugInteractionRecoveryOutcome: return "m_debug_interaction_recovery_outcome"
 
             // MARK: - Debug Prompt Coordination
 

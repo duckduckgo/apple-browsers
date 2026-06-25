@@ -75,6 +75,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534806
     case heuristicAction
 
+    /// Cookie Pop-up Preference picker in settings
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215960699028461?focus=true
+    case cookiePopupPreferenceSetting
+
     // Duckplayer 'Web based' UI
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609457246
     case duckPlayer
@@ -338,6 +342,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1215895676655232
     case webScrollFreezeCapture
 
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1214241865640178
+    case webScrollFreezeAutoRecovery
+
     /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by
     /// default; ship a privacy-config entry to roll back. See
     /// `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab`.
@@ -591,6 +598,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.onByDefault), supportsLocalOverriding: false)
         case .heuristicAction:
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction))
+        case .cookiePopupPreferenceSetting:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupPreferenceSetting))
         case .duckPlayer:
             Config(source: .remoteReleasable(DuckPlayerSubfeature.enableDuckPlayer), supportsLocalOverriding: false)
         case .duckPlayerOpenInNewTab:
@@ -757,6 +766,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeObservability))
         case .webScrollFreezeCapture:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeCapture))
+        case .webScrollFreezeAutoRecovery:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeAutoRecovery))
         case .aiChatTabHideToggle:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .freeTrialConversionWideEvent:

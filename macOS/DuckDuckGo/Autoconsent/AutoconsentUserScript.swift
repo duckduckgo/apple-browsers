@@ -300,6 +300,21 @@ extension AutoconsentUserScript {
     }
 
     @MainActor
+    private func heuristicModeValue() -> String {
+        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
+        if !(consentHeuristicEnabled ?? false) {
+            return "off"
+        }
+        if preferences.cookiePopupPreference == .max {
+            return "tier2"
+        }
+        if preferences.cookiePopupPreference == .default {
+            return config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
+        }
+        return "off"
+    }
+
+    @MainActor
     func handleInit(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let messageData: InitMessage = decodeMessageBody(from: message.body),
               let url = URL(string: messageData.url) else {
@@ -328,7 +343,7 @@ extension AutoconsentUserScript {
         // do the navigation check before checking user settings or whether the domain is allowlisted
         checkMainFrameNavigation(message: message, url: url)
 
-        if preferences.isAutoconsentEnabled == false {
+        if preferences.cookiePopupPreference == .off {
             // this will only happen if the user has just declined a prompt in this tab
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
             if message.frameInfo.isMainFrame {
@@ -393,7 +408,7 @@ extension AutoconsentUserScript {
                 "detectRetries": 20,
                 "isMainWorld": false,
                 "enableHeuristicDetection": true,
-                "enableHeuristicAction": consentHeuristicEnabled ?? false // default to false if not enrolled
+                "heuristicMode": heuristicModeValue()
             ] as [String: Any?]
         ] as [String: Any?]
 

@@ -269,6 +269,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// from `webScrollFreezeObservability` so the production observer ships without the capture.
     case webScrollFreezeCapture
 
+    /// Speculative, scoped auto-recovery triggered on a confirmed freeze; default internal/off.
+    case webScrollFreezeAutoRecovery
+
     case screenTimeCleaning
 
     case minimalChromeInLandscape
@@ -695,7 +698,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canShowV2ConnectCode
 }
 
-public enum AutoconsentSubfeature: String, PrivacySubfeature {
+public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .autoconsent
     }
@@ -703,6 +706,7 @@ public enum AutoconsentSubfeature: String, PrivacySubfeature {
     case onByDefault
     case filterlist
     case heuristicAction
+    case cookiePopupPreferenceSetting
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {

@@ -1773,7 +1773,7 @@
 		AC7100D1A6105DEBEEF00002 /* InteractionDiagnosticsDebugScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7100D1A6105DEBEEF00001 /* InteractionDiagnosticsDebugScreen.swift */; };
 		AC7100D1A6105DEBEEF00004 /* InteractionIntegrityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7100D1A6105DEBEEF00003 /* InteractionIntegrityMonitor.swift */; };
 		AC7100D1A6105DEBEEF00006 /* WebScrollObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7100D1A6105DEBEEF00005 /* WebScrollObserver.swift */; };
-		AC7100D1A6105DEBEEF00008 /* WebScrollFreezeProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7100D1A6105DEBEEF00007 /* WebScrollFreezeProbe.swift */; };
+		AC7100D1A6105DEBEEF00008 /* WebScrollFreezeDebugProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7100D1A6105DEBEEF00007 /* WebScrollFreezeDebugProbe.swift */; };
 		B2258FABEA7BDFCEF297DCFE /* RebrandedOnboardingView+SearchExperienceContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF81E0C6EDC46254CF28AFCB /* RebrandedOnboardingView+SearchExperienceContent.swift */; };
 		B39FB0F42E25368100DF2C4E /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39FB0F32E25368100DF2C4E /* AutoconsentPixels.swift */; };
 		B50DAF4F2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50DAF4E2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift */; };
@@ -4499,7 +4499,7 @@
 		AC7100D1A6105DEBEEF00001 /* InteractionDiagnosticsDebugScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractionDiagnosticsDebugScreen.swift; sourceTree = "<group>"; };
 		AC7100D1A6105DEBEEF00003 /* InteractionIntegrityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractionIntegrityMonitor.swift; sourceTree = "<group>"; };
 		AC7100D1A6105DEBEEF00005 /* WebScrollObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebScrollObserver.swift; sourceTree = "<group>"; };
-		AC7100D1A6105DEBEEF00007 /* WebScrollFreezeProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebScrollFreezeProbe.swift; sourceTree = "<group>"; };
+		AC7100D1A6105DEBEEF00007 /* WebScrollFreezeDebugProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebScrollFreezeDebugProbe.swift; sourceTree = "<group>"; };
 		AC7D7E5EB7B04D2385E0E48E /* AfterInactivityOptionAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AfterInactivityOptionAdapterTests.swift; sourceTree = "<group>"; };
 		AD8CF8E4B152CDB3A4ACB14C /* StartupOnboardingCover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupOnboardingCover.swift; sourceTree = "<group>"; };
 		AF81E0C6EDC46254CF28AFCB /* RebrandedOnboardingView+SearchExperienceContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "RebrandedOnboardingView+SearchExperienceContent.swift"; sourceTree = "<group>"; };
@@ -7889,7 +7889,7 @@
 			children = (
 				852BCC4C2EC4AEA60093C753 /* DataAuditDebugScreen.swift */,
 				AC7100D1A6105DEBEEF00005 /* WebScrollObserver.swift */,
-				AC7100D1A6105DEBEEF00007 /* WebScrollFreezeProbe.swift */,
+				AC7100D1A6105DEBEEF00007 /* WebScrollFreezeDebugProbe.swift */,
 				AC7100D1A6105DEBEEF00003 /* InteractionIntegrityMonitor.swift */,
 				AC7100D1A6105DEBEEF00001 /* InteractionDiagnosticsDebugScreen.swift */,
 				36A96A092E6606C0003D4529 /* LocalNotificationsPlaygroundView.swift */,
@@ -13201,7 +13201,7 @@
 				9F387DE22EA891E8006861F8 /* NewAddressBarPickerModalPromptProvider.swift in Sources */,
 				852BCC4D2EC4AEAC0093C753 /* DataAuditDebugScreen.swift in Sources */,
 				AC7100D1A6105DEBEEF00006 /* WebScrollObserver.swift in Sources */,
-				AC7100D1A6105DEBEEF00008 /* WebScrollFreezeProbe.swift in Sources */,
+				AC7100D1A6105DEBEEF00008 /* WebScrollFreezeDebugProbe.swift in Sources */,
 				AC7100D1A6105DEBEEF00004 /* InteractionIntegrityMonitor.swift in Sources */,
 				AC7100D1A6105DEBEEF00002 /* InteractionDiagnosticsDebugScreen.swift in Sources */,
 				31A968192E4F692200F4305E /* SettingsAIExperimentalPickerView.swift in Sources */,

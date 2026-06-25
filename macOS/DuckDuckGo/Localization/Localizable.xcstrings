@@ -22712,6 +22712,66 @@
         }
       }
     },
+    "cookie.popup.preference.block-all" : {
+      "comment" : "Cookie pop-up preference option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reject, Hide, or Accept"
+          }
+        }
+      }
+    },
+    "cookie.popup.preference.block-standard" : {
+      "comment" : "Cookie pop-up preference option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reject or Hide"
+          }
+        }
+      }
+    },
+    "cookie.popup.preference.do-not-block" : {
+      "comment" : "Cookie pop-up preference option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "cookie.popup.preference.explanation" : {
+      "comment" : "Explanation below cookie pop-up preference picker in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some cookie pop-ups don't have a 'reject' option. By default, we won't block them. Choose **Reject, Hide, or Accept** to let us handle these — we may need to accept some cookies when necessary."
+          }
+        }
+      }
+    },
+    "cookie.popup.preference.title" : {
+      "comment" : "Title for cookie pop-up preference picker in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pop-up Setting"
+          }
+        }
+      }
+    },
     "copy" : {
       "comment" : "Copy button",
       "extractionState" : "extracted_with_value",

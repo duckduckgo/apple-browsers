@@ -123,6 +123,7 @@ struct BrokerProfileOptOutSubJob {
                                 brokerProfileQueryData: brokerProfileQueryData,
                                 database: dependencies.database,
                                 schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
+                                featureFlagger: dependencies.featureFlagger,
                                 identifiers: identifiers,
                                 stageDurationCalculator: stageDurationContext.stageDurationCalculator)
 
@@ -308,7 +309,8 @@ struct BrokerProfileOptOutSubJob {
                                          profileQueryId: identifiers.profileQueryId,
                                          extractedProfileId: identifiers.extractedProfileId)
 
-        let updater = OperationPreferredDateUpdater(database: database)
+        let updater = OperationPreferredDateUpdater(database: database,
+                                                    featureFlagger: dependencies.featureFlagger)
         try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker,
                                                         profileQueryId: identifiers.profileQueryId)
 
@@ -356,6 +358,7 @@ struct BrokerProfileOptOutSubJob {
                                       brokerProfileQueryData: BrokerProfileQueryData,
                                       database: DataBrokerProtectionRepository,
                                       schedulingConfig: DataBrokerScheduleConfig,
+                                      featureFlagger: OptOutRetryErrorFeatureFlagging,
                                       identifiers: OptOutIdentifiers,
                                       stageDurationCalculator: DataBrokerProtectionStageDurationCalculator) {
         // 9. Records opt out failures caught on the main  orchestration function
@@ -371,7 +374,8 @@ struct BrokerProfileOptOutSubJob {
             extractedProfileId: identifiers.extractedProfileId,
             error: error,
             database: database,
-            schedulingConfig: schedulingConfig
+            schedulingConfig: schedulingConfig,
+            featureFlagger: featureFlagger
         )
     }
 
@@ -391,7 +395,8 @@ struct BrokerProfileOptOutSubJob {
                 profileQueryId: profileQueryId,
                 extractedProfileId: extractedProfileId,
                 schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
-                database: database
+                database: database,
+                featureFlagger: dependencies.featureFlagger
             )
         } catch {
             handleOperationError(
@@ -401,7 +406,8 @@ struct BrokerProfileOptOutSubJob {
                 extractedProfileId: extractedProfileId,
                 error: error,
                 database: database,
-                schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig
+                schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
+                featureFlagger: dependencies.featureFlagger
             )
         }
         notificationCenter.post(name: DataBrokerProtectionNotifications.didFinishOptOut, object: brokerProfileQueryData.dataBroker.name)
@@ -439,8 +445,9 @@ struct BrokerProfileOptOutSubJob {
                                            profileQueryId: Int64,
                                            extractedProfileId: Int64?,
                                            schedulingConfig: DataBrokerScheduleConfig,
-                                           database: DataBrokerProtectionRepository) throws {
-        let dateUpdater = OperationPreferredDateUpdater(database: database)
+                                           database: DataBrokerProtectionRepository,
+                                           featureFlagger: OptOutRetryErrorFeatureFlagging) throws {
+        let dateUpdater = OperationPreferredDateUpdater(database: database, featureFlagger: featureFlagger)
         try dateUpdater.updateOperationDataDates(origin: origin,
                                                  brokerId: brokerId,
                                                  profileQueryId: profileQueryId,
@@ -454,7 +461,8 @@ struct BrokerProfileOptOutSubJob {
                                       extractedProfileId: Int64?,
                                       error: Error,
                                       database: DataBrokerProtectionRepository,
-                                      schedulingConfig: DataBrokerScheduleConfig) {
+                                      schedulingConfig: DataBrokerScheduleConfig,
+                                      featureFlagger: OptOutRetryErrorFeatureFlagging) {
         let event: HistoryEvent
 
         if let extractedProfileId = extractedProfileId {
@@ -480,7 +488,8 @@ struct BrokerProfileOptOutSubJob {
                 profileQueryId: profileQueryId,
                 extractedProfileId: extractedProfileId,
                 schedulingConfig: schedulingConfig,
-                database: database
+                database: database,
+                featureFlagger: featureFlagger
             )
         } catch {
             Logger.dataBrokerProtection.log("Can't update operation date after error")

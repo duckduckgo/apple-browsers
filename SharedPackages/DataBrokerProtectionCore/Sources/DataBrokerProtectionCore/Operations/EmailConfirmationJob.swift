@@ -306,7 +306,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             extractedProfileId: jobData.extractedProfileId
         )
 
-        let updater = OperationPreferredDateUpdater(database: jobDependencies.database)
+        let updater = OperationPreferredDateUpdater(database: jobDependencies.database,
+                                                    featureFlagger: DisabledOptOutRetryErrorFeatureFlagger())
         try updater.updateChildrenBrokerForParentBroker(broker, profileQueryId: jobData.profileQueryId)
 
         try updateOperationDataDates(
@@ -402,7 +403,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                           extractedProfileId: Int64?,
                                           schedulingConfig: DataBrokerScheduleConfig,
                                           database: DataBrokerProtectionRepository) throws {
-        let dateUpdater = OperationPreferredDateUpdater(database: database)
+        let dateUpdater = OperationPreferredDateUpdater(database: database,
+                                                        featureFlagger: DisabledOptOutRetryErrorFeatureFlagger())
         try dateUpdater.updateOperationDataDates(origin: origin,
                                                  brokerId: brokerId,
                                                  profileQueryId: profileQueryId,

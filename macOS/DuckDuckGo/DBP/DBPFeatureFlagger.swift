@@ -53,6 +53,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         false
     }
 
+    var isOptOutRetryErrorFrequencyExperimentOn: Bool {
+        featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
+    }
+
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
     }

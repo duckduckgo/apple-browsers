@@ -366,6 +366,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case webViewUserAgent
     case freemiumPIR
     case contentBlocking
+    case optOutRetryError96Hours
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {

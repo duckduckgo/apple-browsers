@@ -369,6 +369,7 @@ extension AutoconsentUserScript {
                 "enableCosmeticRules": true,
                 "detectRetries": 20,
                 "isMainWorld": false,
+                "enableHeuristicDetection": true,
                 "heuristicMode": heuristicModeValue()
             ] as [String: Any?]
         ] as [String: Any?], nil)

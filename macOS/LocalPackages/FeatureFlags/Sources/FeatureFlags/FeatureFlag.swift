@@ -345,7 +345,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
 
-    /// Context-aware page suggestions in the Duck.ai sidebar (macOS MVP).
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1213651763438251
     case sidebarSuggestedPrompts
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213610208091978?focus=true

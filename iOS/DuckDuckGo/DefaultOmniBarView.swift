@@ -980,6 +980,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             let localPoint = target.convert(point, from: self)
             return target.hitTest(localPoint, with: event) ?? target
         }
+        if shouldUseFloatingTopGlass {
+            let localPoint = floatingGlassContentHostView.convert(point, from: self)
+            if let target = floatingGlassContentHostView.hitTest(localPoint, with: event) {
+                return target
+            }
+        }
         return super.hitTest(point, with: event)
     }
 

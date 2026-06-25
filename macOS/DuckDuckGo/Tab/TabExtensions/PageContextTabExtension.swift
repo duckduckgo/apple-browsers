@@ -503,7 +503,7 @@ final class PageContextTabExtension {
     }
 }
 
-protocol PageContextProtocol: AnyObject {
+protocol PageContextProtocol: AnyObject, NavigationResponder {
     /// Appends a user text selection to the sidebar's selection-context list. See the
     /// implementation in `PageContextTabExtension` for buffering/lifecycle semantics.
     @MainActor func appendSelectionContext(_ selection: AIChatSelectionContextData)
@@ -511,6 +511,18 @@ protocol PageContextProtocol: AnyObject {
 
 extension PageContextTabExtension: PageContextProtocol, TabExtension {
     func getPublicProtocol() -> PageContextProtocol { self }
+}
+
+extension PageContextTabExtension: NavigationResponder {
+    /// Re-collect page context once the new page has finished loading. The `Tab.$content` trigger
+    /// fires at `didCommit` — before the page's markup (JSON-LD / og:type) is parsed — so page-type
+    /// signals would otherwise reflect the previous page and the sidebar's suggestions wouldn't
+    /// update on same-tab navigation. Mirrors Windows' `NavigationCompleted` re-collect.
+    func navigationDidFinish(_ navigation: Navigation) {
+        guard !isLoadedInSidebar else { return }
+        collectPageContextIfNeeded()
+        requestSignalsOnlyCollectionIfNeeded()
+    }
 }
 
 extension TabExtensions {

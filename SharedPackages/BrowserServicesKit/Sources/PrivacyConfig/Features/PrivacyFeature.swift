@@ -416,7 +416,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the "Attach to Duck.ai" context-menu item that attaches selected text as the sidebar's page context
     case selectionContext
 
-    /// Context-aware page suggestions shown in the Duck.ai sidebar based on page type
     case sidebarSuggestedPrompts
 
     /// Enables updated AI features settings screen

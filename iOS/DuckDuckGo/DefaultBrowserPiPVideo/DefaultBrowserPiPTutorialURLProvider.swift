@@ -19,19 +19,28 @@
 
 import Foundation
 import SystemSettingsPiPTutorial
+import protocol PrivacyConfig.FeatureFlagger
 
 final class DefaultBrowserPiPTutorialURLProvider: PiPTutorialURLProvider {
 
+    private let featureFlagger: FeatureFlagger
     private let bundle: Bundle
 
-    init(bundle: Bundle = .main) {
+    init(featureFlagger: FeatureFlagger, bundle: Bundle = .main) {
+        self.featureFlagger = featureFlagger
         self.bundle = bundle
     }
 
     func pipTutorialURL() throws(PiPTutorialURLProviderError) -> URL {
+        let resourceName = if featureFlagger.isFeatureOn(.appRebranding) {
+            "default-browser-tutorial-rebranded"
+        } else {
+            "default-browser-tutorial"
+        }
         // Bundle searches for .lproj folders in order of user's preferred languages.
-        // Falls back to development language if no preferred localization exists.
-        guard let url = bundle.url(forResource: "default-browser-tutorial", withExtension: "mp4") else {
+        // Falls back to Base language if no preferred localization exists.
+        // Show video depending on onboarding rebranding
+        guard let url = bundle.url(forResource: resourceName, withExtension: "mp4") else {
             throw .urlNotFound
         }
         return url

@@ -280,6 +280,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534812?focus=true
     case heuristicAction
 
+    /// Cookie Pop-up Preference picker in settings
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215960699028461?focus=true
+    case cookiePopupPreferenceSetting
+
     /// Enables advanced card ordering for the Next Steps List widget
     /// This flag is disabled by default to allow testing the new widget design with current ordering logic
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
@@ -626,6 +630,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
+        case .cookiePopupPreferenceSetting:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupPreferenceSetting), category: .popupBlocking)
         case .nextStepsListAdvancedCardOrdering:
             Config(source: .disabled)
         case .crashCollectionLimitCallStackTreeDepth:

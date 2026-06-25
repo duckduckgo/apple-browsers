@@ -66,16 +66,16 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureSearchExperienceSelectionImpression = false
     private(set) var didCallMeasureChooseAIChat = false
     private(set) var didCallMeasureChooseSearchOnly = false
-    private(set) var didCallMeasureDuckAIQueryExperimentSelectionImpression = false
-    private(set) var didCallMeasureDuckAIQueryExperimentChooseSearchOnly = false
-    private(set) var didCallMeasureDuckAIQueryExperimentChooseAIChat = false
-    private(set) var didCallMeasureDuckAIQueryExperimentQuerySubmission = false
-    private(set) var didCaptureDuckAIQueryExperimentPromptSourceValue: String?
-    private(set) var didCaptureDuckAIQueryExperimentSelection: DuckAIQueryMode?
-    private(set) var didCallMeasureDuckAIExperimentFireButtonCTAAction = false
-    private(set) var didCallMeasureDuckAIExperimentFireDialogImpression = false
-    private(set) var didCallMeasureDuckAIExperimentFinalDialogImpression = false
-    private(set) var didCallMeasureDuckAIExperimentFinalDialogCTAAction = false
+    private(set) var didCallMeasureDuckAIQuerySelectionImpression = false
+    private(set) var didCallMeasureDuckAIQueryChooseSearchOnly = false
+    private(set) var didCallMeasureDuckAIQueryChooseAIChat = false
+    private(set) var didCallMeasureDuckAIQueryQuerySubmission = false
+    private(set) var didCaptureDuckAIQueryPromptSourceValue: String?
+    private(set) var didCaptureDuckAIQuerySelection: DuckAIQueryMode?
+    private(set) var didCallMeasureDuckAIFireButtonCTAAction = false
+    private(set) var didCallMeasureDuckAIFireDialogImpression = false
+    private(set) var didCallMeasureDuckAIFinalDialogImpression = false
+    private(set) var didCallMeasureDuckAIFinalDialogCTAAction = false
 
     private(set) var didCallMeasureTrySearchDialogNewTabDismissButtonTapped = false
     private(set) var didCallMeasureSearchResultDialogDismissButtonTapped = false
@@ -263,21 +263,21 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     }
 
     func measureDuckAIQuerySelectionImpression() {
-        didCallMeasureDuckAIQueryExperimentSelectionImpression = true
+        didCallMeasureDuckAIQuerySelectionImpression = true
     }
 
     func measureDuckAIQueryChooseSearchOnly() {
-        didCallMeasureDuckAIQueryExperimentChooseSearchOnly = true
+        didCallMeasureDuckAIQueryChooseSearchOnly = true
     }
 
     func measureDuckAIQueryChooseAIChat() {
-        didCallMeasureDuckAIQueryExperimentChooseAIChat = true
+        didCallMeasureDuckAIQueryChooseAIChat = true
     }
 
     func measureDuckAIQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
-        didCallMeasureDuckAIQueryExperimentQuerySubmission = true
-        didCaptureDuckAIQueryExperimentPromptSourceValue = promptSource.rawValue
-        didCaptureDuckAIQueryExperimentSelection = selection
+        didCallMeasureDuckAIQueryQuerySubmission = true
+        didCaptureDuckAIQueryPromptSourceValue = promptSource.rawValue
+        didCaptureDuckAIQuerySelection = selection
     }
 
     func measureTrySearchDialogSuggestedSearchTapped() {
@@ -313,19 +313,19 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     }
 
     func measureDuckAIFireButtonCTAAction() {
-        didCallMeasureDuckAIExperimentFireButtonCTAAction = true
+        didCallMeasureDuckAIFireButtonCTAAction = true
     }
 
     func measureDuckAIFireDialogImpression() {
-        didCallMeasureDuckAIExperimentFireDialogImpression = true
+        didCallMeasureDuckAIFireDialogImpression = true
     }
 
     func measureDuckAIFinalDialogImpression() {
-        didCallMeasureDuckAIExperimentFinalDialogImpression = true
+        didCallMeasureDuckAIFinalDialogImpression = true
     }
 
     func measureDuckAIFinalDialogCTAAction() {
-        didCallMeasureDuckAIExperimentFinalDialogCTAAction = true
+        didCallMeasureDuckAIFinalDialogCTAAction = true
     }
 
     func measureEndOfJourneyDialogNewTabDismissButtonTapped() {

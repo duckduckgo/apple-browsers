@@ -281,7 +281,7 @@ extension MainViewController {
     @objc func keyboardNoOperation() { }
 
     private func isShortcutEnabled() -> Bool {
-        !experimentDuckAIFireOnboardingFlow.controlsLocked
+        !duckAIFireOnboardingFlow.controlsLocked
     }
 
     private func saveBookmark(favorite: Bool) {

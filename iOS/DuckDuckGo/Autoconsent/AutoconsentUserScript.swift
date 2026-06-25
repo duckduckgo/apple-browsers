@@ -30,7 +30,7 @@ import Combine
 import WebExtensions
 
 protocol AutoconsentPreferences {
-    var autoconsentEnabled: Bool { get set }
+    var cookiePopupPreference: CookiePopupPreference { get set }
 }
 
 extension AppUserDefaults: AutoconsentPreferences { }
@@ -283,7 +283,7 @@ extension AutoconsentUserScript {
             return
         }
 
-        if preferences.autoconsentEnabled == false {
+        if preferences.cookiePopupPreference == .off {
             // this will only happen if the user has just declined a prompt in this tab
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
             return
@@ -342,8 +342,7 @@ extension AutoconsentUserScript {
                 "enableCosmeticRules": true,
                 "detectRetries": 20,
                 "isMainWorld": false,
-                "enableHeuristicDetection": true,
-                "enableHeuristicAction": consentHeuristicEnabled ?? false
+                "heuristicMode": heuristicModeValue()
             ] as [String: Any?]
         ] as [String: Any?], nil)
     }
@@ -588,6 +587,21 @@ extension AutoconsentUserScript {
         let isEnabled = featureFlagger.isFeatureOn(.heuristicAction)
         Logger.autoconsent.debug("heuristic action enabled: \(isEnabled)")
         return isEnabled
+    }
+
+    @MainActor
+    private func heuristicModeValue() -> String {
+        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
+        if !(consentHeuristicEnabled ?? false) {
+            return "off"
+        }
+        if preferences.cookiePopupPreference == .max {
+            return "tier2"
+        }
+        if preferences.cookiePopupPreference == .default {
+            return config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
+        }
+        return "off"
     }
 
     @MainActor

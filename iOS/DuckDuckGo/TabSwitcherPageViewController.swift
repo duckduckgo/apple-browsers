@@ -74,6 +74,8 @@ class TabSwitcherPageViewController: UIViewController {
     private var trackerInfoModel: InfoPanelView.Model?
     private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
     private let duckAIGridContentProvider: DuckAIGridContentProviding?
+    private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
+    private var voiceSessionChangesCancellable: AnyCancellable?
 
     var canUpdateCollection = true
 
@@ -87,7 +89,8 @@ class TabSwitcherPageViewController: UIViewController {
          tabSwitcherSettings: TabSwitcherSettings,
          trackerCountViewModel: TabSwitcherTrackerCountViewModel?,
          isFireModeEnabled: Bool,
-         duckAIGridContentProvider: DuckAIGridContentProviding?) {
+         duckAIGridContentProvider: DuckAIGridContentProviding?,
+         duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?) {
         self.browsingMode = browsingMode
         self.tabsModel = tabsModel
         self.previewsSource = previewsSource
@@ -96,6 +99,7 @@ class TabSwitcherPageViewController: UIViewController {
         self.isFireModeEnabled = isFireModeEnabled
         self.currentSelection = tabsModel.currentIndex
         self.duckAIGridContentProvider = duckAIGridContentProvider
+        self.duckAIVoiceSessionTracker = duckAIVoiceSessionTracker
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -149,6 +153,7 @@ class TabSwitcherPageViewController: UIViewController {
         collectionView.backgroundView = backgroundView
         
         subscribeToTabChanges()
+        subscribeToVoiceSessionChanges()
         bindTrackerCount()
         trackerCountViewModel?.refresh()
         setupFireModeEmptyState()
@@ -342,7 +347,35 @@ class TabSwitcherPageViewController: UIViewController {
     /// `nil` keeps the cell on the existing screenshot path.
     private func duckAIGridItem(for tab: Tab) -> DuckAIGridItem? {
         guard tab.isAITab else { return nil }
-        return duckAIGridContentProvider?.gridItem(for: tab)
+        let liveVoiceActive = duckAIVoiceSessionTracker?.isVoiceSessionActive(for: tab) ?? false
+        return duckAIGridContentProvider?.gridItem(for: tab, liveVoiceActive: liveVoiceActive)
+    }
+
+    /// Applies the current tab state (preview/rich card) to `cell`.
+    private func configure(_ cell: TabViewCell, with tab: Tab) {
+        cell.update(withTab: tab,
+                    isSelectionModeEnabled: pageDelegate?.isEditing ?? false,
+                    preview: previewsSource?.preview(for: tab),
+                    isFireModeEnabled: isFireModeEnabled,
+                    duckAIGridItem: duckAIGridItem(for: tab),
+                    thumbnailLoader: duckAIGridContentProvider)
+    }
+
+    /// Refreshes visible Duck.ai cells when a voice session starts/ends (end-timing lives in `DuckAIVoiceSessionTracker`).
+    private func subscribeToVoiceSessionChanges() {
+        voiceSessionChangesCancellable = duckAIVoiceSessionTracker?.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshVisibleAITabCells() }
+    }
+
+    private func refreshVisibleAITabCells() {
+        for indexPath in collectionView.indexPathsForVisibleItems {
+            guard indexPath.row < tabsModel.count,
+                  let tab = tabsModel.get(tabAt: indexPath.row),
+                  tab.isAITab,
+                  let cell = collectionView.cellForItem(at: indexPath) as? TabViewCell else { continue }
+            configure(cell, with: tab)
+        }
     }
 }
 
@@ -370,12 +403,7 @@ extension TabSwitcherPageViewController: UICollectionViewDataSource {
            let tab = tabsModel.get(tabAt: indexPath.row) {
             tab.removeObserver(self)
             tab.addObserver(self)
-            cell.update(withTab: tab,
-                        isSelectionModeEnabled: pageDelegate?.isEditing ?? false,
-                        preview: previewsSource?.preview(for: tab),
-                        isFireModeEnabled: isFireModeEnabled,
-                        duckAIGridItem: duckAIGridItem(for: tab),
-                        thumbnailLoader: duckAIGridContentProvider)
+            configure(cell, with: tab)
         }
 
         return cell
@@ -538,12 +566,7 @@ extension TabSwitcherPageViewController: TabObserver {
             DailyPixel.fireDaily(.debugTabSwitcherDidChangeInvalidState)
             return
         }
-        cell.update(withTab: tab,
-                    isSelectionModeEnabled: pageDelegate?.isEditing ?? false,
-                    preview: previewsSource?.preview(for: tab),
-                    isFireModeEnabled: isFireModeEnabled,
-                    duckAIGridItem: duckAIGridItem(for: tab),
-                    thumbnailLoader: duckAIGridContentProvider)
+        configure(cell, with: tab)
     }
 }
 

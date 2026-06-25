@@ -49,6 +49,7 @@ enum GeneralPixel: PixelKitEvent {
     case dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: Bool)
     case dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(openFireWindowByDefault: Bool)
     case dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: Bool)
+    case dailyAutoClearOnExitEnabled
 
     case navigation(NavigationKind)
     case navigationToExternalURL
@@ -666,6 +667,9 @@ enum GeneralPixel: PixelKitEvent {
 
         case .dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: let fireAnimationEnabled):
             return "m_mac_fire_window_configuration_fire-animation_\(fireAnimationEnabled ? "enabled" : "disabled")"
+
+        case .dailyAutoClearOnExitEnabled:
+            return "m_mac_settings_auto-clear_on"
 
         case .navigation:
             return "m_mac_navigation"
@@ -1587,6 +1591,7 @@ enum GeneralPixel: PixelKitEvent {
                 .dailyFireWindowConfigurationFireAnimationEnabled,
                 .fireWindowOpenedAny,
                 .fireWindowOpened,
+                .dailyAutoClearOnExitEnabled,
                 .navigation,
                 .navigationToExternalURL,
                 .serp,

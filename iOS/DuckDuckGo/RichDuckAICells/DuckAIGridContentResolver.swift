@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import ImageIO
 import AIChat
 import PrivacyConfig
 import os.log
@@ -48,6 +49,11 @@ protocol DuckAIGridContentProviding: DuckAIGridItemProviding, DuckAIThumbnailLoa
 /// reading from native chat storage.
 @MainActor
 final class DuckAIGridContentResolver: DuckAIGridContentProviding {
+    
+    private enum Constants {
+        // Card thumbnail is 80×145pt; 512px covers it at 3× + aspectFill crop with margin.
+        static let thumbnailMaxPixelSize = 512
+    }
 
     private let featureFlagger: FeatureFlagger
     private let storageHandler: DuckAiNativeStorageHandling?
@@ -130,13 +136,29 @@ final class DuckAIGridContentResolver: DuckAIGridContentProviding {
     }
 
     /// Native files may be raw image bytes OR a `{data: <base64>, mimeType: ...}` JSON
-    /// wrapper (debug-server dashboard is the reference). Try wrapper first, then raw.
+    /// wrapper (debug-server dashboard is the reference). Try wrapper first, then raw,
+    /// then downsample to the card's display size so the full-res bitmap is never decoded.
     nonisolated private static func decodeImage(from data: Data) -> UIImage? {
+        let bytes: Data
         if let wrapper = try? JSONDecoder().decode(FileWrapper.self, from: data),
-           let bytes = Data(base64Encoded: wrapper.data) {
-            return UIImage(data: bytes)
+           let decoded = Data(base64Encoded: wrapper.data) {
+            bytes = decoded
+        } else {
+            bytes = data
         }
-        return UIImage(data: data)
+        return downsample(bytes, maxPixelSize: Constants.thumbnailMaxPixelSize)
+    }
+
+    /// Decodes straight from the encoded bytes to a thumbnail-sized `CGImage` via ImageIO
+    nonisolated private static func downsample(_ data: Data, maxPixelSize: Int) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        return UIImage(cgImage: cgImage)
     }
 
     private struct FileWrapper: Decodable {

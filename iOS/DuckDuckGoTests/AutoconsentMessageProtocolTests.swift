@@ -140,7 +140,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     func testWhenAutoconsentDisabledByUserThenPublishesSettingDisabledCPMDiagnostics() throws {
         let delegate = MockAutoconsentUserScriptDelegate()
         userScript.delegate = delegate
-        userScript.preferences.autoconsentEnabled = false
+        userScript.preferences.cookiePopupPreference = .off
 
         _ = sendInit(url: "https://example.com")
 

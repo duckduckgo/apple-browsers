@@ -6867,7 +6867,6 @@ extension MainViewController: OnboardingDelegate {
         viewModel.resumeOnboardingFromInterlude()
         let controller = OnboardingIntroFactory.makeController(
             viewModel: viewModel,
-            isRebranded: featureFlagger.isFeatureOn(.onboardingRebranding),
             delegate: self
         )
         linearOnboardingContext?.onboardingViewController = controller

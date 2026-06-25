@@ -17,9 +17,7 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Core
-import UserNotifications
+import UIKit
 import AIChat
 
 protocol Onboarding: UIViewController {

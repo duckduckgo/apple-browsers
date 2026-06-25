@@ -262,11 +262,8 @@ extension DebugScreensViewModel {
                     func searchFromOnboarding(for query: String) {}
                 }
 
-                let isOnboardingRebranding = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.onboardingRebranding)
-                let defaultFlow: OnboardingDebugFlow = isOnboardingRebranding ? .rebranding : .legacy
-
                 weak var capturedController: OnboardingDebugViewController?
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(initialFlow: defaultFlow) { flow in
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView() {
                     guard let capturedController else { return }
 
                     let viewModel = OnboardingIntroFactory.makeViewModel(
@@ -278,7 +275,6 @@ extension DebugScreensViewModel {
                     )
                     let controller = OnboardingIntroFactory.makeController(
                         viewModel: viewModel,
-                        isRebranded: flow.isRebranding,
                         delegate: capturedController
                     )
                     controller.modalPresentationStyle = .overFullScreen

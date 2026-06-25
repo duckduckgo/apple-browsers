@@ -69,7 +69,6 @@ extension MainViewController {
         )
         let controller = OnboardingIntroFactory.makeController(
             viewModel: viewModel,
-            isRebranded: featureFlagger.isFeatureOn(.onboardingRebranding),
             delegate: self
         )
         controller.modalPresentationStyle = .overFullScreen

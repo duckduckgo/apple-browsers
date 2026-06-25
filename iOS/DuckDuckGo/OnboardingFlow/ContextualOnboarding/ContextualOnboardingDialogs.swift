@@ -348,13 +348,7 @@ struct OnboardingAddToDockTutorialContent: View {
     let dismissAction: () -> Void
 
     var body: some View {
-        AddToDockTutorialView(
-            title: title,
-            message: message,
-            cta: cta,
-            isSkipped: isSkipped,
-            action: dismissAction
-        )
+        EmptyView()
     }
 }
 

@@ -65,7 +65,6 @@ final class AIChatSession {
             .eraseToAnyPublisher()
     }
 
-    /// Emits the chat view controller as it's recreated on show / torn down on hide, so observers can re-deliver page context.
     var chatViewControllerPublisher: AnyPublisher<AIChatViewController?, Never> {
         chatViewControllerSubject.eraseToAnyPublisher()
     }

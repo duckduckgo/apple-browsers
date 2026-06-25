@@ -699,23 +699,42 @@ final class BrowserTabViewController: NSViewController {
         // Flexible margins on every side keep the card centered as the window resizes.
         hostingController.view.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin, .maxYMargin]
 
+        // Start hidden so we can fade in.
+        backdrop.alphaValue = 0
+        hostingController.view.alphaValue = 0
+
         addChild(hostingController)
         frameView.addSubview(backdrop, positioned: .above, relativeTo: nil)
         frameView.addSubview(hostingController.view, positioned: .above, relativeTo: backdrop)
         cookiePopupOptInBackdrop = backdrop
         cookiePopupOptInHostingController = hostingController
 
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            backdrop.animator().alphaValue = 1
+            hostingController.view.animator().alphaValue = 1
+        }
+
         // Clear keyboard focus from whatever field was active (e.g. the address bar / search box).
         view.window?.makeFirstResponder(nil)
     }
 
     private func dismissCookiePopupProtectionOptInDialog() {
-        cookiePopupOptInBackdrop?.stopListening()
-        cookiePopupOptInBackdrop?.removeFromSuperview()
+        guard let backdrop = cookiePopupOptInBackdrop, let hostingController = cookiePopupOptInHostingController else { return }
+        // Detach the references now so a re-trigger during the fade-out starts a fresh dialog.
         cookiePopupOptInBackdrop = nil
-        cookiePopupOptInHostingController?.view.removeFromSuperview()
-        cookiePopupOptInHostingController?.removeFromParent()
         cookiePopupOptInHostingController = nil
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.15
+            backdrop.animator().alphaValue = 0
+            hostingController.view.animator().alphaValue = 0
+        } completionHandler: {
+            backdrop.stopListening()
+            backdrop.removeFromSuperview()
+            hostingController.view.removeFromSuperview()
+            hostingController.removeFromParent()
+        }
     }
 
     private func presentContextualOnboarding(showLastDialog: Bool = false) {

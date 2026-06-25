@@ -215,6 +215,15 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func updateBorderView() {
+        // Floating UI overlays a glass omnibar over the page surface, so the framing border would
+        // expose a strip artifact. Suppress it entirely while floating UI is enabled.
+        if FloatingUIManager().isFloatingUIEnabled {
+            borderView.isHidden = true
+            borderView.isTopVisible = false
+            borderView.isBottomVisible = false
+            return
+        }
+
         if !favoritesModel.isEmpty, isViewLoaded {
             borderView.insertSelf(into: view)
         }

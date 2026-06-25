@@ -896,10 +896,29 @@ class TabViewController: UIViewController {
             borderView.isHidden = true
             borderView.isTopVisible = false
             borderView.isBottomVisible = false
+            updateFloatingTopContentInset(for: barsVisibilityPercent)
         } else {
             borderView.isHidden = false
             borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         }
+    }
+
+    /// In floating top mode the web content spans the full height behind the glass omnibar. Inset
+    /// the scroll view so content rests below the bar at rest and underflows it on scroll. The inset
+    /// scales with `barsVisibilityPercent` so it collapses to zero in lock-step as the bar hides.
+    private func updateFloatingTopContentInset(for barsVisibilityPercent: CGFloat) {
+        let topInset: CGFloat
+        // AI tabs with the unified toggle input manage their own top layout (the content container
+        // stays anchored below the chrome), so adding a top inset there would double-offset.
+        if appSettings.currentAddressBarPosition == .top && !(isAITab && unifiedToggleInputFeature.isAvailable) {
+            let omniBarHeight = chromeDelegate?.omniBar.barView.expectedHeight ?? 0
+            topInset = omniBarHeight * barsVisibilityPercent
+        } else {
+            topInset = 0
+        }
+        guard webView.scrollView.contentInset.top != topInset else { return }
+        webView.scrollView.contentInset.top = topInset
+        webView.scrollView.verticalScrollIndicatorInsets.top = topInset
     }
 
     private func observeNetPConnectionStatusChanges() {

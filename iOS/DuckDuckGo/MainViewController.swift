@@ -1361,10 +1361,30 @@ class MainViewController: UIViewController {
     private func adjustNewTabPageSafeAreaInsets(for addressBarPosition: AddressBarPosition) {
         switch addressBarPosition {
         case .top:
-            newTabPageViewController?.additionalSafeAreaInsets = .zero
+            // In floating top mode the NTP spans behind the glass omnibar; inset its content so it
+            // rests below the bar while still being able to underflow it on scroll.
+            let topInset = isFloatingTopContentBehindBar ? viewCoordinator.omniBar.barView.expectedHeight * currentBarsVisibility : 0
+            newTabPageViewController?.additionalSafeAreaInsets = .init(top: topInset, left: 0, bottom: 0, right: 0)
         case .bottom:
             newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: viewCoordinator.omniBar.barView.expectedHeight, right: 0)
         }
+    }
+
+    /// Scales the floating-top NTP content inset with chrome visibility so it collapses to zero in
+    /// lock-step as the bar hides, matching the web view's underflow behaviour. No-op outside
+    /// floating top mode.
+    private func updateFloatingTopNewTabPageInset(for barsVisibilityPercent: CGFloat) {
+        guard isFloatingTopContentBehindBar else { return }
+        newTabPageViewController?.additionalSafeAreaInsets.top = viewCoordinator.omniBar.barView.expectedHeight * barsVisibilityPercent
+    }
+
+    /// True when content (web/NTP) is laid out spanning behind the glass omnibar in floating top
+    /// mode, matching the coordinator's content-container top anchor. The unified toggle input owns
+    /// its own top layout, so the floating-top inset must not be applied while it's active.
+    private var isFloatingTopContentBehindBar: Bool {
+        isFloatingUIEnabled
+            && appSettings.currentAddressBarPosition == .top
+            && unifiedToggleInputCoordinator?.isActive != true
     }
 
     @objc func onShowFullSiteAddressChanged() {
@@ -2641,6 +2661,10 @@ class MainViewController: UIViewController {
             self.suggestionTrayController?.coversFullScreen = isInMinimalChromeLayout
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
             self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)
+            // In floating top mode the tray container spans behind the glass omnibar; inset its top so
+            // suggestions start below the bar instead of underneath it.
+            let topOmniBarHeight = isFloatingTopContentBehindBar ? omniBar.barView.expectedHeight : 0
+            self.suggestionTrayController?.additionalTopInset = topOmniBarHeight
         }
     }
 
@@ -3713,6 +3737,7 @@ extension MainViewController: BrowserChromeDelegate {
             self.updateToolbarConstant(percent)
             self.updateNavBarConstant(percent)
             self.currentTab?.updateWebViewBottomAnchor(for: percent)
+            self.updateFloatingTopNewTabPageInset(for: percent)
 
             self.viewCoordinator.navigationBarContainer.alpha = percent
             self.viewCoordinator.tabBarContainer.alpha = percent

@@ -126,12 +126,14 @@ class MainViewCoordinator {
         var toolbarSpacerHeight: NSLayoutConstraint!
         var contentContainerBottomToUnifiedToggleInputTop: NSLayoutConstraint!
         var contentContainerTopToSafeArea: NSLayoutConstraint!
+        var contentContainerTopToSuperview: NSLayoutConstraint!
         var contentContainerTopToAIChatHeader: NSLayoutConstraint!
 
     }
 
     func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
         addressBarPosition = position
+        applyContentContainerTopAnchorForCurrentState()
         guard isFloatingUIEnabled else {
             toolbar.setOmnibarView(nil, height: 0)
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
@@ -237,6 +239,7 @@ class MainViewCoordinator {
         }
 
         addressBarPosition = position
+        applyContentContainerTopAnchorForCurrentState()
     }
 
     func hideNavigationBarWithBottomPosition() {
@@ -533,17 +536,13 @@ class MainViewCoordinator {
     func showAIChatTabChatHeader() {
         aiChatTabChatHeaderContainer.isHidden = false
         guard isNavigationChromeHidden else { return }
-        constraints.contentContainerTop.isActive = false
-        constraints.contentContainerTopToSafeArea.isActive = false
-        constraints.contentContainerTopToAIChatHeader?.isActive = true
+        setContentContainerTopAnchorMode(.aiChatHeader)
     }
 
     func hideAIChatTabChatHeader() {
         aiChatTabChatHeaderContainer.isHidden = true
         guard isNavigationChromeHidden else { return }
-        constraints.contentContainerTop.isActive = false
-        constraints.contentContainerTopToAIChatHeader?.isActive = false
-        constraints.contentContainerTopToSafeArea.isActive = true
+        setContentContainerTopAnchorMode(.safeArea)
     }
 
     /// Hides the OmniBar collection view (not the container) so that the UTI inside the container
@@ -554,12 +553,10 @@ class MainViewCoordinator {
             isNavigationChromeHidden = true
             navigationBarCollectionView.alpha = 0
             navigationBarCollectionView.isUserInteractionEnabled = false
-            constraints.contentContainerTop.isActive = false
             if constraints.contentContainerTopToAIChatHeader != nil, !aiChatTabChatHeaderContainer.isHidden {
-                constraints.contentContainerTopToSafeArea.isActive = false
-                constraints.contentContainerTopToAIChatHeader.isActive = true
+                setContentContainerTopAnchorMode(.aiChatHeader)
             } else {
-                constraints.contentContainerTopToSafeArea.isActive = true
+                setContentContainerTopAnchorMode(.safeArea)
             }
             if !addressBarPosition.isBottom {
                 constraints.statusBackgroundToNavigationBarContainerBottom.isActive = false
@@ -574,9 +571,7 @@ class MainViewCoordinator {
             isNavigationChromeHidden = false
             navigationBarCollectionView.alpha = 1
             navigationBarCollectionView.isUserInteractionEnabled = true
-            constraints.contentContainerTopToSafeArea.isActive = false
-            constraints.contentContainerTopToAIChatHeader?.isActive = false
-            constraints.contentContainerTop.isActive = true
+            activateBaseContentContainerTopAnchor()
             if !addressBarPosition.isBottom {
                 constraints.statusBackgroundBottomToSafeAreaTop.isActive = false
                 constraints.statusBackgroundToNavigationBarContainerBottom.isActive = true
@@ -613,8 +608,19 @@ class MainViewCoordinator {
     }
 
     private func resolvedStatusBackgroundColor() -> UIColor {
-        if isFloatingUIEnabled && !isUnifiedToggleInputVisible && !isNavigationChromeHidden {
-            return .clear
+        if isFloatingUIEnabled {
+            // The floating omnibar is self-contained glass, so the status strip behind it must stay
+            // clear to let content underflow it. The unified toggle input (the floating search bar)
+            // is visible at rest on the new tab page, so we can't gate on its visibility here — only
+            // the AI-tab chrome-hidden editing surfaces paint a dedicated backdrop.
+            switch statusBackgroundPresentation {
+            case .standard, .omnibarEditing:
+                return .clear
+            case .aiTabSearchChromeHidden:
+                return UIColor(designSystemColor: .panel)
+            case .aiTabChatChromeHidden:
+                return UIColor(designSystemColor: .surfaceCanvas)
+            }
         }
 
         switch statusBackgroundPresentation {
@@ -673,6 +679,44 @@ class MainViewCoordinator {
         constraints.contentContainerBottomToToolbarTop.isActive = mode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = mode == .unifiedToggleInput
         constraints.contentContainerBottomToSafeArea.isActive = mode == .safeArea
+    }
+
+    /// Activates the resting content-container top anchor for the current mode. In floating top
+    /// mode the content spans behind the glass omnibar (safe-area top) so it can underflow on
+    /// scroll; otherwise it sits below the chrome (topSlide/navBar bottom). AI-tab chrome-hidden
+    /// and chat-header states own the top anchor themselves, so this is a no-op while those are
+    /// active.
+    func applyContentContainerTopAnchorForCurrentState() {
+        guard !isNavigationChromeHidden else { return }
+        activateBaseContentContainerTopAnchor()
+    }
+
+    private func activateBaseContentContainerTopAnchor() {
+        let useFloatingTop = isFloatingUIEnabled
+            && addressBarPosition == .top
+            && !isUnifiedToggleInputVisible
+            && (aiChatTabChatHeaderContainer?.isHidden ?? true)
+        // Floating top spans to the screen edge (behind the status bar) so content can underflow all
+        // the way up; otherwise content sits below the chrome via the topSlide anchor.
+        setContentContainerTopAnchorMode(useFloatingTop ? .floatingBehindBar : .standard)
+    }
+
+    private enum ContentContainerTopAnchorMode {
+        /// Below the chrome (topSlide / navBar bottom) — the default non-floating layout.
+        case standard
+        /// Safe-area top — AI-tab chrome-hidden state.
+        case safeArea
+        /// Below the AI chat header — AI-tab chat-header state.
+        case aiChatHeader
+        /// Screen top, behind the status bar — floating top so content underflows to the edge.
+        case floatingBehindBar
+    }
+
+    private func setContentContainerTopAnchorMode(_ mode: ContentContainerTopAnchorMode) {
+        constraints.contentContainerTop.isActive = mode == .standard
+        constraints.contentContainerTopToSafeArea.isActive = mode == .safeArea
+        constraints.contentContainerTopToAIChatHeader?.isActive = mode == .aiChatHeader
+        constraints.contentContainerTopToSuperview?.isActive = mode == .floatingBehindBar
     }
 
     /// Floating-bottom chrome is overlaid above the page surface, so content should extend to

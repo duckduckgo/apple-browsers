@@ -24,6 +24,16 @@ final class FloatingDomainCapsuleController {
 
     private let onTap: () -> Void
     private let backgroundView = UIVisualEffectView(effect: nil)
+    private let domainLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = UIFont.daxCaption1()
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.textAlignment = .center
+        label.lineBreakMode = .byTruncatingMiddle
+        label.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        return label
+    }()
     private var topConstraint: NSLayoutConstraint?
     private var bottomConstraint: NSLayoutConstraint?
 
@@ -32,9 +42,6 @@ final class FloatingDomainCapsuleController {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isHidden = true
         button.alpha = 0
-        button.titleLabel?.font = UIFont.daxCaption1()
-        button.setTitleColor(UIColor(designSystemColor: .textPrimary), for: .normal)
-        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12)
         button.backgroundColor = .clear
         button.layer.cornerCurve = .continuous
         button.layer.cornerRadius = 14
@@ -62,6 +69,13 @@ final class FloatingDomainCapsuleController {
             backgroundView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
             backgroundView.topAnchor.constraint(equalTo: button.topAnchor),
             backgroundView.bottomAnchor.constraint(equalTo: button.bottomAnchor)
+        ])
+        backgroundView.contentView.addSubview(domainLabel)
+        NSLayoutConstraint.activate([
+            domainLabel.leadingAnchor.constraint(equalTo: backgroundView.contentView.leadingAnchor, constant: 12),
+            domainLabel.trailingAnchor.constraint(equalTo: backgroundView.contentView.trailingAnchor, constant: -12),
+            domainLabel.topAnchor.constraint(equalTo: backgroundView.contentView.topAnchor, constant: 6),
+            domainLabel.bottomAnchor.constraint(equalTo: backgroundView.contentView.bottomAnchor, constant: -6)
         ])
 
         applyGlassStyle()
@@ -109,8 +123,8 @@ final class FloatingDomainCapsuleController {
             return
         }
 
-        if button.title(for: .normal) != domain {
-            button.setTitle(domain, for: .normal)
+        if domainLabel.text != domain {
+            domainLabel.text = domain
         }
 
         button.isHidden = false

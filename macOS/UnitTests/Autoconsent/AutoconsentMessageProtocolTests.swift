@@ -231,6 +231,20 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenSamePopupFoundAfterAutoconsentDoneThenDashboardReportsReloadLoop() throws {
+        let delegate = MockAutoconsentUserScriptDelegate()
+        userScript.delegate = delegate
+
+        _ = sendInit(url: "https://example.com")
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
+        sendAutoconsentDone(cmp: "TestCMP", url: "https://example.com", isCosmetic: false)
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
+
+        let cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["consentReloadLoop"] as? Bool, true)
+    }
+
+    @MainActor
     @discardableResult
     private func sendInit(url: String) -> [String: Any]? {
         sendMessage(name: "init", body: [

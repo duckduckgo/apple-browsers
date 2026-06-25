@@ -707,7 +707,7 @@ extension AutoconsentUserScript {
             cosmetic: lastConsentStatus?.cosmetic,
             optoutFailed: lastConsentStatus?.optoutFailed,
             selftestFailed: lastConsentStatus?.selftestFailed,
-            consentReloadLoop: lastConsentStatus?.consentReloadLoop ?? reloadLoopDetected,
+            consentReloadLoop: reloadLoopDetected || (lastConsentStatus?.consentReloadLoop ?? false),
             consentRule: lastConsentStatus?.consentRule ?? lastHandledCMPName,
             consentHeuristicEnabled: lastConsentStatus?.consentHeuristicEnabled ?? consentHeuristicEnabled
         )

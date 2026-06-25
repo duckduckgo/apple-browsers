@@ -620,6 +620,7 @@ class TabViewCell: UICollectionViewCell {
     func prepareForSnapshot() {
         guard let fileRef = currentThumbnailFileRef,
               let loader = thumbnailLoader,
+              richCardContainer?.hasThumbnail == false,
               let image = loader.loadImageSynchronously(fileRef: fileRef) else { return }
         richCardContainer?.setThumbnail(image)
     }

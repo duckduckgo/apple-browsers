@@ -36,7 +36,6 @@ protocol DuckAIGridItemProviding: AnyObject {
 @MainActor
 protocol DuckAIThumbnailLoading: AnyObject {
     func loadImage(fileRef: String) async -> UIImage?
-    /// Synchronous load for the tab-switcher transition, which must populate the destination
     /// Decodes on the calling thread; only used for the single cell being snapshotted.
     func loadImageSynchronously(fileRef: String) -> UIImage?
 }

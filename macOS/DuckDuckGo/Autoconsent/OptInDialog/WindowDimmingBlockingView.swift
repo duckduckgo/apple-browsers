@@ -32,6 +32,16 @@ import Cocoa
 final class WindowDimmingBlockingView: ColorView {
     private var localMonitor: Any?
 
+    /// Height (from the top edge) of a region where a left mouse-down starts a window drag instead of being
+    /// blocked — so the window stays movable by its titlebar while the overlay is shown. 0 disables it.
+    var topDraggableHeight: CGFloat = 0
+
+    /// When true, the window's `.resizable` style is removed while this view is in its window and restored
+    /// when it leaves — so the window can't be resized behind the overlay. Set before adding to the window.
+    var locksWindowResizing: Bool = false
+
+    private weak var lockedResizableWindow: NSWindow?
+
     init() {
         super.init(frame: .zero, backgroundColor: nil, cornerRadius: 0, borderColor: nil, borderWidth: 0, interceptClickEvents: false)
     }
@@ -58,6 +68,11 @@ final class WindowDimmingBlockingView: ColorView {
     func startListening() {
         guard localMonitor == nil else { return }
 
+        if locksWindowResizing, let window, window.styleMask.contains(.resizable) {
+            window.styleMask.remove(.resizable)
+            lockedResizableWindow = window
+        }
+
         // A LOCAL monitor intercepts ALL mouse events and manually dispatches to our subviews, so events
         // never reach the views behind us (e.g. the web view / toolbar / tab bar).
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp, .otherMouseDown, .otherMouseUp, .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged, .scrollWheel]) { [weak self] event -> NSEvent? in
@@ -70,6 +85,15 @@ final class WindowDimmingBlockingView: ColorView {
             let locationInView = self.convert(locationInWindow, from: nil)
 
             guard self.bounds.contains(locationInView) else { return event }
+
+            // Top strip: a left mouse-down starts a window drag (so the window stays movable by its titlebar)
+            // while the click itself is still consumed — a plain click moves nothing and doesn't reach the
+            // tab bar, a drag moves the window.
+            if event.type == .leftMouseDown, self.topDraggableHeight > 0,
+               locationInView.y > self.bounds.height - self.topDraggableHeight {
+                window.performDrag(with: event)
+                return nil
+            }
 
             // Resolve the top-most view against our SUPERVIEW (the window frame view when mounted there),
             // not the contentView — this is what lets the overlay span the whole window. If something
@@ -121,6 +145,11 @@ final class WindowDimmingBlockingView: ColorView {
 
     /// Stops listening to mouse events. Called automatically when the view leaves its window.
     func stopListening() {
+        if let lockedResizableWindow {
+            lockedResizableWindow.styleMask.insert(.resizable)
+            self.lockedResizableWindow = nil
+        }
+
         guard let monitor = localMonitor else { return }
         NSEvent.removeMonitor(monitor)
         localMonitor = nil

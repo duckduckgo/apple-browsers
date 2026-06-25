@@ -679,6 +679,11 @@ final class BrowserTabViewController: NSViewController {
         backdrop.backgroundColor = NSColor.black.withAlphaComponent(0.18)
         backdrop.frame = frameView.bounds
         backdrop.autoresizingMask = [.width, .height]
+        // Keep the window draggable by its titlebar / tab-bar strip while the overlay is up, but lock resizing.
+        if let window = view.window {
+            backdrop.topDraggableHeight = window.frame.height - window.contentLayoutRect.height
+        }
+        backdrop.locksWindowResizing = true
 
         let hostingController = NSHostingController(rootView: CookiePopupProtectionOptInView(onDone: { [weak self] in
             self?.dismissCookiePopupProtectionOptInDialog()

@@ -87,6 +87,7 @@ struct FireDialogView: ModalView {
 
     @ObservedObject var viewModel: FireDialogViewModel
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+    private let metrics = FireDialogMetrics.current
     private let showIndividualSitesLink: Bool
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
@@ -316,10 +317,10 @@ struct FireDialogView: ModalView {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 12.0, style: .continuous)
+            RoundedRectangle(cornerRadius: metrics.rowCornerRadius, style: .continuous)
                 .fill(Color(designSystemColor: .containerFillPrimary))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12.0, style: .continuous)
+                    RoundedRectangle(cornerRadius: metrics.rowCornerRadius, style: .continuous)
                         .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
                 )
         )
@@ -634,6 +635,23 @@ struct FireDialogView: ModalView {
     }
 }
 
+private struct FireDialogMetrics {
+    let rowCornerRadius: CGFloat
+
+    private static var `default`: FireDialogMetrics {
+        FireDialogMetrics(rowCornerRadius: 12)
+    }
+
+    private static var rebranded: FireDialogMetrics {
+        FireDialogMetrics(rowCornerRadius: 16)
+    }
+
+    static var current: FireDialogMetrics {
+        DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
+    }
+}
+
+
 // Corner radius configuration for section rows
 private enum RowCornerRadius {
     case top
@@ -696,13 +714,14 @@ private struct RowWithPressEffect<Content: View>: View {
     @ViewBuilder
     private var pressBackground: some View {
         let background = Color.buttonMouseDown
+        let cornerRadius: CGFloat = FireDialogMetrics.current.rowCornerRadius
 
         switch roundedCorners {
         case .top:
-            CustomRoundedCornersShape(tl: 12, tr: 12, bl: 0, br: 0)
+            CustomRoundedCornersShape(tl: cornerRadius, tr: cornerRadius, bl: 0, br: 0)
                 .fill(background)
         case .bottom:
-            CustomRoundedCornersShape(tl: 0, tr: 0, bl: 12, br: 12)
+            CustomRoundedCornersShape(tl: 0, tr: 0, bl: cornerRadius, br: cornerRadius)
                 .fill(background)
         case .none:
             Rectangle()

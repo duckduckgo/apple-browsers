@@ -253,7 +253,7 @@ struct FireDialogView: ModalView {
                     title: UserText.fireDialogTabsAndWindows,
                     subtitle: tabsSubtitle,
                     isOn: $viewModel.includeTabsAndWindows,
-                    cornerRadius: .top,
+                    roundedCorners: .top,
                     toggleId: "FireDialogView.tabsToggle"
                 )
                 .accessibilityHidden(isShowingSitesOverlay)
@@ -271,7 +271,7 @@ struct FireDialogView: ModalView {
                     viewModel.includeHistory = $0
                 },
                 isEnabled: isIncludeHistoryEnabled,
-                cornerRadius: viewModel.mode.shouldShowCloseTabsToggle ? .none : .top,
+                roundedCorners: viewModel.mode.shouldShowCloseTabsToggle ? .none : .top,
                 toggleId: "FireDialogView.historyToggle"
             )
             .accessibilityHidden(isShowingSitesOverlay)
@@ -288,7 +288,7 @@ struct FireDialogView: ModalView {
                 // grey-out the ℹ button when the toggle is Off
                 infoEnabled: viewModel.includeCookiesAndSiteData,
                 isEnabled: isIncludeCookiesAndSiteDataEnabled,
-                cornerRadius: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
+                roundedCorners: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
                 toggleId: "FireDialogView.cookiesToggle"
             )
             .disabled(!isIncludeCookiesAndSiteDataEnabled)
@@ -439,8 +439,8 @@ struct FireDialogView: ModalView {
         )
     }
 
-    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, cornerRadius: RowCornerRadius = .none, toggleId: String) -> some View {
-        RowWithPressEffect(cornerRadius: cornerRadius, isEnabled: isEnabled) {
+    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
+        RowWithPressEffect(roundedCorners: roundedCorners, isEnabled: isEnabled) {
             guard isEnabled else { return }
             isOn.wrappedValue.toggle()
         } content: {
@@ -502,7 +502,7 @@ struct FireDialogView: ModalView {
     }
 
     private var fireproofSectionView: some View {
-        RowWithPressEffect(cornerRadius: .bottom, isEnabled: true) {
+        RowWithPressEffect(roundedCorners: .bottom, isEnabled: true) {
             presentManageFireproof()
         } content: {
             HStack(alignment: .center, spacing: 0) {
@@ -643,10 +643,10 @@ private enum RowCornerRadius {
 
 // Modifier to apply corner clipping based on row position
 private struct RowCornerClipModifier: ViewModifier {
-    let cornerRadius: RowCornerRadius
+    let roundedCorners: RowCornerRadius
 
     func body(content: Content) -> some View {
-        switch cornerRadius {
+        switch roundedCorners {
         case .none:
             content
         case .top:
@@ -659,7 +659,7 @@ private struct RowCornerClipModifier: ViewModifier {
 
 // Row with press effect - visual feedback without blocking child interactions
 private struct RowWithPressEffect<Content: View>: View {
-    let cornerRadius: RowCornerRadius
+    let roundedCorners: RowCornerRadius
     let isEnabled: Bool
     let action: () -> Void
     @ViewBuilder let content: () -> Content
@@ -690,14 +690,14 @@ private struct RowWithPressEffect<Content: View>: View {
             }
         }
         .animation(.easeOut(duration: showFeedback ? 0.06 : 0.12), value: showFeedback)
-        .modifier(RowCornerClipModifier(cornerRadius: cornerRadius))
+        .modifier(RowCornerClipModifier(roundedCorners: roundedCorners))
     }
 
     @ViewBuilder
     private var pressBackground: some View {
         let background = Color.buttonMouseDown
 
-        switch cornerRadius {
+        switch roundedCorners {
         case .top:
             CustomRoundedCornersShape(tl: 12, tr: 12, bl: 0, br: 0)
                 .fill(background)

@@ -292,7 +292,7 @@ extension OnboardingIntroContentProvider {
 
 }
 
-// MARK: - Content Provider + Duck.ai Query Experiment (Ready to get started?)
+// MARK: - Content Provider + Duck.ai Query Selection (Ready to get started?)
 
 struct OnboardingDuckAIQueryContent: Equatable {
     let title: String

@@ -23,45 +23,77 @@ import AIChat
 /// Describes how a Duck.ai chat tab should be rendered in the tab switcher grid.
 enum DuckAIGridItem: Equatable {
 
+    /// The type chip shown on a card. `chipKind` maps each item to one (or `nil` for no chip).
+    enum ChipKind {
+        case chat, transcript, voice
+    }
+
     /// A text conversation: title plus the snippet of the last assistant message.
     case text(title: String, snippet: String)
+
+    /// A finished voice chat converted to a transcript: title plus the transcript
+    /// snippet. Renders as a light card identical to `.text`, distinguished only by
+    /// a "Transcript" chip. The live (in-progress) voice state is `.voice` instead.
+    case transcript(title: String, snippet: String)
 
     /// A conversation whose last assistant message is an image: title plus the file
     /// ref used to load the thumbnail from the native file store.
     case image(title: String, imageFileRef: String)
 
-    /// A voice-mode chat (`chat.model == "voice-mode"`): title only; the dark
-    /// voice-AI card variant from Figma is rendered around it.
-    case voice(title: String)
+    /// A live (in-progress) voice session — surfaced by the resolver's live-voice override,
+    /// not the persisted classifier. Rendered as the dark voice card. Carries no payload: the
+    /// card is fully static ("Listening…" status + mascot + "Voice" chip).
+    case voice
 
-    /// Empty-state card (centered Dax logo + "Duck.ai" label): a chat exists in
-    /// native storage but has no assistant messages yet.
-    case empty(title: String)
+    /// Empty card showing the centred Duck.ai logo. `title`/`chip` non-nil → an existing chat
+    /// whose content is empty (logo replaces the snippet/thumbnail, keeping title + chip);
+    /// both nil → the bare card for a Duck.ai tab with no chatID.
+    case empty(title: String?, chip: ChipKind?)
 }
 
 extension DuckAIGridItem {
 
+    /// The type chip to show for this item, or `nil` for no chip (the bare empty card).
+    var chipKind: ChipKind? {
+        switch self {
+        case .text, .image: return .chat
+        case .transcript: return .transcript
+        case .voice: return .voice
+        case .empty(_, let chip): return chip
+        }
+    }
+
     /// Chat content can be huge and we only need a few lines worth of content anyway for the snippet
     static let snippetCharacterCap = 500
 
-    /// Maps a decoded chat (+ the text of its last message) to a grid item, or
-    /// `nil` when the chat shouldn't be rendered as a rich card (callers fall back
-    /// to the existing screenshot path). Pure; storage reads live in
-    /// `DuckAIGridContentResolver`.
-    static func from(chat: DuckAiChat, lastMessageContent: String?) -> DuckAIGridItem? {
+    /// Maps a decoded chat (+ the text of its last message) to a grid item. Always succeeds: a chat
+    /// with no renderable content maps to an `.empty` card rather than falling back to the screenshot.
+    /// Pure; storage reads live in `DuckAIGridContentResolver`.
+    static func from(chat: DuckAiChat, lastMessageContent: String?) -> DuckAIGridItem {
         let title = chat.title.isEmpty ? UserText.aiChatTabSwitcherCardUntitledChat : chat.title
 
+        // Empty content keeps the card (title + type chip) but shows the Duck.ai logo instead of
+        // the snippet/thumbnail — it no longer falls back to the screenshot.
         switch chat.chatType {
         case .discussion:
-            let trimmed = lastMessageContent?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            guard !trimmed.isEmpty else { return nil }
-            let snippet = String(trimmed.prefix(snippetCharacterCap))
+            guard let snippet = snippet(from: lastMessageContent) else { return .empty(title: title, chip: .chat) }
             return .text(title: title, snippet: snippet)
         case .imageGeneration:
-            guard let fileRef = chat.fileRefs.last else { return nil }
+            guard let fileRef = chat.fileRefs.last else { return .empty(title: title, chip: .chat) }
             return .image(title: title, imageFileRef: fileRef)
         case .voice:
-            return nil
+            // A voice chat is only persisted after the session ends and is converted
+            // to a transcript, so a persisted `.voice` chat carries its transcript in
+            // `lastMessageContent`.
+            guard let snippet = snippet(from: lastMessageContent) else { return .empty(title: title, chip: .transcript) }
+            return .transcript(title: title, snippet: snippet)
         }
+    }
+
+    /// Trims and caps `content`, returning `nil` when there's nothing meaningful to show.
+    private static func snippet(from content: String?) -> String? {
+        let trimmed = content?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else { return nil }
+        return String(trimmed.prefix(snippetCharacterCap))
     }
 }

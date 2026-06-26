@@ -491,7 +491,8 @@
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
                 "description": "The funnel that led to the subscription flow"
-            }
+            },
+            "channel"
         ]
     },
     // Defined in https://app.asana.com/1/137249556945/task/1211354430557014

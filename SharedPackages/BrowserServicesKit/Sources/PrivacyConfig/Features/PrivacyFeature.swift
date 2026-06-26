@@ -269,6 +269,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// from `webScrollFreezeObservability` so the production observer ships without the capture.
     case webScrollFreezeCapture
 
+    /// Speculative, scoped auto-recovery triggered on a confirmed freeze; default internal/off.
+    case webScrollFreezeAutoRecovery
+
     case screenTimeCleaning
 
     case minimalChromeInLandscape
@@ -459,6 +462,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case omnibarDefaultPosition
 
     case unifiedToggleInput
+
+    /// Forward-only lever for the unified toggle input rollout. When disabled, *new* (un-granted)
+    /// users stop receiving the unified toggle input; users who have already been granted it keep
+    /// it. Independent of the master `unifiedToggleInput` flag (which revokes from everyone when
+    /// turned off). See `UnifiedToggleInputFeature`.
+    case unifiedToggleInputIncludeNewUsers
 
     /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
     /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
@@ -693,7 +702,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canShowV2ConnectCode
 }
 
-public enum AutoconsentSubfeature: String, PrivacySubfeature {
+public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .autoconsent
     }
@@ -701,6 +710,7 @@ public enum AutoconsentSubfeature: String, PrivacySubfeature {
     case onByDefault
     case filterlist
     case heuristicAction
+    case cookiePopupPreferenceSetting
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {

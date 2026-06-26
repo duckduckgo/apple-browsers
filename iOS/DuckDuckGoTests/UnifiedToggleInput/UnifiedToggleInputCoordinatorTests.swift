@@ -3625,6 +3625,7 @@ final class MockSwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding 
 private final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
     private(set) var submissionStartedScopes: [DuckAIWideEventFlowScope] = []
     private(set) var tabSwitchedAwayCalls: [TabUID] = []
+    private(set) var promptInterpretedAsURLScopes: [DuckAIWideEventFlowScope] = []
 
     func submissionStarted(scope: DuckAIWideEventFlowScope,
                            modelId: String?,
@@ -3649,4 +3650,5 @@ private final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumen
     func fireButtonClearedTabDuringGeneration(tabID: TabUID) {}
     func sheetDismissedDuringGeneration(scope: DuckAIWideEventFlowScope) {}
     func pageLoadFailed(scope: DuckAIWideEventFlowScope, error: Error) {}
+    func promptInterpretedAsURL(scope: DuckAIWideEventFlowScope) { promptInterpretedAsURLScopes.append(scope) }
 }

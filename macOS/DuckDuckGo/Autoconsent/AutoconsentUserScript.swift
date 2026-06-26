@@ -288,6 +288,21 @@ extension AutoconsentUserScript {
     }
 
     @MainActor
+    private func heuristicModeValue() -> String {
+        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
+        if !(consentHeuristicEnabled ?? false) {
+            return "off"
+        }
+        if preferences.cookiePopupPreference == .max {
+            return "tier2"
+        }
+        if preferences.cookiePopupPreference == .default {
+            return config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
+        }
+        return "off"
+    }
+
+    @MainActor
     func handleInit(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let messageData: InitMessage = decodeMessageBody(from: message.body),
               let url = URL(string: messageData.url) else {
@@ -309,7 +324,7 @@ extension AutoconsentUserScript {
             return
         }
 
-        if preferences.isAutoconsentEnabled == false {
+        if preferences.cookiePopupPreference == .off {
             // this will only happen if the user has just declined a prompt in this tab
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
             return
@@ -362,7 +377,7 @@ extension AutoconsentUserScript {
 #endif
 
         var autoAction: String?
-        if preferences.isAutoconsentEnabled == true {
+        if preferences.cookiePopupPreference.isBlockingEnabled {
             // Check for reload loop and disable autoAction if needed
             if reloadLoopDetected {
                 // prevent further reloads
@@ -387,8 +402,7 @@ extension AutoconsentUserScript {
                 "detectRetries": 20,
                 "isMainWorld": false,
                 "enableFilterList": enableFilterList,
-                "enableHeuristicDetection": true,
-                "enableHeuristicAction": consentHeuristicEnabled ?? false // default to false if not enrolled
+                "heuristicMode": heuristicModeValue()
             ] as [String: Any?]
         ] as [String: Any?]
 

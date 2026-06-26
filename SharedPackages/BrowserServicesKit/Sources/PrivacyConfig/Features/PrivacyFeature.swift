@@ -382,7 +382,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case goToMarket
     case webViewUserAgent
     case freemiumPIR
-    case contentBlocking
     case optOutRetryError96Hours
 }
 

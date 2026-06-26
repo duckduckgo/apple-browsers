@@ -742,8 +742,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
-        // codeSource is unused for the abandonment pixel; only the source/role matter.
-        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind, setupRole: .receiver(.exchange, .qrCode))
+        let codeSource = pairingV2JoinerCodeSource ?? .qrCode
+        let isConfirmed = await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind, setupRole: .receiver(.exchange, codeSource))
+        pairingV2JoinerCodeSource = nil
+        return isConfirmed
     }
 
     private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind, setupRole: SyncSetupRole) async -> Bool {

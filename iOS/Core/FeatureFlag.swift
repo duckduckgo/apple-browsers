@@ -239,9 +239,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213227027157584
-    case iPadDuckaiOnTab
-
     /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
     /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
     case attributedMetrics
@@ -697,8 +694,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:
             Config(source: .remoteReleasable(AIChatSubfeature.fullDuckAIMode))
-        case .iPadDuckaiOnTab:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadDuckaiOnTab))
         case .iPadDuckAIBarControls:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadDuckAIBarControls))
         case .attributedMetrics:

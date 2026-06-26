@@ -25,6 +25,14 @@ class AddressDisplayHelperTests: XCTestCase {
 
     private typealias AddressHelper = AddressDisplayHelper
 
+    private enum IpadPlatform: DevicePlatformProviding {
+        static var isIphone: Bool { false }
+    }
+
+    private enum IphonePlatform: DevicePlatformProviding {
+        static var isIphone: Bool { true }
+    }
+
     func testDeemphasisePathDoesNotCrash() {
         
         _ = AddressHelper.deemphasisePath(forUrl: URL(string: "example.com")!)
@@ -101,38 +109,33 @@ class AddressDisplayHelperTests: XCTestCase {
 
     // MARK: - Duck.ai Address Bar Display
 
-    func testWhenDuckAIURLAndFeatureAvailableThenShowsFeatureName() {
+    func testWhenDuckAIURLAndNotIphoneThenShowsFeatureName() {
         let url = URL(string: "https://duck.ai")!
-        let mockFeature = MockAIChatIPadTabFeature(isAvailable: true)
-        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, aichatIPadTabFeature: mockFeature)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, devicePlatform: IpadPlatform.self)
         XCTAssertEqual(result.string, UserText.duckAiFeatureName)
     }
 
-    func testWhenDuckAIURLWithChatIDAndFeatureAvailableThenShowsFeatureName() {
+    func testWhenDuckAIURLWithChatIDAndNotIphoneThenShowsFeatureName() {
         let url = URL(string: "https://duck.ai/?chatID=abc123")!
-        let mockFeature = MockAIChatIPadTabFeature(isAvailable: true)
-        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, aichatIPadTabFeature: mockFeature)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, devicePlatform: IpadPlatform.self)
         XCTAssertEqual(result.string, UserText.duckAiFeatureName)
     }
 
     func testWhenDuckAIURLAndShowsFullURLThenShowsActualURL() {
         let url = URL(string: "https://duck.ai/?chatID=abc123")!
-        let mockFeature = MockAIChatIPadTabFeature(isAvailable: true)
-        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: true, aichatIPadTabFeature: mockFeature)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: true, devicePlatform: IpadPlatform.self)
         XCTAssertEqual(result.string, url.absoluteString)
     }
 
-    func testWhenDuckAIURLAndFeatureNotAvailableThenShowsDomain() {
+    func testWhenDuckAIURLAndIphoneThenShowsDomain() {
         let url = URL(string: "https://duck.ai")!
-        let mockFeature = MockAIChatIPadTabFeature(isAvailable: false)
-        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, aichatIPadTabFeature: mockFeature)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, devicePlatform: IphonePlatform.self)
         XCTAssertEqual(result.string, "duck.ai")
     }
 
-    func testWhenNonDuckAIURLAndFeatureAvailableThenShowsDomain() {
+    func testWhenNonDuckAIURLAndNotIphoneThenShowsDomain() {
         let url = URL(string: "https://example.com")!
-        let mockFeature = MockAIChatIPadTabFeature(isAvailable: true)
-        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, aichatIPadTabFeature: mockFeature)
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, devicePlatform: IpadPlatform.self)
         XCTAssertEqual(result.string, "example.com")
     }
 }

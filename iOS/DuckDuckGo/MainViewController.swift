@@ -342,7 +342,6 @@ class MainViewController: UIViewController {
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
-    private let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
     let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
@@ -442,7 +441,6 @@ class MainViewController: UIViewController {
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-        aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature(),
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         remoteMessagingImageLoader: RemoteMessagingImageLoading,
@@ -531,7 +529,6 @@ class MainViewController: UIViewController {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.aichatFullModeFeature = aichatFullModeFeature
-        self.aichatIPadTabFeature = aichatIPadTabFeature
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.privacyStats = privacyStats
@@ -840,7 +837,6 @@ class MainViewController: UIViewController {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aichatIPadTabFeature: aichatIPadTabFeature,
                                                       aiChatSettings: aiChatSettings,
                                                       aiChatSyncCleaner: aiChatSyncCleaner,
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
@@ -2388,7 +2384,7 @@ class MainViewController: UIViewController {
         let logoURL = logoURLForCurrentPage(tab: tab)
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
-        if tab.isAITab && (aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable) {
+        if tab.isAITab && (aichatFullModeFeature.isAvailable || !DevicePlatform.isIphone) {
             // AI tabs use branding UI rather than the standard toggle setup.
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
@@ -3449,7 +3445,7 @@ class MainViewController: UIViewController {
                     files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     fromDeepLink: Bool = false) {
 
-        if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
+        if aichatFullModeFeature.isAvailable || !DevicePlatform.isIphone {
             openAIChatInTab(
                 query,
                 autoSend: autoSend,
@@ -3492,7 +3488,7 @@ class MainViewController: UIViewController {
     }
 
     private func openAIChatInVoiceMode(fromDeepLink: Bool = false) {
-        if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
+        if aichatFullModeFeature.isAvailable || !DevicePlatform.isIphone {
             openAIChatVoiceModeInTab(fromDeepLink: fromDeepLink)
         } else {
             aiChatViewControllerManager.openAIChatVoiceMode(on: self)
@@ -5486,7 +5482,7 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
-        if aichatIPadTabFeature.isAvailable {
+        if !DevicePlatform.isIphone {
             newTab(allowingKeyboard: false)
         }
         openAIChat()

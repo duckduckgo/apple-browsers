@@ -706,7 +706,6 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                 self.currentOptOutRunner = runner
                 
                 try await runner.optOut(
-                    profileQuery: brokerProfileQueryData,
                     extractedProfile: result.extractedProfile,
                     showWebView: true
                 ) { true }
@@ -880,7 +879,6 @@ extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
                 self.currentOptOutRunner = runner
 
                 try await runner.optOut(
-                    profileQuery: brokerProfileQueryData,
                     extractedProfile: scanResult.extractedProfile,
                     showWebView: true
                 ) { true }

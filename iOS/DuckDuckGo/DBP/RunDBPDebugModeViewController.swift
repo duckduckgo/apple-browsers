@@ -571,7 +571,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
                     self.currentRunner = runner
                     
-                    let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: true) { true }
+                    let extractedProfiles = try await runner.scan(showWebView: true) { true }
                     for profile in extractedProfiles {
                         let assignedProfile = debugEmailConfirmationStore.storeExtractedProfile(
                             profile,

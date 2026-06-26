@@ -242,7 +242,6 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
         try await sut.executeOptOut(
             on: runner,
-            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
             extractedProfile: .mockWithoutRemovedDate,
             showWebView: true,
             shouldRunNextStep: { true }
@@ -258,7 +257,6 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         do {
             try await sut.executeOptOut(
                 on: runner,
-                brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                 extractedProfile: .mockWithoutRemovedDate,
                 showWebView: true,
                 shouldRunNextStep: { true }

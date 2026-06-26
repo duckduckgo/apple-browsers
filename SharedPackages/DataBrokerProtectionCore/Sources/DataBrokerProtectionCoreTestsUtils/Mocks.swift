@@ -2877,8 +2877,7 @@ public final class MockScanSubJobWebRunner: BrokerProfileScanSubJobWebRunning {
 
     public init() { }
 
-    public func scan(_ profileQuery: BrokerProfileQueryData,
-                     showWebView: Bool,
+    public func scan(showWebView: Bool,
                      shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         wasScanCalled = true
 
@@ -2903,8 +2902,7 @@ public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebProtoc
 
     public init() { }
 
-    public func optOut(profileQuery: BrokerProfileQueryData,
-                       extractedProfile: ExtractedProfile,
+    public func optOut(extractedProfile: ExtractedProfile,
                        showWebView: Bool,
                        shouldRunNextStep: @escaping () -> Bool) async throws {
         wasOptOutCalled = true

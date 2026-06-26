@@ -99,7 +99,6 @@ struct BrokerProfileOptOutSubJob {
                                     identifiers: identifiers)
 
             try await executeOptOut(on: runner,
-                                    brokerProfileQueryData: brokerProfileQueryData,
                                     extractedProfile: extractedProfile,
                                     showWebView: showWebView,
                                     shouldRunNextStep: shouldRunNextStep)
@@ -244,13 +243,11 @@ struct BrokerProfileOptOutSubJob {
     }
 
     internal func executeOptOut(on runner: BrokerProfileOptOutSubJobWebRunning,
-                                brokerProfileQueryData: BrokerProfileQueryData,
                                 extractedProfile: ExtractedProfile,
                                 showWebView: Bool,
                                 shouldRunNextStep: @escaping () -> Bool) async throws {
         // 8c. Perform the opt-out itself:
-        try await runner.optOut(profileQuery: brokerProfileQueryData,
-                                extractedProfile: extractedProfile,
+        try await runner.optOut(extractedProfile: extractedProfile,
                                 showWebView: showWebView,
                                 shouldRunNextStep: shouldRunNextStep)
     }

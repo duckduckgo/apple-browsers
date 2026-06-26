@@ -349,7 +349,6 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         runner.scanResults = [.mockWithoutRemovedDate]
 
         let profiles = try await sut.executeScan(runner: runner,
-                                                 brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                                                  showWebView: true,
                                                  shouldRunNextStep: { true })
 
@@ -363,7 +362,6 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
         do {
             _ = try await sut.executeScan(runner: runner,
-                                          brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                                           showWebView: true,
                                           shouldRunNextStep: { true })
             XCTFail("Expected runner scan to throw")
@@ -378,7 +376,6 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         runner.scanResults = expectedProfiles
 
         let profiles = try await sut.executeScan(runner: runner,
-                                                 brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
                                                  showWebView: false,
                                                  shouldRunNextStep: { true })
 

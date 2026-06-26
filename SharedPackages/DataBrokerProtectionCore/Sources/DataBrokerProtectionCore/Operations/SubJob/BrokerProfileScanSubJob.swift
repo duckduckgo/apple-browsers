@@ -114,7 +114,6 @@ struct BrokerProfileScanSubJob {
                                         runnerFactory: dependencies.createScanRunner)
 
             let profilesFoundDuringCurrentScanJob = try await executeScan(runner: runner,
-                                                                          brokerProfileQueryData: brokerProfileQueryData,
                                                                           showWebView: showWebView,
                                                                           shouldRunNextStep: shouldRunNextStep)
 
@@ -248,12 +247,10 @@ struct BrokerProfileScanSubJob {
     }
 
     internal func executeScan(runner: BrokerProfileScanSubJobWebRunning,
-                              brokerProfileQueryData: BrokerProfileQueryData,
                               showWebView: Bool,
                               shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         // 4b. Get extracted profiles from the runner:
-        try await runner.scan(brokerProfileQueryData,
-                              showWebView: showWebView,
+        try await runner.scan(showWebView: showWebView,
                               shouldRunNextStep: shouldRunNextStep)
     }
 

@@ -1458,9 +1458,7 @@ extension DefaultOmniBarView {
             updateAIChatSendButton(hasText: !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
             if canShowModelPicker {
-                modelPickerButton.isHidden = false
-                modelPickerButton.alpha = 0
-                searchAreaContainerView.bringSubviewToFront(modelPickerButton)
+                prepareModelPickerButtonForDisplay()
             }
         } else {
             let currentText = aiChatTextView.text ?? ""
@@ -1478,12 +1476,16 @@ extension DefaultOmniBarView {
             return
         }
         guard modelPickerButton.isHidden else { return }
-        modelPickerButton.isHidden = false
-        modelPickerButton.alpha = 0
-        searchAreaContainerView.bringSubviewToFront(modelPickerButton)
+        prepareModelPickerButtonForDisplay()
         UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
             self.modelPickerButton.alpha = 1
         }
+    }
+
+    private func prepareModelPickerButtonForDisplay() {
+        modelPickerButton.isHidden = false
+        modelPickerButton.alpha = 0
+        searchAreaContainerView.bringSubviewToFront(modelPickerButton)
     }
 
     /// Toggles the textField's visibility so its placeholder shows through

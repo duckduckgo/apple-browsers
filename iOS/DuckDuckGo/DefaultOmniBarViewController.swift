@@ -49,12 +49,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private var modelPickerController: IPadOmnibarModelPickerController?
     private var reasoningPickerController: IPadOmnibarReasoningPickerController?
 
-    override var iPadDuckAISelectedModelId: String? {
-        modelPickerController?.currentModelId
-    }
-
-    override var iPadDuckAISelectedReasoningEffort: AIChatReasoningEffort? {
-        reasoningPickerController?.selectedReasoningEffort
+    override var iPadDuckAIControlValues: IPadDuckAIControlValues {
+        IPadDuckAIControlValuesSnapshot(
+            selectedModelId: modelPickerController?.currentModelId,
+            selectedReasoningEffort: reasoningPickerController?.selectedReasoningEffort
+        )
     }
 
     override func loadView() {

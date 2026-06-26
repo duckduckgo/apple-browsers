@@ -3934,9 +3934,10 @@ extension MainViewController: OmniBarDelegate {
         // toggle, which a refresh-on-submit can reset to the stored last-used before we read it.
         commitToggleMode(.aiChat)
         
-        let modelId = viewCoordinator.omniBar.iPadDuckAISelectedModelId
-        let reasoningEffort = viewCoordinator.omniBar.iPadDuckAISelectedReasoningEffort
-        openAIChat(query, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort)
+        let controlValues = viewCoordinator.omniBar.iPadDuckAIControlValues
+        openAIChat(query, autoSend: true, tools: tools,
+                   modelId: controlValues.selectedModelId,
+                   reasoningEffort: controlValues.selectedReasoningEffort)
     }
 
     func onChatHistorySelected(url: URL) {

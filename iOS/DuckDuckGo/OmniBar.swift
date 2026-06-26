@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import AIChat
 import Foundation
 import PrivacyDashboard
 
@@ -93,11 +92,8 @@ protocol OmniBar: AnyObject {
     /// Sets the selected text entry mode for the toggle (search or aiChat).
     func setSelectedTextEntryMode(_ mode: TextEntryMode)
 
-    /// The Duck.ai model id selected in the iPad address-bar model picker, or `nil`
-    var iPadDuckAISelectedModelId: String? { get }
-
-    /// The Duck.ai reasoning effort selected in the iPad address-bar reasoning picker, or `nil`
-    var iPadDuckAISelectedReasoningEffort: AIChatReasoningEffort? { get }
+    /// The values currently selected across the iPad address-bar Duck.ai controls
+    var iPadDuckAIControlValues: IPadDuckAIControlValues { get }
 
     func prepareForMoveTransition()
     func moveTransitionCompleted()

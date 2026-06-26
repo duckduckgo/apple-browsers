@@ -138,7 +138,9 @@ final class PageContextTabExtension {
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
-                self.requestSignalsOnlyCollectionIfNeeded()
+                // Signals-only collection is driven from `navigationDidFinish` (post-load, parsed
+                // markup). Collecting here at didCommit too would race the post-load re-collect for
+                // the single-shot `pendingSignalsOnlyCollection` flag and let stale signals win.
             }
             .store(in: &cancellables)
 

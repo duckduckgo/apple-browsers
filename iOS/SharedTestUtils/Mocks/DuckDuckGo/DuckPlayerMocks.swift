@@ -622,6 +622,8 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var barsMaxHeight: CGFloat = 30
 
+    var isInMinimalChromeLayout: Bool = false
+
     var omniBar: OmniBar = DefaultOmniBarViewController(
         dependencies: MockOmnibarDependency(
             voiceSearchHelper: MockVoiceSearchHelper(

@@ -20,6 +20,7 @@
 import UIKit
 import PrivacyDashboard
 import AIChat
+import Common
 import Core
 import Kingfisher
 import DesignResourcesKitIcons
@@ -561,7 +562,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             return
         }
 
-        if privacyInfo.url.isDuckAIURL, dependencies.aichatIPadTabFeature.isAvailable {
+        if privacyInfo.url.isDuckAIURL, DevicePlatform.isIpad {
             showCustomIcon(icon: .duckAI)
             return
         }

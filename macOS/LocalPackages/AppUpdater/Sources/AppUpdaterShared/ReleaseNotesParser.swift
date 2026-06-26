@@ -39,14 +39,12 @@ public final class ReleaseNotesParser {
 
     /// Parses the release notes HTML fragment into an `XMLDocument`.
     ///
-    /// The fragment is wrapped in a minimal document declaring a UTF-8 charset. Without it,
-    /// libxml2's HTML parser assumes ISO-8859-1 and mangles multi-byte characters (e.g. `⌘`).
+    /// The fragment is prefixed with a `Content-Type` charset declaration. Without it, libxml2's
+    /// HTML parser assumes ISO-8859-1 and mangles multi-byte characters (e.g. `⌘`). The HTML5
+    /// `<meta charset>` shorthand is not honored by libxml2, so the `http-equiv` form is used.
     private static func htmlDocument(from description: String) -> XMLDocument? {
-        let wrapped = """
-        <html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head>\
-        <body>\(description)</body></html>
-        """
-        guard let data = wrapped.data(using: .utf8) else { return nil }
+        let charsetDeclaration = #"<meta http-equiv="Content-Type" content="text/html; charset=utf-8">"#
+        guard let data = (charsetDeclaration + description).data(using: .utf8) else { return nil }
 
         do {
             return try XMLDocument(data: data, options: [.documentTidyHTML])

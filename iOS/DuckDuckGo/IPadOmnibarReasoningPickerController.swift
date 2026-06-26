@@ -83,7 +83,7 @@ final class IPadOmnibarReasoningPickerController {
             pendingGatedSelection = nil
             select(mode)
         } else {
-            if routeGatedSelection(requiredTier: requiredTier) {
+            if routeGatedReasoningSelection(requiredTier: requiredTier) {
                 pendingGatedSelection = (model.id, mode)
             }
             // The selection was rejected — refresh so the chip restores the previous mode.
@@ -104,32 +104,13 @@ final class IPadOmnibarReasoningPickerController {
     }
 
     @discardableResult
-    private func routeGatedSelection(requiredTier: AIChatModelPublicAccessTier) -> Bool {
-        let userTier = store.subscriptionState.userTier
-
-        if userTier == .free, requiredTier == .plus || requiredTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .reasoningPicker,
-                currentTier: userTier,
-                requiredTier: requiredTier,
-                flowType: .purchase
-            )
-            upsellPresenter.presentPurchaseFlow(source: .reasoningPicker, isAITabState: false)
-            return true
-        }
-
-        if userTier == .plus, requiredTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .reasoningPicker,
-                currentTier: userTier,
-                requiredTier: requiredTier,
-                flowType: .upgrade
-            )
-            upsellPresenter.presentUpgradeFlow(source: .reasoningPicker, isAITabState: false)
-            return true
-        }
-
-        return false
+    private func routeGatedReasoningSelection(requiredTier: AIChatModelPublicAccessTier) -> Bool {
+        upsellPresenter.routeGatedSelection(
+            requiredTier: requiredTier,
+            userTier: store.subscriptionState.userTier,
+            source: .reasoningPicker,
+            isAITabState: false
+        )
     }
 
     private func applyPendingGatedSelectionIfPossible() {

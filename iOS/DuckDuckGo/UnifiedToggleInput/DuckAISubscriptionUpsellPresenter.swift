@@ -17,14 +17,53 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import Subscription
 
 /// Routes the Duck.ai subscription purchase / upgrade flows triggered by tapping a gated
-/// model or reasoning level. 
+/// model or reasoning level.
 protocol DuckAISubscriptionUpselling {
     func presentPurchaseFlow(source: SubscriptionFlowSource, isAITabState: Bool)
     func presentUpgradeFlow(source: SubscriptionFlowSource, isAITabState: Bool)
+}
+
+extension DuckAISubscriptionUpselling {
+
+    /// Routes a gated Duck.ai control selection (a model or a reasoning level) to the matching
+    /// subscription upsell and fires the upsell-triggered pixel. Returns `true` when a flow was
+    /// presented
+    @discardableResult
+    func routeGatedSelection(
+        requiredTier: AIChatModelPublicAccessTier,
+        userTier: AIChatUserTier,
+        source: SubscriptionFlowSource,
+        isAITabState: Bool
+    ) -> Bool {
+        if userTier == .free, requiredTier == .plus || requiredTier == .pro {
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
+                source: source,
+                currentTier: userTier,
+                requiredTier: requiredTier,
+                flowType: .purchase
+            )
+            presentPurchaseFlow(source: source, isAITabState: isAITabState)
+            return true
+        }
+
+        if userTier == .plus, requiredTier == .pro {
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
+                source: source,
+                currentTier: userTier,
+                requiredTier: requiredTier,
+                flowType: .upgrade
+            )
+            presentUpgradeFlow(source: source, isAITabState: isAITabState)
+            return true
+        }
+
+        return false
+    }
 }
 
 struct DuckAISubscriptionUpsellPresenter: DuckAISubscriptionUpselling {

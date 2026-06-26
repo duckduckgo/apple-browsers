@@ -117,32 +117,12 @@ final class IPadOmnibarModelPickerController {
     @discardableResult
     private func routeGatedModelSelection(_ model: AIChatModel) -> Bool {
         guard let requiredTier = model.lowestPublicAccessTier else { return false }
-
-        let userTier = store.subscriptionState.userTier
-
-        if userTier == .free, requiredTier == .plus || requiredTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .modelPicker,
-                currentTier: userTier,
-                requiredTier: requiredTier,
-                flowType: .purchase
-            )
-            upsellPresenter.presentPurchaseFlow(source: .modelPicker, isAITabState: false)
-            return true
-        }
-
-        if userTier == .plus, requiredTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .modelPicker,
-                currentTier: userTier,
-                requiredTier: requiredTier,
-                flowType: .upgrade
-            )
-            upsellPresenter.presentUpgradeFlow(source: .modelPicker, isAITabState: false)
-            return true
-        }
-
-        return false
+        return upsellPresenter.routeGatedSelection(
+            requiredTier: requiredTier,
+            userTier: store.subscriptionState.userTier,
+            source: .modelPicker,
+            isAITabState: false
+        )
     }
 
     private func applyPendingGatedModelSelectionIfPossible() {

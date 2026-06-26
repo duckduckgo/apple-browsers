@@ -1466,40 +1466,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return false
         }
 
-        let userTier = subscriptionState.userTier
-
-        if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .modelPicker,
-                currentTier: userTier,
-                requiredTier: requiredPublicTier,
-                flowType: .purchase
-            )
-            presentPurchaseFlow(source: .modelPicker)
-            return true
+        let routed = subscriptionUpsellPresenter.routeGatedSelection(
+            requiredTier: requiredPublicTier,
+            userTier: subscriptionState.userTier,
+            source: .modelPicker,
+            isAITabState: isAITabState
+        )
+        if !routed {
+            Logger.unifiedInputState.debug("No native subscription flow for gated model")
         }
-
-        if userTier == .plus, requiredPublicTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .modelPicker,
-                currentTier: userTier,
-                requiredTier: requiredPublicTier,
-                flowType: .upgrade
-            )
-            presentUpgradeFlow(source: .modelPicker)
-            return true
-        }
-
-        Logger.unifiedInputState.debug("No native subscription flow for gated model")
-        return false
-    }
-
-    private func presentPurchaseFlow(source: SubscriptionFlowSource) {
-        subscriptionUpsellPresenter.presentPurchaseFlow(source: source, isAITabState: isAITabState)
-    }
-
-    private func presentUpgradeFlow(source: SubscriptionFlowSource) {
-        subscriptionUpsellPresenter.presentUpgradeFlow(source: source, isAITabState: isAITabState)
+        return routed
     }
 
     private func refreshModelPickerMenuAfterRejectedSelection() {
@@ -1592,32 +1568,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     @discardableResult
     private func routeGatedReasoningModeSelection(requiredPublicTier: AIChatModelPublicAccessTier) -> Bool {
-        let userTier = subscriptionState.userTier
-
-        if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .reasoningPicker,
-                currentTier: userTier,
-                requiredTier: requiredPublicTier,
-                flowType: .purchase
-            )
-            presentPurchaseFlow(source: .reasoningPicker)
-            return true
+        let routed = subscriptionUpsellPresenter.routeGatedSelection(
+            requiredTier: requiredPublicTier,
+            userTier: subscriptionState.userTier,
+            source: .reasoningPicker,
+            isAITabState: isAITabState
+        )
+        if !routed {
+            Logger.unifiedInputState.debug("No native subscription flow for gated reasoning mode")
         }
-
-        if userTier == .plus, requiredPublicTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .reasoningPicker,
-                currentTier: userTier,
-                requiredTier: requiredPublicTier,
-                flowType: .upgrade
-            )
-            presentUpgradeFlow(source: .reasoningPicker)
-            return true
-        }
-
-        Logger.unifiedInputState.debug("No native subscription flow for gated reasoning mode")
-        return false
+        return routed
     }
 
     func selectTool(_ tool: AIChatRAGTool) {

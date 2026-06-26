@@ -38,6 +38,8 @@ final class DuckAIGridCardView: UIView {
         static let voiceMascotVerticalSpacing: CGFloat = 8
         static let voiceMascotHeight: CGFloat = 80
         static let emptyLogoHeight: CGFloat = 64
+        static let voiceStatusIconSize: CGFloat = 16
+        static let voiceStatusIconSpacing: CGFloat = 4
     }
     
     private enum Colors {
@@ -46,6 +48,7 @@ final class DuckAIGridCardView: UIView {
     }
 
     private let titleLabel = UILabel()
+    private let statusIconImageView = UIImageView()
     private let snippetLabel = UILabel()
     private let chipView = ChipView()
     private let thumbnailImageView = UIImageView()
@@ -91,6 +94,7 @@ final class DuckAIGridCardView: UIView {
         overrideUserInterfaceStyle = .unspecified
         setMascotVisible(false)
         setLogoVisible(false)
+        statusIconImageView.isHidden = true
     }
 
     private func configureTitle(for item: DuckAIGridItem) {
@@ -176,6 +180,7 @@ final class DuckAIGridCardView: UIView {
         backgroundColor = UIColor(singleUseColor: .duckAIVoiceCellBackground)
         overrideUserInterfaceStyle = .dark
         setMascotVisible(true)
+        statusIconImageView.isHidden = false
     }
 
     private func setThumbnailVisible(_ visible: Bool) {
@@ -203,7 +208,24 @@ final class DuckAIGridCardView: UIView {
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
         titleLabel.numberOfLines = 2
         titleLabel.adjustsFontForContentSizeCategory = true
-        addSubview(titleLabel)
+
+        // Leading status glyph for the live-voice card; shown only by `configureVoiceUIIfNeeded`.
+        statusIconImageView.translatesAutoresizingMaskIntoConstraints = false
+        statusIconImageView.image = DesignSystemImages.Glyphs.Size16.permissionMicrophone.withRenderingMode(.alwaysTemplate)
+        statusIconImageView.tintColor = UIColor(designSystemColor: .icons)
+        statusIconImageView.contentMode = .scaleAspectFit
+        statusIconImageView.isHidden = true
+        statusIconImageView.setContentHuggingPriority(.required, for: .horizontal)
+        statusIconImageView.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        // Title row = optional status icon + title. The icon collapses out of the stack when
+        // hidden, so non-voice cards keep a full-width title and only voice shows the 4pt gap.
+        let titleStack = UIStackView(arrangedSubviews: [statusIconImageView, titleLabel])
+        titleStack.translatesAutoresizingMaskIntoConstraints = false
+        titleStack.axis = .horizontal
+        titleStack.alignment = .center
+        titleStack.spacing = Metrics.voiceStatusIconSpacing
+        addSubview(titleStack)
 
         snippetLabel.translatesAutoresizingMaskIntoConstraints = false
         snippetLabel.font = .daxFootnoteRegular()
@@ -261,9 +283,12 @@ final class DuckAIGridCardView: UIView {
         thumbnailBottom.priority = .defaultHigh
 
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.contentTopInset),
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),
-            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.contentHorizontalInset),
+            titleStack.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.contentTopInset),
+            titleStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),
+            titleStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.contentHorizontalInset),
+
+            statusIconImageView.widthAnchor.constraint(equalToConstant: Metrics.voiceStatusIconSize),
+            statusIconImageView.heightAnchor.constraint(equalToConstant: Metrics.voiceStatusIconSize),
 
             snippetLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: Metrics.titleSnippetSpacing),
             snippetLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.snippetLeadingInset),

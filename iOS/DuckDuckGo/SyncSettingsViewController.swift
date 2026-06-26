@@ -95,6 +95,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     var source: String?
     var pairingInfo: PairingInfo?
     var pairingV2PeerKind: PairingV2DeviceKind?
+    var pairingV2JoinerCodeSource: SyncCodeSource?
     var needsPreservedAccountCleanupBeforeServerOperation = false
     var autoRestorePromptSource: AutoRestorePromptSource?
 
@@ -403,8 +404,22 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     private func startPairingIfNecessary() {
         if let pairingInfo {
-            askForPairingConfirmation(deviceName: pairingInfo.deviceName)
+            if pairingInfo.isPairingV2 {
+                startPairingV2DeepLink(pairingInfo)
+            } else if isLegacyExchangeDeepLink(pairingInfo) {
+                askForPairingConfirmation(deviceName: pairingInfo.deviceName)
+            } else {
+                // URL-based Sync setup should only accepts legacy v1 exchange codes.
+                self.pairingInfo = nil
+            }
         }
+    }
+
+    private func isLegacyExchangeDeepLink(_ pairingInfo: PairingInfo) -> Bool {
+        guard let syncCode = try? SyncCode.decodeBase64String(pairingInfo.base64Code) else {
+            return false
+        }
+        return syncCode.exchangeKey != nil
     }
 
     private func startSyncWithAnotherDeviceIfNecessary() {
@@ -434,6 +449,26 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
             }
         }
         self.pairingInfo = nil
+    }
+
+    private func startPairingV2DeepLink(_ pairingInfo: PairingInfo) {
+        self.pairingInfo = nil
+
+        Task {
+            do {
+                try await authenticateUser()
+            } catch {
+                return
+            }
+
+            Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted, includedParameters: [.appVersion])
+            syncSetupExperimentPixels.fireDeepLinkFlowStarted()
+
+            await connectionController.syncCodeEntered(
+                code: pairingInfo.base64Code,
+                canScanLegacyURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes),
+                codeSource: .deepLink)
+        }
     }
 
     func askForPairingConfirmation(deviceName: String) {
@@ -658,6 +693,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
     
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource, codeVersion: SyncSetupCodeVersion) async {
+        pairingV2JoinerCodeSource = codeVersion == .v2 && setupSource == .exchange ? codeSource : nil
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource, codeVersion: codeVersion)
         await dismissPresentedViewController()
         await showPreparingSync(context: setupSource == .recovery ? .recoveringData : .syncingDevices)
@@ -725,7 +761,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             await handleError(.thirdPartyAccountAlreadyUpgraded, error: nil, event: nil)
         case .syncCancelledFromOtherDevice:
-            sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelValue.syncConfirmationDenied)
+            sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
             await handleError(.syncCancelledFromOtherDevice, error: nil, event: nil)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey, .accountUpgradeFailed, .protocolError:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
@@ -828,6 +864,15 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
 
     func sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: SyncSetupRole) {
         sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelValue.syncConfirmationDenied)
+        sendSyncConfirmationDeniedDeepLinkFlowAbandonedPixelIfNeeded(setupRole: setupRole)
+    }
+
+    private func sendSyncConfirmationDeniedDeepLinkFlowAbandonedPixelIfNeeded(setupRole: SyncSetupRole) {
+        guard case .receiver(_, .deepLink) = setupRole else {
+            return
+        }
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned, includedParameters: [.appVersion])
+        syncSetupExperimentPixels.fireDeepLinkFlowAbandoned()
     }
 
     private func syncSetupPixelParameters(setupRole: SyncSetupRole, reason: String?) -> [String: String] {

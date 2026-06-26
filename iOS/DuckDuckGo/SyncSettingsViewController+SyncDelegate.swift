@@ -483,14 +483,20 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showPreparingSync(context: SimplifiedConnectingSheetView.Context = .syncingDevices, _ completion: (() -> Void)?) {
+        guard let navigationController, navigationController.view.window != nil else {
+            Logger.sync.error("Unable to present preparing sync UI because Sync settings navigation controller is not in the window hierarchy")
+            completion?()
+            return
+        }
+
         if useSimplifiedLayout {
             let controller = UIHostingController(rootView: SimplifiedConnectingSheetView(context: context))
             controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
             controller.sheetPresentationController?.detents = [.large()]
-            navigationController?.present(controller, animated: true, completion: completion)
+            navigationController.present(controller, animated: true, completion: completion)
         } else {
             let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
-            navigationController?.present(controller, animated: true, completion: completion)
+            navigationController.present(controller, animated: true, completion: completion)
         }
     }
 
@@ -734,8 +740,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
-        // codeSource is unused for the abandonment pixel; only the source/role matter.
-        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind, setupRole: .receiver(.exchange, .qrCode))
+        let codeSource = pairingV2JoinerCodeSource ?? .qrCode
+        let isConfirmed = await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind, setupRole: .receiver(.exchange, codeSource))
+        pairingV2JoinerCodeSource = nil
+        return isConfirmed
     }
 
     private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind, setupRole: SyncSetupRole) async -> Bool {

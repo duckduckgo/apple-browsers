@@ -35,7 +35,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// Onboarding rebranding feature flag
     case onboardingRebranding
 
-    /// App rebranding feature flag
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1216081727196784
     case appRebranding
 
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715698981

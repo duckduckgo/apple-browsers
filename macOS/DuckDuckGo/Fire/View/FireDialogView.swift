@@ -666,7 +666,7 @@ private enum RowCornerRadius {
 // Modifier to apply corner clipping based on row position
 private struct RowCornerClipModifier: ViewModifier {
     let roundedCorners: RowCornerRadius
-    let roundedCornerRadius: CGFloat = 0 //8 // 16
+    let roundedCornerRadius: CGFloat = FireDialogStyle.current.rowCornerRadius
 
     func body(content: Content) -> some View {
         switch roundedCorners {

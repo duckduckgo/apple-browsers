@@ -44,6 +44,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func fetchActiveBrokerProfileQueryData() throws -> [BrokerProfileQueryData]
     func fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: Bool) throws -> [BrokerProfileQueryData]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
+    func fetchAllExtractedProfiles() throws -> [ExtractedProfile]
 
     func fetchAllDataBrokers() throws -> [DataBroker]
 
@@ -213,6 +214,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return try vault.fetchExtractedProfiles(for: brokerId)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchExtractedProfiles for brokerId")
+            throw error
+        }
+    }
+
+    public func fetchAllExtractedProfiles() throws -> [ExtractedProfile] {
+        do {
+            return try vault.fetchAllBrokers().compactMap(\.id).flatMap { try vault.fetchExtractedProfiles(for: $0) }
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchAllExtractedProfiles")
             throw error
         }
     }

@@ -1396,6 +1396,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return extractedProfilesFromBroker
     }
 
+    public func fetchAllExtractedProfiles() throws -> [ExtractedProfile] {
+        return brokerProfileQueryDataToReturn.flatMap { $0.extractedProfiles }
+    }
+
     public func fetchAllAttempts() throws -> [AttemptInformation] {
         [attemptInformation].compactMap { $0 }
     }

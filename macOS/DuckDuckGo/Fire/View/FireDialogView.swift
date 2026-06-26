@@ -443,7 +443,7 @@ struct FireDialogView: ModalView {
     }
 
     private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
-        RowWithPressEffect(roundedCorners: roundedCorners, isEnabled: isEnabled) {
+        RowWithPressEffect(roundedCorners: roundedCorners, rowCornerRadius: style.rowCornerRadius, isEnabled: isEnabled) {
             guard isEnabled else { return }
             isOn.wrappedValue.toggle()
         } content: {
@@ -505,7 +505,7 @@ struct FireDialogView: ModalView {
     }
 
     private var fireproofSectionView: some View {
-        RowWithPressEffect(roundedCorners: .bottom, isEnabled: true) {
+        RowWithPressEffect(roundedCorners: .bottom, rowCornerRadius: style.rowCornerRadius, isEnabled: true) {
             presentManageFireproof()
         } content: {
             HStack(alignment: .center, spacing: 0) {
@@ -548,7 +548,7 @@ struct FireDialogView: ModalView {
     }
 
     private var individualSitesColor: NSColor {
-        NSColor(designSystemColor: .textPrimary)
+        style.individualSitesColor
     }
 
     private var individualSitesLink: some View {
@@ -639,16 +639,17 @@ struct FireDialogView: ModalView {
 
 private struct FireDialogStyle {
     let knobFillColor: Color
+    let individualSitesColor: NSColor
     let rowCornerRadius: CGFloat
     let segmentedControlCornerRadius: CGFloat
     let segmentedControlItemCornerRadius: CGFloat
 
     private static var `default`: FireDialogStyle {
-        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary), rowCornerRadius: 12, segmentedControlCornerRadius: 12, segmentedControlItemCornerRadius: 10)
+        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary), individualSitesColor: NSColor(designSystemColor: .accentTextPrimary), rowCornerRadius: 12, segmentedControlCornerRadius: 12, segmentedControlItemCornerRadius: 10)
     }
 
     private static var rebranded: FireDialogStyle {
-        FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent), rowCornerRadius: 16, segmentedControlCornerRadius: 16, segmentedControlItemCornerRadius: 14)
+        FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent), individualSitesColor: NSColor(designSystemColor: .textPrimary), rowCornerRadius: 16, segmentedControlCornerRadius: 16, segmentedControlItemCornerRadius: 14)
     }
 
     static var current: FireDialogStyle {
@@ -666,7 +667,7 @@ private enum RowCornerRadius {
 // Modifier to apply corner clipping based on row position
 private struct RowCornerClipModifier: ViewModifier {
     let roundedCorners: RowCornerRadius
-    let roundedCornerRadius: CGFloat = FireDialogStyle.current.rowCornerRadius
+    let roundedCornerRadius: CGFloat
 
     func body(content: Content) -> some View {
         switch roundedCorners {
@@ -683,6 +684,7 @@ private struct RowCornerClipModifier: ViewModifier {
 // Row with press effect - visual feedback without blocking child interactions
 private struct RowWithPressEffect<Content: View>: View {
     let roundedCorners: RowCornerRadius
+    let rowCornerRadius: CGFloat
     let isEnabled: Bool
     let action: () -> Void
     @ViewBuilder let content: () -> Content
@@ -713,20 +715,19 @@ private struct RowWithPressEffect<Content: View>: View {
             }
         }
         .animation(.easeOut(duration: showFeedback ? 0.06 : 0.12), value: showFeedback)
-        .modifier(RowCornerClipModifier(roundedCorners: roundedCorners))
+        .modifier(RowCornerClipModifier(roundedCorners: roundedCorners, roundedCornerRadius: rowCornerRadius))
     }
 
     @ViewBuilder
     private var pressBackground: some View {
         let background = Color.buttonMouseDown
-        let cornerRadius: CGFloat = FireDialogStyle.current.rowCornerRadius
 
         switch roundedCorners {
         case .top:
-            CustomRoundedCornersShape(tl: cornerRadius, tr: cornerRadius, bl: 0, br: 0)
+            CustomRoundedCornersShape(tl: rowCornerRadius, tr: rowCornerRadius, bl: 0, br: 0)
                 .fill(background)
         case .bottom:
-            CustomRoundedCornersShape(tl: 0, tr: 0, bl: cornerRadius, br: cornerRadius)
+            CustomRoundedCornersShape(tl: 0, tr: 0, bl: rowCornerRadius, br: rowCornerRadius)
                 .fill(background)
         case .none:
             Rectangle()

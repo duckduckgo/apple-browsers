@@ -140,9 +140,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212016242789291
     case aiChatOmnibarToggle
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212227266479719
-    case aiChatOmnibarCluster
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
 
@@ -548,8 +545,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.keepSession), category: .duckAI)
         case .aiChatOmnibarToggle:
             Config(source: .remoteReleasable(AIChatSubfeature.omnibarToggle), category: .duckAI)
-        case .aiChatOmnibarCluster:
-            Config(source: .remoteReleasable(AIChatSubfeature.omnibarCluster), category: .duckAI)
         case .aiChatSuggestions:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled), category: .duckAI)
         case .aiChatOmnibarTools:

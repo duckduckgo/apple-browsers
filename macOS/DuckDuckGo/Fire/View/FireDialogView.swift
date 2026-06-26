@@ -87,7 +87,7 @@ struct FireDialogView: ModalView {
 
     @ObservedObject var viewModel: FireDialogViewModel
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
-    private let metrics = FireDialogMetrics.current
+    private let style = FireDialogStyle.current
     private let showIndividualSitesLink: Bool
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
@@ -229,8 +229,8 @@ struct FireDialogView: ModalView {
             ],
             containerBackground: Color(designSystemColor: .containerFillPrimary),
             containerBorder: Color(designSystemColor: .containerBorderPrimary),
-            containerCornerRadius: metrics.segmentedControlCornerRadius,
-            segmentCornerRadius: metrics.segmentedControlItemCornerRadius,
+            containerCornerRadius: style.segmentedControlCornerRadius,
+            segmentCornerRadius: style.segmentedControlItemCornerRadius,
             selectedForeground: Color(designSystemColor: .accentPrimary),
             unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
             selectedIconBackground: Color(designSystemColor: .accentGlowSecondary),
@@ -319,10 +319,10 @@ struct FireDialogView: ModalView {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: metrics.rowCornerRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
                 .fill(Color(designSystemColor: .containerFillPrimary))
                 .overlay(
-                    RoundedRectangle(cornerRadius: metrics.rowCornerRadius, style: .continuous)
+                    RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
                         .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
                 )
         )
@@ -486,7 +486,7 @@ struct FireDialogView: ModalView {
 
                 Group {
                     Toggle(isOn: isOn)
-                        .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accentPrimary), knobFill: Color(designSystemColor: .accentContentPrimary)))
+                        .toggleStyle(FireToggleStyle(onFill: style.knobFillColor, knobFill: Color(designSystemColor: .accentContentPrimary)))
                         .accessibilityLabel(title)
                         .accessibilityIdentifier(toggleId)
                 }
@@ -637,20 +637,21 @@ struct FireDialogView: ModalView {
     }
 }
 
-private struct FireDialogMetrics {
+private struct FireDialogStyle {
+    let knobFillColor: Color
     let rowCornerRadius: CGFloat
     let segmentedControlCornerRadius: CGFloat
     let segmentedControlItemCornerRadius: CGFloat
 
-    private static var `default`: FireDialogMetrics {
-        FireDialogMetrics(rowCornerRadius: 12, segmentedControlCornerRadius: 12, segmentedControlItemCornerRadius: 10)
+    private static var `default`: FireDialogStyle {
+        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary), rowCornerRadius: 12, segmentedControlCornerRadius: 12, segmentedControlItemCornerRadius: 10)
     }
 
-    private static var rebranded: FireDialogMetrics {
-        FireDialogMetrics(rowCornerRadius: 16, segmentedControlCornerRadius: 16, segmentedControlItemCornerRadius: 14)
+    private static var rebranded: FireDialogStyle {
+        FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent), rowCornerRadius: 16, segmentedControlCornerRadius: 16, segmentedControlItemCornerRadius: 14)
     }
 
-    static var current: FireDialogMetrics {
+    static var current: FireDialogStyle {
         DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
     }
 }
@@ -719,7 +720,7 @@ private struct RowWithPressEffect<Content: View>: View {
     @ViewBuilder
     private var pressBackground: some View {
         let background = Color.buttonMouseDown
-        let cornerRadius: CGFloat = FireDialogMetrics.current.rowCornerRadius
+        let cornerRadius: CGFloat = FireDialogStyle.current.rowCornerRadius
 
         switch roundedCorners {
         case .top:

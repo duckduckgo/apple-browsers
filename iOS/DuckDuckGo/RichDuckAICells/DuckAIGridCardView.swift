@@ -27,6 +27,8 @@ final class DuckAIGridCardView: UIView {
     private enum Metrics {
         static let contentTopInset: CGFloat = 12
         static let contentHorizontalInset: CGFloat = 8
+        static let snippetLeadingInset: CGFloat = 8
+        static let snippetTrailingInset: CGFloat = 16
         static let contentBottomInset: CGFloat = 8
         static let titleSnippetSpacing: CGFloat = 4
         static let imageVerticalSpacing: CGFloat = 12
@@ -108,16 +110,28 @@ final class DuckAIGridCardView: UIView {
     private func configureSnippet(for item: DuckAIGridItem) {
         switch item {
         case .text(_, let snippet), .transcript(_, let snippet):
-            if let attributedString = try? AttributedString(markdown: snippet) {
-                snippetLabel.attributedText = NSAttributedString(attributedString)
-            } else {
-                snippetLabel.text = snippet
-            }
+            snippetLabel.attributedText = snippetAttributedText(snippet)
             snippetLabel.isHidden = false
         default:
-            snippetLabel.text = nil
+            snippetLabel.attributedText = nil
             snippetLabel.isHidden = true
         }
+    }
+
+    /// Renders the snippet markdown (bold/italic) and tightens inter-line spacing.
+    private func snippetAttributedText(_ snippet: String) -> NSAttributedString {
+        let result: NSMutableAttributedString
+        if let markdown = try? AttributedString(markdown: snippet) {
+            result = NSMutableAttributedString(attributedString: NSAttributedString(markdown))
+        } else {
+            result = NSMutableAttributedString(string: snippet)
+        }
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineHeightMultiple = 0.9
+        result.addAttribute(.paragraphStyle,
+                            value: paragraph,
+                            range: NSRange(location: 0, length: result.length))
+        return result
     }
     
     private func configureThumbnail(for item: DuckAIGridItem) {
@@ -252,8 +266,8 @@ final class DuckAIGridCardView: UIView {
             titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.contentHorizontalInset),
 
             snippetLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: Metrics.titleSnippetSpacing),
-            snippetLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),
-            snippetLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.contentHorizontalInset),
+            snippetLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.snippetLeadingInset),
+            snippetLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.snippetTrailingInset),
             snippetBottom,
 
             chipView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),

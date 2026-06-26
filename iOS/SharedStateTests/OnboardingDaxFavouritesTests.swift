@@ -44,6 +44,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
     func isEligibleForNTPAfterIdle() -> Bool { false }
     func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
     func idleThresholdSeconds() -> Int { 60 }
+    func ntpAfterIdleState() -> NTPAfterIdleState { .notEligible }
 }
 
  @MainActor

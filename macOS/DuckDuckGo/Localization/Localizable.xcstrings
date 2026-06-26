@@ -13241,7 +13241,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Новая вкладка"
+            "value" : "новинка"
           }
         }
       }
@@ -28952,6 +28952,186 @@
         }
       }
     },
+    "duckai.ai-features.disable-all.button" : {
+      "comment" : "Button that turns off all AI features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo ohne KI verwenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use DuckDuckGo Without AI"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar DuckDuckGo sin IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser DuckDuckGo sans IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa DuckDuckGo senza AI"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebruik DuckDuckGo zonder AI"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Korzystaj z DuckDuckGo bez AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa o DuckDuckGo sem IA"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Использовать DuckDuckGo без ИИ"
+          }
+        }
+      }
+    },
+    "duckai.ai-features.disable-all.footer" : {
+      "comment" : "Footer text below the Disable AI Features button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deaktiviert Duck.ai, verbirgt KI-gestützte Antworten in der Suche und filtert bekannte KI-Spam-Websites in den Ergebnissen der Bildsuche."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disables Duck.ai, hides AI-assisted answers in search, and filters known AI spam sites in image search results."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactiva Duck.ai, oculta las respuestas asistidas por IA en las búsquedas y filtra los sitios de spam de IA conocidos en los resultados de búsqueda de imágenes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactive Duck.ai, masque les réponses assistées par l'IA dans la recherche et filtre les sites de spam liés à l'IA dans les résultats de recherche d'images."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disattiva Duck.ai, nasconde le risposte fornite dall'AI nei risultati di ricerca e filtra i siti di spam basati sull'AI nei risultati della ricerca per immagini."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schakelt Duck.ai uit, verbergt door AI ondersteunde antwoorden in zoekresultaten en filtert bekende AI-spamsites in zoekresultaten voor afbeeldingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłącza Duck.ai, ukrywa odpowiedzi wspomagane sztuczną inteligencją w wyszukiwaniu i filtruje znane strony ze spamem AI w wynikach wyszukiwania obrazów."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativa o Duck.ai, esconde as respostas assistidas por IA nos resultados de pesquisa e filtra os sites conhecidos de spam gerado por IA nos resultados da pesquisa de imagens."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключает Duck.ai, скрывает ответы с использованием ИИ в поиске и фильтрует известные сайты с ИИ-спамом в результатах поиска изображений."
+          }
+        }
+      }
+    },
+    "duckai.ai-features.disable-all.footer.disabled" : {
+      "comment" : "Footer text shown once all AI features are already disabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI ist im Browser derzeit deaktiviert, sodass dir keine KI-gestützten Antworten mehr angezeigt werden und du in den Bildersuchergebnissen weniger von der KI generierte Bilder siehst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers and see fewer AI-generated images in image search results."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA está actualmente deshabilitada en el navegador, por lo que ya no verás respuestas asistidas por IA y menos imágenes generadas por IA en los resultados de búsqueda de imágenes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'IA est actuellement désactivée dans le navigateur, vous ne verrez donc plus de réponses assistées par l'IA et vous verrez moins d'images générées par l'IA dans les résultats de recherche d'images."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'AI è attualmente disattivata nel browser. Non vedrai più risposte né immagini generate dall'intelligenza artificiale."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI is momenteel uitgeschakeld in de browser, dus je ziet geen AI-ondersteunde antwoorden meer en minder AI-gegenereerde afbeeldingen in de zoekresultaten voor afbeeldingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sztuczna inteligencja jest obecnie wyłączona w przeglądarce, więc nie zobaczysz już odpowiedzi wspomaganych AI i zobaczysz mniej obrazów generowanych przez AI w wynikach wyszukiwania obrazów."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA está atualmente desativada no navegador, pelo que deixarás de ver respostas assistidas por IA e verás menos imagens geradas por IA nos resultados de pesquisa de imagens."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ИИ сейчас отключен в браузере, поэтому ответы с использованием ИИ больше не будут отображаться, а в результатах поиска изображений будет меньше изображений, созданных ИИ."
+          }
+        }
+      }
+    },
     "duckai.attach-selection.context-menu-action" : {
       "comment" : "Context menu option that attaches the selected text to Duck.ai as page context",
       "extractionState" : "extracted_with_value",
@@ -29188,6 +29368,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отключить Duck.ai…"
+          }
+        }
+      }
+    },
+    "duckai.disable.button.immediate" : {
+      "comment" : "Button to disable Duck.ai feature directly, without a confirmation dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai deaktivieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disable Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivar Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactiver Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disabilita Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai uitschakelen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłącz Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativar Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключить Duck.ai"
           }
         }
       }
@@ -29492,6 +29732,126 @@
         }
       }
     },
+    "duckai.enabled.off" : {
+      "comment" : "Duck.ai dropdown option: off (Duck.ai disabled)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłączone"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desligado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выкл."
+          }
+        }
+      }
+    },
+    "duckai.enabled.on" : {
+      "comment" : "Duck.ai dropdown option: on (Duck.ai enabled)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Włączone"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ligado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкл."
+          }
+        }
+      }
+    },
     "duckai.hide-ai-generated-images-settings" : {
       "comment" : "The section name in preferences for Hide AI-Generated Images Settings",
       "extractionState" : "extracted_with_value",
@@ -29553,61 +29913,181 @@
       }
     },
     "duckai.hide-ai-generated-images-settings.description" : {
-      "comment" : "Description of the section in Settings",
+      "comment" : "Footnote for the Hide AI-Generated Images setting; a separate Learn More button links to the help page",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filtere KI-generierte Bilder aus den Ergebnissen der Bildersuche"
+            "value" : "Filtert bekannte KI-Spam-Websites aus den Bildersuchergebnissen heraus."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Filter out AI-generated images from image search results"
+            "value" : "Filters out known AI spam sites from image search results."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filtra las imágenes generadas por IA de los resultados de búsqueda de imágenes"
+            "value" : "Filtra los sitios de spam de IA conocidos de los resultados de búsqueda de imágenes."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filtrer les images générées par l'IA dans les résultats de recherche d'images"
+            "value" : "Filtre les sites de spam IA connus dans les résultats de recherche d'images."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filtra le immagini generate dall'intelligenza artificiale dai risultati di ricerca delle immagini"
+            "value" : "Filtra i siti di spam AI noti dai risultati di ricerca delle immagini."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filtert door AI gegenereerde afbeeldingen uit de zoekresultaten van afbeeldingen"
+            "value" : "Filtert bekende AI-spamsites uit de zoekresultaten van afbeeldingen."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filtruj obrazy generowane przez AI z wyników wyszukiwania obrazów"
+            "value" : "Filtruje znane strony z AI-spamem w wynikach wyszukiwania obrazów."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filtra imagens geradas por IA dos resultados de pesquisa de imagens"
+            "value" : "Filtra sites conhecidos de spam gerado por IA nos resultados de pesquisa de imagens."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Исключать из результатов поиска изображения, созданные нейросетью"
+            "value" : "Исключает из результатов поиска изображений известные сайты с ИИ-спамом."
+          }
+        }
+      }
+    },
+    "duckai.hide-ai-generated-images.off" : {
+      "comment" : "Hide AI-Generated Images option: off (images shown)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłączone"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desligado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выкл."
+          }
+        }
+      }
+    },
+    "duckai.hide-ai-generated-images.on" : {
+      "comment" : "Hide AI-Generated Images option: on (images hidden)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Włączone"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ligado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкл."
           }
         }
       }
@@ -30807,6 +31287,246 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть настройки Search Assist"
+          }
+        }
+      }
+    },
+    "duckai.search-assist.never" : {
+      "comment" : "Search Assist frequency option: never show AI-assisted answers",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Never"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nunca"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jamais"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nooit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nigdy"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nunca"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Никогда"
+          }
+        }
+      }
+    },
+    "duckai.search-assist.often" : {
+      "comment" : "Search Assist frequency option: often show AI-assisted answers",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Häufig"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Often"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A menudo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Souvent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spesso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaak"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Często"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frequentemente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Часто"
+          }
+        }
+      }
+    },
+    "duckai.search-assist.on-demand" : {
+      "comment" : "Search Assist frequency option: show AI-assisted answers on demand",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Anfrage"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On demand"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A la carta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À la demande"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su richiesta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Op aanvraag"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na żądanie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A pedido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По запросу"
+          }
+        }
+      }
+    },
+    "duckai.search-assist.sometimes" : {
+      "comment" : "Search Assist frequency option: sometimes show AI-assisted answers",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manchmal"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sometimes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A veces"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parfois"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A volte"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soms"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czasami"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Às vezes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Иногда"
           }
         }
       }
@@ -114606,7 +115326,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voeg een kopie van deze geanonimiseerde VPN-diagnostiek toe wanneer je contact opneemt met de ondersteuning om ons te helpen problemen met je verbinding op te lossen."
+            "value" : "Voeg een kopie van deze geanonimiseerde diagnostische VPN-gegevens toe wanneer je contact opneemt met de klantenservice. Dit helpt ons om problemen met je verbinding op te lossen."
           }
         },
         "pl" : {
@@ -115056,7 +115776,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Empfohlen in Netzwerken, denen du nicht vertraust, z. B. öffentliches WLAN in Hotels, Bars usw. Solltest du Probleme mit Funktionen (wie AirDrop, Sidecar usw.) oder der Verbindung zu anderen Geräten haben, versuche, diese zu deaktivieren. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Empfohlen in Netzwerken, denen du nicht vertraust, z. B. öffentliches WLAN in Hotels, Bars usw. Solltest du Probleme mit Funktionen (wie AirDrop, Sidecar usw.) oder der Verbindung zu anderen Geräten haben, versuche, diese zu deaktivieren. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
           }
         },
         "en" : {
@@ -115068,13 +115788,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recomendado en redes en las que no confías, p. ej., redes Wi-Fi públicas en hoteles, bares, etc. Si tienes problemas con las funciones (como AirDrop, Sidecar, etc.) o al conectarte a otros dispositivos, intenta apagarlo. [Más información](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Recomendado en redes en las que no confías, p. ej., Wifi público en hoteles, bares, etc. Si tienes problemas con las funciones (como AirDrop, Sidecar, etc.) o al conectarte a otros dispositivos, intenta apagarlo. [Más información](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recommandé sur les réseaux que vous jugez non fiables, comme le Wi-Fi public dans les hôtels, bars, etc. Si vous rencontrez des problèmes avec les fonctionnalités (comme AirDrop, Sidecar, etc.) ou la connexion à d’autres appareils, essayez de le désactiver. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Recommandé sur les réseaux que vous jugez non fiables, comme le Wi-Fi public dans les hôtels, bars, etc. Si vous rencontrez des problèmes avec les fonctionnalités (comme AirDrop, Sidecar, etc.) ou la connexion à d'autres appareils, essayez de le désactiver. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
           }
         },
         "it" : {

@@ -510,6 +510,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114767?focus=true
     case syncCanShowV2ConnectCode
+
+    /// Gates the Simplified Sync Setup follow-up screens.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216075349711580
+    case simplifiedSyncSetupV2
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -826,7 +830,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess))
         case .aiFeaturesNativeControls:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.aiFeaturesNativeControls))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiFeaturesNativeControls))
         case .omniBarLongPressMenu:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.omniBarLongPressMenu))
         case .customProductPageDuckAiChat:
@@ -857,6 +861,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow))
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
+        case .simplifiedSyncSetupV2:
+            Config(source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
         }
     }
 

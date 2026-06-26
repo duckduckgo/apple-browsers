@@ -2228,13 +2228,13 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
         self.featureFlagger = MockDBPFeatureFlagger()
     }
 
-    public func createScanRunner(profileQuery: BrokerProfileQueryData,
+    public func createScanRunner(profileQuery: SubJobContextProviding,
                                  stageDurationCalculator: any StageDurationCalculator,
                                  shouldRunNextStep: @escaping () -> Bool) -> any BrokerProfileScanSubJobWebRunning {
         return mockScanRunner
     }
 
-    public func createOptOutRunner(profileQuery: BrokerProfileQueryData,
+    public func createOptOutRunner(profileQuery: SubJobContextProviding,
                                    stageDurationCalculator: any StageDurationCalculator,
                                    shouldRunNextStep: @escaping () -> Bool) -> any BrokerProfileOptOutSubJobWebRunning {
         return mockOptOutRunner

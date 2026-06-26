@@ -1213,6 +1213,13 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return brokerProfileQueryDataToReturn.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
     }
 
+    public func fetchBrokerProfileQueryData(forBrokerId brokerId: Int64) throws -> [BrokerProfileQueryData] {
+        if let fetchAllBrokerProfileQueryDataError {
+            throw fetchAllBrokerProfileQueryDataError
+        }
+        return brokerProfileQueryDataToReturn.filter { $0.dataBroker.id == brokerId }
+    }
+
     public func fetchAllDataBrokers() throws -> [DataBrokerProtectionCore.DataBroker] {
         wasFetchAllDataBrokersCalled = true
 

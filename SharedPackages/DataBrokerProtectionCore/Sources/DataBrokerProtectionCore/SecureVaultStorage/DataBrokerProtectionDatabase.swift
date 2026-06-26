@@ -37,6 +37,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws
 
     func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData?
+    func fetchBrokerProfileQueryData(forBrokerId brokerId: Int64) throws -> [BrokerProfileQueryData]
     /// Includes removed brokers. Prefer `fetchActiveBrokerProfileQueryData()` unless your caller genuinely needs them.
     /// The `reason` parameter is intentionally required so callers document why removed brokers are needed at the call site.
     func fetchAllBrokerProfileQueryData(reason: BrokerProfileQueryDataFetchReason) throws -> [BrokerProfileQueryData]
@@ -415,6 +416,13 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
 
     public func fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: Bool) throws -> [BrokerProfileQueryData] {
         try fetchActiveBrokerProfileQueryData().excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
+    }
+
+    public func fetchBrokerProfileQueryData(forBrokerId brokerId: Int64) throws -> [BrokerProfileQueryData] {
+        try fetchBrokerProfileQueryData {
+            guard let broker = try vault.fetchBroker(with: brokerId) else { return [] }
+            return [broker]
+        }
     }
 
     private func fetchBrokerProfileQueryData(brokers: () throws -> [DataBroker]) throws -> [BrokerProfileQueryData] {

@@ -281,7 +281,7 @@ public final class DataBrokerProtectionAgentManager {
             Logger.dataBrokerProtection.debug("PIR wide event sweep requested (agent launch)")
             sweepWideEvents()
             let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database,
-                                                                              featureFlagger: featureFlagger)
+                                                                              featureFlagger: jobDependencies.featureFlagger)
             operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
             await checkForEmailConfirmationData()
 

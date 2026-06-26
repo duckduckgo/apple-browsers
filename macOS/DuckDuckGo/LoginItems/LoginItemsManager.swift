@@ -24,13 +24,13 @@ import PixelKit
 import os.log
 
 protocol LoginItemsManaging {
-    func enableLoginItems(_ items: Set<LoginItem>)
-    func throwingEnableLoginItems(_ items: Set<LoginItem>) throws
-    func disableLoginItems(_ items: Set<LoginItem>)
-    func restartLoginItems(_ items: Set<LoginItem>)
+    func enableLoginItems(_ items: Set<LoginItem>) async
+    func throwingEnableLoginItems(_ items: Set<LoginItem>) async throws
+    func disableLoginItems(_ items: Set<LoginItem>) async
+    func restartLoginItems(_ items: Set<LoginItem>) async
 
-    func isAnyEnabled(_ items: Set<LoginItem>) -> Bool
-    func isAnyInstalled(_ items: Set<LoginItem>) -> Bool
+    func isAnyEnabled(_ items: Set<LoginItem>) async -> Bool
+    func isAnyInstalled(_ items: Set<LoginItem>) async -> Bool
 }
 
 /// Class to manage the login items for the VPN and DBP
@@ -44,10 +44,10 @@ final class LoginItemsManager: LoginItemsManaging {
 
     // MARK: - Main Interactions
 
-    func enableLoginItems(_ items: Set<LoginItem>) {
+    func enableLoginItems(_ items: Set<LoginItem>) async {
         for item in items {
             do {
-                try item.enable()
+                try await item.enable()
                 Logger.networkProtection.log("🟢 Enabled successfully \(String(describing: item), privacy: .public)")
             } catch let error as NSError {
                 handleError(for: item, action: .enable, error: error)
@@ -57,10 +57,10 @@ final class LoginItemsManager: LoginItemsManaging {
 
     /// Throwing version of enableLoginItems
     ///
-    func throwingEnableLoginItems(_ items: Set<LoginItem>) throws {
+    func throwingEnableLoginItems(_ items: Set<LoginItem>) async throws {
         for item in items {
             do {
-                try item.enable()
+                try await item.enable()
                 Logger.networkProtection.log("🟢 Enabled successfully \(String(describing: item), privacy: .public)")
             } catch let error as NSError {
                 handleError(for: item, action: .enable, error: error)
@@ -69,10 +69,10 @@ final class LoginItemsManager: LoginItemsManaging {
         }
     }
 
-    func restartLoginItems(_ items: Set<LoginItem>) {
+    func restartLoginItems(_ items: Set<LoginItem>) async {
         for item in items {
             do {
-                try item.restart()
+                try await item.restart()
                 Logger.networkProtection.log("🟢 Restarted successfully \(String(describing: item), privacy: .public)")
             } catch let error as NSError {
                 handleError(for: item, action: .restart, error: error)
@@ -80,22 +80,24 @@ final class LoginItemsManager: LoginItemsManaging {
         }
     }
 
-    func disableLoginItems(_ items: Set<LoginItem>) {
+    func disableLoginItems(_ items: Set<LoginItem>) async {
         for item in items {
-            try? item.disable()
+            try? await item.disable()
         }
     }
 
-    func isAnyEnabled(_ items: Set<LoginItem>) -> Bool {
-        return items.contains(where: { item in
-            item.status == .enabled
-        })
+    func isAnyEnabled(_ items: Set<LoginItem>) async -> Bool {
+        for item in items where await item.status() == .enabled {
+            return true
+        }
+        return false
     }
 
-    func isAnyInstalled(_ items: Set<LoginItem>) -> Bool {
-        return items.contains(where: { item in
-            item.status.isInstalled
-        })
+    func isAnyInstalled(_ items: Set<LoginItem>) async -> Bool {
+        for item in items where await item.status().isInstalled {
+            return true
+        }
+        return false
     }
 
     private func handleError(for item: LoginItem, action: Action, error: NSError) {
@@ -111,7 +113,7 @@ final class LoginItemsManager: LoginItemsManaging {
 
     func resetLoginItems(_ items: Set<LoginItem>) async throws {
         for item in items {
-            try? item.disable()
+            try? await item.disable()
         }
     }
 

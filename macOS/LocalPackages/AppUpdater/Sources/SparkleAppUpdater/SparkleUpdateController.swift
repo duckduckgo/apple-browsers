@@ -83,24 +83,28 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     private var cachedUpdateResult: UpdateCheckResult? {
         didSet {
-            if let cachedUpdateResult {
-                refreshUpdateFromCache(cachedUpdateResult)
-            } else {
+            guard let cachedUpdateResult else {
                 latestUpdate = nil
                 hasPendingUpdate = false
                 needsNotificationDot = false
+                return
             }
+            // Rebuild the Update view-model only when the appcast result changes. This is the
+            // only place that parses release notes, so it must not run on every progress tick.
+            latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled)
+            refreshPendingUpdateState()
         }
     }
 
-    private func refreshUpdateFromCache(_ cachedUpdateResult: UpdateCheckResult, progress: UpdateCycleProgress? = nil) {
-        latestUpdate = Update(appcastItem: cachedUpdateResult.item, isInstalled: cachedUpdateResult.isInstalled)
-        let isInstalled = latestUpdate?.isInstalled == false
+    /// Recomputes `hasPendingUpdate` from the current `latestUpdate` and progress state.
+    ///
+    /// Cheap and safe to call on every progress change — unlike rebuilding `latestUpdate`, it
+    /// does not re-parse release notes.
+    private func refreshPendingUpdateState(progress: UpdateCycleProgress? = nil) {
+        let hasInstallableUpdate = latestUpdate?.isInstalled == false
         // Use passed progress if available (avoids @Published willSet timing issue)
         let currentProgress = progress ?? progressState.updateProgress
-        let isDone = currentProgress.isDone
-        let isResumable = progressState.isResumable
-        hasPendingUpdate = isInstalled && isDone && isResumable
+        hasPendingUpdate = hasInstallableUpdate && currentProgress.isDone && progressState.isResumable
     }
 
     // MARK: - Update Progress State Machine
@@ -114,9 +118,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     public var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { progressState.updateProgressPublisher }
 
     private func handleProgressChange(_ progress: UpdateCycleProgress) {
-        if let cachedUpdateResult {
-            refreshUpdateFromCache(cachedUpdateResult, progress: progress)
-        }
+        refreshPendingUpdateState(progress: progress)
         handleUpdateNotification()
     }
 

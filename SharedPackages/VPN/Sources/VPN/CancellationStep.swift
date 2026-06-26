@@ -23,5 +23,8 @@ import Foundation
 public enum CancellationStep: String {
     case systemExtensionActivation
     case tunnelManagerLoad
-    case startTunnel
+    case tunnelConnection
+
+    /// A cancellation that reached the top-level start handler without being attributed to a specific step.
+    case unknown
 }

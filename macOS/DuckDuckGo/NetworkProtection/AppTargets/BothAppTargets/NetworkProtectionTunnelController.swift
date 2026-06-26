@@ -711,6 +711,13 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionControllerStartCancelled(step: step), frequency: .legacyDailyAndCount, includeAppVersionParameter: true
                 )
+            } else if error is CancellationError {
+                // A cancellation that wasn't attributed to a specific start step. Still report it as a
+                // cancellation rather than a failure.
+                isCancelled = true
+                PixelKit.fire(
+                    NetworkProtectionPixelEvent.networkProtectionControllerStartCancelled(step: .unknown), frequency: .legacyDailyAndCount, includeAppVersionParameter: true
+                )
             } else {
                 isCancelled = false
                 PixelKit.fire(
@@ -821,7 +828,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             self.connectionWideEventData?.tunnelStartDuration?.complete()
         } catch is CancellationError {
             Logger.networkProtection.log("VPN tunnel start cancelled")
-            throw StartError.cancelled(step: .startTunnel)
+            throw StartError.cancelled(step: .tunnelConnection)
         } catch {
             Logger.networkProtection.fault("🔴 Failed to start VPN tunnel: \(error, privacy: .public)")
             completeAtStepWithFailure(.tunnelStart, with: error, description: StartError.startTunnelFailure(error).caseDescription)

@@ -512,7 +512,7 @@ public enum FeatureFlag: String {
     case syncCanShowV2ConnectCode
 
     /// Gates the Simplified Sync Setup follow-up screens.
-    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1215960387490701
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216075349711580
     case simplifiedSyncSetupV2
 }
 

@@ -26,7 +26,7 @@ public extension Color {
     }
 
     init(singleUseColor: SingleUseColor, palette: ColorPalette = DesignSystemPalette.current) {
-        self = singleUseColor.dynamicColor.color
+        self = palette.paletteDefinition.dynamicColor(for: singleUseColor).color
     }
 
     init(baseColor: BaseColor, palette: ColorPalette = DesignSystemPalette.current) {
@@ -40,7 +40,7 @@ public extension UIColor {
     }
 
     convenience init(singleUseColor: SingleUseColor, palette: ColorPalette = DesignSystemPalette.current) {
-        self.init(dynamicProvider: singleUseColor.dynamicColor.dynamicProvider)
+        self.init(dynamicProvider: palette.paletteDefinition.dynamicColor(for: singleUseColor).dynamicProvider)
     }
 
     convenience init(baseColor: BaseColor, palette: ColorPalette = DesignSystemPalette.current) {

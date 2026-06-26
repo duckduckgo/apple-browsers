@@ -78,11 +78,10 @@ struct CookiePopupProtectionOptInView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // ponytail: best-guess asset; swap for final circular logo when imported.
-            Image("Logo")
+            Image("OnboardingDax")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 44, height: 44)
+                .frame(width: 32, height: 32)
                 .padding(.top, 28)
                 .padding(.bottom, 16)
 
@@ -124,17 +123,20 @@ struct CookiePopupProtectionOptInView: View {
             Image(nsImage: DesignSystemImages.Color.Size96.cookieCheckFeature)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 96, height: 96)
-                .padding(.top, 24)
-                .padding(.bottom, 12)
+                .frame(width: 72, height: 72)
+                .padding(.top, 20)
+                .padding(.bottom, 8)
 
             Text(variant.title)
-                .font(.system(size: 22, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
                 .padding(.bottom, 8)
 
             Text(variant.message)
-                .font(.system(size: 15))
+                .font(.system(size: 13))
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .fixedSize(horizontal: false, vertical: true)
@@ -144,7 +146,7 @@ struct CookiePopupProtectionOptInView: View {
             preferenceBox
 
             Text(footerText)
-                .font(.system(size: 13))
+                .font(.system(size: 12))
                 .multilineTextAlignment(.leading)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .fixedSize(horizontal: false, vertical: true)
@@ -162,13 +164,13 @@ struct CookiePopupProtectionOptInView: View {
     }
 
     private var preferenceBox: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Picker("", selection: $selectedOption) {
-                Text(variant.primaryOptionTitle).tag(CookiePopupProtectionOptInOption.primary)
-                Text(variant.secondaryOptionTitle).tag(CookiePopupProtectionOptInOption.secondary)
-            }
-            .pickerStyle(.radioGroup)
-            .labelsHidden()
+        VStack(alignment: .leading, spacing: 16) {
+            Text(UserText.cookiePopupProtectionOptInPreferenceCaption)
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+
+            radioRow(.primary, title: variant.primaryOptionTitle)
+            radioRow(.secondary, title: variant.secondaryOptionTitle)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
@@ -178,6 +180,38 @@ struct CookiePopupProtectionOptInView: View {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(Color(.blackWhite10), lineWidth: 1)
         )
+    }
+
+    // Custom radio rows: the native radioGroup Picker gives no control over inter-option spacing.
+    private func radioRow(_ option: CookiePopupProtectionOptInOption, title: String) -> some View {
+        Button {
+            selectedOption = option
+        } label: {
+            HStack(spacing: 10) {
+                radioIndicator(isSelected: selectedOption == option)
+                Text(title)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func radioIndicator(isSelected: Bool) -> some View {
+        if isSelected {
+            ZStack {
+                Circle().fill(Color(designSystemColor: .accentPrimary))
+                Circle().fill(.white).frame(width: 6, height: 6)
+            }
+            .frame(width: 16, height: 16)
+        } else {
+            Circle()
+                .strokeBorder(Color(designSystemColor: .iconsSecondary), lineWidth: 1.5)
+                .frame(width: 16, height: 16)
+        }
     }
 }
 

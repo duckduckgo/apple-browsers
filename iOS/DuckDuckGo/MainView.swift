@@ -110,6 +110,7 @@ extension MainViewFactory {
         createLogoBackground()
         createContentContainer()
         createSuggestionTrayContainer()
+        createFocusedStateBackground()
         createUnifiedInputContentContainer()
         createTopSlideContainer()
         createStatusBackground()
@@ -373,6 +374,14 @@ extension MainViewFactory {
         superview.addSubview(coordinator.unifiedInputContentContainer)
     }
 
+    final class FocusedStateBackgroundView: UIView { }
+    private func createFocusedStateBackground() {
+        coordinator.focusedStateBackground = FocusedStateBackgroundView()
+        coordinator.focusedStateBackground.isHidden = true
+        coordinator.focusedStateBackground.backgroundColor = UIColor(designSystemColor: .panel)
+        superview.addSubview(coordinator.focusedStateBackground)
+    }
+
     private func createToolbar() {
         coordinator.toolbar = BrowserToolbarView()
         coordinator.toolbar.setFloatingStyleEnabled(floatingUIManager.isFloatingUIEnabled)
@@ -444,6 +453,7 @@ extension MainViewFactory {
         constrainTopSlideContainer()
         constrainContentContainer()
         constrainSuggestionTrayContainer()
+        constrainFocusedStateBackground()
         constrainUnifiedInputContentContainer()
         constrainStatusBackground()
         constrainTabBarContainer()
@@ -614,6 +624,16 @@ extension MainViewFactory {
             container.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
             container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
+        ])
+    }
+
+    private func constrainFocusedStateBackground() {
+        let view = coordinator.focusedStateBackground!
+        NSLayoutConstraint.activate([
+            view.topAnchor.constraint(equalTo: superview.topAnchor),
+            view.bottomAnchor.constraint(equalTo: superview.bottomAnchor),
+            view.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])
     }
 

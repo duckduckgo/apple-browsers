@@ -43,6 +43,7 @@ class MainViewCoordinator {
     var omniBar: OmniBar!
     var progress: ProgressView!
     var statusBackground: UIView!
+    var focusedStateBackground: UIView!
     var suggestionTrayContainer: UIView!
     var tabBarContainer: UIView!
     var aiChatTabChatHeaderContainer: UIView!
@@ -351,6 +352,7 @@ class MainViewCoordinator {
         beginOmnibarStatusBackgroundPresentation()
         let inlineBackground = UIColor(designSystemColor: .panel)
         suggestionTrayContainer.backgroundColor = inlineBackground
+        showFocusedStateBackground()
 
         navigationBarContainer.backgroundColor = .clear
 
@@ -396,6 +398,7 @@ class MainViewCoordinator {
         unifiedToggleInputContainer.isHidden = true
         setAITabCollapsedTopSeparatorVisible(false)
         unifiedToggleInputContainer.backgroundColor = .clear
+        hideFocusedStateBackground()
         setNavBarContainerBottomToToolbar()
         if addressBarPosition == .top {
             setAddressBarBottomActive(false)
@@ -464,6 +467,7 @@ class MainViewCoordinator {
         endOmnibarStatusBackgroundPresentation()
         navigationBarContainer.backgroundColor = nil
         suggestionTrayContainer.backgroundColor = .clear
+        hideFocusedStateBackground()
         navigationBarCollectionView.isUserInteractionEnabled = true
 
         if isNavigationChromeHidden {
@@ -499,6 +503,7 @@ class MainViewCoordinator {
     @MainActor
     func hideUnifiedInputContent() {
         unifiedInputContentContainer.isHidden = true
+        hideFocusedStateBackground()
         superview.insertSubview(statusBackground, aboveSubview: topSlideContainer)
     }
 
@@ -637,6 +642,16 @@ class MainViewCoordinator {
         case .aiTabChatChromeHidden:
             return UIColor(designSystemColor: .surfaceCanvas)
         }
+    }
+
+    private func showFocusedStateBackground() {
+        guard isFloatingUIEnabled else { return }
+        focusedStateBackground.isHidden = false
+        superview.insertSubview(focusedStateBackground, belowSubview: unifiedInputContentContainer)
+    }
+
+    private func hideFocusedStateBackground() {
+        focusedStateBackground.isHidden = true
     }
 
     func setNavBarContainerBottomToKeyboard(floorAnchor: NSLayoutYAxisAnchor? = nil) {

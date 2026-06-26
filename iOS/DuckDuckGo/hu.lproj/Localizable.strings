@@ -3839,19 +3839,19 @@
 "settings.aifeatures.assist" = "Keresési asszisztens beállításai";
 
 /* Search Assist frequency option: never show AI-assisted answers */
-"settings.aifeatures.assist.never" = "Never";
+"settings.aifeatures.assist.never" = "Soha";
 
 /* Search Assist frequency option: often show AI-assisted answers */
-"settings.aifeatures.assist.often" = "Often";
+"settings.aifeatures.assist.often" = "Gyakran";
 
 /* Search Assist frequency option: show AI-assisted answers on demand */
-"settings.aifeatures.assist.ondemand" = "On demand";
+"settings.aifeatures.assist.ondemand" = "Igény szerint";
 
 /* Search Assist frequency option: sometimes show AI-assisted answers */
-"settings.aifeatures.assist.sometimes" = "Sometimes";
+"settings.aifeatures.assist.sometimes" = "Néha";
 
 /* Title of the native Search Assist setting control */
-"settings.aifeatures.assist.title" = "Search Assist";
+"settings.aifeatures.assist.title" = "Keresési asszisztens";
 
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Az oldal tartalmának automatikus küldése a Duck.ai részére";
@@ -3863,7 +3863,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Csevegési javaslatok";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Use DuckDuckGo Without AI";
+"settings.aifeatures.disable.all" = "A DuckDuckGo használata AI nélkül";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Kikapcsolja a Duck.ai-t, elrejti az AI segítségével létrehozott válaszokat a keresésben, és kiszűri az ismert AI-spam-webhelyeket a képkeresési eredmények közül.";
@@ -3878,10 +3878,10 @@
 "settings.aifeatures.hide.ai.generated.images" = "AI által generált képek elrejtése";
 
 /* Hide AI-Generated Images option: off (images shown) */
-"settings.aifeatures.hide.ai.generated.images.off" = "Off";
+"settings.aifeatures.hide.ai.generated.images.off" = "Ki";
 
 /* Hide AI-Generated Images option: on (images hidden) */
-"settings.aifeatures.hide.ai.generated.images.on" = "On";
+"settings.aifeatures.hide.ai.generated.images.on" = "Be";
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Kiszűri az ismert AI-spam-webhelyeket a képkeresési találatok közül. [További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";

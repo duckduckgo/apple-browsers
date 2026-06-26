@@ -3839,19 +3839,19 @@
 "settings.aifeatures.assist" = "Instellingen voor zoek Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
-"settings.aifeatures.assist.never" = "Never";
+"settings.aifeatures.assist.never" = "Nooit";
 
 /* Search Assist frequency option: often show AI-assisted answers */
-"settings.aifeatures.assist.often" = "Often";
+"settings.aifeatures.assist.often" = "Vaak";
 
 /* Search Assist frequency option: show AI-assisted answers on demand */
-"settings.aifeatures.assist.ondemand" = "On demand";
+"settings.aifeatures.assist.ondemand" = "Op aanvraag";
 
 /* Search Assist frequency option: sometimes show AI-assisted answers */
-"settings.aifeatures.assist.sometimes" = "Sometimes";
+"settings.aifeatures.assist.sometimes" = "Soms";
 
 /* Title of the native Search Assist setting control */
-"settings.aifeatures.assist.title" = "Search Assist";
+"settings.aifeatures.assist.title" = "Zoek Assist";
 
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Pagina-inhoud automatisch naar Duck.ai verzenden";
@@ -3863,7 +3863,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Chatsuggesties";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Use DuckDuckGo Without AI";
+"settings.aifeatures.disable.all" = "DuckDuckGo gebruiken zonder AI";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Schakelt Duck.ai uit, verbergt door AI ondersteunde antwoorden in zoekresultaten en filtert bekende AI-spamwebsites in zoekresultaten voor afbeeldingen.";
@@ -3878,10 +3878,10 @@
 "settings.aifeatures.hide.ai.generated.images" = "Verberg AI-gegenereerde afbeeldingen.";
 
 /* Hide AI-Generated Images option: off (images shown) */
-"settings.aifeatures.hide.ai.generated.images.off" = "Off";
+"settings.aifeatures.hide.ai.generated.images.off" = "Uit";
 
 /* Hide AI-Generated Images option: on (images hidden) */
-"settings.aifeatures.hide.ai.generated.images.on" = "On";
+"settings.aifeatures.hide.ai.generated.images.on" = "Aan";
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtert bekende AI-spamsites uit de zoekresultaten voor afbeeldingen. [Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";

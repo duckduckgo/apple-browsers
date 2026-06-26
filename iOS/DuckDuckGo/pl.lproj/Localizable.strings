@@ -3839,16 +3839,16 @@
 "settings.aifeatures.assist" = "Ustawienia wyszukiwania Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
-"settings.aifeatures.assist.never" = "Never";
+"settings.aifeatures.assist.never" = "Nigdy";
 
 /* Search Assist frequency option: often show AI-assisted answers */
-"settings.aifeatures.assist.often" = "Often";
+"settings.aifeatures.assist.often" = "Często";
 
 /* Search Assist frequency option: show AI-assisted answers on demand */
-"settings.aifeatures.assist.ondemand" = "On demand";
+"settings.aifeatures.assist.ondemand" = "Na żądanie";
 
 /* Search Assist frequency option: sometimes show AI-assisted answers */
-"settings.aifeatures.assist.sometimes" = "Sometimes";
+"settings.aifeatures.assist.sometimes" = "Czasami";
 
 /* Title of the native Search Assist setting control */
 "settings.aifeatures.assist.title" = "Search Assist";
@@ -3863,7 +3863,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Sugestie czatu";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Use DuckDuckGo Without AI";
+"settings.aifeatures.disable.all" = "Używaj DuckDuckGo bez AI";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Wyłącza Duck.ai, ukrywa odpowiedzi wspomagane sztuczną inteligencją w wyszukiwaniu i filtruje znane strony ze spamem AI w wynikach wyszukiwania obrazów.";
@@ -3878,10 +3878,10 @@
 "settings.aifeatures.hide.ai.generated.images" = "Ukryj obrazy generowane przez AI";
 
 /* Hide AI-Generated Images option: off (images shown) */
-"settings.aifeatures.hide.ai.generated.images.off" = "Off";
+"settings.aifeatures.hide.ai.generated.images.off" = "Wył.";
 
 /* Hide AI-Generated Images option: on (images hidden) */
-"settings.aifeatures.hide.ai.generated.images.on" = "On";
+"settings.aifeatures.hide.ai.generated.images.on" = "Wł.";
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruje znane strony z AI-spamem w wynikach wyszukiwania obrazów. [Dowiedz się więcej](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";

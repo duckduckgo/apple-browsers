@@ -3839,16 +3839,16 @@
 "settings.aifeatures.assist" = "Impostazioni di Search Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
-"settings.aifeatures.assist.never" = "Never";
+"settings.aifeatures.assist.never" = "Mai";
 
 /* Search Assist frequency option: often show AI-assisted answers */
-"settings.aifeatures.assist.often" = "Often";
+"settings.aifeatures.assist.often" = "Spesso";
 
 /* Search Assist frequency option: show AI-assisted answers on demand */
-"settings.aifeatures.assist.ondemand" = "On demand";
+"settings.aifeatures.assist.ondemand" = "Su richiesta";
 
 /* Search Assist frequency option: sometimes show AI-assisted answers */
-"settings.aifeatures.assist.sometimes" = "Sometimes";
+"settings.aifeatures.assist.sometimes" = "A volte";
 
 /* Title of the native Search Assist setting control */
 "settings.aifeatures.assist.title" = "Search Assist";
@@ -3863,7 +3863,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Suggerimenti per la chat";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Use DuckDuckGo Without AI";
+"settings.aifeatures.disable.all" = "Usa DuckDuckGo senza AI";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Disattiva Duck.ai, nasconde le risposte formulate dall'AI nei risultati di ricerca e filtra i siti di spam noti generati dall'AI nei risultati della ricerca per immagini.";

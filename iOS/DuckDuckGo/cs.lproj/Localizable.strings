@@ -3839,19 +3839,19 @@
 "settings.aifeatures.assist" = "Nastavení vyhledávání s funkcí Assist";
 
 /* Search Assist frequency option: never show AI-assisted answers */
-"settings.aifeatures.assist.never" = "Never";
+"settings.aifeatures.assist.never" = "Nikdy";
 
 /* Search Assist frequency option: often show AI-assisted answers */
-"settings.aifeatures.assist.often" = "Often";
+"settings.aifeatures.assist.often" = "Často";
 
 /* Search Assist frequency option: show AI-assisted answers on demand */
-"settings.aifeatures.assist.ondemand" = "On demand";
+"settings.aifeatures.assist.ondemand" = "Na vyžádání";
 
 /* Search Assist frequency option: sometimes show AI-assisted answers */
-"settings.aifeatures.assist.sometimes" = "Sometimes";
+"settings.aifeatures.assist.sometimes" = "Někdy";
 
 /* Title of the native Search Assist setting control */
-"settings.aifeatures.assist.title" = "Search Assist";
+"settings.aifeatures.assist.title" = "Vyhledávání s funkcí Assist";
 
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Automaticky odesílat obsah stránky do Duck.ai";
@@ -3863,7 +3863,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Návrhy chatu";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Use DuckDuckGo Without AI";
+"settings.aifeatures.disable.all" = "Používat DuckDuckGo bez AI";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Zakáže Duck.ai, skryje odpovědi generované umělou inteligencí ve vyhledávání a filtruje známé weby se spamem, které jsou generované umělou inteligencí, z výsledků vyhledávání obrázků.";
@@ -3878,10 +3878,10 @@
 "settings.aifeatures.hide.ai.generated.images" = "Skrýt obrázky vygenerované umělou inteligencí";
 
 /* Hide AI-Generated Images option: off (images shown) */
-"settings.aifeatures.hide.ai.generated.images.off" = "Off";
+"settings.aifeatures.hide.ai.generated.images.off" = "Vypnuto";
 
 /* Hide AI-Generated Images option: on (images hidden) */
-"settings.aifeatures.hide.ai.generated.images.on" = "On";
+"settings.aifeatures.hide.ai.generated.images.on" = "Zapnuto";
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruje známé weby se spamem, které jsou generované umělou inteligencí, z výsledků vyhledávání obrázků. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";

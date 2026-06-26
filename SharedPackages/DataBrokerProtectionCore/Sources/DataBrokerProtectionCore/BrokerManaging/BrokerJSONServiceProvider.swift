@@ -55,6 +55,7 @@ public protocol BrokerStoring {
 
     /// Secure storage for persisting broker data
     var vault: any DataBrokerProtectionSecureVault { get }
+    var optOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFlagging { get }
 
     /// Inserts a new broker or updates an existing one with the same URL
     ///
@@ -91,7 +92,7 @@ public extension BrokerStoring {
         Logger.dataBrokerProtection.log("🧩 Updated broker found: \(broker.url, privacy: .public) (\(savedBroker.version, privacy: .public)->\(broker.version, privacy: .public))")
 
         try vault.update(brokerResource, with: savedBrokerId)
-        try updateAttemptCount(broker)
+        try handleBrokerVersionUpdate(brokerId: savedBrokerId)
     }
 
     private func addBroker(_ brokerResource: BrokerResource) throws {
@@ -110,14 +111,26 @@ public extension BrokerStoring {
         }
     }
 
-    /// Reset attempt count to 0 when broker JSON is updated
-    func updateAttemptCount(_ broker: DataBroker) throws {
-        guard let brokerId = broker.id else { return }
-
+    /// Reset attempt count to 0 when broker JSON is updated.
+    /// If the retry-error experiment is enabled, also retry active opt-outs whose latest state is error.
+    func handleBrokerVersionUpdate(brokerId: Int64) throws {
         let optOutJobs = try vault.fetchOptOuts(brokerId: brokerId)
         for optOutJob in optOutJobs {
             if let extractedProfileId = optOutJob.extractedProfile.id {
                 try vault.updateAttemptCount(0, brokerId: brokerId, profileQueryId: optOutJob.profileQueryId, extractedProfileId: extractedProfileId)
+
+                guard let preferredRunDate = optOutJob.preferredRunDate,
+                      optOutRetryErrorFeatureFlagger.isOptOutRetryErrorFrequencyExperimentOn,
+                      optOutJob.extractedProfile.removedDate == nil,
+                      optOutJob.historyEventsSortedEarliestFirst.last?.isError == true,
+                      preferredRunDate > Date() else {
+                    continue
+                }
+
+                try vault.updatePreferredRunDate(Date(),
+                                                 brokerId: brokerId,
+                                                 profileQueryId: optOutJob.profileQueryId,
+                                                 extractedProfileId: extractedProfileId)
             }
         }
     }

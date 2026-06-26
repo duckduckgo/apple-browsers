@@ -673,9 +673,11 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var scanJobData = [ScanJobData]()
     public var optOutJobData = [OptOutJobData]()
     public var lastPreferredRunDateOnScan: Date?
+    public var lastPreferredRunDateOnOptOut: Date?
     public var lastSavedBrokerResource: BrokerResource?
     public var lastUpdatedBrokerResource: BrokerResource?
     public var brokerFixturesBundle: Bundle?
+    public var wasUpdatedPreferredRunDateCalled = false
 
     public var wasDeleteOptOutEmailConfirmationCalled = false
     public var lastDeletedEmailConfirmationProfileQueryId: Int64?
@@ -705,9 +707,11 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         scanJobData.removeAll()
         optOutJobData.removeAll()
         lastPreferredRunDateOnScan = nil
+        lastPreferredRunDateOnOptOut = nil
         lastSavedBrokerResource = nil
         lastUpdatedBrokerResource = nil
         brokerFixturesBundle = nil
+        wasUpdatedPreferredRunDateCalled = false
     }
 
     public func save(profile: DataBrokerProtectionProfile) throws -> Int64 {
@@ -850,6 +854,8 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     }
 
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+        lastPreferredRunDateOnOptOut = date
+        wasUpdatedPreferredRunDateCalled = true
     }
 
     public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
@@ -2130,6 +2136,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
+    public let isOptOutRetryErrorFrequencyExperimentOn: Bool
     public let isFreemiumPIREnabled: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
@@ -2137,12 +2144,14 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
                 isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isContinuedProcessingFeatureOn: Bool = true,
                 isWebViewUserAgentOn: Bool = false,
+                isOptOutRetryErrorFrequencyExperimentOn: Bool = false,
                 isFreemiumPIREnabled: Bool = false) {
         self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isWebViewUserAgentOn = isWebViewUserAgentOn
+        self.isOptOutRetryErrorFrequencyExperimentOn = isOptOutRetryErrorFrequencyExperimentOn
         self.isFreemiumPIREnabled = isFreemiumPIREnabled
     }
 }
@@ -2284,6 +2293,7 @@ public final class MockMismatchCalculator: MismatchCalculator {
 
 public final class MockBrokerJSONService: BrokerJSONServiceProvider {
     public var vault: any DataBrokerProtectionCore.DataBrokerProtectionSecureVault
+    public let optOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFlagging = DisabledOptOutRetryErrorFeatureFlagger()
 
     public private(set) var didCallUpdateBrokers = false
     public private(set) var didCallCheckForUpdates = false

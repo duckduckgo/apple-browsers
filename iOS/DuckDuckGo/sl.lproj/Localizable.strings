@@ -3602,6 +3602,9 @@
 "preserveLogins.remove.all.ok" = "V REDU";
 
 /* No comment provided by engineer. */
+"Previews" = "Predogledi";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Primarni/prvi ukrep";
 
 /* No comment provided by engineer. */
@@ -3847,6 +3850,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavitve modula Search Assist";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Nikoli";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Pogosto";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "Na zahtevo";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Včasih";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Search Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Vsebino strani samodejno pošljite Duck.ai";
 
@@ -3856,11 +3874,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Predlogi za klepet";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Uporabi DuckDuckGo brez umetne inteligence";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Onemogoči Duck.ai, skrije odgovore z uporabo umetne inteligence v rezultatih iskanja in iz rezultatov iskanja slik odstrani znana spletna mesta z neželeno vsebino, ustvarjeno z umetno inteligenco.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "Umetna inteligenca je v brskalniku trenutno onemogočena. Odgovori, ustvarjeni z umetno inteligenco, ne bodo več prikazani, med rezultati iskanja slik pa bo manj slik, ustvarjenih z umetno inteligenco.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skrij slike, ki jih ustvari umetna inteligenca";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Iz rezultatov iskanja slik odstrani slike, ki jih je ustvarila umetna inteligenca";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Izklopljeno";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Vklopljeno";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Iz rezultatov iskanja slik filtrira znane strani z neželenimi zadetki UI. [Več](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vedno vklopljeno";

@@ -3602,6 +3602,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Previews" = "Previzualizări";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Acțiune primară/principală";
 
 /* No comment provided by engineer. */
@@ -3847,6 +3850,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Setări Search Assist";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Niciodată";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Des";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "La cerere";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Uneori";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Search Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Trimite automat conținutul paginii către Duck.ai";
 
@@ -3856,11 +3874,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Sugestii de chat";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Folosește DuckDuckGo fără IA";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Dezactivează Duck.ai, ascunde răspunsurile asistate de IA în căutare și filtrează site-urile de spam cunoscute bazate pe IA din rezultatele căutării de imagini.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "IA este în prezent dezactivată în browser, așa că nu vei mai vedea răspunsuri asistate de IA și vei vedea mai puține imagini generate de IA în rezultatele căutării de imagini.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ascunde imaginile generate de IA";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrează imaginile generate de IA din rezultatele căutării de imagini";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Oprit";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Pornit";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrează site-urile spam cunoscute, bazate pe IA, din rezultatele căutării de imagini. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Întotdeauna activat";

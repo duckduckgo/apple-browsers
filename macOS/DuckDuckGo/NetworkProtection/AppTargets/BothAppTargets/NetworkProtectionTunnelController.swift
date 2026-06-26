@@ -652,7 +652,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         /// Maps an unattributed `CancellationError` to a `.cancelled(step: .unknown)` start error, so callers can
         /// treat every cancellation as a `StartError.cancelled`. Any other error is returned unchanged.
-        static func normalizing(_ error: Error) -> Error {
+        static func normalizingCancellation(_ error: Error) -> Error {
             error is CancellationError ? StartError.cancelled(step: .unknown) : error
         }
 
@@ -708,33 +708,33 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         } catch {
             // A cancellation that wasn't attributed to a specific start step becomes an unknown-step
             // cancellation, so everything below works with a single StartError.cancelled.
-            let error = StartError.normalizing(error)
+            let error = StartError.normalizingCancellation(error)
 
             Logger.networkProtection.error("Controller start tunnel failure: \(error, privacy: .public)")
 
             VPNOperationErrorRecorder().recordControllerStartFailure(error)
             knownFailureStore.lastKnownFailure = KnownFailure(error)
 
-            let isCancelled: Bool
+            // A cancelled start reports to the cancelled pixel and a cancelled wide event; everything else
+            // is handled below as a failure.
             if case StartError.cancelled(let step) = error {
-                isCancelled = true
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionControllerStartCancelled(step: step), frequency: .legacyDailyAndCount, includeAppVersionParameter: true
                 )
-            } else {
-                isCancelled = false
-                PixelKit.fire(
-                    NetworkProtectionPixelEvent.networkProtectionControllerStartFailure(error), frequency: .legacyDailyAndCount, includeAppVersionParameter: true
-                )
+                completeAndCleanupConnectionWideEvent(status: .cancelled, error: error, description: error.contextualizedDescription())
+                return
             }
 
+            PixelKit.fire(
+                NetworkProtectionPixelEvent.networkProtectionControllerStartFailure(error), frequency: .legacyDailyAndCount, includeAppVersionParameter: true
+            )
+
             // Always keep the first error message shown, as it's the more actionable one.
-            if controllerErrorStore.lastErrorMessage == nil && !isCancelled {
+            if controllerErrorStore.lastErrorMessage == nil {
                 controllerErrorStore.lastErrorMessage = error.localizedDescription
             }
 
-            // Top level catch-all: classify cancel vs failure once, for both the pixel above and the wide event.
-            completeAndCleanupConnectionWideEvent(status: isCancelled ? .cancelled : .failure, error: error, description: error.contextualizedDescription())
+            completeAndCleanupConnectionWideEvent(status: .failure, error: error, description: error.contextualizedDescription())
         }
     }
 

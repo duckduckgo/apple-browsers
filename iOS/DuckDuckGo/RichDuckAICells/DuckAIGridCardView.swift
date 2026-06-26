@@ -173,7 +173,7 @@ final class DuckAIGridCardView: UIView {
         guard item == .voice else { return }
         // Dark, static live-voice card: "Listening…" status + centred mascot + "Voice" chip.
         // Forcing the subtree to `.dark` flips the reused DRK colours to light-on-dark.
-        backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+        backgroundColor = UIColor(singleUseColor: .duckAIVoiceCellBackground)
         overrideUserInterfaceStyle = .dark
         setMascotVisible(true)
     }

@@ -262,6 +262,11 @@ struct SyncEnabledMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct NTPAfterIdleStateMatchingAttribute: SingleValueMatching {
+    var value: [String]? = []
+    var fallback: Bool?
+}
+
 struct WinBackOfferUrgencyMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?

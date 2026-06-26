@@ -1636,6 +1636,18 @@ extension Pixel {
         case aiChatSettingsAutoContextDisabled
         case aiChatSettingsDefaultTogglePositionChanged
 
+        // AI Features telemetry (cross-platform, deliberately no `m_` platform prefix so the
+        // name + params match macOS exactly). See `name` for the wire strings.
+        case aiFeaturesStateDaily
+        case aiFeaturesDisabled
+        case aiFeaturesSearchAssistNever
+        case aiFeaturesSearchAssistOnDemand
+        case aiFeaturesSearchAssistSometimes
+        case aiFeaturesSearchAssistOften
+        case aiFeaturesHideImagesOn
+        case aiFeaturesHideImagesOff
+        case serpSettingsUnrecognizedValue
+
         case aiChatOpen
         case aiChatMetricStartNewConversation
         case aiChatMetricStartNewConversationButtonClicked
@@ -3544,6 +3556,17 @@ extension Pixel.Event {
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
+
+        // AI Features telemetry: no `m_` prefix so the wire names are identical to macOS.
+        case .aiFeaturesStateDaily: return "ai_features_state_daily"
+        case .aiFeaturesDisabled: return "ai_features_disabled"
+        case .aiFeaturesSearchAssistNever: return "ai_features_search_assist_never"
+        case .aiFeaturesSearchAssistOnDemand: return "ai_features_search_assist_on_demand"
+        case .aiFeaturesSearchAssistSometimes: return "ai_features_search_assist_sometimes"
+        case .aiFeaturesSearchAssistOften: return "ai_features_search_assist_often"
+        case .aiFeaturesHideImagesOn: return "ai_features_hide_images_on"
+        case .aiFeaturesHideImagesOff: return "ai_features_hide_images_off"
+        case .serpSettingsUnrecognizedValue: return "serp_settings_unrecognized_value"
 
         case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_duck-ai_native-storage_migration_done_\(key)_unique"
         case .duckAiNativeStorageMigrationDoneCount(let key): return "m_duck-ai_native-storage_migration_done_\(key)_count"

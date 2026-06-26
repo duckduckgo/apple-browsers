@@ -638,7 +638,6 @@ struct FireDialogView: ModalView {
 private enum RowCornerRadius {
     case top
     case bottom
-    case both
     case none
 }
 
@@ -654,8 +653,6 @@ private struct RowCornerClipModifier: ViewModifier {
             content.clipShape(CustomRoundedCornersShape(tl: 8, tr: 8, bl: 0, br: 0))
         case .bottom:
             content.clipShape(CustomRoundedCornersShape(tl: 0, tr: 0, bl: 8, br: 8))
-        case .both:
-            content.clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 }
@@ -706,9 +703,6 @@ private struct RowWithPressEffect<Content: View>: View {
                 .fill(background)
         case .bottom:
             CustomRoundedCornersShape(tl: 0, tr: 0, bl: 12, br: 12)
-                .fill(background)
-        case .both:
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(background)
         case .none:
             Rectangle()

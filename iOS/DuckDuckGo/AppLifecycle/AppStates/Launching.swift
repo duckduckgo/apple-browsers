@@ -209,7 +209,8 @@ struct Launching: LaunchingHandling {
         let idleReturnEligibilityManager = IdleReturnEligibilityManager(
             featureFlagger: featureFlagger,
             keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager
+            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+            isStillOnboarding: { daxDialogs.isStillOnboarding() }
         )
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,

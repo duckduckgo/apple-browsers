@@ -1,6 +1,5 @@
 appId: com.duckduckgo.mobile.ios
 # Creates a Sync account on this device using the simplified Sync setup UI.
-# Account creation is triggered by the "Sync & Backup" toggle.
 ---
 
 - tapOn: Sync & Backup
@@ -9,9 +8,9 @@ appId: com.duckduckgo.mobile.ios
     id: "SyncToggle"
 - inputText: "0000"
 - pressKey: Enter
-- runFlow:
-    when:
-      visible: Sync your data with another device?
-    commands:
-      - tapOn: Not Now
-- assertVisible: Turn Off Sync and Delete Server Data
+- extendedWaitUntilVisible:
+    element:
+      text: Sync your data with another device?
+    timeout: 30000
+- tapOn: Not Now
+- assertVisible: Synced Devices

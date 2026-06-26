@@ -175,7 +175,9 @@ final class DuckAIGridCardView: UIView {
     private func setupSubviews() {
         // Corner radius is owned by the host cell (`TabViewGridCell`), which matches it to the
         // screenshot preview's slot. Only the curve + clipping live here.
-        backgroundColor = UIColor(designSystemColor: .backgroundPromptMessage)
+        let lightModeBackground = UIColor(designSystemColor: .accentGlowPrimary)
+        let darkModeBackground = UIColor(designSystemColor: .surfaceSecondary)
+        backgroundColor = UIColor(lightColor: lightModeBackground, darkColor: darkModeBackground)
         layer.cornerCurve = .continuous
         clipsToBounds = true
 

@@ -25,7 +25,7 @@ import Onboarding
 
 class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
-    var factory: NewTabDaxDialogFactory!
+    var factory: RebrandedNewTabDaxDialogFactory!
     var mockDelegate: CapturingOnboardingNavigationDelegate!
     var contextualOnboardingLogicMock: ContextualOnboardingLogicMock!
     var pixelReporterMock: OnboardingPixelReporterMock!
@@ -38,7 +38,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
         onDismissCalled = false
         pixelReporterMock = OnboardingPixelReporterMock()
-        factory = NewTabDaxDialogFactory(
+        factory = RebrandedNewTabDaxDialogFactory(
             delegate: mockDelegate,
             daxDialogsFlowCoordinator: contextualOnboardingLogicMock,
             onboardingPixelReporter: pixelReporterMock
@@ -68,7 +68,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         XCTAssertNotNil(host.view)
 
         // Then
-        let trySearchDialog = find(OnboardingTrySearchDialog.self, in: host)
+        let trySearchDialog = find(OnboardingRebranding.OnboardingTrySearchDialog.self, in: host)
         XCTAssertNotNil(trySearchDialog)
         XCTAssertTrue(trySearchDialog?.viewModel.delegate === mockDelegate)
     }
@@ -83,7 +83,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         XCTAssertNotNil(host.view)
 
         // Then
-        let trySiteDialog = find(OnboardingTryVisitingSiteDialog.self, in: host)
+        let trySiteDialog = find(OnboardingRebranding.OnboardingTrySiteDialog.self, in: host)
         XCTAssertNotNil(trySiteDialog)
         XCTAssertTrue(trySiteDialog?.viewModel.delegate === mockDelegate)
     }
@@ -103,7 +103,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         XCTAssertNotNil(host.view)
 
         // Then
-        let finalDialog = find(OnboardingFinalDialog.self, in: host)
+        let finalDialog = find(OnboardingRebranding.OnboardingEndOfJourneyDialog.self, in: host)
         XCTAssertNotNil(finalDialog)
         finalDialog?.dismissAction()
         XCTAssertTrue(onDismissedRun)
@@ -121,9 +121,9 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         XCTAssertNotNil(host.view)
 
         // Then
-        let addFavoriteDialog = find(ContextualDaxDialogContent.self, in: host)
+        let addFavoriteDialog = find(OnboardingRebranding.OnboardingAddFavorite.self, in: host)
         XCTAssertNotNil(addFavoriteDialog)
-        XCTAssertEqual(addFavoriteDialog?.message.string, UserText.Onboarding.ContextualOnboarding.daxDialogHomeAddFavorite)
+        XCTAssertEqual(addFavoriteDialog?.message, UserText.Onboarding.ContextualOnboarding.daxDialogHomeAddFavorite)
     }
 
     // MARK: - Pixels
@@ -157,7 +157,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         let view = factory.createDaxDialog(for: DaxDialogs.HomeScreenSpec.final, onCompletion: { _ in }, onManualDismiss: { })
         let host = UIHostingController(rootView: view)
         window.rootViewController = host
-        let finalDialog = try XCTUnwrap(find(OnboardingFinalDialog.self, in: host))
+        let finalDialog = try XCTUnwrap(find(OnboardingRebranding.OnboardingEndOfJourneyDialog.self, in: host))
         XCTAssertFalse(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
 
         // WHEN

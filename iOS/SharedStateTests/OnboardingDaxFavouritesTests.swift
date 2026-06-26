@@ -54,7 +54,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
     private var contextualOnboardingLogicMock: ContextualOnboardingLogicMock!
 
     let mockWebsiteDataManager = MockWebsiteDataManager()
-    let keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
+    let keyValueStore: ThrowingKeyValueStoring = MockKeyValueFileStore()
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -96,7 +96,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(normalStore: keyValueStore, fireStore: MockKeyValueFileStore(), legacyStore: MockKeyValueStore())
         let variantManager = MockVariantManager()
-        let daxDialogsFactory = DefaultContextualDaxDialogsFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
+        let daxDialogsFactory = RebrandedContextualDaxDialogFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
                                                                       contextualOnboardingPixelReporter: onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let mockConfigManager = MockPrivacyConfigurationManager()

@@ -564,10 +564,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess,
                 frequency: .dailyAndCount,
                 includeAppVersionParameter: true)
-        } catch let error where error is CancellationError {
-            throw StartError.cancelled(source: .systemExtensionActivation)
-        } catch OSSystemExtensionError.requestCanceled {
-            // The user cancelled the system extension approval — a cancellation, not a failure.
+        } catch is CancellationError {
             throw StartError.cancelled(source: .systemExtensionActivation)
         } catch {
             switch error {
@@ -703,44 +700,31 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 completeAndCleanupAtStepWithPartialSuccess()
             }
         } catch {
-            // A cancellation reaches this point as `StartError.cancelled(source:)`, or — if it slipped
-            // past the stage-specific handlers — as a raw cancellation error. Either way it's not a
-            // genuine start failure: it shouldn't be recorded as a failure or fire the failure pixel.
-            let cancellationSource: VPNStartCancellationSource?
+            Logger.networkProtection.error("Controller start tunnel failure: \(error, privacy: .public)")
+
+            VPNOperationErrorRecorder().recordControllerStartFailure(error)
+            knownFailureStore.lastKnownFailure = KnownFailure(error)
+
+            let isCancelled: Bool
             if case StartError.cancelled(let source) = error {
-                cancellationSource = source
-            } else if error is CancellationError {
-                cancellationSource = .unknown
+                isCancelled = true
+                PixelKit.fire(
+                    NetworkProtectionPixelEvent.networkProtectionControllerStartCancelled(source: source), frequency: .legacyDailyAndCount, includeAppVersionParameter: true
+                )
             } else {
-                cancellationSource = nil
+                isCancelled = false
+                PixelKit.fire(
+                    NetworkProtectionPixelEvent.networkProtectionControllerStartFailure(error), frequency: .legacyDailyAndCount, includeAppVersionParameter: true
+                )
             }
 
-            if let cancellationSource {
-                Logger.networkProtection.log("Controller start cancelled: \(cancellationSource.rawValue, privacy: .public)")
-                PixelKit.fire(
-                    NetworkProtectionPixelEvent.networkProtectionControllerStartCancelled(source: cancellationSource),
-                    frequency: .legacyDailyAndCount, includeAppVersionParameter: true
-                )
-                completeAndCleanupConnectionWideEventAsCancelled()
-            } else {
-                Logger.networkProtection.error("Controller start tunnel failure: \(error, privacy: .public)")
-
-                VPNOperationErrorRecorder().recordControllerStartFailure(error)
-                knownFailureStore.lastKnownFailure = KnownFailure(error)
-
-                PixelKit.fire(
-                    NetworkProtectionPixelEvent.networkProtectionControllerStartFailure(error),
-                    frequency: .legacyDailyAndCount, includeAppVersionParameter: true
-                )
-
-                // Always keep the first error message shown, as it's the more actionable one.
-                if controllerErrorStore.lastErrorMessage == nil {
-                    controllerErrorStore.lastErrorMessage = error.localizedDescription
-                }
-
-                // Top level catch-all
-                completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
+            // Always keep the first error message shown, as it's the more actionable one.
+            if controllerErrorStore.lastErrorMessage == nil && !isCancelled {
+                controllerErrorStore.lastErrorMessage = error.localizedDescription
             }
+
+            // Top level catch-all
+            completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
         }
     }
 
@@ -785,10 +769,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         } catch {
             if case NEVPNError.configurationReadWriteFailed = error {
                 onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
-                throw StartError.cancelled(source: .tunnelManagerLoad)
-            }
-
-            if error is CancellationError {
+                completeAtStepWithFailure(.controllerStart, with: error, description: StartError.cancelled(source: .tunnelManagerLoad).caseDescription)
                 throw StartError.cancelled(source: .tunnelManagerLoad)
             }
 
@@ -823,12 +804,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     private func start(_ tunnelManager: NETunnelProviderManager) async throws {
         settings.updateExcludeCGNAT(isFeatureEnabled: featureFlagger.isFeatureOn(.vpnExcludeCGNATToggle))
 
-        let options: [String: NSObject]
-        do {
-            options = try await prepareStartupOptions()
-        } catch let error where error is CancellationError {
-            throw StartError.cancelled(source: .startupOptions)
-        }
+        let options = try await prepareStartupOptions()
 
         if Self.simulationOptions.isEnabled(.controllerFailure) {
             Self.simulationOptions.setEnabled(false, option: .controllerFailure)
@@ -843,7 +819,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             try await self.enableOnDemand(tunnelManager: tunnelManager)
 
             self.connectionWideEventData?.tunnelStartDuration?.complete()
-        } catch let error where error is CancellationError {
+        } catch is CancellationError {
             Logger.networkProtection.log("VPN tunnel start cancelled")
             throw StartError.cancelled(source: .startTunnel)
         } catch {
@@ -1035,10 +1011,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             return tokenContainer
         } catch {
             switch error {
-            case is CancellationError:
-                // Don't disguise a cancellation as an auth failure — rethrow it bare so the start path
-                // recognises it as a cancellation.
-                throw error
             case SubscriptionManagerError.noTokenAvailable:
                 Logger.networkProtection.fault("🔴 TunnelController found no token container")
                 throw StartError.noAuthToken
@@ -1101,13 +1073,6 @@ private extension NetworkProtectionTunnelController {
     func completeAndCleanupAtStepWithPartialSuccess(_ step: VPNConnectionWideEventData.Step = .controllerStart) {
         connectionWideEventData?[keyPath: step.durationPath]?.complete()
         completeAndCleanupConnectionWideEvent(successReason: VPNConnectionWideEventData.StatusReason.partialData.rawValue)
-    }
-
-    func completeAndCleanupConnectionWideEventAsCancelled() {
-        guard let data = connectionWideEventData else { return }
-        data.overallDuration?.complete()
-        wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
-        connectionWideEventData = nil
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil, successReason: String? = nil) {

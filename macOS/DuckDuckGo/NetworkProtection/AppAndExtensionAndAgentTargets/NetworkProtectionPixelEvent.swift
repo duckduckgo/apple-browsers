@@ -361,8 +361,6 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
 
     var parameters: [String: String]? {
         switch self {
-        case .networkProtectionControllerStartCancelled(let source):
-            return [PixelKit.Parameters.reason: source.rawValue]
         case .networkProtectionConnectionTesterFailureDetected(let server),
                 .networkProtectionConnectionTesterExtendedFailureDetected(let server):
             return [PixelKit.Parameters.server: server]
@@ -416,6 +414,8 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
             return error?.pixelParameters
         case .networkProtectionWireguardErrorInvalidState(reason: let reason):
             return [PixelKit.Parameters.reason: reason]
+        case .networkProtectionControllerStartCancelled(let source):
+            return [PixelKit.Parameters.reason: source.rawValue]
         case .networkProtectionServerMigrationFailure:
             return error?.pixelParameters
         case .networkProtectionConfigurationErrorLoadingCachedConfig(let error):
@@ -438,7 +438,6 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
                 .networkProtectionNewUser,
                 .networkProtectionControllerStartAttempt,
                 .networkProtectionControllerStartSuccess,
-                .networkProtectionControllerStartCancelled,
                 .networkProtectionControllerStartFailure,
                 .networkProtectionTunnelStartAttempt,
                 .networkProtectionTunnelStartSuccess,

@@ -18,16 +18,10 @@
 
 import Foundation
 
-/// Identifies which stage of the VPN start sequence was cancelled.
-///
-/// Reported as a parameter on the controller start cancelled pixel so cancellations can be
-/// attributed to the stage they originated from (e.g. distinguishing a user declining the system
-/// extension prompt from a tunnel-start race).
+/// Identifies which part of VPN start was cancelled, so a cancellation can be told apart from a failure
+/// and attributed to its origin.
 public enum VPNStartCancellationSource: String {
     case systemExtensionActivation
     case tunnelManagerLoad
-    case startupOptions
     case startTunnel
-    /// A cancellation that reached the top-level handler without being attributed to a specific stage.
-    case unknown
 }

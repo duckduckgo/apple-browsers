@@ -688,7 +688,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncIdentities
     case aiChatSync
     case aiChatSyncPromo
-    case simplifiedSyncSetupExperiment
     case allowSingleDeviceOnConnectScreen
     case scopedAccessCredentials
     case canUseV2ConnectFlow

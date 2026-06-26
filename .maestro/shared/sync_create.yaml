@@ -1,8 +1,17 @@
 appId: com.duckduckgo.mobile.ios
+# NOTE: This flow targets the legacy (control) Sync setup UI, which was removed
+# along with the simplifiedSyncSetupExperiment. It must be migrated to the
+# simplified UI before re-enabling: account creation now happens via the
+# "Sync & Backup" toggle (which directly creates the account and shows a toast /
+# "Sync your data with another device?" prompt) rather than the
+# "Sync and Back Up This Device" -> "Turn On Sync & Backup" -> recovery-PDF flow.
+# Targeting the toggle reliably will likely require adding an accessibility
+# identifier to the Toggle in SimplifiedSyncSettingsView. Validate on a real
+# Maestro run.
 ---
 
 - tapOn: Sync & Backup
-- assertVisible: Sync & Backup 
+- assertVisible: Sync & Backup
 - tapOn: Sync and Back Up This Device
 - inputText: "0000"
 - pressKey: Enter

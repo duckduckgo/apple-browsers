@@ -1071,12 +1071,7 @@ extension MainViewController {
                 // Reconcile against the *current* tab — idempotent and AI-tab paths re-hide
                 // the toolbar on their own.
                 self.reconcileToolbarVisibilityForCurrentTab()
-                let floatingUIEnabled = FloatingUIManager(featureFlagger: self.featureFlagger).isFloatingUIEnabled
-                if self.appSettings.currentAddressBarPosition.isBottom,
-                   floatingUIEnabled,
-                   self.currentTab?.isAITab != true {
-                    self.refreshViewsBasedOnAddressBarPosition(self.appSettings.currentAddressBarPosition)
-                }
+                self.reconcileFloatingLayoutAfterUTIExit()
                 completion?()
             }
         )

@@ -105,10 +105,12 @@ final class FloatingDomainCapsuleController {
         topConstraint?.isActive = useTopAnchor
         bottomConstraint?.isActive = !useTopAnchor
 
-        guard isFloatingUIEnabled,
-              !isUnifiedToggleInputActive,
-              !isAITab,
-              !isMinimalChromeLayout,
+        guard FloatingUILayoutPolicy.shouldShowFloatingDomainCapsule(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            isUnifiedToggleInputActive: isUnifiedToggleInputActive,
+            isAITab: isAITab,
+            isMinimalChromeLayout: isMinimalChromeLayout
+        ),
               let domain,
               !domain.isEmpty else {
             button.alpha = 0

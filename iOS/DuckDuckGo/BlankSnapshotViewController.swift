@@ -83,6 +83,7 @@ class BlankSnapshotViewController: UIViewController {
                                                               aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
+                                                              floatingUIManager: FloatingUIManager(featureFlagger: featureFlagger),
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization)
         if addressBarPosition.isBottom {

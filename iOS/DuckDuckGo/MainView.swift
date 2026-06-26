@@ -30,6 +30,7 @@ class MainViewFactory {
 
     private let coordinator: MainViewCoordinator
     private let featureFlagger: FeatureFlagger
+    private let floatingUIManager: FloatingUIManaging
     private let omnibarDependencies: OmnibarDependencyProvider
     
     var superview: UIView {
@@ -49,9 +50,11 @@ class MainViewFactory {
 
     private init(parentController: UIViewController,
                  omnibarDependencies: OmnibarDependencyProvider,
-                 featureFlagger: FeatureFlagger) {
+                 featureFlagger: FeatureFlagger,
+                 floatingUIManager: FloatingUIManaging) {
         coordinator = MainViewCoordinator(parentController: parentController)
         self.featureFlagger = featureFlagger
+        self.floatingUIManager = floatingUIManager
         self.omnibarDependencies = omnibarDependencies
     }
 
@@ -61,6 +64,7 @@ class MainViewFactory {
                                     aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger,
+                                    floatingUIManager: FloatingUIManaging,
                                     suggestionTrayDependencies: SuggestionTrayDependencies? = nil,
                                     appSettings: AppSettings,
                                     daxEasterEggLogoStore: DaxEasterEggLogoStoring = DaxEasterEggLogoStore(),
@@ -83,7 +87,8 @@ class MainViewFactory {
 
         let factory = MainViewFactory(parentController: parentController,
                                       omnibarDependencies: omnibarDependencies,
-                                      featureFlagger: featureFlagger)
+                                      featureFlagger: featureFlagger,
+                                      floatingUIManager: floatingUIManager)
         factory.createViews()
         factory.disableAutoresizingOnImmediateSubviews(factory.superview)
         factory.constrainViews()
@@ -124,7 +129,10 @@ extension MainViewFactory {
     }
 
     private func createOmniBar() {
-        let controller = OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+        let controller = OmniBarFactory.createOmniBarViewController(
+            with: omnibarDependencies,
+            isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled
+        )
         coordinator.parentController?.addChild(controller)
         coordinator.omniBar = controller
         controller.barView.translatesAutoresizingMaskIntoConstraints = false
@@ -319,7 +327,6 @@ extension MainViewFactory {
     }
     private func createNavigationBarContainer() {
         coordinator.navigationBarContainer = NavigationBarContainer()
-        let floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
         coordinator.navigationBarContainer.setFloatingStyleEnabled(floatingUIManager.isFloatingUIEnabled)
         superview.addSubview(coordinator.navigationBarContainer)
     }
@@ -332,7 +339,6 @@ extension MainViewFactory {
 
     final class StatusBackgroundView: UIVisualEffectView { }
     private func createStatusBackground() {
-        let floatingUIManager = FloatingUIManager()
         if floatingUIManager.isFloatingUIEnabled {
             let view = StatusBackgroundView(effect: nil)
             view.backgroundColor = .clear
@@ -368,7 +374,6 @@ extension MainViewFactory {
     }
 
     private func createToolbar() {
-        let floatingUIManager = FloatingUIManager()
         coordinator.toolbar = BrowserToolbarView()
         coordinator.toolbar.setFloatingStyleEnabled(floatingUIManager.isFloatingUIEnabled)
         coordinator.toolbar.backgroundColor = .clear
@@ -539,7 +544,7 @@ extension MainViewFactory {
     private func constrainToolbar() {
 
         // Changing this?  Best change TabSwitcherViewController too
-        let isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        let isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
         let toolbarWidthMod = isFloatingUIEnabled ? 0.0 : (isiOS26 ? 14.0 : 4.0)
 
         let toolbar = coordinator.toolbar!

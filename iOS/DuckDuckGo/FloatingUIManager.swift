@@ -19,6 +19,7 @@
 
 import Common
 import Core
+import Foundation
 import PrivacyConfig
 
 protocol FloatingUIManaging {
@@ -40,6 +41,18 @@ final class FloatingUIManager: FloatingUIManaging {
     }
 
     var isFloatingUIEnabled: Bool {
-        featureFlagger.isFeatureOn(.floatingUI) && unifiedToggleInputFeature.isAvailable && !isPad()
+        let isFloatingFlagEnabled = featureFlagger.isFeatureOn(.floatingUI)
+        if !Self.isRunningUnitTests {
+            assert(
+                !isFloatingFlagEnabled || unifiedToggleInputFeature.isAvailable,
+                "Floating UI requires Unified Toggle Input availability."
+            )
+        }
+        return isFloatingFlagEnabled && unifiedToggleInputFeature.isAvailable && !isPad()
+    }
+
+    private static var isRunningUnitTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
 }
+

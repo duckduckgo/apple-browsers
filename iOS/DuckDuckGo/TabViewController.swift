@@ -871,7 +871,8 @@ class TabViewController: UIViewController {
     }
 
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
-        if appSettings.currentAddressBarPosition == .bottom && !(isAITab && unifiedToggleInputFeature.isAvailable) {
+        let isUnifiedToggleInputAffectingBottomLayout = isAITab && unifiedToggleInputFeature.isAvailable
+        if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingBottomLayout {
             /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
             /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
             /// manages its own native bottom layout via the UnifiedToggleInput container.
@@ -910,7 +911,12 @@ class TabViewController: UIViewController {
         let topInset: CGFloat
         // AI tabs with the unified toggle input manage their own top layout (the content container
         // stays anchored below the chrome), so adding a top inset there would double-offset.
-        if appSettings.currentAddressBarPosition == .top && !(isAITab && unifiedToggleInputFeature.isAvailable) {
+        let isUnifiedToggleInputAffectingTopLayout = isAITab && unifiedToggleInputFeature.isAvailable
+        if FloatingUILayoutPolicy.shouldApplyFloatingTopContentInset(
+            isFloatingUIEnabled: true,
+            addressBarPosition: appSettings.currentAddressBarPosition,
+            isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingTopLayout
+        ) {
             let omniBarHeight = chromeDelegate?.omniBar.barView.expectedHeight ?? 0
             topInset = omniBarHeight * barsVisibilityPercent
         } else {

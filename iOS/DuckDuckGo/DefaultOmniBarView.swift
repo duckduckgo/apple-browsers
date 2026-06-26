@@ -473,7 +473,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let floatingGlassContentHostView = UIView()
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
-    private let isFloatingUIEnabled = FloatingUIManager().isFloatingUIEnabled
+    private let isFloatingUIEnabled: Bool
     fileprivate var savedBarChromeBackgroundColor: UIColor?
     fileprivate var savedBarViewBackgroundColor: UIColor?
 
@@ -515,11 +515,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return view
     }()
 
-    static func create() -> Self {
-        Self.init()
+    static func create(isFloatingUIEnabled: Bool) -> Self {
+        Self.init(isFloatingUIEnabled: isFloatingUIEnabled)
     }
 
-    init() {
+    static func create() -> Self {
+        Self.init(isFloatingUIEnabled: false)
+    }
+
+    init(isFloatingUIEnabled: Bool) {
+        self.isFloatingUIEnabled = isFloatingUIEnabled
         super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
 
         setUpSubviews()
@@ -1389,7 +1394,7 @@ extension DefaultOmniBarView {
         aiChatLeftButton.isHidden = false
         aiChatLeftButton.alpha = 1.0
         NSLayoutConstraint.activate(aiChatModeConstraints)
-        searchAreaContainerView.bringSubviewToFront(aiChatLeftButton)
+        chromeContentContainerView.bringSubviewToFront(aiChatLeftButton)
 
         setNeedsLayout()
     }
@@ -1578,11 +1583,11 @@ extension DefaultOmniBarView {
 
             aiChatTextView.text = currentText
             aiChatTextView.isHidden = false
-            searchAreaContainerView.bringSubviewToFront(aiChatTextView)
+            chromeContentContainerView.bringSubviewToFront(aiChatTextView)
 
             aiChatSendButton.isHidden = false
             aiChatSendButton.alpha = 0
-            searchAreaContainerView.bringSubviewToFront(aiChatSendButton)
+            chromeContentContainerView.bringSubviewToFront(aiChatSendButton)
             updateAIChatSendButton(hasText: !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
             if canShowModelPicker {
@@ -1613,7 +1618,7 @@ extension DefaultOmniBarView {
     private func prepareModelPickerButtonForDisplay() {
         modelPickerButton.isHidden = false
         modelPickerButton.alpha = 0
-        searchAreaContainerView.bringSubviewToFront(modelPickerButton)
+        chromeContentContainerView.bringSubviewToFront(modelPickerButton)
     }
 
     /// Toggles the textField's visibility so its placeholder shows through
@@ -1731,7 +1736,7 @@ private struct DefaultOmniBarViewGallery: View {
 
     var body: some View {
         rebrandOverride.apply()
-        return DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView())
+        return DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView(isFloatingUIEnabled: false))
             .frame(width: 360, height: 60)
             .padding()
     }

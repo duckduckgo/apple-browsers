@@ -72,6 +72,18 @@ extension MainViewController {
               attributed.length > 0 else { return nil }
         return attributed.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor
     }
+
+    func reconcileFloatingLayoutAfterUTIExit() {
+        guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            addressBarPosition: appSettings.currentAddressBarPosition,
+            isUnifiedToggleInputVisible: false
+        ),
+              currentTab?.isAITab != true else {
+            return
+        }
+        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+    }
 }
 
 private extension MainViewController {
@@ -337,13 +349,4 @@ private extension MainViewController {
         }
     }
 
-    func reconcileFloatingLayoutAfterUTIExit() {
-        let floatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
-        guard appSettings.currentAddressBarPosition.isBottom,
-              floatingUIEnabled,
-              currentTab?.isAITab != true else {
-            return
-        }
-        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
-    }
 }

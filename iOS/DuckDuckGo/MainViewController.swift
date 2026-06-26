@@ -349,6 +349,10 @@ class MainViewController: UIViewController {
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
     let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
+    private lazy var floatingUIManager: FloatingUIManaging = FloatingUIManager(
+        featureFlagger: featureFlagger,
+        unifiedToggleInputFeature: unifiedToggleInputFeature
+    )
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator?
     var unifiedInputStateStore: UnifiedInputStateStore?
@@ -656,6 +660,7 @@ class MainViewController: UIViewController {
                                                               aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
+                                                              floatingUIManager: floatingUIManager,
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization,
@@ -856,7 +861,8 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
                                                     appSettings: appSettings,
-                                                    omnibarDependencies: omnibarDependencies) { [weak self] tab in
+                                                    omnibarDependencies: omnibarDependencies,
+                                                    floatingUIManager: floatingUIManager) { [weak self] tab in
 
             guard tab !== self?.tabManager.currentTabsModel.currentTab else {
                 return
@@ -1380,9 +1386,11 @@ class MainViewController: UIViewController {
     /// mode, matching the coordinator's content-container top anchor. The unified toggle input owns
     /// its own top layout, so the floating-top inset must not be applied while it's active.
     private var isFloatingTopContentBehindBar: Bool {
-        isFloatingUIEnabled
-            && appSettings.currentAddressBarPosition == .top
-            && unifiedToggleInputCoordinator?.isActive != true
+        FloatingUILayoutPolicy.shouldApplyFloatingTopContentInset(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            addressBarPosition: appSettings.currentAddressBarPosition,
+            isUnifiedToggleInputAffectingLayout: unifiedToggleInputCoordinator?.isActive == true
+        )
     }
 
     @objc func onShowFullSiteAddressChanged() {
@@ -1758,7 +1766,8 @@ class MainViewController: UIViewController {
                                                   faviconsCache: favicons,
                                                   subscriptionManager: subscriptionManager,
                                                   internalUserCommands: internalUserCommands,
-                                                  narrowLayoutInLandscape: narrowLayoutInLandscape
+                                                  narrowLayoutInLandscape: narrowLayoutInLandscape,
+                                                  floatingUIManager: floatingUIManager
         )
 
         controller.delegate = self
@@ -6466,8 +6475,8 @@ extension MainViewController: FireExecutorDelegate {
 }
 
 extension MainViewController {
-    private var isFloatingUIEnabled: Bool {
-        FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+    var isFloatingUIEnabled: Bool {
+        floatingUIManager.isFloatingUIEnabled
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -6525,7 +6534,6 @@ extension MainViewController {
     }
 
     private func applyFloatingUIIfNeeded() {
-        let floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
         viewCoordinator.setFloatingUIEnabled(floatingUIManager.isFloatingUIEnabled)
         FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(appSettings.currentAddressBarPosition)

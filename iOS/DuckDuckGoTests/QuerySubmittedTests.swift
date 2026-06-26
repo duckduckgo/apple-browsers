@@ -32,7 +32,8 @@ class QuerySubmittedTests: XCTestCase {
             voiceSearchHelper: MockVoiceSearchHelper(
                 isSpeechRecognizerAvailable: true,
                 voiceSearchEnabled: true)
-        )
+        ),
+        isFloatingUIEnabled: false
     )
 
     override func setUp() {
@@ -97,7 +98,7 @@ class QuerySubmittedTests: XCTestCase {
 
     func testWhenSubmittingValidURLInIPadDuckAIModeThenSubmitsAsQuery() {
         sut.loadViewIfNeeded()
-        sut.setSelectedTextEntryMode(.aiChat)
+        sut.setSelectedTextEntryMode(TextEntryMode.aiChat)
 
         let textView = UITextView()
         textView.text = "https://example.com/path"
@@ -114,7 +115,7 @@ class QuerySubmittedTests: XCTestCase {
 
     func testWhenSubmittingTextInIPadDuckAIModeThenSubmitsAsPrompt() {
         sut.loadViewIfNeeded()
-        sut.setSelectedTextEntryMode(.aiChat)
+        sut.setSelectedTextEntryMode(TextEntryMode.aiChat)
 
         let textView = UITextView()
         textView.text = "best places to visit in japan"

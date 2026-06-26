@@ -31,7 +31,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniDelegate?.isSuggestionTrayVisible() == true
     }
 
-    private lazy var omniBarView = DefaultOmniBarView.create()
+    private let isFloatingUIEnabled: Bool
+    private lazy var omniBarView = DefaultOmniBarView.create(isFloatingUIEnabled: isFloatingUIEnabled)
     private weak var editingStateViewController: OmniBarEditingStateViewController?
     private var cancellables = Set<AnyCancellable>()
     private let sessionStateMetrics = SessionStateMetrics(storage: UserDefaults.standard)
@@ -51,6 +52,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     /// The Duck.ai model id selected in the iPad picker, forwarded into `openAIChat` on submission.
     override var iPadDuckAISelectedModelId: String? {
         modelPickerController?.currentModelId
+    }
+
+    init(dependencies: OmnibarDependencyProvider, isFloatingUIEnabled: Bool) {
+        self.isFloatingUIEnabled = isFloatingUIEnabled
+        super.init(dependencies: dependencies)
     }
 
     override func loadView() {

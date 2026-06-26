@@ -159,7 +159,11 @@ class MainViewCoordinator {
             navigationBarContainer.isUserInteractionEnabled = true
             isOmnibarInToolbar = false
         case .bottom:
-            guard !isUnifiedToggleInputVisible else {
+            guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+                isFloatingUIEnabled: isFloatingUIEnabled,
+                addressBarPosition: position,
+                isUnifiedToggleInputVisible: isUnifiedToggleInputVisible
+            ) else {
                 toolbar.setOmnibarView(nil, height: 0)
                 constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
                 navigationBarContainer.isHidden = false
@@ -183,9 +187,11 @@ class MainViewCoordinator {
     }
 
     func ensureBottomOmnibarAttachedToToolbarIfNeeded() {
-        guard isFloatingUIEnabled else { return }
-        guard !isUnifiedToggleInputVisible else { return }
-        guard addressBarPosition.isBottom else { return }
+        guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            addressBarPosition: addressBarPosition,
+            isUnifiedToggleInputVisible: isUnifiedToggleInputVisible
+        ) else { return }
         guard !toolbar.isHostingOmnibarView(omniBar.barView) else { return }
 
         toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)

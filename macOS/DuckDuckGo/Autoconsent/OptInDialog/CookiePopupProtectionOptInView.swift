@@ -19,6 +19,7 @@
 import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 enum CookiePopupProtectionOptInVariant {
     /// Shown when Cookie Pop-up Protection is already enabled.
@@ -69,6 +70,12 @@ struct CookiePopupProtectionOptInView: View {
     let onConfirm: () -> Void
     @State private var selectedOption: CookiePopupProtectionOptInOption = .primary
 
+    /// Footer with the "Settings > Cookie Pop-Up Protection" span rendered bold (via markdown in the string).
+    private var footerText: AttributedString {
+        (try? AttributedString(markdown: UserText.cookiePopupProtectionOptInFooter))
+            ?? AttributedString(UserText.cookiePopupProtectionOptInFooter)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // ponytail: best-guess asset; swap for final circular logo when imported.
@@ -114,11 +121,10 @@ struct CookiePopupProtectionOptInView: View {
 
     private var innerCard: some View {
         VStack(spacing: 0) {
-            // ponytail: best-guess asset; swap for final cookie-with-check when imported.
-            Image("CookieProtectionIcon")
+            Image(nsImage: DesignSystemImages.Color.Size96.cookieCheckFeature)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 48, height: 48)
+                .frame(width: 96, height: 96)
                 .padding(.top, 24)
                 .padding(.bottom, 12)
 
@@ -137,7 +143,7 @@ struct CookiePopupProtectionOptInView: View {
 
             preferenceBox
 
-            Text(UserText.cookiePopupProtectionOptInFooter)
+            Text(footerText)
                 .font(.system(size: 13))
                 .multilineTextAlignment(.leading)
                 .foregroundColor(Color(designSystemColor: .textSecondary))

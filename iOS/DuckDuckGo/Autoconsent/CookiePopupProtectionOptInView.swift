@@ -90,6 +90,12 @@ struct CookiePopupProtectionOptInView: View {
         ))
     }
 
+    /// Footer with the "Settings > Cookie Pop-Up Protection" span rendered bold (via markdown in the string).
+    private var footerText: AttributedString {
+        (try? AttributedString(markdown: UserText.cookiePopupProtectionOptInFooter))
+            ?? AttributedString(UserText.cookiePopupProtectionOptInFooter)
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -121,12 +127,10 @@ struct CookiePopupProtectionOptInView: View {
 
     private var innerCard: some View {
         VStack(spacing: 0) {
-            // ponytail: placeholder — no cookie-with-check asset on iOS yet; swap for the final one when imported.
-            Image(systemName: "circle.dashed")
+            Image(uiImage: DesignSystemImages.Color.Size96.cookieCheckFeature)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 52, height: 52)
-                .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                .frame(width: 96, height: 96)
                 .padding(.top, 32)
                 .padding(.bottom, 20)
 
@@ -151,7 +155,7 @@ struct CookiePopupProtectionOptInView: View {
                 .buttonStyle(PrimaryButtonStyle())
                 .padding(.top, 24)
 
-            Text(UserText.cookiePopupProtectionOptInFooter)
+            Text(footerText)
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)

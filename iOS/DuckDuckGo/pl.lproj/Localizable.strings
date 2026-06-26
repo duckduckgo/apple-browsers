@@ -1060,12 +1060,6 @@
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Zapisać to hasło?";
 
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Nie, dziękuję";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Nie teraz";
-
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Bezpiecznie przechowuj swoje hasło na urządzeniu dzięki funkcji Hasła i autouzupełnianie DuckDuckGo.";
 
@@ -3202,8 +3196,8 @@
 /* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
 "onboarding.duckai.contextual.end-of-journey.message" = "Rozpocznij prywatny czat AI z Duck.ai lub przełącz się na wyszukiwanie w trybie chronionego przeglądania.\n\nMożesz korzystać z Duck.ai z dowolnego miejsca, w którym widzisz ikonę czatu [[chat_icon]]";
 
-/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
-"onboarding.duckai.contextual.subscription.message" = "Oferujemy również płatną subskrypcję z zaawansowanymi modelami AI z wyższymi limitami czatu od GPT, Claude i Llama, bezpieczną sieć VPN i nie tylko.";
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Oferujemy również płatną subskrypcję obejmującą zaawansowane modele AI z wyższymi limitami czatu od GPT i Claude, bezpieczną sieć VPN i nie tylko.";
 
 /* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
 "onboarding.duckai.duckAIQuery.title" = "Wypróbuj teraz prywatny czat AI";
@@ -3261,6 +3255,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Ochrona aktywowana!";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Używaj paska adresu, aby wyszukiwać i odwiedzać witryny lub przełącz się na Duck.ai, aby prowadzić prywatny czat AI.\n\nMożesz korzystać z Duck.ai z dowolnego miejsca, w którym widzisz ikonę czatu [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Prywatne czaty AI, które możesz usunąć w dowolnym momencie za pomocą Fire Button. Spróbuj! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "To jest Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Zapytaj o cokolwiek prywatnie";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Szukaj prywatnie";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Wyjaśnij giełdę, jakbym miał 10 lat";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Zaplanuj idealny dzień w Londynie";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Jakie masz 10 fascynujących faktów z nauki, natury i historii?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Chcesz zacząć?\nSpróbuj wyszukiwania lub czatu AI!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Zapytaj AI";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Pomiń";
@@ -3572,6 +3596,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Previews" = "Podglądy";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Podstawowe / pierwsze działanie";
 
 /* No comment provided by engineer. */
@@ -3817,6 +3844,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Ustawienia wyszukiwania Assist";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Nigdy";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Często";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "Na żądanie";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Czasami";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Search Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Automatycznie wysyłaj zawartość strony do Duck.ai";
 
@@ -3826,11 +3868,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Sugestie czatu";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Używaj DuckDuckGo bez AI";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Wyłącza Duck.ai, ukrywa odpowiedzi wspomagane sztuczną inteligencją w wyszukiwaniu i filtruje znane strony ze spamem AI w wynikach wyszukiwania obrazów.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "Sztuczna inteligencja jest obecnie wyłączona w przeglądarce, więc nie zobaczysz już odpowiedzi wspomaganych sztuczną inteligencją i zobaczysz mniej obrazów generowanych przez sztuczną inteligencję w wynikach wyszukiwania obrazów.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ukryj obrazy generowane przez AI";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruje obrazy generowane przez AI z wyników wyszukiwania obrazów";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Wył.";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Wł.";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruje znane strony z AI-spamem w wynikach wyszukiwania obrazów. [Dowiedz się więcej](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Zawsze włączone";
@@ -5278,36 +5338,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Brak dopasowań dla \"%@\"";
-
-/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.highlights.duckAIQuery.completion.message" = "Używaj paska adresu, aby wyszukiwać i odwiedzać witryny lub przełącz się na Duck.ai, aby prowadzić prywatny czat AI.\n\nMożesz korzystać z Duck.ai z dowolnego miejsca, w którym widzisz ikonę czatu [[chat_icon]]";
-
-/* Fire onboarding message shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.message" = "Prywatne czaty AI, które możesz usunąć w dowolnym momencie za pomocą Fire Button. Spróbuj! 🔥";
-
-/* Fire onboarding title shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.title" = "To jest Duck.ai!";
-
-/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.ai" = "Zapytaj o cokolwiek prywatnie";
-
-/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.search" = "Szukaj prywatnie";
-
-/* First suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option1" = "Wyjaśnij giełdę, jakbym miał 10 lat";
-
-/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option2" = "Zaplanuj idealny dzień w Londynie";
-
-/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Jakie masz 10 fascynujących faktów z nauki, natury i historii?";
-
-/* Title for the onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.title" = "Chcesz zacząć?\nSpróbuj wyszukiwania lub czatu AI!";
-
-/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
-"onboarding.highlights.duckAIQuery.toggle.ai" = "Zapytaj AI";
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Kod skopiowany";

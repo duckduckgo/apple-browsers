@@ -213,7 +213,8 @@ extension SpecialErrorPageTabExtension: SpecialErrorPageUserScriptDelegate {
     func leaveSiteAction() {
         guard let errorData, let webView else { return }
         switch errorData {
-        case .maliciousSite:
+        case .maliciousSite(let threatKind, _):
+            PixelKit.fire(MaliciousSiteProtection.Event.leaveSite(category: threatKind))
             closeAndOpenNewTab()
         case .ssl:
             if webView.canGoBack {

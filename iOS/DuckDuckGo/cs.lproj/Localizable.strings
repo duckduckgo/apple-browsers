@@ -1060,12 +1060,6 @@
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Uložit tohle heslo?";
 
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Ne, děkuji";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Teď ne";
-
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Bezpečně si ulož heslo do zařízení pomocí funkce pro ukládání a automatické vyplňování hesel DuckDuckGo.";
 
@@ -3202,8 +3196,8 @@
 /* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
 "onboarding.duckai.contextual.end-of-journey.message" = "Začni soukromý chat s AI Duck.ai, nebo přepni na Vyhledávání a začni s chráněným prohlížením.\n\nDuck.ai můžeš používat odkudkoli, kde vidíš ikonu chatu [[chat_icon]]";
 
-/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
-"onboarding.duckai.contextual.subscription.message" = "Nabízíme také placené předplatné s pokročilými modely umělé inteligence GPT, Claude a Llama s vyššími limity chatu, zabezpečenou VPN a dalšími službami.";
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Nabízíme také placené předplatné s pokročilými modely umělé inteligence s vyššími limity chatu od GPT a Claude, zabezpečenou VPN a dalšími funkcemi.";
 
 /* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
 "onboarding.duckai.duckAIQuery.title" = "Teď si vyzkoušej soukromý chat s AI!";
@@ -3261,6 +3255,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Ochrana je aktivní!";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Použij adresní řádek k vyhledávání a návštěvě webů nebo přepni na Duck.ai pro soukromý chat s umělou inteligencí.\n\nDuck.ai můžeš používat odkudkoli, kde vidíš ikonu chatu [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Soukromé AI chaty, které můžeš kdykoli smazat pomocí tlačítka Fire Button. Zkus ji! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "To je Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Zeptej se soukromě na cokoli";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Soukromé vyhledávání";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Vysvětli mi akciový trh, jako kdyby mi bylo 10";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Naplánuj mi perfektní den v Londýně";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Řekni mi 10 fascinujících faktů z vědy, přírody a historie.";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Tak co, jdeš na to?\nZkus vyhledávání nebo AI chat!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Zeptej se AI";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Přeskočit";
@@ -3572,6 +3596,9 @@
 "preserveLogins.remove.all.ok" = "DOBŘE";
 
 /* No comment provided by engineer. */
+"Previews" = "Náhledy";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Primární / první akce";
 
 /* No comment provided by engineer. */
@@ -3817,6 +3844,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavení vyhledávání s funkcí Assist";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Nikdy";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Často";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "Na vyžádání";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Někdy";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Vyhledávání s funkcí Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Automaticky odesílat obsah stránky do Duck.ai";
 
@@ -3826,11 +3868,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Návrhy chatu";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Používat DuckDuckGo bez AI";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Zakáže Duck.ai, skryje odpovědi generované umělou inteligencí ve vyhledávání a filtruje známé weby se spamem, které jsou generované umělou inteligencí, z výsledků vyhledávání obrázků.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "Umělá inteligence je v prohlížeči momentálně zakázaná. Proto v něm neuvidíš odpovědi, které generovala umělá inteligence, a zobrazí se ti méně obrázků generovaných umělou inteligencí ve výsledcích vyhledávání obrázků.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skrýt obrázky vygenerované umělou inteligencí";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Odstraní obrázky vytvořené umělou inteligencí z výsledků vyhledávání obrázků";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Vypnuto";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Zapnuto";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruje známé weby se spamem, které jsou generované umělou inteligencí, z výsledků vyhledávání obrázků. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vždycky zapnuté";
@@ -5278,36 +5338,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Žádné shody pro \"%@\"";
-
-/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.highlights.duckAIQuery.completion.message" = "Použij adresní řádek k vyhledávání a návštěvě webů nebo přepni na Duck.ai pro soukromý chat s umělou inteligencí.\n\nDuck.ai můžeš používat odkudkoli, kde vidíš ikonu chatu [[chat_icon]]";
-
-/* Fire onboarding message shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.message" = "Soukromé AI chaty, které můžeš kdykoli smazat pomocí tlačítka Fire Button. Zkus ji! 🔥";
-
-/* Fire onboarding title shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.title" = "To je Duck.ai!";
-
-/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.ai" = "Zeptej se soukromě na cokoli";
-
-/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.search" = "Soukromé vyhledávání";
-
-/* First suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option1" = "Vysvětli mi akciový trh, jako kdyby mi bylo 10";
-
-/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option2" = "Naplánuj mi perfektní den v Londýně";
-
-/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Řekni mi 10 fascinujících faktů z vědy, přírody a historie.";
-
-/* Title for the onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.title" = "Tak co, jdeš na to?\nZkus vyhledávání nebo AI chat!";
-
-/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
-"onboarding.highlights.duckAIQuery.toggle.ai" = "Zeptej se AI";
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Kód je zkopírovaný";

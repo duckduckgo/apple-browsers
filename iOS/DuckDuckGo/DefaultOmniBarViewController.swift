@@ -46,6 +46,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     /// Manages shared text state for the iPad duck.ai ↔ search mode toggle.
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
+    private var modelPickerController: IPadOmnibarModelPickerController?
+
+    /// The Duck.ai model id selected in the iPad picker, forwarded into `openAIChat` on submission.
+    override var iPadDuckAISelectedModelId: String? {
+        modelPickerController?.currentModelId
+    }
 
     override func loadView() {
         view = omniBarView
@@ -114,8 +120,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniBarView.aiChatTextView.addGestureRecognizer(highlightDismissTap)
 
         omniBarView.isAIVoiceChatEnabled = DuckAIVoiceShortcutFeature(featureFlagger: dependencies.featureFlagger).isAvailable
+        setUpModelPickerIfNeeded()
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
-            self?.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
+            guard let self else { return }
+            self.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
+            self.handleModelPickerExpansionChanged(isExpanded: isExpanded)
         }
 
         // Handle address bar position changes to set the shadow correctly
@@ -557,6 +566,42 @@ extension DefaultOmniBarViewController {
         return !userDidEditText
     }
 
+}
+
+// MARK: - iPad Duck.ai Model Picker
+
+extension DefaultOmniBarViewController {
+
+    private func setUpModelPickerIfNeeded() {
+        guard dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled,
+              dependencies.featureFlagger.isFeatureOn(.iPadDuckAIBarControls) else { return }
+
+        let controller = IPadOmnibarModelPickerController()
+        controller.onModelsUpdated = { [weak self] in
+            self?.refreshModelPicker()
+        }
+        modelPickerController = controller
+        omniBarView.isModelPickerEnabled = true
+        omniBarView.aiChatModelName = controller.currentModelLabel
+    }
+
+    private func handleModelPickerExpansionChanged(isExpanded: Bool) {
+        guard isExpanded, let controller = modelPickerController else { return }
+        controller.activate()
+        refreshModelPicker()
+    }
+
+    private func refreshModelPicker() {
+        guard let controller = modelPickerController else { return }
+
+        if let shortName = controller.currentModelLabel {
+            omniBarView.aiChatModelName = shortName
+        }
+        omniBarView.aiChatModelPickerMenu = controller.makeMenu { [weak self] modelId in
+            self?.modelPickerController?.selectModel(modelId)
+            self?.refreshModelPicker()
+        }
+    }
 }
 
 // MARK: - OmniBarEditingStateViewControllerDelegate

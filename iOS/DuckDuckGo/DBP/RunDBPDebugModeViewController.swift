@@ -571,7 +571,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
                     self.currentRunner = runner
                     
-                    let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: true) { true }
+                    let extractedProfiles = try await runner.scan(showWebView: true) { true }
                     for profile in extractedProfiles {
                         let assignedProfile = debugEmailConfirmationStore.storeExtractedProfile(
                             profile,
@@ -706,7 +706,6 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                 self.currentOptOutRunner = runner
                 
                 try await runner.optOut(
-                    profileQuery: brokerProfileQueryData,
                     extractedProfile: result.extractedProfile,
                     showWebView: true
                 ) { true }
@@ -880,7 +879,6 @@ extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
                 self.currentOptOutRunner = runner
 
                 try await runner.optOut(
-                    profileQuery: brokerProfileQueryData,
                     extractedProfile: scanResult.extractedProfile,
                     showWebView: true
                 ) { true }

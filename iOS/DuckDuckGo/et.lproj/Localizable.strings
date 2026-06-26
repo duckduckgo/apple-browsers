@@ -1060,12 +1060,6 @@
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Kas salvestada see parool?";
 
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Ei aitäh";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Mitte praegu";
-
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Salvesta oma parool turvaliselt seadmesse DuckDuckGo paroolide ja automaatse täitmisega.";
 
@@ -3202,8 +3196,8 @@
 /* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
 "onboarding.duckai.contextual.end-of-journey.message" = "Alusta privaatset AI-vestlust Duck.ai-ga või lülita sisse, et otsida kaitstud sirvimist.\n\nSaad Duck.ai't kasutada kõikjal, kus näed vestluse ikooni [[chat_icon]]";
 
-/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
-"onboarding.duckai.contextual.subscription.message" = "Pakume ka tasulist tellimust, mis sisaldab täiustatud tehisintellekti mudeleid, millel on kõrgemad vestluspiirangud GPT, Claude ja Llama, turvaline VPN ja palju muud.";
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Pakume ka tasulist tellimust, kus on täiustatud tehisintellekti mudelid GPT-lt ja Claude'lt, kõrgemad vestluspiirangud, turvaline VPN ja palju muud.";
 
 /* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
 "onboarding.duckai.duckAIQuery.title" = "Proovi nüüd privaatset AI-vestlust!";
@@ -3261,6 +3255,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Kaitsed aktiveeritud!";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Kasuta aadressiriba, et otsida ja külastada saite või alusta privaatset AI-vestlust Duck.ai abil.\n\nDuck.ai-d saad kasutada kõikjal, kus näed vestluse ikooni [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Privaatseid AI-vestlusi saad igal ajal kustutada Fire Buttoni abil. Proovi! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "See on Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Küsi ükskõik mida privaatselt";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Otsi privaatselt";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Selgitage aktsiaturgu nagu ma oleksin 10-aastane";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planeeri ideaalne päev Londonis";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Millised on 10 põnevat fakti teaduse, looduse ja ajaloo kohta?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Kas oled valmis alustama?\nProovi otsingut või tehisintellekti vestlust!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Küsi AI-lt";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Jäta vahele";
@@ -3572,6 +3596,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Previews" = "Eelvaated";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Esmane/esimene Tegevus";
 
 /* No comment provided by engineer. */
@@ -3817,6 +3844,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Otsingu Assist seaded";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Mitte kunagi";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Sageli";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "Nõudmisel";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Mõnikord";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Otsingu Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Saada lehe sisu automaatselt Duck.ai-le";
 
@@ -3826,11 +3868,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Vestluse soovitused";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Kasuta DuckDuckGot ilma tehisintellektita";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Keelab Duck.ai, peidab otsingus tehisintellektiga toetatud vastused ja filtreerib pildiotsingu tulemustest teadaolevaid tehisintellekti rämpsposti saite.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "Tehisintellekt on brauseris praegu keelatud, seega sa ei näe enam tehisintellekti abil saadud vastuseid ja näed pildiotsingu tulemustes vähem tehisintellekti loodud pilte.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Peida AI loodud pildid";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Eemaldab tehisintellekti loodud pildid pildiotsingu tulemustest";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Väljas";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Sees";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtreerib pildiotsingu tulemustest välja teadaolevad tehisintellekti rämpsposti saidid. [Lisainfo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alati sisse lülitatud";
@@ -5278,36 +5338,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "„%@“ kohta ei leitud vasteid";
-
-/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.highlights.duckAIQuery.completion.message" = "Kasuta aadressiriba, et otsida ja külastada saite või alusta privaatset AI-vestlust Duck.ai abil.\n\nDuck.ai-d saad kasutada kõikjal, kus näed vestluse ikooni [[chat_icon]]";
-
-/* Fire onboarding message shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.message" = "Privaatseid AI-vestlusi saad igal ajal kustutada Fire Buttoni abil. Proovi! 🔥";
-
-/* Fire onboarding title shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.title" = "See on Duck.ai!";
-
-/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.ai" = "Küsi ükskõik mida privaatselt";
-
-/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.search" = "Otsi privaatselt";
-
-/* First suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option1" = "Selgitage aktsiaturgu nagu ma oleksin 10-aastane";
-
-/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planeeri ideaalne päev Londonis";
-
-/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Millised on 10 põnevat fakti teaduse, looduse ja ajaloo kohta?";
-
-/* Title for the onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.title" = "Kas oled valmis alustama?\nProovi otsingut või tehisintellekti vestlust!";
-
-/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
-"onboarding.highlights.duckAIQuery.toggle.ai" = "Küsi AI-lt";
 
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Kood kopeeritud";

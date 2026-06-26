@@ -248,6 +248,34 @@ final class TabTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenSameDocumentNavigationOccursThenSameDocumentNavigationPublisherEmits() {
+        schemeHandler.middleware = [{ _ in
+            .ok(.html("<html><body>test</body></html>"))
+        }]
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
+
+        // Wait for the initial full-page navigation to finish before triggering pushState.
+        let eDidFinish = expectation(description: "initial navigation finished")
+        let finishCancellable = tab.webViewDidFinishNavigationPublisher.sink {
+            eDidFinish.fulfill()
+        }
+        tab.setContent(.url(urls.url, source: .link))
+        wait(for: [eDidFinish], timeout: 5)
+        finishCancellable.cancel()
+
+        // A same-document navigation (history.pushState) must emit on the dedicated publisher,
+        // since webViewDidFinishNavigationPublisher filters these out.
+        let eSameDocument = expectation(description: "same-document navigation published")
+        tab.webViewDidPerformSameDocumentNavigationPublisher.sink {
+            eSameDocument.fulfill()
+        }.store(in: &cancellables)
+
+        tab.webView.evaluateJavaScript("history.pushState({}, '', '/pushed')")
+
+        wait(for: [eSameDocument], timeout: 5)
+    }
+
+    @MainActor
     func testWhenGoingBackInvalidatingBackItem_BackForwardButtonsDoNotBlink() throws {
         var didFinishExpectations = [String: XCTestExpectation]()
         var eDidRedirect: XCTestExpectation!

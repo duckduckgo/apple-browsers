@@ -23,6 +23,7 @@ public typealias DBPFeatureFlagging = RemoteBrokerDeliveryFeatureFlagging
     & ForegroundRunningFeatureFlagging
     & ContinuedProcessingFeatureFlagging
     & WebViewUserAgentFeatureFlagging
+    & OptOutRetryErrorFeatureFlagging
 
 public protocol RemoteBrokerDeliveryFeatureFlagging {
     var isRemoteBrokerDeliveryFeatureOn: Bool { get }
@@ -42,6 +43,16 @@ public protocol ContinuedProcessingFeatureFlagging {
 
 public protocol WebViewUserAgentFeatureFlagging {
     var isWebViewUserAgentOn: Bool { get }
+}
+
+public protocol OptOutRetryErrorFeatureFlagging {
+    var isOptOutRetryErrorFrequencyExperimentOn: Bool { get }
+}
+
+public struct DisabledOptOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFlagging {
+    public let isOptOutRetryErrorFrequencyExperimentOn = false
+
+    public init() {}
 }
 
 public protocol FreemiumPIRFeatureFlagging {

@@ -130,10 +130,12 @@ final class YouTubeAdBlockingUITests: UITestCase {
         ])
         app.enforceSingleWindow()
         app.navigateToYouTubeVideo("dQw4w9WgXcQ")
+
+        Thread.sleep(forTimeInterval: 2)
+
         let youTubeAdBlockButton = app.buttons[youTubeAdBlockButtonIdentifier]
         XCTAssertTrue(youTubeAdBlockButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "YouTube ad block button should still appear when remotely disabled")
-        youTubeAdBlockButton.click()
         let contingencyMessage = app.descendants(matching: .any)["YouTubeAdBlockPopover.unavailableMessage"]
         XCTAssertTrue(contingencyMessage.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Popover should show the contingency message when feature is remotely disabled")

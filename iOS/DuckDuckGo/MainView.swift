@@ -71,7 +71,6 @@ class MainViewFactory {
         let presenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aichatIPadTabFeature: AIChatIPadTabFeature(featureFlagger: featureFlagger),
                                                       aiChatSettings: aiChatSettings,
                                                       aiChatSyncCleaner: aiChatSyncCleaner,
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,

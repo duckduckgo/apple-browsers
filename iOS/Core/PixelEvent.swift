@@ -1636,6 +1636,18 @@ extension Pixel {
         case aiChatSettingsAutoContextDisabled
         case aiChatSettingsDefaultTogglePositionChanged
 
+        // AI Features telemetry (cross-platform, deliberately no `m_` platform prefix so the
+        // name + params match macOS exactly). See `name` for the wire strings.
+        case aiFeaturesStateDaily
+        case aiFeaturesDisabled
+        case aiFeaturesSearchAssistNever
+        case aiFeaturesSearchAssistOnDemand
+        case aiFeaturesSearchAssistSometimes
+        case aiFeaturesSearchAssistOften
+        case aiFeaturesHideImagesOn
+        case aiFeaturesHideImagesOff
+        case serpSettingsUnrecognizedValue
+
         case aiChatOpen
         case aiChatMetricStartNewConversation
         case aiChatMetricStartNewConversationButtonClicked
@@ -3545,6 +3557,17 @@ extension Pixel.Event {
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
 
+        // AI Features telemetry: no `m_` prefix so the wire names are identical to macOS.
+        case .aiFeaturesStateDaily: return "ai_features_state_daily"
+        case .aiFeaturesDisabled: return "ai_features_disabled"
+        case .aiFeaturesSearchAssistNever: return "ai_features_search_assist_never"
+        case .aiFeaturesSearchAssistOnDemand: return "ai_features_search_assist_on_demand"
+        case .aiFeaturesSearchAssistSometimes: return "ai_features_search_assist_sometimes"
+        case .aiFeaturesSearchAssistOften: return "ai_features_search_assist_often"
+        case .aiFeaturesHideImagesOn: return "ai_features_hide_images_on"
+        case .aiFeaturesHideImagesOff: return "ai_features_hide_images_off"
+        case .serpSettingsUnrecognizedValue: return "serp_settings_unrecognized_value"
+
         case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_duck-ai_native-storage_migration_done_\(key)_unique"
         case .duckAiNativeStorageMigrationDoneCount(let key): return "m_duck-ai_native-storage_migration_done_\(key)_count"
         case .duckAiNativeStorageMigrationDoneBlankCount: return "m_duck-ai_native-storage_migration_done_blank_count"
@@ -4103,6 +4126,7 @@ public extension Pixel.Event {
     enum MaliciousSiteProtectionEvent: Equatable {
         case errorPageShown(category: ThreatKind, clientSideHit: Bool?)
         case visitSite(category: ThreatKind)
+        case leaveSite(category: ThreatKind)
         case iframeLoaded(category: ThreatKind)
         case settingToggled(to: Bool)
         case matchesApiTimeout
@@ -4118,6 +4142,8 @@ public extension Pixel.Event {
                 self = .errorPageShown(category: category, clientSideHit: clientSideHit)
             case .visitSite(category: let category):
                 self = .visitSite(category: category)
+            case .leaveSite(category: let category):
+                self = .leaveSite(category: category)
             case .iframeLoaded(category: let category):
                 self = .iframeLoaded(category: category)
             case .settingToggled(let enabled):
@@ -4145,6 +4171,8 @@ public extension Pixel.Event {
                 return MaliciousSiteProtection.Event.errorPageShown(category: category, clientSideHit: clientSideHit)
             case .visitSite(let category):
                 return MaliciousSiteProtection.Event.visitSite(category: category)
+            case .leaveSite(category: let category):
+                return MaliciousSiteProtection.Event.leaveSite(category: category)
             case .iframeLoaded(let category):
                 return MaliciousSiteProtection.Event.iframeLoaded(category: category)
             case .settingToggled(let enabled):

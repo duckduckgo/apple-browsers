@@ -685,7 +685,9 @@ final class BrowserTabViewController: NSViewController {
         }
         backdrop.locksWindowResizing = true
 
-        let hostingController = NSHostingController(rootView: CookiePopupProtectionOptInView(onDone: { [weak self] in
+        let variant: CookiePopupProtectionOptInVariant = cookiePopupProtectionPreferences.isAutoconsentEnabled ? .handleMore : .handleAndHide
+
+        let hostingController = NSHostingController(rootView: CookiePopupProtectionOptInView(variant: variant, onConfirm: { [weak self] in
             self?.dismissCookiePopupProtectionOptInDialog()
         }))
         let cardSize = hostingController.view.fittingSize

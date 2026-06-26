@@ -20,26 +20,54 @@ import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
 
-enum CookiePopupProtectionMode: CaseIterable, Identifiable {
-    case rejectHideAccept
-    case off
-
-    var id: Self { self }
+enum CookiePopupProtectionOptInVariant {
+    /// Shown when Cookie Pop-up Protection is already enabled.
+    case handleMore
+    /// Shown when Cookie Pop-up Protection is off.
+    case handleAndHide
 
     var title: String {
         switch self {
-        case .rejectHideAccept: return UserText.cookiePopupProtectionOptInModeOn
-        case .off: return UserText.cookiePopupProtectionOptInModeOff
+        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledTitle
+        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledTitle
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledBody
+        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledBody
+        }
+    }
+
+    var primaryOptionTitle: String {
+        switch self {
+        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledPrimaryOption
+        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledPrimaryOption
+        }
+    }
+
+    var secondaryOptionTitle: String {
+        switch self {
+        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledSecondaryOption
+        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledSecondaryOption
         }
     }
 }
 
+private enum CookiePopupProtectionOptInOption: CaseIterable, Identifiable {
+    case primary
+    case secondary
+    var id: Self { self }
+}
+
 /// Centered opt-in card matching the Cookie Pop-up Protection design.
-/// ponytail: visual-only — selection is local @State, `Done` just dismisses. No persistence yet.
+/// ponytail: visual-only — selection is local @State, `Confirm` just dismisses. No persistence yet.
 struct CookiePopupProtectionOptInView: View {
 
-    let onDone: () -> Void
-    @State private var mode: CookiePopupProtectionMode = .rejectHideAccept
+    let variant: CookiePopupProtectionOptInVariant
+    let onConfirm: () -> Void
+    @State private var selectedOption: CookiePopupProtectionOptInOption = .primary
 
     var body: some View {
         VStack(spacing: 0) {
@@ -71,7 +99,7 @@ struct CookiePopupProtectionOptInView: View {
 
             HStack {
                 Spacer()
-                Button(UserText.doneDialog, action: onDone)
+                Button(UserText.cookiePopupProtectionOptInConfirm, action: onConfirm)
                     .buttonStyle(DefaultActionButtonStyle(enabled: true))
             }
             .padding(.top, 16)
@@ -94,12 +122,12 @@ struct CookiePopupProtectionOptInView: View {
                 .padding(.top, 24)
                 .padding(.bottom, 12)
 
-            Text(UserText.cookiePopupProtectionOptInTitle)
+            Text(variant.title)
                 .font(.system(size: 22, weight: .bold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .padding(.bottom, 8)
 
-            Text(UserText.cookiePopupProtectionOptInBody)
+            Text(variant.message)
                 .font(.system(size: 15))
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -129,16 +157,9 @@ struct CookiePopupProtectionOptInView: View {
 
     private var preferenceBox: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(UserText.cookiePopupProtectionOptInPreferenceTitle)
-                .font(.system(size: 14))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .padding(.bottom, 2)
-
-            Picker("", selection: $mode) {
-                ForEach(CookiePopupProtectionMode.allCases) { mode in
-                    Text(mode.title).tag(mode)
-                        .padding(.top, 8)
-                }
+            Picker("", selection: $selectedOption) {
+                Text(variant.primaryOptionTitle).tag(CookiePopupProtectionOptInOption.primary)
+                Text(variant.secondaryOptionTitle).tag(CookiePopupProtectionOptInOption.secondary)
             }
             .pickerStyle(.radioGroup)
             .labelsHidden()
@@ -155,10 +176,11 @@ struct CookiePopupProtectionOptInView: View {
 }
 
 /// Dimming scrim + centered card. This is what gets hosted over the tab.
-/// ponytail: scrim is non-dismissing on purpose — it's an opt-in; only `Done` closes it.
+/// ponytail: scrim is non-dismissing on purpose — it's an opt-in; only `Confirm` closes it.
 struct CookiePopupProtectionOptInOverlayView: View {
 
-    let onDone: () -> Void
+    let variant: CookiePopupProtectionOptInVariant
+    let onConfirm: () -> Void
 
     var body: some View {
         ZStack {
@@ -167,12 +189,12 @@ struct CookiePopupProtectionOptInOverlayView: View {
                 .contentShape(Rectangle())
                 // ponytail: absorb clicks on the backdrop so nothing behind reacts; non-dismissing on purpose.
                 .onTapGesture {}
-            CookiePopupProtectionOptInView(onDone: onDone)
+            CookiePopupProtectionOptInView(variant: variant, onConfirm: onConfirm)
         }
     }
 }
 
 #Preview {
-    CookiePopupProtectionOptInOverlayView(onDone: {})
+    CookiePopupProtectionOptInOverlayView(variant: .handleAndHide, onConfirm: {})
         .frame(width: 900, height: 760)
 }

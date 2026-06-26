@@ -37,6 +37,11 @@ final class DuckAIGridCardView: UIView {
         static let voiceMascotHeight: CGFloat = 80
         static let emptyLogoHeight: CGFloat = 64
     }
+    
+    private enum Colors {
+        static let backgroundColor = UIColor(lightColor: UIColor(designSystemColor: .accentAltGlowPrimary),
+                                             darkColor: UIColor(designSystemColor: .surfaceSecondary))
+    }
 
     private let titleLabel = UILabel()
     private let snippetLabel = UILabel()
@@ -80,7 +85,7 @@ final class DuckAIGridCardView: UIView {
     /// Resets to the default light appearance. Called on cell reuse so a recycled `.voice` (dark)
     /// card never lingers in dark state if shown before the next `configure(with:)`.
     func resetAppearance() {
-        backgroundColor = UIColor(designSystemColor: .backgroundPromptMessage)
+        backgroundColor = Colors.backgroundColor
         overrideUserInterfaceStyle = .unspecified
         setMascotVisible(false)
         setLogoVisible(false)
@@ -175,9 +180,7 @@ final class DuckAIGridCardView: UIView {
     private func setupSubviews() {
         // Corner radius is owned by the host cell (`TabViewGridCell`), which matches it to the
         // screenshot preview's slot. Only the curve + clipping live here.
-        let lightModeBackground = UIColor(designSystemColor: .accentGlowPrimary)
-        let darkModeBackground = UIColor(designSystemColor: .surfaceSecondary)
-        backgroundColor = UIColor(lightColor: lightModeBackground, darkColor: darkModeBackground)
+        backgroundColor = Colors.backgroundColor
         layer.cornerCurve = .continuous
         clipsToBounds = true
 

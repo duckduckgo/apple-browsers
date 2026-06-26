@@ -37,6 +37,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let xFFFFFF = Color(0xFFFFFF)
     private static let xFAFAFA = Color(0xFAFAFA)
     private static let x3969EF = Color(0x3969EF)
+    private static let xA1CFF7 = Color(0xA1CFF7)
 
     // New dark mode colors
     private static let x080808 = Color(0x080808)
@@ -126,6 +127,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let accentGlowSecondary = DynamicColor(lightColor: .blue50.opacity(0.12), darkColor: x7295F6.opacity(0.12))
     // Unused in the default palette (rebrand only). Falls back to the legacy ghost glow.
     private static let accentGlowPrimary = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
+    private static let accentAltGlowPrimary = DynamicColor(lightColor: xA1CFF7.opacity(0.16), darkColor: xA1CFF7.opacity(0.12))
 
     // Unused in the default palette (rebrand only). Falls back to the primary accent blue.
     private static let accentBrandPrimary = DynamicColor(lightColor: .blue50, darkColor: .blue30)
@@ -227,6 +229,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .accentPrimary: return accentPrimary
         case .accentGlowPrimary: return accentGlowPrimary
         case .accentGlowSecondary: return accentGlowSecondary
+        case .accentAltGlowPrimary: return accentAltGlowPrimary
         case .accentBrandPrimary: return accentBrandPrimary
         case .accentBrandTertiary: return accentBrandTertiary
         case .accentBrandContentPrimary: return accentBrandContentPrimary

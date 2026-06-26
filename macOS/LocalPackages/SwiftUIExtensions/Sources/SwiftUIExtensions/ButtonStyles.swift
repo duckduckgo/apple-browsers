@@ -38,9 +38,7 @@ private struct ButtonMetrics {
     }
 
     static var current: ButtonMetrics {
-        DesignSystemRebrand.isAppRebranded()
-            ? .rebranded
-            : .default
+        DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
     }
 }
 

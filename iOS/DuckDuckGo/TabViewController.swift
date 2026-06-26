@@ -2258,7 +2258,7 @@ extension TabViewController: WKNavigationDelegate {
             Logger.daxEasterEgg.debug("Created DaxEasterEggHandler for new tab")
         }
         
-        Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.absoluteString)")
+        Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.shortDescription)")
         daxEasterEggHandler?.extractLogosForCurrentPage()
     }
 

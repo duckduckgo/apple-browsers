@@ -398,7 +398,7 @@ extension Navigation: CustomDebugStringConvertible {
         }
         return MainActor.assumeMainThread {
             if let navigationAction = navigationActions.last {
-                return "<\(identity) #\(navigationAction.identifier): url:\(url.absoluteString) state:\(state)\(isCommitted ? "(committed)" : "") type:\(navigationAction.navigationType.debugDescription)\(isCurrent ? "" : " non-current")>"
+                return "<\(identity) #\(navigationAction.identifier): url:\(url.shortDescription) state:\(state)\(isCommitted ? "(committed)" : "") type:\(navigationAction.navigationType.debugDescription)\(isCurrent ? "" : " non-current")>"
             } else {
                 return "<\(identity): no navigation actions state:\(state)>"
             }

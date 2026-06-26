@@ -118,7 +118,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
             return .failure(WebExtensionMessageHandlerError.missingParameter("url or consentStatus"))
         }
 
-        Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - url: \(url.absoluteString), consentManaged: \(consentStatus.consentManaged)")
+        Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - url: \(url.shortDescription), consentManaged: \(consentStatus.consentManaged)")
 
         delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
 
@@ -134,7 +134,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
             return .failure(WebExtensionMessageHandlerError.missingParameter("topUrl or isCosmetic"))
         }
 
-        Logger.webExtensions.debug("🎬 Show CPM Animation - topUrl: \(topUrl.absoluteString), isCosmetic: \(isCosmetic)")
+        Logger.webExtensions.debug("🎬 Show CPM Animation - topUrl: \(topUrl.shortDescription), isCosmetic: \(isCosmetic)")
 
         delegate?.showCookiePopupAnimation(topUrl: topUrl, isCosmetic: isCosmetic)
 
@@ -150,7 +150,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
             return .failure(WebExtensionMessageHandlerError.missingParameter("url or msg"))
         }
 
-        Logger.webExtensions.debug("🍪 Cookie Popup Handled - url: \(url.absoluteString)")
+        Logger.webExtensions.debug("🍪 Cookie Popup Handled - url: \(url.shortDescription)")
 
         let popupInfo = CookiePopupHandledInfo(url: url, message: msg)
         delegate?.handleCookiePopup(popupInfo)

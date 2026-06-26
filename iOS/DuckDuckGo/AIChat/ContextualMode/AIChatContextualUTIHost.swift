@@ -117,7 +117,7 @@ final class AIChatContextualUTIHost {
             .removeDuplicates()
             .sink { [weak self] url in
                 guard let self else { return }
-                Logger.contextualUTI.debug("UTIHost didFinish (post-replay) → \(url?.absoluteString ?? "nil", privacy: .private)")
+                Logger.contextualUTI.debug("UTIHost didFinish (post-replay) → \(url?.shortDescription ?? "nil", privacy: .private)")
                 guard let url else { return }
                 guard self.isAutoAttachEnabled() else {
                     Logger.contextualUTI.debug("UTIHost didFinish skip — auto disabled")
@@ -128,7 +128,7 @@ final class AIChatContextualUTIHost {
                     Logger.contextualUTI.debug("UTIHost didFinish skip — already attached to same URL")
                     return
                 }
-                Logger.contextualUTI.info("Auto-attach on page load — triggering for \(url.absoluteString, privacy: .private)")
+                Logger.contextualUTI.info("Auto-attach on page load — triggering for \(url.shortDescription, privacy: .private)")
                 self.handleChipAttachRequest(originatingURL: url)
             }
             .store(in: &cancellables)

@@ -2384,7 +2384,7 @@ class MainViewController: UIViewController {
         let logoURL = logoURLForCurrentPage(tab: tab)
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
-        if tab.isAITab && (aichatFullModeFeature.isAvailable || !DevicePlatform.isIphone) {
+        if tab.isAITab && (aichatFullModeFeature.isAvailable || DevicePlatform.isIpad) {
             // AI tabs use branding UI rather than the standard toggle setup.
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
@@ -3445,7 +3445,7 @@ class MainViewController: UIViewController {
                     files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     fromDeepLink: Bool = false) {
 
-        if aichatFullModeFeature.isAvailable || !DevicePlatform.isIphone {
+        if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
             openAIChatInTab(
                 query,
                 autoSend: autoSend,
@@ -3488,7 +3488,7 @@ class MainViewController: UIViewController {
     }
 
     private func openAIChatInVoiceMode(fromDeepLink: Bool = false) {
-        if aichatFullModeFeature.isAvailable || !DevicePlatform.isIphone {
+        if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
             openAIChatVoiceModeInTab(fromDeepLink: fromDeepLink)
         } else {
             aiChatViewControllerManager.openAIChatVoiceMode(on: self)
@@ -5482,7 +5482,7 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
-        if !DevicePlatform.isIphone {
+        if DevicePlatform.isIpad {
             newTab(allowingKeyboard: false)
         }
         openAIChat()

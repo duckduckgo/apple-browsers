@@ -562,7 +562,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             return
         }
 
-        if privacyInfo.url.isDuckAIURL, !DevicePlatform.isIphone {
+        if privacyInfo.url.isDuckAIURL, DevicePlatform.isIpad {
             showCustomIcon(icon: .duckAI)
             return
         }

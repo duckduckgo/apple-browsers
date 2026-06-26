@@ -27,7 +27,7 @@ struct AddressDisplayHelper {
 
     static func addressForDisplay(url: URL,
                                   showsFullURL: Bool,
-                                  devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) -> NSAttributedString {
+                                  isIpad: Bool = DevicePlatform.isIpad) -> NSAttributedString {
 
         if url.isDuckPlayer,
            let playerURL = getDuckPlayerURL(url: url, showsFullURL: showsFullURL) {
@@ -35,7 +35,7 @@ struct AddressDisplayHelper {
         }
 
         if url.isDuckAIURL, !showsFullURL,
-           !devicePlatform.isIphone {
+           isIpad {
             return NSAttributedString(
                 string: UserText.omnibarFullAIChatModeDisplayTitle,
                 attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])

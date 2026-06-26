@@ -580,7 +580,7 @@ class TabSwitcherViewController: UIViewController {
 
         barsHandler.onDuckChatTapped = { [weak self] in
             guard let self else { return }
-            if self.aichatFullModeFeature.isAvailable || !DevicePlatform.isIphone {
+            if self.aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
                 self.addNewAIChatTab()
             } else {
                 self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)

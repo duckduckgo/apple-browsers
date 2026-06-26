@@ -200,7 +200,6 @@ extension MainViewFactory {
         private var isFloatingStyleEnabled = false
 
         /// Enables overflow hit testing for iPad expanded search area.
-        /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
         var allowsOverflowHitTesting = false {
             didSet {
                 guard allowsOverflowHitTesting != oldValue else { return }

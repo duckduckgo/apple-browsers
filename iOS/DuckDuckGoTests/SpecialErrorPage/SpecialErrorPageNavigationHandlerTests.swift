@@ -246,12 +246,14 @@ final class SpecialErrorPageNavigationHandlerTests {
         _ = await sut.handleDecidePolicy(for: navigationResponse, webView: webView)
 
         #expect(!maliciousSiteProtectionNavigationHandler.didCallLeaveSite)
+        #expect(maliciousSiteProtectionNavigationHandler.capturedLeaveSiteErrorData == nil)
 
         // WHEN
         sut.leaveSiteAction()
 
         // THEN
         #expect(maliciousSiteProtectionNavigationHandler.didCallLeaveSite)
+        #expect(maliciousSiteProtectionNavigationHandler.capturedLeaveSiteErrorData == errorData)
     }
 
     @MainActor

@@ -35,7 +35,8 @@ final class MockOmniBar: OmniBar {
     func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int) { }
     var isTextFieldEditing: Bool = false
     var text: String?
-    
+    var iPadDuckAISelectedModelId: String?
+
     func updateQuery(_ query: String?) { }
     func refreshText(forUrl url: URL?, forceFullURL: Bool) { }
     func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {}

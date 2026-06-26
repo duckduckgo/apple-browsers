@@ -661,10 +661,8 @@ class MainViewController: UIViewController {
                                                               mobileCustomization: mobileCustomization,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
-        if featureFlagger.isFeatureOn(.iPadAIToggle) {
-            viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
-            viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
-        }
+        viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
+        viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         floatingDomainCapsuleController.install(in: view, addressBarPosition: appSettings.currentAddressBarPosition)
@@ -2521,7 +2519,7 @@ class MainViewController: UIViewController {
         isUTIRotating = true
 
         let isKeyboardShowing = omniBar.isTextFieldEditing
-        if isKeyboardShowing && !AppWidthObserver.shared.isPad && minimalChromeSettings.isFeatureEnabled {
+        if isKeyboardShowing && !AppWidthObserver.shared.isPad {
             omniBar.barView.textField.suppressResignFirstResponder = true
         }
 
@@ -2538,7 +2536,6 @@ class MainViewController: UIViewController {
         }()
 
         let needsWidthUpdate = AppWidthObserver.shared.willResize(toWidth: size.width)
-            && (AppWidthObserver.shared.isPad || isInMinimalChromeLayout || minimalChromeSettings.isFeatureEnabled)
         if needsWidthUpdate {
             applyWidth(for: size)
         }
@@ -3656,7 +3653,7 @@ class MainViewController: UIViewController {
 
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
-    
+
     /// Executes the closure if the current tab is an AI tab
     private func performActionIfAITab(_ action: () -> Void) {
         guard currentTab?.isAITab == true else { return }
@@ -3987,7 +3984,9 @@ extension MainViewController: OmniBarDelegate {
         // A Duck.ai submission IS Duck.ai mode — commit that directly rather than re-reading the live
         // toggle, which a refresh-on-submit can reset to the stored last-used before we read it.
         commitToggleMode(.aiChat)
-        openAIChat(query, autoSend: true, tools: tools)
+        
+        let modelId = viewCoordinator.omniBar.iPadDuckAISelectedModelId
+        openAIChat(query, autoSend: true, tools: tools, modelId: modelId)
     }
 
     func onChatHistorySelected(url: URL) {

@@ -4103,6 +4103,7 @@ public extension Pixel.Event {
     enum MaliciousSiteProtectionEvent: Equatable {
         case errorPageShown(category: ThreatKind, clientSideHit: Bool?)
         case visitSite(category: ThreatKind)
+        case leaveSite(category: ThreatKind)
         case iframeLoaded(category: ThreatKind)
         case settingToggled(to: Bool)
         case matchesApiTimeout
@@ -4118,6 +4119,8 @@ public extension Pixel.Event {
                 self = .errorPageShown(category: category, clientSideHit: clientSideHit)
             case .visitSite(category: let category):
                 self = .visitSite(category: category)
+            case .leaveSite(category: let category):
+                self = .leaveSite(category: category)
             case .iframeLoaded(category: let category):
                 self = .iframeLoaded(category: category)
             case .settingToggled(let enabled):
@@ -4145,6 +4148,8 @@ public extension Pixel.Event {
                 return MaliciousSiteProtection.Event.errorPageShown(category: category, clientSideHit: clientSideHit)
             case .visitSite(let category):
                 return MaliciousSiteProtection.Event.visitSite(category: category)
+            case .leaveSite(category: let category):
+                return MaliciousSiteProtection.Event.leaveSite(category: category)
             case .iframeLoaded(let category):
                 return MaliciousSiteProtection.Event.iframeLoaded(category: category)
             case .settingToggled(let enabled):

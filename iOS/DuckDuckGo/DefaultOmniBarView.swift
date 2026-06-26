@@ -429,9 +429,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         isModelPickerEnabled && !(aiChatModelName?.isEmpty ?? true)
     }
 
-    /// Icon-only reasoning-level chip shown to the left of the model picker, styled to match
-    /// the iPhone reasoning button. Like the iPhone button it carries a pull-down menu and
-    /// swaps its glyph for the selected reasoning mode.
     let reasoningPickerButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -1391,8 +1388,6 @@ extension DefaultOmniBarView {
             modelPickerButton.heightAnchor.constraint(equalToConstant: Metrics.modelPickerChipHeight),
             modelPickerButton.leadingAnchor.constraint(greaterThanOrEqualTo: aiChatTextView.leadingAnchor),
 
-            // Reasoning chip hugs the left edge of the model chip; its fixed width takes
-            // priority so the model name truncates rather than the icon clipping.
             reasoningPickerButton.trailingAnchor.constraint(equalTo: modelPickerButton.leadingAnchor, constant: -Metrics.reasoningToModelPickerSpacing),
             reasoningPickerButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
             reasoningPickerButton.widthAnchor.constraint(equalToConstant: Metrics.reasoningPickerChipSize),

@@ -21,15 +21,7 @@ import AIChat
 import Core
 import UIKit
 
-/// Drives the Duck.ai reasoning-level picker shown to the left of the model picker in the
-/// iPad address bar's expanded AI-chat input area.
-///
-/// Like `IPadOmnibarModelPickerController`, this is a thin wrapper around the shared
-/// `UTIModelStore` — it reuses the same selection / persistence logic as the iPhone
-/// `UnifiedToggleInputCoordinator` (the reasoning menu factory, the tier-access resolver
-/// and the subscription upsell presenter) so reasoning behaves identically across
-/// Duck.ai surfaces. The store is shared with the model picker so both chips reflect the
-/// same selected model and a single `/models` fetch.
+/// Drives the Duck.ai reasoning-level picker
 @MainActor
 final class IPadOmnibarReasoningPickerController {
 
@@ -39,7 +31,7 @@ final class IPadOmnibarReasoningPickerController {
     private let upsellPresenter: DuckAISubscriptionUpselling
 
     /// A reasoning mode whose selection was blocked behind an upsell; re-applied once a
-    /// subscription refresh grants the user access (mirrors the iPhone coordinator).
+    /// subscription refresh grants the user access
     private var pendingGatedSelection: (modelId: String, mode: AIChatReasoningMode)?
 
     /// Invoked whenever the reasoning state changes so the host can refresh the chip
@@ -58,22 +50,15 @@ final class IPadOmnibarReasoningPickerController {
         self.upsellPresenter = upsellPresenter
     }
 
-    /// Whether the reasoning picker should be shown for the selected model. Matches the
-    /// iPhone rule: the model must expose more than one accessible reasoning mode. (The iPad
-    /// omnibar input has no image-generation tool, so that iPhone hide-case doesn't apply.)
     var isReasoningPickerAvailable: Bool {
         store.selectedModel?.supportsReasoningPicker ?? false
     }
 
-    /// The reasoning mode currently in effect, resolved against the model's accessible modes.
-    /// Drives the chip icon and the menu checkmark.
     var currentReasoningMode: AIChatReasoningMode? {
         guard let model = store.selectedModel else { return nil }
         return model.resolvedReasoningMode(from: store.selectedReasoningMode)
     }
 
-    /// The reasoning effort to forward at submission. Delegates to the shared store so the iPad
-    /// picker forwards exactly what the iPhone coordinator does (see `submissionReasoningEffort`).
     var selectedReasoningEffort: AIChatReasoningEffort? {
         store.submissionReasoningEffort
     }
@@ -106,8 +91,6 @@ final class IPadOmnibarReasoningPickerController {
         }
     }
 
-    /// Call from the shared store's `onModelsUpdated` so a pending gated selection is applied
-    /// once a subscription refresh grants access.
     func handleModelsUpdated() {
         applyPendingGatedSelectionIfPossible()
     }

@@ -21,9 +21,7 @@ import Foundation
 import Subscription
 
 /// Routes the Duck.ai subscription purchase / upgrade flows triggered by tapping a gated
-/// model or reasoning level. The flows are decoupled via NotificationCenter
-/// (`.settingsDeepLinkNotification`) so this needs no presenting view controller — which lets
-/// the iPhone `UnifiedToggleInputCoordinator` and the iPad omnibar controllers share it.
+/// model or reasoning level. 
 protocol DuckAISubscriptionUpselling {
     func presentPurchaseFlow(source: SubscriptionFlowSource, isAITabState: Bool)
     func presentUpgradeFlow(source: SubscriptionFlowSource, isAITabState: Bool)

@@ -20,13 +20,9 @@
 import AIChat
 import UIKit
 
-/// Builds the reasoning-mode pull-down menu shared by the iPhone
-/// `UnifiedToggleInputCoordinator` and the iPad `IPadOmnibarReasoningPickerController`.
-/// Mirrors `UnifiedToggleInputModelMenuFactory` so both pickers stay consistent.
+/// Builds the reasoning-mode pull-down menu
 struct UnifiedToggleInputReasoningMenuFactory {
 
-    /// Builds a single-selection menu of the model's available reasoning modes, or `nil`
-    /// when the model doesn't support a reasoning picker (so callers can hide the button).
     func makeMenu(
         model: AIChatModel,
         selectedMode: AIChatReasoningMode?,

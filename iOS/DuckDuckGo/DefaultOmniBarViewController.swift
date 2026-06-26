@@ -49,12 +49,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private var modelPickerController: IPadOmnibarModelPickerController?
     private var reasoningPickerController: IPadOmnibarReasoningPickerController?
 
-    /// The Duck.ai model id selected in the iPad picker, forwarded into `openAIChat` on submission.
     override var iPadDuckAISelectedModelId: String? {
         modelPickerController?.currentModelId
     }
 
-    /// The Duck.ai reasoning effort selected in the iPad picker, forwarded into `openAIChat` on submission.
     override var iPadDuckAISelectedReasoningEffort: AIChatReasoningEffort? {
         reasoningPickerController?.selectedReasoningEffort
     }
@@ -76,8 +74,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         shiftEnter.wantsPriorityOverSystemBehavior = true
         commands.append(shiftEnter)
 
-        // The text view is multi-line, so only claim the arrows when navigating the list or when the caret has no
-        // line to move into; otherwise they fall through to normal caret movement.
         if omniBarView.aiChatTextView.isFirstResponder {
             let hasHighlight = omniDelegate?.hasAIChatSuggestionsHighlight() ?? false
             let canEnterList = omniDelegate?.isAIChatSuggestionsNavigationAvailable() ?? false

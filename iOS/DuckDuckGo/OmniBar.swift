@@ -93,14 +93,10 @@ protocol OmniBar: AnyObject {
     /// Sets the selected text entry mode for the toggle (search or aiChat).
     func setSelectedTextEntryMode(_ mode: TextEntryMode)
 
-    /// The Duck.ai model id selected in the iPad address-bar model picker, or `nil` when the
-    /// picker is not active (non-iPad, flag off). Forwarded into `openAIChat` on submission so
-    /// Duck.ai honors the selection. Defaults to `nil` for omnibars without the iPad picker.
+    /// The Duck.ai model id selected in the iPad address-bar model picker, or `nil`
     var iPadDuckAISelectedModelId: String? { get }
 
     /// The Duck.ai reasoning effort selected in the iPad address-bar reasoning picker, or `nil`
-    /// when the picker is not active or hidden. Forwarded into `openAIChat` on submission so
-    /// Duck.ai honors the selection. Defaults to `nil` for omnibars without the iPad picker.
     var iPadDuckAISelectedReasoningEffort: AIChatReasoningEffort? { get }
 
     func prepareForMoveTransition()

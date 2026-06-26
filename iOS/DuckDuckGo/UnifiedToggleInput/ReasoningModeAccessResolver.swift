@@ -19,9 +19,6 @@
 
 import AIChat
 
-/// Pure tier-access decisions for the reasoning picker, shared between the iPhone
-/// `UnifiedToggleInputCoordinator` and the iPad `IPadOmnibarReasoningPickerController`
-/// so both platforms gate reasoning modes identically.
 protocol ReasoningModeAccessResolving {
     /// The public access tier required to use `mode` on `model`, or `nil` when the mode
     /// is already accessible to the current user (or the model doesn't support it).

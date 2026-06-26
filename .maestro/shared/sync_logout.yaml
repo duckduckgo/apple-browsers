@@ -4,6 +4,10 @@ appId: com.duckduckgo.mobile.ios
 ---
 
 - assertVisible: Sync & Backup
+- scrollUntilVisible:
+    element:
+      id: "SyncToggle"
+    direction: UP
 - tapOn:
     id: "SyncToggle"
 - assertVisible: Turn Off Sync & Backup?

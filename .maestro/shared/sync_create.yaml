@@ -13,3 +13,16 @@ appId: com.duckduckgo.mobile.ios
 - assertVisible: Sync your data with another device?
 - tapOn: Not Now
 - assertVisible: Synced Devices
+- scrollUntilVisible:
+    element:
+      text: Copy Recovery Code
+    direction: DOWN
+- tapOn: Copy Recovery Code
+# Re-authenticate only if the 15s auth session has expired since enabling sync.
+- runFlow:
+    when:
+      visible: Unlock device to set up Sync & Backup
+    commands:
+      - inputText: "0000"
+      - pressKey: Enter
+- assertVisible: Recovery code copied

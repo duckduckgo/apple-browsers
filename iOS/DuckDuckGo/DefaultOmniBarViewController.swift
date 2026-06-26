@@ -590,8 +590,9 @@ extension DefaultOmniBarViewController {
 
         controller.onModelsUpdated = { [weak self] in
             guard let self else { return }
-            // Re-apply any reasoning selection unblocked by a subscription refresh, then
+            // Re-apply any model/reasoning selection unblocked by a subscription refresh, then
             // refresh both chips (selecting a new model changes which reasoning modes apply).
+            self.modelPickerController?.handleModelsUpdated()
             self.reasoningPickerController?.handleModelsUpdated()
             self.refreshModelPicker()
             self.refreshReasoningPicker()
@@ -617,7 +618,7 @@ extension DefaultOmniBarViewController {
             omniBarView.aiChatModelName = shortName
         }
         omniBarView.aiChatModelPickerMenu = controller.makeMenu { [weak self] modelId in
-            self?.modelPickerController?.selectModel(modelId)
+            self?.modelPickerController?.handleModelSelection(modelId)
             self?.refreshModelPicker()
             self?.refreshReasoningPicker()
         }

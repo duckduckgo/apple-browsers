@@ -33,7 +33,12 @@ final class IPadOmnibarModelPickerController {
 
     private let store: UTIModelStore
     private let menuFactory = UnifiedToggleInputModelMenuFactory()
+    private let upsellPresenter: DuckAISubscriptionUpselling
     var onModelsUpdated: (() -> Void)?
+
+    /// A model whose selection was blocked behind an upsell; re-applied once a
+    /// subscription refresh grants the user access.
+    private var pendingGatedModelId: String?
 
     /// The shared model store. Exposed so the sibling reasoning picker can read the same
     /// selected model / subscription state and avoid a second `/models` fetch.
@@ -43,8 +48,10 @@ final class IPadOmnibarModelPickerController {
         modelsService: AIChatModelsProviding? = nil,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
-        aiChatSettings: AIChatSettingsProvider = AIChatSettings()
+        aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+        upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()
     ) {
+        self.upsellPresenter = upsellPresenter
         store = UTIModelStore(
             modelsService: modelsService ?? AIChatModelsService(
                 baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL)
@@ -85,7 +92,65 @@ final class IPadOmnibarModelPickerController {
         )
     }
 
-    func selectModel(_ modelId: String) {
+    /// Selects the model if the user has access; otherwise routes to the matching subscription
+    /// upsell (mirrors the iPhone `UnifiedToggleInputCoordinator.handleModelSelection`).
+    func handleModelSelection(_ modelId: String) {
+        guard let model = store.models.first(where: { $0.id == modelId }) else { return }
+
+        if model.entityHasAccess {
+            pendingGatedModelId = nil
+            store.updateSelectedModel(modelId, isNewChatContext: true)
+        } else if routeGatedModelSelection(model) {
+            // Remember the gated model so a post-purchase `/models` refresh can apply it.
+            pendingGatedModelId = modelId
+        }
+    }
+
+    /// Re-applies a model selection that was blocked behind an upsell once a subscription
+    /// refresh has granted the user access. Invoked after `/models` re-fetches.
+    func handleModelsUpdated() {
+        applyPendingGatedModelSelectionIfPossible()
+    }
+
+    // MARK: - Private
+
+    @discardableResult
+    private func routeGatedModelSelection(_ model: AIChatModel) -> Bool {
+        guard let requiredTier = model.lowestPublicAccessTier else { return false }
+
+        let userTier = store.subscriptionState.userTier
+
+        if userTier == .free, requiredTier == .plus || requiredTier == .pro {
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
+                source: .modelPicker,
+                currentTier: userTier,
+                requiredTier: requiredTier,
+                flowType: .purchase
+            )
+            upsellPresenter.presentPurchaseFlow(source: .modelPicker, isAITabState: false)
+            return true
+        }
+
+        if userTier == .plus, requiredTier == .pro {
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
+                source: .modelPicker,
+                currentTier: userTier,
+                requiredTier: requiredTier,
+                flowType: .upgrade
+            )
+            upsellPresenter.presentUpgradeFlow(source: .modelPicker, isAITabState: false)
+            return true
+        }
+
+        return false
+    }
+
+    private func applyPendingGatedModelSelectionIfPossible() {
+        guard let modelId = pendingGatedModelId,
+              store.models.first(where: { $0.id == modelId })?.entityHasAccess == true else {
+            return
+        }
+        pendingGatedModelId = nil
         store.updateSelectedModel(modelId, isNewChatContext: true)
     }
 }

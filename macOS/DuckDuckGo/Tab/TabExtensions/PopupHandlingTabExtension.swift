@@ -270,7 +270,7 @@ final class PopupHandlingTabExtension {
                                     of kind: NewWindowPolicy,
                                     isUserInitiated: Bool) -> WKWebView? {
         // disable opening 'javascript:' links in new tab
-        guard navigationAction.request.url?.navigationalScheme != .javascript else { return nil }
+        guard ![.javascript, .data].contains(navigationAction.request.url?.navigationalScheme) else { return nil }
         // disable opening internal pages in pop-up windows
         guard TabContent.contentFromURL(navigationAction.request.url, source: .link).isExternalUrl || !kind.isPopup else { return nil }
 

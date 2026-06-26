@@ -71,7 +71,7 @@ final class IPCServiceLauncher {
 
             runningApplication = try await appLauncher.runApp(withCommand: UDSLaunchAppCommand())
         case .loginItem(let loginItem, let loginItemsManager):
-            try loginItemsManager.throwingEnableLoginItems([loginItem])
+            try await loginItemsManager.throwingEnableLoginItems([loginItem])
         }
     }
 
@@ -99,7 +99,7 @@ final class IPCServiceLauncher {
             }
 
         case .loginItem(let loginItem, let loginItemsManager):
-            loginItemsManager.disableLoginItems([loginItem])
+            await loginItemsManager.disableLoginItems([loginItem])
         }
     }
 }

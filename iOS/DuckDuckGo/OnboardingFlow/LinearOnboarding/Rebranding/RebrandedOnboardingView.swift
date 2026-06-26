@@ -237,13 +237,6 @@ extension OnboardingRebranding {
             .contentShape(Rectangle())
             // Tap anywhere to skip the current typing animation via the environment key.
             .simultaneousGesture(TapGesture().onEnded { skipTypingAnimation = true })
-#if DEBUG || ALPHA
-            .overlay(alignment: .topLeading) {
-                RebrandingBadge()
-                    .padding(.leading, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeLeadingPadding)
-                    .padding(.top, onboardingTheme.linearOnboardingMetrics.rebrandingBadgeTopPadding)
-            }
-#endif
             .applyOnboardingTheme(.rebranding2026, stepProgressTheme: .rebranding2026)
             // Resync Dax when text size changes while backgrounded — body re-evaluates on
             // return but `currentDaxAnimation` is `@State` and would otherwise stay stale.
@@ -841,22 +834,6 @@ extension View {
                 typingStartDelay: typingStartDelay
             )
         )
-    }
-}
-
-private struct RebrandingBadge: View {
-    var body: some View {
-        Text(verbatim: "REBRANDED")
-            .font(.caption2.weight(.semibold))
-            .textCase(.uppercase)
-            .foregroundColor(.white)
-            .padding(.vertical, 4)
-            .padding(.horizontal, 8)
-            .background(
-                Capsule()
-                    .fill(Color.black.opacity(0.7))
-            )
-            .accessibilityIdentifier("RebrandedBadge")
     }
 }
 

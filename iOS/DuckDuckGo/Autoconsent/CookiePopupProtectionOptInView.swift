@@ -97,32 +97,50 @@ struct CookiePopupProtectionOptInView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                Image(rebrandable: "Logo")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 44, height: 44)
-                    .padding(.top, 24)
-                    .padding(.bottom, 12)
-
-                HStack(spacing: 8) {
-                    BadgeView(text: UserText.cookiePopupProtectionOptInBadge)
-                    Text(UserText.cookiePopupProtectionOptInHeader.uppercased())
-                        .font(.system(size: 13, weight: .semibold))
-                        .tracking(0.6)
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+        ZStack(alignment: .bottom) {
+            // Decorative wave anchored to the bottom — it does not scroll. The flexible-width box keeps the
+            // oversized asset from stretching the layout; the image fills + center-crops within it, so wider
+            // screens (iPad) reveal more of it.
+            Color.clear
+                .frame(maxWidth: .infinity)
+                .frame(height: 150)
+                .overlay {
+                    Image("dialog-bottom-wave-background")
+                        .resizable()
+                        .scaledToFill()
                 }
-                .padding(.bottom, 28)
+                .clipped()
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .ignoresSafeArea()
 
-                innerCard
+            // The panel scrolls over the fixed wave when it doesn't fit; bottom inset keeps it clear of the wave.
+            ScrollView {
+                VStack(spacing: 0) {
+                    Image(rebrandable: "Logo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 44, height: 44)
+                        .padding(.top, 24)
+                        .padding(.bottom, 12)
+
+                    HStack(spacing: 8) {
+                        BadgeView(text: UserText.cookiePopupProtectionOptInBadge)
+                        Text(UserText.cookiePopupProtectionOptInHeader.uppercased())
+                            .font(.system(size: 13, weight: .semibold))
+                            .tracking(0.6)
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                    }
+                    .padding(.bottom, 28)
+
+                    innerCard
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 24)
+            // Don't scroll/bounce when the content already fits.
+            .bounceBasedOnSizeIfAvailable()
         }
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
-        // Don't scroll/bounce when the content already fits.
-        .bounceBasedOnSizeIfAvailable()
     }
 
     private var innerCard: some View {
@@ -165,6 +183,10 @@ struct CookiePopupProtectionOptInView: View {
                 .padding(.bottom, 28)
         }
         .padding(.horizontal, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(designSystemColor: .backgroundSheets))
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color(designSystemColor: .accentPrimary).opacity(0.3), lineWidth: 1)

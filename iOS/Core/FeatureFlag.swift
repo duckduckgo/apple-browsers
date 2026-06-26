@@ -850,7 +850,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .staleFaviconCleanup:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.staleFaviconCleanup))
         case .aiChatTabSwitcherRichCard:
-            Config(source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .syncScopedAccessCredentials:
             Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
         case .syncCanUseV2ConnectFlow:

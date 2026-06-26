@@ -32,6 +32,7 @@ final class FloatingDomainCapsuleController {
         label.textAlignment = .center
         label.lineBreakMode = .byTruncatingMiddle
         label.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        label.isAccessibilityElement = false
         return label
     }()
     private var topConstraint: NSLayoutConstraint?
@@ -128,6 +129,7 @@ final class FloatingDomainCapsuleController {
         if domainLabel.text != domain {
             domainLabel.text = domain
         }
+        button.accessibilityLabel = domain
 
         button.isHidden = false
         button.alpha = targetAlpha

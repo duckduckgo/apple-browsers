@@ -104,7 +104,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable?
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
-    func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
+    @MainActor func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatSelectionContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
     var selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never> { get }
@@ -277,7 +277,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         messageHandling.getDataForMessageType(.nativePrompt)
     }
 
-    func getAIChatPageContext(params: Any, message: any UserScriptMessage) -> Encodable? {
+    @MainActor
+    func getAIChatPageContext(params: Any, message: any UserScriptMessage) async -> Encodable? {
         guard let payload: GetPageContext = DecodableHelper.decode(from: params) else {
             return nil
         }
@@ -286,18 +287,55 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         // On an explicit user action (Ask-About-Page chip or tapping a suggestion), the user wants
         // the page CONTENT attached. If we only have a signals-only payload (auto-attach off) or no
-        // context, trigger a fresh collection; the full content arrives via the submit push.
+        // context, trigger a fresh collection and await it so the content is returned directly in
+        // this response instead of arriving later via the submit push.
         if payload.reason == "userAction" {
             let hasAttachedContent = pageContext != nil
                 && pageContext?.attached != false
                 && !(pageContext?.content.isEmpty ?? true)
             if !hasAttachedContent {
-                pageContextRequestedSubject.send()
-                return PageContextResponse(pageContext: nil)
+                let collected = await requestPageContextAndWait()
+                return PageContextResponse(pageContext: collected)
             }
         }
 
         return PageContextResponse(pageContext: pageContext)
+    }
+
+    /// Triggers a fresh page-context collection and awaits the collected result, so
+    /// `getAIChatPageContext` can return the content directly via request/response instead of
+    /// returning `nil` and relying on the later `submitAIChatPageContext` push. The pushed context
+    /// arrives back through `pageContextSubject`; we subscribe before firing the request so a fast
+    /// collection can't slip through, and race the result against `timeout`. The submit push still
+    /// fires (it serves auto-collect/navigation flows), so the FE may also receive it that way.
+    /// Mirrors `PageContextUserScript.collectAndWait`.
+    @MainActor
+    private func requestPageContextAndWait(timeout: TimeInterval = 5) async -> AIChatPageContextData? {
+        let collectedContext = AsyncStream<AIChatPageContextData?> { continuation in
+            var cancellable: AnyCancellable?
+            cancellable = pageContextSubject
+                .first()
+                .sink { result in
+                    continuation.yield(result)
+                    continuation.finish()
+                }
+            continuation.onTermination = { _ in cancellable?.cancel() }
+            pageContextRequestedSubject.send()
+        }
+
+        return await withTaskGroup(of: AIChatPageContextData?.self) { group in
+            group.addTask {
+                for await result in collectedContext { return result }
+                return nil
+            }
+            group.addTask {
+                try? await Task.sleep(interval: timeout)
+                return nil
+            }
+            let result = await group.next() ?? nil
+            group.cancelAll()
+            return result
+        }
     }
 
     func getAIChatSelectionContext(params: Any, message: any UserScriptMessage) -> Encodable? {

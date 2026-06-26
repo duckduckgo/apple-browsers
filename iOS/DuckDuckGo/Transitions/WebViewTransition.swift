@@ -107,6 +107,31 @@ class FromWebViewTransition: WebViewTransition {
         imageView.frame = imageContainer.bounds
         imageView.image = preview
 
+        // Duck.ai tabs land on a rich card, not a screenshot. Crossfade a snapshot of the
+        // destination cell over the webview preview so the shrink ends on matching content
+        // instead of popping from screenshot to card. Gated on the rich-card flag: with it off
+        // the AI cell is a screenshot, so there's nothing to crossfade to
+        var cellSnapshot: UIView?
+        if tab.isAITab, mainViewController.featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) {
+            tabSwitcherViewController.collectionView.layoutIfNeeded()
+            if let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
+                // Force the .image thumbnail in synchronously — its async load won't finish
+                // before snapshotView captures the cell.
+                cell.prepareForSnapshot()
+                let currentBorderHidden = cell.border.isHidden
+                cell.border.isHidden = true
+                if let snapshot = cell.snapshotView(afterScreenUpdates: true) {
+                    snapshot.frame = imageContainer.bounds
+                    snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                    snapshot.alpha = 0
+                    imageContainer.addSubview(snapshot)
+                    cellSnapshot = snapshot
+                }
+                cell.border.isHidden = currentBorderHidden
+            }
+               
+        }
+
         UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
 
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
@@ -119,8 +144,14 @@ class FromWebViewTransition: WebViewTransition {
             UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.7) {
                 self.tabSwitcherViewController.view.alpha = 1
             }
-            
-            if !self.tabSwitcherSettings.isGridViewEnabled {
+
+            if let cellSnapshot {
+                // Crossfade webview preview out / cell snapshot in over the first half.
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.5) {
+                    self.imageView.alpha = 0
+                    cellSnapshot.alpha = 1
+                }
+            } else if !self.tabSwitcherSettings.isGridViewEnabled {
                 UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.5) {
                     self.imageView.alpha = 0
                 }

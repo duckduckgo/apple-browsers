@@ -1,0 +1,40 @@
+{
+    "m_malicious-site-protection_error-page-shown": {
+        "description": "Fires when the Malicious Site Protection error page is shown to the user, blocking a navigation to a known phishing, malware, or scam site.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "category",
+                "description": "Threat category that triggered the error page.",
+                "type": "string",
+                "enum": ["phishing", "malware", "scam"]
+            },
+            {
+                "key": "clientSideHit",
+                "description": "Whether the threat was detected client-side (true) or via the matches API (false). Omitted when not applicable.",
+                "type": "boolean",
+                "enum": [true, false]
+            }
+        ]
+    },
+    "m_malicious-site-protection_leave-site": {
+        "description": "Fires when the user taps \"Leave Site\" on the Malicious Site Protection error page.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "category",
+                "description": "Threat category of the error page the user left.",
+                "type": "string",
+                "enum": ["phishing", "malware", "scam"]
+            }
+        ]
+    }
+}

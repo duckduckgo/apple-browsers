@@ -337,10 +337,10 @@ final class PageContextTabExtension {
         case keepExistingContext
     }
 
-    private func navigationAction(autoCollectEnabled: Bool, contextConsumed: Bool) -> NavigationContextAction {
+    private func navigationAction(autoCollectEnabled: Bool, contextConsumed: Bool, fromAttachablePage: Bool = true) -> NavigationContextAction {
         if autoCollectEnabled {
             return .collectNewContext
-        } else if contextConsumed {
+        } else if contextConsumed || !fromAttachablePage {
             return .sendNavigationSignal
         } else {
             return .keepExistingContext
@@ -352,15 +352,26 @@ final class PageContextTabExtension {
     private func handleNavigationForMultipleContexts(from previousContent: Tab.TabContent?, to newContent: Tab.TabContent) {
         guard featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
               case .url(let newURL, _, _) = newContent,
-              case .url(let oldURL, _, _) = previousContent,
-              newURL != oldURL,
               let session = aiChatSessionStore.sessions[tabID],
               session.state.presentationMode != .hidden,
               session.chatViewController != nil else {
             return
         }
 
-        switch navigationAction(autoCollectEnabled: isContextCollectionEnabled, contextConsumed: hasContextBeenConsumedByChat) {
+        // When the previous page was also a URL, skip if the URL hasn't changed.
+        // When coming from a non-URL page (NTP, settings, etc.) always proceed —
+        // the attachability just changed from false to true, so the sidebar needs a signal.
+        let previousWasURL: Bool
+        if case .url(let oldURL, _, _) = previousContent {
+            guard oldURL != newURL else { return }
+            previousWasURL = true
+        } else {
+            previousWasURL = false
+        }
+
+        switch navigationAction(autoCollectEnabled: isContextCollectionEnabled,
+                                contextConsumed: hasContextBeenConsumedByChat,
+                                fromAttachablePage: previousWasURL) {
         case .collectNewContext:
             collectPageContextIfNeeded()
         case .sendNavigationSignal:

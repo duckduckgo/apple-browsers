@@ -23,7 +23,6 @@ public typealias DBPFeatureFlagging = RemoteBrokerDeliveryFeatureFlagging
     & ForegroundRunningFeatureFlagging
     & ContinuedProcessingFeatureFlagging
     & WebViewUserAgentFeatureFlagging
-    & ContentBlockingFeatureFlagging
     & OptOutRetryErrorFeatureFlagging
 
 public protocol RemoteBrokerDeliveryFeatureFlagging {
@@ -44,10 +43,6 @@ public protocol ContinuedProcessingFeatureFlagging {
 
 public protocol WebViewUserAgentFeatureFlagging {
     var isWebViewUserAgentOn: Bool { get }
-}
-
-public protocol ContentBlockingFeatureFlagging {
-    var isContentBlockingOn: Bool { get }
 }
 
 public protocol OptOutRetryErrorFeatureFlagging {

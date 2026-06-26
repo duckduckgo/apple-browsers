@@ -156,10 +156,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
-    var isContentBlockingOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpContentBlocking)
-    }
-
     var isOptOutRetryErrorFrequencyExperimentOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }

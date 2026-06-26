@@ -2125,7 +2125,6 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
-    public var isContentBlockingOn: Bool = false
     public let isOptOutRetryErrorFrequencyExperimentOn: Bool
     public let isFreemiumPIREnabled: Bool
 

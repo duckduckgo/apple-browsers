@@ -656,7 +656,6 @@ private struct FireDialogStyle {
     }
 }
 
-
 // Corner radius configuration for section rows
 private enum RowCornerRadius {
     case top

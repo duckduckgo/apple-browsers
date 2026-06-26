@@ -74,6 +74,9 @@ final class DuckAIGridCardView: UIView {
         thumbnailImageView.image = image
     }
 
+    /// Whether the `.image` thumbnail is already populated — lets the snapshot path skip a redundant load.
+    var hasThumbnail: Bool { thumbnailImageView.image != nil }
+
     /// Resets to the default light appearance. Called on cell reuse so a recycled `.voice` (dark)
     /// card never lingers in dark state if shown before the next `configure(with:)`.
     func resetAppearance() {

@@ -125,6 +125,7 @@ class TabViewCell: UICollectionViewCell {
     /// File-ref token guarding the in-flight thumbnail load.
     private var currentThumbnailFileRef: String?
     private var thumbnailLoadTask: Task<Void, Never>?
+    private weak var thumbnailLoader: DuckAIThumbnailLoading?
 
     weak var previewAspectRatio: NSLayoutConstraint?
     var previewTopConstraint: NSLayoutConstraint?
@@ -611,12 +612,24 @@ class TabViewCell: UICollectionViewCell {
         thumbnailLoadTask?.cancel()
         thumbnailLoadTask = nil
         currentThumbnailFileRef = nil
+        thumbnailLoader = nil
+    }
+
+    /// Synchronously loads the `.image` thumbnail into the card so a snapshot taken during the
+    /// tab-switcher transition includes it. No-op for non-image cards or once it's already set.
+    func prepareForSnapshot() {
+        guard let fileRef = currentThumbnailFileRef,
+              let loader = thumbnailLoader,
+              richCardContainer?.hasThumbnail == false,
+              let image = loader.loadImageSynchronously(fileRef: fileRef) else { return }
+        richCardContainer?.setThumbnail(image)
     }
 
     private func startThumbnailLoadIfNeeded(for item: DuckAIGridItem,
                                             loader: DuckAIThumbnailLoading?) {
         guard case .image(_, let fileRef) = item, let loader else { return }
         currentThumbnailFileRef = fileRef
+        thumbnailLoader = loader
         thumbnailLoadTask = Task { @MainActor [weak self, weak loader] in
             guard let loader else { return }
             let image = await loader.loadImage(fileRef: fileRef)

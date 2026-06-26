@@ -41,9 +41,9 @@
     },
     "consentHeuristicEnabled": {
         "key": "consentHeuristicEnabled",
-        "description": "0 when the consent heuristic feature is disabled, 1 when it is enabled",
-        "type": "integer",
-        "enum": [0, 1]
+        "description": "The mode of the consent heuristic feature: '', off, reject, tier1, tier2",
+        "type": "string",
+        "enum": ["", "off", "reject", "tier1", "tier2"]
     },
     "isInternalUser": {
         "key": "is_internal_user",

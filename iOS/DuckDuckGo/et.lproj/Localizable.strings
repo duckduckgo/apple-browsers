@@ -3947,7 +3947,7 @@
 "settings.cookie.pop-up-protection.protection" = "Küpsiste hüpikakna kaitse";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo proovib valida kõige privaatsemad saadaolevad seaded ja peidab need hüpikaknad sinu eest.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo proovib valida kõige privaatsemad saadaolevad seaded ja peidab need hüpikaknad sinu eest.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Halda küpsiste hüpikaknaid";

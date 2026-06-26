@@ -359,6 +359,11 @@ private struct CPMDebugScreensView: View {
             }))
             weakController = controller
             controller.isModalInPresentation = true
+            // iPad: present as a fixed-size form sheet instead of a full-height page sheet.
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                controller.modalPresentationStyle = .formSheet
+                controller.preferredContentSize = CGSize(width: 480, height: 744)
+            }
             window.rootViewController?.present(controller, animated: true)
         }
 

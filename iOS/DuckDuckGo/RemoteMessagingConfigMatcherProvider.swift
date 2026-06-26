@@ -46,7 +46,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         winBackOfferService: WinBackOfferService,
         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil,
         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
-        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+        idleReturnEligibilityManager: IdleReturnEligibilityManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -59,6 +60,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.dbpRunPrerequisitesDelegate = dbpRunPrerequisitesDelegate
         self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -72,6 +74,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+    let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
         var bookmarksCount = 0
@@ -161,6 +164,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
         }.map(\.rawValue)
 
+        let ntpAfterIdleState = idleReturnEligibilityManager.ntpAfterIdleState().rawValue
+
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager,
@@ -192,7 +197,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isFreemiumPIREligible: isFreemiumPIREligible,
                                                        isFreemiumPIRActivated: didActivateFreemiumPIR,
                                                        freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
-                                                       isCurrentPIRUser: isCurrentPIRUser),
+                                                       isCurrentPIRUser: isCurrentPIRUser,
+                                                       ntpAfterIdleState: ntpAfterIdleState),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds

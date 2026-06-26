@@ -102,6 +102,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     var onConfirmAndDeleteAllData: (() -> Void)?
 
     let useSimplifiedLayout: Bool
+    let useSimplifiedLayoutV2: Bool
     let syncSetupExperimentPixels: SyncSetupExperimentPixelFiring
 
     // For some reason, on iOS 14, the viewDidLoad wasn't getting called so do some setup here
@@ -142,7 +143,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         self.viewModel = viewModel
 
         self.useSimplifiedLayout = (featureFlagger.resolveCohort(for: FeatureFlag.simplifiedSyncSetupExperiment) as? FeatureFlag.SimplifiedSyncSetupExperimentCohort) == .treatment
-        let rootView = SyncSettingsRootView(model: viewModel, useSimplifiedLayout: useSimplifiedLayout)
+        self.useSimplifiedLayoutV2 = featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
+        let rootView = SyncSettingsRootView(model: viewModel, useSimplifiedLayout: useSimplifiedLayout, useSimplifiedLayoutV2: useSimplifiedLayoutV2)
 
         super.init(rootView: rootView)
 

@@ -3602,6 +3602,9 @@
 "preserveLogins.remove.all.ok" = "ОК";
 
 /* No comment provided by engineer. */
+"Previews" = "Прегледи";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Основно/първо действие";
 
 /* No comment provided by engineer. */
@@ -3847,6 +3850,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Настройки за Assist при търсене";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Никога";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Често";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "При поискване";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Понякога";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Assist при търсене";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Автоматично изпращане на съдържанието на страницата до Duck.ai";
 
@@ -3856,11 +3874,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Предложения за чат";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Използвай DuckDuckGo без AI";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Деактивира Duck.ai, скрива подпомогнатите от AI отговори в търсенето и филтрира известни спам AI сайтове в резултатите от търсенето на изображения.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "AI в момента е деактивиран в браузъра, затова вече няма да виждате подпомогнати от AI отговори и ще виждате по-малко генерирани от AI изображения в резултатите от търсенето на изображения.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Скриване на изображения, генерирани от изкуствен интелект";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Филтрира в резултатите от търсенето изображенията, генерирани от изкуствен интелект";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Изключено";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Включено";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Филтрира известни спам AI сайтове в резултатите от търсенето на изображения. [Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Винаги включено";

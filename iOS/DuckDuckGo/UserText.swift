@@ -2289,7 +2289,23 @@ public struct UserText {
 
     public static let settingsAiFeaturesHideAIGeneratedImages = NSLocalizedString("settings.aifeatures.hide.ai.generated.images", value: "Hide AI-Generated Images", comment: "Title of hide AI-generated images settings link")
 
-    public static let settingsAiFeaturesHideAIGeneratedImagesSubtitle = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.subtitle", value: "Filters out AI-Generated images from image search results", comment: "Description of what the hide AI-generated images feature does")
+    public static let settingsAiFeaturesHideAIGeneratedImagesSubtitle = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.subtitle", value: "Filters out known AI spam sites from image search results. [Learn more](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)", comment: "Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link)")
+
+    public static let settingsAiFeaturesSearchAssistTitle = NSLocalizedString("settings.aifeatures.assist.title", value: "Search Assist", comment: "Title of the native Search Assist setting control")
+
+    public static let settingsAiFeaturesSearchAssistNever = NSLocalizedString("settings.aifeatures.assist.never", value: "Never", comment: "Search Assist frequency option: never show AI-assisted answers")
+    public static let settingsAiFeaturesSearchAssistOnDemand = NSLocalizedString("settings.aifeatures.assist.ondemand", value: "On demand", comment: "Search Assist frequency option: show AI-assisted answers on demand")
+    public static let settingsAiFeaturesSearchAssistSometimes = NSLocalizedString("settings.aifeatures.assist.sometimes", value: "Sometimes", comment: "Search Assist frequency option: sometimes show AI-assisted answers")
+    public static let settingsAiFeaturesSearchAssistOften = NSLocalizedString("settings.aifeatures.assist.often", value: "Often", comment: "Search Assist frequency option: often show AI-assisted answers")
+
+    public static let settingsAiFeaturesHideAIGeneratedImagesOn = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.on", value: "On", comment: "Hide AI-Generated Images option: on (images hidden)")
+    public static let settingsAiFeaturesHideAIGeneratedImagesOff = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.off", value: "Off", comment: "Hide AI-Generated Images option: off (images shown)")
+
+    public static let settingsAiFeaturesDisableAIFeatures = NSLocalizedString("settings.aifeatures.disable.all", value: "Use DuckDuckGo Without AI", comment: "Button that turns off all AI features")
+    public static let settingsAiFeaturesDisableAllFooter = NSLocalizedString("settings.aifeatures.disable.all.footer", value: "Disables Duck.ai, hides AI-assisted answers in search, and filters known AI spam sites in image search results.", comment: "Footer text below the disable all AI features button")
+    public static let settingsAiFeaturesDisableAllFooterDisabled = NSLocalizedString("settings.aifeatures.disable.all.footer.disabled", value: "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers and see fewer AI-generated images in image search results.", comment: "Footer text shown once all AI features are already disabled")
+
+    public static let settingsDuckAiSectionHeader = NSLocalizedString("settings.aifeatures.duckai.section.header", value: "Duck.ai", comment: "Section header for the Duck.ai settings group on the AI Features screen")
 
     public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Duck.ai Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
 

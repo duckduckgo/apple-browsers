@@ -3602,6 +3602,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Previews" = "プレビュー";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "プライマリ／ファーストアクション";
 
 /* No comment provided by engineer. */
@@ -3847,6 +3850,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist設定";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "なし";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "頻繁";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "オンデマンド";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "ときどき";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Search Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "ページのコンテンツをDuck.aiに自動送信";
 
@@ -3856,11 +3874,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "チャットの提案";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "AIなしでDuckDuckGoを使用";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Duck.aiを無効にすると、AIを使った回答は検索に表示されなくなり、画像検索結果から既知のAIスパムサイトが除外されます。";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "現在、ブラウザではAIが無効にされているため、AIを使った回答は表示されなくなり、画像検索結果に表示されるAI生成画像の数は少なくなります。";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "AI生成画像を非表示にする";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "画像検索結果からAI生成画像を除外";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "オフ";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "オン";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "画像検索結果から既知のAIスパムサイトが除外されます。[詳細を表示](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "常にオン";

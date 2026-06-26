@@ -29,14 +29,18 @@ public struct SyncSettingsRootView: View {
     @ObservedObject var model: SyncSettingsViewModel
 
     private let useSimplifiedLayout: Bool
+    private let useSimplifiedLayoutV2: Bool
 
-    public init(model: SyncSettingsViewModel, useSimplifiedLayout: Bool) {
+    public init(model: SyncSettingsViewModel, useSimplifiedLayout: Bool, useSimplifiedLayoutV2: Bool) {
         self.model = model
         self.useSimplifiedLayout = useSimplifiedLayout
+        self.useSimplifiedLayoutV2 = useSimplifiedLayoutV2
     }
 
     public var body: some View {
-        if useSimplifiedLayout {
+        if useSimplifiedLayoutV2 {
+            SimplifiedSyncSettingsViewV2(model: model)
+        } else if useSimplifiedLayout {
             SimplifiedSyncSettingsView(model: model)
         } else {
             SyncSettingsView(model: model)

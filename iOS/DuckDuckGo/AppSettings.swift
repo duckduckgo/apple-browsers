@@ -20,6 +20,7 @@
 import Bookmarks
 import Foundation
 import Onboarding
+import WebExtensions
 
 enum AutoplayBlockingMode: String, CaseIterable, CustomStringConvertible {
     case allowAll
@@ -124,6 +125,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     func isWidgetInstalled() async -> Bool
     
     var autoconsentEnabled: Bool { get set }
+    var cookiePopupPreference: CookiePopupPreference { get set }
 
     var crashCollectionOptInStatus: CrashCollectionOptInStatus { get set }
     var crashCollectionShouldRevertOptedInStatusTrigger: Int { get set }

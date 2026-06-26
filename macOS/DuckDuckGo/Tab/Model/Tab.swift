@@ -565,6 +565,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     let webViewDidReceiveRedirectPublisher = PassthroughSubject<Void, Never>()
     let webViewDidFailNavigationPublisher = PassthroughSubject<Void, Never>()
     let webViewRenderingProgressDidChangePublisher = PassthroughSubject<Void, Never>()
+    /// Fires on same-document (SPA) navigations, which `webViewDidFinishNavigationPublisher` filters out.
+    let webViewDidPerformSameDocumentNavigationPublisher = PassthroughSubject<Void, Never>()
 
     // MARK: - Properties
 
@@ -1505,6 +1507,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         guard navigation.isCurrent else { return }
 
         invalidateInteractionStateData()
+        webViewDidPerformSameDocumentNavigationPublisher.send()
     }
 
     @MainActor

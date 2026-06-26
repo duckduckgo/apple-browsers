@@ -75,6 +75,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534806
     case heuristicAction
 
+    /// Cookie Pop-up Preference picker in settings
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215960699028461?focus=true
+    case cookiePopupPreferenceSetting
+
     // Duckplayer 'Web based' UI
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609457246
     case duckPlayer
@@ -117,9 +121,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/task/1213609085394793
     case dbpWebViewUserAgent
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215031617586670
-    case dbpContentBlocking
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
@@ -228,17 +229,15 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214946884020610?focus=true
     case vpnExcludeCGNATToggle
 
+    /// Toggle for the Copy VPN Diagnostics button in the VPN status screen.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
+    case vpnShowCopyDiagnosticsButton
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213227027157584
-    case iPadDuckaiOnTab
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213313932650457
-    case iPadAIToggle
 
     /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
     /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
@@ -318,6 +317,13 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInput
 
+    /// Forward-only new-user cutoff for the unified toggle input rollout. On by default; ship a
+    /// privacy-config entry disabling it to stop *new* (un-granted) users from receiving UTI
+    /// without revoking it from anyone already granted. Distinct from `unifiedToggleInput`, which
+    /// is the full kill switch. See `UnifiedToggleInputFeature`.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
+    case unifiedToggleInputIncludeNewUsers
+
     /// Production kill switch (on by default) for web-scroll-freeze observability: the passive scroll-failure
     /// observer (bystander recognizer) + the symptom/mechanism pixels. Ship a privacy-config entry to roll back.
     case webScrollFreezeObservability
@@ -326,6 +332,9 @@ public enum FeatureFlag: String {
     /// `webScrollFreezeObservability` so the production observer ships without the capture.
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1215895676655232
     case webScrollFreezeCapture
+
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1214241865640178
+    case webScrollFreezeAutoRecovery
 
     /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by
     /// default; ship a privacy-config entry to roll back. See
@@ -428,9 +437,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213763338305579?focus=true
     case aiChatContextualFireButton
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213809475913723?focus=true
-    case minimalChromeInLandscape
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
 
@@ -438,6 +444,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215106459483563?focus=true
     case duckAINativeStoragePathMigration
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215920422347500?focus=true
+    case duckAINativeStorageMigrationLockedLaunchFix
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
@@ -477,6 +486,9 @@ public enum FeatureFlag: String {
     /// Gates the Duck.ai shortcut in the iPad browser chrome (tabs bar).
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
     case aiChatChromeShortcutIPad
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216000794365770?focus=true
+    case iPadDuckAIBarControls
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
     case floatingUI
@@ -577,6 +589,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.onByDefault), supportsLocalOverriding: false)
         case .heuristicAction:
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction))
+        case .cookiePopupPreferenceSetting:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupPreferenceSetting))
         case .duckPlayer:
             Config(source: .remoteReleasable(DuckPlayerSubfeature.enableDuckPlayer), supportsLocalOverriding: false)
         case .duckPlayerOpenInNewTab:
@@ -603,8 +617,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.freemiumPIR))
         case .dbpWebViewUserAgent:
             Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true)
-        case .dbpContentBlocking:
-            Config(source: .remoteReleasable(DBPSubfeature.contentBlocking))
         case .crashReportOptInStatusResetting:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting), supportsLocalOverriding: false)
         case .syncSeamlessAccountSwitching:
@@ -673,14 +685,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
         case .vpnExcludeCGNATToggle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.excludeCGNAT))
+        case .vpnShowCopyDiagnosticsButton:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.showCopyDiagnosticsButton))
         case .forgetAllInSettings:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .fullDuckAIMode:
             Config(source: .remoteReleasable(AIChatSubfeature.fullDuckAIMode))
-        case .iPadDuckaiOnTab:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadDuckaiOnTab))
-        case .iPadAIToggle:
-            Config(source: .remoteReleasable(AIChatSubfeature.iPadAIChatToggle))
+        case .iPadDuckAIBarControls:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadDuckAIBarControls))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .onboardingDuckAIFlow:
@@ -726,17 +738,23 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSuggestions:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled))
         case .aiChatNativeChatHistory:
-            Config(defaultValue: .disabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.nativeChatHistory))
+            Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.nativeChatHistory))
         case .aiChatContextualSheetImprovements:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualSheetImprovements))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .unifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.unifiedToggleInput))
+        case .unifiedToggleInputIncludeNewUsers:
+            Config(defaultValue: .enabled,
+                   source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputIncludeNewUsers),
+                   supportsLocalOverriding: false)
         case .webScrollFreezeObservability:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeObservability))
         case .webScrollFreezeCapture:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeCapture))
+        case .webScrollFreezeAutoRecovery:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeAutoRecovery))
         case .aiChatTabHideToggle:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .freeTrialConversionWideEvent:
@@ -762,7 +780,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingRebranding:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.onboardingRebranding))
         case .appRebranding:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding))
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding), supportsLocalOverriding: true)
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled))
         case .webExtensionLightweightReload:
@@ -797,14 +815,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .aiChatContextualFireButton:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualFireButton))
-        case .minimalChromeInLandscape:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.minimalChromeInLandscape))
         case .bottomBarViewportFixedElementsWorkaround:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.bottomBarViewportFixedElementsWorkaround))
         case .aiChatNativeStorage:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage))
         case .duckAINativeStoragePathMigration:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeStoragePathMigration))
+        case .duckAINativeStorageMigrationLockedLaunchFix:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeStorageMigrationLockedLaunchFix))
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess))
         case .aiFeaturesNativeControls:

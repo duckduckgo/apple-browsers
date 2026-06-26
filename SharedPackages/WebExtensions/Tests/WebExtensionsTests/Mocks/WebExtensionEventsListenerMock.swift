@@ -23,6 +23,7 @@ import WebKit
 final class WebExtensionEventsListenerMock: WebExtensionEventsListening {
 
     var controller: WKWebExtensionController?
+    var droppedCallbacksCount = 0
 
     var didOpenWindowCalled = false
     func didOpenWindow(_ window: WKWebExtensionWindow) {

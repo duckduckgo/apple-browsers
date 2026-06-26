@@ -592,38 +592,72 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         }
     }
 
+    // MARK: - getCookiePopupPreference
+
+    func testWhenGetCookiePopupPreferenceThenReturnsPreference() async {
+        mockAutoconsentPreferences.cookiePopupPreference = .max
+        let message = createMessage(method: "getCookiePopupPreference")
+
+        let result = await handler.handleMessage(message)
+
+        if case .success(let response) = result {
+            let dict = response as? [String: String]
+            XCTAssertEqual(dict?["preference"], "max")
+        } else {
+            XCTFail("Expected success result")
+        }
+    }
+
+    func testWhenGetCookiePopupPreferenceIsDoNotBlockThenReturnsDoNotBlock() async {
+        mockAutoconsentPreferences.cookiePopupPreference = .off
+        let message = createMessage(method: "getCookiePopupPreference")
+
+        let result = await handler.handleMessage(message)
+
+        if case .success(let response) = result {
+            let dict = response as? [String: String]
+            XCTAssertEqual(dict?["preference"], "off")
+        } else {
+            XCTFail("Expected success result")
+        }
+    }
+
     // MARK: - isAutoconsentSettingEnabled
 
     func testWhenIsAutoconsentSettingEnabledAndPreferenceIsTrueThenReturnsEnabled() async {
-        mockAutoconsentPreferences.isAutoconsentEnabled = true
+        mockAutoconsentPreferences.cookiePopupPreference = .default
         let message = createMessage(method: "isAutoconsentSettingEnabled")
 
         let result = await handler.handleMessage(message)
 
         if case .success(let response) = result {
-            let dict = response as? [String: Bool]
-            XCTAssertEqual(dict?["enabled"], true)
+            let dict = response as? [String: Any]
+            XCTAssertEqual(dict?["enabled"] as? Bool, true)
+            XCTAssertEqual(dict?["userPreference"] as? String, "default")
+            assertFeatureFlags(dict?["featureFlags"] as? [String: Bool])
         } else {
             XCTFail("Expected success result")
         }
     }
 
     func testWhenIsAutoconsentSettingEnabledAndPreferenceIsFalseThenReturnsDisabled() async {
-        mockAutoconsentPreferences.isAutoconsentEnabled = false
+        mockAutoconsentPreferences.cookiePopupPreference = .off
         let message = createMessage(method: "isAutoconsentSettingEnabled")
 
         let result = await handler.handleMessage(message)
 
         if case .success(let response) = result {
-            let dict = response as? [String: Bool]
-            XCTAssertEqual(dict?["enabled"], false)
+            let dict = response as? [String: Any]
+            XCTAssertEqual(dict?["enabled"] as? Bool, false)
+            XCTAssertEqual(dict?["userPreference"] as? String, "off")
+            assertFeatureFlags(dict?["featureFlags"] as? [String: Bool])
         } else {
             XCTFail("Expected success result")
         }
     }
 
     func testWhenIsAutoconsentSettingEnabledWithParametersThenIgnoresParamsAndReturnsCorrectly() async {
-        mockAutoconsentPreferences.isAutoconsentEnabled = true
+        mockAutoconsentPreferences.cookiePopupPreference = .default
         let message = createMessage(
             method: "isAutoconsentSettingEnabled",
             params: ["someKey": "someValue"]
@@ -632,8 +666,46 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         let result = await handler.handleMessage(message)
 
         if case .success(let response) = result {
-            let dict = response as? [String: Bool]
-            XCTAssertEqual(dict?["enabled"], true)
+            let dict = response as? [String: Any]
+            XCTAssertEqual(dict?["enabled"] as? Bool, true)
+            XCTAssertEqual(dict?["userPreference"] as? String, "default")
+            assertFeatureFlags(dict?["featureFlags"] as? [String: Bool])
+        } else {
+            XCTFail("Expected success result")
+        }
+    }
+
+    func testWhenIsAutoconsentSettingEnabledAndPreferenceIsMaxThenReturnsEnabledWithMaxPreference() async {
+        mockAutoconsentPreferences.cookiePopupPreference = .max
+        let message = createMessage(method: "isAutoconsentSettingEnabled")
+
+        let result = await handler.handleMessage(message)
+
+        if case .success(let response) = result {
+            let dict = response as? [String: Any]
+            XCTAssertEqual(dict?["enabled"] as? Bool, true)
+            XCTAssertEqual(dict?["userPreference"] as? String, "max")
+            assertFeatureFlags(dict?["featureFlags"] as? [String: Bool])
+        } else {
+            XCTFail("Expected success result")
+        }
+    }
+
+    func testWhenIsAutoconsentSettingEnabledThenReturnsAllSubfeatureFlags() async {
+        mockAutoconsentPreferences.cookiePopupPreference = .default
+        mockPrivacyConfiguration.isSubfeatureEnabledCheck = { subfeature, _ in
+            subfeature.rawValue == AutoconsentSubfeature.heuristicAction.rawValue
+        }
+        let message = createMessage(method: "isAutoconsentSettingEnabled")
+
+        let result = await handler.handleMessage(message)
+
+        if case .success(let response) = result {
+            let dict = response as? [String: Any]
+            assertFeatureFlags(
+                dict?["featureFlags"] as? [String: Bool],
+                enabledSubfeatures: [AutoconsentSubfeature.heuristicAction.rawValue]
+            )
         } else {
             XCTFail("Expected success result")
         }
@@ -692,6 +764,21 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 
     // MARK: - Helper Methods
 
+    private func assertFeatureFlags(
+        _ featureFlags: [String: Bool]?,
+        enabledSubfeatures: [String] = []
+    ) {
+        let expectedSubfeatures = AutoconsentSubfeature.allCases.map(\.rawValue)
+
+        XCTAssertNotNil(featureFlags)
+        guard let featureFlags else { return }
+
+        XCTAssertEqual(Set(featureFlags.keys), Set(expectedSubfeatures))
+        for subfeature in expectedSubfeatures {
+            XCTAssertEqual(featureFlags[subfeature], enabledSubfeatures.contains(subfeature))
+        }
+    }
+
     private func createMessage(
         method: String,
         params: [String: Any]? = nil
@@ -711,5 +798,5 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 
 @available(macOS 15.4, iOS 18.4, *)
 final class MockAutoconsentPreferences: AutoconsentPreferencesProviding {
-    var isAutoconsentEnabled: Bool = false
+    var cookiePopupPreference: CookiePopupPreference = .off
 }

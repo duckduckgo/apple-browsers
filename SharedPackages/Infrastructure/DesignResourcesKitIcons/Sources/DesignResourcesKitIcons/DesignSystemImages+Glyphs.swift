@@ -124,6 +124,7 @@ public extension DesignSystemImages {
             public static var subscription: DesignSystemImage { .init(resource: .subscription12) }
             public static var sync: DesignSystemImage { .init(resource: .sync12) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew12) }
+            public static var textSelectedRight: DesignSystemImage { .init(resource: .textSelectedRight12) }
             public static var thumbsDown: DesignSystemImage { .init(resource: .thumbsDown12) }
             public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUp12) }
             public static var toolbar: DesignSystemImage { .init(resource: .toolbar12) }

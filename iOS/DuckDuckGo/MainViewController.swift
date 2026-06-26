@@ -262,8 +262,8 @@ class MainViewController: UIViewController {
     var keyModifierFlags: UIKeyModifierFlags?
     var showKeyboardAfterFireButton: DispatchWorkItem?
 
-    // Duck.ai query experiment fire onboarding flow — see MainViewController+DuckAIExperiment.swift
-    var experimentDuckAIFireOnboardingFlow = ExperimentDuckAIFireOnboardingFlowContext()
+    // Duck.ai fire onboarding flow — see MainViewController+DuckAIFireOnboarding.swift
+    var duckAIFireOnboardingFlow = DuckAIFireOnboardingFlowContext()
 
     // Skip SERP flow (focusing on autocomplete logic) and prepare for new navigation when selecting search bar
     private var skipSERPFlow = true
@@ -342,7 +342,6 @@ class MainViewController: UIViewController {
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
-    private let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
     let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
@@ -353,6 +352,9 @@ class MainViewController: UIViewController {
     var unifiedToggleInputFloatingReturnKeyKeyboardBottomConstraint: NSLayoutConstraint?
     var unifiedToggleInputFloatingReturnKeyInputTopConstraint: NSLayoutConstraint?
     var aiChatTabChatHeaderView: AIChatTabChatHeaderView?
+
+    /// Tracks live Duck.ai voice sessions per tab. Created in `setUpDuckAIVoiceSessionTracker()`.
+    var duckAIVoiceSessionTracker: DuckAIVoiceSessionTracker?
 
     private var iPadAIChatQuery = ""
     /// Owns the iPad popover's suggestion decision + Duck.ai surface lifecycle (built in `loadSuggestionTray`).
@@ -439,7 +441,6 @@ class MainViewController: UIViewController {
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-        aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature(),
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         remoteMessagingImageLoader: RemoteMessagingImageLoading,
@@ -528,7 +529,6 @@ class MainViewController: UIViewController {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.aichatFullModeFeature = aichatFullModeFeature
-        self.aichatIPadTabFeature = aichatIPadTabFeature
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.privacyStats = privacyStats
@@ -633,6 +633,14 @@ class MainViewController: UIViewController {
             productSurfaceTelemetry: productSurfaceTelemetry)
     }()
 
+    /// Creates the voice-session tracker on launch so it catches sessions before the switcher opens.
+    /// Always created — the rich-card flag gates rendering (in the resolver), not tracking.
+    private func setUpDuckAIVoiceSessionTracker() {
+        duckAIVoiceSessionTracker = DuckAIVoiceSessionTracker(tabForWebView: { [weak self] webView in
+            self?.tabManager.controller(forWebView: webView)?.tabModel
+        })
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -647,10 +655,8 @@ class MainViewController: UIViewController {
                                                               mobileCustomization: mobileCustomization,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
-        if featureFlagger.isFeatureOn(.iPadAIToggle) {
-            viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
-            viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
-        }
+        viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
+        viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
@@ -671,6 +677,7 @@ class MainViewController: UIViewController {
         initTabButton()
         initBookmarksButton()
         setUpUnifiedToggleInputIfNeeded()
+        setUpDuckAIVoiceSessionTracker()
         configureStartupPresentation()
         previewsSource.prepare()
         addLaunchTabNotificationObserver()
@@ -830,7 +837,6 @@ class MainViewController: UIViewController {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aichatIPadTabFeature: aichatIPadTabFeature,
                                                       aiChatSettings: aiChatSettings,
                                                       aiChatSyncCleaner: aiChatSyncCleaner,
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
@@ -1838,19 +1844,19 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
         wakeLazyFireButtonAnimator()
 
-        let isExperimentDuckAIFireFlow = experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse ||
-            experimentDuckAIFireOnboardingFlow.state == .active
-        // Keep the experiment fire onboarding dialog visible until the burn action is confirmed.
-        if !isExperimentDuckAIFireFlow {
+        let isDuckAIFireOnboardingFlow = duckAIFireOnboardingFlow.state == .awaitingFirstResponse ||
+            duckAIFireOnboardingFlow.state == .active
+        // Keep the fire onboarding dialog visible until the burn action is confirmed.
+        if !isDuckAIFireOnboardingFlow {
             currentTab?.dismissContextualDaxFireDialog()
         }
         ViewHighlighter.hideAll()
 
-        if isExperimentDuckAIFireFlow {
-            // Keep this path scoped to the onboarding experiment: single "Delete This Chat" action only,
+        if isDuckAIFireOnboardingFlow {
+            // During the Duck.ai fire onboarding: single "Delete This Chat" action only,
             // whether the contextual dialog has already appeared or is still pending.
             contextualOnboardingPixelReporter.measureDuckAIFireButtonCTAAction()
-            presentExperimentDuckAIFireConfirmation()
+            presentDuckAIFireConfirmation()
             performCancel()
             return
         }
@@ -2175,6 +2181,7 @@ class MainViewController: UIViewController {
 
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
         guard let tab else { return }
+        WebScrollFreezeDebugTransitionLog.note("mainVC.tabTransition")
         previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
         previousTab?.tabModel.openedAfterIdle = false
         previousTab?.dismiss()
@@ -2243,6 +2250,7 @@ class MainViewController: UIViewController {
     private func addToContentContainer(controller: UIViewController) {
         viewCoordinator.contentContainer.isHidden = false
         addChild(controller)
+        WebScrollFreezeDebugTransitionLog.note("mainVC.contentContainer.swap")
         viewCoordinator.contentContainer.subviews.forEach { $0.removeFromSuperview() }
         viewCoordinator.contentContainer.addSubview(controller.view)
 
@@ -2376,7 +2384,7 @@ class MainViewController: UIViewController {
         let logoURL = logoURLForCurrentPage(tab: tab)
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
-        if tab.isAITab && (aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable) {
+        if tab.isAITab && (aichatFullModeFeature.isAvailable || DevicePlatform.isIpad) {
             // AI tabs use branding UI rather than the standard toggle setup.
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
@@ -2458,7 +2466,7 @@ class MainViewController: UIViewController {
         isUTIRotating = true
 
         let isKeyboardShowing = omniBar.isTextFieldEditing
-        if isKeyboardShowing && !AppWidthObserver.shared.isPad && minimalChromeSettings.isFeatureEnabled {
+        if isKeyboardShowing && !AppWidthObserver.shared.isPad {
             omniBar.barView.textField.suppressResignFirstResponder = true
         }
 
@@ -2475,7 +2483,6 @@ class MainViewController: UIViewController {
         }()
 
         let needsWidthUpdate = AppWidthObserver.shared.willResize(toWidth: size.width)
-            && (AppWidthObserver.shared.isPad || isInMinimalChromeLayout || minimalChromeSettings.isFeatureEnabled)
         if needsWidthUpdate {
             applyWidth(for: size)
         }
@@ -2503,6 +2510,8 @@ class MainViewController: UIViewController {
         } completion: { _ in
             toolbarSnapshot?.removeFromSuperview()
 
+            self.resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: isKeyboardShowing)
+
             self.omniBar.barView.textField.suppressResignFirstResponder = false
             if isKeyboardShowing {
                 self.omniBar.beginEditing(animated: false)
@@ -2529,6 +2538,14 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
     }
 
+    private func resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: Bool) {
+        // Rotation changes the bar geometry, so the scroll-hide state can't carry across it.
+        // Reset to revealed (editing and AI chrome manage their own layout).
+        if !self.isCurrentTabUsingUnifiedInputAIChrome, !wasKeyboardShowing {
+            self.resetBars(animated: false)
+        }
+    }
+
     private func deferredFireOrientationPixel() {
         orientationPixelWorker?.cancel()
         orientationPixelWorker = nil
@@ -2549,7 +2566,14 @@ class MainViewController: UIViewController {
             && (size.width > size.height)
     }
 
+    private var isApplyingWidth = false
+
     private func applyWidth(for size: CGSize? = nil) {
+        // Re-entrancy guard: a refreshOmniBar side-effect calls applyWidth() with no size
+        // mid-rotation, which reads stale view.bounds and re-applies the wrong chrome mode.
+        guard !isApplyingWidth else { return }
+        isApplyingWidth = true
+        defer { isApplyingWidth = false }
 
         if AppWidthObserver.shared.isLargeWidth {
             applyLargeWidth()
@@ -3119,7 +3143,7 @@ class MainViewController: UIViewController {
         NotificationCenter.default.publisher(for: .aiChatResponseReceived)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.showExperimentFireDialogAfterAIChatResponseIfReady()
+                self?.showFireDialogAfterAIChatResponseIfReady()
             }
             .store(in: &aiChatCancellables)
     }
@@ -3437,7 +3461,7 @@ class MainViewController: UIViewController {
                     files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     fromDeepLink: Bool = false) {
 
-        if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
+        if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
             openAIChatInTab(
                 query,
                 autoSend: autoSend,
@@ -3480,7 +3504,7 @@ class MainViewController: UIViewController {
     }
 
     private func openAIChatInVoiceMode(fromDeepLink: Bool = false) {
-        if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
+        if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
             openAIChatVoiceModeInTab(fromDeepLink: fromDeepLink)
         } else {
             aiChatViewControllerManager.openAIChatVoiceMode(on: self)
@@ -3589,7 +3613,7 @@ class MainViewController: UIViewController {
 
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
-    
+
     /// Executes the closure if the current tab is an AI tab
     private func performActionIfAITab(_ action: () -> Void) {
         guard currentTab?.isAITab == true else { return }
@@ -3906,7 +3930,9 @@ extension MainViewController: OmniBarDelegate {
         // A Duck.ai submission IS Duck.ai mode — commit that directly rather than re-reading the live
         // toggle, which a refresh-on-submit can reset to the stored last-used before we read it.
         commitToggleMode(.aiChat)
-        openAIChat(query, autoSend: true, tools: tools)
+        
+        let modelId = viewCoordinator.omniBar.iPadDuckAISelectedModelId
+        openAIChat(query, autoSend: true, tools: tools, modelId: modelId)
     }
 
     func onChatHistorySelected(url: URL) {
@@ -4424,7 +4450,7 @@ extension MainViewController: OmniBarDelegate {
         Pixel.fire(pixel: .tabSwitchLongPressNewTab, withAdditionalParameters: [
             PixelParameters.browsingMode: tabManager.currentBrowsingMode.pixelParamValue
         ])
-        guard !experimentDuckAIFireOnboardingFlow.controlsLocked else { return }
+        guard !duckAIFireOnboardingFlow.controlsLocked else { return }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         performCancel()
         newTab()
@@ -5136,8 +5162,8 @@ extension MainViewController: NewTabPageControllerDelegate {
         requestTabSwitcher()
     }
 
-    func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {
-        markSearchContextualOnboardingAsSeenForExperiment()
+    func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: NewTabPageViewController) {
+        markSearchContextualOnboardingAsSeen()
     }
 
     func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
@@ -5320,11 +5346,11 @@ extension MainViewController: TabDelegate {
 
     func tabLoadingStateDidChange(tab: TabViewController) {
         if tab.isLoading {
-            experimentDuckAIFireOnboardingFlow.triggerWorkItem?.cancel()
-            experimentDuckAIFireOnboardingFlow.triggerWorkItem = nil
+            duckAIFireOnboardingFlow.triggerWorkItem?.cancel()
+            duckAIFireOnboardingFlow.triggerWorkItem = nil
         } else {
-            scheduleExperimentDuckAIFireOnboardingAfterLoadIfNeeded(for: tab)
-            if experimentDuckAIFireOnboardingFlow.shouldForcePostFireAddressBarPickerRestore && currentTab == tab {
+            scheduleDuckAIFireOnboardingAfterLoadIfNeeded(for: tab)
+            if duckAIFireOnboardingFlow.shouldForcePostFireAddressBarPickerRestore && currentTab == tab {
                 restorePostFireAddressBarPickerIfNeeded()
             }
         }
@@ -5472,7 +5498,7 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
-        if aichatIPadTabFeature.isAvailable {
+        if DevicePlatform.isIpad {
             newTab(allowingKeyboard: false)
         }
         openAIChat()
@@ -6119,9 +6145,9 @@ extension MainViewController {
     }
     
     func showFireButtonPulse() {
-        // During experiment fire onboarding we control pulse lifecycle explicitly.
+        // During Duck.ai fire onboarding we control pulse lifecycle explicitly.
         // Avoid Dax pulse bookkeeping here, because it can immediately clear highlights.
-        if experimentDuckAIFireOnboardingFlow.state != .active {
+        if duckAIFireOnboardingFlow.state != .active {
             daxDialogsManager.fireButtonPulseStarted()
         }
         guard let window = view.window else { return }
@@ -6485,11 +6511,12 @@ extension MainViewController: OnboardingDelegate {
 
         appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
 
+
         // Now that linear onboarding has finished, run the unified-toggle-input
         // setup that was deferred at viewDidLoad.
         setUpUnifiedToggleInputIfNeeded()
-        if experimentDuckAIFireOnboardingFlow.state == .awaitingFirstResponse {
-            onboardingCompletedWithExperimentTransition(controller: controller)
+        if duckAIFireOnboardingFlow.state == .awaitingFirstResponse {
+            onboardingCompletedWithDuckAITransition(controller: controller)
             return
         }
 
@@ -6497,7 +6524,7 @@ extension MainViewController: OnboardingDelegate {
         // which only installs when `shouldUseExperimentalEditingState` is true — itself gated on
         // `aiChatSettings.isAIChatSearchInputUserSettingsEnabled`.
         //
-        // IMPORTANT: Contrary to the Duck.ai experiment on the default flow we do not call `ensureDuckAiCompletionDialogPresentationPrerequisites()`.
+        // IMPORTANT: Contrary to the Duck.ai fire onboarding on the default flow we do not call `ensureDuckAiCompletionDialogPresentationPrerequisites()`.
         // The full prerequisite also calls `daxDialogsManager.disableContextualDaxDialogs()`, which would set
         // `isEnabled = false` before the tailored completion dialog is presented, breaking the subscription
         // chain inside the dialog's `onDismiss` (`nextHomeScreenMessageNew()` would return `nil` from its

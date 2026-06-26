@@ -19,6 +19,7 @@
 import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
+import VPN
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -256,7 +257,21 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
             cpuArchitecture: "arm64"
         )
 
-        let networkInfo = VPNMetadata.NetworkInfo(currentPath: "path")
+        let networkInfo = VPNMetadata.NetworkInfo(
+            currentPath: NetworkProtectionNetworkPathInfo(
+                status: "satisfied",
+                unsatisfiedReason: nil,
+                mainInterfaceType: "wifi",
+                utunInterfaceCount: 1,
+                ipsecInterfaceCount: 0,
+                dnsInterfaceCount: 0,
+                unidentifiedInterfaceCount: 0,
+                isConstrained: false,
+                isExpensive: false
+            ),
+            deviceAddressCategories: [.ipv4Private192],
+            routerAddressCategories: [.ipv4Private192]
+        )
 
         let vpnState = VPNMetadata.VPNState(
             onboardingState: "onboarded",
@@ -265,7 +280,14 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
             lastTunnelErrorDescription: "none",
             lastKnownFailureDescription: "none",
             connectedServer: "Paoli, PA",
-            connectedServerIP: "123.123.123.123"
+            connectedServerIP: "123.123.123.123",
+            dataVolume: NetworkProtectionDataVolumeBuckets(bytesSent: 10_485_760, bytesReceived: 20_971_520)
+        )
+
+        let dnsSettingsState = VPNMetadata.DNSSettingsState(
+            selection: .duckDuckGo,
+            blockRiskyDomainsEnabled: true,
+            customDNSServerAddressCategory: nil
         )
 
         let vpnSettingsState = VPNMetadata.VPNSettingsState(
@@ -278,7 +300,8 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
             showInMenuBarEnabled: true,
             selectedServer: "server",
             selectedEnvironment: "production",
-            customDNS: false
+            customDNS: false,
+            dnsSettings: dnsSettingsState
         )
 
         let loginItemState = VPNMetadata.LoginItemState(
@@ -287,9 +310,9 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
         )
 
         let subscriptionInfo = VPNMetadata.SubscriptionInfo(
-            hasSubscriptionAccount: true,
-            isVPNFeatureIncludedInSubscription: true,
-            isVPNFeatureEnabled: true
+            isSubscriptionAuthenticated: true,
+            subscriptionPlanIncludesVPN: true,
+            accountCanUseVPN: true
         )
 
         return VPNMetadata(

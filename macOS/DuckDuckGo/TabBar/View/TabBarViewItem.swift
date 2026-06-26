@@ -289,6 +289,10 @@ final class TabBarItemCellView: NSView {
         return layer
     }()
 
+    private var mustLayoutCloseButton: Bool {
+        closeButton.isShown || !widthStage.isCloseButtonHidden || NSApp.isCommandPressed
+    }
+
     convenience init() {
         self.init(frame: .zero)
     }
@@ -435,7 +439,7 @@ final class TabBarItemCellView: NSView {
             minX = audioButton.frame.maxX
         }
         var maxX = bounds.maxX - 9
-        if closeButton.isShown {
+        if mustLayoutCloseButton {
             closeButton.frame = NSRect(x: maxX - Metrics.closeButtonDimension, y: bounds.midY - Metrics.closeButtonDimension * 0.5, width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
             maxX = closeButton.frame.minX - 4
         } else {
@@ -492,7 +496,7 @@ final class TabBarItemCellView: NSView {
             audioButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: Metrics.audioAndCrashButtonSide, height: Metrics.audioAndCrashButtonSide)
             x = audioButton.frame.maxX + spacing
         }
-        if closeButton.isShown {
+        if mustLayoutCloseButton {
             // close button appears in place of favicon in compact mode
             closeButton.frame = NSRect(x: x.rounded(), y: bounds.midY - Metrics.closeButtonDimension * 0.5, width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
             x = closeButton.frame.maxX + spacing

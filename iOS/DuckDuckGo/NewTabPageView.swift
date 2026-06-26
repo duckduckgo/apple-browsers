@@ -104,7 +104,8 @@ struct NewTabPageLayoutConfiguration {
                                                         contentTopInsetOverride: nil,
                                                         interSectionSpacing: Metrics.sectionSpacing)
     static let unifiedToggleInput = NewTabPageLayoutConfiguration(expandsEscapeHatchToAvailableWidth: true,
-                                                                  escapeHatchHorizontalPadding: 0,
+                                                                  // Aligns the resting hatch with the focused `FocusedChromeView` hatch so it doesn't resize on dismiss.
+                                                                  escapeHatchHorizontalPadding: Metrics.updatedNonGridSectionHorizontalPadding,
                                                                   favoritesShareHatchTopInset: true,
                                                                   contentTopInsetOverride: 10,
                                                                   interSectionSpacing: 26)

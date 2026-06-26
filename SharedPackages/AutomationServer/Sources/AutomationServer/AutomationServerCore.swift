@@ -218,9 +218,11 @@ public final class AutomationServerCore {
         ) { (content: Data?, _: NWConnection.ContentContext?, isComplete: Bool, error: NWError?) in
             // The connection is started on the main queue (`connection.start(queue: .main)`), so this
             // @Sendable handler is always delivered on the main thread. The compiler can't prove that
-            // from a Sendable closure, so hop onto the main actor before touching main-actor state
-            // (`connectionQueues`) or calling main-actor methods.
-            Task { @MainActor in
+            // from a Sendable closure, so assert the isolation synchronously with `assumeIsolated`.
+            // Deliberately not `Task { @MainActor in ... }`: hopping to a later main-actor turn would
+            // defer the `connection.state == .ready` guard, so bytes already delivered in this callback
+            // could be dropped if the connection left `.ready` before the task ran.
+            MainActor.assumeIsolated {
                 // Ensure connection queue is cleaned up when request completes or fails
                 defer {
                     if isComplete || error != nil || connection.state != .ready {

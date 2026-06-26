@@ -23,18 +23,57 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIComponents
 
+enum CookiePopupProtectionOptInVariant {
+    /// Shown when Cookie Pop-up Protection is already enabled.
+    case handleMore
+    /// Shown when Cookie Pop-up Protection is off.
+    case handleAndHide
+
+    var title: String {
+        switch self {
+        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledTitle
+        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledTitle
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledBody
+        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledBody
+        }
+    }
+
+    var primaryOptionTitle: String {
+        switch self {
+        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledPrimaryOption
+        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledPrimaryOption
+        }
+    }
+
+    var secondaryOptionTitle: String {
+        switch self {
+        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledSecondaryOption
+        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledSecondaryOption
+        }
+    }
+}
+
 /// Cookie Pop-up Protection opt-in dialog (iOS counterpart of the macOS dialog).
 /// ponytail: visual-only — selection is local state, `Confirm` just calls `onConfirm`. No persistence yet.
 struct CookiePopupProtectionOptInView: View {
 
-    let onConfirm: () -> Void
+    private let variant: CookiePopupProtectionOptInVariant
+    private let onConfirm: () -> Void
+    @StateObject private var optionsModel: RadioButtonViewModel
 
-    @StateObject private var optionsModel: RadioButtonViewModel = {
+    init(variant: CookiePopupProtectionOptInVariant, onConfirm: @escaping () -> Void) {
+        self.variant = variant
+        self.onConfirm = onConfirm
         let items = [
-            RadioButtonItem(text: UserText.cookiePopupProtectionOptInModeOn),
-            RadioButtonItem(text: UserText.cookiePopupProtectionOptInModeOff)
+            RadioButtonItem(text: variant.primaryOptionTitle),
+            RadioButtonItem(text: variant.secondaryOptionTitle)
         ]
-        return RadioButtonViewModel(
+        _optionsModel = StateObject(wrappedValue: RadioButtonViewModel(
             items: items,
             selectedItem: items.first,
             configuration: RadioButtonConfiguration(
@@ -48,8 +87,8 @@ struct CookiePopupProtectionOptInView: View {
                 checkboxSize: 28,
                 buttonSpacing: 12
             )
-        )
-    }()
+        ))
+    }
 
     var body: some View {
         ScrollView {
@@ -91,14 +130,14 @@ struct CookiePopupProtectionOptInView: View {
                 .padding(.top, 32)
                 .padding(.bottom, 20)
 
-            Text(UserText.cookiePopupProtectionOptInTitle)
+            Text(variant.title)
                 .font(.system(size: 26, weight: .bold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 16)
 
-            Text(UserText.cookiePopupProtectionOptInBody)
+            Text(variant.message)
                 .font(.system(size: 16))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
@@ -141,5 +180,5 @@ private extension View {
 }
 
 #Preview {
-    CookiePopupProtectionOptInView(onConfirm: {})
+    CookiePopupProtectionOptInView(variant: .handleAndHide, onConfirm: {})
 }

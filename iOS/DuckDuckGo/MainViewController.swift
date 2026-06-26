@@ -2516,11 +2516,7 @@ class MainViewController: UIViewController {
         } completion: { _ in
             toolbarSnapshot?.removeFromSuperview()
 
-            // Rotation changes the bar geometry, so the scroll-hide state can't carry across it.
-            // Reset to revealed (editing and AI chrome manage their own layout).
-            if !self.isCurrentTabUsingUnifiedInputAIChrome, !isKeyboardShowing {
-                self.resetBars(animated: false)
-            }
+            self.resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: isKeyboardShowing)
 
             self.omniBar.barView.textField.suppressResignFirstResponder = false
             if isKeyboardShowing {
@@ -2546,6 +2542,14 @@ class MainViewController: UIViewController {
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
+    }
+
+    private func resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: Bool) {
+        // Rotation changes the bar geometry, so the scroll-hide state can't carry across it.
+        // Reset to revealed (editing and AI chrome manage their own layout).
+        if !self.isCurrentTabUsingUnifiedInputAIChrome, !wasKeyboardShowing {
+            self.resetBars(animated: false)
+        }
     }
 
     private func deferredFireOrientationPixel() {

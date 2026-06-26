@@ -1,5 +1,5 @@
 //
-//  VPNStartCancellationSource.swift
+//  CancellationStep.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,9 +18,9 @@
 
 import Foundation
 
-/// Identifies which part of VPN start was cancelled, so a cancellation can be told apart from a failure
+/// Identifies which step of VPN start was cancelled, so a cancellation can be told apart from a failure
 /// and attributed to its origin.
-public enum VPNStartCancellationSource: String {
+public enum CancellationStep: String {
     case systemExtensionActivation
     case tunnelManagerLoad
     case startTunnel

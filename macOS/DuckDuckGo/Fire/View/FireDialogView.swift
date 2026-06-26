@@ -545,7 +545,7 @@ struct FireDialogView: ModalView {
     }
 
     private var individualSitesColor: NSColor {
-        NSColor(designSystemColor: .accentTextPrimary)
+        NSColor(designSystemColor: .textPrimary)
     }
 
     private var individualSitesLink: some View {

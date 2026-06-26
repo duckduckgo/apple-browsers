@@ -691,6 +691,10 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
+
+    /// Gates the Simplified Sync Setup follow-up screens (deactivation + multi-device path).
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1215960387490701
+    case simplifiedSyncSetupV2
 }
 
 public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {

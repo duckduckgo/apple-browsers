@@ -618,8 +618,11 @@ extension MainViewFactory {
     private func constrainUnifiedInputContentContainer() {
         let container = coordinator.unifiedInputContentContainer!
         let toolbar = coordinator.toolbar!
+        let topAnchor: NSLayoutYAxisAnchor = floatingUIManager.isFloatingUIEnabled
+            ? superview.topAnchor
+            : superview.safeAreaLayoutGuide.topAnchor
         NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor),
+            container.topAnchor.constraint(equalTo: topAnchor),
             container.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
             container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),

@@ -229,6 +229,8 @@ struct FireDialogView: ModalView {
             ],
             containerBackground: Color(designSystemColor: .containerFillPrimary),
             containerBorder: Color(designSystemColor: .containerBorderPrimary),
+            containerCornerRadius: metrics.segmentedControlCornerRadius,
+            segmentCornerRadius: metrics.segmentedControlItemCornerRadius,
             selectedForeground: Color(designSystemColor: .accentPrimary),
             unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
             selectedIconBackground: Color(designSystemColor: .accentGlowSecondary),
@@ -637,13 +639,15 @@ struct FireDialogView: ModalView {
 
 private struct FireDialogMetrics {
     let rowCornerRadius: CGFloat
+    let segmentedControlCornerRadius: CGFloat
+    let segmentedControlItemCornerRadius: CGFloat
 
     private static var `default`: FireDialogMetrics {
-        FireDialogMetrics(rowCornerRadius: 12)
+        FireDialogMetrics(rowCornerRadius: 12, segmentedControlCornerRadius: 12, segmentedControlItemCornerRadius: 10)
     }
 
     private static var rebranded: FireDialogMetrics {
-        FireDialogMetrics(rowCornerRadius: 16)
+        FireDialogMetrics(rowCornerRadius: 16, segmentedControlCornerRadius: 16, segmentedControlItemCornerRadius: 14)
     }
 
     static var current: FireDialogMetrics {
@@ -662,15 +666,16 @@ private enum RowCornerRadius {
 // Modifier to apply corner clipping based on row position
 private struct RowCornerClipModifier: ViewModifier {
     let roundedCorners: RowCornerRadius
+    let roundedCornerRadius: CGFloat = 0 //8 // 16
 
     func body(content: Content) -> some View {
         switch roundedCorners {
         case .none:
             content
         case .top:
-            content.clipShape(CustomRoundedCornersShape(tl: 8, tr: 8, bl: 0, br: 0))
+            content.clipShape(CustomRoundedCornersShape(tl: roundedCornerRadius, tr: roundedCornerRadius, bl: 0, br: 0))
         case .bottom:
-            content.clipShape(CustomRoundedCornersShape(tl: 0, tr: 0, bl: 8, br: 8))
+            content.clipShape(CustomRoundedCornersShape(tl: 0, tr: 0, bl: roundedCornerRadius, br: roundedCornerRadius))
         }
     }
 }

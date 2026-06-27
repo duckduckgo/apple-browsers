@@ -51,7 +51,7 @@ enum UserText {
     static let preparingToSyncDialogTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-title", bundle: Bundle.module, value: "Preparing To Sync", comment: "Preparing to sync dialog title during sync set up")
     static let preparingToSyncDialogSubTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks and autofill data with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
     static let preparingToSyncDialogSubTitleUpdated = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle-updated", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks, autofill data, and Duck.ai chats with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
-    static let preparingToSyncTwoDeviceDialogTitle = NSLocalizedString("preferences.preparing-to-sync.two-device.dialog-title", bundle: Bundle.module, value: "Keep “Sync & Backup” open on both devices", comment: "Preparing to sync dialog title during two-device sync set up. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved.")
+    static let preparingToSyncTwoDeviceDialogTitle = NSLocalizedString("preferences.preparing-to-sync.two-device.dialog-title", bundle: Bundle.module, value: "End-to-end encrypted on all your devices.", comment: "Preparing to sync dialog title during two-device sync set up.")
     static let preparingToSyncDialogAction = NSLocalizedString("preferences.preparing-to-sync.dialog-action", bundle: Bundle.module, value: "Connecting…", comment: "Sync preparing to sync dialog action")
 
     // Enter recovery code dialog
@@ -136,7 +136,7 @@ enum UserText {
     static let syncWithServerButton = NSLocalizedString("preferences.sync.sync-with-server-button", bundle: Bundle.module, value: "Turn On Sync & Backup", comment: "Sync with server dialog button")
 
     // Device synced dialog
-    static let deviceSynced = NSLocalizedString("prefrences.sync.device-synced", bundle: Bundle.module, value: "Your data is synced!", comment: "Sync setup confirmation dialog title")
+    static let deviceSynced = NSLocalizedString("prefrences.sync.device-synced", bundle: Bundle.module, value: "New device added!", comment: "Sync setup confirmation dialog title")
 
     // Device details
     static let deviceDetailsTitle = NSLocalizedString("prefrences.sync.device-details.title", bundle: Bundle.module, value: "Device Details", comment: "The title of the device details dialog")
@@ -253,7 +253,7 @@ enum UserText {
     static let syncUpdateRequiredTitle = NSLocalizedString("alert.sync-update-required-title", bundle: Bundle.module, value: "Update the DuckDuckGo browser and try again.", comment: "Title for Sync error shown when the app version does not support the scanned Sync code")
     static let syncUpdateRequiredDescription = NSLocalizedString("alert.sync-update-required-description", bundle: Bundle.module, value: "", comment: "Description for Sync error shown when the app version does not support the scanned Sync code")
     static let syncUnsupportedThirdPartyRecoveryCodeTitle = NSLocalizedString("alert.sync-code-only-compatible-with-duckai-title", bundle: Bundle.module, value: "Scan this code using a browser other than DuckDuckGo.", comment: "Title for Sync error shown when a third-party recovery code can only be used with Duck.ai")
-    static let syncUnsupportedThirdPartyRecoveryCodeDescription = NSLocalizedString("alert.sync-code-only-compatible-with-duckai-description", bundle: Bundle.module, value: "In your browser, visit duck.ai, go to Settings, then under “Sync & Backup” select “Turn On” and then “Sync with another device”.", comment: "Description for Sync error shown when a third-party recovery code can only be used with Duck.ai")
+    static let syncUnsupportedThirdPartyRecoveryCodeDescription = NSLocalizedString("alert.sync-code-only-compatible-with-duckai-description", bundle: Bundle.module, value: "In your other browser, visit Duck.ai, go to Settings, then under “Sync & Backup” select “Turn On” and then “Sync with another device”.", comment: "Description for Sync error shown when a third-party recovery code can only be used with Duck.ai")
     static let syncThirdPartyAccountAlreadyUpgradedDescription = NSLocalizedString("alert.sync-from-another-connected-device-description", bundle: Bundle.module, value: "Please Sync this device from an already-connected DuckDuckGo browser on another device.", comment: "Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential")
     static let syncAlreadyPairedWithAccountTitle = NSLocalizedString("alert.sync-already-paired-with-account-title", bundle: Bundle.module, value: "Already synced.", comment: "Title for Sync error shown when both devices are already paired with the same account")
     static let syncAlreadyPairedWithAccountDescription = NSLocalizedString("alert.sync-already-paired-with-account-description", bundle: Bundle.module, value: "These devices are already connected to Sync & Backup.", comment: "Description for Sync error shown when both devices are already paired with the same account")

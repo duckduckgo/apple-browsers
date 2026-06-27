@@ -112,7 +112,7 @@ public enum SyncErrorType {
             return UserText.syncAlreadyPairedWithAccountTitle
         case .unsupportedThirdPartyRecoveryCode:
             return UserText.syncUnsupportedThirdPartyRecoveryCodeTitle
-        case .unableToRecognizeCode:
+        case .invalidCode, .unableToRecognizeCode:
             return UserText.unableToRecognizeCodeTitle
         case .syncCancelledFromOtherDevice:
             return UserText.syncCancelledFromOtherDeviceTitle
@@ -162,7 +162,7 @@ public enum SyncErrorType {
         switch self {
         case .unableToAuthenticateOnDevice:
             return UserText.syncDeviceAuthenticationErrorAlertButton
-        case .unableToSyncToOtherDevice:
+        case .unableToSyncToOtherDevice, .invalidCode, .unableToRecognizeCode, .updateRequired, .unsupportedThirdPartyRecoveryCode:
             return UserText.syncSetupErrorGotItButton
         case .alreadyPairedWithAccount:
             return UserText.syncAlreadyPairedWithAccountButton

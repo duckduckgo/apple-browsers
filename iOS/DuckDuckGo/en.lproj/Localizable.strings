@@ -4495,15 +4495,6 @@ Take back control of your personal information with the browser designed for dat
 /* Fallback device name for confirmation dialogs */
 "sync.pairing-v2.unknown-peer-name" = "the other device";
 
-/* Title of the dialog shown after confirming sync setup while waiting for another DuckDuckGo browser to confirm */
-"sync.pairing-v2.waiting-for-native-confirmation.title" = "Confirm on your other device.";
-
-/* Caption for a button to dismiss the dialog shown while waiting for a third-party device to finish confirming sync setup */
-"sync.pairing-v2.waiting-for-third-party-confirmation.action" = "Next";
-
-/* Title of the dialog shown after confirming sync setup while waiting for a third-party device to finish confirming */
-"sync.pairing-v2.waiting-for-third-party-confirmation.title" = "Check your other device to finish.";
-
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.";
 
@@ -4568,7 +4559,7 @@ Take back control of your personal information with the browser designed for dat
 "sync.remove-device.title" = "Remove Device?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Device synced successfully!";
+"sync.simplified.device-synced.toast" = "New device added!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup enabled";

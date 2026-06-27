@@ -3681,7 +3681,10 @@ extension MainViewController: BrowserChromeDelegate {
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
         if percent < 1 {
-            hideKeyboard()
+            if omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true {
+                dismissOmniBar()
+            }
+            _ = findInPageView?.resignFirstResponder()
             hideMenuHighlighter()
         } else {
             showMenuHighlighterIfNeeded()

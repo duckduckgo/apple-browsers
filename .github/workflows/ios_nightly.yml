@@ -54,7 +54,7 @@ jobs:
   atb-ui-tests:
     name: ATB UI Tests${{ matrix.user-mode == 'internal' && ' (internal)' || '' }}
     needs: setup-user-modes
-    runs-on: macos-26-xlarge
+    runs-on: macos-26
     timeout-minutes: 30
 
     strategy:

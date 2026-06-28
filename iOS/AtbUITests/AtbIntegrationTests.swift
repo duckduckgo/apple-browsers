@@ -121,9 +121,15 @@ class AtbIntegrationTests: XCTestCase {
         let hasKeyboardFocus = NSPredicate(format: "hasKeyboardFocus == true")
 
         for _ in 0..<3 {
+            app.typeKey("l", modifierFlags: .command)
+            let keyCommandFocusExpectation = XCTNSPredicateExpectation(predicate: hasKeyboardFocus, object: element)
+            if XCTWaiter.wait(for: [keyCommandFocusExpectation], timeout: 2) == .completed {
+                return
+            }
+
             element.tap()
-            let focusExpectation = XCTNSPredicateExpectation(predicate: hasKeyboardFocus, object: element)
-            if XCTWaiter.wait(for: [focusExpectation], timeout: 2) == .completed {
+            let tapFocusExpectation = XCTNSPredicateExpectation(predicate: hasKeyboardFocus, object: element)
+            if XCTWaiter.wait(for: [tapFocusExpectation], timeout: 2) == .completed {
                 return
             }
         }

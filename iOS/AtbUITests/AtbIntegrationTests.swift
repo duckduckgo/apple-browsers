@@ -109,12 +109,26 @@ class AtbIntegrationTests: XCTestCase {
 
     private func search(forText text: String) {
 
-        let searchentrySearchField = app.descendants(matching: .any)["searchEntry"]
+        let searchentrySearchField = app.searchFields["searchEntry"]
         XCTAssertTrue(searchentrySearchField.waitForExistence(timeout: Constants.defaultTimeout))
-        searchentrySearchField.tap()
+        focus(searchentrySearchField)
         searchentrySearchField.typeText("\(text)\r")
         Snapshot.waitForLoadingIndicatorToDisappear(within: Constants.defaultTimeout)
 
+    }
+
+    private func focus(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        let hasKeyboardFocus = NSPredicate(format: "hasKeyboardFocus == true")
+
+        for _ in 0..<3 {
+            element.tap()
+            let focusExpectation = XCTNSPredicateExpectation(predicate: hasKeyboardFocus, object: element)
+            if XCTWaiter.wait(for: [focusExpectation], timeout: 2) == .completed {
+                return
+            }
+        }
+
+        XCTFail("Could not focus \(element)", file: file, line: line)
     }
 
     /// We don't care which requests, as long as it's one of the expected endpoints.  The actual logic is tested in

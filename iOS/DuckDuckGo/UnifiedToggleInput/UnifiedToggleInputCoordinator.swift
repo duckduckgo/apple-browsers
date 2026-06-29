@@ -380,7 +380,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         duckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring = DuckAiNativeStoragePixelAdapter(),
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
         lastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding? = nil,
-        modelsService: AIChatModelsProviding = AIChatModelsService(),
+        modelsService: AIChatModelsProviding? = nil,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
@@ -404,7 +404,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             toggleModeStorage: toggleModeStorage
         )
         self.modelStore = UTIModelStore(
-            modelsService: modelsService,
+            modelsService: modelsService ?? AIChatModelsService(
+                baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL)
+            ),
             preferences: preferences,
             subscriptionManager: subscriptionManager
         )
@@ -2706,4 +2708,17 @@ extension UnifiedToggleInputCoordinator {
             }
             .store(in: &cancellables)
     }
+}
+
+/// Derives the AI Chat models API base (scheme + host) from the resolved chat URL, so `/models` is fetched
+/// from the same origin the chat loads from — production `duck.ai`, or a debug/dev host when the chat URL is
+/// overridden via Debug → "Set Custom AI Chat URL". Falls back to `AIChatModelsService.defaultBaseURL` if the
+/// chat URL lacks a host.
+func aiChatModelsBaseURL(forChatURL chatURL: URL) -> URL {
+    guard let scheme = chatURL.scheme, let host = chatURL.host else { return AIChatModelsService.defaultBaseURL }
+    var components = URLComponents()
+    components.scheme = scheme
+    components.host = host
+    components.port = chatURL.port
+    return components.url ?? AIChatModelsService.defaultBaseURL
 }

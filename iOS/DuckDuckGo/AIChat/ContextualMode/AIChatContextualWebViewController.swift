@@ -179,7 +179,7 @@ final class AIChatContextualWebViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
+        Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(self.initialURL?.shortDescription ?? "nil")")
         setupUI()
         if shouldInstallUTIHost, !deferUTIInstall, let utiHostInstaller {
             utiHost = utiHostInstaller(self)
@@ -188,7 +188,7 @@ final class AIChatContextualWebViewController: UIViewController {
         setupURLObservation()
         setupDownloadHandler()
         if let url = initialURL {
-            Logger.aiChat.debug("[ContextualWebVC] Loading initialURL: \(url.absoluteString)")
+            Logger.aiChat.debug("[ContextualWebVC] Loading initialURL: \(url.shortDescription)")
             loadChatURL(url)
         } else {
             Logger.aiChat.debug("[ContextualWebVC] No initialURL, loading default AI chat")
@@ -260,11 +260,7 @@ final class AIChatContextualWebViewController: UIViewController {
 
     func loadChatURL(_ url: URL) {
         let urlToLoad = chatURLForLoading(url)
-        let hasNativeInputParam = URLComponents(url: urlToLoad, resolvingAgainstBaseURL: false)?
-            .queryItems?
-            .contains(where: {
-                $0.name == AIChatURLParameters.nativeInputName && $0.value == AIChatURLParameters.nativeInputValue
-            }) ?? false
+        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(urlToLoad.shortDescription)")
         isPageReady = false
         isFrontendReady = false
         pendingPrompt = nil
@@ -472,7 +468,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        Logger.aiChat.debug("[ContextualWebVC] didFinish navigation - URL: \(String(describing: webView.url?.absoluteString))")
+        Logger.aiChat.debug("[ContextualWebVC] didFinish navigation - URL: \(webView.url?.shortDescription ?? "nil")")
         loadingView.stopAnimating()
         isPageReady = true
         submitPendingIfReady()

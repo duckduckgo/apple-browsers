@@ -125,6 +125,7 @@ class TabViewCell: UICollectionViewCell {
     /// File-ref token guarding the in-flight thumbnail load.
     private var currentThumbnailFileRef: String?
     private var thumbnailLoadTask: Task<Void, Never>?
+    private weak var thumbnailLoader: DuckAIThumbnailLoading?
 
     weak var previewAspectRatio: NSLayoutConstraint?
     var previewTopConstraint: NSLayoutConstraint?
@@ -536,18 +537,9 @@ class TabViewCell: UICollectionViewCell {
                 link?.isHidden = true
             }
 
-            if let item = duckAIGridItem {
-                richCardContainer?.configure(with: item)
-                richCardContainer?.isHidden = false
-                self.preview?.isHidden = true
-                startThumbnailLoadIfNeeded(for: item, loader: thumbnailLoader)
-            } else if let preview = preview {
-                self.updatePreviewToDisplay(image: preview)
-                self.preview?.contentMode = .scaleAspectFill
-                self.preview?.image = preview
-            } else {
-                self.preview?.image = nil
-            }
+            configureAIContent(duckAIGridItem: duckAIGridItem,
+                               screenshotPreview: preview,
+                               thumbnailLoader: thumbnailLoader)
 
             removeButton.isHidden = false
 
@@ -611,12 +603,49 @@ class TabViewCell: UICollectionViewCell {
         thumbnailLoadTask?.cancel()
         thumbnailLoadTask = nil
         currentThumbnailFileRef = nil
+        thumbnailLoader = nil
+    }
+
+    /// Synchronously loads the `.image` thumbnail into the card so a snapshot taken during the
+    /// tab-switcher transition includes it. No-op for non-image cards or once it's already set.
+    func prepareForSnapshot() {
+        guard let fileRef = currentThumbnailFileRef,
+              let loader = thumbnailLoader,
+              richCardContainer?.hasThumbnail == false,
+              let image = loader.loadImageSynchronously(fileRef: fileRef) else { return }
+        richCardContainer?.setThumbnail(image)
+    }
+
+    /// Chooses what fills an AI tab's preview slot: the bare-empty new-tab logo, the rich card,
+    /// or the screenshot fallback.
+    private func configureAIContent(duckAIGridItem: DuckAIGridItem?,
+                                    screenshotPreview: UIImage?,
+                                    thumbnailLoader: DuckAIThumbnailLoading?) {
+        if case .empty(nil, nil) = duckAIGridItem {
+            richCardContainer?.isHidden = true
+            preview?.isHidden = false
+            updatePreviewToDisplayLogo()
+            preview?.image = DesignSystemImages.Color.Size96.duckAI
+            preview?.contentMode = .center
+        } else if let item = duckAIGridItem {
+            richCardContainer?.configure(with: item)
+            richCardContainer?.isHidden = false
+            preview?.isHidden = true
+            startThumbnailLoadIfNeeded(for: item, loader: thumbnailLoader)
+        } else if let screenshotPreview {
+            updatePreviewToDisplay(image: screenshotPreview)
+            preview?.contentMode = .scaleAspectFill
+            preview?.image = screenshotPreview
+        } else {
+            preview?.image = nil
+        }
     }
 
     private func startThumbnailLoadIfNeeded(for item: DuckAIGridItem,
                                             loader: DuckAIThumbnailLoading?) {
         guard case .image(_, let fileRef) = item, let loader else { return }
         currentThumbnailFileRef = fileRef
+        thumbnailLoader = loader
         thumbnailLoadTask = Task { @MainActor [weak self, weak loader] in
             guard let loader else { return }
             let image = await loader.loadImage(fileRef: fileRef)

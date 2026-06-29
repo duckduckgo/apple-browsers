@@ -93,7 +93,6 @@ public extension BrokerProfileQueryData {
 public enum BrokerProfileQueryDataFetchReason {
     case oneTimeMigration
     case profileHistoryReporting
-    case specificBrokerJobDispatch
 }
 
 public extension Array where Element == BrokerProfileQueryData {

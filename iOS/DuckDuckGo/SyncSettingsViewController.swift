@@ -95,6 +95,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     var source: String?
     var pairingInfo: PairingInfo?
     var pairingV2PeerKind: PairingV2DeviceKind?
+    var pairingV2JoinerCodeSource: SyncCodeSource?
     var needsPreservedAccountCleanupBeforeServerOperation = false
     var autoRestorePromptSource: AutoRestorePromptSource?
 
@@ -102,6 +103,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     var onConfirmAndDeleteAllData: (() -> Void)?
 
     let useSimplifiedLayout: Bool
+    let useSimplifiedLayoutV2: Bool
     let syncSetupExperimentPixels: SyncSetupExperimentPixelFiring
 
     // For some reason, on iOS 14, the viewDidLoad wasn't getting called so do some setup here
@@ -142,7 +144,8 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
         self.viewModel = viewModel
 
         self.useSimplifiedLayout = (featureFlagger.resolveCohort(for: FeatureFlag.simplifiedSyncSetupExperiment) as? FeatureFlag.SimplifiedSyncSetupExperimentCohort) == .treatment
-        let rootView = SyncSettingsRootView(model: viewModel, useSimplifiedLayout: useSimplifiedLayout)
+        self.useSimplifiedLayoutV2 = featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
+        let rootView = SyncSettingsRootView(model: viewModel, useSimplifiedLayout: useSimplifiedLayout, useSimplifiedLayoutV2: useSimplifiedLayoutV2)
 
         super.init(rootView: rootView)
 
@@ -295,10 +298,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
     private func updateInvalidObjects(_ viewModel: SyncSettingsViewModel) {
         viewModel.invalidBookmarksTitles = syncBookmarksAdapter.provider?
             .fetchDescriptionsForObjectsThatFailedValidation()
-            .map { $0.truncated(length: 15) } ?? []
+            .map { $0.truncated(to: 15, position: .tail) } ?? []
 
         let invalidCredentialsObjects: [String] = (try? syncCredentialsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
-        viewModel.invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(length: 15) })
+        viewModel.invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(to: 15, position: .tail) })
 
         let invalidCreditCardObjects: [String] = (try? syncCreditCardsAdapter?.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
         viewModel.invalidCreditCardsTitles = invalidCreditCardObjects
@@ -401,8 +404,22 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     private func startPairingIfNecessary() {
         if let pairingInfo {
-            askForPairingConfirmation(deviceName: pairingInfo.deviceName)
+            if pairingInfo.isPairingV2 {
+                startPairingV2DeepLink(pairingInfo)
+            } else if isLegacyExchangeDeepLink(pairingInfo) {
+                askForPairingConfirmation(deviceName: pairingInfo.deviceName)
+            } else {
+                // URL-based Sync setup should only accepts legacy v1 exchange codes.
+                self.pairingInfo = nil
+            }
         }
+    }
+
+    private func isLegacyExchangeDeepLink(_ pairingInfo: PairingInfo) -> Bool {
+        guard let syncCode = try? SyncCode.decodeBase64String(pairingInfo.base64Code) else {
+            return false
+        }
+        return syncCode.exchangeKey != nil
     }
 
     private func startSyncWithAnotherDeviceIfNecessary() {
@@ -432,6 +449,26 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
             }
         }
         self.pairingInfo = nil
+    }
+
+    private func startPairingV2DeepLink(_ pairingInfo: PairingInfo) {
+        self.pairingInfo = nil
+
+        Task {
+            do {
+                try await authenticateUser()
+            } catch {
+                return
+            }
+
+            Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted, includedParameters: [.appVersion])
+            syncSetupExperimentPixels.fireDeepLinkFlowStarted()
+
+            await connectionController.syncCodeEntered(
+                code: pairingInfo.base64Code,
+                canScanLegacyURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes),
+                codeSource: .deepLink)
+        }
     }
 
     func askForPairingConfirmation(deviceName: String) {
@@ -490,7 +527,6 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         syncSetupExperimentPixels.fireLogin()
-        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         presentSyncCompletionAfterDelay()
     }
 
@@ -604,7 +640,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
         syncSetupExperimentPixels.fireSignupConnect()
 
-        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         if shouldShowSyncEnabled {
             if useSimplifiedLayout {
                 dismissVCAndShowDeviceSyncedToast()
@@ -658,6 +693,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
     
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource, codeVersion: SyncSetupCodeVersion) async {
+        pairingV2JoinerCodeSource = codeVersion == .v2 && setupSource == .exchange ? codeSource : nil
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource, codeVersion: codeVersion)
         await dismissPresentedViewController()
         await showPreparingSync(context: setupSource == .recovery ? .recoveringData : .syncingDevices)
@@ -681,7 +717,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         syncSetupExperimentPixels.fireLogin()
         handleSuccessfulSetupOutcome(.loginCompleted(setupRole: setupRole))
-        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
         if case .receiver(.recovery, _) = setupRole {
             Task {
                 await connectionController.cancel()
@@ -726,7 +761,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             await handleError(.thirdPartyAccountAlreadyUpgraded, error: nil, event: nil)
         case .syncCancelledFromOtherDevice:
-            sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelValue.syncConfirmationDenied)
+            sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
             await handleError(.syncCancelledFromOtherDevice, error: nil, event: nil)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey, .accountUpgradeFailed, .protocolError:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
@@ -829,6 +864,15 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
 
     func sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: SyncSetupRole) {
         sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelValue.syncConfirmationDenied)
+        sendSyncConfirmationDeniedDeepLinkFlowAbandonedPixelIfNeeded(setupRole: setupRole)
+    }
+
+    private func sendSyncConfirmationDeniedDeepLinkFlowAbandonedPixelIfNeeded(setupRole: SyncSetupRole) {
+        guard case .receiver(_, .deepLink) = setupRole else {
+            return
+        }
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned, includedParameters: [.appVersion])
+        syncSetupExperimentPixels.fireDeepLinkFlowAbandoned()
     }
 
     private func syncSetupPixelParameters(setupRole: SyncSetupRole, reason: String?) -> [String: String] {

@@ -43,11 +43,11 @@ public protocol BrokerProfileJobDependencyProviding {
 
     func isAuthenticatedUser() async -> Bool
 
-    func createScanRunner(profileQuery: BrokerProfileQueryData,
+    func createScanRunner(profileQuery: SubJobContextProviding,
                           stageDurationCalculator: StageDurationCalculator,
                           shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileScanSubJobWebRunning
 
-    func createOptOutRunner(profileQuery: BrokerProfileQueryData,
+    func createOptOutRunner(profileQuery: SubJobContextProviding,
                             stageDurationCalculator: StageDurationCalculator,
                             shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning
 }
@@ -108,7 +108,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.isAuthenticatedUserProvider = isAuthenticatedUserProvider
     }
 
-    public func createScanRunner(profileQuery: BrokerProfileQueryData,
+    public func createScanRunner(profileQuery: SubJobContextProviding,
                                  stageDurationCalculator: StageDurationCalculator,
                                  shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileScanSubJobWebRunning {
         return BrokerProfileScanSubJobWebRunner(
@@ -127,7 +127,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         )
     }
 
-    public func createOptOutRunner(profileQuery: BrokerProfileQueryData,
+    public func createOptOutRunner(profileQuery: SubJobContextProviding,
                                    stageDurationCalculator: StageDurationCalculator,
                                    shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning {
         return BrokerProfileOptOutSubJobWebRunner(

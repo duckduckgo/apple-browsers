@@ -89,9 +89,7 @@ private extension NSMenuItem {
         case .url, .subscription, .identityTheftRestoration, .webExtensionUrl, .aiChat:
             title = recentlyClosedTab.title ?? recentlyClosedTab.tabContent.userEditableUrl?.absoluteString ?? ""
 
-            if title.count > MainMenu.Constants.maxTitleLength {
-                title = String(title.truncated(length: MainMenu.Constants.maxTitleLength))
-            }
+            title = title.truncated(to: MainMenu.Constants.maxTitleLength, position: .tail)
         case .onboarding, .none:
             return nil
         }

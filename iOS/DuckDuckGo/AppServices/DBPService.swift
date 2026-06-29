@@ -73,9 +73,7 @@ final class DBPService: NSObject {
             let isWebViewInspectable = AppUserDefaults().inspectableWebViewEnabled
             #endif
 
-            let dbpContentBlocking: DBPWebViewContentBlocking? = featureFlagger.isContentBlockingOn
-                ? DBPIOSContentBlocking(contentBlockingManager: contentBlocking.contentBlockingManager)
-                : nil
+            let dbpContentBlocking = DBPIOSContentBlocking(contentBlockingManager: contentBlocking.contentBlockingManager)
 
             self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
                 authenticationManager: authManager,
@@ -158,8 +156,8 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
-    var isContentBlockingOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpContentBlocking)
+    var isOptOutRetryErrorFrequencyExperimentOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
     var isFreemiumPIREnabled: Bool {

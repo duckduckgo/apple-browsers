@@ -36,7 +36,7 @@ struct BookmarkViewModel {
         if title.count <= MainMenu.Constants.maxTitleLength {
             return title
         } else {
-            return String(title.truncated(length: MainMenu.Constants.maxTitleLength))
+            return title.truncated(to: MainMenu.Constants.maxTitleLength, position: .tail)
         }
 
     }

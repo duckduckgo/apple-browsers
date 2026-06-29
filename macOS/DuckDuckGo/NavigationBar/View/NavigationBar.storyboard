@@ -696,6 +696,8 @@
                     </view>
                     <connections>
                         <outlet property="activeBackgroundView" destination="e0p-7S-Gan" id="2FB-uy-8tO"/>
+                        <outlet property="activeBackgroundViewLeadingConstraint" destination="E5D-iA-uu3" id="Pre-0L-gHd"/>
+                        <outlet property="activeBackgroundViewTrailingConstraint" destination="V8Z-LH-nT9" id="q7O-8M-oCC"/>
                         <outlet property="activeBackgroundViewWithSuggestions" destination="Ij9-fc-CLI" id="JWC-g2-hrM"/>
                         <outlet property="activeOuterBorderBottomConstraint" destination="ic3-He-fz0" id="pRh-g4-1mm"/>
                         <outlet property="activeOuterBorderLeadingConstraint" destination="0fn-nq-VWh" id="UMH-7o-CeB"/>

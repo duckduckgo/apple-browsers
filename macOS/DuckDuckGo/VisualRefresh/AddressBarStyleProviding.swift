@@ -37,6 +37,7 @@ protocol AddressBarStyleProviding {
     var shouldAddAddressBarShadowWhenInactive: Bool { get }
     var shouldDisplayAddressBarOuerBorder: Bool { get }
     var shouldLeaveBottomPaddingInSuggestions: Bool { get }
+    var shouldUseLegacyAddressBarSpacingMechanism: Bool { get }
 
     // MARK: - Font Sizes
     var defaultAddressBarFontSize: CGFloat { get }
@@ -135,6 +136,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let suggestionShadowRadius: CGFloat = 3.0
     let suggestionHighlightCornerRadius: CGFloat = 6.0
     let shouldLeaveBottomPaddingInSuggestions: Bool = true
+    let shouldUseLegacyAddressBarSpacingMechanism: Bool = true
 
     func navigationBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
@@ -210,6 +212,7 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     let shouldAddAddressBarShadowWhenInactive: Bool = true
     let shouldDisplayAddressBarOuerBorder: Bool = true
     let shouldLeaveBottomPaddingInSuggestions: Bool = true
+    let shouldUseLegacyAddressBarSpacingMechanism: Bool = false
 
     // MARK: - Font Sizes
     let defaultAddressBarFontSize: CGFloat = 13

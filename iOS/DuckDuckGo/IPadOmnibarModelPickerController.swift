@@ -36,12 +36,15 @@ final class IPadOmnibarModelPickerController {
     var onModelsUpdated: (() -> Void)?
 
     init(
-        modelsService: AIChatModelsProviding = AIChatModelsService(),
+        modelsService: AIChatModelsProviding? = nil,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
-        subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager
+        subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
+        aiChatSettings: AIChatSettingsProvider = AIChatSettings()
     ) {
         store = UTIModelStore(
-            modelsService: modelsService,
+            modelsService: modelsService ?? AIChatModelsService(
+                baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL)
+            ),
             preferences: preferences,
             subscriptionManager: subscriptionManager
         )

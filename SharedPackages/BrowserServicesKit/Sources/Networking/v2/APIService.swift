@@ -67,7 +67,7 @@ public class DefaultAPIService: APIService {
         do {
             result = try await urlSession.data(for: request.urlRequest)
         } catch {
-            Logger.networking.error("Request failed: \(String(describing: error))\nrequest: \(request.url?.absoluteString ?? "unknown URL")")
+            Logger.networking.error("Request failed: \(String(describing: error))\nrequest: \(request.url?.shortDescription ?? "unknown URL")")
 
             if let retryPolicy = request.retryPolicy,
                failureRetryCount < retryPolicy.maxRetries {
@@ -105,7 +105,7 @@ public class DefaultAPIService: APIService {
            request.isAuthenticated == true,
            !authAlreadyRefreshed,
            let authorizationRefresherCallback {
-            Logger.networking.log("Refreshing token for \(request.url?.absoluteString ?? "unknown URL", privacy: .public)")
+            Logger.networking.log("Refreshing token for \(request.url?.shortDescription ?? "unknown URL", privacy: .public)")
             // Ask to refresh the token
             let refreshedToken = try await authorizationRefresherCallback(request)
             request.updateAuthorizationHeader(refreshedToken)

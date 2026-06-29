@@ -30,7 +30,7 @@ extension AppStoreCustomProductPageEvaluator: OnboardingFlowEvaluating {
     /// - Parameter url: The URL to evaluate (typically from app launch via CPP deep link)
     /// - Returns: A tuple containing `OnboardingFlowType` and `OnboardingSource`
     func evaluateOnboardingFlow(from url: URL?) -> (flow: OnboardingFlowType, source: OnboardingSource) {
-        Logger.onboarding.debug("Evaluating onboarding flow for url: \(url?.absoluteString ?? "nil")")
+        Logger.onboarding.debug("Evaluating onboarding flow for url: \(url?.shortDescription ?? "nil")")
 
         guard let url else {
             Logger.onboarding.debug("No URL Provided. Default to standard onboarding.")

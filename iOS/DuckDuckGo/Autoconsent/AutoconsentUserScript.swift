@@ -320,7 +320,7 @@ extension AutoconsentUserScript {
 
         let topURLDomain = message.webView?.url?.host
         guard config.isFeature(.autoconsent, enabledForDomain: topURLDomain) else {
-            Logger.autoconsent.info("disabled for site: \(String(describing: url.absoluteString))")
+            Logger.autoconsent.info("disabled for site: \(url.shortDescription)")
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
             if message.frameInfo.isMainFrame {
                 cpmStage = .siteDisabled

@@ -78,7 +78,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         originatingURLPublisher
             .sink { [weak self] url in
                 guard let self else { return }
-                Logger.contextualUTI.debug("ChipViewModel originatingURL changed → \(url?.absoluteString ?? "nil", privacy: .private)")
+                Logger.contextualUTI.debug("ChipViewModel originatingURL changed → \(url?.shortDescription ?? "nil", privacy: .private)")
                 self.originatingURL = url
                 if self.shouldClearOnNavigationAway { self.clearAttachedDueToNavigationAway() }
                 self.recompute()
@@ -104,7 +104,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
             Logger.contextualUTI.debug("PageContextChip tapped but no originating URL — ignoring")
             return
         }
-        Logger.contextualUTI.info("PageContextChip placeholder tapped — attaching \(url.absoluteString, privacy: .private)")
+        Logger.contextualUTI.info("PageContextChip placeholder tapped — attaching \(url.shortDescription, privacy: .private)")
         onAttachActionRequested?(url)
     }
 
@@ -181,6 +181,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
             case .attached(let title, _): return "attached(\(title))"
             }
         }()
-        Logger.contextualUTI.debug("ChipViewModel recompute → \(branch, privacy: .public) state=\(stateDesc, privacy: .public) isVisible=\(self.isVisible, privacy: .public) auto=\(self.isAutoAttachEnabled(), privacy: .public) attached=\(self.attachedContext != nil, privacy: .public) attachedURL=\(self.attachedURL?.absoluteString ?? "nil", privacy: .private) originatingURL=\(self.originatingURL?.absoluteString ?? "nil", privacy: .private)")
+        Logger.contextualUTI.debug("ChipViewModel recompute → \(branch, privacy: .public) state=\(stateDesc, privacy: .public) isVisible=\(self.isVisible, privacy: .public) auto=\(self.isAutoAttachEnabled(), privacy: .public) attached=\(self.attachedContext != nil, privacy: .public) attachedURL=\(self.attachedURL?.shortDescription ?? "nil", privacy: .private) originatingURL=\(self.originatingURL?.shortDescription ?? "nil", privacy: .private)")
     }
 }

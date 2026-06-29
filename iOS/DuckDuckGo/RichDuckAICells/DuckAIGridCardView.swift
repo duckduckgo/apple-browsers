@@ -27,6 +27,8 @@ final class DuckAIGridCardView: UIView {
     private enum Metrics {
         static let contentTopInset: CGFloat = 12
         static let contentHorizontalInset: CGFloat = 8
+        static let snippetLeadingInset: CGFloat = 8
+        static let snippetTrailingInset: CGFloat = 16
         static let contentBottomInset: CGFloat = 8
         static let titleSnippetSpacing: CGFloat = 4
         static let imageVerticalSpacing: CGFloat = 12
@@ -36,9 +38,17 @@ final class DuckAIGridCardView: UIView {
         static let voiceMascotVerticalSpacing: CGFloat = 8
         static let voiceMascotHeight: CGFloat = 80
         static let emptyLogoHeight: CGFloat = 64
+        static let voiceStatusIconSize: CGFloat = 16
+        static let voiceStatusIconSpacing: CGFloat = 4
+    }
+    
+    private enum Colors {
+        static let backgroundColor = UIColor(lightColor: UIColor(designSystemColor: .accentAltGlowPrimary),
+                                             darkColor: UIColor(designSystemColor: .surfaceSecondary))
     }
 
     private let titleLabel = UILabel()
+    private let statusIconImageView = UIImageView()
     private let snippetLabel = UILabel()
     private let chipView = ChipView()
     private let thumbnailImageView = UIImageView()
@@ -80,10 +90,11 @@ final class DuckAIGridCardView: UIView {
     /// Resets to the default light appearance. Called on cell reuse so a recycled `.voice` (dark)
     /// card never lingers in dark state if shown before the next `configure(with:)`.
     func resetAppearance() {
-        backgroundColor = UIColor(designSystemColor: .backgroundPromptMessage)
+        backgroundColor = Colors.backgroundColor
         overrideUserInterfaceStyle = .unspecified
         setMascotVisible(false)
         setLogoVisible(false)
+        statusIconImageView.isHidden = true
     }
 
     private func configureTitle(for item: DuckAIGridItem) {
@@ -103,12 +114,28 @@ final class DuckAIGridCardView: UIView {
     private func configureSnippet(for item: DuckAIGridItem) {
         switch item {
         case .text(_, let snippet), .transcript(_, let snippet):
-            snippetLabel.text = snippet
+            snippetLabel.attributedText = snippetAttributedText(snippet)
             snippetLabel.isHidden = false
         default:
-            snippetLabel.text = nil
+            snippetLabel.attributedText = nil
             snippetLabel.isHidden = true
         }
+    }
+
+    /// Renders the snippet markdown (bold/italic) and tightens inter-line spacing.
+    private func snippetAttributedText(_ snippet: String) -> NSAttributedString {
+        let result: NSMutableAttributedString
+        if let markdown = try? AttributedString(markdown: snippet) {
+            result = NSMutableAttributedString(attributedString: NSAttributedString(markdown))
+        } else {
+            result = NSMutableAttributedString(string: snippet)
+        }
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineHeightMultiple = 0.9
+        result.addAttribute(.paragraphStyle,
+                            value: paragraph,
+                            range: NSRange(location: 0, length: result.length))
+        return result
     }
     
     private func configureThumbnail(for item: DuckAIGridItem) {
@@ -150,9 +177,10 @@ final class DuckAIGridCardView: UIView {
         guard item == .voice else { return }
         // Dark, static live-voice card: "Listening…" status + centred mascot + "Voice" chip.
         // Forcing the subtree to `.dark` flips the reused DRK colours to light-on-dark.
-        backgroundColor = UIColor(singleUseColor: .duckAIContextualSheetBackground)
+        backgroundColor = UIColor(singleUseColor: .duckAIVoiceCellBackground)
         overrideUserInterfaceStyle = .dark
         setMascotVisible(true)
+        statusIconImageView.isHidden = false
     }
 
     private func setThumbnailVisible(_ visible: Bool) {
@@ -171,7 +199,7 @@ final class DuckAIGridCardView: UIView {
     private func setupSubviews() {
         // Corner radius is owned by the host cell (`TabViewGridCell`), which matches it to the
         // screenshot preview's slot. Only the curve + clipping live here.
-        backgroundColor = UIColor(designSystemColor: .backgroundPromptMessage)
+        backgroundColor = Colors.backgroundColor
         layer.cornerCurve = .continuous
         clipsToBounds = true
 
@@ -180,7 +208,24 @@ final class DuckAIGridCardView: UIView {
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
         titleLabel.numberOfLines = 2
         titleLabel.adjustsFontForContentSizeCategory = true
-        addSubview(titleLabel)
+
+        // Leading status glyph for the live-voice card; shown only by `configureVoiceUIIfNeeded`.
+        statusIconImageView.translatesAutoresizingMaskIntoConstraints = false
+        statusIconImageView.image = DesignSystemImages.Glyphs.Size16.permissionMicrophone.withRenderingMode(.alwaysTemplate)
+        statusIconImageView.tintColor = UIColor(designSystemColor: .icons)
+        statusIconImageView.contentMode = .scaleAspectFit
+        statusIconImageView.isHidden = true
+        statusIconImageView.setContentHuggingPriority(.required, for: .horizontal)
+        statusIconImageView.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        // Title row = optional status icon + title. The icon collapses out of the stack when
+        // hidden, so non-voice cards keep a full-width title and only voice shows the 4pt gap.
+        let titleStack = UIStackView(arrangedSubviews: [statusIconImageView, titleLabel])
+        titleStack.translatesAutoresizingMaskIntoConstraints = false
+        titleStack.axis = .horizontal
+        titleStack.alignment = .center
+        titleStack.spacing = Metrics.voiceStatusIconSpacing
+        addSubview(titleStack)
 
         snippetLabel.translatesAutoresizingMaskIntoConstraints = false
         snippetLabel.font = .daxFootnoteRegular()
@@ -238,13 +283,16 @@ final class DuckAIGridCardView: UIView {
         thumbnailBottom.priority = .defaultHigh
 
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.contentTopInset),
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),
-            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.contentHorizontalInset),
+            titleStack.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.contentTopInset),
+            titleStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),
+            titleStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.contentHorizontalInset),
+
+            statusIconImageView.widthAnchor.constraint(equalToConstant: Metrics.voiceStatusIconSize),
+            statusIconImageView.heightAnchor.constraint(equalToConstant: Metrics.voiceStatusIconSize),
 
             snippetLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: Metrics.titleSnippetSpacing),
-            snippetLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),
-            snippetLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.contentHorizontalInset),
+            snippetLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.snippetLeadingInset),
+            snippetLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.snippetTrailingInset),
             snippetBottom,
 
             chipView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.contentHorizontalInset),

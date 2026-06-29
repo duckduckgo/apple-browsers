@@ -122,6 +122,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1213609085394793
     case dbpWebViewUserAgent
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
+    case dbpOptOutRetryError96Hours
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -401,9 +404,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213278892205657?focus=true
     case forceDarkModeOnWebsites
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214001986307605?focus=true
-    case autofillOnboardingDismissExperiment
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725495563625
     case adBlockingExtension
 
@@ -510,6 +510,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114767?focus=true
     case syncCanShowV2ConnectCode
+
+    /// Gates the Simplified Sync Setup follow-up screens.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216075349711580
+    case simplifiedSyncSetupV2
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -517,12 +521,6 @@ extension FeatureFlag: FeatureFlagDescribing {
     public enum UITestExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
-    }
-
-    public enum AutofillOnboardingDismissExperimentCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case variant1  // "Not Now"
-        case variant2  // "Never for this site"
     }
 
     public enum SimplifiedSyncSetupExperimentCohort: String, FeatureFlagCohortDescribing {
@@ -617,6 +615,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.freemiumPIR))
         case .dbpWebViewUserAgent:
             Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true)
+        case .dbpOptOutRetryError96Hours:
+            Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours))
         case .crashReportOptInStatusResetting:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting), supportsLocalOverriding: false)
         case .syncSeamlessAccountSwitching:
@@ -795,8 +795,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled))
         case .adBlockingExtensionEnabledByDefault:
             Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault))
-        case .autofillOnboardingDismissExperiment:
-            Config(source: .remoteReleasable(AutofillSubfeature.onboardingDismissExperiment), cohortType: AutofillOnboardingDismissExperimentCohort.self)
         case .supportsSyncChatsDeletion:
             Config(source: .remoteReleasable(AIChatSubfeature.supportsSyncChatsDeletion))
         case .supportsSyncChatsUpdate:
@@ -850,13 +848,15 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .staleFaviconCleanup:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.staleFaviconCleanup))
         case .aiChatTabSwitcherRichCard:
-            Config(source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .syncScopedAccessCredentials:
             Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
         case .syncCanUseV2ConnectFlow:
             Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow))
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
+        case .simplifiedSyncSetupV2:
+            Config(source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2))
         }
     }
 

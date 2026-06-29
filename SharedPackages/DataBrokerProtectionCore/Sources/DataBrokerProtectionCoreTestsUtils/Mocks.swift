@@ -673,9 +673,11 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var scanJobData = [ScanJobData]()
     public var optOutJobData = [OptOutJobData]()
     public var lastPreferredRunDateOnScan: Date?
+    public var lastPreferredRunDateOnOptOut: Date?
     public var lastSavedBrokerResource: BrokerResource?
     public var lastUpdatedBrokerResource: BrokerResource?
     public var brokerFixturesBundle: Bundle?
+    public var wasUpdatedPreferredRunDateCalled = false
 
     public var wasDeleteOptOutEmailConfirmationCalled = false
     public var lastDeletedEmailConfirmationProfileQueryId: Int64?
@@ -705,9 +707,11 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         scanJobData.removeAll()
         optOutJobData.removeAll()
         lastPreferredRunDateOnScan = nil
+        lastPreferredRunDateOnOptOut = nil
         lastSavedBrokerResource = nil
         lastUpdatedBrokerResource = nil
         brokerFixturesBundle = nil
+        wasUpdatedPreferredRunDateCalled = false
     }
 
     public func save(profile: DataBrokerProtectionProfile) throws -> Int64 {
@@ -850,6 +854,8 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     }
 
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+        lastPreferredRunDateOnOptOut = date
+        wasUpdatedPreferredRunDateCalled = true
     }
 
     public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
@@ -1213,6 +1219,13 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return brokerProfileQueryDataToReturn.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
     }
 
+    public func fetchBrokerProfileQueryData(forBrokerId brokerId: Int64) throws -> [BrokerProfileQueryData] {
+        if let fetchAllBrokerProfileQueryDataError {
+            throw fetchAllBrokerProfileQueryDataError
+        }
+        return brokerProfileQueryDataToReturn.filter { $0.dataBroker.id == brokerId }
+    }
+
     public func fetchAllDataBrokers() throws -> [DataBrokerProtectionCore.DataBroker] {
         wasFetchAllDataBrokersCalled = true
 
@@ -1387,6 +1400,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile] {
         return extractedProfilesFromBroker
+    }
+
+    public func fetchAllExtractedProfiles() throws -> [ExtractedProfile] {
+        return brokerProfileQueryDataToReturn.flatMap { $0.extractedProfiles }
     }
 
     public func fetchAllAttempts() throws -> [AttemptInformation] {
@@ -2119,6 +2136,7 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isContinuedProcessingFeatureOn: Bool
     public let isWebViewUserAgentOn: Bool
+    public let isOptOutRetryErrorFrequencyExperimentOn: Bool
     public let isFreemiumPIREnabled: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
@@ -2126,12 +2144,14 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
                 isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isContinuedProcessingFeatureOn: Bool = true,
                 isWebViewUserAgentOn: Bool = false,
+                isOptOutRetryErrorFrequencyExperimentOn: Bool = false,
                 isFreemiumPIREnabled: Bool = false) {
         self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isWebViewUserAgentOn = isWebViewUserAgentOn
+        self.isOptOutRetryErrorFrequencyExperimentOn = isOptOutRetryErrorFrequencyExperimentOn
         self.isFreemiumPIREnabled = isFreemiumPIREnabled
     }
 }
@@ -2217,13 +2237,13 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
         self.featureFlagger = MockDBPFeatureFlagger()
     }
 
-    public func createScanRunner(profileQuery: BrokerProfileQueryData,
+    public func createScanRunner(profileQuery: SubJobContextProviding,
                                  stageDurationCalculator: any StageDurationCalculator,
                                  shouldRunNextStep: @escaping () -> Bool) -> any BrokerProfileScanSubJobWebRunning {
         return mockScanRunner
     }
 
-    public func createOptOutRunner(profileQuery: BrokerProfileQueryData,
+    public func createOptOutRunner(profileQuery: SubJobContextProviding,
                                    stageDurationCalculator: any StageDurationCalculator,
                                    shouldRunNextStep: @escaping () -> Bool) -> any BrokerProfileOptOutSubJobWebRunning {
         return mockOptOutRunner
@@ -2273,6 +2293,7 @@ public final class MockMismatchCalculator: MismatchCalculator {
 
 public final class MockBrokerJSONService: BrokerJSONServiceProvider {
     public var vault: any DataBrokerProtectionCore.DataBrokerProtectionSecureVault
+    public let optOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFlagging = DisabledOptOutRetryErrorFeatureFlagger()
 
     public private(set) var didCallUpdateBrokers = false
     public private(set) var didCallCheckForUpdates = false
@@ -2866,8 +2887,7 @@ public final class MockScanSubJobWebRunner: BrokerProfileScanSubJobWebRunning {
 
     public init() { }
 
-    public func scan(_ profileQuery: BrokerProfileQueryData,
-                     showWebView: Bool,
+    public func scan(showWebView: Bool,
                      shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         wasScanCalled = true
 
@@ -2892,8 +2912,7 @@ public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebProtoc
 
     public init() { }
 
-    public func optOut(profileQuery: BrokerProfileQueryData,
-                       extractedProfile: ExtractedProfile,
+    public func optOut(extractedProfile: ExtractedProfile,
                        showWebView: Bool,
                        shouldRunNextStep: @escaping () -> Bool) async throws {
         wasOptOutCalled = true

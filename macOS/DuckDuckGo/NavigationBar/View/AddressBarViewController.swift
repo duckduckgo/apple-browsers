@@ -167,11 +167,14 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    /// True when the nav bar should render at its tall / focused height. Covers any selected state, duck.ai
-    /// (focused or unfocused — Duck.ai is always a typing context), and unfocused search with user-provided
-    /// input (typed text / URL / tab suggestion). Compact only for `.inactive` + `.browsing` (URL rendered passively).
+    /// True when the nav bar should render at its tall / focused height
     var shouldUseTallAddressBarLayout: Bool {
-        selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
+        guard featureFlagger.isFeatureOn(.appRebranding) else {
+            return selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
+        }
+
+        // Tall only when the bar is focused with text, or it's a duck.ai prompt input.
+        return (selectionState.isSelected && !addressBarTextField.value.isEmpty) || selectionState.isInAIChatMode
     }
 
     let themeManager: ThemeManaging

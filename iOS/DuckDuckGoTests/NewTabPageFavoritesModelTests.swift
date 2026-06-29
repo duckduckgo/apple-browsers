@@ -20,6 +20,9 @@
 import XCTest
 import Combine
 import Bookmarks
+import CoreData
+import Common
+import Persistence
 @testable import Core
 @testable import DuckDuckGo
 
@@ -85,6 +88,74 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
                            pixelFiring: PixelFiringMock.self,
                            dailyPixelFiring: PixelFiringMock.self)
     }
+
+    // MARK: - Reordering (regression for m_d_favorites_list_index_not_matching_bookmark)
+
+    // These exercise the real model -> adapter -> view model stack, because the bug only appears
+    // when the adapter forwards the model's in-process `localUpdates` back into the originating
+    // view model (added in 7.225), making `updateData()` re-enter during `moveFavorites`.
+
+    func testReorderingFavoriteKeepsInMemoryListInSyncWithModel() throws {
+        let env = try makeReorderEnvironment()
+        defer { try? env.db.tearDown(deleteStores: true) }
+
+        XCTAssertEqual(env.sut.allFavorites.map(\.title), BasicBookmarksStructure.favoriteTitles)
+
+        env.sut.moveFavorites(from: IndexSet(integer: 0), to: 2)
+
+        // The in-memory list must match the persisted order. Before the fix the move was applied
+        // twice — once by the re-entrant model update and again by the manual `allFavorites.move(...)`
+        // — leaving the in-memory list permanently out of step with Core Data.
+        XCTAssertEqual(env.sut.allFavorites.map(\.id), env.adapter.favorites.map(\.id))
+        XCTAssertFalse(env.recorder.events.contains(.favoritesListIndexNotMatchingBookmark))
+    }
+
+    func testRepeatedReorderingDoesNotFireIndexMismatch() throws {
+        let env = try makeReorderEnvironment()
+        defer { try? env.db.tearDown(deleteStores: true) }
+
+        env.sut.moveFavorites(from: IndexSet(integer: 0), to: 2)
+        env.sut.moveFavorites(from: IndexSet(integer: 0), to: 2)
+
+        XCTAssertFalse(env.recorder.events.contains(.favoritesListIndexNotMatchingBookmark),
+                       "Reordering favorites desynced the in-memory list from the model, firing favoritesListIndexNotMatchingBookmark")
+    }
+
+    private typealias ReorderEnvironment = (
+        sut: FavoritesViewModel,
+        adapter: FavoritesListInteractingAdapter,
+        db: CoreDataDatabase,
+        recorder: BookmarksModelErrorRecorder
+    )
+
+    private func makeReorderEnvironment() throws -> ReorderEnvironment {
+        let managedObjectModel = try XCTUnwrap(CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel"))
+        let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: managedObjectModel)
+        db.loadStore()
+        let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType, name: "TestContext")
+        BasicBookmarksStructure.populateDB(context: context)
+
+        let recorder = BookmarksModelErrorRecorder()
+        let model = FavoritesListViewModel(
+            bookmarksDatabase: db,
+            errorEvents: .init(mapping: { event, _, _, _ in
+                recorder.events.append(event)
+            }),
+            favoritesDisplayMode: .displayNative(.mobile))
+        let adapter = FavoritesListInteractingAdapter(favoritesListInteracting: model, appSettings: AppSettingsMock())
+        let sut = FavoritesViewModel(isFocussedState: false,
+                                     favoriteDataSource: adapter,
+                                     faviconLoader: MockFavoritesFaviconLoading(),
+                                     faviconsCache: MockFavoritesFaviconCaching(),
+                                     pixelFiring: PixelFiringMock.self,
+                                     dailyPixelFiring: PixelFiringMock.self)
+        // `adapter` retains `model`, keeping the Core Data stack alive for the test's lifetime.
+        return (sut, adapter, db, recorder)
+    }
+}
+
+private final class BookmarksModelErrorRecorder {
+    var events: [BookmarksModelError] = []
 }
 
 private final class MockNewTabPageFavoriteDataSource: NewTabPageFavoriteDataSource {

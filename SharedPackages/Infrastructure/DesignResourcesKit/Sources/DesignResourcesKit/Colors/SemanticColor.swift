@@ -67,6 +67,10 @@ public enum DesignSystemColor {
     case accentContentPrimary
     case accentTertiary
 
+    // Brand Alt
+    case accentAltGlowPrimary
+    case accentAltContentPrimary
+
     // Container
     case containerBorderPrimary
 

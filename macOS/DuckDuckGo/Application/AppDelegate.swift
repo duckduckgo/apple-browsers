@@ -54,6 +54,7 @@ import os.log
 import Persistence
 import PixelExperimentKit
 import PixelKit
+import SERPSettings
 import PrivacyConfig
 import PrivacyStats
 import RemoteMessaging
@@ -1567,7 +1568,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
         fireDailyAIChatEnabledPixel()
+        fireDailyAIFeaturesStatePixel()
         fireDailyAdBlockingPixel()
+        fireDailyAutoClearOnExitEnabledPixel()
 
         fireAutoconsentDailyPixel()
         fireThemeDailyPixel()
@@ -1616,6 +1619,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyAIChatEnabledPixel() {
         PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
+    }
+
+    /// Once-daily snapshot of the three AI settings + the derived "no AI" state, across the active base.
+    private func fireDailyAIFeaturesStatePixel() {
+        let serpSettings = SERPSettingsProvider()
+        let duckAIEnabled = aiChatPreferences.isAIFeaturesEnabled
+        let searchAssist = serpSettings.searchAssistFrequency
+        let hideAIImages = serpSettings.hideAIGeneratedImages
+        let noAI = !duckAIEnabled && searchAssist == .never && hideAIImages
+
+        PixelKit.fire(AIChatPixel.aiFeaturesState(duckAI: duckAIEnabled,
+                                                  searchAssist: searchAssist.rawValue,
+                                                  hideAIImages: hideAIImages,
+                                                  noAI: noAI),
+                      frequency: .daily,
+                      includeAppVersionParameter: true)
+    }
+
+    private func fireDailyAutoClearOnExitEnabledPixel() {
+        guard dataClearingPreferences.isAutoClearEnabled else { return }
+        PixelKit.fire(GeneralPixel.dailyAutoClearOnExitEnabled, frequency: .daily, doNotEnforcePrefix: true)
     }
 
     private func fireDailyAdBlockingPixel() {

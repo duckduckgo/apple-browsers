@@ -71,7 +71,6 @@ class MainViewFactory {
         let presenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aichatIPadTabFeature: AIChatIPadTabFeature(featureFlagger: featureFlagger),
                                                       aiChatSettings: aiChatSettings,
                                                       aiChatSyncCleaner: aiChatSyncCleaner,
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
@@ -186,7 +185,6 @@ extension MainViewFactory {
     final class NavigationBarContainer: UIView {
 
         /// Enables overflow hit testing for iPad expanded search area.
-        /// Set to `true` when `FeatureFlag.iPadAIToggle` is on.
         var allowsOverflowHitTesting = false {
             didSet {
                 guard allowsOverflowHitTesting != oldValue else { return }

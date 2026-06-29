@@ -33,6 +33,7 @@ protocol BrowserChromeDelegate: AnyObject {
     var isToolbarHidden: Bool { get }
     var toolbarHeight: CGFloat { get }
     var barsMaxHeight: CGFloat { get }
+    var isInMinimalChromeLayout: Bool { get }
 
     var omniBar: any OmniBar { get }
     var tabBarContainer: UIView { get }

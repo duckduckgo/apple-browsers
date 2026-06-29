@@ -390,6 +390,9 @@ public extension Notification.Name {
 public extension Notification.Name {
     /// Posted when a native-originated SERP setting changes, so open SERPs push the new snapshot.
     static let serpSettingsDidChange = Notification.Name("com.duckduckgo.serpsettings.didchange")
+
+    /// Posted when the SERP stores a full settings snapshot natively, so native settings UI can refresh.
+    static let serpSettingsDidReceiveWebUpdate = Notification.Name("com.duckduckgo.serpsettings.didreceivewebupdate")
 }
 
 /// Model that holds the state of the Duck.ai state

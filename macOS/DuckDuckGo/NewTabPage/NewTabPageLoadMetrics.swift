@@ -72,8 +72,7 @@ final class NewTabPageLoadMetrics {
         guard loadTime <= 10 else {
             return
         }
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
-        firePixel(NewTabPagePixel.newTabPageLoadingTime(duration: loadTime, osMajorVersion: osVersion))
+        firePixel(NewTabPagePixel.newTabPageLoadingTime(duration: loadTime))
     }
 
 }

@@ -269,9 +269,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// from `webScrollFreezeObservability` so the production observer ships without the capture.
     case webScrollFreezeCapture
 
-    case screenTimeCleaning
+    /// Speculative, scoped auto-recovery triggered on a confirmed freeze; default internal/off.
+    case webScrollFreezeAutoRecovery
 
-    case minimalChromeInLandscape
+    case screenTimeCleaning
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
@@ -361,7 +362,6 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
-    case onboardingDismissExperiment
     case autofillPasswordsStatusBar
 }
 
@@ -381,7 +381,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case goToMarket
     case webViewUserAgent
     case freemiumPIR
-    case contentBlocking
+    case optOutRetryError96Hours
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -449,9 +449,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar onboarding for AI Chat
     case omnibarOnboarding
 
-    /// Enables the omnibar cluster for AI Chat
-    case omnibarCluster
-
     /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
     case omnibarTools
 
@@ -459,6 +456,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case omnibarDefaultPosition
 
     case unifiedToggleInput
+
+    /// Forward-only lever for the unified toggle input rollout. When disabled, *new* (un-granted)
+    /// users stop receiving the unified toggle input; users who have already been granted it keep
+    /// it. Independent of the master `unifiedToggleInput` flag (which revokes from everyone when
+    /// turned off). See `UnifiedToggleInputFeature`.
+    case unifiedToggleInputIncludeNewUsers
 
     /// Hides the Search↔Duck.ai toggle in the unified input when the user is on a Duck.ai tab,
     /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
@@ -470,9 +473,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls whether automatic page context attachment defaults to enabled
     case autoAttachContextByDefault
-
-    /// Signals that the iPad app should display duck.ai chats in a tab instead of a sheet
-    case iPadDuckaiOnTab
 
     /// Signals that the iPad app should display the duck.ai toggle
     case iPadAIChatToggle
@@ -595,6 +595,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// settings screen with native controls, regroups the main AI settings at the top, and adds the
     /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
     case aiFeaturesNativeControls
+
+    /// Enables the native Duck.ai bar controls (model picker) in the iPad address bar's
+    /// expanded Duck.ai input area.
+    case iPadDuckAIBarControls
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -687,9 +691,13 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
+
+    /// Gates the Simplified Sync Setup follow-up screens (deactivation + multi-device path).
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1215960387490701
+    case simplifiedSyncSetupV2
 }
 
-public enum AutoconsentSubfeature: String, PrivacySubfeature {
+public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .autoconsent
     }
@@ -697,6 +705,7 @@ public enum AutoconsentSubfeature: String, PrivacySubfeature {
     case onByDefault
     case filterlist
     case heuristicAction
+    case cookiePopupPreferenceSetting
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {

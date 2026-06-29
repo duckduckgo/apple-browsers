@@ -178,6 +178,13 @@ public struct PairingInfo {
     public let deviceName: String
     let kind: Kind
 
+    public var isPairingV2: Bool {
+        if case .pairingV2 = kind {
+            return true
+        }
+        return false
+    }
+
     public init?(url: URL) {
         guard Self.isPairing(url: url) else {
             return nil
@@ -186,6 +193,10 @@ public struct PairingInfo {
             return nil
         }
         let dict = Self.fragmentParameters(from: fragment)
+        if dict[Keys.pairingV2Code] != nil {
+            self.init(pairingV2URL: url, deviceName: "")
+            return
+        }
         guard let code = dict[Keys.code], let deviceName = dict[Keys.deviceName] else {
             return nil
         }

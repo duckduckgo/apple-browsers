@@ -80,6 +80,8 @@ class MockWebTrackingProtectionPreferencesPersistor: WebTrackingProtectionPrefer
 
 class MockCookiePopupProtectionPreferencesPersistor: CookiePopupProtectionPreferencesPersistor {
     var autoconsentEnabled: Bool = false
+    var cookiePopupPreferenceRawValue: String?
+    var didMigrateCookiePopupPreference: Bool = false
 }
 
 class MockAIChatPreferencesStorage: AIChatPreferencesStorage {

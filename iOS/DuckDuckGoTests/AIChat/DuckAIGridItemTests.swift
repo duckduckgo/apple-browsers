@@ -83,12 +83,12 @@ final class DuckAIGridItemTests: XCTestCase {
         XCTAssertEqual(item, .image(title: "A duck wearing sunglasses", imageFileRef: "uuid-latest"))
     }
 
-    func testWhenChatIsImageGenerationModelAndHasNoFileRefsThenReturnsNil() {
+    func testWhenChatIsImageGenerationModelAndHasNoFileRefsThenReturnsEmptyWithChatChip() {
         let chat = makeChat(title: "A duck wearing sunglasses", model: "image-generation", fileRefs: [])
 
         let item = DuckAIGridItem.from(chat: chat, lastMessageContent: nil)
 
-        XCTAssertNil(item)
+        XCTAssertEqual(item, .empty(title: "A duck wearing sunglasses", chip: .chat))
     }
 
     func testWhenChatIsImageGenerationAndTitleIsEmptyThenFallsBackToUntitledChatPlaceholder() {
@@ -97,6 +97,79 @@ final class DuckAIGridItemTests: XCTestCase {
         let item = DuckAIGridItem.from(chat: chat, lastMessageContent: nil)
 
         XCTAssertEqual(item, .image(title: UserText.aiChatTabSwitcherCardUntitledChat, imageFileRef: "uuid-1"))
+    }
+
+    // MARK: - Voice / transcript branch
+
+    func testWhenChatIsVoiceKindAndHasTranscriptThenReturnsTranscriptItem() {
+        let chat = makeChat(title: "Weekend plans", model: "voice-mode")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: "Let's go hiking on Saturday.")
+
+        XCTAssertEqual(item, .transcript(title: "Weekend plans", snippet: "Let's go hiking on Saturday."))
+    }
+
+    func testWhenChatIsVoiceKindAndTranscriptHasWhitespaceThenSnippetIsTrimmed() {
+        let chat = makeChat(title: "Weekend plans", model: "voice-mode")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: "  Let's go hiking\n")
+
+        XCTAssertEqual(item, .transcript(title: "Weekend plans", snippet: "Let's go hiking"))
+    }
+
+    func testWhenChatIsVoiceKindAndTranscriptExceedsSnippetCapThenSnippetIsTruncatedToCap() {
+        let chat = makeChat(title: "Weekend plans", model: "voice-mode")
+        let longTranscript = String(repeating: "a", count: DuckAIGridItem.snippetCharacterCap + 100)
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: longTranscript)
+
+        let expectedSnippet = String(repeating: "a", count: DuckAIGridItem.snippetCharacterCap)
+        XCTAssertEqual(item, .transcript(title: "Weekend plans", snippet: expectedSnippet))
+    }
+
+    func testWhenChatIsVoiceKindAndTitleIsEmptyThenFallsBackToUntitledChatPlaceholder() {
+        let chat = makeChat(title: "", model: "voice-mode")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: "Hi")
+
+        XCTAssertEqual(item, .transcript(title: UserText.aiChatTabSwitcherCardUntitledChat, snippet: "Hi"))
+    }
+
+    func testWhenChatIsVoiceKindAndTranscriptIsNilThenReturnsEmptyWithTranscriptChip() {
+        let chat = makeChat(title: "Weekend plans", model: "voice-mode")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: nil)
+
+        XCTAssertEqual(item, .empty(title: "Weekend plans", chip: .transcript))
+    }
+
+    // MARK: - Empty-content branch
+
+    func testWhenChatIsTextKindAndContentIsEmptyThenReturnsEmptyWithChatChip() {
+        let chat = makeChat(title: "Cute ducks", model: "gpt-4o-mini")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: "   \n")
+
+        XCTAssertEqual(item, .empty(title: "Cute ducks", chip: .chat))
+    }
+
+    func testWhenContentIsEmptyAndTitleIsEmptyThenFallsBackToUntitledChatPlaceholder() {
+        let chat = makeChat(title: "", model: "gpt-4o-mini")
+
+        let item = DuckAIGridItem.from(chat: chat, lastMessageContent: nil)
+
+        XCTAssertEqual(item, .empty(title: UserText.aiChatTabSwitcherCardUntitledChat, chip: .chat))
+    }
+
+    // MARK: - chipKind
+
+    func testChipKindMapping() {
+        XCTAssertEqual(DuckAIGridItem.text(title: "t", snippet: "s").chipKind, .chat)
+        XCTAssertEqual(DuckAIGridItem.image(title: "t", imageFileRef: "r").chipKind, .chat)
+        XCTAssertEqual(DuckAIGridItem.transcript(title: "t", snippet: "s").chipKind, .transcript)
+        XCTAssertEqual(DuckAIGridItem.voice.chipKind, .voice)
+        XCTAssertEqual(DuckAIGridItem.empty(title: "t", chip: .chat).chipKind, .chat)
+        XCTAssertNil(DuckAIGridItem.empty(title: nil, chip: nil).chipKind)
     }
 
     // MARK: - Helpers

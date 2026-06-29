@@ -26,6 +26,7 @@ import XCTest
 final class DarkReaderBundlePatchTests: XCTestCase {
 
     private var extractedDir: URL!
+    private var baseDir: URL!
 
     override func setUp() async throws {
         try await super.setUp()
@@ -51,6 +52,27 @@ final class DarkReaderBundlePatchTests: XCTestCase {
         }
 
         extractedDir = tempDir
+
+        // The bundle may be packaged flat (manifest.json at the root, matching the
+        // other embedded extensions) or wrapped in a top-level folder. Resolve the
+        // directory that actually contains manifest.json, mirroring how the app's
+        // WebExtensionStorageProviding.resolveInstalledExtension locates it.
+        baseDir = Self.directoryContainingManifest(in: tempDir) ?? tempDir
+    }
+
+    private static func directoryContainingManifest(in root: URL) -> URL? {
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: root.appendingPathComponent("manifest.json").path) {
+            return root
+        }
+        let contents = (try? fileManager.contentsOfDirectory(
+            at: root,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        )) ?? []
+        return contents.first { item in
+            fileManager.fileExists(atPath: item.appendingPathComponent("manifest.json").path)
+        }
     }
 
     override func tearDown() {
@@ -155,13 +177,13 @@ final class DarkReaderBundlePatchTests: XCTestCase {
     // MARK: - Helpers
 
     private func loadManifestJSON() throws -> [String: Any] {
-        let manifestURL = extractedDir.appendingPathComponent("darkreader/manifest.json")
+        let manifestURL = baseDir.appendingPathComponent("manifest.json")
         let data = try Data(contentsOf: manifestURL)
         return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
     private func loadBackgroundScript() throws -> String {
-        let backgroundURL = extractedDir.appendingPathComponent("darkreader/background/index.js")
+        let backgroundURL = baseDir.appendingPathComponent("background/index.js")
         return try String(contentsOf: backgroundURL, encoding: .utf8)
     }
 }

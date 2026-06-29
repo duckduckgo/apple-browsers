@@ -1,6 +1,5 @@
 //
-//  MockAutofillOnboardingExperimentPixelFiring.swift
-//  DuckDuckGo
+//  CookiePopupPreference.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,17 +16,20 @@
 //  limitations under the License.
 //
 
-@testable import DuckDuckGo
+import Foundation
 
-final class MockAutofillOnboardingExperimentPixelFiring: AutofillOnboardingExperimentPixelFiring {
-    func fireSaveTap() {}
-    func fireDismissTap() {}
-    func fireNeverAskTap() {}
-    func firePasswordsSaved() {}
-    func fireImportCompleted() {}
-    func fireAutofillEnabled(_ enabled: Bool) {}
-    func fireSyncEnabled(_ enabled: Bool) {}
-    func fireAutofillInOtherAppsEnabled(_ enabled: Bool) {}
-    func fireImpressionCount(_ count: Int) {}
-    func fireDaysToConversion(_ days: Int) {}
+public enum CookiePopupPreference: String, Codable, CaseIterable, Sendable {
+    case max
+    case `default`
+    case off
+
+    public var isBlockingEnabled: Bool {
+        self != .off
+    }
+}
+
+public extension AutoconsentPreferencesProviding {
+    var isAutoconsentEnabled: Bool {
+        cookiePopupPreference.isBlockingEnabled
+    }
 }

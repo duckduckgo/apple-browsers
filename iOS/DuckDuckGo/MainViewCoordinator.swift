@@ -446,12 +446,19 @@ class MainViewCoordinator {
         animator.startAnimation()
     }
 
-    /// Hides chrome and brings the omnibar collection above UTI so icons can fade in on top of the collapsing UTI.
+    /// Hides chrome and puts the omnibar collection above UTI, but keeps it invisible until
+    /// `finalizeInlineDismissOmnibarReveal` snaps it in at the end of the transition.
     func prepareOmnibarForInlineDismissReveal() {
         guard !isNavigationChromeHidden, let barView = omniBar?.barView else { return }
         barView.hideBarChrome()
-        navigationBarCollectionView.alpha = 1
+        navigationBarCollectionView.alpha = 0
         navigationBarContainer.bringSubviewToFront(navigationBarCollectionView)
+    }
+
+    /// Snaps omnibar visibility once the UTI collapse finishes to avoid a layered overlap.
+    func finalizeInlineDismissOmnibarReveal() {
+        guard !isNavigationChromeHidden else { return }
+        navigationBarCollectionView.alpha = 1
     }
 
     /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.

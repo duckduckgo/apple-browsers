@@ -1066,6 +1066,7 @@ extension MainViewController {
                 coordinator.viewController.setTextHorizontalShift(0)
                 coordinator.deactivateToOmnibar(resetView: false, animateDismiss: false)
                 coordinator.viewController.finalizeOmnibarEditingDismiss()
+                self.viewCoordinator.finalizeInlineDismissOmnibarReveal()
                 // The user can land here on a non-AI tab (e.g. NTP via the after-idle escape
                 // hatch) while the toolbar is still hidden from a prior Duck.ai session.
                 // Reconcile against the *current* tab — idempotent and AI-tab paths re-hide

@@ -198,6 +198,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     private var hasEnteredText: Bool = false
+    private var displaysTallLayout: Bool = false
 
     private var isFirstResponder = false {
         didSet {
@@ -570,6 +571,7 @@ final class AddressBarViewController: NSViewController {
                 updateView()
                 updateSwitchToTabBoxAppearance()
                 markTextEnteredIfNeeded()
+                resizeAddressBarIfNeeded()
             }
             .store(in: &cancellables)
     }
@@ -1318,6 +1320,16 @@ private extension AddressBarViewController {
 
     func resetTextEntered() {
         hasEnteredText = false
+    }
+
+    func resizeAddressBarIfNeeded() {
+        let usesTallLayout = shouldUseTallAddressBarLayout
+        guard usesTallLayout != displaysTallLayout else {
+            return
+        }
+
+        displaysTallLayout = usesTallLayout
+        delegate?.resizeAddressBarForHomePage(self)
     }
 }
 

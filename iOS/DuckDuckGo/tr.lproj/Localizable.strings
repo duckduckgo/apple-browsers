@@ -4795,15 +4795,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Sync & Backup kapatılsın mı?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Kaldır";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Bu Cihaz artık senkronize edilen verilerinize erişemeyecektir.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Senkronizasyon kapatılsın mı?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Sync & Backup kurulumu için cihazın kilidini açın";
 
@@ -5338,9 +5329,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "\"%@\" için eşleşme bulunamadı";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kod kopyalandı";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

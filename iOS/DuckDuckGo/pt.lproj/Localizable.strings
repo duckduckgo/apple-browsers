@@ -4795,15 +4795,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Desativar a Sincronização e cópia de segurança?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Remover";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Este dispositivo deixará de poder aceder aos teus dados sincronizados.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Desativar a sincronização?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Desbloquear dispositivo para configurar a Sync & Backup";
 
@@ -5338,9 +5329,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Nenhuma correspondência para\"%@\"";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Código copiado";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

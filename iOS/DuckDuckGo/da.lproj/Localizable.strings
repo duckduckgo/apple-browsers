@@ -4795,15 +4795,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Slå Sync & Backup fra?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Fjern";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Denne enhed vil ikke længere have adgang til dine synkroniserede data.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Slå synkronisering fra?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Lås enheden op for at konfigurere synkronisering og sikkerhedskopiering.";
 
@@ -5338,9 +5329,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Ingen resultater for \"%@\"";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kode kopieret";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

@@ -32,7 +32,6 @@ let package = Package(
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../../../SharedPackages/DataBrokerProtectionCore"),
-        .package(path: "../../../SharedPackages/DebugServer"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../AppKitExtensions"),
         .package(path: "../XPCHelper"),
@@ -48,7 +47,6 @@ let package = Package(
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
-                .product(name: "DebugServer", package: "DebugServer"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "AppKitExtensions", package: "AppKitExtensions"),
                 .byName(name: "XPCHelper"),

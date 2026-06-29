@@ -126,8 +126,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                     .targetting(self)
             }
 
-            NSMenuItem(title: "Debug Server (read-only)") {
-                NSMenuItem(title: "Start & Open Snapshot", action: #selector(DataBrokerProtectionDebugMenu.startPIRDebugServer))
+            NSMenuItem(title: "Debug Server") {
+                NSMenuItem(title: "Start", action: #selector(DataBrokerProtectionDebugMenu.startPIRDebugServer))
                     .targetting(self)
                 NSMenuItem(title: "Stop", action: #selector(DataBrokerProtectionDebugMenu.stopPIRDebugServer))
                     .targetting(self)
@@ -425,12 +425,17 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func startPIRDebugServer() {
         Task { @MainActor in
-            guard let info = await DataBrokerProtectionManager.shared.loginItemInterface.startDebugServer() else {
+            guard await DataBrokerProtectionManager.shared.loginItemInterface.startDebugServer() else {
                 Logger.dataBrokerProtection.error("Failed to start PIR debug server (is the background agent running?)")
                 return
             }
-            guard let url = URL(string: "http://127.0.0.1:\(info.port)/api/snapshot") else { return }
-            Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .ui))
+
+            let url = "http://127.0.0.1:\(DataBrokerProtectionDebugHTTPServer.defaultPort)/api"
+            let alert = NSAlert()
+            alert.messageText = "PIR Debug Server Started"
+            alert.informativeText = url
+            alert.addButton(withTitle: "OK")
+            await alert.runModal()
         }
     }
 

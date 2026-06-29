@@ -37,7 +37,7 @@ public protocol DataBrokerProtectionAgentDebugCommands {
     func checkForEmailConfirmationData() async
     func runEmailConfirmationOperations(showWebView: Bool) async
     func getDebugMetadata() async -> DBPBackgroundAgentMetadata?
-    func startDebugServer() async -> DBPDebugServerInfo?
+    func startDebugServer() async -> Bool
     func stopDebugServer()
 }
 

@@ -80,12 +80,9 @@ public class DBPIOSInterface {
 
         func resetAllNotificationStatesForDebug()
 
-        /// Starts the read-only debug HTTP server and returns the listening port, or `nil` on
-        /// failure. Returns the existing port if already running.
         @discardableResult
-        func startDebugServer() async -> UInt16?
+        func startDebugServer() async -> Bool
         func stopDebugServer()
-        /// The port the debug server is currently listening on, or `nil` if stopped.
         var debugServerPort: UInt16? { get }
     }
 
@@ -194,8 +191,6 @@ public final class DataBrokerProtectionIOSManager {
     private var isContinuedProcessingRunActive = false
 
     private var debugServer: DataBrokerProtectionDebugHTTPServer?
-    private var debugServerAutoStopWorkItem: DispatchWorkItem?
-    /// Last time a background processing task fired — surfaced via the debug server's snapshot.
     private var lastBackgroundTaskTriggerTimestamp: Date?
 
     private lazy var continuedProcessingCoordinator: any DBPContinuedProcessingCoordinating = {
@@ -640,40 +635,41 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         userNotificationService.resetAllNotificationStatesForDebug()
     }
 
+    private var canStartDebugServer: Bool {
+        #if DEBUG
+        return true
+        #else
+        return privacyConfigManager.internalUserDecider.isInternalUser
+        #endif
+    }
+
     @discardableResult
-    public func startDebugServer() async -> UInt16? {
+    public func startDebugServer() async -> Bool {
+        guard canStartDebugServer else {
+            Logger.dataBrokerProtection.error("Blocked PIR debug server start outside debug/internal-user context.")
+            return false
+        }
+
         if let debugServer {
-            return debugServer.port
+            return debugServer.isRunning
         }
         let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionIOSLogReader())
         do {
             try server.start()
             debugServer = server
-            scheduleDebugServerAutoStop()
-            return server.port
+            return true
         } catch {
             Logger.dataBrokerProtection.error("Failed to start PIR debug server: \(error.localizedDescription, privacy: .public)")
-            return nil
+            return false
         }
     }
 
     public func stopDebugServer() {
         debugServer?.stop()
         debugServer = nil
-        debugServerAutoStopWorkItem?.cancel()
-        debugServerAutoStopWorkItem = nil
     }
 
     public var debugServerPort: UInt16? { debugServer?.port }
-
-    /// Stops the debug server after a period of inactivity so it does not linger indefinitely.
-    private func scheduleDebugServerAutoStop() {
-        let autoStopInterval: TimeInterval = 30 * 60
-        debugServerAutoStopWorkItem?.cancel()
-        let workItem = DispatchWorkItem { [weak self] in self?.stopDebugServer() }
-        debugServerAutoStopWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + autoStopInterval, execute: workItem)
-    }
 }
 
 // MARK: - Debug HTTP server read access
@@ -690,12 +686,6 @@ extension DataBrokerProtectionIOSManager: DataBrokerProtectionDebugReadProviding
 
     public var lastSchedulerTrigger: Date? { lastBackgroundTaskTriggerTimestamp }
 
-    public func isAuthenticated() async -> Bool { await authenticationManager.isUserAuthenticated }
-
-    public func hasAccessToken() async -> Bool { await authenticationManager.accessToken() != nil }
-
-    public func hasValidEntitlement() async -> Bool { (try? await authenticationManager.hasValidEntitlement()) ?? false }
-
     public var environmentName: String {
         settings.selectedEnvironment == .production ? "production" : "staging"
     }
@@ -710,10 +700,6 @@ extension DataBrokerProtectionIOSManager: DataBrokerProtectionDebugReadProviding
 
     public func brokerProfileQueryData() throws -> [BrokerProfileQueryData] {
         try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
-    }
-
-    public func allBrokerResources() throws -> [BrokerResource] {
-        try brokerUpdater?.vault.fetchAllBrokerResources() ?? []
     }
 }
 

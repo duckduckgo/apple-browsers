@@ -20,21 +20,15 @@ import DataBrokerProtectionCore
 import Foundation
 import OSLog
 
-/// macOS `DebugLogReading` for the debug server's `/api/logs` endpoint, backed by the unified log
-/// via `DataBrokerLogMonitorService` (`OSLogStore`). iOS has no `OSLogStore` equivalent, so it
-/// injects no reader and the endpoint is omitted there.
 struct DataBrokerProtectionOSLogReader: DebugLogReading {
 
     private let monitor = DataBrokerLogMonitorService()
 
-    func logLines(since: Date?, minLevel: String?, category: String?, limit: Int) throws -> [DebugLogLine] {
-        // Default filter targets the PIR subsystem in the duckduckgo process — the agent's own logs.
+    func logLines(since: Date?, category: String?, limit: Int) throws -> [DebugLogLine] {
         let predicate = LogFilterSettings().subsystemPredicate
         let entries = try monitor.fetchLogs(matching: predicate, since: since)
 
-        let threshold = minLevel.flatMap(Self.levelRank(forName:))
         let filtered = entries.compactMap { entry -> DebugLogLine? in
-            if let threshold, Self.levelRank(entry.level) < threshold { return nil }
             if let category, entry.rawCategory.caseInsensitiveCompare(category) != .orderedSame { return nil }
             return DebugLogLine(timestamp: entry.timestamp,
                                 level: entry.level.description,
@@ -44,27 +38,5 @@ struct DataBrokerProtectionOSLogReader: DebugLogReading {
                                 message: entry.message)
         }
         return limit > 0 ? Array(filtered.suffix(limit)) : filtered
-    }
-
-    private static func levelRank(_ level: OSLogEntryLog.Level) -> Int {
-        switch level {
-        case .debug: return 0
-        case .info: return 1
-        case .notice: return 2
-        case .error: return 3
-        case .fault: return 4
-        default: return 2
-        }
-    }
-
-    private static func levelRank(forName name: String) -> Int? {
-        switch name.lowercased() {
-        case "debug": return 0
-        case "info": return 1
-        case "notice": return 2
-        case "error": return 3
-        case "fault": return 4
-        default: return nil
-        }
     }
 }

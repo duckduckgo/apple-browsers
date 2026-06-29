@@ -18,32 +18,17 @@
 
 import Foundation
 
-// Read-only JSON payloads exposed by the PIR debug HTTP server. All `Encodable`; the server encodes
-// them with an ISO-8601 date strategy. Platform-agnostic so macOS and iOS hosts share them.
-//
-// Three data endpoints: a one-shot `DebugSnapshot` (current standing), a per-broker `DebugBrokerDetail`
-// (drill-in), and a `[DebugBrokerEvent]` change stream (progress).
-
-// MARK: - /api/snapshot
+// MARK: - /api
 
 public struct DebugSnapshot: Encodable, Equatable {
     public let agentVersion: String
-    /// Human-readable scheduler/queue state.
     public let schedulerState: String
-    /// Last `NSBackgroundActivityScheduler` fire — NOT the last immediate scan.
     public let lastSchedulerTrigger: Date?
-    public let auth: Auth
+    public let environment: String
+    public let endpointURL: String
     public let brokerUpdate: BrokerUpdate
     public let brokers: [BrokerSummary]
     public let profileQueries: [ProfileQuery]
-
-    public struct Auth: Encodable, Equatable {
-        public let isAuthenticated: Bool
-        public let hasAccessToken: Bool
-        public let hasValidEntitlement: Bool
-        public let environment: String
-        public let endpointURL: String
-    }
 
     public struct BrokerUpdate: Encodable, Equatable {
         public let mainConfigETag: String?
@@ -62,22 +47,6 @@ public struct DebugSnapshot: Encodable, Equatable {
         public let errorCount: Int
         public let lastScanDate: Date?
     }
-
-    public struct ProfileQuery: Encodable, Equatable {
-        public let id: Int64?
-        public let firstName: String
-        public let lastName: String
-        public let middleName: String?
-        public let suffix: String?
-        public let city: String
-        public let state: String
-        public let street: String?
-        public let zip: String?
-        public let birthYear: Int
-        public let age: Int
-        public let phone: String?
-        public let deprecated: Bool
-    }
 }
 
 // MARK: - /api/brokers/{broker}
@@ -89,8 +58,6 @@ public struct DebugBrokerDetail: Encodable, Equatable {
     public let version: String
     public let parent: String?
     public let isRemoved: Bool
-    /// Pretty-printed raw broker JSON definition (parse client-side).
-    public let definition: String?
     public let profileQueries: [ProfileQueryDetail]
 
     public struct ProfileQueryDetail: Encodable, Equatable {
@@ -114,13 +81,12 @@ public struct DebugBrokerDetail: Encodable, Equatable {
         public let submittedSuccessfullyDate: Date?
         public let removedDate: Date?
         public let history: [DebugHistoryEvent]
-        public let extractedRecord: DebugExtractedRecord
+        public let extractedRecord: ExtractedProfile
     }
 }
 
 // MARK: - /api/events
 
-/// A history event with its broker/profile-query owner, for the cross-broker progress stream.
 public struct DebugBrokerEvent: Encodable, Equatable {
     public let broker: String
     public let profileQueryId: Int64
@@ -131,12 +97,12 @@ public struct DebugBrokerEvent: Encodable, Equatable {
     public var error: DebugError?
 }
 
-// MARK: - /api (self-describing index)
-
-public struct DebugAPIIndex: Encodable, Equatable {
+public struct DebugAPIResponse: Encodable, Equatable {
+    public let snapshot: DebugSnapshot
     public let endpoints: [Endpoint]
 
-    public init(endpoints: [Endpoint]) {
+    public init(snapshot: DebugSnapshot, endpoints: [Endpoint]) {
+        self.snapshot = snapshot
         self.endpoints = endpoints
     }
 
@@ -149,23 +115,6 @@ public struct DebugAPIIndex: Encodable, Equatable {
             self.description = description
         }
     }
-}
-
-// MARK: - Shared
-
-public struct DebugExtractedRecord: Encodable, Equatable {
-    public let id: Int64?
-    public let name: String?
-    public let alternativeNames: [String]?
-    public let addressFull: String?
-    public let addresses: [String]?
-    public let phoneNumbers: [String]?
-    public let relatives: [String]?
-    public let profileUrl: String?
-    public let reportId: String?
-    public let age: String?
-    public let email: String?
-    public let removedDate: Date?
 }
 
 public struct DebugHistoryEvent: Encodable, Equatable {
@@ -183,7 +132,6 @@ public struct DebugError: Encodable, Equatable {
 
 // MARK: - /api/logs
 
-/// One unified-log line, JSON-serialized by `/api/logs`. Produced by a platform `DebugLogReading`.
 public struct DebugLogLine: Encodable, Equatable {
     public let timestamp: Date
     public let level: String

@@ -181,15 +181,15 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
         }
     }
 
-    public func startDebugServer() async -> DBPDebugServerInfo? {
+    public func startDebugServer() async -> Bool {
         await withCheckedContinuation { continuation in
             xpc.execute(call: { server in
-                server.startDebugServer { info in
-                    continuation.resume(returning: info)
+                server.startDebugServer { didStart in
+                    continuation.resume(returning: didStart)
                 }
             }, xpcReplyErrorHandler: { error in
                 Logger.dataBrokerProtection.error("Error \(error.localizedDescription)")
-                continuation.resume(returning: nil)
+                continuation.resume(returning: false)
             })
         }
     }

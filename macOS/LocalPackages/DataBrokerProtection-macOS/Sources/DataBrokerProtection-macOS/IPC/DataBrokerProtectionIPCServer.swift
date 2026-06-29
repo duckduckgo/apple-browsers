@@ -73,30 +73,6 @@ public final class DBPBackgroundAgentMetadata: NSObject, NSSecureCoding {
     }
 }
 
-/// Connection details for the agent-hosted PIR debug HTTP server, returned to the app over XPC.
-@objc(DBPDebugServerInfo)
-public final class DBPDebugServerInfo: NSObject, NSSecureCoding {
-    enum Consts {
-        static let portKey = "port"
-    }
-
-    public static var supportsSecureCoding: Bool = true
-
-    public let port: UInt16
-
-    public init(port: UInt16) {
-        self.port = port
-    }
-
-    public init?(coder: NSCoder) {
-        self.port = UInt16(coder.decodeInteger(forKey: Consts.portKey))
-    }
-
-    public func encode(with coder: NSCoder) {
-        coder.encode(Int(port), forKey: Consts.portKey)
-    }
-}
-
 /// This protocol describes the server-side IPC interface for controlling the tunnel
 ///
 public protocol IPCServerInterface: AnyObject, DataBrokerProtectionAgentDebugCommands {
@@ -142,7 +118,7 @@ protocol XPCServerInterface {
     func checkForEmailConfirmationData()
     func runEmailConfirmationOperations(showWebView: Bool)
     func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void)
-    func startDebugServer(completion: @escaping (DBPDebugServerInfo?) -> Void)
+    func startDebugServer(completion: @escaping (Bool) -> Void)
     func stopDebugServer()
 }
 
@@ -244,10 +220,10 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
         }
     }
 
-    func startDebugServer(completion: @escaping (DBPDebugServerInfo?) -> Void) {
+    func startDebugServer(completion: @escaping (Bool) -> Void) {
         Task {
-            let info = await serverDelegate?.startDebugServer()
-            completion(info)
+            let didStart = await serverDelegate?.startDebugServer() ?? false
+            completion(didStart)
         }
     }
 

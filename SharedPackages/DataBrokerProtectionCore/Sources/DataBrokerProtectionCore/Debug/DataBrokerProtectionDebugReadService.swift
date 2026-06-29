@@ -18,16 +18,10 @@
 
 import Foundation
 
-/// In-agent data the read service needs. The background agent already holds all of this in process,
-/// so the read endpoints read it directly — no XPC. Platform-agnostic; a macOS or iOS agent conforms.
 public protocol DataBrokerProtectionDebugReadProviding {
     var agentVersion: String { get }
     var schedulerStateString: String { get }
     var lastSchedulerTrigger: Date? { get }
-
-    func isAuthenticated() async -> Bool
-    func hasAccessToken() async -> Bool
-    func hasValidEntitlement() async -> Bool
 
     var environmentName: String { get }
     var endpointURL: URL { get }
@@ -36,16 +30,10 @@ public protocol DataBrokerProtectionDebugReadProviding {
     var lastBrokerJSONUpdateCheck: Date { get }
 
     func brokerProfileQueryData() throws -> [BrokerProfileQueryData]
-    func allBrokerResources() throws -> [BrokerResource]
 }
 
-/// Produces read-only, JSON-serializable snapshots of PIR/DBP state for the debug HTTP server.
-///
-/// Read-only by design: no method mutates state. Three views — a one-shot `snapshot()`, a per-broker
-/// `brokerDetail()`, and an `events()` change stream for monitoring progress.
 public struct DataBrokerProtectionDebugReadService {
 
-    /// Cap on the events stream when no `since` is supplied, to bound the first-call payload.
     private static let maxEvents = 500
 
     private let provider: DataBrokerProtectionDebugReadProviding
@@ -56,30 +44,21 @@ public struct DataBrokerProtectionDebugReadService {
 
     // MARK: - /api
 
-    public func apiIndex() -> DebugAPIIndex {
-        DebugAPIIndex(endpoints: [
-            .init(path: "/api/snapshot",
-                  description: "Current PIR state: agent & scheduler status, auth, per-broker summaries (counts, last scan), and profile queries."),
-            .init(path: "/api/brokers/{broker}",
-                  description: "Per-broker detail: scan & opt-out state with full history, extracted records, and the broker JSON definition. {broker} = broker url or name."),
-            .init(path: "/api/events?since={iso8601}",
-                  description: "History events across all brokers, oldest-first. Pass 'since' (ISO-8601) to tail new events; omit for the most recent.")
-        ])
+    public func apiResponse(endpoints: [DebugAPIResponse.Endpoint]) throws -> DebugAPIResponse {
+        DebugAPIResponse(snapshot: try snapshot(), endpoints: endpoints)
     }
 
-    // MARK: - /api/snapshot
+    public func defaultEndpoints() -> [DebugAPIResponse.Endpoint] {
+        [
+            .init(path: "/api/brokers/{broker}",
+                  description: "Per-broker detail: scan & opt-out state with full history and extracted records. {broker} = broker url or name."),
+            .init(path: "/api/events?since={iso8601}",
+                  description: "History events across all brokers, oldest-first. Pass 'since' (ISO-8601) to tail new events; omit for the most recent.")
+        ]
+    }
 
-    public func snapshot() async throws -> DebugSnapshot {
+    public func snapshot() throws -> DebugSnapshot {
         let queryData = try provider.brokerProfileQueryData()
-
-        let isAuthenticated = await provider.isAuthenticated()
-        let hasAccessToken = await provider.hasAccessToken()
-        let hasValidEntitlement = await provider.hasValidEntitlement()
-        let auth = DebugSnapshot.Auth(isAuthenticated: isAuthenticated,
-                                      hasAccessToken: hasAccessToken,
-                                      hasValidEntitlement: hasValidEntitlement,
-                                      environment: provider.environmentName,
-                                      endpointURL: provider.endpointURL.absoluteString)
 
         let lastCheck = provider.lastBrokerJSONUpdateCheck
         let brokerUpdate = DebugSnapshot.BrokerUpdate(mainConfigETag: provider.mainConfigETag,
@@ -88,7 +67,8 @@ public struct DataBrokerProtectionDebugReadService {
         return DebugSnapshot(agentVersion: provider.agentVersion,
                              schedulerState: provider.schedulerStateString,
                              lastSchedulerTrigger: provider.lastSchedulerTrigger,
-                             auth: auth,
+                             environment: provider.environmentName,
+                             endpointURL: provider.endpointURL.absoluteString,
                              brokerUpdate: brokerUpdate,
                              brokers: brokerSummaries(from: queryData),
                              profileQueries: profileQueries(from: queryData))
@@ -117,7 +97,7 @@ public struct DataBrokerProtectionDebugReadService {
                         submittedSuccessfullyDate: optOut.submittedSuccessfullyDate,
                         removedDate: optOut.extractedProfile.removedDate,
                         history: optOut.historyEventsSortedEarliestFirst.map { historyEvent($0) },
-                        extractedRecord: extractedRecord(optOut.extractedProfile))
+                        extractedRecord: optOut.extractedProfile)
                 })
         }
 
@@ -127,7 +107,6 @@ public struct DataBrokerProtectionDebugReadService {
                                  version: broker.version,
                                  parent: broker.parent,
                                  isRemoved: broker.removedAt != nil,
-                                 definition: try brokerDefinition(brokerIdentifier: brokerIdentifier),
                                  profileQueries: queries)
     }
 
@@ -178,37 +157,17 @@ public struct DataBrokerProtectionDebugReadService {
         }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
-    private func profileQueries(from queryData: [BrokerProfileQueryData]) -> [DebugSnapshot.ProfileQuery] {
+    private func profileQueries(from queryData: [BrokerProfileQueryData]) -> [ProfileQuery] {
         var seenIDs = Set<Int64>()
-        var result: [DebugSnapshot.ProfileQuery] = []
+        var result: [ProfileQuery] = []
         for data in queryData {
             let query = data.profileQuery
             if let id = query.id {
                 guard seenIDs.insert(id).inserted else { continue }
             }
-            result.append(DebugSnapshot.ProfileQuery(id: query.id,
-                                                     firstName: query.firstName,
-                                                     lastName: query.lastName,
-                                                     middleName: query.middleName,
-                                                     suffix: query.suffix,
-                                                     city: query.city,
-                                                     state: query.state,
-                                                     street: query.street,
-                                                     zip: query.zip,
-                                                     birthYear: query.birthYear,
-                                                     age: query.age,
-                                                     phone: query.phone,
-                                                     deprecated: query.deprecated))
+            result.append(query)
         }
         return result
-    }
-
-    private func brokerDefinition(brokerIdentifier: String) throws -> String? {
-        let resources = try provider.allBrokerResources()
-        guard let resource = resources.first(where: { matches(broker: $0.broker, identifier: brokerIdentifier) }) else {
-            return nil
-        }
-        return DebugHelper.prettyJSONString(from: resource.rawJSON) ?? String(data: resource.rawJSON, encoding: .utf8)
     }
 
     private func matches(broker: DataBroker, identifier: String) -> Bool {
@@ -226,21 +185,6 @@ public struct DataBrokerProtectionDebugReadService {
         default:
             return DebugHistoryEvent(type: eventTypeName(event.type), date: event.date, matchCount: nil, error: nil)
         }
-    }
-
-    private func extractedRecord(_ profile: ExtractedProfile) -> DebugExtractedRecord {
-        DebugExtractedRecord(id: profile.id,
-                             name: profile.name,
-                             alternativeNames: profile.alternativeNames,
-                             addressFull: profile.addressFull,
-                             addresses: profile.addresses?.map { $0.fullAddress },
-                             phoneNumbers: profile.phoneNumbers,
-                             relatives: profile.relatives,
-                             profileUrl: profile.profileUrl,
-                             reportId: profile.reportId,
-                             age: profile.age,
-                             email: profile.email,
-                             removedDate: profile.removedDate)
     }
 
     private func eventTypeName(_ type: HistoryEvent.EventType) -> String {

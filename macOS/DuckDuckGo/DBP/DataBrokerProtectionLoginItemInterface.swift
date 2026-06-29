@@ -129,7 +129,7 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
         return await ipcClient.getDebugMetadata()
     }
 
-    func startDebugServer() async -> DBPDebugServerInfo? {
+    func startDebugServer() async -> Bool {
         return await ipcClient.startDebugServer()
     }
 

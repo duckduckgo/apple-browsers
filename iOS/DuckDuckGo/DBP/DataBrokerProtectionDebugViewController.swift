@@ -22,6 +22,7 @@ import Common
 import FoundationExtensions
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
+import DebugServer
 import Core
 import Subscription
 import PixelKit
@@ -130,7 +131,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             case .resetAllPIRNotifications:
                 return "Reset All PIR Notifications"
             case .debugServer:
-                return "Debug Server (read-only)"
+                return "Debug Server"
             }
         }
     }
@@ -514,7 +515,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 if let port = debuggingDelegate?.debugServerPort {
                     toggle.isOn = true
                     cell.detailTextLabel?.numberOfLines = 0
-                    cell.detailTextLabel?.text = "http://\(Self.wiFiAddress ?? "127.0.0.1"):\(port)/api"
+                    let host = DebugServerNetworkInterface.wiFiAddress() ?? "127.0.0.1"
+                    cell.detailTextLabel?.text = "http://\(host):\(port)/api"
                 } else {
                     toggle.isOn = false
                     cell.detailTextLabel?.text = nil
@@ -719,7 +721,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     @objc private func debugServerToggled(_ sender: UISwitch) {
         if sender.isOn {
             Task { @MainActor in
-                guard await debuggingDelegate?.startDebugServer() != nil else {
+                guard await debuggingDelegate?.startDebugServer() == true else {
                     sender.setOn(false, animated: true)
                     presentAlert(title: "Debug Server", message: "Failed to start the debug server.")
                     return
@@ -730,27 +732,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             debuggingDelegate?.stopDebugServer()
             tableView.reloadSections(IndexSet(integer: Sections.debugActions.rawValue), with: .none)
         }
-    }
-
-    /// The device's Wi-Fi (en0) IPv4 address, shown inline so the server is reachable from a Mac on
-    /// the same network.
-    private static var wiFiAddress: String? {
-        var address: String?
-        var ifaddr: UnsafeMutablePointer<ifaddrs>?
-        guard getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr else { return nil }
-        defer { freeifaddrs(ifaddr) }
-
-        for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
-            let interface = ptr.pointee
-            guard let addr = interface.ifa_addr, addr.pointee.sa_family == UInt8(AF_INET) else { continue }
-            guard String(cString: interface.ifa_name) == "en0" else { continue }
-
-            var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-            getnameinfo(addr, socklen_t(addr.pointee.sa_len),
-                        &hostname, socklen_t(hostname.count), nil, 0, NI_NUMERICHOST)
-            address = String(cString: hostname)
-        }
-        return address
     }
 
     // MARK: - Freemium PIR Rows

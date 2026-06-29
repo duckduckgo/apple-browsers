@@ -294,7 +294,6 @@ jobs:
         ATTEMPT_BUDGET_MIN=120
         MAX_ATTEMPTS=2
         RETRY_DELAY=30
-        NETWORK_SIGNATURE='getaddrinfo ENOTFOUND|EAI_AGAIN|FetchError|Could not get Upload status|ETIMEDOUT|ECONNRESET|socket hang up'
         TIMEOUT_BIN="$(command -v timeout || command -v gtimeout)"
 
         flags=(
@@ -322,30 +321,37 @@ jobs:
             exit 0
           fi
 
-          # Maestro hit its own --timeout (rc=1, distinct from a flow failure). Not retried: a
-          # retry re-runs the full leg under the same budget, so a genuine overrun fails twice.
-          # Checked BEFORE the network signature below because a 90m poll legitimately logs
-          # transient "Could not get Upload status"/ETIMEDOUT lines mid-run; matching those first
-          # would spuriously retry a definitive polling timeout. The rc!=124 guard keeps the outer
-          # hard-kill (below) as a retryable hang. Surface it clearly instead of masquerading as a
-          # test failure.
+          # Retry by default; only a positively-identified outcome stops us. The inverse - an
+          # allowlist of known transient error strings - is unsafe: it can never enumerate every way
+          # a cloud poll drops, so any unlisted transient red-fails a run that passed cloud-side.
+          # (CLI 2.6.1 alone emits both "Could not get Upload status" and "Failed to fetch the
+          # status of an upload ... Status code = null"; the second slipped the old allowlist.) So we
+          # retry unless the run provably reached a verdict - the two definitive cases below.
+
+          # Maestro's own --timeout polling budget elapsed. Not a flow failure, but re-running the
+          # full leg under the same budget overruns identically, so don't retry. The rc!=124 guard
+          # leaves the outer hard-kill (a true hang) on the retry path below.
           if [ "$rc" -ne 124 ] && grep -qE "Waiting for flows to complete has timed out" maestro.log; then
             echo "::error::Maestro Cloud's ${MAESTRO_TIMEOUT_MIN}m polling budget elapsed before all flows finished (not a test failure). Most of the budget is cloud-side queuing - only 2 runners serve every leg. Raise MAESTRO_TIMEOUT_MIN (and ATTEMPT_BUDGET_MIN / job timeout-minutes to keep them nested) if this recurs on an otherwise-green run."
             exit "$rc"
           fi
 
-          if [ "$rc" -eq 124 ] || grep -qE "$NETWORK_SIGNATURE" maestro.log; then
-            echo "::warning::Transient Maestro Cloud/network failure on attempt $attempt (rc=$rc)."
-            if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
-              echo "Retrying in ${RETRY_DELAY}s..."
-              sleep "$RETRY_DELAY"
-              continue
-            fi
-            echo "::error::Transient Maestro Cloud failures persisted across $MAX_ATTEMPTS attempts."
+          # The run reached a verdict and a flow genuinely failed, identified positively by Maestro's
+          # per-flow "[Failed]" marker / "N/M Flow(s) Failed" summary - not by absence of a transient.
+          if grep -qE "\[Failed\]|[0-9]+/[0-9]+ Flows? Failed" maestro.log; then
+            echo "Genuine Maestro flow failure (rc=$rc) - not retrying."
             exit "$rc"
           fi
 
-          echo "Genuine Maestro flow failure (rc=$rc) - not retrying."
+          # No verdict produced (dropped poll, DNS hang, null status code, socket reset, rc=124 hang,
+          # or any phrasing we've never seen) - treat as transient infrastructure and retry.
+          echo "::warning::No Maestro verdict produced on attempt $attempt (rc=$rc) - treating as transient infrastructure failure."
+          if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
+            echo "Retrying in ${RETRY_DELAY}s..."
+            sleep "$RETRY_DELAY"
+            continue
+          fi
+          echo "::error::Transient Maestro Cloud failures persisted across $MAX_ATTEMPTS attempts (no verdict)."
           exit "$rc"
         done
 

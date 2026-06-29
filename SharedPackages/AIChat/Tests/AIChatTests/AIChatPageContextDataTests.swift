@@ -114,3 +114,49 @@ final class AIChatPageContextDataTests: XCTestCase {
         XCTAssertFalse(fullContext.isEmpty(), "Context should not be empty when all fields are populated")
     }
 }
+
+final class AIChatSelectionContextDataTests: XCTestCase {
+
+    func testRoundTripsThroughJSON() throws {
+        let selection = AIChatSelectionContextData(
+            id: "ABC-123",
+            title: "Text selection",
+            favicon: [AIChatPageContextData.PageContextFavicon(href: "data:image/png;base64,abc", rel: "icon")],
+            url: "https://example.com",
+            content: "selected text",
+            truncated: false,
+            fullContentLength: 13,
+            wordCount: 2
+        )
+
+        let data = try JSONEncoder().encode(selection)
+        let decoded = try JSONDecoder().decode(AIChatSelectionContextData.self, from: data)
+
+        XCTAssertEqual(decoded, selection)
+        XCTAssertEqual(decoded.favicon.first?.href, "data:image/png;base64,abc")
+        XCTAssertEqual(decoded.wordCount, 2)
+    }
+
+    func testEncodesExpectedFields() throws {
+        let selection = AIChatSelectionContextData(
+            id: "ABC-123",
+            title: "Text selection",
+            url: "https://example.com",
+            content: "xxx",
+            truncated: true,
+            fullContentLength: 9999,
+            wordCount: 1500
+        )
+
+        let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(selection)) as? [String: Any]
+
+        XCTAssertEqual(object?["id"] as? String, "ABC-123")
+        XCTAssertEqual(object?["title"] as? String, "Text selection")
+        XCTAssertEqual(object?["url"] as? String, "https://example.com")
+        XCTAssertEqual(object?["content"] as? String, "xxx")
+        XCTAssertEqual(object?["truncated"] as? Bool, true)
+        XCTAssertEqual(object?["fullContentLength"] as? Int, 9999)
+        XCTAssertEqual(object?["wordCount"] as? Int, 1500)
+        XCTAssertNotNil(object?["favicon"] as? [Any], "favicon must be present (empty array when none cached)")
+    }
+}

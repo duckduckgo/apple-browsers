@@ -273,12 +273,13 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                                           extractedProfileId: Int64?,
                                           schedulingConfig: DataBrokerScheduleConfig,
                                           database: DataBrokerProtectionRepository) throws {
-       let dateUpdater = OperationPreferredDateUpdater(database: database)
-       try dateUpdater.updateOperationDataDates(origin: origin,
-                                                brokerId: brokerId,
-                                                profileQueryId: profileQueryId,
-                                                extractedProfileId: extractedProfileId,
-                                                schedulingConfig: schedulingConfig)
+        let dateUpdater = OperationPreferredDateUpdater(database: database,
+                                                        featureFlagger: DisabledOptOutRetryErrorFeatureFlagger())
+        try dateUpdater.updateOperationDataDates(origin: origin,
+                                                 brokerId: brokerId,
+                                                 profileQueryId: profileQueryId,
+                                                 extractedProfileId: extractedProfileId,
+                                                 schedulingConfig: schedulingConfig)
    }
 }
 

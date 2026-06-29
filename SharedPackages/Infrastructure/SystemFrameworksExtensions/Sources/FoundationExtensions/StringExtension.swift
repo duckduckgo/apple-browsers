@@ -84,6 +84,58 @@ public extension String {
         return self
     }
 
+    // MARK: Truncation
+
+    /// Where to insert the ellipsis when a string is truncated.
+    enum TruncationPosition {
+        /// Replace the middle characters, preserving a head and a tail of equal length.
+        case middle
+        /// Replace the trailing characters, preserving the head.
+        case tail
+    }
+
+    /// Returns the string truncated to at most `maxLength` characters.
+    ///
+    /// When the string exceeds `maxLength`, `ellipsis` is inserted at `position`:
+    /// - `.middle` (default): the middle characters are replaced so the result is exactly
+    ///   `maxLength` characters (head + ellipsis + tail).
+    /// - `.tail`: the end is replaced so the result is exactly `maxLength` characters
+    ///   (head + ellipsis).
+    ///
+    /// When `trimmingWhitespace` is `true`, whitespace is stripped from the head and tail
+    /// portions before assembly; the result may then be shorter than `maxLength`.
+    ///
+    /// - Parameters:
+    ///   - maxLength: Maximum total length of the result including the ellipsis. Must be ≥ 1.
+    ///   - position: Where to insert the ellipsis. Defaults to `.middle`.
+    ///   - ellipsis: The string inserted at the truncation point. Defaults to `"…"`.
+    ///   - trimmingWhitespace: Strip whitespace from head/tail portions. Defaults to `true`.
+    func truncated(to maxLength: Int,
+                   position: TruncationPosition = .middle,
+                   ellipsis: String = "…",
+                   trimmingWhitespace: Bool = true) -> String {
+        precondition(maxLength >= 1)
+        guard count > maxLength else { return self }
+
+        func trim(_ s: some StringProtocol) -> String {
+            trimmingWhitespace ? String(s).trimmingCharacters(in: .whitespaces) : String(s)
+        }
+
+        let usable = max(maxLength - ellipsis.count, 0)
+
+        switch position {
+        case .middle:
+            let headLength = usable - usable / 2
+            let tailLength = usable / 2
+            let head = trim(self[startIndex ..< index(startIndex, offsetBy: headLength)])
+            let tail = tailLength > 0 ? trim(self[index(endIndex, offsetBy: -tailLength)...]) : ""
+            return "\(head)\(ellipsis)\(tail)"
+        case .tail:
+            let head = trim(self[startIndex ..< index(startIndex, offsetBy: usable)])
+            return "\(head)\(ellipsis)"
+        }
+    }
+
     func autofillNormalized() -> String {
         let autofillCharacterSet = CharacterSet.whitespacesAndNewlines.union(.punctuationCharacters).union(.symbols)
 
@@ -490,6 +542,31 @@ public extension String {
 
         // swiftlint:disable:next optional_data_string_conversion
         return String(decoding: result, as: UTF8.self)
+    }
+
+    /// Prevents typographic widows by replacing the last space with a non-breaking space.
+    ///
+    /// A "widow" in typography refers to a single word that appears alone on the last line
+    /// of a paragraph or text block, which is considered poor typography as it creates
+    /// visual imbalance and awkward spacing.
+    ///
+    /// This function finds the last space character in the string and replaces it with
+    /// a non-breaking space (U+00A0) to ensure the last two words stay together on the
+    /// same line, preventing the final word from becoming orphaned.
+    ///
+    /// - Returns: A new string with the last space replaced by a non-breaking space,
+    ///            or the original string if no space is found or if the space is at the end.
+    ///
+    /// - SeeAlso: [Widows and orphans typography](https://en.wikipedia.org/wiki/Widows_and_orphans)
+    /// - SeeAlso: [Android Implementation](https://github.com/duckduckgo/Android/blob/95bac8057f06f85587412147acbb179af5a9cb4c/common/common-utils/src/main/java/com/duckduckgo/common/utils/extensions/StringExtensions.kt#L92)
+    func preventWidows() -> String {
+        guard let lastSpace = range(of: " ", options: .backwards),
+              lastSpace.lowerBound != startIndex,
+              lastSpace.upperBound != endIndex
+        else {
+            return self
+        }
+        return replacingCharacters(in: lastSpace, with: "\u{00A0}")
     }
 
 }

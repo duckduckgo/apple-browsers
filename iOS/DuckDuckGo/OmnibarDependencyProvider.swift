@@ -27,7 +27,6 @@ import Core
 protocol OmnibarDependencyProvider {
     var voiceSearchHelper: VoiceSearchHelperProtocol { get }
     var featureFlagger: FeatureFlagger { get }
-    var aichatIPadTabFeature: AIChatIPadTabFeatureProviding { get }
     var aiChatSettings: AIChatSettingsProvider { get }
     var aiChatSyncCleaner: AIChatSyncCleaning? { get }
     var aiChatAddressBarExperience: AIChatAddressBarExperienceProviding { get }
@@ -41,7 +40,6 @@ protocol OmnibarDependencyProvider {
 struct OmnibarDependencies: OmnibarDependencyProvider {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
-    let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     let aiChatSettings: AIChatSettingsProvider
     var aiChatSyncCleaner: AIChatSyncCleaning?
     let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding

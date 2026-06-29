@@ -240,7 +240,7 @@ actor EncryptedHistoryStore: HistoryStoring {
                 case .success(let visitMOs):
                     do {
                         try self.context.save()
-                        Logger.history.debug("HistoryStore: saved entry \(entry.url.absoluteString)")
+                        Logger.history.debug("HistoryStore: saved entry \(entry.url.shortDescription)")
                     } catch {
                         PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
                         PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)

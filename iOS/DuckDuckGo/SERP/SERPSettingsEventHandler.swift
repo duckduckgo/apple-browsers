@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Core
 import Common
 import FoundationExtensions
 import PixelKit
@@ -78,6 +79,9 @@ final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
             case .keyValueStoreWriteError:
                 // Fires when writing to persistent storage fails.
                 PixelKit.fire(SERPSettingsPixel.serpSettingsKeyValueStoreWriteError, frequency: .dailyAndCount)
+            case .unrecognizedValue:
+                // Daily-only, no params: the SERP getters run on every read, so a count variant would spam.
+                DailyPixel.fire(pixel: .serpSettingsUnrecognizedValue)
             }
         }
     }

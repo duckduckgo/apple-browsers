@@ -23,6 +23,8 @@ import CombineExtensions
 import Foundation
 import PixelKit
 import PrivacyConfig
+import SERPSettings
+import SwiftUI
 
 final class AIChatPreferences: ObservableObject {
 
@@ -32,6 +34,8 @@ final class AIChatPreferences: ObservableObject {
     private var windowControllersManager: WindowControllersManagerProtocol
     private let featureFlagger: FeatureFlagger
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
+    // Lazy: built on first use, not during early/transient inits when the store isn't ready yet.
+    private lazy var serpSettings: SERPSettingsProviding = SERPSettingsProvider()
 
     init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = Application.appDelegate.aiChatMenuConfiguration,
@@ -57,6 +61,17 @@ final class AIChatPreferences: ObservableObject {
 
         subscribeToShowInApplicationMenuSettingsChanges()
         subscribeToDuckAIChromeButtonsVisibilityChanges()
+        subscribeToSERPSettingsChanges()
+    }
+
+    // Refresh the Search Assist / Hide AI Images pickers when the SERP changes them on the web side.
+    private func subscribeToSERPSettingsChanges() {
+        NotificationCenter.default.publisher(for: .serpSettingsDidReceiveWebUpdate)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     func subscribeToShowInApplicationMenuSettingsChanges() {
@@ -136,6 +151,87 @@ final class AIChatPreferences: ObservableObject {
         return !showShortcutInAddressBar || !openAIChatInSidebar
     }
 
+    var shouldShowNativeAIControls: Bool {
+        featureFlagger.isFeatureOn(.aiFeaturesNativeControls)
+    }
+
+    // Native SERP AI settings (Search Assist / Hide AI Images), backed by the shared SERP settings store.
+
+    var searchAssistFrequencyBinding: Binding<SearchAssistFrequency> {
+        Binding(
+            get: { self.serpSettings.searchAssistFrequency },
+            set: { newValue in
+                guard newValue != self.serpSettings.searchAssistFrequency else { return }
+                self.objectWillChange.send()
+                self.serpSettings.searchAssistFrequency = newValue
+                PixelKit.fire(Self.searchAssistPixel(for: newValue),
+                              frequency: .dailyAndCount,
+                              includeAppVersionParameter: true)
+            }
+        )
+    }
+
+    var hideAIImagesBinding: Binding<HideAIImagesOption> {
+        Binding(
+            get: { HideAIImagesOption(hidden: self.serpSettings.hideAIGeneratedImages) },
+            set: { newValue in
+                guard newValue.hidden != self.serpSettings.hideAIGeneratedImages else { return }
+                self.objectWillChange.send()
+                self.serpSettings.hideAIGeneratedImages = newValue.hidden
+                PixelKit.fire(newValue.hidden ? AIChatPixel.aiFeaturesHideImagesOn : .aiFeaturesHideImagesOff,
+                              frequency: .dailyAndCount,
+                              includeAppVersionParameter: true)
+            }
+        )
+    }
+
+    // Duck.ai on/off, exposed as a dropdown in the native-controls layout. Fires the global-toggle
+    // pixel only on user-driven changes (not external/storage-driven updates to isAIFeaturesEnabled).
+    var duckAIEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { self.isAIFeaturesEnabled },
+            set: { newValue in
+                guard newValue != self.isAIFeaturesEnabled else { return }
+                self.isAIFeaturesEnabled = newValue
+                PixelKit.fire(newValue ? AIChatPixel.aiChatSettingsGlobalToggleTurnedOn : .aiChatSettingsGlobalToggleTurnedOff,
+                              frequency: .dailyAndCount,
+                              includeAppVersionParameter: true)
+            }
+        )
+    }
+
+    /// Maps a Search Assist frequency to its value-in-name AI Features pixel.
+    private static func searchAssistPixel(for frequency: SearchAssistFrequency) -> AIChatPixel {
+        switch frequency {
+        case .never: return .aiFeaturesSearchAssistNever
+        case .onDemand: return .aiFeaturesSearchAssistOnDemand
+        case .sometimes: return .aiFeaturesSearchAssistSometimes
+        case .often: return .aiFeaturesSearchAssistOften
+        }
+    }
+
+    // Duck.ai-only; `isAIFeaturesEnabled` is the legacy name (kept to avoid an app-wide rename).
+    private var isDuckAIEnabled: Bool {
+        get { isAIFeaturesEnabled }
+        set { isAIFeaturesEnabled = newValue }
+    }
+
+    var isAllAIDisabled: Bool {
+        !isDuckAIEnabled
+            && serpSettings.searchAssistFrequency == .never
+            && serpSettings.hideAIGeneratedImages
+    }
+
+    @MainActor func disableAllAI() {
+        objectWillChange.send()
+        isDuckAIEnabled = false
+        serpSettings.searchAssistFrequency = .never
+        serpSettings.hideAIGeneratedImages = true
+        PixelKit.fire(AIChatPixel.aiFeaturesDisabled,
+                      frequency: .dailyAndCount,
+                      includeAppVersionParameter: true)
+    }
+
     // Properties for managing the current state of AI Chat preference options
 
     @Published var isAIFeaturesEnabled: Bool {
@@ -192,6 +288,10 @@ final class AIChatPreferences: ObservableObject {
 
     @MainActor func openSearchAssistSettings() {
         windowControllersManager.show(url: URL.aiChatSettings, source: .ui, newTab: true, selected: true)
+    }
+
+    @MainActor func openHideAIGeneratedImagesLearnMore() {
+        windowControllersManager.show(url: URL.hideAIGeneratedImagesLearnMore, source: .ui, newTab: true, selected: true)
     }
 
     /// Opens duck.ai in a new tab and triggers the Duck.ai Settings modal once the page

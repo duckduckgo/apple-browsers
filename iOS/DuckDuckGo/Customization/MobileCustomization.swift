@@ -175,10 +175,15 @@ class MobileCustomization {
         return buttons
     }
 
+    private var cachedState: State?
+
     var state: State {
-        State(isEnabled: isEnabled,
-              currentToolbarButton: current(forKey: .toolbarButton, containedIn: toolbarButtonOptions, Self.toolbarDefault),
-              currentAddressBarButton: current(forKey: .addressBarButton, containedIn: addressBarButtonOptions, Self.addressBarDefault))
+        if let cachedState { return cachedState }
+        let state = State(isEnabled: isEnabled,
+                          currentToolbarButton: current(forKey: .toolbarButton, containedIn: toolbarButtonOptions, Self.toolbarDefault),
+                          currentAddressBarButton: current(forKey: .addressBarButton, containedIn: addressBarButtonOptions, Self.addressBarDefault))
+        cachedState = state
+        return state
     }
 
     var hasFireButton: Bool {
@@ -233,6 +238,7 @@ class MobileCustomization {
     func persist(_ state: State) {
         setCurrentToolbarButton(state.currentToolbarButton)
         setCurrentAddressBarButton(state.currentAddressBarButton)
+        cachedState = nil
         postChangeNotification(state)
     }
 

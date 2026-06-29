@@ -333,8 +333,8 @@ final class PreferencesSidebarModel: ObservableObject {
         case .threatProtection:
             return PrivacyProtectionStatus(statusIndicator: .on)
         case .cookiePopupProtection:
-            return  PrivacyProtectionStatus(statusPublisher: cookiePopupProtectionPreferences.$isAutoconsentEnabled) { isAutoconsentEnabled in
-                isAutoconsentEnabled ? .on : .off
+            return  PrivacyProtectionStatus(statusPublisher: cookiePopupProtectionPreferences.$cookiePopupPreference) { preference in
+                preference.isBlockingEnabled ? .on : .off
             }
         case .emailProtection:
             let publisher = Publishers.Merge(

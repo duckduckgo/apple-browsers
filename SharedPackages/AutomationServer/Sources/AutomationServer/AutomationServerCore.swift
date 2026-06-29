@@ -216,59 +216,66 @@ public final class AutomationServerCore {
             minimumIncompleteLength: 1,
             maximumLength: self.maxRequestSize
         ) { (content: Data?, _: NWConnection.ContentContext?, isComplete: Bool, error: NWError?) in
-            // Ensure connection queue is cleaned up when request completes or fails
-            defer {
-                if isComplete || error != nil || connection.state != .ready {
-                    self.connectionQueues.removeValue(forKey: ObjectIdentifier(connection))
+            // The connection is started on the main queue (`connection.start(queue: .main)`), so this
+            // @Sendable handler is always delivered on the main thread. The compiler can't prove that
+            // from a Sendable closure, so assert the isolation synchronously with `assumeIsolated`.
+            // Deliberately not `Task { @MainActor in ... }`: hopping to a later main-actor turn would
+            // defer the `connection.state == .ready` guard, so bytes already delivered in this callback
+            // could be dropped if the connection left `.ready` before the task ran.
+            MainActor.assumeIsolated {
+                // Ensure connection queue is cleaned up when request completes or fails
+                defer {
+                    if isComplete || error != nil || connection.state != .ready {
+                        self.connectionQueues.removeValue(forKey: ObjectIdentifier(connection))
+                    }
                 }
-            }
 
-            guard connection.state == .ready else {
-                Logger.automationServer.debug("Receive aborted as connection is no longer ready.")
-                return
-            }
-            Logger.automationServer.debug("Received request - Content: \(String(describing: content)) isComplete: \(isComplete) Error: \(String(describing: error))")
-
-            if let error {
-                Logger.automationServer.error("Error in request: \(error)")
-                connection.cancel()
-                return
-            }
-
-            if let content {
-                Logger.automationServer.debug("Handling content")
-                let queue = self.connectionQueues[ObjectIdentifier(connection)] ?? PerConnectionQueue()
-                self.connectionQueues[ObjectIdentifier(connection)] = queue
-                Task { @MainActor in
-                    await queue.enqueue(
-                        content: content,
-                        processor: { data in
-                            return await self.processContentWhenReady(content: data)
-                        },
-                        responder: { connectionResultWithPath in
-                            self.respond(on: connection, connectionResultWithPath: connectionResultWithPath)
-                        })
+                guard connection.state == .ready else {
+                    Logger.automationServer.debug("Receive aborted as connection is no longer ready.")
+                    return
                 }
-            }
-            if isComplete {
-                Logger.automationServer.debug("Connection marked complete.")
-                // Only cancel immediately if there was no content to process.
-                // When content is present, respond() will cancel the connection
-                // after successfully sending the response.
-                if content == nil {
-                    Logger.automationServer.debug("No pending content - cancelling connection.")
+                Logger.automationServer.debug("Received request - Content: \(String(describing: content)) isComplete: \(isComplete) Error: \(String(describing: error))")
+
+                if let error {
+                    Logger.automationServer.error("Error in request: \(error)")
                     connection.cancel()
+                    return
                 }
-                return
-            }
 
-            if connection.state == .ready {
-                Logger.automationServer.debug("Handling not complete, continuing receive.")
-                Task { @MainActor in
-                    self.receive(from: connection)
+                if let content {
+                    Logger.automationServer.debug("Handling content")
+                    let queue = self.connectionQueues[ObjectIdentifier(connection)] ?? PerConnectionQueue()
+                    self.connectionQueues[ObjectIdentifier(connection)] = queue
+                    // Fire-and-forget: keep request processing off the receive loop so we can re-arm below.
+                    Task { @MainActor in
+                        await queue.enqueue(
+                            content: content,
+                            processor: { data in
+                                return await self.processContentWhenReady(content: data)
+                            },
+                            responder: { connectionResultWithPath in
+                                self.respond(on: connection, connectionResultWithPath: connectionResultWithPath)
+                            })
+                    }
                 }
-            } else {
-                Logger.automationServer.debug("Connection is no longer ready, stopping receive.")
+                if isComplete {
+                    Logger.automationServer.debug("Connection marked complete.")
+                    // Only cancel immediately if there was no content to process.
+                    // When content is present, respond() will cancel the connection
+                    // after successfully sending the response.
+                    if content == nil {
+                        Logger.automationServer.debug("No pending content - cancelling connection.")
+                        connection.cancel()
+                    }
+                    return
+                }
+
+                if connection.state == .ready {
+                    Logger.automationServer.debug("Handling not complete, continuing receive.")
+                    self.receive(from: connection)
+                } else {
+                    Logger.automationServer.debug("Connection is no longer ready, stopping receive.")
+                }
             }
         }
     }

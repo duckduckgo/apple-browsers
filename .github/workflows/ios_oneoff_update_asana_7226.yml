@@ -1,0 +1,116 @@
+name: iOS - ONE-OFF Update Asana for 7.226.0
+
+# TEMPORARY one-off workflow. The "iOS - Tag Release and Update Asana" run for
+# 7.226.0+ios crashed in tag_release's report_status because github handle
+# "pballart" was missing from the user-id mapping (fixed in
+# fastlane-plugin-ddg_apple_automation 4.1.4). The tag, GitHub release and
+# branch deletion all succeeded, but every Asana update was skipped. This
+# workflow reproduces ONLY the skipped Asana steps. DELETE after running once.
+
+defaults:
+  run:
+    working-directory: iOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      asana-task-url:
+        description: "7.226.0 release task URL"
+        required: true
+        default: "https://app.asana.com/1/137249556945/project/1214200115953388/task/1215899328995417?focus=true"
+        type: string
+      branch:
+        description: "Deleted release branch (for the 'tagged' comment)"
+        required: true
+        default: "release/ios/7.226.0"
+        type: string
+
+jobs:
+  update-asana:
+
+    name: Update Asana for 7.226.0
+
+    runs-on: macos-26-xlarge
+    timeout-minutes: 15
+
+    env:
+      TAG: "7.226.0+ios"
+      PROMOTED_TAG: "7.226.0-11+ios"
+      BRANCH: ${{ github.event.inputs.branch }}
+      asana-task-url: ${{ github.event.inputs.asana-task-url }}
+      RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/7.226.0+ios
+      WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    steps:
+
+      - name: Check out main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: iOS
+          cache-key-prefix: ios-ruby
+
+      - name: Extract Asana Task ID
+        id: task-id
+        run: bundle exec fastlane run asana_extract_task_id task_url:"${{ env.asana-task-url }}"
+
+      # (0) Reproduce tag_release report_status: add actor as follower on the
+      #     Automation subtask and post the "release tagged" comment.
+      - name: Post 'release tagged' comment
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        run: |
+          bundle exec fastlane run asana_log_message \
+            task_url:"${{ env.asana-task-url }}" \
+            template_name:"public-release-tagged" \
+            github_handle:"${{ github.actor }}"
+
+      # (1) Move release-tagged tasks to Done, complete them, create the
+      #     "Announce the release to the company" subtask. Use the promoted
+      #     tag here so the fastlane action derives Asana tag "ios-app-release-7.226.0".
+      - name: Update Asana for the release
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          bundle exec fastlane run update_asana_for_release \
+            platform:ios \
+            release_type:public \
+            github_handle:"${{ github.actor }}" \
+            release_task_id:"${{ steps.task-id.outputs.asana_task_id }}" \
+            target_section_id:"${{ vars.IOS_APP_BOARD_DONE_SECTION_ID }}" \
+            tag:"${{ env.PROMOTED_TAG }}"
+
+      # (2) Post the public-release-complete comment on the release task.
+      - name: Add a comment to the release task
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        run: |
+          bundle exec fastlane run asana_add_comment \
+            task_url:"${{ env.asana-task-url }}" \
+            template_name:"public-release-complete-ios"
+
+      # (3) Release annotation pixel. Use the promoted tag to match the value
+      #     the real Tag Release workflow feeds this step (env.TAG there is the
+      #     promoted, build-numbered tag), keeping pixel names consistent.
+      - name: Send release annotation pixel
+        continue-on-error: true
+        uses: ./.github/actions/send-release-annotation-pixel
+        with:
+          version: ${{ env.PROMOTED_TAG }}
+          platform: "ios"
+
+      # (4) Asana notification task in the Apple Deployments project.
+      - name: Create Asana notification task
+        continue-on-error: true
+        uses: ./.github/actions/send-release-notification-task
+        with:
+          platform: ios
+          tag: ${{ env.TAG }}
+          asana-project: ${{ vars.APPLE_DEPLOYMENTS_ASANA_PROJECT_ID }}
+          asana-section: ${{ vars.APPLE_DEPLOYMENTS_SECTION_ID }}
+          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}

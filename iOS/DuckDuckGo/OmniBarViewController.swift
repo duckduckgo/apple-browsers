@@ -20,6 +20,7 @@
 import UIKit
 import PrivacyDashboard
 import AIChat
+import Common
 import Core
 import Kingfisher
 import DesignResourcesKitIcons
@@ -33,6 +34,9 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     /// Access to iPad-specific expandable search area features.
     var expandableBarView: ExpandableOmniBarView? { barView as? ExpandableOmniBarView }
+
+    /// Overridden by `DefaultOmniBarViewController` when the iPad model picker is active. `nil` here.
+    var iPadDuckAISelectedModelId: String? { nil }
 
     var isBackButtonEnabled: Bool {
         get { barView.backButton.isEnabled }
@@ -558,7 +562,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             return
         }
 
-        if privacyInfo.url.isDuckAIURL, dependencies.aichatIPadTabFeature.isAvailable {
+        if privacyInfo.url.isDuckAIURL, DevicePlatform.isIpad {
             showCustomIcon(icon: .duckAI)
             return
         }

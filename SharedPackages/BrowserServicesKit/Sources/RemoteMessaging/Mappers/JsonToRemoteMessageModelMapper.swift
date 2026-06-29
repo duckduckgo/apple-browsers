@@ -62,6 +62,7 @@ private enum AttributesKey: String, CaseIterable {
     case isCurrentPIRUser
     case allFeatureFlagsEnabled
     case syncEnabled
+    case ntpAfterIdleState
     case shouldShowWinBackOfferUrgencyMessage
     case daysSinceDuckAiUsed
 
@@ -109,6 +110,7 @@ private enum AttributesKey: String, CaseIterable {
         case .isCurrentPIRUser: return PIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .allFeatureFlagsEnabled: return AllFeatureFlagsEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .syncEnabled: return SyncEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .ntpAfterIdleState: return NTPAfterIdleStateMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .shouldShowWinBackOfferUrgencyMessage: return WinBackOfferUrgencyMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .daysSinceDuckAiUsed: return DaysSinceDuckAIUsedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         }

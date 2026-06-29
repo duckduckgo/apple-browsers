@@ -156,6 +156,7 @@ class TabSwitcherViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
     private let duckAIGridContentProvider: DuckAIGridContentProviding?
+    private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
     var tabsModel: TabsModelManaging {
         tabManager.tabsModel(for: selectedBrowsingMode)
     }
@@ -170,7 +171,6 @@ class TabSwitcherViewController: UIViewController {
     private let initialTrackerCountState: TabSwitcherTrackerCountViewModel.State
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
-    private(set) var aichatIPadTabFeature: AIChatIPadTabFeatureProviding
 
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
@@ -196,7 +196,6 @@ class TabSwitcherViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
                    aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-                   aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature(),
                    privacyStats: PrivacyStatsProviding,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    historyManager: HistoryManaging,
@@ -205,7 +204,8 @@ class TabSwitcherViewController: UIViewController {
                    tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
                    daxDialogsManager: DaxDialogsManaging,
                    initialTrackerCountState: TabSwitcherTrackerCountViewModel.State,
-                   duckAIGridContentProvider: DuckAIGridContentProviding?) {
+                   duckAIGridContentProvider: DuckAIGridContentProviding?,
+                   duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -215,7 +215,6 @@ class TabSwitcherViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
-        self.aichatIPadTabFeature = aichatIPadTabFeature
         self.privacyStats = privacyStats
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.historyManager = historyManager
@@ -224,6 +223,7 @@ class TabSwitcherViewController: UIViewController {
         self.daxDialogsManager = daxDialogsManager
         self.initialTrackerCountState = initialTrackerCountState
         self.duckAIGridContentProvider = duckAIGridContentProvider
+        self.duckAIVoiceSessionTracker = duckAIVoiceSessionTracker
         let tabCountModel = TabCountModel()
         self.tabCountModel = tabCountModel
         self.pickerItems = BrowsingMode.allCases.map { $0.segmentedPickerItem(tabCountModel: tabCountModel) }
@@ -488,7 +488,8 @@ class TabSwitcherViewController: UIViewController {
                 tabSwitcherSettings: tabSwitcherSettings,
                 trackerCountViewModel: nil,
                 isFireModeEnabled: isFireModeEnabled,
-                duckAIGridContentProvider: duckAIGridContentProvider)
+                duckAIGridContentProvider: duckAIGridContentProvider,
+                duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
             firePageController?.pageDelegate = self
             firePageController?.onNewFireTab = { [weak self] in
                 self?.addNewTab()
@@ -509,7 +510,8 @@ class TabSwitcherViewController: UIViewController {
             tabSwitcherSettings: tabSwitcherSettings,
             trackerCountViewModel: trackerCountViewModel,
             isFireModeEnabled: isFireModeEnabled,
-            duckAIGridContentProvider: duckAIGridContentProvider)
+            duckAIGridContentProvider: duckAIGridContentProvider,
+            duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
         normalPageController.pageDelegate = self
         embedPageController(normalPageController, in: normalPageContainer)
 
@@ -578,7 +580,7 @@ class TabSwitcherViewController: UIViewController {
 
         barsHandler.onDuckChatTapped = { [weak self] in
             guard let self else { return }
-            if self.aichatFullModeFeature.isAvailable || self.aichatIPadTabFeature.isAvailable {
+            if self.aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
                 self.addNewAIChatTab()
             } else {
                 self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)

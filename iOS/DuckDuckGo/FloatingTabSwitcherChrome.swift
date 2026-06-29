@@ -46,6 +46,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     private weak var hostView: UIView?
     private weak var contentView: UIView?
     private weak var centerView: UIView?
+    private var glassCenterContainer: UIVisualEffectView?
     private var title: String?
     private var isFireModeEnabled = false
 
@@ -65,10 +66,16 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
     private lazy var doneItem: UIBarButtonItem = {
         let item = UIBarButtonItem(title: nil,
-                                   image: UIImage(systemName: "checkmark.circle.fill"),
+                                   image: UIImage(systemName: "checkmark"),
                                    primaryAction: UIAction { [weak self] _ in self?.actions.onDoneTapped?() },
                                    menu: nil)
         item.accessibilityLabel = UserText.navigationTitleDone
+        // Prominent style gives an accent-filled glass capsule (with a contrasting white
+        // checkmark) sized like the other glass bar buttons. The fill colour comes from
+        // `tintColor`, set in `decorate(theme:)`.
+        if #available(iOS 26.0, *) {
+            item.style = .prominent
+        }
         return item
     }()
 
@@ -91,13 +98,13 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
     private lazy var editMenuItem = UIBarButtonItem(
         title: nil,
-        image: DesignSystemImages.Glyphs.Size24.moreApple,
+        image: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal,
         primaryAction: nil,
         menu: UIMenu(children: []))
 
     private lazy var multiSelectMenuItem = UIBarButtonItem(
         title: nil,
-        image: DesignSystemImages.Glyphs.Size24.moreApple,
+        image: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal,
         primaryAction: nil,
         menu: UIMenu(children: []))
 
@@ -147,6 +154,29 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
     func setCenterView(_ view: UIView?) {
         centerView = view
+        glassCenterContainer = nil
+    }
+
+    /// Wraps the mode switcher in a glass capsule on iOS 26 so it stays legible over the
+    /// glass navigation bar (otherwise it washes out). Below iOS 26 the raw view is used.
+    private func centerTitleView() -> UIView? {
+        guard let centerView else { return nil }
+        guard #available(iOS 26.0, *) else { return centerView }
+
+        if let glassCenterContainer { return glassCenterContainer }
+
+        let effectView = UIVisualEffectView(effect: UIGlassEffect())
+        effectView.cornerConfiguration = .capsule()
+        centerView.translatesAutoresizingMaskIntoConstraints = false
+        effectView.contentView.addSubview(centerView)
+        NSLayoutConstraint.activate([
+            centerView.topAnchor.constraint(equalTo: effectView.contentView.topAnchor),
+            centerView.bottomAnchor.constraint(equalTo: effectView.contentView.bottomAnchor),
+            centerView.leadingAnchor.constraint(equalTo: effectView.contentView.leadingAnchor),
+            centerView.trailingAnchor.constraint(equalTo: effectView.contentView.trailingAnchor),
+        ])
+        glassCenterContainer = effectView
+        return effectView
     }
 
     func setTitle(_ title: String?) {
@@ -217,7 +247,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             toolbar.setItems([multiSelectMenuItem, .flexibleSpace(), closeTabsItem], animated: false)
         } else {
             navigationItem.title = nil
-            navigationItem.titleView = centerView
+            navigationItem.titleView = centerTitleView()
             navigationItem.leftBarButtonItems = [tabsStyleItem]
             navigationItem.rightBarButtonItems = [doneItem]
 

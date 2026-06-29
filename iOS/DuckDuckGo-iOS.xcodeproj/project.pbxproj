@@ -932,6 +932,7 @@
 		85B04B152FF28DC100987274 /* LegacyTabSwitcherChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B04B142FF28DC100987274 /* LegacyTabSwitcherChrome.swift */; };
 		85B04B172FF28DF900987274 /* FloatingTabSwitcherChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B04B162FF28DF900987274 /* FloatingTabSwitcherChrome.swift */; };
 		85B04B192FF28E2200987274 /* FloatingTabSwitcherChromeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B04B182FF28E2200987274 /* FloatingTabSwitcherChromeTests.swift */; };
+		85B04B1B2FF2A7E600987274 /* TabSwitcherChromeFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B04B1A2FF2A7E600987274 /* TabSwitcherChromeFactoryTests.swift */; };
 		85B7CD8D2DCA3308000C7B7B /* MessageNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B7CD8C2DCA3304000C7B7B /* MessageNavigator.swift */; };
 		85B9814E2B5EB618009AC9A6 /* SwipeTabsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B9814D2B5EB618009AC9A6 /* SwipeTabsCoordinator.swift */; };
 		85BA58551F34F49E00C6E8CA /* AppUserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BA58541F34F49E00C6E8CA /* AppUserDefaults.swift */; };
@@ -3585,6 +3586,7 @@
 		85B04B142FF28DC100987274 /* LegacyTabSwitcherChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyTabSwitcherChrome.swift; sourceTree = "<group>"; };
 		85B04B162FF28DF900987274 /* FloatingTabSwitcherChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingTabSwitcherChrome.swift; sourceTree = "<group>"; };
 		85B04B182FF28E2200987274 /* FloatingTabSwitcherChromeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingTabSwitcherChromeTests.swift; sourceTree = "<group>"; };
+		85B04B1A2FF2A7E600987274 /* TabSwitcherChromeFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherChromeFactoryTests.swift; sourceTree = "<group>"; };
 		85B6ABB62DE5E4CC009C85C7 /* Onboarding */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = Onboarding; path = ../SharedPackages/Onboarding; sourceTree = SOURCE_ROOT; };
 		85B7CD8C2DCA3304000C7B7B /* MessageNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageNavigator.swift; sourceTree = "<group>"; };
 		85B9814D2B5EB618009AC9A6 /* SwipeTabsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeTabsCoordinator.swift; sourceTree = "<group>"; };
@@ -11044,6 +11046,7 @@
 				D625AAEA2BBEEFC900BC189A /* TabURLInterceptorTests.swift */,
 				F7594859CB2334A38D629EF5 /* SafariRedirectHandlerTests.swift */,
 				85B04B182FF28E2200987274 /* FloatingTabSwitcherChromeTests.swift */,
+				85B04B1A2FF2A7E600987274 /* TabSwitcherChromeFactoryTests.swift */,
 			);
 			name = Tabs;
 			sourceTree = "<group>";
@@ -14095,6 +14098,7 @@
 				987243142C5232B5007ECC76 /* BookmarksDatabaseSetupTests.swift in Sources */,
 				4B2DF8A62E64C67300FBF11E /* WideEventServiceTests.swift in Sources */,
 				56C23F652E0AD93600FD63C6 /* MockFeedbackSender.swift in Sources */,
+				85B04B1B2FF2A7E600987274 /* TabSwitcherChromeFactoryTests.swift in Sources */,
 				80CDFA1D2EF0AEB600375E73 /* MockTabManager.swift in Sources */,
 				36F619602F686F3300CBF121 /* DataClearingWideEventServiceTests.swift in Sources */,
 				56CA25EE2DB7ABCF00BE4226 /* LocalizationTests.swift in Sources */,

@@ -347,12 +347,15 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func makeChrome() -> TabSwitcherChrome {
-        guard floatingUIManaging.isFloatingUIEnabled else {
-            return LegacyTabSwitcherChrome(toolbar: toolbar, appSettings: appSettings)
+        let isFloating = floatingUIManaging.isFloatingUIEnabled
+        let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingUIEnabled: isFloating,
+                                                         toolbar: toolbar,
+                                                         appSettings: appSettings)
+        if isFloating {
+            // The storyboard toolbar is unused in floating mode; the chrome provides its own bars.
+            toolbar?.removeFromSuperview()
         }
-        // The storyboard toolbar is unused in floating mode; the chrome provides its own bars.
-        toolbar?.removeFromSuperview()
-        return FloatingTabSwitcherChrome()
+        return chrome
     }
 
     private func setupPagingScrollView() {

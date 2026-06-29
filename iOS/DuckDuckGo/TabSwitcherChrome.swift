@@ -78,3 +78,17 @@ protocol TabSwitcherChrome: AnyObject {
     /// Applies the appropriate content insets so collection content clears the bars.
     func applyCollectionContentInset(to collectionView: UICollectionView)
 }
+
+/// Selects the chrome implementation based on whether floating UI is enabled.
+enum TabSwitcherChromeFactory {
+
+    @MainActor
+    static func makeChrome(isFloatingUIEnabled: Bool,
+                           toolbar: UIToolbar,
+                           appSettings: AppSettings) -> TabSwitcherChrome {
+        if isFloatingUIEnabled {
+            return FloatingTabSwitcherChrome()
+        }
+        return LegacyTabSwitcherChrome(toolbar: toolbar, appSettings: appSettings)
+    }
+}

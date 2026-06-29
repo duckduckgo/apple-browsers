@@ -365,7 +365,6 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
-    case onboardingDismissExperiment
     case autofillPasswordsStatusBar
 }
 
@@ -385,6 +384,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case goToMarket
     case webViewUserAgent
     case freemiumPIR
+    case optOutRetryError96Hours
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {

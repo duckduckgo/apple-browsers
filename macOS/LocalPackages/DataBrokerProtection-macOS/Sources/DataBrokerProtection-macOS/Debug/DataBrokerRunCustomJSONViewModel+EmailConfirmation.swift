@@ -91,8 +91,7 @@ extension DataBrokerRunCustomJSONViewModel: DebugModeEmailConfirming {
                     shouldRunNextStep: { true }
                 )
 
-                try await runner.optOut(profileQuery: brokerProfileQueryData,
-                                        extractedProfile: scanResult.extractedProfile,
+                try await runner.optOut(extractedProfile: scanResult.extractedProfile,
                                         showWebView: true) { true }
 
                 addOptOutConfirmedEvent(for: scanResult)

@@ -64,6 +64,9 @@ public enum SingleUseColor {
     case fireModeAccentTertiary
     case fireModeBackground
     case fireModeCardBackground
+
+    // Duck.ai Grid Cell
+    case duckAIVoiceCellBackground
 }
 
 // MARK: - Onboarding Rebranding 2026

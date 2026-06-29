@@ -1,6 +1,5 @@
 //
-//  MockAutofillOnboardingExperimentPixelFiring.swift
-//  DuckDuckGo
+//  CancellationStep.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,17 +16,15 @@
 //  limitations under the License.
 //
 
-@testable import DuckDuckGo
+import Foundation
 
-final class MockAutofillOnboardingExperimentPixelFiring: AutofillOnboardingExperimentPixelFiring {
-    func fireSaveTap() {}
-    func fireDismissTap() {}
-    func fireNeverAskTap() {}
-    func firePasswordsSaved() {}
-    func fireImportCompleted() {}
-    func fireAutofillEnabled(_ enabled: Bool) {}
-    func fireSyncEnabled(_ enabled: Bool) {}
-    func fireAutofillInOtherAppsEnabled(_ enabled: Bool) {}
-    func fireImpressionCount(_ count: Int) {}
-    func fireDaysToConversion(_ days: Int) {}
+/// Identifies which step of VPN start was cancelled, so a cancellation can be told apart from a failure
+/// and attributed to its origin.
+public enum CancellationStep: String {
+    case systemExtensionActivation
+    case tunnelManagerLoad
+    case tunnelConnection
+
+    /// A cancellation that reached the top-level start handler without being attributed to a specific step.
+    case unknown
 }

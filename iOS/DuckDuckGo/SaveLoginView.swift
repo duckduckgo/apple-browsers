@@ -248,24 +248,10 @@ struct SaveLoginView: View {
         VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
             AutofillViews.PrimaryButton(title: UserText.autofillSavePasswordSaveCTA,
                                         action: viewModel.save)
-            dismissButton
-        }
-        .padding(.horizontal, buttonHorizontalPadding)
-    }
-
-    @ViewBuilder
-    private var dismissButton: some View {
-        switch viewModel.dismissExperimentCohort {
-        case .variant1:
-            AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNotNowCTA,
-                                         action: viewModel.cancelButtonPressed)
-        case .variant2:
             AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNeverPromptCTA,
                                          action: viewModel.neverPrompt)
-        case .control, nil:
-            AutofillViews.TertiaryButton(title: UserText.autofillSaveLoginNoThanksCTA,
-                                         action: viewModel.cancelButtonPressed)
         }
+        .padding(.horizontal, buttonHorizontalPadding)
     }
 
     /// CTA buttons for non-onboarding flows
@@ -347,14 +333,11 @@ struct SaveLoginView_Previews: PreviewProvider {
     
     static var previews: some View {
         Group {
-            let featureFlagger = AppDependencyProvider.shared.featureFlagger
             let viewModelNewUser = SaveLoginViewModel(credentialManager: MockManager(),
                                                       appSettings: AppDependencyProvider.shared.appSettings,
-                                                      featureFlagger: featureFlagger,
                                                       layoutType: .newUser)
             let viewModelSaveLogin = SaveLoginViewModel(credentialManager: MockManager(),
                                                         appSettings: AppDependencyProvider.shared.appSettings,
-                                                        featureFlagger: featureFlagger,
                                                         layoutType: .saveLogin)
 
             VStack {
@@ -370,13 +353,11 @@ struct SaveLoginView_Previews: PreviewProvider {
             VStack {
                 let viewModelUpdatePassword = SaveLoginViewModel(credentialManager: MockManager(),
                                                                  appSettings: AppDependencyProvider.shared.appSettings,
-                                                                 featureFlagger: featureFlagger,
                                                                  layoutType: .updatePassword)
                 SaveLoginView(viewModel: viewModelUpdatePassword)
-                
+
                 let viewModelUpdateUsername = SaveLoginViewModel(credentialManager: MockManager(),
                                                                  appSettings: AppDependencyProvider.shared.appSettings,
-                                                                 featureFlagger: featureFlagger,
                                                                  layoutType: .updateUsername)
                 SaveLoginView(viewModel: viewModelUpdateUsername)
             }
@@ -384,13 +365,11 @@ struct SaveLoginView_Previews: PreviewProvider {
             VStack {
                 let viewModelAdditionalLogin = SaveLoginViewModel(credentialManager: MockManager(),
                                                                   appSettings: AppDependencyProvider.shared.appSettings,
-                                                                  featureFlagger: featureFlagger,
                                                                   layoutType: .saveLogin)
                 SaveLoginView(viewModel: viewModelAdditionalLogin)
-                
+
                 let viewModelSavePassword = SaveLoginViewModel(credentialManager: MockManager(),
                                                                appSettings: AppDependencyProvider.shared.appSettings,
-                                                               featureFlagger: featureFlagger,
                                                                layoutType: .savePassword)
                 SaveLoginView(viewModel: viewModelSavePassword)
             }

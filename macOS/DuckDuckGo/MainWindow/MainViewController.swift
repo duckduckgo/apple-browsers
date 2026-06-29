@@ -809,7 +809,7 @@ final class MainViewController: NSViewController {
                 window.title = UserText.burnerWindowHeader
                 return
             }
-            let truncatedTitle = title.truncated(length: MainMenu.Constants.maxTitleLength)
+            let truncatedTitle = title.truncated(to: MainMenu.Constants.maxTitleLength, position: .tail)
 
             window.title = truncatedTitle
         }

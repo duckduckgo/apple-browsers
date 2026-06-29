@@ -267,10 +267,10 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     private func updateInvalidObjects() {
         invalidBookmarksTitles = syncBookmarksAdapter.provider?
             .fetchDescriptionsForObjectsThatFailedValidation()
-            .map { $0.truncated(length: 15) } ?? []
+            .map { $0.truncated(to: 15, position: .tail) } ?? []
 
         let invalidCredentialsObjects: [String] = (try? syncCredentialsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
-        invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(length: 15) })
+        invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(to: 15, position: .tail) })
 
         if let syncCreditCardsAdapter = syncCreditCardsAdapter {
             let invalidCreditCardsObjects: [String] = (try? syncCreditCardsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []

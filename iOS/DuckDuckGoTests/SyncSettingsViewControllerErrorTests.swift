@@ -434,6 +434,78 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenLegacyConnectURLPairingInfoIsPresentThenPairingIsSilentlyDropped() throws {
+        let syncCode = SyncCode(recovery: nil,
+                                connect: SyncCode.ConnectCode(deviceId: "device-id", secretKey: Data("secret".utf8)),
+                                exchangeKey: nil)
+        let pairingURL = try legacyPairingURL(for: syncCode)
+        let spyVC = try makeSpyVC(pairingURL: pairingURL)
+
+        spyVC.viewDidAppear(false)
+
+        XCTAssertNil(spyVC.pairingInfo)
+        XCTAssertEqual(spyVC.askForPairingConfirmationCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenLegacyRecoveryURLPairingInfoIsPresentThenPairingIsSilentlyDropped() throws {
+        let pairingURL = PairingInfo(base64Code: testRecoveryCode, deviceName: "Android")
+            .toURL(baseURL: try XCTUnwrap(URL(string: "https://duckduckgo.com")))
+        let spyVC = try makeSpyVC(pairingURL: pairingURL)
+
+        spyVC.viewDidAppear(false)
+
+        XCTAssertNil(spyVC.pairingInfo)
+        XCTAssertEqual(spyVC.askForPairingConfirmationCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenLegacyUnparseableURLPairingInfoIsPresentThenPairingIsSilentlyDropped() throws {
+        let pairingURL = PairingInfo(base64Code: "not-a-sync-code", deviceName: "Android")
+            .toURL(baseURL: try XCTUnwrap(URL(string: "https://duckduckgo.com")))
+        let spyVC = try makeSpyVC(pairingURL: pairingURL)
+
+        spyVC.viewDidAppear(false)
+
+        XCTAssertNil(spyVC.pairingInfo)
+        XCTAssertEqual(spyVC.askForPairingConfirmationCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenLegacyExchangeURLPairingInfoIsPresentThenPairingConfirmationIsShown() throws {
+        let syncCode = SyncCode(recovery: nil,
+                                connect: nil,
+                                exchangeKey: SyncCode.ExchangeKey(keyId: "key-id", publicKey: Data("public-key".utf8)))
+        let spyVC = try makeSpyVC(pairingURL: legacyPairingURL(for: syncCode))
+
+        spyVC.viewDidAppear(false)
+
+        XCTAssertNotNil(spyVC.pairingInfo)
+        XCTAssertEqual(spyVC.askForPairingConfirmationCallCount, 1)
+    }
+
+    private func legacyPairingURL(for syncCode: SyncCode) throws -> URL {
+        let base64Code = try syncCode.toJSON().base64EncodedString()
+        return PairingInfo(base64Code: base64Code, deviceName: "Android")
+            .toURL(baseURL: try XCTUnwrap(URL(string: "https://duckduckgo.com")))
+    }
+
+    @MainActor
+    private func makeSpyVC(pairingURL: URL) throws -> SpySyncSettingsViewController {
+        SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            pairingInfo: try XCTUnwrap(PairingInfo(url: pairingURL)),
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            syncSetupExperimentPixels: syncSetupExperimentPixels
+        )
+    }
+
+    @MainActor
     func testWhenConnectReceiverWasAlreadyEnabledThenSuccessExperimentMetricIsNotFired() {
         vc.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: true, setupSource: .connect, codeSource: .qrCode)
 
@@ -600,6 +672,7 @@ private final class SpySyncSettingsViewController: SyncSettingsViewController {
     var dismissPresentedViewControllerCallCount = 0
     var dismissVCAndShowDeviceSyncedToastCallCount = 0
     var dismissVCAndShowRecoveryPDFCallCount = 0
+    var askForPairingConfirmationCallCount = 0
 
     override func dismissPresentedViewController(completion: (() -> Void)? = nil) {
         dismissPresentedViewControllerCallCount += 1
@@ -612,5 +685,9 @@ private final class SpySyncSettingsViewController: SyncSettingsViewController {
 
     override func dismissVCAndShowRecoveryPDF() {
         dismissVCAndShowRecoveryPDFCallCount += 1
+    }
+
+    override func askForPairingConfirmation(deviceName: String) {
+        askForPairingConfirmationCallCount += 1
     }
 }

@@ -15,6 +15,11 @@ appId: com.duckduckgo.mobile.ios
     commands:
         - tapOn:
             id: "UnifiedFavoritesToggle"
+- extendedWaitUntil:
+    visible:
+      id: "UnifiedFavoritesToggle"
+      checked: true
+    timeout: 10000
 - tapOn: Settings
 - tapOn: Done
 

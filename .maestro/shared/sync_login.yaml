@@ -6,6 +6,7 @@ appId: com.duckduckgo.mobile.ios
 
 - assertVisible: Sync With Another Device
 - tapOn: Sync With Another Device
+- tapOn: Passcode field
 - inputText: "0000"
 - pressKey: Enter
 - runFlow:

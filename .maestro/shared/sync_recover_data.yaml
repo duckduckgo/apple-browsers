@@ -6,6 +6,7 @@ appId: com.duckduckgo.mobile.ios
 
 - assertVisible: Use Recovery Code
 - tapOn: Use Recovery Code
+- tapOn: Passcode field
 - inputText: "0000"
 - pressKey: Enter
 - assertVisible: Recover your synced data

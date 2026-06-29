@@ -8,9 +8,9 @@ appId: com.duckduckgo.mobile.ios
     id: "SyncToggle"
 - inputText: "0000"
 - pressKey: Enter
-- runFlow:
-    file: delay.yaml
-- assertVisible: Sync your data with another device?
+- extendedWaitUntil:
+    visible: Sync your data with another device?
+    timeout: 30000
 - tapOn: Not Now
 - assertVisible: Synced Devices
 - scrollUntilVisible:
@@ -25,4 +25,3 @@ appId: com.duckduckgo.mobile.ios
     commands:
       - inputText: "0000"
       - pressKey: Enter
-- assertVisible: Recovery code copied

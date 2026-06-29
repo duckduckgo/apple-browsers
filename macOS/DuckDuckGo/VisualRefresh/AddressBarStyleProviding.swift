@@ -28,6 +28,7 @@ protocol AddressBarStyleProviding {
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
+    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat
 
     // MARK: - Configuration
@@ -181,6 +182,10 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
         return 0
     }
 
+    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
+        return true
+    }
+
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {
         return 32
     }
@@ -280,6 +285,10 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
 
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat {
         return 0
+    }
+
+    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
+        return false
     }
 
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {

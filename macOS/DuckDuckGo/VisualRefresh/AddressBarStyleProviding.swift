@@ -49,6 +49,8 @@ protocol AddressBarStyleProviding {
     var addressBarActiveOuterBorderSize: CGFloat { get }
     var addressBarButtonSize: CGFloat { get }
     var addressBarButtonsCornerRadius: CGFloat { get }
+    var addressBarHorizontalPaddingExtended: CGFloat? { get }
+    var addressBarHorizontalPaddingIDLE: CGFloat? { get }
     var addressBarInactiveBackgroundViewRadius: CGFloat { get }
     var addressBarInnerBorderViewRadius: CGFloat { get }
     var addTabButtonPadding: CGFloat { get }
@@ -130,6 +132,8 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarInnerBorderViewRadius: CGFloat = 15
     let addressBarActiveOuterBorderViewRadius: CGFloat = 17
     let addressBarActiveOuterBorderSize: CGFloat = -2
+    let addressBarHorizontalPaddingExtended: CGFloat? = nil
+    let addressBarHorizontalPaddingIDLE: CGFloat? = nil
     let suggestionIconViewLeadingPadding: CGFloat = 8
     let suggestionTextFieldLeadingPadding: CGFloat = 8
     let topSpaceForSuggestionWindow: CGFloat = 16
@@ -226,6 +230,8 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarButtonSize: CGFloat = 28
     let addressBarButtonsCornerRadius: CGFloat = 16             // VERIFY
     let addressBarInactiveBackgroundViewRadius: CGFloat = 17    // OK
+    let addressBarHorizontalPaddingExtended: CGFloat? = 4       // OK
+    let addressBarHorizontalPaddingIDLE: CGFloat? = 1           // OK
     let addressBarInnerBorderViewRadius: CGFloat = 19           // OK - Matches addressBarActiveBackgroundViewRadius
     let addTabButtonPadding: CGFloat = 32                       // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = CurrentPrivacyShieldAddressBarStyleProvider()

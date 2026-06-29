@@ -963,6 +963,18 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
+    func refreshAddressBarSize() {
+        let styleProvider = theme.addressBarStyleProvider
+        guard let idlePadding = styleProvider.addressBarHorizontalPaddingIDLE, let extendedPadding = styleProvider.addressBarHorizontalPaddingExtended else {
+            return
+        }
+
+        let horizontalPadding = shouldUseTallAddressBarLayout ? idlePadding : idlePadding
+        activeBackgroundViewLeadingConstraint.constant = horizontalPadding
+        activeBackgroundViewTrailingConstraint.constant = horizontalPadding
+        view.layoutSubtreeIfNeeded()
+    }
+
     private func refreshSuggestionsAppearance() {
         activeBackgroundViewWithSuggestions.backgroundColor = theme.colorsProvider.suggestionsBackgroundColor
     }

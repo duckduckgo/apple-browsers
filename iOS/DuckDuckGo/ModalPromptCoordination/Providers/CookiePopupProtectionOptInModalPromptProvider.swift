@@ -20,6 +20,7 @@
 import Persistence
 import SwiftUI
 import UIKit
+import WebExtensions
 
 /// Persisted "already shown on launch" flag for the Cookie Pop-up Protection opt-in dialog.
 /// ponytail: the modal prompt queue tracks no per-prompt history, so we keep our own one-shot flag.
@@ -63,7 +64,8 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
     static func makeViewController() -> UIViewController {
         let variant: CookiePopupProtectionOptInVariant = AppUserDefaults().autoconsentEnabled ? .whenEnabled : .whenDisabled
         weak var controller: UIViewController?
-        let hostingController = UIHostingController(rootView: CookiePopupProtectionOptInView(variant: variant, onConfirm: {
+        let hostingController = UIHostingController(rootView: CookiePopupProtectionOptInView(variant: variant, onConfirm: { selectedOption in
+            Self.applyCookiePopupProtectionOptInSelection(selectedOption)
             controller?.dismiss(animated: true)
         }))
         controller = hostingController
@@ -75,5 +77,11 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
             hostingController.preferredContentSize = CGSize(width: 480, height: 744)
         }
         return hostingController
+    }
+
+    /// The top option turns on Cookie Pop-up Protection with the most-private handling; the bottom keeps the current setting.
+    static func applyCookiePopupProtectionOptInSelection(_ option: CookiePopupProtectionOptInOption) {
+        guard option == .optIn else { return }
+        AppUserDefaults().cookiePopupPreference = .max
     }
 }

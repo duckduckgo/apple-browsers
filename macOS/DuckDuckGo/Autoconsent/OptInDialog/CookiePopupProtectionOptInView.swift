@@ -54,19 +54,21 @@ enum CookiePopupProtectionOptInVariant {
     }
 }
 
-private enum CookiePopupProtectionOptInOption: CaseIterable, Identifiable {
-    case primary
-    case secondary
+enum CookiePopupProtectionOptInOption: CaseIterable, Identifiable {
+    /// Top option — enable Cookie Pop-up Protection with the most-private handling.
+    case optIn
+    /// Bottom option — keep the current setting.
+    case keepCurrent
     var id: Self { self }
 }
 
 /// Centered opt-in card matching the Cookie Pop-up Protection design.
-/// ponytail: visual-only — selection is local @State, `Confirm` just dismisses. No persistence yet.
+/// ponytail: `Confirm` reports the selected option via `onConfirm`; the presenter applies the setting.
 struct CookiePopupProtectionOptInView: View {
 
     let variant: CookiePopupProtectionOptInVariant
-    let onConfirm: () -> Void
-    @State private var selectedOption: CookiePopupProtectionOptInOption = .primary
+    let onConfirm: (CookiePopupProtectionOptInOption) -> Void
+    @State private var selectedOption: CookiePopupProtectionOptInOption = .optIn
 
     /// Footer with the "Settings > Cookie Pop-Up Protection" span rendered bold (via markdown in the string).
     private var footerText: AttributedString {
@@ -103,8 +105,10 @@ struct CookiePopupProtectionOptInView: View {
 
             HStack {
                 Spacer()
-                Button(UserText.cookiePopupProtectionOptInConfirm, action: onConfirm)
-                    .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                Button(UserText.cookiePopupProtectionOptInConfirm) {
+                    onConfirm(selectedOption)
+                }
+                .buttonStyle(DefaultActionButtonStyle(enabled: true))
             }
             .padding(.top, 16)
             .padding(.trailing, 20)
@@ -167,8 +171,8 @@ struct CookiePopupProtectionOptInView: View {
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
 
-            radioRow(.primary, title: variant.primaryOptionTitle)
-            radioRow(.secondary, title: variant.secondaryOptionTitle)
+            radioRow(.optIn, title: variant.primaryOptionTitle)
+            radioRow(.keepCurrent, title: variant.secondaryOptionTitle)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
@@ -218,7 +222,7 @@ struct CookiePopupProtectionOptInView: View {
 struct CookiePopupProtectionOptInOverlayView: View {
 
     let variant: CookiePopupProtectionOptInVariant
-    let onConfirm: () -> Void
+    let onConfirm: (CookiePopupProtectionOptInOption) -> Void
 
     var body: some View {
         ZStack {
@@ -233,6 +237,6 @@ struct CookiePopupProtectionOptInOverlayView: View {
 }
 
 #Preview {
-    CookiePopupProtectionOptInOverlayView(variant: .whenDisabled, onConfirm: {})
+    CookiePopupProtectionOptInOverlayView(variant: .whenDisabled, onConfirm: { _ in })
         .frame(width: 900, height: 760)
 }

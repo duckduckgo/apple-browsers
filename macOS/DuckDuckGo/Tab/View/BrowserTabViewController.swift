@@ -700,7 +700,8 @@ final class BrowserTabViewController: NSViewController {
 
         let variant: CookiePopupProtectionOptInVariant = cookiePopupProtectionPreferences.isAutoconsentEnabled ? .whenEnabled : .whenDisabled
 
-        let hostingController = NSHostingController(rootView: CookiePopupProtectionOptInView(variant: variant, onConfirm: { [weak self] in
+        let hostingController = NSHostingController(rootView: CookiePopupProtectionOptInView(variant: variant, onConfirm: { [weak self] selectedOption in
+            self?.applyCookiePopupProtectionOptInSelection(selectedOption)
             self?.dismissCookiePopupProtectionOptInDialog()
             onConfirm?()
         }))
@@ -751,6 +752,12 @@ final class BrowserTabViewController: NSViewController {
             hostingController.view.removeFromSuperview()
             hostingController.removeFromParent()
         }
+    }
+
+    /// The top option turns on Cookie Pop-up Protection with the most-private handling; the bottom keeps the current setting.
+    private func applyCookiePopupProtectionOptInSelection(_ option: CookiePopupProtectionOptInOption) {
+        guard option == .optIn else { return }
+        cookiePopupProtectionPreferences.cookiePopupPreference = .max
     }
 
     private func presentContextualOnboarding(showLastDialog: Bool = false) {

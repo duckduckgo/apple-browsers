@@ -56,20 +56,27 @@ enum CookiePopupProtectionOptInVariant {
     }
 }
 
+enum CookiePopupProtectionOptInOption: Hashable {
+    /// Top option — enable Cookie Pop-up Protection with the most-private handling.
+    case optIn
+    /// Bottom option — keep the current setting.
+    case keepCurrent
+}
+
 /// Cookie Pop-up Protection opt-in dialog (iOS counterpart of the macOS dialog).
-/// ponytail: visual-only — selection is local state, `Confirm` just calls `onConfirm`. No persistence yet.
+/// ponytail: `Confirm` reports the selected option via `onConfirm`; the presenter applies the setting.
 struct CookiePopupProtectionOptInView: View {
 
     private let variant: CookiePopupProtectionOptInVariant
-    private let onConfirm: () -> Void
+    private let onConfirm: (CookiePopupProtectionOptInOption) -> Void
     @StateObject private var optionsModel: RadioButtonViewModel
 
-    init(variant: CookiePopupProtectionOptInVariant, onConfirm: @escaping () -> Void) {
+    init(variant: CookiePopupProtectionOptInVariant, onConfirm: @escaping (CookiePopupProtectionOptInOption) -> Void) {
         self.variant = variant
         self.onConfirm = onConfirm
         let items = [
-            RadioButtonItem(text: variant.primaryOptionTitle),
-            RadioButtonItem(text: variant.secondaryOptionTitle)
+            RadioButtonItem(text: variant.primaryOptionTitle, value: CookiePopupProtectionOptInOption.optIn),
+            RadioButtonItem(text: variant.secondaryOptionTitle, value: CookiePopupProtectionOptInOption.keepCurrent)
         ]
         _optionsModel = StateObject(wrappedValue: RadioButtonViewModel(
             items: items,
@@ -166,7 +173,10 @@ struct CookiePopupProtectionOptInView: View {
 
             RadioButtonView(viewModel: optionsModel)
 
-            Button(UserText.cookiePopupProtectionOptInConfirm, action: onConfirm)
+            Button(UserText.cookiePopupProtectionOptInConfirm) {
+                let selectedOption = optionsModel.selectedItem?.value as? CookiePopupProtectionOptInOption ?? .optIn
+                onConfirm(selectedOption)
+            }
                 .buttonStyle(PrimaryButtonStyle())
                 .padding(.top, 24)
 
@@ -203,5 +213,5 @@ private extension View {
 }
 
 #Preview {
-    CookiePopupProtectionOptInView(variant: .whenDisabled, onConfirm: {})
+    CookiePopupProtectionOptInView(variant: .whenDisabled, onConfirm: { _ in })
 }

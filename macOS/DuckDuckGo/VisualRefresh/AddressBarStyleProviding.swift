@@ -198,7 +198,7 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     private let navigationBarHeightForHomePage: CGFloat = 52
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
     private let addressBarTopPaddingForDefault: CGFloat = 7
-    private let addressBarTopPaddingForDefaultFocused: CGFloat = 7
+    private let addressBarTopPaddingForDefaultFocused: CGFloat = 3
     private let addressBarTopPaddingForPopUpWindow: CGFloat = 7
     private let addressBarBottomPaddingForDefault: CGFloat = 7
     private let addressBarBottomPaddingForHomePage: CGFloat = 7

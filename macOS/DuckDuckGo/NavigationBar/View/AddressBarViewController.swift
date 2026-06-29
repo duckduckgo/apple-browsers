@@ -197,6 +197,8 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
+    private var hasEnteredText: Bool = false
+
     private var isFirstResponder = false {
         didSet {
             handleFirstResponderChange()
@@ -567,6 +569,7 @@ final class AddressBarViewController: NSViewController {
                 addressBarButtonsViewController?.textFieldValue = value
                 updateView()
                 updateSwitchToTabBoxAppearance()
+                markTextEnteredIfNeeded()
             }
             .store(in: &cancellables)
     }
@@ -1088,6 +1091,7 @@ final class AddressBarViewController: NSViewController {
         }
 
         setupAddressBarPlaceHolder()
+        resetTextEntered()
     }
 
     private func fireAddressBarActivatedPixelIfNeeded() {
@@ -1299,6 +1303,21 @@ extension AddressBarViewController: ThemeUpdateListening {
         refreshAddressBarAppearance(nil)
         refreshSuggestionsAppearance()
         updateView()
+    }
+}
+
+private extension AddressBarViewController {
+
+    func markTextEnteredIfNeeded() {
+        if addressBarTextField.value.isEmpty {
+            return
+        }
+
+        hasEnteredText = true
+    }
+
+    func resetTextEntered() {
+        hasEnteredText = false
     }
 }
 

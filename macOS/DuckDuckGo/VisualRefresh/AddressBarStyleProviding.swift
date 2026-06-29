@@ -27,14 +27,12 @@ protocol AddressBarStyleProviding {
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
-    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat
 
     var tabBarBackgroundTopPadding: CGFloat { get }
     var defaultAddressBarFontSize: CGFloat { get }
     var newTabOrHomePageAddressBarFontSize: CGFloat { get }
     var shouldShowNewSearchIcon: Bool { get }
-    var addressBarLogoImage: NSImage? { get }
     var addressBarButtonsCornerRadius: CGFloat { get }
     var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
     var shouldAddPaddingToAddressBarButtons: Bool { get }
@@ -99,7 +97,6 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let defaultAddressBarFontSize: CGFloat = 13
     let newTabOrHomePageAddressBarFontSize: CGFloat = 13
     let addressBarButtonsCornerRadius: CGFloat = 9
-    let addressBarLogoImage: NSImage? = DesignSystemImages.Glyphs.Size16.findSearch
     let shouldShowNewSearchIcon: Bool = true
     let shouldAddPaddingToAddressBarButtons: Bool = true
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = CurrentPrivacyShieldAddressBarStyleProvider()
@@ -163,10 +160,6 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
 
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat {
         return 0
-    }
-
-    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
-        return true
     }
 
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {

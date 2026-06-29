@@ -90,7 +90,7 @@ struct ThemeStyle: ThemeStyleProviding {
             palette: palette,
             toolbarButtonsCornerRadius: 9,
             fireWindowGraphic: .burnerWindowGraphicNew,
-            addressBarStyleProvider: CurrentAddressBarStyleProvider(featureFlagger: featureFlagger),
+            addressBarStyleProvider: AddressBarStyleProvidingFactory.buildStyleProvider(featureFlagger: featureFlagger),
             navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(displaysTabsAnimations: displaysTabsAnimations),
             tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette, displaysTabsAnimations: displaysTabsAnimations),
             colorsProvider: NewColorsProviding(palette: palette),

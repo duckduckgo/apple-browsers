@@ -1,0 +1,29 @@
+# vcf_contact_links_happy_path.yaml
+# Single-VCARD .vcf file should present the native CNContactViewController
+# ("Add to Contacts" card) without a fallback toast.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+- runFlow:
+    file: ../shared/setup.yaml
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/features/download/contact-full.vcf"
+- pressKey: Enter
+
+# CNContactViewController(forUnknownContact:) has no stable nav title, so assert
+# on the family name from the fixture (FN: Johnny Q. Appleseed). It only renders
+# on the contact card — the .vcf URL triggers a download, not a page render.
+- extendedWaitUntil:
+    visible: "Appleseed"
+    timeout: 10000
+
+# No parse-failure toast for a happy-path single contact.
+- assertNotVisible: "Unable to add contact. Try opening the contact file from Downloads instead."

@@ -1,0 +1,33 @@
+# vcf_contact_links_multiple_contacts.yaml
+# Multi-VCARD .vcf presents the FIRST contact's native card (the rest are
+# silently truncated). Unlike .ics multi-event, it does NOT fall back to QuickLook.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+- runFlow:
+    file: ../shared/setup.yaml
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/features/download/contact-multiple.vcf"
+- pressKey: Enter
+
+# contact-multiple.vcf holds Alice Smith, Bob Jones, Carol Garcia.
+# Only the first contact's card is presented.
+- extendedWaitUntil:
+    visible: "Alice Smith"
+    timeout: 10000
+
+# Truncation: the remaining contacts must not appear.
+- assertNotVisible: "Bob Jones"
+- assertNotVisible: "Carol Garcia"
+
+# Multi-contact .vcf shows the native card, not QuickLook (differs from .ics multi-event).
+- assertNotVisible:
+    id: "QLOverlayDoneButtonAccessibilityIdentifier"

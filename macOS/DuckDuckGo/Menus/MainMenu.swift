@@ -932,7 +932,10 @@ final class MainMenu: NSMenu {
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem)
             }.withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu)
             NSMenuItem(title: "CPM") {
-                NSMenuItem(title: "Show opt-in dialog", action: #selector(MainViewController.debugShowCookiePopupProtectionOptInDialog))
+                NSMenuItem(title: "Opt-in dialog") {
+                    NSMenuItem(title: "Show opt-in dialog", action: #selector(MainViewController.debugShowCookiePopupProtectionOptInDialog))
+                    NSMenuItem(title: "Reset app launch flag", action: #selector(MainViewController.debugResetCookiePopupProtectionOptInLaunchFlag))
+                }
                 NSMenuItem(title: "NTP widget") {
                     NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
                     NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))

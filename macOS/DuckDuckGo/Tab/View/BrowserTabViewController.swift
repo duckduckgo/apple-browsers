@@ -661,13 +661,13 @@ final class BrowserTabViewController: NSViewController {
         presentedContextualOnboardingDialogType = nil
     }
 
-    // TODO: Remember to remove it
-    /// Debug-only: presents the Cookie Pop-up Protection opt-in dialog centered over the window.
+    /// Presents the Cookie Pop-up Protection opt-in dialog centered over the window.
+    /// `onConfirm` fires when the user taps Confirm — the promo queue uses it to record the result.
     /// ponytail: the dim/backdrop is a WindowDimmingBlockingView mounted on the window frame view
     /// (contentView.superview) so it covers the WHOLE window — titlebar / tab bar included — and its local
     /// event monitor blocks mouse/scroll from reaching anything behind it. The card is a sibling above the
     /// backdrop so it receives events normally (no manual forwarding).
-    func showCookiePopupProtectionOptInDialog() {
+    func showCookiePopupProtectionOptInDialog(onConfirm: (() -> Void)? = nil) {
         guard cookiePopupOptInHostingController == nil else { return }
         guard let frameView = view.window?.contentView?.superview else { return }
 
@@ -689,6 +689,7 @@ final class BrowserTabViewController: NSViewController {
 
         let hostingController = NSHostingController(rootView: CookiePopupProtectionOptInView(variant: variant, onConfirm: { [weak self] in
             self?.dismissCookiePopupProtectionOptInDialog()
+            onConfirm?()
         }))
         let cardSize = hostingController.view.fittingSize
         hostingController.view.translatesAutoresizingMaskIntoConstraints = true
@@ -721,7 +722,7 @@ final class BrowserTabViewController: NSViewController {
         view.window?.makeFirstResponder(nil)
     }
 
-    private func dismissCookiePopupProtectionOptInDialog() {
+    func dismissCookiePopupProtectionOptInDialog() {
         guard let backdrop = cookiePopupOptInBackdrop, let hostingController = cookiePopupOptInHostingController else { return }
         // Detach the references now so a re-trigger during the fade-out starts a fresh dialog.
         cookiePopupOptInBackdrop = nil

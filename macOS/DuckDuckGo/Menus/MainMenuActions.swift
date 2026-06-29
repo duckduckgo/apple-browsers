@@ -1498,6 +1498,10 @@ extension MainViewController {
         browserTabViewController.showCookiePopupProtectionOptInDialog()
     }
 
+    @objc func debugResetCookiePopupProtectionOptInLaunchFlag(_ sender: Any?) {
+        NSApp.delegateTyped.promoService?.undismiss(promoId: PromoServiceFactory.cookiePopupProtectionOptInPromoID, clearHistory: true)
+    }
+
     @objc func showHistory(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .anyHistoryPane)

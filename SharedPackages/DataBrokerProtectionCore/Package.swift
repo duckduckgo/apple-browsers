@@ -34,6 +34,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../DebugServer"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
         .package(url: "https://github.com/apple/swift-algorithms", exact: "1.2.1"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.1.0"),
@@ -47,6 +48,7 @@ let package = Package(
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
+                .product(name: "DebugServer", package: "DebugServer"),
                 "ZIPFoundation",
                 .product(name: "Algorithms", package: "swift-algorithms"),
                 "TrackerRadarKit",

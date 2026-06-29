@@ -335,7 +335,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    func getAIChatPageContext(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+    func getAIChatPageContext(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         didGetAIChatPageContext = true
         return nil
     }

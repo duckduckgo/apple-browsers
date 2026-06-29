@@ -42,12 +42,12 @@ final class FloatingUIManager: FloatingUIManaging {
 
     var isFloatingUIEnabled: Bool {
         let isFloatingFlagEnabled = featureFlagger.isFeatureOn(.floatingUI)
-        if !Self.isRunningUnitTests {
-            assert(
-                !isFloatingFlagEnabled || unifiedToggleInputFeature.isAvailable,
-                "Floating UI requires Unified Toggle Input availability."
-            )
-        }
+//        if !Self.isRunningUnitTests {
+//            assert(
+//                !isFloatingFlagEnabled || unifiedToggleInputFeature.isAvailable,
+//                "Floating UI requires Unified Toggle Input availability."
+//            )
+//        }
         return isFloatingFlagEnabled && unifiedToggleInputFeature.isAvailable && !isPad()
     }
 

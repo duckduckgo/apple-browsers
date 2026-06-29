@@ -990,7 +990,9 @@ final class AddressBarViewController: NSViewController {
         /// (e.g. browsing with the privacy dashboard showing), we respect that width so the text clears the button.
         let isToggleFeatureEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
         let isToggleVisible = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
-        let duckAILeadingPadding: CGFloat = 20
+
+        let styleProvider = theme.addressBarStyleProvider
+        let duckAILeadingPadding: CGFloat = styleProvider.addressBarTextFieldLeadingPadding
 
         if isToggleVisible {
             let effectiveMinX = max(minX, duckAILeadingPadding)
@@ -1009,7 +1011,7 @@ final class AddressBarViewController: NSViewController {
         /// (`.text`, `.url`, `.openTabSuggestion`, `.aiChat`) no longer render a leading icon regardless of
         /// the `aiChatOmnibarToggle` flag — skip the offset so the text isn't pushed past the (now-narrower)
         /// buttons container's left edge on that path.
-        if theme.addressBarStyleProvider.shouldShowNewSearchIcon && !self.mode.isEditing {
+        if styleProvider.shouldShowNewSearchIcon && !self.mode.isEditing {
             let pullback = isAddressBarFocused
                 ? AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.focused
                 : AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.unfocused

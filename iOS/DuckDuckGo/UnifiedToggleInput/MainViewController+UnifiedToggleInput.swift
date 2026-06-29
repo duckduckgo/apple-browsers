@@ -823,7 +823,9 @@ private extension MainViewController {
         chromeManager.reset(animated: false)
         if coordinator.isActive {
             coordinator.deactivateToOmnibar()
+            WebScrollFreezeDebugTransitionLog.note("uti.hide")
             coordinator.hide()
+            WebScrollFreezeDebugTransitionLog.note("uti.unbind")
             coordinator.unbind()
         }
     }

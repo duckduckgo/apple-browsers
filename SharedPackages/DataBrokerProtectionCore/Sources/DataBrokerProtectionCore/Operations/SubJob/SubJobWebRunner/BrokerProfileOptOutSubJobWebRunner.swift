@@ -27,8 +27,7 @@ import Common
 public typealias BrokerProfileOptOutSubJobWebProtocol = BrokerProfileOptOutSubJobWebRunning & BrokerProfileOptOutSubJobWebTesting
 
 public protocol BrokerProfileOptOutSubJobWebRunning {
-    func optOut(profileQuery: BrokerProfileQueryData,
-                extractedProfile: ExtractedProfile,
+    func optOut(extractedProfile: ExtractedProfile,
                 showWebView: Bool,
                 shouldRunNextStep: @escaping () -> Bool) async throws
 }
@@ -119,8 +118,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.contentBlocking = contentBlocking
     }
 
-    public func optOut(profileQuery: BrokerProfileQueryData,
-                       extractedProfile: ExtractedProfile,
+    public func optOut(extractedProfile: ExtractedProfile,
                        showWebView: Bool,
                        shouldRunNextStep: @escaping () -> Bool) async throws {
         try await run(inputValue: extractedProfile, showWebView: showWebView)

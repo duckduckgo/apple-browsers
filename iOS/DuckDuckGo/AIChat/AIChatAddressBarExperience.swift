@@ -64,7 +64,6 @@ struct AIChatAddressBarExperience: AIChatAddressBarExperienceProviding {
 
     var isIPadAIToggleExperienceEnabled: Bool {
         userInterfaceIdiomProvider.userInterfaceIdiom == .pad
-            && featureFlagger.isFeatureOn(.iPadAIToggle)
     }
 
     private var isIPadChromeShortcutInPlay: Bool {

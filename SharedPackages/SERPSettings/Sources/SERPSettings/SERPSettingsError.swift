@@ -41,4 +41,10 @@ public enum SERPSettingsError: Error {
     /// This error occurs when the underlying storage mechanism fails during a write operation,
     /// such as insufficient permissions, disk full, or keychain access failures.
     case keyValueStoreWriteError
+
+    /// A stored SERP value could not be decoded into its native enum.
+    ///
+    /// Signals a SERP/native contract mismatch: the SERP persisted a value outside the
+    /// range the native side recognizes. The native getter falls back to its default.
+    case unrecognizedValue
 }

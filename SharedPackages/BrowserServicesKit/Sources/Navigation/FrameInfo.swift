@@ -103,6 +103,6 @@ extension FrameInfo: CustomDebugStringConvertible {
 #else
         let handle = ""
 #endif
-        return "<Frame \(webViewPtr)_\(handle)\(isMainFrame ? ": Main" : ""); current url: \(url.absoluteString.isEmpty ? "empty" : url.absoluteString)>"
+        return "<Frame \(webViewPtr)_\(handle)\(isMainFrame ? ": Main" : ""); current url: \(url.isEmpty ? "empty" : url.shortDescription)>"
     }
 }

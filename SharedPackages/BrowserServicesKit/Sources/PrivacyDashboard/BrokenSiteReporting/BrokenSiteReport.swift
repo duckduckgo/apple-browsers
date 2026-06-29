@@ -304,6 +304,13 @@ public struct BrokenSiteReport {
             "consentReloadLoop": boolToStringValue(cookieConsentInfo?.consentReloadLoop),
             "consentHeuristicEnabled": boolToStringValue(cookieConsentInfo?.consentHeuristicEnabled),
             "consentRule": cookieConsentInfo?.consentRule ?? "",
+            "cpmExtensionDroppedCallbacks": intToStringValue(cookieConsentInfo?.cpmExtensionDroppedCallbacks),
+            "cpmExtensionLoaded": boolToStringValue(cookieConsentInfo?.cpmExtensionLoaded),
+            "cpmDashboardState": cookieConsentInfo?.cpmDashboardState?.rawValue ?? "",
+            "cpmStage": cookieConsentInfo?.cpmStage?.rawValue ?? "",
+            "cpmErrors": cookieConsentInfo?.cpmErrors ?? "",
+            "cpmQueueSize": intToStringValue(cookieConsentInfo?.cpmQueueSize),
+            "cpmConfigVersion": cookieConsentInfo?.cpmConfigVersion ?? "",
             "debugFlags": debugFlags,
             "contentScopeExperiments": privacyExperiments
         ]
@@ -390,6 +397,10 @@ public struct BrokenSiteReport {
         default:
             return ""
         }
+    }
+
+    private func intToStringValue(_ value: Int?) -> String {
+        value.map(String.init) ?? ""
     }
 
     private func encodeErrors(_ errors: [Error]) -> String {

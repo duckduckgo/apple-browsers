@@ -114,6 +114,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 return false
             }
         }
+
+        var preservesFailureRecoveryDuringReassertUpdate: Bool {
+            self == .failureRecovery
+        }
     }
 
     public enum ConnectionTesterStatus {
@@ -1102,7 +1106,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 }
             },
             stopMonitors: { [weak self] in
-                await self?.stopMonitors()
+                await self?.stopMonitorsForReconfiguration(preservingFailureRecovery: attemptSource.preservesFailureRecoveryDuringReassertUpdate)
             },
             updateAdapterConfiguration: { [weak self] tunnelConfiguration in
                 guard let self else { throw CancellationError() }
@@ -1471,6 +1475,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     @MainActor
     public func stopMonitors() async {
         await tunnelMonitors.stop()
+    }
+
+    /// Stops the monitors during a reasserting config update. Failure recovery
+    /// is preserved only for the update it drives itself; other reassert updates
+    /// supersede any in-flight recovery.
+    @MainActor
+    private func stopMonitorsForReconfiguration(preservingFailureRecovery: Bool) async {
+        await tunnelMonitors.stop(includingFailureRecovery: !preservingFailureRecovery)
     }
 
     // MARK: - Connection Tester

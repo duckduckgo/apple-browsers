@@ -200,7 +200,7 @@ final class SuggestionViewController: NSViewController {
         }
 
         // Remove the second reload that causes visual glitch in the beginning of typing
-        if suggestionContainerViewModel.suggestionContainer.result != nil || suggestionContainerViewModel.shouldShowSearchCell {
+        if suggestionContainerViewModel.suggestionContainer.result != nil {
             updateHeight()
             tableView.reloadData()
 
@@ -231,13 +231,7 @@ final class SuggestionViewController: NSViewController {
         guard let rowIndex,
               rowIndex >= 0,
               rowIndex < suggestionContainerViewModel.numberOfRows else {
-            if let defaultRow = suggestionContainerViewModel.defaultSelectedRow {
-                tableView.selectRowIndexes(IndexSet(integer: defaultRow), byExtendingSelection: false)
-                // Sync view model with the default selection so keyboard navigation works correctly
-                suggestionContainerViewModel.selectRow(at: defaultRow)
-            } else {
-                self.clearSelection()
-            }
+            self.clearSelection()
             return
         }
 
@@ -377,21 +371,10 @@ extension SuggestionViewController: NSTableViewDelegate {
         cell.isAIChatToggleBeingDisplayed = isAIChatToggleBeingDisplayed
 
         switch rowContent {
-        case .searchCell:
-            let userText = suggestionContainerViewModel.userStringValue ?? ""
-            let searchIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.phraseEntryIcon
-            cell.display(userText: userText, style: .search, icon: searchIcon, isBurner: self.isBurner)
-
         case .aiChatCell:
             let userText = suggestionContainerViewModel.userStringValue ?? ""
             let aiChatIcon: NSImage = .aiChat
             cell.display(userText: userText, style: .aiChat, icon: aiChatIcon, isBurner: self.isBurner)
-
-        case .visitCell:
-            let userText = suggestionContainerViewModel.userStringValue ?? ""
-            let host = suggestionContainerViewModel.visitCellHost ?? ""
-            let websiteIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.websiteEntryIcon
-            cell.display(userText: userText, style: .visit(host: host), icon: websiteIcon, isBurner: self.isBurner)
 
         case .sectionDivider:
             break // Already handled above

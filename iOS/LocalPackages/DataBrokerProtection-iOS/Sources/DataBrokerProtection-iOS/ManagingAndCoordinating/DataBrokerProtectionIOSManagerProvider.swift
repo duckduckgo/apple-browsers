@@ -57,7 +57,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
                                   isWebViewInspectable: Bool = false,
                                   freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil,
-                                  contentBlocking: DBPWebViewContentBlocking?) -> DataBrokerProtectionIOSManager? {
+                                  contentBlocking: DBPWebViewContentBlocking) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
@@ -100,7 +100,8 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
                                                         runTypeProvider: dbpSettings,
-                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated })
+                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated },
+                                                        optOutRetryErrorFeatureFlagger: featureFlagger)
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
 

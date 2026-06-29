@@ -1,5 +1,5 @@
 //
-//  WebScrollFreezeProbe.swift
+//  WebScrollFreezeDebugProbe.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -28,28 +28,36 @@ import Core
 /// tree), so it is callable from the Interaction Diagnostics debug screen, from the auto-capture in
 /// `WebScrollObserver` (gated by `webScrollFreezeCapture`, internal-only), and from lldb:
 ///
-///     expr -l Swift -O -- print(WebScrollFreezeProbe.captureNow())
-enum WebScrollFreezeProbe {
+///     expr -l Swift -O -- print(WebScrollFreezeDebugProbe.captureNow())
+enum WebScrollFreezeDebugProbe {
 
     @MainActor
     static func captureNow() -> String {
         var out = "# Interaction Diagnostics — \(Date())\n"
         out += "App: \(appVersion)\n\n"
         out += touchSection() + "\n"
+        out += transitionLogSection() + "\n"
         out += featureFlagsSection() + "\n"
         out += currentTabSection() + "\n"
         out += scrollViewsSection() + "\n"
+        out += allScrollViewsSection() + "\n"
+        out += windowWideRecognizerSuspectsSection() + "\n"
         out += presentationSection() + "\n"
         out += windowSection() + "\n"
         out += "## Recent interaction logs (last 5 min)\n" + recentInteractionLogs()
         return out
     }
 
-    // MARK: Touch ledger (reserved for Part 2 — not instrumented in Part 1)
+    // MARK: Active touches
 
     @MainActor
     private static func touchSection() -> String {
-        "## Touch ledger\n- (not instrumented in this build — Part 2 work)\n"
+        "## Active touches\n" + WebScrollFreezeDebugActiveTouchProbe.report() + "\n"
+    }
+
+    @MainActor
+    private static func transitionLogSection() -> String {
+        "## Recent transitions\n" + WebScrollFreezeDebugTransitionLog.recent() + "\n"
     }
 
     private static func featureFlagsSection() -> String {
@@ -91,6 +99,7 @@ enum WebScrollFreezeProbe {
         out += "- delegate: \(scrollView.delegate.map { typeName($0) } ?? "nil")\n"
 
         out += "\n" + panGesture(of: scrollView)
+        out += "\n" + webViewSubtreeSection(of: webView)
         out += "\n" + gestureChainSection(from: webView)
         out += "\n" + competingRecognizersSection()
         out += "\n" + overlaySection(over: webView, boundary: findMainViewController()?.view)
@@ -112,6 +121,110 @@ enum WebScrollFreezeProbe {
         }
         if !found { out += "- (none active — all idle)\n" }
         return out
+    }
+
+    /// Every UIScrollView in every window — regardless of gesture state — so a frozen scroll view that is
+    /// NOT mid-gesture (e.g. stuck after a failed reset) still shows up. Listed per window with host view
+    /// type, interaction flags, gesture state, content geometry, and whether it could be the culprit.
+    private static func allScrollViewsSection() -> String {
+        var out = "## All scroll views (window-wide)\n"
+        var count = 0
+        for window in allWindows() {
+            let windowName = typeName(window)
+            walkSubviews(window) { view in
+                guard let sv = view as? UIScrollView else { return }
+                count += 1
+                let pan = sv.panGestureRecognizer
+                let contentRange = sv.contentSize.height - sv.bounds.height
+                out += "- \(typeName(sv)) in \(windowName)\n"
+                out += "    scrollEnabled=\(sv.isScrollEnabled) userInteractionEnabled=\(sv.isUserInteractionEnabled)\n"
+                out += "    tracking=\(sv.isTracking) dragging=\(sv.isDragging) decelerating=\(sv.isDecelerating)\n"
+                out += "    pan: state=\(pan.state.diagnosticName) touches=\(pan.numberOfTouches)\n"
+                out += "    contentOffset=\(sv.contentOffset) contentSize.h=\(sv.contentSize.height)"
+                    + " bounds.h=\(sv.bounds.height) range=\(contentRange)\n"
+            }
+        }
+        if count == 0 { out += "- (no UIScrollViews found)\n" }
+        return out
+    }
+
+    /// Window-wide scan of all gesture recognizers, grouped into four buckets:
+    ///   (a) `.began` / `.changed` — actively recognizing a gesture right now,
+    ///   (b) `.began` / `.changed` AND `numberOfTouches == 0` — active with no live touches, a suspect
+    ///       pattern worth comparing against a healthy baseline (a recognizer in (b) also appears in (a)),
+    ///   (c) `numberOfTouches > 0` — holding touch references without being active,
+    ///   (d) WebKit/private recognizers in `.possible`, `.began`, or `.changed` — compare against a
+    ///       healthy baseline; `.possible`/0-touches is also the normal idle state for these gates.
+    /// Each entry includes a short superview-chain path, frame, window, visibility, and alpha.
+    private static func windowWideRecognizerSuspectsSection() -> String {
+        var active: [(UIGestureRecognizer, UIView, UIWindow)] = []
+        var activeZeroTouches: [(UIGestureRecognizer, UIView, UIWindow)] = []
+        var holdingTouches: [(UIGestureRecognizer, UIView, UIWindow)] = []
+        var webKitNonEnded: [(UIGestureRecognizer, UIView, UIWindow)] = []
+
+        for window in allWindows() {
+            walkSubviews(window) { view in
+                guard let recognizers = view.gestureRecognizers else { return }
+                for recognizer in recognizers {
+                    let state = recognizer.state
+                    let touches = recognizer.numberOfTouches
+                    let isActive = state == .began || state == .changed
+                    if isActive {
+                        active.append((recognizer, view, window))
+                        if touches == 0 {
+                            activeZeroTouches.append((recognizer, view, window))
+                        }
+                    } else if touches > 0 {
+                        holdingTouches.append((recognizer, view, window))
+                    }
+                    if isWebKitPrivate(recognizer) && (state == .possible || state == .began || state == .changed) {
+                        webKitNonEnded.append((recognizer, view, window))
+                    }
+                }
+            }
+        }
+
+        var out = "## Window-wide recognizer suspects\n"
+
+        out += "\n### (a) Active recognizers (.began / .changed)\n"
+        out += formatRecognizerBucket(active)
+        out += "\n### (b) Active with zero touches (.began / .changed, numberOfTouches == 0 — wedge suspects)\n"
+        out += "- NOTE: active-but-zero-touches is a suspect pattern; compare against a healthy-baseline capture to assess.\n"
+        out += formatRecognizerBucket(activeZeroTouches)
+        out += "\n### (c) Recognizers holding touches (numberOfTouches > 0, not active)\n"
+        out += formatRecognizerBucket(holdingTouches)
+        out += "\n### (d) WebKit/private recognizers (.possible / .began / .changed)\n"
+        out += "- NOTE: .possible/0-touches is the NORMAL idle state for WebKit gates."
+            + " Useful only when diffed against a healthy-baseline capture.\n"
+        out += formatRecognizerBucket(webKitNonEnded, warning: false)
+
+        return out
+    }
+
+    private static func formatRecognizerBucket(
+        _ entries: [(UIGestureRecognizer, UIView, UIWindow)],
+        warning: Bool = true
+    ) -> String {
+        guard !entries.isEmpty else { return "- (none)\n" }
+        return entries.map { recognizer, view, window in
+            "- \(warning ? "⚠️ " : "")\(typeName(recognizer)) state=\(recognizer.state.diagnosticName)"
+                + " touches=\(recognizer.numberOfTouches)\n"
+                + "    \(viewContextDescription(view, window: window))\n"
+        }.joined()
+    }
+
+    /// Short description of a view's position in the window hierarchy: superview type chain, frame,
+    /// which window it lives in, and visibility.
+    private static func viewContextDescription(_ view: UIView, window: UIWindow) -> String {
+        var chain: [String] = []
+        var cursor: UIView? = view.superview
+        while let current = cursor, !(current is UIWindow) {
+            chain.append(typeName(current))
+            cursor = current.superview
+        }
+        let path = chain.isEmpty ? "(root)" : chain.joined(separator: " > ")
+        return "host=\(typeName(view)) superviews=[\(path)] frame=\(view.frame)"
+            + " window=\(typeName(window)) hidden=\(view.isHidden) alpha=\(view.alpha)"
     }
 
     /// A presentation/transition left mid-flight can wedge UIKit's pan routing while taps still work.
@@ -163,6 +276,97 @@ enum WebScrollFreezeProbe {
 
     private static func panGesture(of scrollView: UIScrollView) -> String {
         "## webView.scrollView.panGestureRecognizer\n- \(describe(scrollView.panGestureRecognizer))\n"
+    }
+
+    /// Dumps EVERY gesture recogniser in the webView's SUBTREE (descending into WKScrollView / WKContentView)
+    /// — the recognisers the `webView → window` ancestor chain never reaches, and where a suspected wedge
+    /// may reside (e.g. a WebKit deferring/gating recogniser). We list all of them (robust to not knowing the
+    /// exact WebKit class names) with full public state, classify each, and flag `.possible`-with-0-touches
+    /// WebKit recognisers as SUSPECTS — deliberately NOT "wedged", because those states are also the normal idle state.
+    @MainActor
+    private static func webViewSubtreeSection(of webView: UIView) -> String {
+        var entries: [(recognizer: UIGestureRecognizer, host: UIView)] = []
+        collectSubtreeRecognizers(in: webView, into: &entries)
+
+        var out = "## WKWebView subtree recognizers (descending into WKContentView — NOT the ancestor chain)\n"
+        if entries.isEmpty {
+            out += "- (no recognizers found under the web view subtree)\n"
+            return out
+        }
+        for entry in entries {
+            out += "    \(describeSubtreeRecognizer(entry.recognizer, host: entry.host))\n"
+        }
+
+        out += "\n### Possible gate suspects (WebKit/private recognizers .possible, 0 touches — SUSPECTS ONLY)\n"
+        let suspects = entries.filter {
+            isWebKitPrivate($0.recognizer) && $0.recognizer.state == .possible && $0.recognizer.numberOfTouches == 0
+        }
+        if suspects.isEmpty {
+            out += "- (none)\n"
+        } else {
+            for suspect in suspects {
+                out += "    - \(typeName(suspect.recognizer)) on \(typeName(suspect.host))\n"
+            }
+        }
+        out += "- NOTE: WebKit gates sit .possible/0-touches in the NORMAL idle state too. This list confirms"
+            + " nothing on its own — it is diagnostic only when a FREEZE capture is diffed against a healthy"
+            + " baseline (which gate failed to reset / differs in state).\n"
+        return out
+    }
+
+    private static func collectSubtreeRecognizers(
+        in view: UIView,
+        into entries: inout [(recognizer: UIGestureRecognizer, host: UIView)]
+    ) {
+        view.gestureRecognizers?.forEach { entries.append(($0, view)) }
+        view.subviews.forEach { collectSubtreeRecognizers(in: $0, into: &entries) }
+    }
+
+    @MainActor
+    private static func describeSubtreeRecognizer(_ recognizer: UIGestureRecognizer, host: UIView) -> String {
+        let active = (recognizer.state == .began || recognizer.state == .changed)
+        return "[\(suspectClass(recognizer))] \(typeName(recognizer)) on \(typeName(host))"
+            + " — state=\(recognizer.state.diagnosticName)\(active ? " ⚠️ ACTIVE" : "")"
+            + " enabled=\(recognizer.isEnabled) touches=\(recognizer.numberOfTouches)"
+            + " cancels=\(recognizer.cancelsTouchesInView)"
+            + " delaysBegan=\(recognizer.delaysTouchesBegan) delaysEnded=\(recognizer.delaysTouchesEnded)"
+            + (isWebKitPrivate(recognizer) ? " (private)" : "")
+    }
+
+    /// Classify by runtime type name only (no private API). WebKit/private recognisers first, then fall back
+    /// to the existing app-recogniser buckets so app recognisers keep their established labels.
+    @MainActor
+    private static func suspectClass(_ recognizer: UIGestureRecognizer) -> String {
+        let name = String(describing: type(of: recognizer))
+        if name.contains("WKDeferring") { return "wk_deferring" }
+        if name.contains("WKTouchAction") { return "wk_touch_action" }
+        if name.contains("WebTouchEvents") || name.contains("UIWebTouch") { return "wk_touch_events" }
+        if name.contains("WKContent") { return "wk_content" }
+        if name.hasPrefix("WK") || name.hasPrefix("_") { return "wk_other" }
+        return WebScrollObserver.bucket(for: recognizer)
+    }
+
+    private static func isWebKitPrivate(_ recognizer: UIGestureRecognizer) -> Bool {
+        let name = String(describing: type(of: recognizer))
+        return name.hasPrefix("WK") || name.hasPrefix("_") || name.contains("WebTouch") || name.contains("UIWebTouch")
+    }
+
+    /// Recursively collect recognisers whose class is a WebKit deferring gate (WKDeferringGestureRecognizer)
+    /// from the webView's subtree. Shared with `WebScrollFreezeRecovery` so recovery resets exactly what the
+    /// capture reports.
+    static func deferringGates(in view: UIView) -> [UIGestureRecognizer] {
+        var gates: [UIGestureRecognizer] = []
+        collectDeferringGates(in: view, into: &gates)
+        return gates
+    }
+
+    private static func collectDeferringGates(in view: UIView, into gates: inout [UIGestureRecognizer]) {
+        view.gestureRecognizers?.forEach { recognizer in
+            if String(describing: type(of: recognizer)).contains("Deferring") {
+                gates.append(recognizer)
+            }
+        }
+        view.subviews.forEach { collectDeferringGates(in: $0, into: &gates) }
     }
 
     private static func gestureChainSection(from start: UIView) -> String {
@@ -314,7 +518,7 @@ enum WebScrollFreezeProbe {
 
 /// Last N freeze captures, written to Caches so they survive leaving the debug screen and can be exported
 /// after the fact (the freeze persists, so the user has time). No pixel — purely on-device, no triage.
-enum FreezeCaptureStore {
+enum WebScrollFreezeDebugCaptureStore {
 
     private static let maxCaptures = 10
 
@@ -325,9 +529,14 @@ enum FreezeCaptureStore {
         return url
     }
 
+    /// Monotonic counter so back-to-back saves (e.g. a recovery's pre + post captures, written within the
+    /// same wall-clock second) get distinct filenames.
+    private static var sequence = 0
+
     static func save(_ text: String) {
         guard let directory else { return }
-        let name = "capture-\(Int(Date().timeIntervalSince1970)).txt"
+        sequence += 1
+        let name = "capture-\(Int(Date().timeIntervalSince1970))-\(String(format: "%03d", sequence)).txt"
         try? text.write(to: directory.appendingPathComponent(name), atomically: true, encoding: .utf8)
         prune()
     }

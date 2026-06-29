@@ -911,7 +911,7 @@ extension AppDelegate {
             throw error
         }
         if let configurationUrl {
-            Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
+            Logger.config.debug("New configuration URL set to \(configurationUrl.shortDescription)")
         } else {
             Logger.config.log("New configuration URL reset to default")
         }

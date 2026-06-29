@@ -921,11 +921,20 @@ final class SyncConnectionControllerTests: XCTestCase {
         let peerKeyPair = try makePeerKeyPair()
         let scannerPayload = PairingV2QRCodePayload(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
         let scannerURL = try scannerPayload.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
+        let didClosePresenterChannel = expectation(description: "presenter channel closed")
+        didClosePresenterChannel.assertForOverFulfill = false
+        messageExchanger.closeChannelHandler = { channelID in
+            guard channelID == presenterPayload.channelId else {
+                return
+            }
+            didClosePresenterChannel.fulfill()
+        }
 
         messageExchanger.fetchMessagesError = PairingV2Error.cancelled
         let result = await controller.syncCodeEntered(code: scannerURL.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
+        await fulfillment(of: [didClosePresenterChannel], timeout: 5)
         XCTAssertTrue(messageExchanger.closeChannelCalls.contains(presenterPayload.channelId))
         XCTAssertNil(delegate.didErrorErrors)
     }
@@ -937,12 +946,21 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.createPairingV2MessageExchangerStub = messageExchanger
         let presenterInfo = try await controller.startExchangeMode()
         let presenterPayload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: presenterInfo.base64Code))))
+        let didClosePresenterChannel = expectation(description: "presenter channel closed")
+        didClosePresenterChannel.assertForOverFulfill = false
+        messageExchanger.closeChannelHandler = { channelID in
+            guard channelID == presenterPayload.channelId else {
+                return
+            }
+            didClosePresenterChannel.fulfill()
+        }
 
         let mockExchangePublicKeyTransmitter = MockExchangePublicKeyTransmitting()
         dependencies.createExchangePublicKeyTransmitterStub = mockExchangePublicKeyTransmitter
         let result = await controller.syncCodeEntered(code: Self.validExchangeCode, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
+        await fulfillment(of: [didClosePresenterChannel], timeout: 5)
         XCTAssertTrue(messageExchanger.closeChannelCalls.contains(presenterPayload.channelId))
     }
 

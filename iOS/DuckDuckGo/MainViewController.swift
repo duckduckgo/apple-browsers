@@ -342,7 +342,6 @@ class MainViewController: UIViewController {
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
-    private let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
     private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
     let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
@@ -442,7 +441,6 @@ class MainViewController: UIViewController {
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-        aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature(),
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         remoteMessagingImageLoader: RemoteMessagingImageLoading,
@@ -531,7 +529,6 @@ class MainViewController: UIViewController {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.aichatFullModeFeature = aichatFullModeFeature
-        self.aichatIPadTabFeature = aichatIPadTabFeature
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.privacyStats = privacyStats
@@ -658,10 +655,8 @@ class MainViewController: UIViewController {
                                                               mobileCustomization: mobileCustomization,
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
-        if featureFlagger.isFeatureOn(.iPadAIToggle) {
-            viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
-            viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
-        }
+        viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
+        viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
@@ -842,7 +837,6 @@ class MainViewController: UIViewController {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aichatIPadTabFeature: aichatIPadTabFeature,
                                                       aiChatSettings: aiChatSettings,
                                                       aiChatSyncCleaner: aiChatSyncCleaner,
                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
@@ -2068,7 +2062,7 @@ class MainViewController: UIViewController {
 
     func loadQuery(_ query: String) {
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
-            Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.absoluteString ?? "<nil>", privacy: .public)\"")
+            Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.shortDescription ?? "<nil>", privacy: .public)\"")
             return
         }
         // Make sure that once query is submitted, we don't trigger the non-SERP flow
@@ -2187,6 +2181,7 @@ class MainViewController: UIViewController {
 
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
         guard let tab else { return }
+        WebScrollFreezeDebugTransitionLog.note("mainVC.tabTransition")
         previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
         previousTab?.tabModel.openedAfterIdle = false
         previousTab?.dismiss()
@@ -2255,6 +2250,7 @@ class MainViewController: UIViewController {
     private func addToContentContainer(controller: UIViewController) {
         viewCoordinator.contentContainer.isHidden = false
         addChild(controller)
+        WebScrollFreezeDebugTransitionLog.note("mainVC.contentContainer.swap")
         viewCoordinator.contentContainer.subviews.forEach { $0.removeFromSuperview() }
         viewCoordinator.contentContainer.addSubview(controller.view)
 
@@ -2388,7 +2384,7 @@ class MainViewController: UIViewController {
         let logoURL = logoURLForCurrentPage(tab: tab)
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
 
-        if tab.isAITab && (aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable) {
+        if tab.isAITab && (aichatFullModeFeature.isAvailable || DevicePlatform.isIpad) {
             // AI tabs use branding UI rather than the standard toggle setup.
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
@@ -2470,7 +2466,7 @@ class MainViewController: UIViewController {
         isUTIRotating = true
 
         let isKeyboardShowing = omniBar.isTextFieldEditing
-        if isKeyboardShowing && !AppWidthObserver.shared.isPad && minimalChromeSettings.isFeatureEnabled {
+        if isKeyboardShowing && !AppWidthObserver.shared.isPad {
             omniBar.barView.textField.suppressResignFirstResponder = true
         }
 
@@ -2487,7 +2483,6 @@ class MainViewController: UIViewController {
         }()
 
         let needsWidthUpdate = AppWidthObserver.shared.willResize(toWidth: size.width)
-            && (AppWidthObserver.shared.isPad || isInMinimalChromeLayout || minimalChromeSettings.isFeatureEnabled)
         if needsWidthUpdate {
             applyWidth(for: size)
         }
@@ -2515,6 +2510,8 @@ class MainViewController: UIViewController {
         } completion: { _ in
             toolbarSnapshot?.removeFromSuperview()
 
+            self.resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: isKeyboardShowing)
+
             self.omniBar.barView.textField.suppressResignFirstResponder = false
             if isKeyboardShowing {
                 self.omniBar.beginEditing(animated: false)
@@ -2541,6 +2538,14 @@ class MainViewController: UIViewController {
         hideNotificationBarIfBrokenSitePromptShown()
     }
 
+    private func resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: Bool) {
+        // Rotation changes the bar geometry, so the scroll-hide state can't carry across it.
+        // Reset to revealed (editing and AI chrome manage their own layout).
+        if !self.isCurrentTabUsingUnifiedInputAIChrome, !wasKeyboardShowing {
+            self.resetBars(animated: false)
+        }
+    }
+
     private func deferredFireOrientationPixel() {
         orientationPixelWorker?.cancel()
         orientationPixelWorker = nil
@@ -2561,7 +2566,14 @@ class MainViewController: UIViewController {
             && (size.width > size.height)
     }
 
+    private var isApplyingWidth = false
+
     private func applyWidth(for size: CGSize? = nil) {
+        // Re-entrancy guard: a refreshOmniBar side-effect calls applyWidth() with no size
+        // mid-rotation, which reads stale view.bounds and re-applies the wrong chrome mode.
+        guard !isApplyingWidth else { return }
+        isApplyingWidth = true
+        defer { isApplyingWidth = false }
 
         if AppWidthObserver.shared.isLargeWidth {
             applyLargeWidth()
@@ -3449,7 +3461,7 @@ class MainViewController: UIViewController {
                     files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     fromDeepLink: Bool = false) {
 
-        if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
+        if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
             openAIChatInTab(
                 query,
                 autoSend: autoSend,
@@ -3492,7 +3504,7 @@ class MainViewController: UIViewController {
     }
 
     private func openAIChatInVoiceMode(fromDeepLink: Bool = false) {
-        if aichatFullModeFeature.isAvailable || aichatIPadTabFeature.isAvailable {
+        if aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
             openAIChatVoiceModeInTab(fromDeepLink: fromDeepLink)
         } else {
             aiChatViewControllerManager.openAIChatVoiceMode(on: self)
@@ -3601,7 +3613,7 @@ class MainViewController: UIViewController {
 
         load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
     }
-    
+
     /// Executes the closure if the current tab is an AI tab
     private func performActionIfAITab(_ action: () -> Void) {
         guard currentTab?.isAITab == true else { return }
@@ -3669,7 +3681,10 @@ extension MainViewController: BrowserChromeDelegate {
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
         if percent < 1 {
-            hideKeyboard()
+            if omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true {
+                dismissOmniBar()
+            }
+            _ = findInPageView?.resignFirstResponder()
             hideMenuHighlighter()
         } else {
             showMenuHighlighterIfNeeded()
@@ -3918,7 +3933,9 @@ extension MainViewController: OmniBarDelegate {
         // A Duck.ai submission IS Duck.ai mode — commit that directly rather than re-reading the live
         // toggle, which a refresh-on-submit can reset to the stored last-used before we read it.
         commitToggleMode(.aiChat)
-        openAIChat(query, autoSend: true, tools: tools)
+        
+        let modelId = viewCoordinator.omniBar.iPadDuckAISelectedModelId
+        openAIChat(query, autoSend: true, tools: tools, modelId: modelId)
     }
 
     func onChatHistorySelected(url: URL) {
@@ -5484,7 +5501,7 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
-        if aichatIPadTabFeature.isAvailable {
+        if DevicePlatform.isIpad {
             newTab(allowingKeyboard: false)
         }
         openAIChat()

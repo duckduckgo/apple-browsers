@@ -151,7 +151,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     public func load(url: URL) async throws {
         webView?.load(url)
-        Logger.action.log("Loading URL: \(String(describing: url.absoluteString))")
+        Logger.action.log("Loading URL: \(url.shortDescription)")
         try await waitForWebViewLoad()
     }
 

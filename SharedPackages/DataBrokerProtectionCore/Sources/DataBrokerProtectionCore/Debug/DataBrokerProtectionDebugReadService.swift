@@ -34,7 +34,8 @@ public protocol DataBrokerProtectionDebugReadProviding {
 
 public struct DataBrokerProtectionDebugReadService {
 
-    private static let maxEvents = 500
+    public static let defaultLimit = 500
+    public static let maximumLimit = 5_000
 
     private let provider: DataBrokerProtectionDebugReadProviding
 
@@ -52,9 +53,17 @@ public struct DataBrokerProtectionDebugReadService {
         [
             .init(path: "/api/brokers/{broker}",
                   description: "Per-broker detail: scan & opt-out state with full history and extracted records. {broker} = broker url or name."),
-            .init(path: "/api/events?since={iso8601}",
-                  description: "History events across all brokers, oldest-first. Pass 'since' (ISO-8601) to tail new events; omit for the most recent.")
+            .init(path: "/api/events?since={iso8601}&limit={n}",
+                  description: "History events across all brokers, oldest-first. 'since' tails new events; 'limit' defaults to \(Self.defaultLimit) and is capped at \(Self.maximumLimit).")
         ]
+    }
+
+    public static func clampedLimit(_ limit: Int?) -> Int {
+        guard let limit, limit > 0 else {
+            return defaultLimit
+        }
+
+        return min(limit, maximumLimit)
     }
 
     public func snapshot() throws -> DebugSnapshot {
@@ -112,7 +121,7 @@ public struct DataBrokerProtectionDebugReadService {
 
     // MARK: - /api/events
 
-    public func events(since: Date?) throws -> [DebugBrokerEvent] {
+    public func events(since: Date?, limit: Int = Self.defaultLimit) throws -> [DebugBrokerEvent] {
         let queryData = try provider.brokerProfileQueryData()
         var events: [DebugBrokerEvent] = []
 
@@ -135,7 +144,7 @@ public struct DataBrokerProtectionDebugReadService {
         }
 
         let sorted = events.sorted { $0.date < $1.date }
-        return since == nil ? Array(sorted.suffix(Self.maxEvents)) : sorted
+        return Array(sorted.suffix(Self.clampedLimit(limit)))
     }
 
     // MARK: - Mapping helpers

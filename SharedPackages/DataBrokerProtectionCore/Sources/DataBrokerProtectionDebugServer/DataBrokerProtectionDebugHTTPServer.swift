@@ -78,7 +78,8 @@ public final class DataBrokerProtectionDebugHTTPServer {
         server.addRoute("/api/events", method: .GET) { request in
             let service = service.value
             let since = request.queryParameters["since"].flatMap(Self.parseDate)
-            return try Self.json(service.events(since: since))
+            let limit = Self.resultLimit(from: request)
+            return try Self.json(service.events(since: since, limit: limit))
         }
 
         if let logReader {
@@ -86,7 +87,7 @@ public final class DataBrokerProtectionDebugHTTPServer {
                 let logReader = logReader.value
                 let since = request.queryParameters["since"].flatMap(Self.parseDate)
                 let category = request.queryParameters["category"]
-                let limit = request.queryParameters["limit"].flatMap(Int.init) ?? Self.defaultLogLimit
+                let limit = Self.resultLimit(from: request)
                 return try Self.json(try logReader.logLines(since: since,
                                                             category: category,
                                                             limit: limit))
@@ -108,16 +109,18 @@ public final class DataBrokerProtectionDebugHTTPServer {
         }
     }
 
-    private static let defaultLogLimit = 1000
-
     private static let logsEndpointDescription = DebugAPIResponse.Endpoint(
         path: "/api/logs?since={iso8601}&category={category}&limit={n}",
-        description: "Unified-log tail for PIR execution detail. 'since' tails new lines; 'category' filters by category.")
+        description: "Unified-log tail for PIR execution detail. 'since' tails new lines; 'category' filters by category; 'limit' defaults to \(DataBrokerProtectionDebugReadService.defaultLimit) and is capped at \(DataBrokerProtectionDebugReadService.maximumLimit).")
 
     private static let iso8601 = ISO8601DateFormatter()
 
     private static func parseDate(_ string: String) -> Date? {
         iso8601.date(from: string)
+    }
+
+    private static func resultLimit(from request: HTTPRequest) -> Int {
+        DataBrokerProtectionDebugReadService.clampedLimit(request.queryParameters["limit"].flatMap(Int.init))
     }
 
     private static func json<T: Encodable>(_ value: T) throws -> HTTPResponse {

@@ -40,7 +40,7 @@ enum ChromeExtensionInstallerPixelEvent: PixelKitEvent {
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
-        [.pixelSource]
+        nil
     }
 }
 

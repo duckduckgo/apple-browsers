@@ -132,13 +132,13 @@
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_mac_debug_onboarding_chrome-extension-install_install-failed": {
         "description": "Fired when onboarding Chrome extension install fails to write Application Support.",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

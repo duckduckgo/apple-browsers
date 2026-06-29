@@ -27,6 +27,7 @@ import DataBrokerProtection_iOS
 import AIChat
 import WebExtensions
 import DuckUI
+import Persistence
 
 extension DebugScreensViewModel {
 
@@ -49,8 +50,8 @@ extension DebugScreensViewModel {
                     }
                 }
             }),
-            .view(title: "CPM", { _ in
-                CPMDebugScreensView()
+            .view(title: "CPM", { d in
+                CPMDebugScreensView(keyValueStore: d.keyValueStore)
             }),
             .action(title: "Reset Sync Promos", { d in
                 let syncPromoPresenter = SyncPromoManager(syncService: d.syncService)
@@ -330,12 +331,22 @@ extension DebugScreensViewModel {
 /// Sub-screen grouping the CPM (Cookie Pop-up Protection) debug actions.
 private struct CPMDebugScreensView: View {
 
+    let keyValueStore: ThrowingKeyValueStoring
+
     var body: some View {
         List {
-            Section {
+            Section("Opt-in dialog") {
                 Button("Show opt-in dialog") {
                     Self.presentOptInDialog()
                 }
+                Button("Reset app launch flag") {
+                    CookiePopupProtectionOptInPromptStore(keyValueStore: keyValueStore).hasShownLaunchPrompt = false
+                    // Also lift the global modal cooldown — otherwise the queue suppresses all prompts on launch until it expires.
+                    try? keyValueStore.set(nil, forKey: PromptCooldownKeyValueFilesStore.StorageKey.lastPromptShownTimestamp)
+                    ActionMessageView.present(message: "Reset opt-in dialog launch state - DONE")
+                }
+            }
+            Section {
                 Button("Reset Autoconsent Prompt") {
                     AppUserDefaults().clearAutoconsentUserSetting()
                     ActionMessageView.present(message: "Reset Autoconsent Prompt - DONE")
@@ -346,24 +357,11 @@ private struct CPMDebugScreensView: View {
     }
 
     /// Presents the Cookie Pop-up Protection opt-in dialog as a sheet over the browser.
-    /// `isModalInPresentation` blocks swipe-to-dismiss — the dialog can only be dismissed via its own controls.
     private static func presentOptInDialog() {
         guard let window = UIApplication.shared.firstKeyWindow else { return }
 
-        let variant: CookiePopupProtectionOptInVariant = AppUserDefaults().autoconsentEnabled ? .whenEnabled : .whenDisabled
-
-        weak var weakController: UIViewController?
         let present = {
-            let controller = UIHostingController(rootView: CookiePopupProtectionOptInView(variant: variant, onConfirm: {
-                weakController?.dismiss(animated: true)
-            }))
-            weakController = controller
-            controller.isModalInPresentation = true
-            // iPad: present as a fixed-size form sheet instead of a full-height page sheet.
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                controller.modalPresentationStyle = .formSheet
-                controller.preferredContentSize = CGSize(width: 480, height: 744)
-            }
+            let controller = CookiePopupProtectionOptInModalPromptProvider.makeViewController()
             window.rootViewController?.present(controller, animated: true)
         }
 

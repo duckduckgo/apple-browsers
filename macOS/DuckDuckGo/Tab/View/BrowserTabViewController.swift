@@ -685,7 +685,7 @@ final class BrowserTabViewController: NSViewController {
         }
         backdrop.locksWindowResizing = true
 
-        let variant: CookiePopupProtectionOptInVariant = cookiePopupProtectionPreferences.isAutoconsentEnabled ? .handleMore : .handleAndHide
+        let variant: CookiePopupProtectionOptInVariant = cookiePopupProtectionPreferences.isAutoconsentEnabled ? .whenEnabled : .whenDisabled
 
         let hostingController = NSHostingController(rootView: CookiePopupProtectionOptInView(variant: variant, onConfirm: { [weak self] in
             self?.dismissCookiePopupProtectionOptInDialog()

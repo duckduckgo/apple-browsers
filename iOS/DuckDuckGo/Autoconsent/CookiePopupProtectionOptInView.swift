@@ -24,36 +24,34 @@ import DesignResourcesKitIcons
 import UIComponents
 
 enum CookiePopupProtectionOptInVariant {
-    /// Shown when Cookie Pop-up Protection is already enabled.
-    case handleMore
-    /// Shown when Cookie Pop-up Protection is off.
-    case handleAndHide
+    case whenEnabled
+    case whenDisabled
 
     var title: String {
         switch self {
-        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledTitle
-        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledTitle
+        case .whenEnabled: return UserText.cookiePopupProtectionOptInEnabledTitle
+        case .whenDisabled: return UserText.cookiePopupProtectionOptInDisabledTitle
         }
     }
 
     var message: String {
         switch self {
-        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledBody
-        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledBody
+        case .whenEnabled: return UserText.cookiePopupProtectionOptInEnabledBody
+        case .whenDisabled: return UserText.cookiePopupProtectionOptInDisabledBody
         }
     }
 
     var primaryOptionTitle: String {
         switch self {
-        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledPrimaryOption
-        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledPrimaryOption
+        case .whenEnabled: return UserText.cookiePopupProtectionOptInEnabledPrimaryOption
+        case .whenDisabled: return UserText.cookiePopupProtectionOptInDisabledPrimaryOption
         }
     }
 
     var secondaryOptionTitle: String {
         switch self {
-        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledSecondaryOption
-        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledSecondaryOption
+        case .whenEnabled: return UserText.cookiePopupProtectionOptInEnabledSecondaryOption
+        case .whenDisabled: return UserText.cookiePopupProtectionOptInDisabledSecondaryOption
         }
     }
 }
@@ -137,7 +135,6 @@ struct CookiePopupProtectionOptInView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 24)
             }
-            // Don't scroll/bounce when the content already fits.
             .bounceBasedOnSizeIfAvailable()
         }
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
@@ -206,5 +203,5 @@ private extension View {
 }
 
 #Preview {
-    CookiePopupProtectionOptInView(variant: .handleAndHide, onConfirm: {})
+    CookiePopupProtectionOptInView(variant: .whenDisabled, onConfirm: {})
 }

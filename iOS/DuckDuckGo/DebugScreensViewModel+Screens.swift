@@ -350,7 +350,7 @@ private struct CPMDebugScreensView: View {
     private static func presentOptInDialog() {
         guard let window = UIApplication.shared.firstKeyWindow else { return }
 
-        let variant: CookiePopupProtectionOptInVariant = AppUserDefaults().autoconsentEnabled ? .handleMore : .handleAndHide
+        let variant: CookiePopupProtectionOptInVariant = AppUserDefaults().autoconsentEnabled ? .whenEnabled : .whenDisabled
 
         weak var weakController: UIViewController?
         let present = {

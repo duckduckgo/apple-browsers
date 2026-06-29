@@ -22,36 +22,34 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 
 enum CookiePopupProtectionOptInVariant {
-    /// Shown when Cookie Pop-up Protection is already enabled.
-    case handleMore
-    /// Shown when Cookie Pop-up Protection is off.
-    case handleAndHide
+    case whenEnabled
+    case whenDisabled
 
     var title: String {
         switch self {
-        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledTitle
-        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledTitle
+        case .whenEnabled: return UserText.cookiePopupProtectionOptInEnabledTitle
+        case .whenDisabled: return UserText.cookiePopupProtectionOptInDisabledTitle
         }
     }
 
     var message: String {
         switch self {
-        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledBody
-        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledBody
+        case .whenEnabled: return UserText.cookiePopupProtectionOptInEnabledBody
+        case .whenDisabled: return UserText.cookiePopupProtectionOptInDisabledBody
         }
     }
 
     var primaryOptionTitle: String {
         switch self {
-        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledPrimaryOption
-        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledPrimaryOption
+        case .whenEnabled: return UserText.cookiePopupProtectionOptInEnabledPrimaryOption
+        case .whenDisabled: return UserText.cookiePopupProtectionOptInDisabledPrimaryOption
         }
     }
 
     var secondaryOptionTitle: String {
         switch self {
-        case .handleMore: return UserText.cookiePopupProtectionOptInEnabledSecondaryOption
-        case .handleAndHide: return UserText.cookiePopupProtectionOptInDisabledSecondaryOption
+        case .whenEnabled: return UserText.cookiePopupProtectionOptInEnabledSecondaryOption
+        case .whenDisabled: return UserText.cookiePopupProtectionOptInDisabledSecondaryOption
         }
     }
 }
@@ -235,6 +233,6 @@ struct CookiePopupProtectionOptInOverlayView: View {
 }
 
 #Preview {
-    CookiePopupProtectionOptInOverlayView(variant: .handleAndHide, onConfirm: {})
+    CookiePopupProtectionOptInOverlayView(variant: .whenDisabled, onConfirm: {})
         .frame(width: 900, height: 760)
 }

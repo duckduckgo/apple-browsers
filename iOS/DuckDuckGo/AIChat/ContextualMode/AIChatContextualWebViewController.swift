@@ -56,7 +56,10 @@ final class AIChatContextualWebViewController: UIViewController {
     private let debugSettings: AIChatDebugSettingsHandling
     private let userAgentManager: UserAgentManaging
     private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
+    private let deferUTIInstall: Bool
     private var utiHost: AIChatContextualUTIHost?
+    private weak var boundAIChatUserScript: AIChatUserScript?
+    private var boundChatUpdatesPublisher: AnyPublisher<String, Never>?
     private var webViewBottomConstraint: NSLayoutConstraint?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
@@ -138,7 +141,8 @@ final class AIChatContextualWebViewController: UIViewController {
          pixelHandler: AIChatContextualModePixelFiring,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
-         utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil) {
+         utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil,
+         deferUTIInstall: Bool = false) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -152,6 +156,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.debugSettings = debugSettings
         self.userAgentManager = userAgentManager
         self.utiHostInstaller = utiHostInstaller
+        self.deferUTIInstall = deferUTIInstall
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
@@ -176,7 +181,7 @@ final class AIChatContextualWebViewController: UIViewController {
         super.viewDidLoad()
         Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(String(describing: self.initialURL?.absoluteString))")
         setupUI()
-        if shouldInstallUTIHost, let utiHostInstaller {
+        if shouldInstallUTIHost, !deferUTIInstall, let utiHostInstaller {
             utiHost = utiHostInstaller(self)
         }
         aiChatContentHandler.fireAIChatTelemetry()
@@ -255,7 +260,11 @@ final class AIChatContextualWebViewController: UIViewController {
 
     func loadChatURL(_ url: URL) {
         let urlToLoad = chatURLForLoading(url)
-        Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(urlToLoad.absoluteString)")
+        let hasNativeInputParam = URLComponents(url: urlToLoad, resolvingAgainstBaseURL: false)?
+            .queryItems?
+            .contains(where: {
+                $0.name == AIChatURLParameters.nativeInputName && $0.value == AIChatURLParameters.nativeInputValue
+            }) ?? false
         isPageReady = false
         isFrontendReady = false
         pendingPrompt = nil
@@ -319,6 +328,17 @@ final class AIChatContextualWebViewController: UIViewController {
         unifiedToggleInputFeature.isAvailable && utiHostInstaller != nil
     }
 
+    func installUTIHostIfNeeded() {
+        guard utiHost == nil, shouldInstallUTIHost, let utiHostInstaller else { return }
+        utiHost = utiHostInstaller(self)
+        if let aiChatUserScript = boundAIChatUserScript {
+            utiHost?.bindToUserScript(aiChatUserScript)
+            if let publisher = boundChatUpdatesPublisher {
+                utiHost?.observeChatUpdates(publisher)
+            }
+        }
+    }
+
     private var defaultChatURL: URL {
         aiChatSettings.aiChatURL.addingOrReplacing(URLQueryItem(name: "placement", value: "sidebar"))
     }
@@ -342,7 +362,6 @@ final class AIChatContextualWebViewController: UIViewController {
 
     /// Handles edge case where user submits or pushes context before preloaded web view is fully ready.
     private func submitPendingIfReady() {
-        Logger.aiChat.debug("[ContextualWebVC] submitPendingIfReady - pendingPrompt: \(self.pendingPrompt != nil), hasPendingChipContext: \(self.hasPendingChipContext), isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady), isFrontendReady: \(self.isFrontendReady)")
         guard isPageReady, isContentHandlerReady else { return }
 
         if let prompt = pendingPrompt {
@@ -409,6 +428,9 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
         userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
+        // Retain the bridge so a deferred UTI host can bind to it later (see installUTIHostIfNeeded).
+        boundAIChatUserScript = userScripts.aiChatUserScript
+        boundChatUpdatesPublisher = userScripts.duckAiNativeStorageUserScript?.chatUpdatesPublisher
         utiHost?.bindToUserScript(userScripts.aiChatUserScript)
         if let chatUpdatesPublisher = userScripts.duckAiNativeStorageUserScript?.chatUpdatesPublisher {
             utiHost?.observeChatUpdates(chatUpdatesPublisher)

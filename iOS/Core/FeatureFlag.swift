@@ -316,6 +316,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1213651262338059
     case aiChatContextualSheetImprovements
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216111312217462?focus=true
+    case contextualSuggestedPrompts
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
     case showWhatsNewPromptOnDemand
 
@@ -748,6 +751,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.nativeChatHistory))
         case .aiChatContextualSheetImprovements:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualSheetImprovements))
+        case .contextualSuggestedPrompts:
+            Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .unifiedToggleInput:

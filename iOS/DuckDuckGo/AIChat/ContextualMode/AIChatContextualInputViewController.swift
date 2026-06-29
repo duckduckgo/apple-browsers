@@ -51,8 +51,16 @@ final class AIChatContextualInputViewController: UIViewController {
     weak var delegate: AIChatContextualInputViewControllerDelegate?
 
     private let isContextualSheetImprovementsEnabled: Bool
+    private let isSuggestionsSurfaceEnabled: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private lazy var nativeInputViewController = AIChatNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
+
+    /// Container in the content region that hosts the FE WebView when `isSuggestionsSurfaceEnabled`.
+    private lazy var suggestionsContentView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
 
     private lazy var quickActionsScrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -82,8 +90,11 @@ final class AIChatContextualInputViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol, isContextualSheetImprovementsEnabled: Bool = false) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol,
+         isContextualSheetImprovementsEnabled: Bool = false,
+         isSuggestionsSurfaceEnabled: Bool = false) {
         self.isContextualSheetImprovementsEnabled = isContextualSheetImprovementsEnabled
+        self.isSuggestionsSurfaceEnabled = isSuggestionsSurfaceEnabled
         self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
     }
@@ -166,6 +177,19 @@ final class AIChatContextualInputViewController: UIViewController {
     func updateQuickActions(with actions: [AIChatContextualQuickAction]) {
         quickActionsView.configure(with: actions)
     }
+
+    func embedSuggestionsContent(_ childViewController: UIViewController) {
+        addChild(childViewController)
+        childViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        suggestionsContentView.addSubview(childViewController.view)
+        NSLayoutConstraint.activate([
+            childViewController.view.topAnchor.constraint(equalTo: suggestionsContentView.topAnchor),
+            childViewController.view.leadingAnchor.constraint(equalTo: suggestionsContentView.leadingAnchor),
+            childViewController.view.trailingAnchor.constraint(equalTo: suggestionsContentView.trailingAnchor),
+            childViewController.view.bottomAnchor.constraint(equalTo: suggestionsContentView.bottomAnchor),
+        ])
+        childViewController.didMove(toParent: self)
+    }
 }
 
 // MARK: - Private Setup
@@ -175,11 +199,31 @@ private extension AIChatContextualInputViewController {
     func setupUI() {
         view.backgroundColor = .clear
 
-        if isContextualSheetImprovementsEnabled {
+        if isSuggestionsSurfaceEnabled {
+            setupSuggestionsUI()
+        } else if isContextualSheetImprovementsEnabled {
             setupImprovedUI()
         } else {
             setupOriginalUI()
         }
+    }
+
+    func setupSuggestionsUI() {
+        view.addSubview(suggestionsContentView)
+        embedNativeInputViewController()
+
+        bottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+
+        NSLayoutConstraint.activate([
+            suggestionsContentView.topAnchor.constraint(equalTo: view.topAnchor),
+            suggestionsContentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            suggestionsContentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            suggestionsContentView.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor),
+
+            nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            bottomConstraint!,
+        ])
     }
 
     func setupOriginalUI() {

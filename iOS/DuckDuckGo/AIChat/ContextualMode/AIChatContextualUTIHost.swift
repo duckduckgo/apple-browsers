@@ -19,8 +19,11 @@
 
 import AIChat
 import Combine
+import Core
 import UIKit
 import os.log
+import BrowserServicesKit
+import PrivacyConfig
 
 /// Owns a `UnifiedToggleInputCoordinator` configured for the contextual chat surface and
 /// embeds its view controller as a child of `AIChatContextualWebViewController`.
@@ -32,8 +35,10 @@ final class AIChatContextualUTIHost {
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
     private let isAutoAttachEnabled: () -> Bool
     private let hasActiveChat: () -> Bool
+    private let featureFlagger: FeatureFlagger
     private weak var contextualChatViewController: AIChatContextualWebViewController?
     private var pendingChipAttachCancellable: AnyCancellable?
+    private var pendingSignalsOnlyCollection = false
     private var suppressExternalContextUntilNextAttach = false
     private var isBoundToUserScript = false
     private var cancellables = Set<AnyCancellable>()
@@ -47,6 +52,7 @@ final class AIChatContextualUTIHost {
         initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
         hasActiveChat: @escaping () -> Bool,
         isAutoAttachEnabled: @escaping () -> Bool,
+        featureFlagger: FeatureFlagger,
         pageContextHandler: AIChatPageContextHandling,
         isFireTab: Bool,
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil
@@ -54,6 +60,7 @@ final class AIChatContextualUTIHost {
         self.pageContextHandler = pageContextHandler
         self.isAutoAttachEnabled = isAutoAttachEnabled
         self.hasActiveChat = hasActiveChat
+        self.featureFlagger = featureFlagger
         let wideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent
         )
@@ -95,16 +102,7 @@ final class AIChatContextualUTIHost {
         pageContextHandler.contextPublisher
             .dropFirst()
             .sink { [weak self] context in
-                guard let self else { return }
-                guard self.pendingChipAttachCancellable == nil else { return }
-                guard context == nil || !self.suppressExternalContextUntilNextAttach else { return }
-                guard context != self.chipViewModel.attachedContext else { return }
-                Logger.contextualUTI.debug("UTIHost contextPublisher emission → \(context != nil ? "context" : "nil", privacy: .public) — syncing chip")
-                if let context {
-                    self.chipViewModel.setAttached(context, deliveryState: self.externalContextDeliveryState)
-                } else {
-                    self.chipViewModel.clearAttached()
-                }
+                self?.handleIncomingContext(context)
             }
             .store(in: &cancellables)
 
@@ -120,7 +118,7 @@ final class AIChatContextualUTIHost {
                 Logger.contextualUTI.debug("UTIHost didFinish (post-replay) → \(url?.absoluteString ?? "nil", privacy: .private)")
                 guard let url else { return }
                 guard self.isAutoAttachEnabled() else {
-                    Logger.contextualUTI.debug("UTIHost didFinish skip — auto disabled")
+                    self.requestSignalsOnlyCollectionIfNeeded()
                     return
                 }
                 if let attached = self.chipViewModel.attachedContext,
@@ -132,6 +130,24 @@ final class AIChatContextualUTIHost {
                 self.handleChipAttachRequest(originatingURL: url)
             }
             .store(in: &cancellables)
+    }
+
+    private func handleIncomingContext(_ context: AIChatPageContext?) {
+        if pendingSignalsOnlyCollection {
+            pendingSignalsOnlyCollection = false
+            if let context {
+                contextualChatViewController?.pushPageContext(signalsOnlyPayload(from: context.contextData))
+            }
+            return
+        }
+        guard pendingChipAttachCancellable == nil else { return }
+        guard context == nil || !suppressExternalContextUntilNextAttach else { return }
+        guard context != chipViewModel.attachedContext else { return }
+        if let context {
+            chipViewModel.setAttached(context, deliveryState: externalContextDeliveryState)
+        } else {
+            chipViewModel.clearAttached()
+        }
     }
 
     private func handleChipAttachRequest(originatingURL: URL) {
@@ -168,6 +184,34 @@ final class AIChatContextualUTIHost {
         pageContextHandler.clear()
         contextualChatViewController?.pushPageContext(nil)
         chipViewModel.clearAttached()
+    }
+
+    private func requestSignalsOnlyCollectionIfNeeded() {
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
+              !isAutoAttachEnabled(),
+              chipViewModel.attachedContext == nil,
+              pendingChipAttachCancellable == nil else {
+            return
+        }
+        pendingSignalsOnlyCollection = true
+        guard pageContextHandler.triggerContextCollection() else {
+            pendingSignalsOnlyCollection = false
+            return
+        }
+    }
+
+    private func signalsOnlyPayload(from context: AIChatPageContextData) -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: context.title,
+            favicon: [],
+            url: context.url,
+            content: "",
+            truncated: false,
+            fullContentLength: 0,
+            attachable: true,
+            pageTypeSignals: context.pageTypeSignals,
+            attached: false
+        )
     }
 
     /// Routes UTI-submitted prompts through the contextual chat's JS message channel (same as the FE).
@@ -225,6 +269,7 @@ final class AIChatContextualUTIHost {
             contextualChatViewController.view.layoutIfNeeded()
         }
         Logger.contextualUTI.info("Installed at bottom of contextual chat")
+        requestSignalsOnlyCollectionIfNeeded()
     }
 
     private func applyCurrentRenderState() {

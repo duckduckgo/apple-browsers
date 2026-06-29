@@ -128,7 +128,8 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
-        isContextualSheetImprovementsEnabled: featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements)
+        isContextualSheetImprovementsEnabled: featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements),
+        isSuggestionsSurfaceEnabled: featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
     )
     private var cancellables = Set<AnyCancellable>()
 
@@ -432,6 +433,18 @@ private extension AIChatContextualSheetViewController {
     func showContextualInput() {
         contextualInputViewController.delegate = self
         embedChildViewController(contextualInputViewController)
+        embedSuggestionsWebViewIfNeeded()
+    }
+
+    func embedSuggestionsWebViewIfNeeded() {
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), let webVC = webViewController else { return }
+        guard webVC.parent !== contextualInputViewController else { return }
+        if webVC.parent != nil {
+            webVC.willMove(toParent: nil)
+            webVC.view.removeFromSuperview()
+            webVC.removeFromParent()
+        }
+        contextualInputViewController.embedSuggestionsContent(webVC)
     }
 
     func showNativeInputUI() {
@@ -465,8 +478,14 @@ private extension AIChatContextualSheetViewController {
 
     func transitionToWebView() {
         guard let webVC = webViewController else { return }
+        if let webVCParent = webVC.parent, webVCParent !== self {
+            webVC.willMove(toParent: nil)
+            webVC.view.removeFromSuperview()
+            webVC.removeFromParent()
+        }
         removeCurrentChildViewController()
         embedChildViewController(webVC)
+        webVC.installUTIHostIfNeeded()
         isWebViewVisible = true
     }
 
@@ -866,6 +885,7 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         webViewController?.notifyFrontendPromptSubmissionAcknowledged()
+        sessionState.handleFrontendDrivenChatStart()
     }
 
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {

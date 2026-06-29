@@ -163,6 +163,9 @@ final class AIChatContextualSheetCoordinator {
 
         if sessionState.shouldAutoCollectContext {
             pageContextHandler.triggerContextCollection()
+        } else if shouldCollectSignalsOnly {
+            sessionState.markPendingSignalsOnlyCollection()
+            pageContextHandler.triggerContextCollection()
         }
 
         stopSessionTimer()
@@ -219,6 +222,11 @@ final class AIChatContextualSheetCoordinator {
         } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && isActivelyObservingContext {
             sessionState.notifyFrontendOfMultiContextNavigation()
             sessionState.clearProcessingNavigationFlag()
+        } else if shouldCollectSignalsOnly {
+            sessionState.markPendingSignalsOnlyCollection()
+            if !pageContextHandler.triggerContextCollection() {
+                sessionState.clearProcessingNavigationFlag()
+            }
         } else {
             sessionState.clearProcessingNavigationFlag()
         }
@@ -227,6 +235,12 @@ final class AIChatContextualSheetCoordinator {
     /// Returns true if the contextual sheet has been shown.
     var hasActiveSheet: Bool {
         sheetViewController != nil
+    }
+
+    private var shouldCollectSignalsOnly: Bool {
+        featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+            && !sessionState.hasActiveChat
+            && !sessionState.shouldAutoCollectContext
     }
 }
 
@@ -251,8 +265,14 @@ private extension AIChatContextualSheetCoordinator {
             sessionState.restoreChat(with: restoreURL)
         }
 
-        let suggestionsReader = makeSuggestionsReaderIfEnabled()
+        let sheetVC = makeSheetViewController(suggestionsReader: makeSuggestionsReaderIfEnabled())
+        sheetViewController = sheetVC
 
+        presentingVC.present(sheetVC, animated: true)
+        isSheetPresented = true
+    }
+
+    func makeSheetViewController(suggestionsReader: AIChatSuggestionsReading?) -> AIChatContextualSheetViewController {
         let sheetVC = AIChatContextualSheetViewController(
             sessionState: sessionState,
             aiChatSettings: aiChatSettings,
@@ -266,10 +286,7 @@ private extension AIChatContextualSheetCoordinator {
             suggestionsReader: suggestionsReader
         )
         sheetVC.delegate = self
-        sheetViewController = sheetVC
-
-        presentingVC.present(sheetVC, animated: true)
-        isSheetPresented = true
+        return sheetVC
     }
 
     func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
@@ -323,6 +340,10 @@ private extension AIChatContextualSheetCoordinator {
             getPageContext: { [weak self] reason in
                 guard let self else { return nil }
                 guard reason == .userAction else { return nil }
+                if let cached = self.sessionState.latestContext?.contextData,
+                   cached.attached != false, !cached.content.isEmpty {
+                    return cached
+                }
                 self.sessionState.beginManualAttach(fromFrontend: true)
                 let didTrigger = self.pageContextHandler.triggerContextCollection()
                 if !didTrigger {
@@ -341,13 +362,15 @@ private extension AIChatContextualSheetCoordinator {
                     initialAttachmentDeliveryState: initialUTIAttachment.deliveryState,
                     hasActiveChat: { [weak self] in self?.sessionState.hasActiveChat ?? false },
                     isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
+                    featureFlagger: self.featureFlagger,
                     pageContextHandler: self.pageContextHandler,
                     isFireTab: self.isFireTab,
                     lastUsedModelProvider: self.duckAiLastUsedModelProvider
                 )
                 host.install(in: contextualChatViewController)
                 return host
-            }
+            },
+            deferUTIInstall: featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
         )
 
         return webVC

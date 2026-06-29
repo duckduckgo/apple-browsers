@@ -120,6 +120,8 @@ final class AIChatContextualChatSessionState {
     /// Flag to prevent duplicate navigation processing
     private var isProcessingNavigation = false
 
+    private var pendingSignalsOnlyCollection = false
+
     // MARK: - Initialization
 
     init(aiChatSettings: AIChatSettingsProvider,
@@ -175,6 +177,10 @@ final class AIChatContextualChatSessionState {
         featureFlagger.isFeatureOn(.multiplePageContexts)
     }
 
+    var showsSuggestionsStartSurface: Bool {
+        featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+    }
+
     // MARK: - Frontend Chat State Transitions
 
     /// Call when user submits a prompt from native input
@@ -204,6 +210,20 @@ final class AIChatContextualChatSessionState {
 
         rebuildViewState()
         emit(.submitPrompt(prompt: prompt, context: contextData))
+    }
+
+    /// Call when the FE submits a prompt on its own (e.g. a tapped suggestion on the
+    /// suggestions start surface) — transition to the chat view without re-emitting a submit, since
+    /// the FE has already submitted. No-op once a chat is active.
+    func handleFrontendDrivenChatStart() {
+        guard frontendState == .noChat else { return }
+        switch chipState {
+        case .attached:
+            frontendState = .chatWithInitialContext
+        case .placeholder:
+            frontendState = .chatWithoutInitialContext
+        }
+        rebuildViewState()
     }
 
     /// Call when starting a new chat (resetting frontend)
@@ -306,8 +326,22 @@ final class AIChatContextualChatSessionState {
         wasAutoAttachEnabled = isEnabled
     }
 
+    func markPendingSignalsOnlyCollection() {
+        pendingSignalsOnlyCollection = true
+    }
+
     /// Updates the latest page context and determines attach behavior based on internal state.
     func updateContext(_ context: AIChatPageContext?) {
+        if pendingSignalsOnlyCollection {
+            pendingSignalsOnlyCollection = false
+            isProcessingNavigation = false
+            if let context {
+                let payload = signalsOnlyPayload(from: context.contextData)
+                emit(.pushContextToFrontend(payload))
+            }
+            return
+        }
+
         guard let context = context else {
             Logger.aiChat.debug("[SessionState] Context collection returned nil - clearing context and downgrading to placeholder")
             latestContext = nil
@@ -421,7 +455,7 @@ private extension AIChatContextualChatSessionState {
         case .chatWithInitialContext:
             canPush = supportsMultipleContexts
         case .noChat:
-            canPush = false
+            canPush = showsSuggestionsStartSurface
         }
         Logger.aiChat.debug("[SessionState] canPushToFrontend=\(canPush) (frontendState=\(self.frontendState), multipleContexts=\(self.supportsMultipleContexts))")
         return canPush
@@ -429,6 +463,21 @@ private extension AIChatContextualChatSessionState {
 
     func shouldAllowAutomaticUpgrade() -> Bool {
         return !userDowngradedToPlaceholder
+    }
+
+    /// Strips page content, keeping metadata + page-type signals so the FE renders page-tailored suggestions without attaching content.
+    func signalsOnlyPayload(from context: AIChatPageContextData) -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: context.title,
+            favicon: [],
+            url: context.url,
+            content: "",
+            truncated: false,
+            fullContentLength: 0,
+            attachable: true,
+            pageTypeSignals: context.pageTypeSignals,
+            attached: false
+        )
     }
 
     func clearUserDowngradeOnNavigation() {

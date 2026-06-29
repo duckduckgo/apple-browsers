@@ -24,10 +24,23 @@ import DataBrokerProtectionCore
 public class DataBrokerLogMonitorService {
     private var lastLogPosition: OSLogPosition?
 
+    /// Lookback used when no explicit start is given, bounding the first payload.
+    private static let defaultLookback: TimeInterval = 5 * 60
+
     public init() {}
 
     var currentPosition: OSLogPosition? {
         return lastLogPosition
+    }
+
+    /// Stateless, date-windowed read for the debug HTTP server. Unlike `fetchRecentLogs`, it keeps no
+    /// cursor: the caller passes an explicit `since` date (defaulting to a short lookback). Entries
+    /// come back oldest-first, matching the `/api/events` ordering so the two can be merged client-side.
+    func fetchLogs(matching predicate: NSPredicate, since: Date?) throws -> [LogEntry] {
+        let store = try OSLogStore.local()
+        let start = since ?? Date().addingTimeInterval(-Self.defaultLookback)
+        let position = store.position(date: start)
+        return try store.getEntries(at: position, matching: predicate).compactMap(LogEntry.init(from:))
     }
 
     func fetchRecentLogs(matching predicate: NSPredicate, since lastPosition: OSLogPosition? = nil) async throws -> [LogEntry] {

@@ -205,6 +205,10 @@ public final class DataBrokerProtectionAgentManager {
     // Used for debug functions only, so not injected
     private lazy var browserWindowManager = BrowserWindowManager()
 
+    // Agent-hosted read-only debug HTTP server (started on demand via the app Debug menu).
+    private var debugServer: DataBrokerProtectionDebugHTTPServer?
+    private var debugServerAutoStopWorkItem: DispatchWorkItem?
+
     private var didStartActivityScheduler = false
     private var currentRunIsFreeScan: Bool?
 
@@ -557,10 +561,86 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
                                               lastSchedulerSessionStartTimestamp: activityScheduler.lastTriggerTimestamp?.timeIntervalSince1970)
         }
     }
+
+    public func startDebugServer() async -> DBPDebugServerInfo? {
+        if let debugServer {
+            return DBPDebugServerInfo(port: debugServer.port)
+        }
+
+        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionOSLogReader())
+        do {
+            try server.start()
+            debugServer = server
+            scheduleDebugServerAutoStop()
+            return DBPDebugServerInfo(port: server.port)
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to start PIR debug server: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    public func stopDebugServer() {
+        debugServer?.stop()
+        debugServer = nil
+        debugServerAutoStopWorkItem?.cancel()
+        debugServerAutoStopWorkItem = nil
+    }
+
+    /// Stops the debug server after a period of inactivity so it does not linger after the app quits.
+    private func scheduleDebugServerAutoStop() {
+        let autoStopInterval: TimeInterval = 30 * 60
+        debugServerAutoStopWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in self?.stopDebugServer() }
+        debugServerAutoStopWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + autoStopInterval, execute: workItem)
+    }
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAppToAgentInterface {
 
+}
+
+// MARK: - Debug HTTP server read access
+
+extension DataBrokerProtectionAgentManager: DataBrokerProtectionDebugReadProviding {
+
+    private var debugSettings: DataBrokerProtectionSettings { DataBrokerProtectionSettings(defaults: .dbp) }
+
+    public var agentVersion: String {
+        let version = Bundle.main.releaseVersionNumber ?? "unknown"
+        let build = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "unknown"
+        return "\(version) (build: \(build))"
+    }
+
+    public var schedulerStateString: String { queueManager.debugRunningStatusString }
+
+    public var lastSchedulerTrigger: Date? { activityScheduler.lastTriggerTimestamp }
+
+    public func isAuthenticated() async -> Bool { await authenticationManager.isUserAuthenticated }
+
+    public func hasAccessToken() async -> Bool { await authenticationManager.accessToken() != nil }
+
+    public func hasValidEntitlement() async -> Bool { (try? await authenticationManager.hasValidEntitlement()) ?? false }
+
+    public var environmentName: String {
+        debugSettings.selectedEnvironment == .production ? "production" : "staging"
+    }
+
+    public var endpointURL: URL { debugSettings.endpointURL }
+
+    public var mainConfigETag: String? { debugSettings.mainConfigETag }
+
+    public var lastBrokerJSONUpdateCheck: Date {
+        Date(timeIntervalSince1970: debugSettings.lastBrokerJSONUpdateCheckTimestamp)
+    }
+
+    public func brokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+        try dataManager.fetchBrokerProfileQueryData(ignoresCache: true)
+    }
+
+    public func allBrokerResources() throws -> [BrokerResource] {
+        try brokerUpdater.vault.fetchAllBrokerResources()
+    }
 }
 
 extension DataBrokerProtectionAgentManager: EmailConfirmationDataDelegate {

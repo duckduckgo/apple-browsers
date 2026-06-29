@@ -128,4 +128,12 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
     func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
         return await ipcClient.getDebugMetadata()
     }
+
+    func startDebugServer() async -> DBPDebugServerInfo? {
+        return await ipcClient.startDebugServer()
+    }
+
+    func stopDebugServer() {
+        ipcClient.stopDebugServer()
+    }
 }

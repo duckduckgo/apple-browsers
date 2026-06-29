@@ -109,6 +109,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case runAllPendingJobs
         case fireWeeklyPixel
         case resetAllPIRNotifications
+        case debugServer
 
         var title: String {
             switch self {
@@ -128,6 +129,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Test Firing Weekly Pixels"
             case .resetAllPIRNotifications:
                 return "Reset All PIR Notifications"
+            case .debugServer:
+                return "Debug Server (read-only)"
             }
         }
     }
@@ -501,6 +504,25 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             return cell
 
         case .debugActions:
+            if DebugActionRows(rawValue: indexPath.row) == .debugServer {
+                let cell = dequeueCell(identifier: CellType.subtitle.rawValue, style: .subtitle)
+                cell.textLabel?.text = DebugActionRows.debugServer.title
+                cell.selectionStyle = .none
+
+                let toggle = UISwitch()
+                toggle.addTarget(self, action: #selector(debugServerToggled(_:)), for: .valueChanged)
+                if let port = debuggingDelegate?.debugServerPort {
+                    toggle.isOn = true
+                    cell.detailTextLabel?.numberOfLines = 0
+                    cell.detailTextLabel?.text = "http://\(Self.wiFiAddress ?? "127.0.0.1"):\(port)/api"
+                } else {
+                    toggle.isOn = false
+                    cell.detailTextLabel?.text = nil
+                }
+                cell.accessoryView = toggle
+                return cell
+            }
+
             let cell = dequeueCell(identifier: identifier, style: section.cellType(for: indexPath.row))
 
             let row = DebugActionRows(rawValue: indexPath.row)
@@ -689,7 +711,46 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .resetAllPIRNotifications:
             debuggingDelegate?.resetAllNotificationStatesForDebug()
             presentAlert(message: "All PIR notification states reset.")
+        case .debugServer:
+            break // toggled via the cell's switch, not by row tap
         }
+    }
+
+    @objc private func debugServerToggled(_ sender: UISwitch) {
+        if sender.isOn {
+            Task { @MainActor in
+                guard await debuggingDelegate?.startDebugServer() != nil else {
+                    sender.setOn(false, animated: true)
+                    presentAlert(title: "Debug Server", message: "Failed to start the debug server.")
+                    return
+                }
+                tableView.reloadSections(IndexSet(integer: Sections.debugActions.rawValue), with: .none)
+            }
+        } else {
+            debuggingDelegate?.stopDebugServer()
+            tableView.reloadSections(IndexSet(integer: Sections.debugActions.rawValue), with: .none)
+        }
+    }
+
+    /// The device's Wi-Fi (en0) IPv4 address, shown inline so the server is reachable from a Mac on
+    /// the same network.
+    private static var wiFiAddress: String? {
+        var address: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr else { return nil }
+        defer { freeifaddrs(ifaddr) }
+
+        for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
+            let interface = ptr.pointee
+            guard let addr = interface.ifa_addr, addr.pointee.sa_family == UInt8(AF_INET) else { continue }
+            guard String(cString: interface.ifa_name) == "en0" else { continue }
+
+            var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            getnameinfo(addr, socklen_t(addr.pointee.sa_len),
+                        &hostname, socklen_t(hostname.count), nil, 0, NI_NUMERICHOST)
+            address = String(cString: hostname)
+        }
+        return address
     }
 
     // MARK: - Freemium PIR Rows

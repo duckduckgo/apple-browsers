@@ -79,6 +79,14 @@ public class DBPIOSInterface {
         func fireWeeklyPixels() async
 
         func resetAllNotificationStatesForDebug()
+
+        /// Starts the read-only debug HTTP server and returns the listening port, or `nil` on
+        /// failure. Returns the existing port if already running.
+        @discardableResult
+        func startDebugServer() async -> UInt16?
+        func stopDebugServer()
+        /// The port the debug server is currently listening on, or `nil` if stopped.
+        var debugServerPort: UInt16? { get }
     }
 
     public protocol AuthenticationDelegate: AnyObject {
@@ -184,6 +192,11 @@ public final class DataBrokerProtectionIOSManager {
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     private var currentRunIsFreeScan: Bool?
     private var isContinuedProcessingRunActive = false
+
+    private var debugServer: DataBrokerProtectionDebugHTTPServer?
+    private var debugServerAutoStopWorkItem: DispatchWorkItem?
+    /// Last time a background processing task fired — surfaced via the debug server's snapshot.
+    private var lastBackgroundTaskTriggerTimestamp: Date?
 
     private lazy var continuedProcessingCoordinator: any DBPContinuedProcessingCoordinating = {
         guard #available(iOS 26.0, *) else {
@@ -626,6 +639,82 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
     public func resetAllNotificationStatesForDebug() {
         userNotificationService.resetAllNotificationStatesForDebug()
     }
+
+    @discardableResult
+    public func startDebugServer() async -> UInt16? {
+        if let debugServer {
+            return debugServer.port
+        }
+        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionIOSLogReader())
+        do {
+            try server.start()
+            debugServer = server
+            scheduleDebugServerAutoStop()
+            return server.port
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to start PIR debug server: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    public func stopDebugServer() {
+        debugServer?.stop()
+        debugServer = nil
+        debugServerAutoStopWorkItem?.cancel()
+        debugServerAutoStopWorkItem = nil
+    }
+
+    public var debugServerPort: UInt16? { debugServer?.port }
+
+    /// Stops the debug server after a period of inactivity so it does not linger indefinitely.
+    private func scheduleDebugServerAutoStop() {
+        let autoStopInterval: TimeInterval = 30 * 60
+        debugServerAutoStopWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in self?.stopDebugServer() }
+        debugServerAutoStopWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + autoStopInterval, execute: workItem)
+    }
+}
+
+// MARK: - Debug HTTP server read access
+
+extension DataBrokerProtectionIOSManager: DataBrokerProtectionDebugReadProviding {
+
+    public var agentVersion: String {
+        let version = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "unknown"
+        let build = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "unknown"
+        return "\(version) (build: \(build))"
+    }
+
+    public var schedulerStateString: String { queueManager.debugRunningStatusString }
+
+    public var lastSchedulerTrigger: Date? { lastBackgroundTaskTriggerTimestamp }
+
+    public func isAuthenticated() async -> Bool { await authenticationManager.isUserAuthenticated }
+
+    public func hasAccessToken() async -> Bool { await authenticationManager.accessToken() != nil }
+
+    public func hasValidEntitlement() async -> Bool { (try? await authenticationManager.hasValidEntitlement()) ?? false }
+
+    public var environmentName: String {
+        settings.selectedEnvironment == .production ? "production" : "staging"
+    }
+
+    public var endpointURL: URL { settings.endpointURL }
+
+    public var mainConfigETag: String? { settings.mainConfigETag }
+
+    public var lastBrokerJSONUpdateCheck: Date {
+        Date(timeIntervalSince1970: settings.lastBrokerJSONUpdateCheckTimestamp)
+    }
+
+    public func brokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+        try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
+    }
+
+    public func allBrokerResources() throws -> [BrokerResource] {
+        try brokerUpdater?.vault.fetchAllBrokerResources() ?? []
+    }
 }
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelegate {
@@ -848,6 +937,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
         iOSPixelsHandler.fire(.backgroundTaskStarted)
         let startDate = Date.now
         let sessionId = UUID().uuidString
+        lastBackgroundTaskTriggerTimestamp = startDate
 
         // Record started event
         do {

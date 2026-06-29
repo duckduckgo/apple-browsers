@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DataBrokerProtectionCore
 import DebugServer
 import Foundation
 import os.log
@@ -26,8 +27,7 @@ public protocol DebugLogReading {
 
 public final class DataBrokerProtectionDebugHTTPServer {
 
-    /// Default port. Distinct from `AIChatDebugServer` (8473) to avoid collisions.
-    public static let defaultPort: UInt16 = 8474
+    public static let defaultPort = DataBrokerProtectionDebugServerDefaults.defaultPort
 
     public let port: UInt16
 

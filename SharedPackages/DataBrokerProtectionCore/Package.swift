@@ -30,6 +30,9 @@ let package = Package(
         .library(
             name: "DataBrokerProtectionCore",
             targets: ["DataBrokerProtectionCore"]),
+        .library(
+            name: "DataBrokerProtectionDebugServer",
+            targets: ["DataBrokerProtectionDebugServer"]),
         .library(name: "DataBrokerProtectionCoreTestsUtils", targets: ["DataBrokerProtectionCoreTestsUtils"]),
     ],
     dependencies: [
@@ -48,12 +51,21 @@ let package = Package(
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
-                .product(name: "DebugServer", package: "DebugServer"),
                 "ZIPFoundation",
                 .product(name: "Algorithms", package: "swift-algorithms"),
                 "TrackerRadarKit",
             ],
             resources: [.copy("BundleResources")],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "DataBrokerProtectionDebugServer",
+            dependencies: [
+                "DataBrokerProtectionCore",
+                .product(name: "DebugServer", package: "DebugServer"),
+            ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]

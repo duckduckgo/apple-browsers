@@ -27,6 +27,7 @@ import os.log
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import DataBrokerProtectionDebugServer
 import WebKit
 import BackgroundTasks
 import PrivacyConfig

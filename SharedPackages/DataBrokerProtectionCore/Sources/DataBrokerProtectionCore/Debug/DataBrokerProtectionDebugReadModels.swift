@@ -18,6 +18,10 @@
 
 import Foundation
 
+public enum DataBrokerProtectionDebugServerDefaults {
+    public static let defaultPort: UInt16 = 8474
+}
+
 // MARK: - /api
 
 public struct DebugSnapshot: Encodable, Equatable {

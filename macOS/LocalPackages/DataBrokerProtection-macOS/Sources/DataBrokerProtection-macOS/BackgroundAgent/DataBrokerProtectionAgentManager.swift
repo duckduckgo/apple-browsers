@@ -29,6 +29,7 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import DataBrokerProtectionDebugServer
 import PrivacyConfig
 import FeatureFlags
 

@@ -17,6 +17,7 @@
 //
 
 import DataBrokerProtectionCore
+import DataBrokerProtectionDebugServer
 import Foundation
 import OSLog
 

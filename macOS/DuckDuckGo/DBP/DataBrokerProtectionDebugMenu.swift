@@ -430,7 +430,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 return
             }
 
-            let url = "http://127.0.0.1:\(DataBrokerProtectionDebugHTTPServer.defaultPort)/api"
+            let url = "http://127.0.0.1:\(DataBrokerProtectionDebugServerDefaults.defaultPort)/api"
             let alert = NSAlert()
             alert.messageText = "PIR Debug Server Started"
             alert.informativeText = url

@@ -437,7 +437,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     func setupButtonPaddings(isFocused: Bool = false) {
-        guard theme.addressBarStyleProvider.shouldAddPaddingToAddressBarButtons else { return }
+        let styleProvider = theme.addressBarStyleProvider
+        guard styleProvider.shouldAddPaddingToAddressBarButtons else { return }
 
         imageButtonLeadingConstraint.constant = isFocused ? 2 : 1
         animationWrapperViewLeadingConstraint.constant = 1
@@ -455,12 +456,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if let superview = aiChatButton.superview {
             aiChatButton.translatesAutoresizingMaskIntoConstraints = false
-            if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-                /// When the toggle is enabled we need a fixed constant, otherwise the stackview feels wobbly
-                trailingStackViewTrailingViewConstraint.constant = 4
-            } else {
-                trailingStackViewTrailingViewConstraint.constant = isFocused ? 4 : 3
-            }
+            trailingStackViewTrailingViewConstraint.constant = styleProvider.addressBarTrailingStackViewPadding(focused: isFocused)
+
             NSLayoutConstraint.activate([
                 aiChatButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
                 aiChatButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)

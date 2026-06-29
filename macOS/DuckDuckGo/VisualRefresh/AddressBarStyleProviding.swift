@@ -28,6 +28,7 @@ protocol AddressBarStyleProviding {
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarTrailingStackViewPadding(focused: Bool) -> CGFloat
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat
 
@@ -106,6 +107,9 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarBottomPaddingForHomePage: CGFloat = 7
     private let addressBarBottomPaddingForHomePageFocusedWithAIChat: CGFloat = 3
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
+    private let addressBarTrailingStackViewOmnibarPadding: CGFloat = 4
+    private let addressBarTrailingStackViewFocusedPadding: CGFloat = 4
+    private let addressBarTrailingStackViewDefaultPadding: CGFloat = 3
 
     private let featureFlagger: FeatureFlagger
 
@@ -190,6 +194,14 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
         return 0
     }
 
+    func addressBarTrailingStackViewPadding(focused: Bool) -> CGFloat {
+        if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            return addressBarTrailingStackViewOmnibarPadding
+        }
+
+        return focused ? addressBarTrailingStackViewFocusedPadding : addressBarTrailingStackViewDefaultPadding
+    }
+
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
         return true
     }
@@ -211,6 +223,9 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarBottomPaddingForDefault: CGFloat = 7
     private let addressBarBottomPaddingForHomePage: CGFloat = 7
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
+    private let addressBarTrailingStackViewOmnibarPadding: CGFloat = -2
+    private let addressBarTrailingStackViewFocusedPadding: CGFloat = 4
+    private let addressBarTrailingStackViewDefaultPadding: CGFloat = 3
 
     // MARK: - Configuration
     let shouldShowNewSearchIcon: Bool = true
@@ -258,6 +273,10 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     // MARK: - Feature Flag Helpers
     private let featureFlagger: FeatureFlagger
 
+    private var isAIChatOmnibarEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+    }
+
     /// Designated Initializer
     ///
     init(featureFlagger: FeatureFlagger) {
@@ -297,6 +316,14 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
 
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat {
         return 0
+    }
+
+    func addressBarTrailingStackViewPadding(focused: Bool) -> CGFloat {
+        if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            return addressBarTrailingStackViewOmnibarPadding
+        }
+
+        return focused ? addressBarTrailingStackViewFocusedPadding : addressBarTrailingStackViewDefaultPadding
     }
 
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {

@@ -103,8 +103,7 @@ struct BrokerProfileOptOutSubJob {
                                     showWebView: showWebView,
                                     shouldRunNextStep: shouldRunNextStep)
 
-            if dependencies.featureFlagger.isEmailConfirmationDecouplingFeatureOn,
-               brokerProfileQueryData.dataBroker.requiresEmailConfirmationDuringOptOut() {
+            if brokerProfileQueryData.dataBroker.requiresEmailConfirmationDuringOptOut() {
                 try handleEmailConfirmationDecoupling(database: dependencies.database,
                                                       pixelHandler: dependencies.pixelHandler,
                                                       brokerProfileQueryData: brokerProfileQueryData,

@@ -3935,7 +3935,9 @@ extension MainViewController: OmniBarDelegate {
         commitToggleMode(.aiChat)
         
         let controlValues = viewCoordinator.omniBar.iPadDuckAIControlValues
-        openAIChat(query, autoSend: true, tools: tools,
+        // `tools` is supplied by the iPhone editing-state path; the iPad tool picker supplies its
+        // selection via the control-values snapshot. The two surfaces never both provide tools.
+        openAIChat(query, autoSend: true, tools: tools ?? controlValues.selectedTools,
                    modelId: controlValues.selectedModelId,
                    reasoningEffort: controlValues.selectedReasoningEffort)
     }

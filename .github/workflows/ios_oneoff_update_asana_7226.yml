@@ -19,11 +19,6 @@ on:
         required: true
         default: "https://app.asana.com/1/137249556945/project/1214200115953388/task/1215899328995417?focus=true"
         type: string
-      tag:
-        description: "Release tag"
-        required: true
-        default: "7.226.0+ios"
-        type: string
       branch:
         description: "Deleted release branch (for the 'tagged' comment)"
         required: true
@@ -39,10 +34,11 @@ jobs:
     timeout-minutes: 15
 
     env:
-      TAG: ${{ github.event.inputs.tag }}
+      TAG: "7.226.0+ios"
+      PROMOTED_TAG: "7.226.0-11+ios"
       BRANCH: ${{ github.event.inputs.branch }}
       asana-task-url: ${{ github.event.inputs.asana-task-url }}
-      RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.event.inputs.tag }}
+      RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/7.226.0+ios
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
     steps:
@@ -74,7 +70,8 @@ jobs:
             github_handle:"${{ github.actor }}"
 
       # (1) Move release-tagged tasks to Done, complete them, create the
-      #     "Announce the release to the company" subtask.
+      #     "Announce the release to the company" subtask. Use the promoted
+      #     tag here so the fastlane action derives Asana tag "ios-app-release-7.226.0".
       - name: Update Asana for the release
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -86,7 +83,7 @@ jobs:
             github_handle:"${{ github.actor }}" \
             release_task_id:"${{ steps.task-id.outputs.asana_task_id }}" \
             target_section_id:"${{ vars.IOS_APP_BOARD_DONE_SECTION_ID }}" \
-            tag:"${{ env.TAG }}"
+            tag:"${{ env.PROMOTED_TAG }}"
 
       # (2) Post the public-release-complete comment on the release task.
       - name: Add a comment to the release task

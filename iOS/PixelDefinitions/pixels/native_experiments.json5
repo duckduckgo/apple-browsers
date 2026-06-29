@@ -1,6 +1,5 @@
 {
     // This file defines pixels sent by the native experiments framework
     "defaultSuffixes": [],
-    "activeExperiments": {
-    }
+    "activeExperiments": {}
 }

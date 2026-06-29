@@ -969,7 +969,7 @@ final class AddressBarViewController: NSViewController {
             return
         }
 
-        let horizontalPadding = shouldUseTallAddressBarLayout ? idlePadding : idlePadding
+        let horizontalPadding = shouldUseTallAddressBarLayout ? extendedPadding : idlePadding
         activeBackgroundViewLeadingConstraint.constant = horizontalPadding
         activeBackgroundViewTrailingConstraint.constant = horizontalPadding
         view.layoutSubtreeIfNeeded()

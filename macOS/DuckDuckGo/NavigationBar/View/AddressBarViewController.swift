@@ -103,7 +103,6 @@ final class AddressBarViewController: NSViewController {
     @IBOutlet var passiveTextField: PassiveAddressBarTextField!
     @IBOutlet var inactiveBackgroundView: ColorView!
     @IBOutlet var activeBackgroundView: ColorView!
-    @IBOutlet var activeOuterBorderView: ColorView!
     @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
     @IBOutlet var innerBorderView: ColorView!
     @IBOutlet var buttonsContainerView: NSView!
@@ -143,6 +142,8 @@ final class AddressBarViewController: NSViewController {
         tabViewModel?.addressBarSharedTextState ?? AddressBarSharedTextState()
     }
 
+    /// Deprecated: Remove when `appRebranding` ships
+    @IBOutlet var activeOuterBorderView: ColorView!
     @IBOutlet weak var activeOuterBorderTrailingConstraint: NSLayoutConstraint!
     @IBOutlet weak var activeOuterBorderLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var activeOuterBorderBottomConstraint: NSLayoutConstraint!

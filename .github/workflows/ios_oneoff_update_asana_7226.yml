@@ -94,12 +94,14 @@ jobs:
             task_url:"${{ env.asana-task-url }}" \
             template_name:"public-release-complete-ios"
 
-      # (3) Release annotation pixel.
+      # (3) Release annotation pixel. Use the promoted tag to match the value
+      #     the real Tag Release workflow feeds this step (env.TAG there is the
+      #     promoted, build-numbered tag), keeping pixel names consistent.
       - name: Send release annotation pixel
         continue-on-error: true
         uses: ./.github/actions/send-release-annotation-pixel
         with:
-          version: ${{ env.TAG }}
+          version: ${{ env.PROMOTED_TAG }}
           platform: "ios"
 
       # (4) Asana notification task in the Apple Deployments project.

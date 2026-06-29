@@ -164,6 +164,41 @@ final class IPadOmnibarToolPickerControllerTests: XCTestCase {
         XCTAssertEqual(sut.selectedToolsForSubmission, [.webSearch])
     }
 
+    // MARK: - Reset on submit
+
+    func testWhenResetSelectionThenToolClearedAndReasoningRestored() {
+        store.models = [makeModel(id: "gpt-5.2", supportedTools: [.imageGeneration])]
+        sut.handleToolSelection(.imageGeneration)
+        XCTAssertTrue(sut.selectedToolHidesReasoningPicker)
+
+        sut.resetSelection()
+
+        XCTAssertNil(sut.selectedToolsForSubmission)
+        XCTAssertFalse(sut.isToolSelected)
+        XCTAssertFalse(sut.selectedToolHidesReasoningPicker)
+    }
+
+    func testWhenResetSelectionWithSelectedToolThenOnToolsUpdatedFires() {
+        store.models = [makeModel(id: "gpt-5.2", supportedTools: [.webSearch])]
+        sut.handleToolSelection(.webSearch)
+        var updateCount = 0
+        sut.onToolsUpdated = { updateCount += 1 }
+
+        sut.resetSelection()
+
+        XCTAssertEqual(updateCount, 1)
+    }
+
+    func testWhenResetSelectionWithNoSelectedToolThenNoUpdate() {
+        store.models = [makeModel(id: "gpt-5.2", supportedTools: [.webSearch])]
+        var updateCount = 0
+        sut.onToolsUpdated = { updateCount += 1 }
+
+        sut.resetSelection()
+
+        XCTAssertEqual(updateCount, 0)
+    }
+
     // MARK: - Update callback
 
     func testWhenToolSelectedThenOnToolsUpdatedFires() {

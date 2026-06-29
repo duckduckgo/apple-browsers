@@ -484,6 +484,7 @@ extension DefaultOmniBarViewController {
                 omniBarView.setSearchAreaExpanded(false, animated: false)
                 omniBarView.aiChatTextView.resignFirstResponder()
                 omniDelegate?.onPromptSubmitted(query, tools: nil)
+                toolPickerController?.resetSelection()
             }
         } else {
             omniDelegate?.onOmniQuerySubmitted(query)

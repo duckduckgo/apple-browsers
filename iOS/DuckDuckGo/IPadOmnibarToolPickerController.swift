@@ -104,6 +104,12 @@ final class IPadOmnibarToolPickerController {
         onToolsUpdated?()
     }
 
+    func resetSelection() {
+        guard toolsController.selectedTool != nil else { return }
+        toolsController.clearSelection()
+        onToolsUpdated?()
+    }
+
     // MARK: - Private
 
     private var presentation: UTIToolsController.Presentation {

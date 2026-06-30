@@ -112,6 +112,10 @@ final class AddressBarViewController: NSViewController {
 
     @IBOutlet var activeBackgroundViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var activeBackgroundViewTrailingConstraint: NSLayoutConstraint!
+    @IBOutlet var inactiveBackgroundViewLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet var inactiveBackgroundViewTrailingConstraint: NSLayoutConstraint!
+    @IBOutlet var buttonsContainerViewLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet var buttonsContainerViewTrailingConstraint: NSLayoutConstraint!
     @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
     @IBOutlet var passiveTextFieldMinXConstraint: NSLayoutConstraint!
     @IBOutlet var activeTextFieldMinXConstraint: NSLayoutConstraint!
@@ -370,6 +374,7 @@ final class AddressBarViewController: NSViewController {
 
         setupInactiveShadowView()
         setupActiveOuterBorderSize()
+        setupConstraints()
         refreshSuggestionsAppearance()
     }
 
@@ -798,6 +803,14 @@ final class AddressBarViewController: NSViewController {
         activeOuterBorderLeadingConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
         activeOuterBorderBottomConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
         activeOuterBorderTopConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
+    }
+
+    private func setupConstraints() {
+        let styleProvider = theme.addressBarStyleProvider
+        inactiveBackgroundViewLeadingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewLeadingPadding
+        inactiveBackgroundViewTrailingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewTrailingPadding
+        buttonsContainerViewLeadingConstraint.constant = styleProvider.addressBarButtonsContainerViewLeadingPadding
+        buttonsContainerViewTrailingConstraint.constant = styleProvider.addressBarButtonsContainerViewTrailingPadding
     }
 
     private func setupAddressBarPlaceHolder() {

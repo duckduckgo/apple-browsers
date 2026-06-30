@@ -225,7 +225,7 @@ final class AddressBarViewController: NSViewController {
         didSet {
             addressBarButtonsViewController?.isAIChatPanelActive = isAIChatOmnibarVisible
             if isSelected {
-                updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
+                refreshAppearance(isSuggestionsWindowVisible: addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
             }
         }
     }
@@ -625,7 +625,7 @@ final class AddressBarViewController: NSViewController {
         addressBarTextField.isSuggestionWindowVisiblePublisher
             .sink { [weak self] isSuggestionsWindowVisible in
                 guard let self else { return }
-                self.updateShadowView(isSuggestionsWindowVisible || self.isAIChatOmnibarVisible)
+                self.refreshAppearance(isSuggestionsWindowVisible: isSuggestionsWindowVisible || self.isAIChatOmnibarVisible)
                 if isSuggestionsWindowVisible || self.isAIChatOmnibarVisible {
                     self.layoutShadowView()
                 }
@@ -737,7 +737,7 @@ final class AddressBarViewController: NSViewController {
         /// When duck.ai is active, the extended `activeBackgroundViewWithSuggestions` is the single background
         /// behind the bar (it merges with the panel below). Suppress the regular inactive / active variants to
         /// avoid two layers rendering with different widths — that's the ~1pt edge mismatch and the
-        /// "address-bar-like" look on tab-switch back into a Duck.ai tab. `updateShadowView` (fired off the
+        /// "address-bar-like" look on tab-switch back into a Duck.ai tab. `refreshAppearance` (fired off the
         /// suggestion-window publisher) handles the suggestions-visible case; don't duplicate its isHidden flips
         /// here or we risk racing it after first ESC closes the suggestions window.
         inactiveBackgroundView.alphaValue = (selectionState.isSelected || isAIChatOmnibarVisible) ? 0 : 1
@@ -866,7 +866,7 @@ final class AddressBarViewController: NSViewController {
             return
         }
         if shadowView.superview == nil {
-            updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
+            refreshAppearance(isSuggestionsWindowVisible: addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
             view.window?.contentView?.addSubview(shadowView)
             layoutShadowView()
 
@@ -879,7 +879,7 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    private func updateShadowView(_ isSuggestionsWindowVisible: Bool) {
+    private func refreshAppearance(isSuggestionsWindowVisible: Bool) {
         shadowView.shadowSides = isSuggestionsWindowVisible ? [.left, .top, .right] : []
         shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
         shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
@@ -890,6 +890,10 @@ final class AddressBarViewController: NSViewController {
         activeBackgroundView.isHidden = isSuggestionsWindowVisible
         activeBackgroundViewWithSuggestions.isHidden = !isSuggestionsWindowVisible
         inactiveAddressBarShadowView.isHidden = isSuggestionsWindowVisible
+
+        if featureFlagger.isFeatureOn(.appRebranding) {
+            innerBorderView.roundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
+        }
     }
 
     private func layoutShadowView() {

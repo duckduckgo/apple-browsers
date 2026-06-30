@@ -1,5 +1,5 @@
 //
-//  NavigationBarStyleProviding.swift
+//  DDGChromeExtension.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,19 +16,19 @@
 //  limitations under the License.
 //
 
-import AppKit
+enum DDGChromeExtension: CaseIterable {
+    case full
+    case search
+    case noAISearch
 
-protocol NavigationBarStyleProviding {
-    var topCornerRadius: CGFloat? { get }
-}
-
-final class RefreshNavigationBarStyleProviding: NavigationBarStyleProviding {
-    let topCornerRadius: CGFloat? = 12
-}
-
-struct NavigationBarStyleProvidingFactory {
-
-    static func buildStyleProvider() -> NavigationBarStyleProviding {
-        RefreshNavigationBarStyleProviding()
+    var extensionID: String {
+        switch self {
+        case .full:
+            return "bkdgflcldnnnapblkhphbgpggdiikppg"
+        case .search:
+            return "jhagicoeeifaamcacdeifbjacnbgbeip"
+        case .noAISearch:
+            return "faoilnlkccdjdkpljainiiimmijofmpd"
+        }
     }
 }

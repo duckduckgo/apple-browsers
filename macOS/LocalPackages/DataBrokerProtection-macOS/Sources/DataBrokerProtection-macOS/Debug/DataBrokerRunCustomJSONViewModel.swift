@@ -338,7 +338,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 executionConfig: .init(),
                                 shouldRunNextStep: { true }
                             )
-                            let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
+                            let extractedProfiles = try await runner.scan(showWebView: true) { true }
                             let brokerId = DebugHelper.stableId(for: query.dataBroker)
                             let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
                             let assignedProfiles: [ExtractedProfile] = extractedProfiles.map { profile in
@@ -437,8 +437,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     shouldRunNextStep: { true }
                 )
 
-                try await runner.optOut(profileQuery: brokerProfileQueryData,
-                                        extractedProfile: scanResult.extractedProfile,
+                try await runner.optOut(extractedProfile: scanResult.extractedProfile,
                                         showWebView: true) { true }
 
                 if self.featureFlagger.isEmailConfirmationDecouplingFeatureOn,

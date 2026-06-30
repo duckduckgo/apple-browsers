@@ -187,8 +187,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Autoplay policy control via WKWebpagePreferences
     case autoplayPolicy
 
-    case tabAnimations
-
     /// Enables lazy reload for the more options menu
     case lazyMenuRebuild
 
@@ -199,6 +197,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
     case onboardingRebranding
+
+    /// Option to install Chrome extension during onboarding (DMG only)
+    case onboardingChromeExtension
 
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
@@ -273,8 +274,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case webScrollFreezeAutoRecovery
 
     case screenTimeCleaning
-
-    case minimalChromeInLandscape
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
@@ -364,7 +363,6 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
-    case onboardingDismissExperiment
     case autofillPasswordsStatusBar
 }
 
@@ -384,7 +382,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case goToMarket
     case webViewUserAgent
     case freemiumPIR
-    case contentBlocking
+    case optOutRetryError96Hours
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -419,6 +417,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the "Attach to Duck.ai" context-menu item that attaches selected text as the sidebar's page context
     case selectionContext
 
+    case sidebarSuggestedPrompts
+
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
@@ -452,9 +452,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar onboarding for AI Chat
     case omnibarOnboarding
 
-    /// Enables the omnibar cluster for AI Chat
-    case omnibarCluster
-
     /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
     case omnibarTools
 
@@ -479,9 +476,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls whether automatic page context attachment defaults to enabled
     case autoAttachContextByDefault
-
-    /// Signals that the iPad app should display duck.ai chats in a tab instead of a sheet
-    case iPadDuckaiOnTab
 
     /// Signals that the iPad app should display the duck.ai toggle
     case iPadAIChatToggle
@@ -604,6 +598,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// settings screen with native controls, regroups the main AI settings at the top, and adds the
     /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
     case aiFeaturesNativeControls
+
+    /// Enables the native Duck.ai bar controls (model picker) in the iPad address bar's
+    /// expanded Duck.ai input area.
+    case iPadDuckAIBarControls
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -696,9 +694,13 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
+
+    /// Gates the Simplified Sync Setup follow-up screens (deactivation + multi-device path).
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1215960387490701
+    case simplifiedSyncSetupV2
 }
 
-public enum AutoconsentSubfeature: String, PrivacySubfeature {
+public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .autoconsent
     }
@@ -706,6 +708,7 @@ public enum AutoconsentSubfeature: String, PrivacySubfeature {
     case onByDefault
     case filterlist
     case heuristicAction
+    case cookiePopupPreferenceSetting
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {

@@ -673,7 +673,7 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
               !(url.absoluteString.hashedSuffix != nil && redirectedNavigation.url.absoluteString.droppingHashedSuffix() == url.absoluteString.droppingHashedSuffix())
         else { return }
 
-        Logger.navigation.log("willPerformClientRedirect to: \(url.absoluteString), current: \(redirectedNavigation.debugDescription)")
+        Logger.navigation.log("willPerformClientRedirect to: \(url.shortDescription), current: \(redirectedNavigation.debugDescription)")
 
         // keep the original Navigation non-finished until the redirect NavigationAction is received
         let originalResponders = redirectedNavigation.navigationResponders

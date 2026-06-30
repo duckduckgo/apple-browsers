@@ -375,9 +375,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         return ContentBlocking.shared.privacyConfigurationManager
     }
 
-    private func makeContentBlocking() -> DBPWebViewContentBlocking? {
-        guard featureFlagger.isContentBlockingOn else { return nil }
-        return DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
+    private func makeContentBlocking() -> DBPWebViewContentBlocking {
+        DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
     }
 
     private let contentScopeProperties: ContentScopeProperties
@@ -572,7 +571,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
                     self.currentRunner = runner
                     
-                    let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: true) { true }
+                    let extractedProfiles = try await runner.scan(showWebView: true) { true }
                     for profile in extractedProfiles {
                         let assignedProfile = debugEmailConfirmationStore.storeExtractedProfile(
                             profile,
@@ -707,7 +706,6 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                 self.currentOptOutRunner = runner
                 
                 try await runner.optOut(
-                    profileQuery: brokerProfileQueryData,
                     extractedProfile: result.extractedProfile,
                     showWebView: true
                 ) { true }
@@ -881,7 +879,6 @@ extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
                 self.currentOptOutRunner = runner
 
                 try await runner.optOut(
-                    profileQuery: brokerProfileQueryData,
                     extractedProfile: scanResult.extractedProfile,
                     showWebView: true
                 ) { true }

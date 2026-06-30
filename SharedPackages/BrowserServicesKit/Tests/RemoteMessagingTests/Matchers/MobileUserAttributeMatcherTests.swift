@@ -101,6 +101,32 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
+    // MARK: - NTPAfterIdleState
+
+    func testWhenNTPAfterIdleStateMatchesSingleValueThenReturnMatch() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardShown")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown"], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenNTPAfterIdleStateDoesNotMatchSingleValueThenReturnFail() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardHidden")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown"], fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenNTPAfterIdleStateMatchesAnyOfMultipleValuesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardHidden")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown", "eligibleCardHidden"], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenNTPAfterIdleStateNotEligibleDoesNotMatchEligibleValuesThenReturnFail() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "notEligible")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown", "eligibleCardHidden"], fallback: nil)),
+                       .fail)
+    }
+
     // MARK: - FreemiumPIREligible
 
     func testWhenIsFreemiumPIREligibleMatchesThenReturnMatch() throws {
@@ -192,7 +218,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                                            isFreemiumPIREligible: Bool = false,
                                            isFreemiumPIRActivated: Bool = false,
                                            freemiumPIRFirstScanResult: String? = nil,
-                                           isCurrentPIRUser: Bool = false) {
+                                           isCurrentPIRUser: Bool = false,
+                                           ntpAfterIdleState: String = "") {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             featureDiscovery: mockFeatureDiscovery,
@@ -222,7 +249,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             isFreemiumPIREligible: isFreemiumPIREligible,
             isFreemiumPIRActivated: isFreemiumPIRActivated,
             freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
-            isCurrentPIRUser: isCurrentPIRUser
+            isCurrentPIRUser: isCurrentPIRUser,
+            ntpAfterIdleState: ntpAfterIdleState
         )
     }
 }

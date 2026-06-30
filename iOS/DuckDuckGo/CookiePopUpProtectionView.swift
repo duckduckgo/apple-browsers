@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import WebExtensions
 
 struct CookiePopUpProtectionView: View {
 
@@ -51,10 +52,30 @@ struct CookiePopUpProtectionViewSettings: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var body: some View {
-        Section {
-            // Let DuckDuckGo manage cookie consent pop-ups
-            SettingsCellView(label: UserText.letDuckDuckGoManageCookieConsentPopups,
-                             accessory: .toggle(isOn: viewModel.autoconsentBinding))
+        if viewModel.featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting) {
+            Section(footer: Text(LocalizedStringKey(UserText.cookiePopupPreferenceExplanation))) {
+                SettingsPickerCellView(label: UserText.cookiePopupPreferenceTitle,
+                                       options: CookiePopupPreference.allCases,
+                                       selectedOption: viewModel.cookiePopupPreferenceBinding)
+            }
+        } else {
+            Section {
+                SettingsCellView(label: UserText.letDuckDuckGoManageCookieConsentPopups,
+                                 accessory: .toggle(isOn: viewModel.autoconsentBinding))
+            }
+        }
+    }
+}
+
+extension CookiePopupPreference: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .max:
+            return UserText.cookiePopupPreferenceBlockAll
+        case .default:
+            return UserText.cookiePopupPreferenceBlockStandard
+        case .off:
+            return UserText.cookiePopupPreferenceDoNotBlock
         }
     }
 }

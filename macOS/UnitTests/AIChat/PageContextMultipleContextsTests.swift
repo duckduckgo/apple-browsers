@@ -27,10 +27,10 @@ import Testing
 struct NavigationContextActionTests {
 
     /// Helper that mirrors the logic in PageContextTabExtension.navigationAction
-    private func navigationAction(autoCollectEnabled: Bool, contextConsumed: Bool) -> String {
+    private func navigationAction(autoCollectEnabled: Bool, contextConsumed: Bool, fromAttachablePage: Bool = true) -> String {
         if autoCollectEnabled {
             return "collectNewContext"
-        } else if contextConsumed {
+        } else if contextConsumed || !fromAttachablePage {
             return "sendNavigationSignal"
         } else {
             return "keepExistingContext"
@@ -51,6 +51,23 @@ struct NavigationContextActionTests {
     @Test("Auto-collect OFF without consumed context returns keepExistingContext")
     func autoCollectOffNotConsumedKeeps() {
         #expect(navigationAction(autoCollectEnabled: false, contextConsumed: false) == "keepExistingContext")
+    }
+
+    // fromAttachablePage = false (navigating FROM NTP/settings/etc. to a URL)
+
+    @Test("NTP to URL with auto-collect OFF and no prior chat sends navigation signal")
+    func ntpToURLAutoCollectOffNoChat() {
+        #expect(navigationAction(autoCollectEnabled: false, contextConsumed: false, fromAttachablePage: false) == "sendNavigationSignal")
+    }
+
+    @Test("NTP to URL with auto-collect ON collects new context")
+    func ntpToURLAutoCollectOn() {
+        #expect(navigationAction(autoCollectEnabled: true, contextConsumed: false, fromAttachablePage: false) == "collectNewContext")
+    }
+
+    @Test("NTP to URL with consumed context sends navigation signal")
+    func ntpToURLContextConsumed() {
+        #expect(navigationAction(autoCollectEnabled: false, contextConsumed: true, fromAttachablePage: false) == "sendNavigationSignal")
     }
 }
 

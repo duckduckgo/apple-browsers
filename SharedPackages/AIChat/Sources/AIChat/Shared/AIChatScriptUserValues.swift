@@ -99,11 +99,20 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsMultipleContexts: Bool
     public let supportsTabPicker: Bool
     public let supportsNativeStorage: Bool
+    /// `true` when the native side supplies page-type signals so the duck.ai web app can render
+    /// page-tailored suggested prompts ("suggestions").
+    public let supportsSuggestions: Bool
     /// `true` when the native app handles the "voice chat start failed" remediation UI
     /// (e.g. surfaces the OS microphone-disabled prompt). When this is `true` the FE
     /// must suppress its own in-page tooltip and post `voiceChatStartFailed` to native
     /// after `getUserMedia` rejects.
     public let supportsNativeVoicePermissionHandler: Bool
+    /// `true` when the native app handles the "dictation start failed" remediation UI.
+    /// Mirrors `supportsNativeVoicePermissionHandler` but for the dictation flow: when this
+    /// is `true` the FE must suppress its own in-page tooltip and post `dictationStartFailed`
+    /// to native after `getUserMedia` rejects. Native surfaces the OS microphone-disabled
+    /// prompt with dictation-specific copy.
+    public let supportsNativeDictationPermissionHandler: Bool
     /// Whether this is a new or returning (reinstall) install — `unknown` when the platform
     /// can't tell. Surfaced on the `web.conversion.duckai.prompt` pixel.
     public let installType: AIChatInstallType
@@ -130,7 +139,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsAIChatSync: false,
                                         supportsMultipleContexts: false,
                                         supportsNativeStorage: false,
-                                        supportsNativeVoicePermissionHandler: false)
+                                        supportsNativeVoicePermissionHandler: false,
+                                        supportsNativeDictationPermissionHandler: false)
 #endif
 
 #if os(macOS)
@@ -151,7 +161,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsAIChatSync: false,
                                         supportsMultipleContexts: false,
                                         supportsNativeStorage: false,
-                                        supportsNativeVoicePermissionHandler: true)
+                                        supportsNativeVoicePermissionHandler: true,
+                                        supportsNativeDictationPermissionHandler: true)
 #endif
     }
 
@@ -173,7 +184,9 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsMultipleContexts: Bool = false,
                 supportsTabPicker: Bool = false,
                 supportsNativeStorage: Bool = false,
+                supportsSuggestions: Bool = false,
                 supportsNativeVoicePermissionHandler: Bool = false,
+                supportsNativeDictationPermissionHandler: Bool = false,
                 installType: AIChatInstallType = .new,
                 installAge: Int = 0) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
@@ -195,7 +208,9 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsMultipleContexts = supportsMultipleContexts
         self.supportsTabPicker = supportsTabPicker
         self.supportsNativeStorage = supportsNativeStorage
+        self.supportsSuggestions = supportsSuggestions
         self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
+        self.supportsNativeDictationPermissionHandler = supportsNativeDictationPermissionHandler
         self.installType = installType
         self.installAge = installAge
     }

@@ -426,6 +426,7 @@ public extension DesignSystemImages {
             }
             public static var daxDuckAIStacked: DesignSystemImage { .init(resource: .daxDuckAIStacked96) }
             public static var duckAIDDGHero: DesignSystemImage { .init(resource: .duckAIDDGHeroColor96) }
+            public static var duckAI: DesignSystemImage { .init(resource: .duckAI96) }
             public static var duckDuckGo: DesignSystemImage { .init(resource: .duckDuckGo96) }
             public static var extensionChrome: DesignSystemImage {
                 AppRebrand.isAppRebranded()

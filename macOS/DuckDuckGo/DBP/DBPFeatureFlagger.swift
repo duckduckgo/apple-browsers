@@ -48,9 +48,8 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
-    var isContentBlockingOn: Bool {
-        // content blocking is iOS-only.
-        false
+    var isOptOutRetryErrorFrequencyExperimentOn: Bool {
+        featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
     init(featureFlagger: FeatureFlagger) {

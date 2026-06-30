@@ -331,6 +331,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
 @available(macOS 15.4, iOS 18.4, *)
 private final class RecordingEventsListener: WebExtensionEventsListening {
     var controller: WKWebExtensionController?
+    var droppedCallbacksCount = 0
     func didOpenWindow(_ window: WKWebExtensionWindow) {}
     func didCloseWindow(_ window: WKWebExtensionWindow) {}
     func didFocusWindow(_ window: WKWebExtensionWindow) {}

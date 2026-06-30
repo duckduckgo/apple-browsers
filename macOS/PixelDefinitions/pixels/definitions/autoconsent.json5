@@ -5,272 +5,112 @@
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_error_multiple-popups_daily": {
         "description": "Autoconsent error state when multiple valid rules were matched on a page.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_error_optout_daily": {
         "description": "Fires when the rule opt-out steps hit an error.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_popup-found_daily": {
         "description": "Fires when autoconsent found an open popup on a page.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_done_daily": {
         "description": "Fires when autoconsent successfully opts-out of a popup.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_done_cosmetic_daily": {
         "description": "Fires when autoconsent successfully dismisses a cosmetic popup.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_done_heuristic_daily": {
         "description": "Fires when autoconsent on-device heuristic successfully dismisses a popup.",
         "owners": ["muodov"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_animation-shown_daily": {
         "description": "Fires when the autoconsent URLbar \"Consent Managed\" animation is shown.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_animation-shown_cosmetic_daily": {
         "description": "Fires when the autoconsent URLbar \"Popup hidden\" animation is shown.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_disabled-for-site_daily": {
         "description": "Fires when autoconsent is not run because of a site exception.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_detected-by-patterns_daily": {
         "description": "Fires when heuristic patterns match on a page.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_detected-by-both_daily": {
         "description": "Fires when both heuristic patterns and a popup is found on a page.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_detected-only-rules_daily": {
         "description": "Fires when a popup is found but no heuristic patterns match on a page.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_self-test-ok_daily": {
         "description": "Fires when the autoconsent self-test passes.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_self-test-fail_daily": {
         "description": "Fires when the autoconsent self-test fails.",
         "owners": ["sammacbeth"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_error_reload-loop_daily": {
         "description": "Fires when the autoconsent reload loop is detected.",
         "owners": ["muodov"],
         "triggers": ["page_load"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "fromExtension",
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "temporary: whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
-            "channel"
-        ]
+        "parameters": ["appVersion", "pixelSource", "fromExtension", "consentHeuristicEnabled", "channel"]
     },
     "m_mac_autoconsent_summary": {
         "description": "Fires periodically with counts of autoconsent metrics.",
@@ -361,11 +201,7 @@
                 "description": "Number of autoconsent error-reload-loop pixels fired.",
                 "type": "number"
             },
-            {
-                "key": "consentHeuristicEnabled",
-                "description": "Whether the user is in CPM heuristic experiment treatment group",
-                "type": "number"
-            },
+            "consentHeuristicEnabled",
             "channel"
         ]
     },

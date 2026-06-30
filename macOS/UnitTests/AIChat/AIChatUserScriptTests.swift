@@ -335,7 +335,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    func getAIChatPageContext(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+    func getAIChatPageContext(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         didGetAIChatPageContext = true
         return nil
     }
@@ -449,6 +449,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func voiceChatStartFailed(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
+    func dictationStartFailed(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         return nil
     }
 

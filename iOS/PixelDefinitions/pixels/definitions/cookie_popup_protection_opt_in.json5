@@ -4,20 +4,20 @@
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "autoconsent_enabled"]
     },
     "cookie_popup_opt_in_shown_repeat": {
         "description": "Fires when the Cookie Pop-up Protection opt-in dialog is shown again on app launch (any presentation after the first).",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "autoconsent_enabled"]
     },
     "cookie_popup_opt_in_option_confirmed": {
-        "description": "Fires when the user confirms the Cookie Pop-up Protection opt-in dialog. The cookie_popup_preference parameter is the resulting preference.",
+        "description": "Fires when the user confirms the Cookie Pop-up Protection opt-in dialog. cookie_popup_preference is the resulting preference; autoconsent_enabled is the feature state when the dialog was shown; time_since_shown is the bucketed time from first shown to confirmation.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "cookie_popup_preference"]
+        "parameters": ["appVersion", "cookie_popup_preference", "autoconsent_enabled", "time_since_shown"]
     }
 }

@@ -21,13 +21,15 @@ import PixelKit
 import WebExtensions
 
 /// Telemetry for the Cookie Pop-up Protection opt-in dialog.
+/// `autoconsentEnabled` is the feature state at the moment the dialog was shown.
 enum CookiePopupProtectionOptInPixel: PixelKitEvent {
     /// The dialog was shown on launch for the first time (once per install).
-    case shownFirst
+    case shownFirst(autoconsentEnabled: Bool)
     /// The dialog was shown on launch again (any presentation after the first).
-    case shownRepeat
-    /// The user confirmed the dialog; `preference` is the resulting Cookie Pop-up Protection preference.
-    case optionConfirmed(preference: CookiePopupPreference)
+    case shownRepeat(autoconsentEnabled: Bool)
+    /// The user confirmed the dialog; `preference` is the resulting Cookie Pop-up Protection preference,
+    /// `timeSinceShown` the bucketed time from first shown to confirmation.
+    case optionConfirmed(preference: CookiePopupPreference, autoconsentEnabled: Bool, timeSinceShown: String?)
 
     var name: String {
         switch self {
@@ -39,10 +41,17 @@ enum CookiePopupProtectionOptInPixel: PixelKitEvent {
 
     var parameters: [String: String]? {
         switch self {
-        case .optionConfirmed(let preference):
-            return ["cookie_popup_preference": preference.rawValue]
-        case .shownFirst, .shownRepeat:
-            return nil
+        case .shownFirst(let autoconsentEnabled), .shownRepeat(let autoconsentEnabled):
+            return ["autoconsent_enabled": autoconsentEnabled ? "true" : "false"]
+        case .optionConfirmed(let preference, let autoconsentEnabled, let timeSinceShown):
+            var parameters = [
+                "cookie_popup_preference": preference.rawValue,
+                "autoconsent_enabled": autoconsentEnabled ? "true" : "false"
+            ]
+            if let timeSinceShown {
+                parameters["time_since_shown"] = timeSinceShown
+            }
+            return parameters
         }
     }
 }

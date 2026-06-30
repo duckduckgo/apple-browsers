@@ -23,10 +23,11 @@ import SwiftUI
 import UIKit
 import WebExtensions
 
-/// Persisted "already shown on launch" flag for the Cookie Pop-up Protection opt-in dialog.
-/// ponytail: the modal prompt queue tracks no per-prompt history, so we keep our own one-shot flag.
+/// Persisted state for the Cookie Pop-up Protection opt-in dialog.
+/// ponytail: the modal prompt queue tracks no per-prompt history, so we keep our own one-shot flag + first-shown date.
 struct CookiePopupProtectionOptInPromptStore {
     private static let hasShownLaunchPromptKey = "com.duckduckgo.cookiePopupProtection.optIn.hasShownLaunchPrompt"
+    private static let firstShownDateKey = "com.duckduckgo.cookiePopupProtection.optIn.firstShownDate"
 
     private let keyValueStore: ThrowingKeyValueStoring
 
@@ -37,6 +38,40 @@ struct CookiePopupProtectionOptInPromptStore {
     var hasShownLaunchPrompt: Bool {
         get { (try? keyValueStore.object(forKey: Self.hasShownLaunchPromptKey)) as? Bool ?? false }
         nonmutating set { try? keyValueStore.set(newValue, forKey: Self.hasShownLaunchPromptKey) }
+    }
+
+    /// The date the dialog was first shown on launch (set once).
+    var firstShownDate: Date? {
+        get {
+            guard let timestamp = (try? keyValueStore.object(forKey: Self.firstShownDateKey)) as? TimeInterval else { return nil }
+            return Date(timeIntervalSince1970: timestamp)
+        }
+        nonmutating set { try? keyValueStore.set(newValue?.timeIntervalSince1970, forKey: Self.firstShownDateKey) }
+    }
+
+    /// Bucketed time elapsed from the first-shown date to `now`, for telemetry.
+    func bucketedTimeSinceFirstShown(now: Date = Date()) -> String? {
+        guard let firstShownDate else { return nil }
+        return CookiePopupProtectionOptInTimeBucket.bucket(for: now.timeIntervalSince(firstShownDate))
+    }
+
+    /// Clears all persisted opt-in dialog state (debug reset).
+    func reset() {
+        try? keyValueStore.set(nil, forKey: Self.hasShownLaunchPromptKey)
+        try? keyValueStore.set(nil, forKey: Self.firstShownDateKey)
+    }
+}
+
+/// Maps an elapsed interval (seconds) into a coarse bucket label for telemetry.
+enum CookiePopupProtectionOptInTimeBucket {
+    static func bucket(for elapsed: TimeInterval) -> String {
+        switch elapsed {
+        case ..<60: return "0-1min"
+        case ..<(5 * 60): return "1-5min"
+        case ..<(60 * 60): return "5-60min"
+        case ..<(24 * 60 * 60): return "1h-1d"
+        default: return "1d+"
+        }
     }
 }
 
@@ -52,15 +87,30 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
         guard !store.hasShownLaunchPrompt else { return nil }
+        // The feature state stays unchanged between presentation and confirmation, so capture it now.
+        let autoconsentEnabledWhenShown = AppUserDefaults().autoconsentEnabled
+        let store = store
         return ModalPromptConfiguration(viewController: Self.makeViewController(onOptionConfirmed: { preference in
-            Pixel.fire(pixel: .cookiePopupOptInOptionConfirmed,
-                       withAdditionalParameters: [PixelParameters.cookiePopupPreference: preference.rawValue])
+            var parameters = [
+                PixelParameters.cookiePopupPreference: preference.rawValue,
+                PixelParameters.autoconsentEnabled: autoconsentEnabledWhenShown ? "true" : "false"
+            ]
+            if let timeSinceShown = store.bucketedTimeSinceFirstShown() {
+                parameters[PixelParameters.timeSinceShown] = timeSinceShown
+            }
+            Pixel.fire(pixel: .cookiePopupOptInOptionConfirmed, withAdditionalParameters: parameters)
         }))
     }
 
     func didPresentModal() {
+        let parameters = [PixelParameters.autoconsentEnabled: AppUserDefaults().autoconsentEnabled ? "true" : "false"]
         // First launch presentation vs subsequent ones (the latter is dormant while the dialog shows once per install).
-        Pixel.fire(pixel: store.hasShownLaunchPrompt ? .cookiePopupOptInShownRepeat : .cookiePopupOptInShownFirst)
+        if store.hasShownLaunchPrompt {
+            Pixel.fire(pixel: .cookiePopupOptInShownRepeat, withAdditionalParameters: parameters)
+        } else {
+            store.firstShownDate = Date()
+            Pixel.fire(pixel: .cookiePopupOptInShownFirst, withAdditionalParameters: parameters)
+        }
         store.hasShownLaunchPrompt = true
     }
 

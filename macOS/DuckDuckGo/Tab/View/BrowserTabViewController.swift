@@ -97,7 +97,7 @@ final class BrowserTabViewController: NSViewController {
     private let searchPreferences: SearchPreferences
     private let tabsPreferences: TabsPreferences
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
-    private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
+    let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     private let aiChatPreferences: AIChatPreferences
     private let aboutPreferences: AboutPreferences
     private let dockPreferences: DockPreferencesModel

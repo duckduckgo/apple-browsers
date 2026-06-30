@@ -28,7 +28,7 @@ protocol AddressBarStyleProviding {
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
-    func addressBarTrailingStackViewPadding(focused: Bool) -> CGFloat
+    func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat
 
@@ -202,7 +202,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
         return 0
     }
 
-    func addressBarTrailingStackViewPadding(focused: Bool) -> CGFloat {
+    func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat {
         if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
             return addressBarTrailingStackViewOmnibarPadding
         }
@@ -330,9 +330,9 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
         return 0
     }
 
-    func addressBarTrailingStackViewPadding(focused: Bool) -> CGFloat {
+    func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat {
         if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            return addressBarTrailingStackViewOmnibarPadding
+            return showsToggle ? addressBarTrailingStackViewOmnibarPadding : addressBarTrailingStackViewDefaultPadding
         }
 
         return focused ? addressBarTrailingStackViewFocusedPadding : addressBarTrailingStackViewDefaultPadding

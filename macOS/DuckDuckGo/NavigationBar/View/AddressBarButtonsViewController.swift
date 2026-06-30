@@ -456,8 +456,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if let superview = aiChatButton.superview {
             aiChatButton.translatesAutoresizingMaskIntoConstraints = false
-            trailingStackViewTrailingViewConstraint.constant = styleProvider.addressBarTrailingStackViewPadding(focused: isFocused)
-
+            trailingStackViewTrailingViewConstraint.constant = styleProvider.addressBarTrailingStackViewPadding(focused: isFocused, showsToggle: shouldShowSearchModeToggle)
             NSLayoutConstraint.activate([
                 aiChatButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
                 aiChatButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
@@ -1910,12 +1909,20 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let isToggleFeatureEnabled = isSearchModeToggleFeatureActive
         let shouldShowToggle = shouldShowSearchModeToggle
+        // Capture before updateToggleExpansionState(_:) overwrites wasToggleVisible.
+        let toggleVisibilityChanged = shouldShowToggle != wasToggleVisible
 
         // Update key view chain when toggle visibility changes
         updateKeyViewChainForToggle(shouldShowToggle: shouldShowToggle)
 
         searchModeToggleControl?.isHidden = !shouldShowToggle
         updateToggleExpansionState(shouldShowToggle: shouldShowToggle)
+
+        // The trailing padding depends on whether the toggle is shown, so re-run when its
+        // visibility flips (e.g. the toggle hides when visiting a site).
+        if toggleVisibilityChanged {
+            setupButtonPaddings(isFocused: isTextFieldEditorFirstResponder)
+        }
 
         if isToggleFeatureEnabled {
             aiChatButton.isHidden = true

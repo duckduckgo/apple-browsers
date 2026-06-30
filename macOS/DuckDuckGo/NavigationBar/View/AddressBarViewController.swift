@@ -996,7 +996,7 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    func refreshAddressBarSize() {
+    func refreshAddressBarWidth() {
         let styleProvider = theme.addressBarStyleProvider
         guard let idlePadding = styleProvider.addressBarHorizontalPaddingIDLE, let extendedPadding = styleProvider.addressBarHorizontalPaddingExtended else {
             return

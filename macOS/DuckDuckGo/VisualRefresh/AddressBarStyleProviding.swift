@@ -231,8 +231,8 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarBottomPaddingForDefault: CGFloat = 7
     private let addressBarBottomPaddingForDefaultFocused: CGFloat = 3
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
-    private let addressBarTrailingStackViewOmnibarPadding: CGFloat = 1
-    private let addressBarTrailingStackViewFocusedPadding: CGFloat = 4
+    private let addressBarTrailingStackViewOmnibarPadding: CGFloat = 0
+    private let addressBarTrailingStackViewFocusedPadding: CGFloat = 3
     private let addressBarTrailingStackViewDefaultPadding: CGFloat = 3
 
     // MARK: - Configuration
@@ -258,8 +258,8 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarHorizontalPaddingIDLE: CGFloat? = 4           // OK
     let addressBarInactiveBackgroundViewLeadingPadding: CGFloat = 6
     let addressBarInactiveBackgroundViewTrailingPadding: CGFloat = 6
-    let addressBarButtonsContainerViewLeadingPadding: CGFloat = 6
-    let addressBarButtonsContainerViewTrailingPadding: CGFloat = 6
+    let addressBarButtonsContainerViewLeadingPadding: CGFloat = 7
+    let addressBarButtonsContainerViewTrailingPadding: CGFloat = 7
     let addressBarInnerBorderViewRadius: CGFloat = 19           // OK - Matches addressBarActiveBackgroundViewRadius
     let addressBarTextFieldLeadingPadding: CGFloat = 23
     let addTabButtonPadding: CGFloat = 32                       // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)

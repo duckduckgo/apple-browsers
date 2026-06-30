@@ -618,13 +618,6 @@ final class WebDuckPlayerNavigationHandler: NSObject {
         redirectToYouTubeVideo(url: url, webView: webView, forceNewTab: true)
     }
 
-    /// Checks if a URL contains a hash
-    ///
-    /// - Parameter url: The `URL` used to determine the tab type.
-    private func urlContainsHash(_ url: URL) -> Bool {
-        return url.fragment != nil && !url.fragment!.isEmpty
-    }
-
     /// Checks a URL and updates the referer if present
     ///
     /// - Parameter url: The 'URL' with referrer parameters (current URL)
@@ -994,7 +987,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Allow Youtube's internal navigation when DuckPlayer is enabled and user is watching on Youtube
         // Youtube uses hashes to navigate within some settings
         // This allows any navigation that includes a hash # (#searching, #bottom-sheet, etc)
-        if urlContainsHash(url), url.isYoutubeWatch {
+        if url.hasFragment, url.isYoutubeWatch {
             return false
         }
 

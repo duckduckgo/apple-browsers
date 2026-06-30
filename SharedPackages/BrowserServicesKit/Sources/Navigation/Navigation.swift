@@ -245,8 +245,8 @@ extension Navigation {
         }
     }
 
-    func willStart() {
-        guard case .navigationActionReceived = self.state else {
+    func willStart(isSameDocument: Bool = false) {
+        guard state == .navigationActionReceived || isSameDocument else {
             assertionFailure("unexpected state \(self.state)")
             return
         }

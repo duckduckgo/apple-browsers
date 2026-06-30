@@ -34,6 +34,10 @@ extension URL {
         absoluteString.truncated(to: 1024)
     }
 
+    public var originalWebKitString: String? {
+        (self as NSURL).value(forKey: Selector.originalDataAsString) as? String
+    }
+
     /// URL without the scheme and the '/' suffix of the path.
     /// Useful for finding duplicate URLs
     public var naked: URL? {
@@ -382,9 +386,11 @@ extension URL {
 
     // MARK: - Component-based URL equality
 
-    /// Returns `true` if the URL has a fragment, including percent-encoded `%23` in opaque URLs.
+    /// Returns `true` if the URL has a fragment
     public var hasFragment: Bool {
-        isOpaque ? opaqueFragment != nil : fragment != nil
+        guard let components = URLComponents(webKitUrl: self),
+              let fragment = components.fragment else { return false }
+        return !fragment.isEmpty
     }
 
     /// `true` when the URL is opaque (scheme without authority), e.g. `about:`, `data:`, `javascript:`.
@@ -427,85 +433,30 @@ extension URL {
     /// fragments, so the fragment is found by scanning `absoluteString` for `#` or `%23`.
     /// Path comparison always strips a trailing '/' (except for bare root '/').
     public func equals(_ other: URL, by components: EqualityComponents) -> Bool {
-        guard let selfParsed  = ResolvedComponents(self),
-              let otherParsed = ResolvedComponents(other) else { return false }
+        guard let selfParsed  = URLComponents(webKitUrl: self),
+              let otherParsed = URLComponents(webKitUrl: other) else { return false }
 
         return EqualityComponents.allComponents.filter(components.contains).allSatisfy { component in
             switch component {
-            case .scheme:   return scheme == other.scheme
-            case .host:     return selfParsed.host == otherParsed.host
-            case .port:     return selfParsed.port == otherParsed.port
-            case .path:     return selfParsed.path == otherParsed.path
-            case .query:    return selfParsed.query == otherParsed.query
-            case .fragment: return selfParsed.fragment == otherParsed.fragment
+            case .scheme:
+               return scheme == other.scheme
+            case .host:
+                return selfParsed.host == otherParsed.host
+            case .port:
+                return selfParsed.port == otherParsed.port
+            case .path where !self.isOpaque && !other.isOpaque:     
+                return selfParsed.path.dropping(suffix: "/") == otherParsed.path.dropping(suffix: "/")
+            case .path:     
+                return selfParsed.path == otherParsed.path
+            case .query:
+                return selfParsed.query == otherParsed.query
+            case .fragment:
+                return selfParsed.fragment == otherParsed.fragment
             default:
                 assertionFailure("Unknown component: \(component)")
                 return true
             }
         }
-    }
-
-    // MARK: - Helpers for equals(_:by:)
-
-    /// Parsed URL components used internally by `equals(_:by:)`.
-    ///
-    /// For hierarchical URLs `URLComponents` is used directly. For opaque URLs
-    /// (e.g. `about:blank%23foo`) the fragment is recovered by scanning `absoluteString`
-    /// for a `#` or `%23` delimiter; path and query are then trimmed accordingly.
-    private struct ResolvedComponents {
-        let host: String?
-        let port: Int?
-        let path: Substring?
-        let query: Substring?
-        let fragment: Substring?
-
-        init?(_ url: URL) {
-            guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
-            host     = components.host
-            port     = components.port
-            let isOpaque = url.isOpaque
-            // For opaque URLs (about:, data:, …) URLComponents doesn't surface the fragment;
-            // scan absoluteString directly. For hierarchical URLs, URLComponents is reliable.
-            fragment = isOpaque ? url.opaqueFragment : components.fragment.map { $0[...] }
-            // Only strip when Foundation missed the fragment (the %23 case).
-            // When Foundation found a literal '#', URLComponents already stripped it from path/query.
-            let foundationMissedFragment = isOpaque && components.fragment == nil
-            query = components.query.map { [fragment] query in
-                if foundationMissedFragment, let fragment, !fragment.isEmpty,
-                   query.count > fragment.count + 1 {
-                    return query.dropLast(fragment.count + 1) // drop "#<fragment>" folded into query
-                }
-                return query[...]
-            }
-            let rawPath = components.path
-            if foundationMissedFragment, query == nil,
-               let fragment, !fragment.isEmpty,
-               rawPath.count > fragment.count + 1 {
-                // drop "#<fragment>" folded into path
-                // if opaque URL path ends with "/" – it’s kept
-                path = rawPath.dropLast(fragment.count + 1)
-            } else if !isOpaque && rawPath.hasSuffix("/") {
-                path = rawPath.dropLast()
-            } else {
-                path = rawPath[...]
-            }
-        }
-    }
-
-    // Fragment substring for opaque URLs, recovered by scanning absoluteString.
-    // Returns nil when no fragment delimiter is found after the scheme.
-    private var opaqueFragment: Substring? {
-        // Foundation recognises a literal '#' as a fragment delimiter even for opaque about: URLs.
-        if let fragment { return fragment[...] }
-        // URL(trimmedAddressBarString:) can produce about:blank%23anchor where %23 is
-        // a percent-encoded '#' that Foundation's opaque URL parser doesn't treat as a delimiter.
-        let raw = absoluteString
-        guard let schemeEnd = raw.range(of: ":") else { return nil }
-        let rest = raw[schemeEnd.upperBound...]
-        if let encodedRange = rest.range(of: "%23") {
-            return rest[encodedRange.upperBound...]
-        }
-        return nil
     }
 
     /// Drops text fragment from a URL.
@@ -518,7 +469,7 @@ extension URL {
     /// text fragment, but manual testing shows that it's what WebKit already considers
     /// a text fragment and decides to drop on some occasions.
     public func removingTextFragment() -> URL? {
-        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false),
+        guard var components = URLComponents(webKitUrl: self),
               components.fragment?.hasPrefix(":~:") == true
         else {
             return self
@@ -537,11 +488,11 @@ extension URL {
     }
 
     public var isHttp: Bool {
-        scheme == "http"
+        navigationalScheme == .http
     }
 
     public var isHttps: Bool {
-        scheme == "https"
+        navigationalScheme == .https
     }
 
     // MARK: - Parameters
@@ -771,6 +722,10 @@ extension URL {
 
         components.host = host.droppingWwwPrefix()
         return components.url
+    }
+
+    enum Selector {
+        static let originalDataAsString = "_web_originalDataAsString"
     }
 
 }

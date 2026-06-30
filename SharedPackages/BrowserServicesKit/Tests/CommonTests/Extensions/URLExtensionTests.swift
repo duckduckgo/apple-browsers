@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import OSLog
 import Testing
 
 @testable import Common
@@ -737,274 +738,429 @@ extension URL {
     }
 }
 
-// MARK: - URL.equals(_:by:) tests
+// MARK: - URLEqualityComponentsTests
 
 final class URLEqualityComponentsTests {
 
-    // MARK: .sameDocument
-    static let sameDocument_args: [(String, String, Bool, UInt)] = [
-        // Same URL, no fragment → equal
-        ("http://example.com/page",      "http://example.com/page",       true,  #line),
-        // Same URL, different fragments → still same document
-        ("http://example.com/page#a",    "http://example.com/page#b",     true,  #line),
-        ("http://example.com/page#a",    "http://example.com/page",       true,  #line),
-        ("http://example.com/page",      "http://example.com/page#b",     true,  #line),
-        // Foundation normalises path trailing slash, so /page/ and /page compare equal
-        ("http://example.com/page/",     "http://example.com/page",       true,  #line),
-        // Different paths → not same document
-        ("http://example.com/page",      "http://example.com/other",      false, #line),
-        ("http://example.com/path",      "http://example.com/",           false, #line),
-        // Same path, different query → not same document
-        ("http://example.com/page?q=1",  "http://example.com/page?q=2",  false, #line),
-        ("http://example.com/page?q=1",  "http://example.com/page",       false, #line),
-        // query+fragment combo: query difference dominates
-        ("http://example.com/page?q#a",  "http://example.com/page",       false, #line),
-        ("http://example.com/page?q#a",  "http://example.com/page#a",     false, #line),
-        // Different scheme → not same document
-        ("http://example.com/page",      "https://example.com/page",      false, #line),
-        // Different host → not same document
-        ("http://example.com/page",      "http://other.com/page",         false, #line),
-        ("http://example.com/#hash",     "file://example.com",            false, #line),
-        ("http://example.com",           "file://example.com",            false, #line),
-        // Different port → not same document
-        ("http://example.com:8080/page", "http://example.com:9090/page",  false, #line),
-        ("http://example.com:81/",       "http://example.com/",           false, #line),
-        // Non-default explicit port: same port ± fragment → same document
-        ("http://example.com:81/#hash",  "http://example.com:81/",        true,  #line),
-        ("http://example.com:81/p#hash", "http://example.com:81/p",       true,  #line),
-        // Foundation's URL.port does NOT normalise default ports, so explicit :80
-        // and no-port are treated as different even though they resolve to the same server.
-        ("http://example.com:80/page",   "http://example.com/page",       false, #line),
-        // about:blank — same document regardless of fragment
-        ("about:blank",                  "about:blank",                   true,  #line),
-        ("about:blank#section",          "about:blank",                   true,  #line),
-        // about:blank with percent-encoded fragment (%23): Foundation treats it as part
-        // of the path, so effectivePath strips it — both sides are "blank" → same document.
-        ("about:blank",                  "about:blank%23section",         true,  #line),
-        ("about:blank%23foo",            "about:blank%23bar",             true,  #line),
-        // file:// URLs
-        ("file:///path/to/file.html",    "file:///path/to/file.html",     true,  #line),
-        ("file:///path/to/file.html#a",  "file:///path/to/file.html",     true,  #line),
-        ("file:///path/to/file.html?q",  "file:///path/to/file.html",     false, #line),
-        ("file:///path/to/file.html?q#a","file:///path/to/file.html",     false, #line),
-        ("file:///path/to/other.html",   "file:///path/to/file.html",     false, #line),
-        ("file:///path/sub/file.html",   "file:///path/to/file.html",     false, #line),
-        // data: URLs with different opaque paths → not same document
-        ("data:text/plain,hello",        "data:text/plain,world",         false, #line),
-    ]
+    // MARK: - hasFragment
 
     @available(iOS 16, macOS 13, *)
-    @Test("URL.equals(by:.sameDocument) — fragment-blind equality", .timeLimit(.minutes(1)),
-          arguments: sameDocument_args)
-    func equalsSameDocument(url1: String, url2: String, expected: Bool, line: UInt) {
-        let loc = Testing.SourceLocation(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1)
-        #expect(url1.url!.equals(url2.url!, by: .sameDocument) == expected, sourceLocation: loc)
+    @Test("hasFragment — hierarchical URL with literal fragment", .timeLimit(.minutes(1)))
+    func hasFragment_hierarchical() {
+        #expect(URL(string: "https://example.com/#section")!.hasFragment)
+        #expect(URL(string: "https://example.com/page#anchor")!.hasFragment)
+        #expect(!URL(string: "https://example.com/")!.hasFragment)
+        #expect(!URL(string: "https://example.com/#")!.hasFragment)  // empty fragment → false
     }
 
-    // MARK: .fuzzyIdentity — mirrors matches(_: URL) semantics
+    @available(iOS 16, macOS 13, *)
+    @Test("hasFragment — opaque URL (native) with literal # is recognised", .timeLimit(.minutes(1)))
+    func hasFragment_opaque_nativeURL_literalHash() {
+        #expect(URL(string: "about:blank#section")!.hasFragment)
+        #expect(!URL(string: "about:blank")!.hasFragment)
+        #expect(!URL(string: "about:blank#")!.hasFragment)  // empty fragment
+    }
 
-    static let fuzzyIdentity_args: [(String, String, Bool, UInt)] = [
-        // Trailing slash normalisation
-        ("http://youtube.com/",          "http://youtube.com",            true,  #line),
-        ("http://youtube.com",           "http://youtube.com/",           true,  #line),
-        ("https://youtube.com/",         "https://youtube.com",           true,  #line),
-        // Same fragment both sides → equal
-        ("https://youtube.com/#link#1",  "https://youtube.com#link#1",   true,  #line),
-        ("https://youtube.com/#link#1",  "https://youtube.com/#link#1",  true,  #line),
-        ("https://youtube.com#link#1",   "https://youtube.com/#link#1",  true,  #line),
-        // Different fragments → not equal
-        ("youtube.com/#link#1",          "https://youtube.com#link#2",   false, #line),
-        ("youtube.com/#link#1",          "https://youtube.com#link",     false, #line),
-        // Scheme mismatch
-        ("youtube.com",                  "https://youtube.com",          false, #line),
-        // Different paths
-        ("http://example.com/a",         "http://example.com/b",         false, #line),
+    @available(iOS 16, macOS 13, *)
+    @Test("hasFragment — opaque URL with %23 and no WebKit string: fragment NOT detected", .timeLimit(.minutes(1)))
+    func hasFragment_opaque_percentEncoded_noWebKitString() {
+        // Without _web_originalDataAsString, URLComponents(webKitUrl:) falls back to
+        // URLComponents(url:), which treats %23 as part of the path — not a fragment delimiter.
+        #expect(!URL(string: "about:blank%23section")!.hasFragment)
+        #expect(!(NSURL(string: "about:blank%23section")! as URL).hasFragment)
+        #expect(!URL(string: "data:text/html,hello%23anchor")!.hasFragment)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("hasFragment — MockWebKitURL: fragment recovered from originalDataAsString", .timeLimit(.minutes(1)))
+    func hasFragment_opaque_mockedWebKitURL() {
+        let withFrag = URL(string: "about:blank#section")!
+        let noFrag   = URL(string: "about:blank")!
+        let empty    = URL(string: "about:blank#")!
+        let data     = URL(string: "data:text/html,hello#anchor")!
+
+        #expect(withFrag.hasFragment)
+        #expect(!noFrag.hasFragment)
+        #expect(!empty.hasFragment)   // empty string after '#'
+        #expect(data.hasFragment)
+    }
+
+    // MARK: - originalWebKitString
+
+    @available(iOS 16, macOS 13, *)
+    @Test("originalWebKitString — MockWebKitURL returns injected original string", .timeLimit(.minutes(1)))
+    func originalWebKitString_mock_returnsInjectedString() {
+        let url = URL(string: "about:blank#section")!
+        #expect(url.originalWebKitString == "about:blank#section")
+    }
+
+    // MARK: - equals — individual component masks (hierarchical URLs)
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals([.scheme]) — scheme only, ignores host/port/path/query/fragment", .timeLimit(.minutes(1)))
+    func equalsSchemeOnly() {
+        let a = URL(string: "https://example.com:8080/path?q=1#frag")!
+        #expect(a.equals(URL(string: "https://other.com:9090/different?q=2#other")!, by: [.scheme]))
+        #expect(!a.equals(URL(string: "http://example.com:8080/path?q=1#frag")!, by: [.scheme]))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals([.host]) — host only, ignores scheme/port/path/query/fragment", .timeLimit(.minutes(1)))
+    func equalsHostOnly() {
+        let a = URL(string: "https://example.com:443/path?q=1#frag")!
+        #expect(a.equals(URL(string: "http://example.com:80/other?q=2#other")!, by: [.host]))
+        #expect(!a.equals(URL(string: "https://other.com:443/path?q=1#frag")!, by: [.host]))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals([.port]) — port only, including nil (absent) vs explicit port", .timeLimit(.minutes(1)))
+    func equalsPortOnly() {
+        let a = URL(string: "https://example.com:8080/path")!
+        #expect(a.equals(URL(string: "http://other.com:8080/different")!, by: [.port]))
+        #expect(!a.equals(URL(string: "https://example.com:9090/path")!, by: [.port]))
+        #expect(!a.equals(URL(string: "https://example.com/path")!, by: [.port]))  // 8080 vs nil
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals([.path]) — path only; with trailing-slash normalisation", .timeLimit(.minutes(1)))
+    func equalsPathOnly() {
+        let a = URL(string: "https://example.com:443/path/to/page?q=1#frag")!
+        #expect(a.equals(URL(string: "http://other.com/path/to/page?q=2#other")!, by: [.path]))
+        #expect(!a.equals(URL(string: "https://example.com/different/path")!, by: [.path]))
+        // Trailing slash is NOT normalised — paths differ literally.
+        #expect(a.equals(URL(string: "https://example.com/path/to/page/")!, by: [.path]))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals([.query]) — query only, ignores scheme/host/port/path/fragment", .timeLimit(.minutes(1)))
+    func equalsQueryOnly() {
+        let a = URL(string: "https://example.com/path?q=1&p=2#frag")!
+        #expect(a.equals(URL(string: "http://other.com/other?q=1&p=2#other")!, by: [.query]))
+        #expect(!a.equals(URL(string: "https://example.com/path?q=2&p=2")!, by: [.query]))
+        #expect(!a.equals(URL(string: "https://example.com/path")!, by: [.query]))  // q=1&p=2 vs nil
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals([.fragment]) — fragment only, ignores scheme/host/port/path/query", .timeLimit(.minutes(1)))
+    func equalsFragmentOnly() {
+        let a = URL(string: "https://example.com/path?q=1#frag")!
+        #expect(a.equals(URL(string: "http://other.com/other?q=2#frag")!, by: [.fragment]))
+        #expect(!a.equals(URL(string: "https://example.com/path?q=1#other")!, by: [.fragment]))
+        #expect(!a.equals(URL(string: "https://example.com/path")!, by: [.fragment]))  // "frag" vs nil
+    }
+
+    // MARK: - equals — component combinations (hierarchical URLs)
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals([.scheme, .host]) — ignores port, path, query, fragment", .timeLimit(.minutes(1)))
+    func equalsSchemeAndHost() {
+        let a = URL(string: "https://example.com:8080/path?q=1#frag")!
+        #expect(a.equals(URL(string: "https://example.com:9090/other?q=2#other")!, by: [.scheme, .host]))
+        #expect(!a.equals(URL(string: "http://example.com:8080/path?q=1#frag")!, by: [.scheme, .host]))
+        #expect(!a.equals(URL(string: "https://other.com:8080/path")!, by: [.scheme, .host]))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals([.scheme, .host, .port]) — origin equality", .timeLimit(.minutes(1)))
+    func equalsOrigin() {
+        let a = URL(string: "https://example.com:8080/path?q=1")!
+        #expect(a.equals(URL(string: "https://example.com:8080/other?q=2#frag")!, by: [.scheme, .host, .port]))
+        #expect(!a.equals(URL(string: "https://example.com:9090/path?q=1")!, by: [.scheme, .host, .port]))
+        #expect(!a.equals(URL(string: "http://example.com:8080/path?q=1")!, by: [.scheme, .host, .port]))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals([.path, .query]) — ignores scheme/host/port/fragment", .timeLimit(.minutes(1)))
+    func equalsPathAndQuery() {
+        let a = URL(string: "https://example.com/path?q=1#frag")!
+        #expect(a.equals(URL(string: "http://other.com:8080/path?q=1#other")!, by: [.path, .query]))
+        #expect(!a.equals(URL(string: "https://example.com/path?q=2")!, by: [.path, .query]))
+        #expect(!a.equals(URL(string: "https://example.com/path")!, by: [.path, .query]))  // q=1 vs nil
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals([.path, .fragment]) — ignores scheme/host/port/query", .timeLimit(.minutes(1)))
+    func equalsPathAndFragment() {
+        let a = URL(string: "https://example.com/path?q=1#frag")!
+        #expect(a.equals(URL(string: "http://other.com:123/path?x=9#frag")!, by: [.path, .fragment]))
+        #expect(!a.equals(URL(string: "https://example.com/path?q=1#other")!, by: [.path, .fragment]))
+        #expect(!a.equals(URL(string: "https://example.com/different#frag")!, by: [.path, .fragment]))
+    }
+
+    // MARK: - equals(.sameDocument) — parameterised (hierarchical + opaque with literal #)
+
+    static let sameDocument_args: [(String, String, Bool, UInt)] = [
+        // Same URL, no fragment → equal
+        ("http://example.com/page",       "http://example.com/page",        true,  #line),
+        // Different fragments → same document (fragment is ignored)
+        ("http://example.com/page#a",     "http://example.com/page#b",      true,  #line),
+        ("http://example.com/page#a",     "http://example.com/page",        true,  #line),
+        // Different path → not same document
+        ("http://example.com/page",       "http://example.com/other",       false, #line),
+        ("http://example.com/path",       "http://example.com/",            false, #line),
+        // Different query → not same document
+        ("http://example.com/page?q=1",   "http://example.com/page?q=2",    false, #line),
+        ("http://example.com/page?q=1",   "http://example.com/page",        false, #line),
+        ("http://example.com/page?q#a",   "http://example.com/page",        false, #line),
+        // Different scheme → not same document
+        ("http://example.com/page",       "https://example.com/page",       false, #line),
+        // Different host → not same document
+        ("http://example.com/page",       "http://other.com/page",          false, #line),
+        ("http://example.com/#hash",      "file://example.com",             false, #line),
+        // Different port → not same document
+        ("http://example.com:8080/page",  "http://example.com:9090/page",   false, #line),
+        ("http://example.com:81/",        "http://example.com/",            false, #line),
+        // Explicit non-default port: same port ± fragment → same document
+        ("http://example.com:81/#hash",   "http://example.com:81/",         true,  #line),
+        ("http://example.com:81/p#hash",  "http://example.com:81/p",        true,  #line),
+        // about: with literal # — same document regardless of fragment
+        ("about:blank",                   "about:blank",                    true,  #line),
+        ("about:blank#section",           "about:blank",                    true,  #line),
+        ("about:blank#a",                 "about:blank#b",                  true,  #line),
+        // file://
+        ("file:///path/to/file.html",     "file:///path/to/file.html",      true,  #line),
+        ("file:///path/to/file.html#a",   "file:///path/to/file.html",      true,  #line),
+        ("file:///path/to/file.html?q",   "file:///path/to/file.html",      false, #line),
+        ("file:///path/to/other.html",    "file:///path/to/file.html",      false, #line),
+        // data: — different opaque payloads → not same document
+        ("data:text/plain,hello",         "data:text/plain,world",          false, #line),
     ]
 
     @available(iOS 16, macOS 13, *)
-    @Test("URL.equals(by:.fuzzyIdentity) — trailing-slash normalised, fragment-sensitive",
+    @Test("equals(.sameDocument) — fragment-blind equality, native URL(string:)",
+          .timeLimit(.minutes(1)), arguments: sameDocument_args)
+    func equalsSameDocument(url1: String, url2: String, expected: Bool, line: UInt) {
+        let loc = Testing.SourceLocation(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1)
+        guard let a = URL(string: url1), let b = URL(string: url2) else {
+            Issue.record("Could not construct URLs: \(url1) / \(url2)", sourceLocation: loc); return
+        }
+        #expect(a.equals(b, by: .sameDocument) == expected, sourceLocation: loc)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals(.sameDocument) — same result when URLs are created via NSURL",
+          .timeLimit(.minutes(1)), arguments: sameDocument_args)
+    func equalsSameDocument_NSURL(url1: String, url2: String, expected: Bool, line: UInt) {
+        guard let a = NSURL(string: url1) as URL?, let b = NSURL(string: url2) as URL? else { return }
+        let loc = Testing.SourceLocation(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1)
+        #expect(a.equals(b, by: .sameDocument) == expected, sourceLocation: loc)
+    }
+
+    // MARK: - equals(.fuzzyIdentity) — parameterised
+
+    static let fuzzyIdentity_args: [(String, String, Bool, UInt)] = [
+        // Identical URL → equal
+        ("http://example.com/page",       "http://example.com/page",        true,  #line),
+        // Same fragment → equal
+        ("https://example.com/page#sec",  "https://example.com/page#sec",   true,  #line),
+        ("https://example.com/#link#1",   "https://example.com#link#1",     true,  #line),
+        // Different fragments → not equal
+        ("http://example.com/page#a",     "http://example.com/page#b",      false, #line),
+        ("http://example.com/page#frag",  "http://example.com/page",        false, #line),
+        // Different scheme → not equal
+        ("https://example.com/page",      "http://example.com/page",        false, #line),
+        // Different host → not equal
+        ("http://example.com/page",       "http://other.com/page",          false, #line),
+        // Different port → not equal
+        ("http://example.com:8080/",      "http://example.com:9090/",       false, #line),
+        // Different path → not equal (no trailing-slash normalisation)
+        ("http://example.com/a",          "http://example.com/b",           false, #line),
+        ("http://example.com/page/",      "http://example.com/page",        true, #line),
+        // about: with literal # → fragment distinguished
+        ("about:blank#section",           "about:blank#section",            true,  #line),
+        ("about:blank#section",           "about:blank#other",              false, #line),
+        ("about:blank#section",           "about:blank",                    false, #line),
+    ]
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals(.fuzzyIdentity) — fragment-sensitive, native URL(string:)",
           .timeLimit(.minutes(1)), arguments: fuzzyIdentity_args)
     func equalsFuzzyIdentity(url1: String, url2: String, expected: Bool, line: UInt) {
         let loc = Testing.SourceLocation(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1)
-        #expect(url1.url!.equals(url2.url!, by: .fuzzyIdentity) == expected, sourceLocation: loc)
-    }
-
-    // MARK: Custom component combinations
-
-    @available(iOS 16, macOS 13, *)
-    @Test("URL.equals(by:) — host only ignores everything else", .timeLimit(.minutes(1)))
-    func equalsHostOnly() {
-        let a = URL(string: "https://example.com:443/path?q=1#frag")!
-        let b = URL(string: "http://example.com:80/other?q=2#other")!
-        #expect(a.equals(b, by: [.host]))
-        #expect(!a.equals(URL(string: "https://other.com/path")!, by: [.host]))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("URL.equals(by:) — scheme+host without port", .timeLimit(.minutes(1)))
-    func equalsSchemeAndHostIgnoresPort() {
-        let a = URL(string: "https://example.com:8080/")!
-        let b = URL(string: "https://example.com:9090/")!
-        #expect(a.equals(b, by: [.scheme, .host]))
-        #expect(!a.equals(URL(string: "http://example.com:8080/")!, by: [.scheme, .host]))
-    }
-
-    // MARK: about: URLs — effectiveFragment and effectivePath
-
-    @available(iOS 16, macOS 13, *)
-    @Test("URL.equals — about:blank with %23 fragment is same document as about:blank", .timeLimit(.minutes(1)))
-    func aboutBlankPercentEncodedFragmentIsSameDocument() {
-        let blank   = URL(string: "about:blank")!
-        let hashed  = URL(string: "about:blank%23section")!
-        let hashed2 = URL(string: "about:blank%23other")!
-        #expect(blank.equals(hashed,  by: .sameDocument))
-        #expect(blank.equals(hashed2, by: .sameDocument))
-        #expect(hashed.equals(hashed2, by: .sameDocument))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("URL.equals — about:blank with %23 differs in fragment under .fuzzyIdentity", .timeLimit(.minutes(1)))
-    func aboutBlankPercentEncodedFragmentDiffersUnderFuzzyIdentity() {
-        let hashed  = URL(string: "about:blank%23section")!
-        let hashed2 = URL(string: "about:blank%23other")!
-        // different %23 suffixes → different effective fragments → not equal
-        #expect(!hashed.equals(hashed2, by: .fuzzyIdentity))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("URL.equals — about:blank with real #fragment vs %23 fragment", .timeLimit(.minutes(1)))
-    func aboutBlankRealHashVsPercentEncodedSameDocument() {
-        let real    = URL(string: "about:blank#section")!
-        let encoded = URL(string: "about:blank%23section")!
-        // Both should be same document as plain about:blank
-        let blank = URL(string: "about:blank")!
-        #expect(blank.equals(real,    by: .sameDocument))
-        #expect(blank.equals(encoded, by: .sameDocument))
-    }
-
-    // MARK: Foundation contract — opaque URL fragment behaviour
-
-    // ResolvedComponents relies on two Foundation invariants for opaque URLs:
-    //   1. URL.fragment is nil  (Foundation does not treat '%23' as a fragment delimiter)
-    //   2. URLComponents.fragment is nil  (same reason; '%23' is left in the path/query string)
-    //
-    // The tests below assert those invariants so a future Foundation change that starts
-    // recognising '%23' in opaque URLs would surface here before silently breaking the
-    // double-stripping guard in ResolvedComponents.init.
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Foundation contract — opaque URL with %23: URL.fragment is nil", .timeLimit(.minutes(1)))
-    func foundationOpaqueURLPercentEncodedFragmentIsNilOnURLFragment() {
-        let urls: [(String, String)] = [
-            ("about:blank%23section",           "about:blank"),
-            ("about:blank%23",                  "about:blank with bare %23"),
-            ("about:srcdoc?html=x%23sec",       "about:srcdoc with %23 in query"),
-            ("data:text/html,hello%23world",    "data: with %23 in payload"),
-        ]
-        for (raw, label) in urls {
-            guard let url = URL(string: raw) else {
-                Issue.record("Could not construct URL for \(label)")
-                continue
-            }
-            #expect(url.fragment == nil,
-                    "URL.fragment should be nil for opaque URL with %%23 (\(label))")
+        guard let a = URL(string: url1), let b = URL(string: url2) else {
+            Issue.record("Could not construct URLs: \(url1) / \(url2)", sourceLocation: loc); return
         }
+        #expect(a.equals(b, by: .fuzzyIdentity) == expected, sourceLocation: loc)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Foundation contract — opaque URL with %23: URLComponents.fragment is nil", .timeLimit(.minutes(1)))
-    func foundationOpaqueURLPercentEncodedFragmentIsNilOnURLComponents() {
-        let urls: [(String, String)] = [
-            ("about:blank%23section",           "about:blank"),
-            ("about:blank%23",                  "about:blank with bare %23"),
-            ("about:srcdoc?html=x%23sec",       "about:srcdoc with %23 in query"),
-            ("data:text/html,hello%23world",    "data: with %23 in payload"),
-        ]
-        for (raw, label) in urls {
-            guard let url = URL(string: raw),
-                  let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-                Issue.record("Could not construct URL/components for \(label)")
-                continue
-            }
-            #expect(components.fragment == nil,
-                    "URLComponents.fragment should be nil for opaque URL with %%23 (\(label))")
-        }
+    @Test("equals(.fuzzyIdentity) — same result when URLs are created via NSURL",
+          .timeLimit(.minutes(1)), arguments: fuzzyIdentity_args)
+    func equalsFuzzyIdentity_NSURL(url1: String, url2: String, expected: Bool, line: UInt) {
+        guard let a = NSURL(string: url1) as URL?, let b = NSURL(string: url2) as URL? else { return }
+        let loc = Testing.SourceLocation(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1)
+        #expect(a.equals(b, by: .fuzzyIdentity) == expected, sourceLocation: loc)
     }
 
-    // MARK: ResolvedComponents — path/query stripping code paths
+    // MARK: - equals — MockWebKitURL: about: URLs with %23 fragment
 
     @available(iOS 16, macOS 13, *)
-    @Test("ResolvedComponents — opaque + no query + %23 fragment: strips from path", .timeLimit(.minutes(1)))
-    func resolvedComponentsOpaquePercentEncodedFragmentStrippedFromPath() {
-        // about:blank%23foo: Foundation misses %23 as delimiter; URLComponents folds it into path.
-        // ResolvedComponents must strip it so path equals "blank" not "blank#foo".
-        let blank   = URL(string: "about:blank")!
-        let hashed  = URL(string: "about:blank%23foo")!
-        #expect(blank.equals(hashed, by: .sameDocument),  "path should match after stripping %23 fragment")
-        #expect(!blank.equals(hashed, by: .fuzzyIdentity), "fragments differ: nil vs 'foo'")
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("ResolvedComponents — opaque + no query + literal # fragment: path not double-stripped", .timeLimit(.minutes(1)))
-    func resolvedComponentsOpaqueRealHashFragmentNotDoubleStripped() {
-        // about:blank#foo: Foundation recognises '#'; URLComponents already strips the fragment
-        // from the path. foundationMissedFragment=false so we must not strip again.
+    @Test("equals — MockWebKitURL about: sameDocument ignores fragment, fuzzyIdentity distinguishes",
+          .timeLimit(.minutes(1)))
+    func webKit_aboutURL_fragmentAwareness() {
         let blank  = URL(string: "about:blank")!
-        let hashed = URL(string: "about:blank#foo")!
-        #expect(blank.equals(hashed, by: .sameDocument),  "path should be 'blank' either way")
-        #expect(!blank.equals(hashed, by: .fuzzyIdentity), "fragments differ: nil vs 'foo'")
+        let sec    = URL(string: "about:blank#section")!
+        let other  = URL(string: "about:blank#other")!
+
+        // sameDocument: path "blank" == "blank" for all three
+        #expect(blank.equals(sec,   by: .sameDocument))
+        #expect(blank.equals(other, by: .sameDocument))
+        #expect(sec.equals(other,   by: .sameDocument))
+
+        // fuzzyIdentity: fragment nil / "section" / "other" all differ
+        #expect(!blank.equals(sec,   by: .fuzzyIdentity))
+        #expect(!blank.equals(other, by: .fuzzyIdentity))
+        #expect(!sec.equals(other,   by: .fuzzyIdentity))
+
+        // individual components
+        #expect(blank.equals(sec,  by: [.scheme]))    // "about" == "about"
+        #expect(blank.equals(sec,  by: [.path]))      // "blank" == "blank"
+        #expect(!blank.equals(sec, by: [.fragment]))  // nil != "section"
+        #expect(!sec.equals(other, by: [.fragment]))  // "section" != "other"
+        #expect(sec.equals(other,  by: [.path]))      // "blank" == "blank"
     }
 
+    // MARK: - equals — MockWebKitURL: data: URLs with %23 fragment
+
     @available(iOS 16, macOS 13, *)
-    @Test("ResolvedComponents — opaque + no query + no fragment: path unchanged", .timeLimit(.minutes(1)))
-    func resolvedComponentsOpaqueNoFragmentPathUnchanged() {
-        let a = URL(string: "about:blank")!
-        let b = URL(string: "about:blank")!
-        #expect(a.equals(b, by: .fuzzyIdentity))
-        #expect(!a.hasFragment)
+    @Test("equals — MockWebKitURL data: path and fragment separated correctly",
+          .timeLimit(.minutes(1)))
+    func webKit_dataURL_pathAndFragmentSeparated() {
+        let noFrag   = URL(string: "data:text/html,hello")!
+        let anchor   = URL(string: "data:text/html,hello#anchor")!
+        let other    = URL(string: "data:text/html,hello#other")!
+        let diffPath = URL(string: "data:text/html,world#anchor")!
+        let sameAnchor = URL(string: "data:text/html,hello#anchor2")!
+
+        // sameDocument: path must match, fragment ignored
+        #expect(noFrag.equals(anchor,   by: .sameDocument))
+        #expect(noFrag.equals(other,    by: .sameDocument))
+        #expect(anchor.equals(other,    by: .sameDocument))
+        #expect(!noFrag.equals(diffPath, by: .sameDocument))   // "hello" != "world"
+
+        // fuzzyIdentity: fragment included
+        #expect(!noFrag.equals(anchor,   by: .fuzzyIdentity))  // nil vs "anchor"
+        #expect(!anchor.equals(other,    by: .fuzzyIdentity))  // "anchor" vs "other"
+        #expect(!noFrag.equals(diffPath, by: .fuzzyIdentity))
+
+        // [.path] only
+        #expect(noFrag.equals(anchor,  by: [.path]))           // "text/html,hello"
+        #expect(!noFrag.equals(diffPath, by: [.path]))         // hello != world
+
+        // [.fragment] only
+        #expect(!noFrag.equals(anchor, by: [.fragment]))       // nil vs "anchor"
+        #expect(!anchor.equals(other,  by: [.fragment]))       // "anchor" vs "other"
+        #expect(anchor.equals(                                 // both "anchor"
+            URL(string: "data:text/html,world#anchor")!,
+            by: [.fragment]))
+
+        // [.path, .query]: no query present → path comparison only
+        #expect(noFrag.equals(anchor,   by: [.path, .query]))
+        #expect(!noFrag.equals(diffPath, by: [.path, .query]))
+
+        // [.path, .fragment]: path must also match
+        #expect(!noFrag.equals(anchor,     by: [.path, .fragment]))   // fragment nil vs "anchor"
+        #expect(anchor.equals(sameAnchor,  by: [.path]))              // "hello" == "hello"
+        #expect(!anchor.equals(sameAnchor, by: [.fragment]))          // "anchor" vs "anchor2"
+        #expect(!anchor.equals(sameAnchor, by: [.path, .fragment]))   // path same, frag differs
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test("ResolvedComponents — opaque + with query + %23 fragment: strips from query", .timeLimit(.minutes(1)))
-    func resolvedComponentsOpaquePercentEncodedFragmentStrippedFromQuery() {
-        // about:srcdoc?html=x%23sec: Foundation misses %23; URLComponents folds fragment into query.
-        // After stripping, query should be "html=x" and path should be "srcdoc".
-        let withFrag    = URL(string: "about:srcdoc?html=x%23sec")!
-        let withoutFrag = URL(string: "about:srcdoc?html=x")!
-        #expect(withFrag.equals(withoutFrag, by: .sameDocument),  "queries should match after stripping %23 fragment")
-        #expect(!withFrag.equals(withoutFrag, by: .fuzzyIdentity), "fragments differ: 'sec' vs nil")
-    }
+    // MARK: - %23 behaviour: NSURL vs native URL vs MockWebKitURL
 
     @available(iOS 16, macOS 13, *)
-    @Test("ResolvedComponents — hierarchical URL: trailing slash stripped from path", .timeLimit(.minutes(1)))
-    func resolvedComponentsHierarchicalTrailingSlashStripped() {
-        let withSlash    = URL(string: "https://example.com/page/")!
-        let withoutSlash = URL(string: "https://example.com/page")!
-        #expect(withSlash.equals(withoutSlash, by: .sameDocument))
-        #expect(withSlash.equals(withoutSlash, by: .fuzzyIdentity))
-    }
-
-    // MARK: data: URL performance — equals must not O(n)-scan a 20 MB payload
-
-    @available(iOS 16, macOS 13, *)
-    @Test("URL.equals(by:.sameDocument) completes in reasonable time for a 20 MB data: URI", .timeLimit(.minutes(1)))
-    func equalsSameDocumentCompletesForLargeDataURL() {
-        let payload = String(repeating: "A", count: 20 * 1024 * 1024)
-        guard let url1 = URL(string: "data:text/html," + payload),
-              let url2 = URL(string: "data:text/html," + payload + "#anchor") else {
-            Issue.record("Failed to construct 20 MB data: URLs")
-            return
+    @Test("URL.fragment is nil for opaque URL with %23 (Foundation contract)", .timeLimit(.minutes(1)))
+    func foundationOpaqueURLPercentEncodedFragmentIsNil() {
+        let cases = ["about:blank%23section", "about:blank%23", "data:text/html,hello%23world"]
+        for raw in cases {
+            #expect(URL(string: raw)?.fragment == nil, "URL.fragment should be nil for \(raw)")
         }
-        let start = Date()
-        let result = url1.equals(url2, by: .sameDocument)
-        let elapsed = Date().timeIntervalSince(start)
+    }
 
-        // Comparing two 20 MB data: URLs is O(n) in the payload length regardless of implementation
-        // (the full path must be compared). The threshold guards against catastrophically slow
-        // regressions (e.g. O(n²) scanning) while accepting the unavoidable O(n) memory work.
-        _ = result
-        #expect(elapsed < 5.0,
-                "equals(by:.sameDocument) took \(elapsed)s on a 20 MB data: URI — should not be O(n²)")
+    @available(iOS 16, macOS 13, *)
+    @Test("URLComponents.fragment is nil for opaque URL with %23 (Foundation contract)", .timeLimit(.minutes(1)))
+    func foundationOpaqueURLPercentEncodedFragmentNilInURLComponents() {
+        let cases = ["about:blank%23section", "about:srcdoc?html=x%23sec"]
+        for raw in cases {
+            guard let url = URL(string: raw),
+                  let comps = URLComponents(url: url, resolvingAgainstBaseURL: false) else { continue }
+            #expect(comps.fragment == nil, "URLComponents.fragment should be nil for \(raw)")
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("NSURL with #fragment: sameDocument true",
+          .timeLimit(.minutes(1)))
+    func nsURL_percentEncoded_limitationWithoutWebKitString() {
+        let blank  = NSURL(string: "about:blank")! as URL
+        let hashed = NSURL(string: "about:blank#section")! as URL
+
+        // sameDocument: both NSURL paths are "" → path matches → true
+        #expect(blank.equals(hashed, by: .sameDocument))
+
+        // about: with literal # is correctly detected even via NSURL
+        let literal = NSURL(string: "about:blank#section")! as URL
+        #expect(blank.equals(literal, by: .sameDocument))
+        #expect(!blank.equals(literal, by: .fuzzyIdentity))  // nil vs "section"
+
+        let other = URL(string: "about:blank#section")!
+        #expect(hashed.equals(other, by: .fuzzyIdentity))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("MockWebKitURL resolves %23 fragments that NSURL cannot", .timeLimit(.minutes(1)))
+    func mockWebKitURL_resolves_percentEncodedFragments_thatNSURLCannot() {
+        let sec   = URL(string: "about:blank#section")!
+        let other = URL(string: "about:blank#other")!
+
+        // With original string: fragment is correctly read → fuzzyIdentity distinguishes them
+        #expect(!sec.equals(other, by: .fuzzyIdentity))
+        #expect(!sec.equals(other, by: [.fragment]))
+
+        // sameDocument still true (path "blank" == "blank")
+        #expect(sec.equals(other, by: .sameDocument))
+    }
+
+    // MARK: - Performance
+
+    @available(iOS 16, macOS 13, *)
+    @Test("equals(.sameDocument) completes in reasonable time for a 20 MB data: URI", .timeLimit(.minutes(1)))
+    func equalsSameDocumentCompletesForLargeDataURL() {
+        let payload  = String(repeating: "A", count: 20 * 1024 * 1024)
+        let anchor   = String(repeating: "z", count: 1024 * 1024)
+        let nsStr1   = "data:text/html," + payload                      // no fragment
+        let orig1    = "data:text/html," + payload                      // original WTF::URL
+        let orig2    = "data:text/html," + payload + "#" + anchor       // original WTF::URL with fragment
+
+        // — Native URL(string:) path —
+        guard let nativeUrl1 = URL(string: nsStr1),
+              let nativeUrl2 = URL(string: orig2) else {
+            Issue.record("Failed to construct 20 MB native data: URLs"); return
+        }
+        let nativeStart   = Date()
+        let nativeResult  = nativeUrl1.equals(nativeUrl2, by: .sameDocument)
+        let nativeElapsed = Date().timeIntervalSince(nativeStart)
+        #expect(nativeResult == true)
+        #expect(nativeElapsed < 0.5,
+                "native equals(.sameDocument) took \(nativeElapsed)s — should not be O(n²)")
+        Logger.general.info("equalsSameDocumentCompletesForLargeDataURL (native): \(nativeElapsed)s")
+
+        // — MockWebKitURL path (simulates URLs from WKNavigationAction) —
+        // The NSURL absoluteString has %23 for the fragment; the original string has a literal #.
+        guard let wkUrl1 = URL(string: orig1),
+              let wkUrl2 = URL(string: orig2) else {
+            Issue.record("Failed to construct 20 MB MockWebKit data: URLs"); return
+        }
+        let wkStart   = Date()
+        let wkResult  = wkUrl1.equals(wkUrl2, by: .sameDocument)
+        let wkElapsed = Date().timeIntervalSince(wkStart)
+        #expect(wkResult == true)
+        #expect(wkElapsed < 0.5,
+                "WebKit equals(.sameDocument) took \(wkElapsed)s — should not be O(n²)")
+        Logger.general.info("equalsSameDocumentCompletesForLargeDataURL (WebKit): \(wkElapsed)s")
+
+        // Verify fuzzyIdentity correctly distinguishes fragment presence via WebKit string
+        #expect(!wkUrl1.equals(wkUrl2, by: .fuzzyIdentity),
+                "wkUrl1 has no fragment, wkUrl2 has one — must differ under fuzzyIdentity")
     }
 }
 // swiftlint:enable comma

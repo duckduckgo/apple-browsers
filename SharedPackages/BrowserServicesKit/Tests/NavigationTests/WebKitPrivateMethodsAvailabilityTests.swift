@@ -24,6 +24,7 @@ import WebKit
 import XCTest
 
 @testable import Navigation
+@testable import Common
 
 @available(iOS 15.0, *)
 class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsBase {
@@ -294,6 +295,10 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
             XCTAssertEqual(backURLs, [dataURL1])
             XCTAssertEqual(forwardURLs, [])
         }
+    }
+
+    func testOriginalWebKitStringAvailability() throws {
+        XCTAssertTrue(NSURL.instancesRespond(to: NSSelectorFromString(URL.Selector.originalDataAsString)))
     }
 
 }

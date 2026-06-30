@@ -177,8 +177,7 @@ final class AddressBarViewController: NSViewController {
             return selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
         }
 
-        // Tall only when the bar is focused with text, or it's a duck.ai prompt input.
-        return (selectionState.isSelected && !addressBarTextField.value.isEmpty) || selectionState.isInAIChatMode
+        return selectionState.isSelected && (!addressBarTextField.value.isEmpty || selectionState.isInAIChatMode)
     }
 
     let themeManager: ThemeManaging

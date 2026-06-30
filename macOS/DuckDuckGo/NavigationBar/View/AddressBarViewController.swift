@@ -897,7 +897,11 @@ final class AddressBarViewController: NSViewController {
         inactiveAddressBarShadowView.isHidden = isSuggestionsWindowVisible
 
         if themeManager.isAppRebranded {
-            innerBorderView.roundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
+            /// We're disabling rounded corners at the bottom edges, so that we seamlessly blend in with the Suggestions / Omnibar UI
+            let roundedCorners: RoundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
+
+            innerBorderView.roundedCorners = roundedCorners
+            activeBackgroundViewWithSuggestions.roundedCorners = roundedCorners
         }
     }
 

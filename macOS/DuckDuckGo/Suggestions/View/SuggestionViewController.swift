@@ -92,6 +92,7 @@ final class SuggestionViewController: NSViewController {
         addTrackingArea()
         subscribeToSuggestionResult()
         subscribeToSelectionSync()
+        setupRoundedCorners()
         subscribeToThemeChanges()
         applyThemeStyle()
 
@@ -135,6 +136,16 @@ final class SuggestionViewController: NSViewController {
     private func setupTableView() {
         tableView.style = .plain
         tableView.setAccessibilityIdentifier("SuggestionViewController.tableView")
+    }
+
+    private func setupRoundedCorners() {
+        guard featureFlagger.isFeatureOn(.appRebranding) else {
+            return
+        }
+
+        let roundedCorners: RoundedCorners = [.bottomLeft, .bottomRight]
+        backgroundView.roundedCorners = roundedCorners
+        innerBorderView.roundedCorners = roundedCorners
     }
 
     private func addTrackingArea() {

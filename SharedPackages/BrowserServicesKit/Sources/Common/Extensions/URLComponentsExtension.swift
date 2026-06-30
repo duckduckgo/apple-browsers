@@ -38,7 +38,7 @@ extension URLComponents {
     init?(webKitUrl: URL) {
 #if DEBUG
         // Link WebKit for test targets
-        _=WKWebView.className()
+        _=type(of: WKWebView.self)
 #endif
 
         guard webKitUrl.isOpaque,

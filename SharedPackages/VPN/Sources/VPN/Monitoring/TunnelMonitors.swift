@@ -28,7 +28,7 @@ import os.log
 @MainActor
 protocol TunnelMonitoring: AnyObject {
     func start(testImmediately: Bool) async throws
-    func stop() async
+    func stop(includingFailureRecovery: Bool) async
 }
 
 @MainActor
@@ -111,10 +111,16 @@ final class TunnelMonitors: TunnelMonitoring {
         }
     }
 
-    func stop() async {
+    /// Stops the monitors. Pass `includingFailureRecovery: false` for a transient
+    /// reconfiguration (a reasserting config update): recovery is what *drives*
+    /// those updates, so cancelling it mid-apply would truncate its retry loop.
+    func stop(includingFailureRecovery: Bool = true) async {
         connectionTester.stop()
         await keyExpirationTester.stop()
         await tunnelFailureMonitor.stop()
+        if includingFailureRecovery {
+            await failureRecoveryHandler.stop()
+        }
         await latencyMonitor.stop()
         await entitlementMonitor.stop()
         await serverStatusMonitor.stop()
@@ -147,18 +153,17 @@ final class TunnelMonitors: TunnelMonitoring {
     private func startServerFailureRecovery() {
         Task { [weak self] in
             guard let self,
-                  let server = self.tunnelState?.lastSelectedServer else {
+                  let tunnelState = self.tunnelState,
+                  let server = tunnelState.lastSelectedServer else {
                 return
             }
-            let excludeLocalNetworks = self.tunnelState?.excludeLocalNetworks ?? false
+            let excludeLocalNetworks = tunnelState.excludeLocalNetworks
             await self.failureRecoveryHandler.attemptRecovery(
                 to: server,
                 excludeLocalNetworks: excludeLocalNetworks,
                 excludeCGNAT: self.settings.excludeCGNAT,
                 dnsSettings: self.settings.dnsSettings) { [weak self] generateConfigResult in
-
                 try await self?.onFailureRecoveryConfigUpdate(generateConfigResult)
-                self?.events.fire(.failureRecoveryAttempt(.completed(.unhealthy)))
             }
         }
     }

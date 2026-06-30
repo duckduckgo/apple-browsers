@@ -152,4 +152,350 @@ final class WebScrollObserverTests: XCTestCase {
 
         XCTAssertTrue(firedPixels.isEmpty, "Short or horizontal drags are not scroll attempts")
     }
+
+    func testNormalScrollsNeverFirePixel() {
+        let observer = makeObserver()
+
+        // 20 successful scrolls across all three screen regions — content moves each time.
+        for i in 0..<20 {
+            let startY: CGFloat = 100
+            scrollView.contentOffset = CGPoint(x: 0, y: startY + 100)
+            let screenY = CGFloat([100, 300, 500][i % 3])
+            observer.classifyDrag(dx: 0, dy: -100, startOffsetY: startY, startScreenY: screenY)
+        }
+
+        XCTAssertTrue(firedPixels.isEmpty,
+                      "m_debug_interaction_repeated_failed_scroll must not fire for successful scrolls")
+    }
+}
+
+// MARK: - Bucket helper tests
+
+/// Tests for the classification/bucket helpers that are `internal` (visible via `@testable import`).
+@MainActor
+final class WebScrollObserverBucketTests: XCTestCase {
+
+    // MARK: attemptBucket
+
+    func testAttemptBucket_threeReturnsThree() {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
+        let scrollView = UIScrollView()
+        let observer = WebScrollObserver(container: container,
+                                         scrollView: { scrollView },
+                                         currentURL: { nil })
+        XCTAssertEqual(observer.attemptBucket(3), "3")
+    }
+
+    func testAttemptBucket_belowThresholdAlsoReturnsThree() {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
+        let observer = WebScrollObserver(container: container,
+                                         scrollView: { nil },
+                                         currentURL: { nil })
+        // The method uses `..<4` — values 1, 2, 3 all map to "3".
+        XCTAssertEqual(observer.attemptBucket(1), "3")
+        XCTAssertEqual(observer.attemptBucket(2), "3")
+    }
+
+    func testAttemptBucket_fourAndFiveReturnFourFive() {
+        let observer = WebScrollObserver(container: UIView(),
+                                         scrollView: { nil },
+                                         currentURL: { nil })
+        XCTAssertEqual(observer.attemptBucket(4), "4_5")
+        XCTAssertEqual(observer.attemptBucket(5), "4_5")
+    }
+
+    func testAttemptBucket_sixAndAboveReturnSixPlus() {
+        let observer = WebScrollObserver(container: UIView(),
+                                         scrollView: { nil },
+                                         currentURL: { nil })
+        XCTAssertEqual(observer.attemptBucket(6), "6_plus")
+        XCTAssertEqual(observer.attemptBucket(100), "6_plus")
+    }
+
+    // MARK: screenRegion(forY:)
+
+    func testScreenRegion_topThirdIsRegionZero() {
+        // Container height 600 → thirds at [0,200), [200,400), [400,600].
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
+        let observer = WebScrollObserver(container: container,
+                                         scrollView: { nil },
+                                         currentURL: { nil })
+        XCTAssertEqual(observer.screenRegion(forY: 0), 0)
+        XCTAssertEqual(observer.screenRegion(forY: 100), 0)
+        XCTAssertEqual(observer.screenRegion(forY: 199), 0)
+    }
+
+    func testScreenRegion_middleThirdIsRegionOne() {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
+        let observer = WebScrollObserver(container: container,
+                                         scrollView: { nil },
+                                         currentURL: { nil })
+        XCTAssertEqual(observer.screenRegion(forY: 200), 1)
+        XCTAssertEqual(observer.screenRegion(forY: 300), 1)
+        XCTAssertEqual(observer.screenRegion(forY: 399), 1)
+    }
+
+    func testScreenRegion_bottomThirdIsRegionTwo() {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
+        let observer = WebScrollObserver(container: container,
+                                         scrollView: { nil },
+                                         currentURL: { nil })
+        XCTAssertEqual(observer.screenRegion(forY: 400), 2)
+        XCTAssertEqual(observer.screenRegion(forY: 500), 2)
+        XCTAssertEqual(observer.screenRegion(forY: 600), 2)
+    }
+
+    func testScreenRegion_clampsBelowZero() {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
+        let observer = WebScrollObserver(container: container,
+                                         scrollView: { nil },
+                                         currentURL: { nil })
+        // Negative Y is possible on a rubber-band bounce — must not produce a region below 0.
+        XCTAssertEqual(observer.screenRegion(forY: -50), 0)
+    }
+
+    func testScreenRegion_clampsAboveTwo() {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
+        let observer = WebScrollObserver(container: container,
+                                         scrollView: { nil },
+                                         currentURL: { nil })
+        XCTAssertEqual(observer.screenRegion(forY: 1000), 2)
+    }
+
+    // MARK: webScrollPanState
+
+    func testWebScrollPanState_nilScrollViewReturnsNone() {
+        let observer = WebScrollObserver(container: UIView(),
+                                         scrollView: { nil },
+                                         currentURL: { nil })
+        XCTAssertEqual(observer.webScrollPanState(nil), "none")
+    }
+
+    func testWebScrollPanState_freshScrollViewReturnsPossible() {
+        let sv = UIScrollView()
+        let observer = WebScrollObserver(container: UIView(),
+                                         scrollView: { sv },
+                                         currentURL: { nil })
+        // A freshly-created UIScrollView's pan recognizer starts in .possible.
+        XCTAssertEqual(observer.webScrollPanState(sv), "possible")
+    }
+
+    // MARK: webScrollPanTouches
+
+    func testWebScrollPanTouches_nilScrollViewReturnsZero() {
+        let observer = WebScrollObserver(container: UIView(),
+                                         scrollView: { nil },
+                                         currentURL: { nil })
+        XCTAssertEqual(observer.webScrollPanTouches(nil), "0")
+    }
+
+    func testWebScrollPanTouches_idleScrollViewReturnsZero() {
+        let sv = UIScrollView()
+        let observer = WebScrollObserver(container: UIView(),
+                                         scrollView: { sv },
+                                         currentURL: { nil })
+        // A pan recognizer with no active touches reports numberOfTouches == 0.
+        XCTAssertEqual(observer.webScrollPanTouches(sv), "0")
+    }
+
+    // MARK: count → bucket mapping (possibleZeroTouchCountBucket / windowActiveNoTouchBucket)
+    // The live scans behind these params walk UIApplication.shared.connectedScenes, whose recognizer
+    // state isn't controllable in a test host (the app host has real WebKit recognizers), so we test the
+    // pure count→bucket mapping directly rather than asserting a host-dependent live count.
+
+    func testCountBucket3PlusThresholds() {
+        XCTAssertEqual(WebScrollObserver.countBucket3Plus(0), "0")
+        XCTAssertEqual(WebScrollObserver.countBucket3Plus(1), "1")
+        XCTAssertEqual(WebScrollObserver.countBucket3Plus(2), "2")
+        XCTAssertEqual(WebScrollObserver.countBucket3Plus(3), "3_plus")
+        XCTAssertEqual(WebScrollObserver.countBucket3Plus(99), "3_plus")
+    }
+
+    func testCountBucket2PlusThresholds() {
+        XCTAssertEqual(WebScrollObserver.countBucket2Plus(0), "0")
+        XCTAssertEqual(WebScrollObserver.countBucket2Plus(1), "1")
+        XCTAssertEqual(WebScrollObserver.countBucket2Plus(2), "2_plus")
+        XCTAssertEqual(WebScrollObserver.countBucket2Plus(5), "2_plus")
+    }
+
+    // MARK: static bucket(for:)
+
+    func testBucket_tapRecognizerReturnsTap() {
+        let tap = UITapGestureRecognizer()
+        XCTAssertEqual(WebScrollObserver.bucket(for: tap), "tap")
+    }
+
+    func testBucket_longPressReturnsLongPress() {
+        let lp = UILongPressGestureRecognizer()
+        XCTAssertEqual(WebScrollObserver.bucket(for: lp), "long_press")
+    }
+
+    func testBucket_screenEdgePanReturnsEdgePan() {
+        let edge = UIScreenEdgePanGestureRecognizer()
+        XCTAssertEqual(WebScrollObserver.bucket(for: edge), "edge_pan")
+    }
+
+    func testBucket_scrollViewOwnPanReturnsWebScrollPan() {
+        let sv = UIScrollView()
+        XCTAssertEqual(WebScrollObserver.bucket(for: sv.panGestureRecognizer), "web_scroll_pan")
+    }
+
+    func testBucket_plainPanReturnsOtherPan() {
+        let pan = UIPanGestureRecognizer()
+        XCTAssertEqual(WebScrollObserver.bucket(for: pan), "other_pan")
+    }
+
+    func testBucket_unknownRecognizerReturnsOther() {
+        // A bare UIGestureRecognizer is not a pan, tap, long-press, or edge-pan — falls through to "other".
+        let r = UIGestureRecognizer()
+        XCTAssertEqual(WebScrollObserver.bucket(for: r), "other")
+    }
+}
+
+// MARK: - Deferring-gate collection tests
+
+/// Tests for `WebScrollFreezeDebugProbe.deferringGates(in:)`.
+/// The filter is purely by runtime class name — any recognizer whose type name contains "Deferring"
+/// is collected; all others are skipped. We use a custom subclass name that satisfies that check
+/// without requiring any private WebKit types.
+@MainActor
+final class DeferringGateCollectionTests: XCTestCase {
+
+    /// A `UIGestureRecognizer` whose type name contains "Deferring", simulating a
+    /// `WKDeferringGestureRecognizer` without using private API.
+    private final class SimulatedDeferringGestureRecognizer: UIGestureRecognizer {}
+
+    func testDeferringGates_findsSubclassWhoseNameContainsDeferring() {
+        let view = UIView()
+        let deferring = SimulatedDeferringGestureRecognizer()
+        let plain = UITapGestureRecognizer()
+        view.addGestureRecognizer(deferring)
+        view.addGestureRecognizer(plain)
+
+        let gates = WebScrollFreezeDebugProbe.deferringGates(in: view)
+
+        XCTAssertEqual(gates.count, 1)
+        XCTAssertTrue(gates.first === deferring)
+    }
+
+    func testDeferringGates_ignoresRecognizersThatDoNotContainDeferring() {
+        let view = UIView()
+        view.addGestureRecognizer(UITapGestureRecognizer())
+        view.addGestureRecognizer(UIPanGestureRecognizer())
+        view.addGestureRecognizer(UILongPressGestureRecognizer())
+
+        let gates = WebScrollFreezeDebugProbe.deferringGates(in: view)
+
+        XCTAssertTrue(gates.isEmpty)
+    }
+
+    func testDeferringGates_descendsIntoSubviews() {
+        let root = UIView()
+        let child = UIView()
+        root.addSubview(child)
+        let grandchild = UIView()
+        child.addSubview(grandchild)
+
+        // Only the grandchild has the deferring recognizer.
+        let deferring = SimulatedDeferringGestureRecognizer()
+        grandchild.addGestureRecognizer(deferring)
+
+        let gates = WebScrollFreezeDebugProbe.deferringGates(in: root)
+
+        XCTAssertEqual(gates.count, 1)
+        XCTAssertTrue(gates.first === deferring)
+    }
+
+    func testDeferringGates_emptyViewTreeReturnsEmptyArray() {
+        let view = UIView()
+        XCTAssertTrue(WebScrollFreezeDebugProbe.deferringGates(in: view).isEmpty)
+    }
+
+    func testDeferringGates_collectsMultipleDeferringRecognizersAcrossTree() {
+        let root = UIView()
+        let child = UIView()
+        root.addSubview(child)
+
+        let d1 = SimulatedDeferringGestureRecognizer()
+        let d2 = SimulatedDeferringGestureRecognizer()
+        root.addGestureRecognizer(d1)
+        child.addGestureRecognizer(d2)
+
+        let gates = WebScrollFreezeDebugProbe.deferringGates(in: root)
+
+        XCTAssertEqual(gates.count, 2)
+        XCTAssertTrue(gates.contains { $0 === d1 })
+        XCTAssertTrue(gates.contains { $0 === d2 })
+    }
+
+}
+
+// MARK: - Non-scrollable probe tests
+
+/// Tests for the "not scrollable" guard in `InteractionDiagnosticsModel.probeProgrammaticScroll`.
+///
+/// `probeProgrammaticScroll` calls `WebScrollFreezeDebugProbe.findMainViewController()` to locate the
+/// web scroll view. That method walks `UIApplication.shared.connectedScenes` looking for a
+/// `MainViewController`, which does not exist in the XCTest host process. The method therefore
+/// returns `nil` and sets `actionResult = "Scroll probe: no web scroll view found"` — the scroll
+/// view is never reached, so the ≤64pt guard cannot be exercised through the public API without a
+/// full app fixture.
+///
+/// The logic under test (the guard: `maxY - minY > 64`) is a two-liner inside
+/// `probeProgrammaticScroll` that is not extracted into a separately-testable helper; exercising it
+/// requires a live `MainViewController` → `TabViewController` → `WKWebView` chain. That chain is not
+/// set up by the test host, so the guard is not unit-testable without an integration fixture.
+final class ProbeProgrammaticScrollTests: XCTestCase {
+
+    @MainActor
+    func testProbeProgrammaticScroll_noWebViewFoundMessage() {
+        // In the test host there is no MainViewController, so the probe reports "no web scroll view found"
+        // rather than running the scrollability check. This test confirms the "no view" path returns a
+        // sensible message that does NOT contain "DID NOT MOVE" (which would be a false failure signal).
+        let model = InteractionDiagnosticsModel()
+        model.probeProgrammaticScroll()
+        XCTAssertFalse(model.actionResult.isEmpty)
+        XCTAssertFalse(model.actionResult.contains("DID NOT MOVE"),
+                       "The 'no scroll view' path must not emit the failure message")
+    }
+}
+
+// MARK: - Recovery wording / hypothesis-language tests
+
+/// Asserts that the static result strings emitted by `WebScrollFreezeRecovery` use suspect/hypothesis
+/// wording and do NOT make definitive causal claims.
+final class RecoveryWordingTests: XCTestCase {
+
+    /// Recovery result strings must never claim a proven cause. Exercises the LIVE return values — in the
+    /// test host there is no MainViewController, so each rung returns its non-causal "no web view" status.
+    @MainActor
+    func testRecoveryResultStringsMakeNoCausalClaim() {
+        let results = [
+            WebScrollFreezeRecovery.runRung(.resetScrollPan),
+            WebScrollFreezeRecovery.runRung(.resetDeferringGates)
+        ]
+        for result in results {
+            XCTAssertFalse(result.contains("WAS the cause"),
+                           "Recovery result must not claim a proven cause: \"\(result)\"")
+            XCTAssertFalse(result.contains("proven"),
+                           "Recovery result must not use 'proven': \"\(result)\"")
+        }
+    }
+
+    /// autoRecover returns Bool — true only if it actually ran the scoped resets. With no scroll view it
+    /// returns false (never a false success), which is also what happens in the test host.
+    @MainActor
+    func testAutoRecoverWithNoScrollViewReturnsFalse() {
+        XCTAssertFalse(WebScrollFreezeRecovery.autoRecover(scrollView: nil),
+                       "autoRecover must return false when there is no scroll view to recover.")
+    }
+
+    // Scoped recovery skips when a recognizer has touches:
+    //
+    // `WebScrollFreezeRecovery.anyTouchInFlight()` iterates `UIApplication.shared.connectedScenes`
+    // exactly like the deferring-gate scanner. There is no public API to inject an artificial touch
+    // count into a recognizer (numberOfTouches is read-only and backed by UIKit internal state), and
+    // the scene/window hierarchy that `anyTouchInFlight` walks is not set up in the test host.
+    // Verifying the "touch in flight → skip" guard therefore requires a live app window with a real
+    // UITouch in-flight — it is not unit-testable without an integration fixture.
 }

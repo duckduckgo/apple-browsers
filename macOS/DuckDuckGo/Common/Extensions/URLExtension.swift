@@ -533,7 +533,7 @@ extension URL {
     }
 
     static var cookieConsentPopUpManagement: URL {
-        return URL(string: "\(base)/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management")!
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection")!
     }
 
     static var gpcLearnMore: URL {
@@ -620,6 +620,10 @@ extension URL {
 
     static var aiChatHelpPages: URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai")!
+    }
+
+    static var hideAIGeneratedImagesLearnMore: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results")!
     }
 
     // MARK: - Search Settings

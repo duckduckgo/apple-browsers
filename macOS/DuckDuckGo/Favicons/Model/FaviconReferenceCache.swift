@@ -306,7 +306,7 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
         Task {
             do {
                 try await self.storing.save(urlReference: urlReference)
-                Logger.favicons.debug("URL reference saved successfully. document URL: \(urlReference.documentUrl.absoluteString)")
+                Logger.favicons.debug("URL reference saved successfully. document URL: \(urlReference.documentUrl.shortDescription)")
             } catch {
                 Logger.favicons.error("Saving of URL reference failed: \(error.localizedDescription)")
             }

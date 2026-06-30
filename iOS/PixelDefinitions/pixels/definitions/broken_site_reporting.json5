@@ -164,6 +164,57 @@
                 "description": "Cookie consent rule applied"
             },
             {
+                "key": "cpmExtensionDroppedCallbacks",
+                "type": "string",
+                "description": "Number of web extension callbacks dropped before a native controller was available",
+                "pattern": "^[0-9]*$"
+            },
+            {
+                "key": "cpmExtensionLoaded",
+                "type": "string",
+                "description": "Whether the embedded cookie prompt management extension was loaded when the report was assembled",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "cpmDashboardState",
+                "type": "string",
+                "description": "Whether native was still waiting for a cookie prompt management dashboard state or had applied one for the current page",
+                "enum": ["waiting", "applied", ""]
+            },
+            {
+                "key": "cpmStage",
+                "type": "string",
+                "description": "Most recent cookie prompt management lifecycle stage observed for the page",
+                "enum": [
+                    "not_started",
+                    "config_unavailable",
+                    "settings_missing",
+                    "setting_disabled",
+                    "site_disabled",
+                    "init_received",
+                    "popup_found",
+                    "optout_failed",
+                    "done",
+                    ""
+                ]
+            },
+            {
+                "key": "cpmErrors",
+                "type": "string",
+                "description": "Deduplicated comma-separated cookie prompt management diagnostic errors, capped at 255 characters"
+            },
+            {
+                "key": "cpmQueueSize",
+                "type": "string",
+                "description": "Native callback queue size observed by the embedded cookie prompt management extension",
+                "pattern": "^[0-9]*$"
+            },
+            {
+                "key": "cpmConfigVersion",
+                "type": "string",
+                "description": "Privacy remote config version observed by cookie prompt management diagnostics"
+            },
+            {
                 "key": "debugFlags",
                 "type": "string",
                 "description": "Debug flags"
@@ -485,6 +536,57 @@
                 "key": "consentRule",
                 "type": "string",
                 "description": "Cookie consent rule applied"
+            },
+            {
+                "key": "cpmExtensionDroppedCallbacks",
+                "type": "string",
+                "description": "Number of web extension callbacks dropped before a native controller was available",
+                "pattern": "^[0-9]*$"
+            },
+            {
+                "key": "cpmExtensionLoaded",
+                "type": "string",
+                "description": "Whether the embedded cookie prompt management extension was loaded when the report was assembled",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "cpmDashboardState",
+                "type": "string",
+                "description": "Whether native was still waiting for a cookie prompt management dashboard state or had applied one for the current page",
+                "enum": ["waiting", "applied", ""]
+            },
+            {
+                "key": "cpmStage",
+                "type": "string",
+                "description": "Most recent cookie prompt management lifecycle stage observed for the page",
+                "enum": [
+                    "not_started",
+                    "config_unavailable",
+                    "settings_missing",
+                    "setting_disabled",
+                    "site_disabled",
+                    "init_received",
+                    "popup_found",
+                    "optout_failed",
+                    "done",
+                    ""
+                ]
+            },
+            {
+                "key": "cpmErrors",
+                "type": "string",
+                "description": "Deduplicated comma-separated cookie prompt management diagnostic errors, capped at 255 characters"
+            },
+            {
+                "key": "cpmQueueSize",
+                "type": "string",
+                "description": "Native callback queue size observed by the embedded cookie prompt management extension",
+                "pattern": "^[0-9]*$"
+            },
+            {
+                "key": "cpmConfigVersion",
+                "type": "string",
+                "description": "Privacy remote config version observed by cookie prompt management diagnostics"
             },
             {
                 "key": "debugFlags",

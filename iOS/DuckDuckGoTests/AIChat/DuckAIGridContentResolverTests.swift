@@ -105,13 +105,13 @@ final class DuckAIGridContentResolverTests: XCTestCase {
         XCTAssertNil(sut.gridItem(for: tab, liveVoiceActive: false))
     }
 
-    func testWhenTabHasNoChatIDThenReturnsNil() {
+    func testWhenTabHasNoChatIDThenReturnsBareEmptyCard() {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNativeDataAccess, .aiChatTabSwitcherRichCard])
         let storage = makeStorageWithMigrationsDone()
         let sut = DuckAIGridContentResolver(featureFlagger: flagger, storageHandler: storage)
         let tab = Tab(link: Link(title: nil, url: URL(string: "https://example.com")!))
 
-        XCTAssertNil(sut.gridItem(for: tab, liveVoiceActive: false))
+        XCTAssertEqual(sut.gridItem(for: tab, liveVoiceActive: false), .empty(title: nil, chip: nil))
     }
 
     func testWhenTabIsAIChatWithChatIDThenReturnsTextItem() throws {

@@ -72,6 +72,7 @@ public extension PixelKit {
         public static let vpnBreakageCategory = "breakageCategory"
         public static let vpnBreakageDescription = "breakageDescription"
         public static let vpnBreakageMetadata = "breakageMetadata"
+        public static let vpnStartCancellationStep = "step"
 
         public static let reason = "reason"
 

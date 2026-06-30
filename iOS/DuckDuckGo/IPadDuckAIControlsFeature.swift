@@ -1,5 +1,5 @@
 //
-//  AIChatIPadTabFeature.swift
+//  IPadDuckAIControlsFeature.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -20,20 +20,20 @@
 import Foundation
 import PrivacyConfig
 import Common
-import FoundationExtensions
+import Core
 
-/// Provides access to Duck AI iPad tab mode availability.
-protocol AIChatIPadTabFeatureProviding {
-    /// Whether Duck AI should display in a tab on iPad.
+/// Provides access to the iPad Duck.ai bar controls (the address-bar model picker).
+protocol IPadDuckAIControlsFeatureProviding {
+    /// Whether the iPad Duck.ai bar controls are available.
     ///
     /// Returns `true` only when both conditions are met:
-    /// - The `iPadDuckaiOnTab` feature flag is enabled
+    /// - The `iPadDuckAIBarControls` feature flag is enabled
     /// - The device is NOT an iPhone (i.e. iPad or other large-screen devices)
     var isAvailable: Bool { get }
 }
 
-/// Determines availability of Duck AI's iPad tab mode feature.
-struct AIChatIPadTabFeature: AIChatIPadTabFeatureProviding {
+/// Determines availability of the iPad Duck.ai bar controls feature.
+struct IPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding {
 
     private let featureFlagger: any FeatureFlagger
     private let devicePlatform: DevicePlatformProviding.Type
@@ -45,6 +45,6 @@ struct AIChatIPadTabFeature: AIChatIPadTabFeatureProviding {
     }
 
     var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.iPadDuckaiOnTab) && !devicePlatform.isIphone
+        featureFlagger.isFeatureOn(.iPadDuckAIBarControls) && !devicePlatform.isIphone
     }
 }

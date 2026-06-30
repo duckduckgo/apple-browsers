@@ -45,7 +45,7 @@ struct AppStoreCustomProductPageEvaluator: AppStoreCustomProductPageEvaluating {
     }
 
     func evaluateCustomProductPage(from url: URL) -> AppStoreCustomProductPage? {
-        Logger.customProductPage.debug("Evaluating Custom Product Page url: \(url.absoluteString)")
+        Logger.customProductPage.debug("Evaluating Custom Product Page url: \(url.shortDescription)")
 
         guard
             url.scheme?.lowercased() == customProductPageScheme.lowercased(),

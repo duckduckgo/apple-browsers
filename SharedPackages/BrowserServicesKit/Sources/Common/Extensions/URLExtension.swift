@@ -36,6 +36,11 @@ extension URL {
             == string2.droppingHashedSuffix().dropping(suffix: "/").appending(string2.hashedSuffix ?? "")
     }
 
+    /// Returns `absoluteString` truncated to at most 1024 characters, with the middle replaced by `"…"` for longer strings.
+    public var shortDescription: String {
+        absoluteString.truncated(to: 1024)
+    }
+
     /// URL without the scheme and the '/' suffix of the path.
     /// Useful for finding duplicate URLs
     public var naked: URL? {

@@ -150,7 +150,8 @@ class FavoritesViewModel: ObservableObject {
         let favorite = allFavorites[fromIndex]
 
         favoriteDataSource.moveFavorite(favorite, fromIndex: fromIndex, toIndex: index)
-        allFavorites.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: index)
+        // Reload from the data source; it already republishes the reordered list, so don't re-apply the move.
+        updateData()
     }
 
     // MARK: -

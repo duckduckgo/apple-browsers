@@ -330,7 +330,7 @@ final class AIChatContextualSheetViewController: UIViewController {
             pixelHandler.fireSessionRestored()
         }
 
-        Logger.aiChat.debug("[SheetVC] Web VC created with URL: \(webVC.initialURL?.absoluteString ?? "nil")")
+        Logger.aiChat.debug("[SheetVC] Web VC created with URL: \(webVC.initialURL?.shortDescription ?? "nil")")
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -388,7 +388,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     @objc private func expandButtonTapped() {
         pixelHandler.fireExpandButtonTapped()
         let url = sessionState.contextualChatURL ?? aiChatSettings.aiChatURL
-        Logger.aiChat.debug("[AIChatContextual] Expand tapped with URL: \(url.absoluteString)")
+        Logger.aiChat.debug("[AIChatContextual] Expand tapped with URL: \(url.shortDescription)")
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
     }
 
@@ -839,7 +839,7 @@ extension AIChatContextualSheetViewController: AIChatContextualWebViewController
     }
 
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?) {
-        Logger.aiChat.debug("[AIChatContextual] Received contextual chat URL update: \(String(describing: url?.absoluteString))")
+        Logger.aiChat.debug("[AIChatContextual] Received contextual chat URL update: \(url?.shortDescription ?? "nil")")
         delegate?.aiChatContextualSheetViewController(self, didUpdateContextualChatURL: url)
     }
 

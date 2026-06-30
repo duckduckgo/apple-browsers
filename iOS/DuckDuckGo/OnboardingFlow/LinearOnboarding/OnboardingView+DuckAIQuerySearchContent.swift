@@ -1,5 +1,5 @@
 //
-//  OnboardingView+DuckAIExperimentSearchContent.swift
+//  OnboardingView+DuckAIQuerySearchContent.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -73,7 +73,7 @@ extension OnboardingView {
         static let queryFieldActionOffsetY: CGFloat = 0
     }
 
-    struct DuckAIExperimentSearchContent: View {
+    struct DuckAIQuerySearchContent: View {
         // MARK: Types
         enum VisualStyle {
             case legacy
@@ -92,7 +92,7 @@ extension OnboardingView {
         private let visualStyle: VisualStyle
         private var animateTitle: Binding<Bool>
         @StateObject private var pickerViewModel: ImageSegmentedPickerViewModel
-        private let suggestionsViewModel = OnboardingDuckAIExperimentSuggestionsViewModel()
+        private let suggestionsViewModel = OnboardingDuckAISuggestionsViewModel()
 
         // MARK: State
         @State private var query = ""
@@ -699,7 +699,7 @@ private struct OnboardingQueryField: UIViewRepresentable {
 
 // MARK: - Suggestion View Model
 
-struct OnboardingDuckAIExperimentSuggestionsViewModel {
+struct OnboardingDuckAISuggestionsViewModel {
     private let searchSuggestionsProvider: OnboardingSuggestionsItemsProviding
     private let duckAISuggestionsProvider: OnboardingSuggestionsItemsProviding
 
@@ -729,10 +729,10 @@ private struct OnboardingSuggestionChips: View {
     @Environment(\.onboardingTheme.contextualOnboardingMetrics) private var contextualOnboardingMetrics
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    let viewModel: OnboardingDuckAIExperimentSuggestionsViewModel
+    let viewModel: OnboardingDuckAISuggestionsViewModel
     let isDuckAIMode: Bool
     let visibleCount: Int
-    let visualStyle: OnboardingView.DuckAIExperimentSearchContent.VisualStyle
+    let visualStyle: OnboardingView.DuckAIQuerySearchContent.VisualStyle
     let onItemTap: (ContextualOnboardingListItem, DuckAIQueryPromptSource) -> Void
 
     // MARK: Computed Properties

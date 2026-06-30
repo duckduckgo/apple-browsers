@@ -35,6 +35,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Onboarding rebranding feature flag
     case onboardingRebranding
 
+    /// Option to install Chrome extension during onboarding (DMG only)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216010708822357
+    case onboardingChromeExtension
+
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715698981
     case unknownUsernameCategorization
 
@@ -113,6 +117,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1206873150423133/task/1213344522599586
     case dbpWebViewUserAgent
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
+    case dbpOptOutRetryError96Hours
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
@@ -139,9 +146,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212016242789291
     case aiChatOmnibarToggle
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212227266479719
-    case aiChatOmnibarCluster
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
@@ -280,6 +284,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534812?focus=true
     case heuristicAction
 
+    /// Cookie Pop-up Preference picker in settings
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215960699028461?focus=true
+    case cookiePopupPreferenceSetting
+
     /// Enables advanced card ordering for the Next Steps List widget
     /// This flag is disabled by default to allow testing the new widget design with current ordering logic
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
@@ -341,6 +349,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213279513677422
     case aiChatSidebarFloating
 
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1213651763438251
+    case sidebarSuggestedPrompts
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213610208091978?focus=true
     case aiChatChromeSidebar
 
@@ -358,10 +369,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
-
-    /// Enables the new Tab Animations (Milestone 1)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213643457004332
-    case tabAnimations
 
     /// Defers menu population to NSMenuDelegate.menuNeedsUpdate(_:) to avoid expensive eager rebuilds
     case lazyMenuRebuild
@@ -478,6 +485,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(ContextualOnboardingSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .onboardingRebranding:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingRebranding))
+        case .onboardingChromeExtension:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension))
         case .unknownUsernameCategorization:
             Config(source: .remoteReleasable(AutofillSubfeature.unknownUsernameCategorization), supportsLocalOverriding: false)
         case .credentialsImportPromotionForExistingUsers:
@@ -526,6 +535,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.emailConfirmationDecoupling), category: .dbp)
         case .dbpWebViewUserAgent:
             Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true, category: .dbp)
+        case .dbpOptOutRetryError96Hours:
+            Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours), category: .dbp)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased), category: .sync)
         case .allowSingleDeviceOnConnectScreen:
@@ -544,8 +555,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.keepSession), category: .duckAI)
         case .aiChatOmnibarToggle:
             Config(source: .remoteReleasable(AIChatSubfeature.omnibarToggle), category: .duckAI)
-        case .aiChatOmnibarCluster:
-            Config(source: .remoteReleasable(AIChatSubfeature.omnibarCluster), category: .duckAI)
         case .aiChatSuggestions:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled), category: .duckAI)
         case .aiChatOmnibarTools:
@@ -626,6 +635,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
+        case .cookiePopupPreferenceSetting:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupPreferenceSetting), category: .popupBlocking)
         case .nextStepsListAdvancedCardOrdering:
             Config(source: .disabled)
         case .crashCollectionLimitCallStackTreeDepth:
@@ -664,6 +675,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.ntpAttachMoreTabs), category: .duckAI)
         case .aiChatSidebarFloating:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.sidebarFloating), category: .duckAI)
+        case .sidebarSuggestedPrompts:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.sidebarSuggestedPrompts), category: .duckAI)
         case .aiChatChromeSidebar:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebar), category: .duckAI)
         case .webViewLookUpAction:
@@ -672,8 +685,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
-        case .tabAnimations:
-            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.tabAnimations))
         case .lazyMenuRebuild:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.lazyMenuRebuild))
         case .aiChatRemoveSuggestion:

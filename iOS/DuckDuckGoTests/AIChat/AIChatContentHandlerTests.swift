@@ -36,6 +36,7 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockProductSurfaceTelemetry: MockProductSurfaceTelemetry!
     var mockFreeTrialConversionService: MockFreeTrialConversionInstrumentationService!
     var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
+    var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
 
     override func setUpWithError() throws {
         mockSettings = MockAIChatSettingsProvider()
@@ -44,6 +45,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         mockProductSurfaceTelemetry = MockProductSurfaceTelemetry()
         mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
+        mockIPadDuckAIControlsFeature = MockIPadDuckAIControlsFeatureProvider()
 
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
@@ -53,7 +55,8 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
-            unifiedToggleInputFeature: mockUnifiedToggleInputFeature
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature
         )
     }
 
@@ -283,6 +286,34 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         let nativeInputItem = components.queryItems?.first { $0.name == AIChatURLParameters.nativeInputName }
         XCTAssertEqual(nativeInputItem?.value, AIChatURLParameters.nativeInputValue)
+    }
+
+    func testWhenIPadDuckAIControlsAvailableThenBuildQueryURLAddsNativeInputParameter() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = true
+
+        let url = handler.buildQueryURL(query: "test", autoSend: false, flowType: .default, tools: nil)
+
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            XCTFail("Invalid URL components")
+            return
+        }
+
+        let nativeInputItem = components.queryItems?.first { $0.name == AIChatURLParameters.nativeInputName }
+        XCTAssertEqual(nativeInputItem?.value, AIChatURLParameters.nativeInputValue)
+    }
+
+    func testWhenNoNativeInputSourceAvailableThenBuildQueryURLOmitsNativeInputParameter() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+
+        let url = handler.buildQueryURL(query: "test", autoSend: false, flowType: .default, tools: nil)
+
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let nativeInputItem = components?.queryItems?.first { $0.name == AIChatURLParameters.nativeInputName }
+        XCTAssertNil(nativeInputItem)
     }
 
     func testBuildQueryURLWithNativeInputAvailableAndNilQueryAddsNativeInputParameter() throws {
@@ -690,6 +721,14 @@ final class MockUnifiedToggleInputFeatureProvider: UnifiedToggleInputFeatureProv
     init(isAvailable: Bool = false, isToggleHiddenOnDuckAITab: Bool = false) {
         self.isAvailable = isAvailable
         self.isToggleHiddenOnDuckAITab = isToggleHiddenOnDuckAITab
+    }
+}
+
+final class MockIPadDuckAIControlsFeatureProvider: IPadDuckAIControlsFeatureProviding {
+    var isAvailable: Bool
+
+    init(isAvailable: Bool = false) {
+        self.isAvailable = isAvailable
     }
 }
 

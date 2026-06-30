@@ -71555,6 +71555,66 @@
         }
       }
     },
+    "permission.authorization.microphone.duckai-dictation" : {
+      "comment" : "Prompt shown in the OS-microphone-disabled popover when the user starts dictation on Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für die Diktierfunktion von Duck.ai ist ein Mikrofonzugriff erforderlich."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai dictation requires microphone access."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El dictado de Duck.ai requiere acceso al micrófono."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La dictée Duck.ai nécessite un accès au micro."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La dettatura di Duck.ai richiede l'accesso al microfono."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voor dicteren via Duck.ai is toegang tot de microfoon vereist."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dyktowanie w Duck.ai wymaga dostępu do mikrofonu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O ditado Duck.ai requer acesso ao microfone."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для диктовки Duck.ai требуется доступ к микрофону."
+          }
+        }
+      }
+    },
     "permission.authorization.microphone.duckai-voice-chat" : {
       "comment" : "Prompt shown in the OS-microphone-disabled popover when the user starts voice chat on Duck.ai",
       "extractionState" : "extracted_with_value",

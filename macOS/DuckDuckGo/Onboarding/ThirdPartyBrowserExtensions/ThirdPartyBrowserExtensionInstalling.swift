@@ -1,5 +1,5 @@
 //
-//  NavigationBarStyleProviding.swift
+//  ThirdPartyBrowserExtensionInstalling.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,19 +16,13 @@
 //  limitations under the License.
 //
 
-import AppKit
+protocol ThirdPartyBrowserExtensionInstalling {
+    /// Whether the DuckDuckGo extension can be installed in a third-party browser.
+    ///
+    var canInstallDDGExtension: Bool { get }
 
-protocol NavigationBarStyleProviding {
-    var topCornerRadius: CGFloat? { get }
-}
-
-final class RefreshNavigationBarStyleProviding: NavigationBarStyleProviding {
-    let topCornerRadius: CGFloat? = 12
-}
-
-struct NavigationBarStyleProvidingFactory {
-
-    static func buildStyleProvider() -> NavigationBarStyleProviding {
-        RefreshNavigationBarStyleProviding()
-    }
+    /// Installs the DuckDuckGo extension in a third-party browser.
+    ///
+    @discardableResult
+    func installDDGExtension() -> Bool
 }

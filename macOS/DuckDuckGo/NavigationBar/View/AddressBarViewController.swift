@@ -769,11 +769,11 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func setupAddressBarCornerRadius() {
-        activeBackgroundView.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
-        inactiveBackgroundView.setCornerRadius(theme.addressBarStyleProvider.addressBarInactiveBackgroundViewRadius)
-        innerBorderView.setCornerRadius(theme.addressBarStyleProvider.addressBarInnerBorderViewRadius)
-        activeOuterBorderView.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveOuterBorderViewRadius)
-        activeBackgroundViewWithSuggestions.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
+        activeBackgroundView.cornerRadius = theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius
+        activeBackgroundViewWithSuggestions.cornerRadius = theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius
+        activeOuterBorderView.cornerRadius = theme.addressBarStyleProvider.addressBarActiveOuterBorderViewRadius
+        inactiveBackgroundView.cornerRadius = theme.addressBarStyleProvider.addressBarInactiveBackgroundViewRadius
+        innerBorderView.cornerRadius = theme.addressBarStyleProvider.addressBarInnerBorderViewRadius
     }
 
     private func setupInactiveShadowView() {

@@ -276,11 +276,12 @@ final class AIChatContextualChatSessionState {
 
     /// Downgrades an attached chip to placeholder state.
     func downgradeToPlaceholder() {
-        guard case .attached = chipState else { return }
+        guard case .attached(let context) = chipState else { return }
         chipState = .placeholder
         userDowngradedToPlaceholder = true
         pixelHandler.firePageContextRemovedNative()
         rebuildViewState()
+        pushDetachedContextToSuggestionsSurfaceIfNeeded(context)
         Logger.aiChat.debug("[SessionState] Chip downgraded to placeholder via coordinator")
     }
 
@@ -463,6 +464,13 @@ private extension AIChatContextualChatSessionState {
 
     func shouldAllowAutomaticUpgrade() -> Bool {
         return !userDowngradedToPlaceholder
+    }
+
+    func pushDetachedContextToSuggestionsSurfaceIfNeeded(_ context: AIChatPageContext) {
+        guard frontendState == .noChat, showsSuggestionsStartSurface else { return }
+        let payload = signalsOnlyPayload(from: context.contextData)
+        emit(.pushContextToFrontend(nil))
+        emit(.pushContextToFrontend(payload))
     }
 
     /// Strips page content, keeping metadata + page-type signals so the FE renders page-tailored suggestions without attaching content.

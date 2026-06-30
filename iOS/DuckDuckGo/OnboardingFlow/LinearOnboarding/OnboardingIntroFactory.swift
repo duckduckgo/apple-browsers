@@ -55,7 +55,7 @@ enum OnboardingIntroFactory {
         delegate: OnboardingDelegate
     ) -> UIViewController {
         let controller = OnboardingIntroViewController(
-                rootView: RebrandedOnboardingView(model: viewModel),
+                rootView: OnboardingView(model: viewModel),
                 viewModel: viewModel
             )
         controller.delegate = delegate

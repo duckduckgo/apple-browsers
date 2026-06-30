@@ -614,8 +614,8 @@ class MainViewController: UIViewController {
 
     private var expandedOmniBarDismissTapGesture: UITapGestureRecognizer?
 
-    lazy var newTabDaxDialogFactory: RebrandedNewTabDaxDialogFactory = {
-        RebrandedNewTabDaxDialogFactory(
+    lazy var newTabDaxDialogFactory: NewTabDaxDialogFactory = {
+        NewTabDaxDialogFactory(
             delegate: self,
             daxDialogsFlowCoordinator: daxDialogsManager,
             onboardingPixelReporter: contextualOnboardingPixelReporter
@@ -1828,7 +1828,7 @@ class MainViewController: UIViewController {
             tabManager.save()
         }
 
-        let newTabDaxDialogFactory = RebrandedNewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
         let controller = NewTabPageViewController(isFocussedState: false,

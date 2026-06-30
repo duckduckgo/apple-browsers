@@ -25,7 +25,7 @@ import Onboarding
 
 class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
-    var factory: RebrandedNewTabDaxDialogFactory!
+    var factory: NewTabDaxDialogFactory!
     var mockDelegate: CapturingOnboardingNavigationDelegate!
     var contextualOnboardingLogicMock: ContextualOnboardingLogicMock!
     var pixelReporterMock: OnboardingPixelReporterMock!
@@ -38,7 +38,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
         onDismissCalled = false
         pixelReporterMock = OnboardingPixelReporterMock()
-        factory = RebrandedNewTabDaxDialogFactory(
+        factory = NewTabDaxDialogFactory(
             delegate: mockDelegate,
             daxDialogsFlowCoordinator: contextualOnboardingLogicMock,
             onboardingPixelReporter: pixelReporterMock

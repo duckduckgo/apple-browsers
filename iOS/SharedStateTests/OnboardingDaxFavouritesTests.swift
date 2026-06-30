@@ -96,7 +96,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(normalStore: keyValueStore, fireStore: MockKeyValueFileStore(), legacyStore: MockKeyValueStore())
         let variantManager = MockVariantManager()
-        let daxDialogsFactory = RebrandedContextualDaxDialogFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
+        let daxDialogsFactory = ContextualDaxDialogFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
                                                                       contextualOnboardingPixelReporter: onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let mockConfigManager = MockPrivacyConfigurationManager()

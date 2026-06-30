@@ -27,7 +27,7 @@ final class ContextualOnboardingPresenterTests: XCTestCase {
 
     override func setUpWithError() throws {
         throw XCTSkip("Tests involving controllers. Sometimes they fail on CI. Disabling them for now")
-        contextualDaxDialogsFactory = RebrandedContextualDaxDialogFactory(contextualOnboardingLogic: ContextualOnboardingLogicMock(), contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
+        contextualDaxDialogsFactory = ContextualDaxDialogFactory(contextualOnboardingLogic: ContextualOnboardingLogicMock(), contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
         try super.setUpWithError()
     }
 

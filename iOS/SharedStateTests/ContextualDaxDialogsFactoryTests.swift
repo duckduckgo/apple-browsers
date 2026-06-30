@@ -39,7 +39,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         pixelReporterMock = OnboardingPixelReporterMock()
         onboardingManagerMock = OnboardingManagerMock()
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-        sut = RebrandedContextualDaxDialogFactory(
+        sut = ContextualDaxDialogFactory(
             contextualOnboardingLogic: contextualOnboardingLogicMock,
             contextualOnboardingSettings: settingsMock,
             contextualOnboardingPixelReporter: pixelReporterMock,
@@ -294,7 +294,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             // GIVEN
             settingsMock.userHasSeenFireDialog = false
             pixelReporterMock = OnboardingPixelReporterMock()
-            sut = RebrandedContextualDaxDialogFactory(
+            sut = ContextualDaxDialogFactory(
                 contextualOnboardingLogic: ContextualOnboardingLogicMock(),
                 contextualOnboardingSettings: settingsMock,
                 contextualOnboardingPixelReporter: pixelReporterMock
@@ -430,7 +430,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             pixelReporterMock = OnboardingPixelReporterMock()
             delegate = ContextualOnboardingDelegateMock()
             contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-            sut = RebrandedContextualDaxDialogFactory(
+            sut = ContextualDaxDialogFactory(
                 contextualOnboardingLogic: contextualOnboardingLogicMock,
                 contextualOnboardingSettings: settingsMock,
                 contextualOnboardingPixelReporter: pixelReporterMock
@@ -458,7 +458,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             pixelReporterMock = OnboardingPixelReporterMock()
             delegate = ContextualOnboardingDelegateMock()
             contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-            sut = RebrandedContextualDaxDialogFactory(
+            sut = ContextualDaxDialogFactory(
                 contextualOnboardingLogic: contextualOnboardingLogicMock,
                 contextualOnboardingSettings: settingsMock,
                 contextualOnboardingPixelReporter: pixelReporterMock

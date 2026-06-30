@@ -65,6 +65,9 @@ enum PageContextRequestReason: String {
     }
 }
 
+/// Provides page context for a `getAIChatPageContext` request.
+typealias PageContextAsyncProvider = @MainActor (PageContextRequestReason) async -> AIChatPageContextData?
+
 /// Response structure for getAIChatPageContext
 struct PageContextResponse: Encodable {
     let pageContext: AIChatPageContextData?
@@ -148,12 +151,12 @@ protocol AIChatUserScriptHandling: AnyObject {
     var displayMode: AIChatDisplayMode? { get set }
     var isFireModeProvider: (() -> Bool)? { get set }
     var focusChatInputHandler: (@MainActor () -> Void)? { get set }
-    func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
+    func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
-    func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
+    func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -228,7 +231,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     /// Closure that provides page context on getAIChatPageContext requests.
     /// Parameter is the request reason (e.g., `.userAction` for manual attach).
-    private var pageContextProvider: ((PageContextRequestReason) -> AIChatPageContextData?)?
+    private var pageContextProvider: PageContextAsyncProvider?
 
     init(experimentalAIChatManager: ExperimentalAIChatManager,
          syncHandler: AIChatSyncHandling,
@@ -456,15 +459,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         AIChatNativeHandoffData.defaultValuesWithPayload(payloadHandler?.consumeData() as? AIChatPayload)
     }
 
-    func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable? {
+    func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable? {
         let request: GetPageContextRequest? = DecodableHelper.decode(from: params)
         let reason = PageContextRequestReason(rawValue: request?.reason)
-        let pageContext = pageContextProvider?(reason)
-        if let context = pageContext {
-            Logger.aiChat.debug("[PageContext] Frontend requested context (reason: \(request?.reason ?? "none")) - returning \(context.content.count) chars")
-        } else {
-            Logger.aiChat.debug("[PageContext] Frontend requested context (reason: \(request?.reason ?? "none")) - returning nil")
-        }
+        let pageContext = await pageContextProvider?(reason)
         return PageContextResponse(pageContext: pageContext)
     }
 
@@ -484,7 +482,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.metricReportingHandler = metricHandler
     }
 
-    func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?) {
+    func setPageContextProvider(_ provider: PageContextAsyncProvider?) {
         self.pageContextProvider = provider
     }
 

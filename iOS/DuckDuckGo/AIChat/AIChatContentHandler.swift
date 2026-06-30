@@ -35,7 +35,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     var canDispatchBridgeMessages: Bool { get }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
-    func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
+    func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
@@ -100,7 +100,7 @@ protocol AIChatContentHandling: AnyObject {
 
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
-    func submitStartChatAction()
+    func submitStartChatAction() async
 
     /// Submits an open settings action to open the AI Chat settings.
     func submitOpenSettingsAction()
@@ -150,7 +150,7 @@ final class AIChatContentHandler: AIChatContentHandling {
 
     /// Closure to get page context for contextual mode. Nil in full mode.
     /// Parameter is the request reason (e.g., `.userAction` for manual attach).
-    private let getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?
+    private let getPageContext: PageContextAsyncProvider?
 
     weak var delegate: AIChatContentHandlingDelegate?
 
@@ -164,7 +164,7 @@ final class AIChatContentHandler: AIChatContentHandling {
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
-         getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)? = nil) {
+         getPageContext: PageContextAsyncProvider? = nil) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
@@ -264,8 +264,8 @@ final class AIChatContentHandler: AIChatContentHandling {
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     /// Only pushes page context if auto-attach is enabled; manual attach goes through explicit pushPageContext calls.
-    func submitStartChatAction() {
-        if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = getPageContext?(.other) {
+    func submitStartChatAction() async {
+        if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = await getPageContext?(.other) {
             userScript?.submitPageContext(context)
         }
         userScript?.submitStartChatAction()

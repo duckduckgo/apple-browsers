@@ -21,6 +21,7 @@ import AIChat
 import BrowserServicesKit
 import Combine
 import Common
+import ConcurrencyExtensions
 import FoundationExtensions
 import Core
 import os.log
@@ -82,6 +83,7 @@ final class AIChatContextualSheetCoordinator {
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
+    private let contextualContextCollectionTimeout: TimeInterval = 5
 
     /// Handler for page context - single source of truth.
     let pageContextHandler: AIChatPageContextHandling
@@ -321,6 +323,35 @@ private extension AIChatContextualSheetCoordinator {
         sessionState.updateContext(context)
     }
 
+    func collectFreshContextAndWait(timeout: TimeInterval) async -> AIChatPageContextData? {
+        let firstResult = AsyncStream<AIChatPageContextData?> { continuation in
+            var cancellable: AnyCancellable?
+            cancellable = pageContextHandler.contextPublisher
+                .dropFirst()
+                .first()
+                .sink { context in
+                    continuation.yield(context?.contextData)
+                    continuation.finish()
+                }
+            continuation.onTermination = { _ in cancellable?.cancel() }
+
+            if !pageContextHandler.triggerContextCollection() {
+                sessionState.cancelManualAttach()
+                continuation.yield(nil)
+                continuation.finish()
+            }
+        }
+
+        // Await with `timeout` so this FE bridge call never hangs if the JS collection never responds
+        // (web view torn down, navigation mid-request, JS error). On timeout the push still delivers.
+        return try? await withTimeout(timeout) {
+            for await result in firstResult {
+                return result
+            }
+            return nil
+        }
+    }
+
     /// Factory method for creating web view controllers, avoids prop drilling through the Sheet VC.
     func makeWebViewController() -> AIChatContextualWebViewController {
         let downloadsDirectoryHandler = DownloadsDirectoryHandler()
@@ -345,11 +376,14 @@ private extension AIChatContextualSheetCoordinator {
                     return cached
                 }
                 self.sessionState.beginManualAttach(fromFrontend: true)
-                let didTrigger = self.pageContextHandler.triggerContextCollection()
-                if !didTrigger {
-                    self.sessionState.cancelManualAttach()
+
+                guard self.featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else {
+                    if !self.pageContextHandler.triggerContextCollection() {
+                        self.sessionState.cancelManualAttach()
+                    }
+                    return nil
                 }
-                return nil
+                return await self.collectFreshContextAndWait(timeout: contextualContextCollectionTimeout)
             },
             pixelHandler: pixelHandler,
             utiHostInstaller: { [weak self] contextualChatViewController in

@@ -17,8 +17,12 @@
 //
 
 protocol ThirdPartyBrowserExtensionInstalling {
+    /// Whether the DuckDuckGo extension can be installed in a third-party browser.
+    ///
     var canInstallDDGExtension: Bool { get }
 
+    /// Installs the DuckDuckGo extension in a third-party browser.
+    ///
     @discardableResult
     func installDDGExtension() -> Bool
 }

@@ -90,16 +90,18 @@ final class ChromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling {
     ///
     /// On filesystem errors during detection, the implementation logs, fires a debug pixel, and returns `false`.
     var canInstallDDGExtension: Bool {
+        let channelRoots = installedChannelRoots
+
         guard featureFlagger.isFeatureOn(.onboardingChromeExtension),
               buildType.isSparkleBuild,
               isChromeInstalled(),
-              !installedChannelRoots.isEmpty else {
+              !channelRoots.isEmpty else {
             return false
         }
 
         do {
             return try DDGChromeExtension.allCases.allSatisfy { chromeExtension in
-                try isInstalled(extensionID: chromeExtension.extensionID) == false
+                try isInstalled(extensionID: chromeExtension.extensionID, in: channelRoots) == false
             }
         } catch {
             Logger.general.error("Failed to detect third-party browser extension install state: \(String(describing: error), privacy: .public)")
@@ -120,16 +122,16 @@ final class ChromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling {
         let extensionID = DDGChromeExtension.search.extensionID
         var writeSucceededForAllChannels = true
         for channelRoot in installedChannelRoots {
-            let externalExtensionsDirectory = channelRoot.appendingPathComponent(Constants.externalExtensionsPath, isDirectory: true)
-            let externalExtensionFile = externalExtensionsDirectory.appendingPathComponent("\(extensionID).json", isDirectory: false)
+            let directory = externalExtensionsDirectoryURL(channelRoot: channelRoot)
+            let file = externalExtensionFileURL(channelRoot: channelRoot, extensionID: extensionID)
             let fileContents = #"{"external_update_url":"\#(Constants.externalExtensionUpdateURL)"}"#
 
             do {
                 guard let fileData = fileContents.data(using: .utf8) else {
                     throw CocoaError(.fileWriteUnknown)
                 }
-                try fileManager.createDirectory(at: externalExtensionsDirectory, withIntermediateDirectories: true)
-                try fileData.write(to: externalExtensionFile, options: [.atomic])
+                try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+                try fileData.write(to: file, options: [.atomic])
             } catch {
                 writeSucceededForAllChannels = false
                 Logger.general.error("Failed to write third-party browser extension install file: \(String(describing: error), privacy: .public)")
@@ -140,14 +142,11 @@ final class ChromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling {
         return writeSucceededForAllChannels
     }
 
-    private func isInstalled(extensionID: String) throws -> Bool {
+    private func isInstalled(extensionID: String, in channelRoots: [URL]) throws -> Bool {
         // Check if the extension is installed in any channel's external staging directory.
-        for channelRoot in installedChannelRoots {
-            let externalExtensionFile = channelRoot
-                .appendingPathComponent(Constants.externalExtensionsPath, isDirectory: true)
-                .appendingPathComponent("\(extensionID).json", isDirectory: false)
-
-            if fileManager.fileExists(atPath: externalExtensionFile.path) {
+        for channelRoot in channelRoots {
+            let file = externalExtensionFileURL(channelRoot: channelRoot, extensionID: extensionID)
+            if fileManager.fileExists(atPath: file.path) {
                 return true
             }
         }
@@ -172,5 +171,14 @@ final class ChromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling {
         }
 
         return false
+    }
+
+    private func externalExtensionsDirectoryURL(channelRoot: URL) -> URL {
+        channelRoot.appendingPathComponent(Constants.externalExtensionsPath, isDirectory: true)
+    }
+
+    private func externalExtensionFileURL(channelRoot: URL, extensionID: String) -> URL {
+        externalExtensionsDirectoryURL(channelRoot: channelRoot)
+            .appendingPathComponent("\(extensionID).json", isDirectory: false)
     }
 }

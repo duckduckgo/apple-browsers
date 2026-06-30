@@ -29,16 +29,20 @@ final class ChromeExtensionInstallerTests: XCTestCase {
 
     private var applicationSupportURL: URL!
 
-    override func setUp() {
-        super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         applicationSupportURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try? FileManager.default.removeItem(at: applicationSupportURL)
+        if FileManager.default.fileExists(atPath: applicationSupportURL.path) {
+            try FileManager.default.removeItem(at: applicationSupportURL)
+        }
     }
 
-    override func tearDown() {
-        try? FileManager.default.removeItem(at: applicationSupportURL)
+    override func tearDownWithError() throws {
+        if FileManager.default.fileExists(atPath: applicationSupportURL.path) {
+            try FileManager.default.removeItem(at: applicationSupportURL)
+        }
         applicationSupportURL = nil
-        super.tearDown()
+        try super.tearDownWithError()
     }
 
     func testWhenFeatureFlagIsOffThenCanInstallIsFalse() {

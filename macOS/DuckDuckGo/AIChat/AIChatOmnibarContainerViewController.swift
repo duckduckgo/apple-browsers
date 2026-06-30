@@ -1822,7 +1822,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func applyTheme(theme: ThemeStyleProviding) {
         let barStyleProvider = theme.addressBarStyleProvider
         let colorsProvider = theme.colorsProvider
-        let isAppRebranding = featureFlagger.isFeatureOn(.appRebranding)
+        let isAppRebranding = themeManager.isAppRebranded
 
         backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
         backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius

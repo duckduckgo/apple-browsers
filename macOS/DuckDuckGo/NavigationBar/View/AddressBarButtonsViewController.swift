@@ -1267,7 +1267,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButton.setCornerRadius(cornerRadius)
         youTubeAdBlockButton.setCornerRadius(cornerRadius)
 
-        if featureFlagger.isFeatureOn(.appRebranding) {
+        if themeManager.isAppRebranded {
             trailingButtonsBackground.setCornerRadius(cornerRadius)
         }
     }

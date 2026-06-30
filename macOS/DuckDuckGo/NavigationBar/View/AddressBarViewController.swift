@@ -173,7 +173,7 @@ final class AddressBarViewController: NSViewController {
 
     /// True when the nav bar should render at its tall / focused height
     var shouldUseTallAddressBarLayout: Bool {
-        guard featureFlagger.isFeatureOn(.appRebranding) else {
+        guard themeManager.isAppRebranded else {
             return selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
         }
 
@@ -891,7 +891,7 @@ final class AddressBarViewController: NSViewController {
         activeBackgroundViewWithSuggestions.isHidden = !isSuggestionsWindowVisible
         inactiveAddressBarShadowView.isHidden = isSuggestionsWindowVisible
 
-        if featureFlagger.isFeatureOn(.appRebranding) {
+        if themeManager.isAppRebranded {
             innerBorderView.roundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
         }
     }

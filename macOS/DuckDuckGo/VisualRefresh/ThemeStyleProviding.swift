@@ -79,20 +79,20 @@ struct ThemeStyle: ThemeStyleProviding {
     let tabBarButtonSize: CGFloat
     let addToolbarShadow: Bool
 
-    static func buildThemeStyle(themeName: ThemeName, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) -> ThemeStyle {
+    static func buildThemeStyle(themeName: ThemeName, featureFlagger: FeatureFlagger) -> ThemeStyle {
         let palette = ThemeColors(themeName: themeName)
-        return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
+        return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger)
     }
 
-    private static func buildThemeStyle(name: ThemeName, palette: ThemeColors, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) -> ThemeStyle {
+    private static func buildThemeStyle(name: ThemeName, palette: ThemeColors, featureFlagger: FeatureFlagger) -> ThemeStyle {
         ThemeStyle(
             name: name,
             palette: palette,
             toolbarButtonsCornerRadius: 9,
             fireWindowGraphic: .burnerWindowGraphicNew,
             addressBarStyleProvider: CurrentAddressBarStyleProvider(featureFlagger: featureFlagger),
-            navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(displaysTabsAnimations: displaysTabsAnimations),
-            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette, displaysTabsAnimations: displaysTabsAnimations),
+            navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(),
+            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette),
             colorsProvider: NewColorsProviding(palette: palette),
             iconsProvider: CurrentIconsProvider(),
             fireButtonSize: 32,

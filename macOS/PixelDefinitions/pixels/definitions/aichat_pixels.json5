@@ -96,6 +96,45 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_suggestion_selected": {
+        "description": "Fired when the user taps a sidebar page-suggestion chip (including ask-about-page, which only attaches the page and does not submit a prompt)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "suggestionId",
+                "description": "Catalog key of the selected suggestion (e.g. summarize-page, translate-page, ask-about-page). Bounded and PII-free.",
+                "type": "string"
+            },
+            {
+                "key": "pageType",
+                "description": "Coarse page-type bucket the frontend computes from page-type signals. Never a URL, domain or page content.",
+                "type": "string",
+                "enum": [
+                    "recipe",
+                    "product",
+                    "article",
+                    "video",
+                    "job",
+                    "book",
+                    "event",
+                    "place",
+                    "forum",
+                    "code",
+                    "course",
+                    "review",
+                    "person",
+                    "howto",
+                    "faq",
+                    "none"
+                ]
+            },
+            "channel"
+        ]
+    },
     "m_mac_aichat_sidebar_resized": {
         "description": "Fired when user finishes dragging the sidebar resize grip (after 500 ms debounce)",
         "owners": ["jaceklyp"],

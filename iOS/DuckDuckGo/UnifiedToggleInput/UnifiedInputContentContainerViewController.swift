@@ -285,9 +285,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         refreshVisibleContent(animateContentUpdates: false)
     }
 
+    private var sessionOpenedAfterIdle: Bool {
+        suggestionTrayDependencies?.tabsModelProvider().currentTab?.openedAfterIdle ?? false
+    }
+
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
+        unifiedSuggestionsHost?.updateOpenedAfterIdle(sessionOpenedAfterIdle)
         // The chrome (hatch + sync-promo) is pinned to the bar (see below), not rendered in the host.
         updatePinnedChrome()
         updateSingleHostTopOffset()
@@ -700,6 +705,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let ntpDeps = dependencies.newTabPageDependencies
         let controller = NewTabPageViewController(
             isFocussedState: true,
+            openedAfterIdle: sessionOpenedAfterIdle,
             dismissKeyboardOnScroll: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             tab: Tab(fireTab: dependencies.tabsModelProvider().shouldCreateFireTabs),
             interactionModel: ntpDeps.favoritesModel,
@@ -723,8 +729,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // standalone NTP (the embedded controller has no owner to set this otherwise).
         controller.delegate = self
         // The escape hatch and the empty-state logo are UTI chrome (bar-pinned hatch + the host's
-        // `FocusedDaxLogoView`), not the NTP's — suppress the NTP's own so we never get two.
-        controller.setEscapeHatch(nil)
+        // `FocusedDaxLogoView`), not the NTP's — leave the NTP's own hatch unset so we never get two.
         controller.setLogoHidden(true)
         return controller
     }

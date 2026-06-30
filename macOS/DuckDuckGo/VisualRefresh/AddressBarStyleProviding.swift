@@ -31,6 +31,7 @@ protocol AddressBarStyleProviding {
     func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat
+    func addressBarActiveBackgroundViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat
 
     // MARK: - Configuration
     var shouldShowNewSearchIcon: Bool { get }
@@ -45,6 +46,7 @@ protocol AddressBarStyleProviding {
 
     // MARK: - Metrics
     var addressBarActiveBackgroundViewRadius: CGFloat { get }
+    var addressBarActiveBackgroundViewRadiusWithSuggestions: CGFloat { get }
     var addressBarActiveOuterBorderViewRadius: CGFloat { get }
     var addressBarActiveOuterBorderSize: CGFloat { get }
     var addressBarButtonSize: CGFloat { get }
@@ -136,6 +138,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarButtonSize: CGFloat = 28
     let addTabButtonPadding: CGFloat = 32 // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
     let addressBarActiveBackgroundViewRadius: CGFloat = 15
+    let addressBarActiveBackgroundViewRadiusWithSuggestions: CGFloat = 15
     let addressBarInactiveBackgroundViewRadius: CGFloat = 12
     let addressBarInnerBorderViewRadius: CGFloat = 15
     let addressBarTextFieldLeadingPadding: CGFloat = 20
@@ -217,6 +220,10 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {
         return 32
     }
+
+    func addressBarActiveBackgroundViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat {
+        isSuggestionsWindowVisible ? addressBarActiveBackgroundViewRadiusWithSuggestions : addressBarActiveBackgroundViewRadius
+    }
 }
 
 final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
@@ -249,6 +256,7 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     // MARK: - Metrics
 
     let addressBarActiveBackgroundViewRadius: CGFloat = 19      // OK
+    let addressBarActiveBackgroundViewRadiusWithSuggestions: CGFloat = 24      // OK
     let addressBarActiveOuterBorderViewRadius: CGFloat = 0      // Deprecated
     let addressBarActiveOuterBorderSize: CGFloat = 0            // Deprecated
     let addressBarButtonSize: CGFloat = 28
@@ -344,5 +352,9 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
 
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {
         return 32
+    }
+
+    func addressBarActiveBackgroundViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat {
+        isSuggestionsWindowVisible ? addressBarActiveBackgroundViewRadiusWithSuggestions : addressBarActiveBackgroundViewRadius
     }
 }

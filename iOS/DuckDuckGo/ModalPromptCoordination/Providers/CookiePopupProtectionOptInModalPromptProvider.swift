@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Core
 import Persistence
 import SwiftUI
@@ -24,10 +25,11 @@ import UIKit
 import WebExtensions
 
 /// Persisted state for the Cookie Pop-up Protection opt-in dialog.
-/// ponytail: the modal prompt queue tracks no per-prompt history, so we keep our own one-shot flag + first-shown date.
+/// ponytail: the modal prompt queue tracks no per-prompt history, so we keep our own counters + first-shown date.
 struct CookiePopupProtectionOptInPromptStore {
-    private static let hasShownLaunchPromptKey = "com.duckduckgo.cookiePopupProtection.optIn.hasShownLaunchPrompt"
+    private static let shownCountKey = "com.duckduckgo.cookiePopupProtection.optIn.shownCount"
     private static let firstShownDateKey = "com.duckduckgo.cookiePopupProtection.optIn.firstShownDate"
+    private static let hasConfirmedKey = "com.duckduckgo.cookiePopupProtection.optIn.hasConfirmed"
 
     private let keyValueStore: ThrowingKeyValueStoring
 
@@ -35,9 +37,10 @@ struct CookiePopupProtectionOptInPromptStore {
         self.keyValueStore = keyValueStore
     }
 
-    var hasShownLaunchPrompt: Bool {
-        get { (try? keyValueStore.object(forKey: Self.hasShownLaunchPromptKey)) as? Bool ?? false }
-        nonmutating set { try? keyValueStore.set(newValue, forKey: Self.hasShownLaunchPromptKey) }
+    /// How many times the dialog has been shown on launch.
+    var shownCount: Int {
+        get { (try? keyValueStore.object(forKey: Self.shownCountKey)) as? Int ?? 0 }
+        nonmutating set { try? keyValueStore.set(newValue, forKey: Self.shownCountKey) }
     }
 
     /// The date the dialog was first shown on launch (set once).
@@ -49,6 +52,12 @@ struct CookiePopupProtectionOptInPromptStore {
         nonmutating set { try? keyValueStore.set(newValue?.timeIntervalSince1970, forKey: Self.firstShownDateKey) }
     }
 
+    /// Whether the user has confirmed the dialog (it should not be shown again afterwards).
+    var hasConfirmed: Bool {
+        get { (try? keyValueStore.object(forKey: Self.hasConfirmedKey)) as? Bool ?? false }
+        nonmutating set { try? keyValueStore.set(newValue, forKey: Self.hasConfirmedKey) }
+    }
+
     /// Bucketed time elapsed from the first-shown date to `now`, for telemetry.
     func bucketedTimeSinceFirstShown(now: Date = Date()) -> String? {
         guard let firstShownDate else { return nil }
@@ -57,8 +66,9 @@ struct CookiePopupProtectionOptInPromptStore {
 
     /// Clears all persisted opt-in dialog state (debug reset).
     func reset() {
-        try? keyValueStore.set(nil, forKey: Self.hasShownLaunchPromptKey)
+        try? keyValueStore.set(nil, forKey: Self.shownCountKey)
         try? keyValueStore.set(nil, forKey: Self.firstShownDateKey)
+        try? keyValueStore.set(nil, forKey: Self.hasConfirmedKey)
     }
 }
 
@@ -76,21 +86,31 @@ enum CookiePopupProtectionOptInTimeBucket {
 }
 
 /// Shows the Cookie Pop-up Protection opt-in dialog on app launch via the modal prompt queue.
-/// ponytail: always eligible until shown once — real conditions come later.
+/// Shown at most `maxShowCount` times, only ≥ `minDaysSinceInstall` days after install, and never after the user confirms.
 final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
 
-    private let store: CookiePopupProtectionOptInPromptStore
+    private enum Constants {
+        /// Maximum number of times the dialog may be shown.
+        static let maxShowCount = 3
+        /// The dialog is only shown once the install is at least this many days old.
+        static let minDaysSinceInstall = 2
+    }
 
-    init(store: CookiePopupProtectionOptInPromptStore) {
+    private let store: CookiePopupProtectionOptInPromptStore
+    private let statisticsStore: StatisticsStore
+
+    init(store: CookiePopupProtectionOptInPromptStore, statisticsStore: StatisticsStore = StatisticsUserDefaults()) {
         self.store = store
+        self.statisticsStore = statisticsStore
     }
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
-        guard !store.hasShownLaunchPrompt else { return nil }
+        guard isEligibleToShow else { return nil }
         // The feature state stays unchanged between presentation and confirmation, so capture it now.
         let autoconsentEnabledWhenShown = AppUserDefaults().autoconsentEnabled
         let store = store
         return ModalPromptConfiguration(viewController: Self.makeViewController(onOptionConfirmed: { preference in
+            store.hasConfirmed = true
             var parameters = [
                 PixelParameters.cookiePopupPreference: preference.rawValue,
                 PixelParameters.autoconsentEnabled: autoconsentEnabledWhenShown ? "true" : "false"
@@ -104,14 +124,21 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
 
     func didPresentModal() {
         let parameters = [PixelParameters.autoconsentEnabled: AppUserDefaults().autoconsentEnabled ? "true" : "false"]
-        // First launch presentation vs subsequent ones (the latter is dormant while the dialog shows once per install).
-        if store.hasShownLaunchPrompt {
-            Pixel.fire(pixel: .cookiePopupOptInShownRepeat, withAdditionalParameters: parameters)
-        } else {
+        if store.shownCount == 0 {
             store.firstShownDate = Date()
             Pixel.fire(pixel: .cookiePopupOptInShownFirst, withAdditionalParameters: parameters)
+        } else {
+            Pixel.fire(pixel: .cookiePopupOptInShownRepeat, withAdditionalParameters: parameters)
         }
-        store.hasShownLaunchPrompt = true
+        store.shownCount += 1
+    }
+
+    /// Shown at most `maxShowCount` times, only ≥ `minDaysSinceInstall` days after install, and never after the user confirms.
+    private var isEligibleToShow: Bool {
+        guard !store.hasConfirmed, store.shownCount < Constants.maxShowCount else { return false }
+        guard let installDate = statisticsStore.installDate else { return false }
+        let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: Date()).day ?? 0
+        return daysSinceInstall >= Constants.minDaysSinceInstall
     }
 
     /// Builds the opt-in dialog hosting controller, configured to dismiss itself on Confirm.

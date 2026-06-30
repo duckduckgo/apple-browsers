@@ -21,9 +21,10 @@ import Combine
 import PixelKit
 import WebExtensions
 
-/// Persisted first-shown date for the Cookie Pop-up Protection opt-in dialog (for telemetry + debug reset).
+/// Persisted state for the Cookie Pop-up Protection opt-in dialog (for telemetry + showing conditions + debug reset).
 struct CookiePopupProtectionOptInPromptStore {
     private static let firstShownDateKey = "cookie-popup-protection.opt-in.first-shown-date"
+    private static let shownCountKey = "cookie-popup-protection.opt-in.shown-count"
 
     private let userDefaults: UserDefaults
 
@@ -36,6 +37,12 @@ struct CookiePopupProtectionOptInPromptStore {
         nonmutating set { userDefaults.set(newValue, forKey: Self.firstShownDateKey) }
     }
 
+    /// How many times the dialog has been shown on launch.
+    var shownCount: Int {
+        get { userDefaults.integer(forKey: Self.shownCountKey) }
+        nonmutating set { userDefaults.set(newValue, forKey: Self.shownCountKey) }
+    }
+
     /// Bucketed time elapsed from the first-shown date to `now`, for telemetry.
     func bucketedTimeSinceFirstShown(now: Date = Date()) -> String? {
         guard let firstShownDate else { return nil }
@@ -45,6 +52,7 @@ struct CookiePopupProtectionOptInPromptStore {
     /// Clears all persisted opt-in dialog state (debug reset).
     func reset() {
         userDefaults.removeObject(forKey: Self.firstShownDateKey)
+        userDefaults.removeObject(forKey: Self.shownCountKey)
     }
 }
 
@@ -62,17 +70,38 @@ enum CookiePopupProtectionOptInTimeBucket {
 }
 
 /// Presents the Cookie Pop-up Protection opt-in dialog through the promo queue.
-/// ponytail: always eligible for now — real show conditions come later.
+/// Shown at most `maxShowCount` times, only ≥ `minDaysSinceInstall` days after install; confirming permanently
+/// dismisses the promo (via `.actioned`), so it isn't shown again afterwards.
 final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
 
-    private let isEligibleSubject = CurrentValueSubject<Bool, Never>(true)
+    /// Maximum number of times the dialog may be shown.
+    private static let maxShowCount = 3
+    /// The dialog is only shown once the install is at least this many days old.
+    private static let minDaysSinceInstall = 2
+
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
     private let store = CookiePopupProtectionOptInPromptStore()
+    private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
 
-    var isEligible: Bool { isEligibleSubject.value }
+    init() {
+        refreshEligibility()
+    }
+
+    var isEligible: Bool { computeEligibility() }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
         isEligibleSubject.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    func refreshEligibility() {
+        isEligibleSubject.send(computeEligibility())
+    }
+
+    private func computeEligibility() -> Bool {
+        guard store.shownCount < Self.maxShowCount else { return false }
+        guard let installDate = LocalStatisticsStore().installDate else { return false }
+        let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: Date()).day ?? 0
+        return daysSinceInstall >= Self.minDaysSinceInstall
     }
 
     @MainActor
@@ -85,13 +114,13 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
         // Feature state when shown — unchanged until the user confirms, so reuse it for the confirmation pixel too.
         let autoconsentEnabled = browserTabViewController.cookiePopupProtectionPreferences.isAutoconsentEnabled
 
-        // Skip telemetry for force-shows (promo debug menu). First launch presentation vs subsequent ones
-        // (the latter is dormant while the dialog shows once per install).
+        // Skip telemetry + counting for force-shows (promo debug menu).
         if !force {
-            let isFirstShow = store.firstShownDate == nil
+            let isFirstShow = store.shownCount == 0
             if isFirstShow {
                 store.firstShownDate = Date()
             }
+            store.shownCount += 1
             PixelKit.fire(isFirstShow ? CookiePopupProtectionOptInPixel.shownFirst(autoconsentEnabled: autoconsentEnabled)
                                       : .shownRepeat(autoconsentEnabled: autoconsentEnabled),
                           frequency: .standard)

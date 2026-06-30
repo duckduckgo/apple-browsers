@@ -112,7 +112,6 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         static let alreadyPaired = "already_paired"
         static let accountCreationFailed = "account_creation_failed"
         static let accountUpgradeFailed = "account_upgrade_failed"
-        static let protocolError = "protocol_error"
         static let invalidCredentials = "invalid_credentials"
         static let transportFailure = "transport_failure"
         static let sessionTimeout = "session_timeout"
@@ -122,6 +121,13 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         static let unrecognizedCode = "unrecognized_code"
         static let scanningCancelled = "scanning_cancelled"
         static let syncConfirmationDenied = "sync_confirmation_denied"
+        static let unexpectedSecondHello = "unexpected_second_hello"
+        static let unexpectedEvent = "unexpected_event"
+        static let pairingSessionNotReady = "pairing_session_not_ready"
+        static let relayChannelUnavailable = "relay_channel_unavailable"
+        static let recoveryCodePreparationFailed = "recovery_code_preparation_failed"
+        static let peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
+        static let unexpectedFailure = "unexpected_failure"
         static let host = "host"
         static let joiner = "joiner"
     }
@@ -344,9 +350,23 @@ extension SyncConnectionError {
         case .accountUpgradeFailed:
             return SyncSetupPixelKitEvent.ParameterValue.accountUpgradeFailed
         case .protocolError:
-            return SyncSetupPixelKitEvent.ParameterValue.protocolError
+            return SyncSetupPixelKitEvent.ParameterValue.unexpectedFailure
         case .syncCancelledFromOtherDevice:
             return nil
+        case .unexpectedSecondHello:
+            return SyncSetupPixelKitEvent.ParameterValue.unexpectedSecondHello
+        case .unexpectedEvent:
+            return SyncSetupPixelKitEvent.ParameterValue.unexpectedEvent
+        case .pairingSessionNotReady:
+            return SyncSetupPixelKitEvent.ParameterValue.pairingSessionNotReady
+        case .relayChannelUnavailable:
+            return SyncSetupPixelKitEvent.ParameterValue.relayChannelUnavailable
+        case .recoveryCodePreparationFailed:
+            return SyncSetupPixelKitEvent.ParameterValue.recoveryCodePreparationFailed
+        case .peerRecoveryCodeUnavailable:
+            return SyncSetupPixelKitEvent.ParameterValue.peerRecoveryCodeUnavailable
+        case .unexpectedFailure:
+            return SyncSetupPixelKitEvent.ParameterValue.unexpectedFailure
         }
     }
 }

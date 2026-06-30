@@ -228,7 +228,14 @@
                     "already_paired",
                     "account_creation_failed",
                     "account_upgrade_failed",
-                    "protocol_error"
+                    "protocol_error",
+                    "unexpected_second_hello",
+                    "unexpected_event",
+                    "pairing_session_not_ready",
+                    "relay_channel_unavailable",
+                    "recovery_code_preparation_failed",
+                    "peer_recovery_code_unavailable",
+                    "unexpected_failure"
                 ]
             }
         ]

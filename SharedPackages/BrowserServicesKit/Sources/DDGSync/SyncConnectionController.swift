@@ -67,6 +67,14 @@ public enum SyncConnectionError: Error {
     case protocolError
 
     case pollingForRecoveryKeyTimedOut
+
+    case unexpectedSecondHello
+    case unexpectedEvent
+    case pairingSessionNotReady
+    case relayChannelUnavailable
+    case recoveryCodePreparationFailed
+    case peerRecoveryCodeUnavailable
+    case unexpectedFailure
 }
 
 public protocol SyncConnectionControlling {
@@ -467,7 +475,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         } else if let cryptoError = error as? PairingV2MessageCryptoError {
             await delegate?.controllerDidError(pairingV2CryptoConnectionError(for: cryptoError), underlyingError: cryptoError, setupRole: setupRole)
         } else {
-            await delegate?.controllerDidError(.failedToFetchExchangeRecoveryKey, underlyingError: error, setupRole: setupRole)
+            await delegate?.controllerDidError(.unexpectedFailure, underlyingError: error, setupRole: setupRole)
         }
 
         await coordinator.cancel()
@@ -480,7 +488,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         case .accountAlreadyExists:
             await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
         default:
-            await delegate?.controllerDidError(.failedToFetchExchangeRecoveryKey, underlyingError: error, setupRole: setupRole)
+            await delegate?.controllerDidError(.unexpectedFailure, underlyingError: error, setupRole: setupRole)
         }
     }
 
@@ -733,7 +741,9 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func pairingV2ConnectionError(for error: PairingV2Error) -> SyncConnectionError {
         switch error {
-        case .recoveryCodePreparationFailed, .recoveryCodeSendFailed:
+        case .recoveryCodePreparationFailed:
+            return .recoveryCodePreparationFailed
+        case .recoveryCodeSendFailed:
             return .failedToTransmitExchangeRecoveryKey
         case .loginFailed:
             return .failedToLogIn
@@ -744,15 +754,19 @@ public class SyncConnectionController: SyncConnectionControlling {
         case .recoveryCodeDenied:
             return .syncCancelledFromOtherDevice
         case .recoveryCodeUnavailable:
-            return .failedToFetchExchangeRecoveryKey
+            return .peerRecoveryCodeUnavailable
         case .unsupportedVersion(let version):
             return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor)
         case .v2ScanningDisabled, .unknownCode, .unsupportedFlow:
             return .unableToRecognizeCode
-        case .secondHello, .unexpectedEvent, .pairingSessionNotReady:
-            return .protocolError
+        case .secondHello:
+            return .unexpectedSecondHello
+        case .unexpectedEvent:
+            return .unexpectedEvent
+        case .pairingSessionNotReady:
+            return .pairingSessionNotReady
         case .relayChannelUnavailable, .relayChannelExpired:
-            return .failedToFetchExchangeRecoveryKey
+            return .relayChannelUnavailable
         case .cancelled:
             return .syncCancelledFromOtherDevice
         }

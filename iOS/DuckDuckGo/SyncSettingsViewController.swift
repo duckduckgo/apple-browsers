@@ -763,7 +763,22 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         case .syncCancelledFromOtherDevice:
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
             await handleError(.syncCancelledFromOtherDevice, error: nil, event: nil)
-        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey, .accountUpgradeFailed, .protocolError:
+        case .failedToFetchPublicKey,
+                .failedToTransmitExchangeRecoveryKey,
+                .failedToFetchConnectRecoveryKey,
+                .failedToLogIn,
+                .failedToTransmitExchangeKey,
+                .failedToFetchExchangeRecoveryKey,
+                .failedToTransmitConnectRecoveryKey,
+                .accountUpgradeFailed,
+                .protocolError,
+                .unexpectedSecondHello,
+                .unexpectedEvent,
+                .pairingSessionNotReady,
+                .relayChannelUnavailable,
+                .recoveryCodePreparationFailed,
+                .peerRecoveryCodeUnavailable,
+                .unexpectedFailure:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
@@ -1006,7 +1021,13 @@ private enum SyncSetupPixelValue {
     static let alreadyPaired = "already_paired"
     static let accountCreationFailed = "account_creation_failed"
     static let accountUpgradeFailed = "account_upgrade_failed"
-    static let protocolError = "protocol_error"
+    static let unexpectedSecondHello = "unexpected_second_hello"
+    static let unexpectedEvent = "unexpected_event"
+    static let pairingSessionNotReady = "pairing_session_not_ready"
+    static let relayChannelUnavailable = "relay_channel_unavailable"
+    static let recoveryCodePreparationFailed = "recovery_code_preparation_failed"
+    static let peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
+    static let unexpectedFailure = "unexpected_failure"
     static let host = "host"
     static let joiner = "joiner"
 }
@@ -1093,9 +1114,23 @@ private extension SyncConnectionError {
         case .accountUpgradeFailed:
             return SyncSetupPixelValue.accountUpgradeFailed
         case .protocolError:
-            return SyncSetupPixelValue.protocolError
+            return SyncSetupPixelValue.unexpectedFailure
         case .syncCancelledFromOtherDevice:
             return nil
+        case .unexpectedSecondHello:
+            return SyncSetupPixelValue.unexpectedSecondHello
+        case .unexpectedEvent:
+            return SyncSetupPixelValue.unexpectedEvent
+        case .pairingSessionNotReady:
+            return SyncSetupPixelValue.pairingSessionNotReady
+        case .relayChannelUnavailable:
+            return SyncSetupPixelValue.relayChannelUnavailable
+        case .recoveryCodePreparationFailed:
+            return SyncSetupPixelValue.recoveryCodePreparationFailed
+        case .peerRecoveryCodeUnavailable:
+            return SyncSetupPixelValue.peerRecoveryCodeUnavailable
+        case .unexpectedFailure:
+            return SyncSetupPixelValue.unexpectedFailure
         }
     }
 }

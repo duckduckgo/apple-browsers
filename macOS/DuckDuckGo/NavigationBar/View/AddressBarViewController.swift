@@ -901,12 +901,12 @@ final class AddressBarViewController: NSViewController {
         let winFrame = self.view.convert(self.view.bounds, to: nil)
         var frame = superview.convert(winFrame, from: nil)
 
-        /// Extend shadow upward when AI Chat omnibar toggle is enabled to vertically align the toggle
-        if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            let offset = AddressBarTextField.SuggestionWindowSizes.aiChatToggleVerticalOffset
-            frame.origin.y += offset
-            frame.size.height -= offset
-        }
+        /// Keep the suggestions shadow aligned with the panel by applying the same vertical offset.
+        let offset = AddressBarTextField.SuggestionWindowSizes.verticalOffset(
+            isAppRebranded: themeManager.isAppRebranded,
+            aiChatOmnibarToggleEnabled: featureFlagger.isFeatureOn(.aiChatOmnibarToggle))
+        frame.origin.y += offset
+        frame.size.height -= offset
 
         shadowView.frame = frame
     }

@@ -104,8 +104,10 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable?
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
-    func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
+    @MainActor func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable?
+    func getAIChatSelectionContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
+    var selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
@@ -118,6 +120,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData)
 
     @MainActor func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -158,6 +161,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
+    public let selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
     public let pageContextConsumedPublisher: AnyPublisher<Void, Never>
     public let pageContextRemovedPublisher: AnyPublisher<Void, Never>
@@ -166,6 +170,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    private let selectionContextSubject = PassthroughSubject<AIChatSelectionContextData, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let pageContextConsumedSubject = PassthroughSubject<Void, Never>()
     private let pageContextRemovedSubject = PassthroughSubject<Void, Never>()
@@ -223,6 +228,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         )
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
+        self.selectionContextPublisher = selectionContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         self.pageContextConsumedPublisher = pageContextConsumedSubject.eraseToAnyPublisher()
         self.pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
@@ -275,18 +281,71 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         messageHandling.getDataForMessageType(.nativePrompt)
     }
 
-    func getAIChatPageContext(params: Any, message: any UserScriptMessage) -> Encodable? {
+    @MainActor
+    func getAIChatPageContext(params: Any, message: any UserScriptMessage) async -> Encodable? {
         guard let payload: GetPageContext = DecodableHelper.decode(from: params) else {
             return nil
         }
 
         let pageContext = messageHandling.getDataForMessageType(.pageContext) as? AIChatPageContextData
 
-        if pageContext == nil, payload.reason == "userAction" {
-            pageContextRequestedSubject.send()
+        // On an explicit user action (Ask-About-Page chip or tapping a suggestion), the user wants
+        // the page CONTENT attached. If we only have a signals-only payload (auto-attach off) or no
+        // context, trigger a fresh collection and await it so the content is returned directly in
+        // this response instead of arriving later via the submit push.
+        if payload.reason == "userAction" {
+            let hasAttachedContent = pageContext != nil
+                && pageContext?.attached != false
+                && !(pageContext?.content.isEmpty ?? true)
+            if !hasAttachedContent {
+                let collected = await requestPageContextAndWait()
+                return PageContextResponse(pageContext: collected)
+            }
         }
 
         return PageContextResponse(pageContext: pageContext)
+    }
+
+    /// Triggers a fresh page-context collection and awaits the collected result, so
+    /// `getAIChatPageContext` can return the content directly via request/response instead of
+    /// returning `nil` and relying on the later `submitAIChatPageContext` push. The pushed context
+    /// arrives back through `pageContextSubject`; we subscribe before firing the request so a fast
+    /// collection can't slip through, and race the result against `timeout`. The submit push still
+    /// fires (it serves auto-collect/navigation flows), so the FE may also receive it that way.
+    /// Mirrors `PageContextUserScript.collectAndWait`.
+    @MainActor
+    private func requestPageContextAndWait(timeout: TimeInterval = 5) async -> AIChatPageContextData? {
+        let collectedContext = AsyncStream<AIChatPageContextData?> { continuation in
+            var cancellable: AnyCancellable?
+            cancellable = pageContextSubject
+                .first()
+                .sink { result in
+                    continuation.yield(result)
+                    continuation.finish()
+                }
+            continuation.onTermination = { _ in cancellable?.cancel() }
+            pageContextRequestedSubject.send()
+        }
+
+        return await withTaskGroup(of: AIChatPageContextData?.self) { group in
+            group.addTask {
+                for await result in collectedContext { return result }
+                return nil
+            }
+            group.addTask {
+                try? await Task.sleep(interval: timeout)
+                return nil
+            }
+            let result = await group.next() ?? nil
+            group.cancelAll()
+            return result
+        }
+    }
+
+    func getAIChatSelectionContext(params: Any, message: any UserScriptMessage) -> Encodable? {
+        // Mirrors `getAIChatPageContext`: the FE pulls this on init to retrieve selections attached
+        // before it was ready to receive pushes. Returned non-destructively — the FE dedupes by `id`.
+        return SelectionContextResponse(selections: messageHandling.getSelectionContexts())
     }
 
     @MainActor
@@ -373,6 +432,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         pageContextSubject.send(pageContext)
+    }
+
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
+        selectionContextSubject.send(selection)
     }
 
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -895,6 +958,8 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
+            // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
+            messageHandling.clearSelectionContexts()
             pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation, frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
@@ -903,12 +968,22 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
+            messageHandling.clearSelectionContexts()
             pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat, frequency: .standard)
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
         case .userDidAcceptTermsAndConditions:
             handleTermsAccepted()
+            completion?()
+        case .userDidSelectSuggestion:
+            pixelFiring?.fire(
+                AIChatPixel.aiChatSuggestionSelected(
+                    suggestionId: metric.suggestionId ?? "",
+                    pageType: metric.pageType ?? "none"
+                ),
+                frequency: .dailyAndStandard
+            )
             completion?()
         default:
             completion?()

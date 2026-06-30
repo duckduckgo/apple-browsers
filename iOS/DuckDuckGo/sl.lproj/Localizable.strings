@@ -1060,12 +1060,6 @@
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Želite shraniti to geslo?";
 
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Ne, hvala";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Ne zdaj";
-
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "S funkcijo DuckDuckGo Passwords & Autofill varno shranite geslo v napravo.";
 
@@ -3055,6 +3049,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo usmerja poizvedbe DNS prek naših strežnikov DNS, da vaš ponudnik interneta ne more videti, katere spletne strani obiskujete.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Kopiraj diagnostične podatke o omrežju VPN";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Ko se obrnete na podporo, priložite kopijo teh anonimiziranih diagnostičnih podatkov o omrežju VPN, da nam pomagate pri odpravljanju težave z vašo povezavo.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Kopirano v odložišče";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Ni bilo mogoče kopirati v odložišče";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "Pogosta vprašanja in podpora";
 
@@ -3190,8 +3196,8 @@
 /* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
 "onboarding.duckai.contextual.end-of-journey.message" = "Začni zasebni klepet z umetno inteligenco z Duck.ai ali preklopi na iskanje za zaščiteno brskanje.\n\nDuck.ai lahko uporabljate kjer koli, kjer vidite ikono klepeta [[chat_icon]]";
 
-/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
-"onboarding.duckai.contextual.subscription.message" = "Ponujamo tudi plačljivo naročnino z naprednimi modeli umetne inteligence z višjimi omejitvami klepeta GPT, Claude in Llama, varnim VPN in še več.";
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Ponujamo tudi plačljivo naročnino z naprednimi modeli umetne inteligence z višjimi omejitvami klepeta GPT in Claude, varnim VPN in še več.";
 
 /* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
 "onboarding.duckai.duckAIQuery.title" = "Zdaj pa preizkusite zasebni klepet z umetno inteligenco!";
@@ -3249,6 +3255,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Zaščite so aktivirane!";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Za iskanje in obisk spletnih mest uporabite naslovno vrstico ali preklopite na Duck.ai za zasebni klepet z umetno inteligenco.\n\nDuck.ai lahko uporabljate kjer koli, kjer vidite ikono klepeta [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Zasebni klepeti z umetno inteligenco, ki jih lahko kadar koli izbrišete z gumbom Fire Button. Preizkusite! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "To je Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Vprašajte kar koli zasebno";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Iščite zasebno";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Razloži mi borzo, kot da sem star 10 let";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Načrtuj popoln dan v Londonu";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Katerih je 10 zanimivih dejstev o znanosti, naravi in zgodovini?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Ste pripravljeni začeti?\nPreizkusite iskanje ali klepet z umetno inteligenco!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Vprašajte UI";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Preskoči";
@@ -3560,6 +3596,9 @@
 "preserveLogins.remove.all.ok" = "V REDU";
 
 /* No comment provided by engineer. */
+"Previews" = "Predogledi";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Primarni/prvi ukrep";
 
 /* No comment provided by engineer. */
@@ -3805,6 +3844,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavitve modula Search Assist";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Nikoli";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Pogosto";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "Na zahtevo";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Včasih";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Search Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Vsebino strani samodejno pošljite Duck.ai";
 
@@ -3814,11 +3868,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Predlogi za klepet";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Uporabi DuckDuckGo brez umetne inteligence";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Onemogoči Duck.ai, skrije odgovore z uporabo umetne inteligence v rezultatih iskanja in iz rezultatov iskanja slik odstrani znana spletna mesta z neželeno vsebino, ustvarjeno z umetno inteligenco.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "Umetna inteligenca je v brskalniku trenutno onemogočena. Odgovori, ustvarjeni z umetno inteligenco, ne bodo več prikazani, med rezultati iskanja slik pa bo manj slik, ustvarjenih z umetno inteligenco.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skrij slike, ki jih ustvari umetna inteligenca";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Iz rezultatov iskanja slik odstrani slike, ki jih je ustvarila umetna inteligenca";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Izklopljeno";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Vklopljeno";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Iz rezultatov iskanja slik filtrira znane strani z neželenimi zadetki UI. [Več](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vedno vklopljeno";
@@ -3935,7 +4007,7 @@
 "settings.cookie.pop-up-protection.protection" = "Zaščita pred pojavnimi okni piškotkov";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo bo poskusil izbrati najbolj zasebne nastavitve, ki so na voljo, in skriti ta pojavna okna za vas.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo bo poskusil izbrati najbolj zasebne nastavitve, ki so na voljo, in skriti ta pojavna okna za vas.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Upravljanje pojavnih oken za piškotke";
@@ -5267,35 +5339,51 @@
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Ni zadetkov za »% @«";
 
-/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.highlights.duckAIQuery.completion.message" = "Za iskanje in obisk spletnih mest uporabite naslovno vrstico ali preklopite na Duck.ai za zasebni klepet z umetno inteligenco.\n\nDuck.ai lahko uporabljate kjer koli, kjer vidite ikono klepeta [[chat_icon]]";
-
-/* Fire onboarding message shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.message" = "Zasebni klepeti z umetno inteligenco, ki jih lahko kadar koli izbrišete z gumbom Fire Button. Preizkusite! 🔥";
-
-/* Fire onboarding title shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.title" = "To je Duck.ai!";
-
-/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.ai" = "Vprašajte kar koli zasebno";
-
-/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.search" = "Iščite zasebno";
-
-/* First suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option1" = "Razloži mi borzo, kot da sem star 10 let";
-
-/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option2" = "Načrtuj popoln dan v Londonu";
-
-/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Katerih je 10 zanimivih dejstev o znanosti, naravi in zgodovini?";
-
-/* Title for the onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.title" = "Ste pripravljeni začeti?\nPreizkusite iskanje ali klepet z umetno inteligenco!";
-
-/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
-"onboarding.highlights.duckAIQuery.toggle.ai" = "Vprašajte UI";
-
 /* Toast message shown after copying sync code to clipboard */
 "sync.simplified.code.copied.toast" = "Koda je kopirana";
+
+
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Klepeti";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Ni nedavnih pogovorov";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Odprite Duck.ai";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Iskanje";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Pripeto";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Nedavno";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Ni zadetkov";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Klepetov ni bilo mogoče naložiti";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Pri nalaganju klepetov Duck.ai je prišlo do napake. Poskusite znova pozneje.";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Izbriši klepet";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Prenesi klepet";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Pripni klepet";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Odpni klepet";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Izbriši klepete";
+
+/* Do not translate - stringsdict entry */
+"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";

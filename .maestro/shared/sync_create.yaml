@@ -11,6 +11,6 @@ appId: com.duckduckgo.mobile.ios
 - assertVisible: Recover Your Data Easily
 - tapOn: Copy Code
 - tapOn: Next
-- assertVisible: Your data is synced!
+- assertVisible: Device synced!
 - tapOn: Done
 - assertVisible: Sync Enabled

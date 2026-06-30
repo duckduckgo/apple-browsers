@@ -25,8 +25,7 @@ import Common
 import os.log
 
 public protocol BrokerProfileScanSubJobWebRunning {
-    func scan(_ profileQuery: BrokerProfileQueryData,
-              showWebView: Bool,
+    func scan(showWebView: Bool,
               shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile]
 }
 
@@ -92,8 +91,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     }
 
     @MainActor
-    public func scan(_ profileQuery: BrokerProfileQueryData,
-                     showWebView: Bool,
+    public func scan(showWebView: Bool,
                      shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         return try await self.run(inputValue: (), showWebView: showWebView)
     }

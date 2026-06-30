@@ -65,6 +65,22 @@ final class MockAIChatMessageHandler: AIChatMessageHandling {
         setDataCalls.append(.init(data, type))
         setData(data, type)
     }
+
+    var appendSelectionContextCalls: [AIChatSelectionContextData] = []
+    var clearSelectionContextsCallCount = 0
+    var getSelectionContextsImpl: () -> [AIChatSelectionContextData] = { [] }
+
+    func appendSelectionContext(_ selection: AIChatSelectionContextData) {
+        appendSelectionContextCalls.append(selection)
+    }
+
+    func getSelectionContexts() -> [AIChatSelectionContextData] {
+        getSelectionContextsImpl()
+    }
+
+    func clearSelectionContexts() {
+        clearSelectionContextsCallCount += 1
+    }
 }
 
 // swiftlint:disable inclusive_language
@@ -135,6 +151,26 @@ struct AIChatUserScriptHandlerTests {
     func testThatGetAIChatNativePromptCallsMessageHandler() async {
         _ = await handler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock())
         #expect(messageHandler.getDataForMessageTypeCalls == [.nativePrompt])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("getAIChatSelectionContext returns the stored selections", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatGetAIChatSelectionContextReturnsStoredSelections() {
+        let selection = AIChatSelectionContextData(id: "id-1", title: "Text selection", url: "https://example.com", content: "hi", truncated: false, fullContentLength: 2, wordCount: 1)
+        messageHandler.getSelectionContextsImpl = { [selection] }
+
+        let response = handler.getAIChatSelectionContext(params: [], message: WKScriptMessage.mock()) as? SelectionContextResponse
+
+        #expect(response?.selections == [selection])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("submitting a prompt clears the stored selections", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatSubmittingPromptClearsSelectionStore() {
+        handler.didReportMetric(.init(metricName: .userDidSubmitPrompt))
+        #expect(messageHandler.clearSelectionContextsCallCount == 1)
     }
 
     @available(iOS 16, macOS 13, *)

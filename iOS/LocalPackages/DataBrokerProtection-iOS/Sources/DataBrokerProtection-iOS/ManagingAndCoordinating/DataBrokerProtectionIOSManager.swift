@@ -247,7 +247,8 @@ public final class DataBrokerProtectionIOSManager {
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
                                                         runTypeProvider: settings,
-                                                        isAuthenticatedUser: { [authenticationManager] in await authenticationManager.isUserAuthenticated })
+                                                        isAuthenticatedUser: { [authenticationManager] in await authenticationManager.isUserAuthenticated },
+                                                        optOutRetryErrorFeatureFlagger: featureFlagger)
 
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                        settings: settings,
@@ -353,7 +354,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
             return
         }
 
-        let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database)
+        let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database,
+                                                                          featureFlagger: featureFlagger)
         operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
 
         if featureFlagger.isForegroundRunningOnAppActiveFeatureOn,

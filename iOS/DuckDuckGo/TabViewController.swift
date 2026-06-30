@@ -437,16 +437,17 @@ class TabViewController: UIViewController {
     private var canDisplayJavaScriptAlert: Bool {
         return presentedViewController == nil
             && delegate?.tabCheckIfItsBeingCurrentlyPresented(self) ?? false
-            && !self.jsAlertController.isShown
+            && !(jsAlertView?.isShown ?? false)
     }
 
     func present(_ alert: WebJSAlert) {
-        self.jsAlertController.present(alert)
+        setupJSAlertViewIfNeeded()
+        jsAlertView.present(alert)
     }
 
     private func dismissJSAlertIfNeeded() {
-        if jsAlertController.isShown {
-            jsAlertController.dismiss(animated: false)
+        if jsAlertView?.isShown == true {
+            jsAlertView?.dismiss(animated: false)
         }
     }
 
@@ -751,7 +752,10 @@ class TabViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupJSAlertController()
+        // Note: JSAlertView is intentionally NOT set up here. Instantiating its
+        // UIVisualEffectView eagerly triggers a first-time CoreMaterial bundle
+        // scan on the cold-launch critical path, which can trip the scene-create watchdog
+        // (0x8BADF00D). It is now lazily created on first use via setupJSAlertViewIfNeeded().
 
         fireproofingWorker = FireproofingWorking(controller: self, fireproofing: fireproofing, favicons: favicons)
         initAttributionLogic()
@@ -861,21 +865,29 @@ class TabViewController: UIViewController {
 
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
         if appSettings.currentAddressBarPosition == .bottom && !(isAITab && unifiedToggleInputFeature.isAvailable) {
-            /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
-            /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
-            /// manages its own native bottom layout via the UnifiedToggleInput container.
-            let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
-            let effectiveBarsVisibilityPercent: CGFloat
-            if #available(iOS 26, *),
-               featureFlagger.isFeatureOn(.bottomBarViewportFixedElementsWorkaround) {
-                /// iOS 26 regressed fixed-bottom webpage elements when the browser continuously
-                /// resizes the webview's bottom inset while chrome hides/shows. Keep the inset
-                /// stable in bottom-address-bar mode to avoid pushing page-fixed footers offscreen.
-                effectiveBarsVisibilityPercent = 1.0
+            if chromeDelegate?.isInMinimalChromeLayout == true {
+                // Minimal chrome: inset follows the bars so the slot is reclaimed when hidden. The
+                // iOS 26 fixed inset is skipped; in landscape it leaves a visible gap once the bar
+                // scrolls away (contentContainer is exactly the screen height).
+                let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
+                webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
             } else {
-                effectiveBarsVisibilityPercent = barsVisibilityPercent
+                /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
+                /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
+                /// manages its own native bottom layout via the UnifiedToggleInput container.
+                let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
+                let effectiveBarsVisibilityPercent: CGFloat
+                if #available(iOS 26, *),
+                   featureFlagger.isFeatureOn(.bottomBarViewportFixedElementsWorkaround) {
+                    /// iOS 26 regressed fixed-bottom webpage elements when the browser continuously
+                    /// resizes the webview's bottom inset while chrome hides/shows. Keep the inset
+                    /// stable in bottom-address-bar mode to avoid pushing page-fixed footers offscreen.
+                    effectiveBarsVisibilityPercent = 1.0
+                } else {
+                    effectiveBarsVisibilityPercent = barsVisibilityPercent
+                }
+                webViewBottomAnchorConstraint?.constant = -targetHeight * effectiveBarsVisibilityPercent
             }
-            webViewBottomAnchorConstraint?.constant = -targetHeight * effectiveBarsVisibilityPercent
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }
@@ -1009,19 +1021,7 @@ class TabViewController: UIViewController {
             self?.handlePullToRefresh()
         })
 
-        // Symptom detection + pixels ship to production behind the `webScrollFreezeObservability` kill switch
-        // (on by default). The heavy on-device freeze capture is injected only when `webScrollFreezeCapture`
-        // (internal-only) is on — in production `captureFreeze` is a no-op.
-        if webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) {
-            let captureEnabled = featureFlagger.isFeatureOn(.webScrollFreezeCapture)
-            webScrollObserver = WebScrollObserver(container: webViewContainer,
-                                                  scrollView: { [weak self] in self?.webView?.scrollView },
-                                                  currentURL: { [weak self] in self?.webView?.url },
-                                                  captureFreeze: captureEnabled
-                                                    ? { FreezeCaptureStore.save(WebScrollFreezeProbe.captureNow()) }
-                                                    : {})
-            webScrollObserver?.install()
-        }
+        attachScrollFreezeDiagnosticsIfNeeded()
 
         if isAITab {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(false)
@@ -1080,6 +1080,31 @@ class TabViewController: UIViewController {
 
         borderView.insertSelf(into: webView)
         borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+    }
+
+    // Symptom detection + pixels ship to production behind the `webScrollFreezeObservability` kill switch
+    // (on by default). The heavy on-device freeze capture is injected only when `webScrollFreezeCapture`
+    // (internal-only) is on — in production `captureFreeze` is a no-op.
+    private func attachScrollFreezeDiagnosticsIfNeeded() {
+        guard webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) else { return }
+        let captureEnabled = featureFlagger.isFeatureOn(.webScrollFreezeCapture)
+        webScrollObserver = WebScrollObserver(container: webViewContainer,
+                                              scrollView: { [weak self] in self?.webView?.scrollView },
+                                              currentURL: { [weak self] in self?.webView?.url },
+                                              captureFreeze: captureEnabled
+                                                ? { WebScrollFreezeDebugCaptureStore.save(WebScrollFreezeDebugProbe.captureNow()) }
+                                                : {},
+                                              autoRecover: featureFlagger.isFeatureOn(.webScrollFreezeAutoRecovery)
+                                                ? { [weak self] in
+                                                    let ran = WebScrollFreezeRecovery.autoRecover(scrollView: self?.webView?.scrollView)
+                                                    if ran { DailyPixel.fireDailyAndCount(pixel: .debugInteractionRecoveryAttempted, withAdditionalParameters: [:]) }
+                                                    return ran
+                                                }
+                                                : { false })
+        webScrollObserver?.install()
+        if captureEnabled, let window = WebScrollFreezeDebugProbe.keyWindow() {
+            WebScrollFreezeDebugActiveTouchProbe.installIfNeeded(on: window)
+        }
     }
 
     private func addObservers() {
@@ -1295,7 +1320,7 @@ class TabViewController: UIViewController {
         dismissContextualOnboardingIfNeeded()
     }
 
-    func presentExperimentContextualDaxFireDialog() {
+    func presentDuckAIOnboardingFireDialog() {
         contextualOnboardingLogic.setLastShownDialog(type: .fire(.duckAIOnboarding))
         let fireSpec = DaxDialogs.BrowsingSpec.fireDuckAIOnboarding
         presentContextualOnboarding(for: fireSpec)
@@ -1494,7 +1519,7 @@ class TabViewController: UIViewController {
         return url.isDuckDuckGo
     }
 
-    var jsAlertController: JSAlertController!
+    var jsAlertView: JSAlertView!
 
     private func addTextZoomObserver() {
         NotificationCenter.default.addObserver(self,
@@ -1627,6 +1652,7 @@ class TabViewController: UIViewController {
                                       malicousSiteThreatKind: specialErrorPageNavigationHandler.currentThreatKind,
                                       shouldCheckServerTrust: shouldCheckServerTrust,
                                       allActiveContentScopeExperiments: contentScopeExperimentsManager.allActiveContentScopeExperiments)
+        privacyInfo.cookieConsentManaged = CookieConsentInfo.initialCPMDiagnostics
         let isCertificateInvalid = certificateTrustEvaluator
             .evaluateCertificateTrust(trust: webView.serverTrust)
             .map { !$0 }
@@ -1732,9 +1758,13 @@ class TabViewController: UIViewController {
 
         var loadedWebExtensions: String?
         var adBlockingScriptletsVersion: String?
+        var cpmExtensionLoaded = false
+        var cpmExtensionDroppedCallbacks = 0
         if #available(iOS 18.4, *), let webExtensionManager {
             loadedWebExtensions = webExtensionManager.loadedWebExtensionsString()
             adBlockingScriptletsVersion = webExtensionManager.adBlockingScriptletsVersion()
+            cpmExtensionLoaded = webExtensionManager.isAutoconsentExtensionLoaded
+            cpmExtensionDroppedCallbacks = webExtensionManager.eventsListener.droppedCallbacksCount
         }
 
         return PrivacyDashboardViewController.BreakageAdditionalInfo(currentURL: currentURL,
@@ -1752,7 +1782,9 @@ class TabViewController: UIViewController {
                                                                      autoplayBlockingMode: autoplaySettings.currentAutoplayBlockingMode.rawValue,
                                                                      isAfterSuppressedXSafariRedirect: safariRedirectHandler.isAfterSuppressedXSafariRedirect(for: currentURL),
                                                                      loadedWebExtensions: loadedWebExtensions,
-                                                                     adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion)
+                                                                     adBlockingExtensionScriptletsVersion: adBlockingScriptletsVersion,
+                                                                     cpmExtensionLoaded: cpmExtensionLoaded,
+                                                                     cpmExtensionDroppedCallbacks: cpmExtensionDroppedCallbacks)
     }
 
     public func print() {
@@ -2117,8 +2149,8 @@ extension TabViewController: WKNavigationDelegate {
             let image = renderer.image { context in
                 context.cgContext.translateBy(x: 0, y: -webView.scrollView.contentInset.top)
                 webView.drawHierarchy(in: webView.bounds, afterScreenUpdates: true)
-                if let jsAlertController = self?.jsAlertController {
-                    jsAlertController.view.drawHierarchy(in: jsAlertController.view.bounds, afterScreenUpdates: false)
+                if let jsAlertView = self?.jsAlertView {
+                    jsAlertView.drawHierarchy(in: jsAlertView.bounds, afterScreenUpdates: false)
                 }
             }
 
@@ -2234,7 +2266,7 @@ extension TabViewController: WKNavigationDelegate {
             Logger.daxEasterEgg.debug("Created DaxEasterEggHandler for new tab")
         }
         
-        Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.absoluteString)")
+        Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.shortDescription)")
         daxEasterEggHandler?.extractLogosForCurrentPage()
     }
 
@@ -2403,12 +2435,11 @@ extension TabViewController: WKNavigationDelegate {
         linkProtection.setMainFrameUrl(nil)
         referrerTrimming.onFailedNavigation()
 
-        // Skip the site-loading failure pixel for download handoffs (WebKit error 102) and user
-        // cancellations (NSURLErrorCancelled) — same exclusions as `didFailProvisionalNavigation`.
+        // Skip the site-loading failure pixel for download handoffs (WebKit error 102) — same exclusion
+        // as `didFailProvisionalNavigation`.
         let nsError = error as NSError
         let isDownloadHandoff = nsError.code == 102 && nsError.domain == "WebKitErrorDomain"
-        let isCancellation = nsError.code == NSURLErrorCancelled && nsError.domain == NSURLErrorDomain
-        if !isDownloadHandoff && !isCancellation {
+        if !isDownloadHandoff {
             navigationPixelResponder.didFail(navigation, error: error)
         }
 
@@ -2456,6 +2487,10 @@ extension TabViewController: WKNavigationDelegate {
             self.url = webView.url
         }
 
+        // Fire the site-loading failure pixel after the download-handoff guard above so WebKit error 102
+        // isn't miscounted as a failure. User cancellations are counted intentionally.
+        navigationPixelResponder.didFail(navigation, error: error)
+
         // Bail out before showing error when navigation was cancelled by the user
         if error.code == NSURLErrorCancelled && error.domain == NSURLErrorDomain {
             webpageDidFailToLoad()
@@ -2464,10 +2499,6 @@ extension TabViewController: WKNavigationDelegate {
             self.url = webView.url
             return
         }
-
-        // Fire the site-loading failure pixel after the early-return guards above so download handoffs
-        // (WebKit error 102) and user cancellations (NSURLErrorCancelled) aren't miscounted as failures.
-        navigationPixelResponder.didFail(navigation, error: error)
 
         // wait before showing errors in case they recover automatically
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -3927,7 +3958,12 @@ extension ConsentStatusInfo {
             selftestFailed: selftestFailed,
             consentReloadLoop: consentReloadLoop,
             consentRule: consentRule,
-            consentHeuristicEnabled: consentHeuristicEnabled
+            consentHeuristicEnabled: consentHeuristicEnabled,
+            cpmDashboardState: .applied,
+            cpmStage: cpmStage.flatMap(CookieConsentCPMStage.init(rawValue:)),
+            cpmErrors: cpmErrors,
+            cpmQueueSize: cpmQueueSize,
+            cpmConfigVersion: cpmConfigVersion
         )
     }
 }
@@ -4008,7 +4044,6 @@ extension TabViewController: SecureVaultManagerDelegate {
             
             let saveLoginController = SaveLoginViewController(credentialManager: manager,
                                                               appSettings: self.appSettings,
-                                                              featureFlagger: self.featureFlagger,
                                                               domainLastShownOn: self.domainSaveLoginPromptLastShownOn,
                                                               backfilled: backfilled)
             self.domainSaveLoginPromptLastShownOn = self.url?.host
@@ -4547,7 +4582,6 @@ extension TabViewController: SaveLoginViewControllerDelegate {
             syncService.scheduler.notifyDataChanged()
 
             NotificationCenter.default.post(name: .autofillSaveEvent, object: nil)
-            AutofillOnboardingExperimentPixelReporter().firePasswordsSaved()
         } catch {
             Logger.general.error("failed to store credentials: \(error.localizedDescription, privacy: .public)")
         }

@@ -368,6 +368,16 @@ final class BookmarkOutlineCellView: NSTableCellView {
         updateConstraints(isSearch: isSearch)
     }
 
+    /// Upgrades the displayed favicon in place to the latest cached image, if one is available.
+    ///
+    /// Used by the bookmarks bar menu to reflect lazily-decoded favicons without a full
+    /// `reloadData()` — a reload while a submenu is open dismisses the submenu and flickers the
+    /// menu. Never downgrades an already-shown favicon back to the placeholder on a transient miss.
+    func refreshFavicon(for bookmark: Bookmark) {
+        guard let favicon = bookmark.favicon(.small) else { return }
+        faviconImageView.image = favicon
+    }
+
     func update(from folder: BookmarkFolder, isSearch: Bool = false) {
         faviconImageView.image = theme.iconsProvider.bookmarksIconsProvider.bookmarkFolderColorIcon
         faviconImageView.isHidden = false

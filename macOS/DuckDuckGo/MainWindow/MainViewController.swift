@@ -44,6 +44,7 @@ final class MainViewController: NSViewController {
     let aiChatCoordinator: AIChatCoordinating
     let aiChatSummarizer: AIChatSummarizer
     let aiChatTranslator: AIChatTranslator
+    let aiChatSelectionContextAttacher: AIChatSelectionContextAttaching
 
     private(set) lazy var findInPageViewController: FindInPageViewController = {
         let vc = FindInPageViewController.create()
@@ -265,6 +266,15 @@ final class MainViewController: NSViewController {
             aiChatCoordinator: aiChatCoordinator,
             aiChatTabOpener: aiChatTabOpener,
             pixelFiring: pixelFiring
+        )
+
+        aiChatSelectionContextAttacher = AIChatSelectionContextAttacher(
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatCoordinator: aiChatCoordinator,
+            pixelFiring: pixelFiring,
+            currentPageContextProvider: { [weak tabCollectionViewModel] in
+                tabCollectionViewModel?.selectedTabViewModel?.tab.pageContext
+            }
         )
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
@@ -799,7 +809,7 @@ final class MainViewController: NSViewController {
                 window.title = UserText.burnerWindowHeader
                 return
             }
-            let truncatedTitle = title.truncated(length: MainMenu.Constants.maxTitleLength)
+            let truncatedTitle = title.truncated(to: MainMenu.Constants.maxTitleLength, position: .tail)
 
             window.title = truncatedTitle
         }

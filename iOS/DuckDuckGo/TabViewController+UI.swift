@@ -120,6 +120,10 @@ extension TabViewController {
 
         jsAlertContainerView = UIView()
         jsAlertContainerView.translatesAutoresizingMaskIntoConstraints = false
+        // Hidden until a JS alert is presented. This fills rootView and sits above the web view,
+        // so leaving it visible would swallow all touches/scrolls. The JSAlertView toggles this
+        // container's visibility when presenting/dismissing; it starts hidden because setup is deferred.
+        jsAlertContainerView.isHidden = true
         rootView.addSubview(jsAlertContainerView)
         NSLayoutConstraint.activate([
             jsAlertContainerView.topAnchor.constraint(equalTo: rootView.topAnchor),
@@ -208,23 +212,27 @@ extension TabViewController {
         ])
     }
 
-    func setupJSAlertController() {
-        let storyboard = UIStoryboard(name: "JSAlertController", bundle: nil)
-        guard let controller = storyboard.instantiateInitialViewController() as? JSAlertController else {
-            fatalError("Failed to instantiate JSAlertController")
-        }
-        jsAlertController = controller
+    /// Lazily creates the `JSAlertView` on first use.
+    ///
+    /// This is deliberately not called from `viewDidLoad`: the view contains a
+    /// `UIVisualEffectView`/`UIBlurEffect` whose first decode triggers a synchronous
+    /// CoreMaterial recipe-bundle scan. Doing that for every tab on the cold-launch path
+    /// could exhaust the scene-create CPU budget and trip the watchdog (SIGKILL 0x8BADF00D).
+    /// Deferring it to the first presented JS alert keeps that work off the launch path.
+    func setupJSAlertViewIfNeeded() {
+        guard jsAlertView == nil else { return }
 
-        addChild(controller)
-        jsAlertContainerView.addSubview(controller.view)
-        controller.view.translatesAutoresizingMaskIntoConstraints = false
+        let alertView = JSAlertView()
+        jsAlertView = alertView
+
+        alertView.translatesAutoresizingMaskIntoConstraints = false
+        jsAlertContainerView.addSubview(alertView)
         NSLayoutConstraint.activate([
-            controller.view.topAnchor.constraint(equalTo: jsAlertContainerView.topAnchor),
-            controller.view.leadingAnchor.constraint(equalTo: jsAlertContainerView.leadingAnchor),
-            controller.view.trailingAnchor.constraint(equalTo: jsAlertContainerView.trailingAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: jsAlertContainerView.bottomAnchor)
+            alertView.topAnchor.constraint(equalTo: jsAlertContainerView.topAnchor),
+            alertView.leadingAnchor.constraint(equalTo: jsAlertContainerView.leadingAnchor),
+            alertView.trailingAnchor.constraint(equalTo: jsAlertContainerView.trailingAnchor),
+            alertView.bottomAnchor.constraint(equalTo: jsAlertContainerView.bottomAnchor)
         ])
-        controller.didMove(toParent: self)
     }
 
     func makeXSafariHTTPSURL(from url: URL) -> URL {

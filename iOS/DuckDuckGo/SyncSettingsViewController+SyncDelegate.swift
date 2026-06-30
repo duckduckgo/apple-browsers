@@ -174,8 +174,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
                         return
                     }
-                    await self.dismissPresentedViewController()
-                    await self.showPreparingSync()
+                    self.dismissPresentedViewController(completion: nil)
+                    self.showPreparingSync(context: .syncingDevices, nil)
                     try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                     let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                     try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
@@ -185,7 +185,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                                includedParameters: [.appVersion],
                                onComplete: { _ in })
                     self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
-                    AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                     self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
                     self.refreshDevices()
                     self.dismissVCAndShowRecoveryPDF()
@@ -212,7 +211,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                            includedParameters: [.appVersion],
                            onComplete: { _ in })
                 self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
-                AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
@@ -485,14 +483,20 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showPreparingSync(context: SimplifiedConnectingSheetView.Context = .syncingDevices, _ completion: (() -> Void)?) {
+        guard let navigationController, navigationController.view.window != nil else {
+            Logger.sync.error("Unable to present preparing sync UI because Sync settings navigation controller is not in the window hierarchy")
+            completion?()
+            return
+        }
+
         if useSimplifiedLayout {
             let controller = UIHostingController(rootView: SimplifiedConnectingSheetView(context: context))
             controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
             controller.sheetPresentationController?.detents = [.large()]
-            navigationController?.present(controller, animated: true, completion: completion)
+            navigationController.present(controller, animated: true, completion: completion)
         } else {
             let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
-            navigationController?.present(controller, animated: true, completion: completion)
+            navigationController.present(controller, animated: true, completion: completion)
         }
     }
 
@@ -736,8 +740,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
-        // codeSource is unused for the abandonment pixel; only the source/role matter.
-        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind, setupRole: .receiver(.exchange, .qrCode))
+        let codeSource = pairingV2JoinerCodeSource ?? .qrCode
+        let isConfirmed = await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind, setupRole: .receiver(.exchange, codeSource))
+        pairingV2JoinerCodeSource = nil
+        return isConfirmed
     }
 
     private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind, setupRole: SyncSetupRole) async -> Bool {
@@ -793,7 +799,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         try await self.syncService.disconnect()
                         Pixel.fire(pixel: .syncDisabled)
                         self.syncSetupExperimentPixels.fireSyncDisabled()
-                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self.viewModel.isSyncEnabled = false
                         self.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
@@ -829,7 +834,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         try await self.syncService.disconnect()
                         Pixel.fire(pixel: .syncDisabled)
                         self.syncSetupExperimentPixels.fireSyncDisabled()
-                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
                     } catch {
@@ -859,7 +863,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                         try await self?.syncService.deleteAccount()
                         Pixel.fire(pixel: .syncDisabledAndDeleted, withAdditionalParameters: [PixelParameters.connectedDevices: "\(deviceCount)"])
                         self?.syncSetupExperimentPixels.fireSyncDisabledAndDeleted()
-                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
                         self?.viewModel.isSyncEnabled = false
                         self?.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)

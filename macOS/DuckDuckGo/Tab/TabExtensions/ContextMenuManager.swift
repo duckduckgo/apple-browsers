@@ -228,16 +228,21 @@ extension ContextMenuManager {
 
     private func handleSearchWebItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
         let isSummarizationAvailable = shouldShowTextSummarization
+        let isAttachSelectionAvailable = shouldShowAttachSelection
         let isTranslationAvailable = shouldShowTextTranslation
 
         var currentIndex = index
-        if isSummarizationAvailable || isTranslationAvailable {
+        if isSummarizationAvailable || isAttachSelectionAvailable || isTranslationAvailable {
             menu.insertItem(.separator(), at: currentIndex)
             currentIndex += 1
         }
         menu.replaceItem(at: currentIndex, with: self.searchMenuItem(makeBurner: isCurrentWindowBurner))
         if isSummarizationAvailable {
             menu.insertItem(summarizeMenuItem(), at: currentIndex + 1)
+            currentIndex += 1
+        }
+        if isAttachSelectionAvailable {
+            menu.insertItem(attachToDuckAIMenuItem(), at: currentIndex + 1)
             currentIndex += 1
         }
         if isTranslationAvailable {
@@ -274,6 +279,15 @@ extension ContextMenuManager {
             return false
         default:
             return aiChatMenuConfiguration.shouldDisplayTranslationMenuItem
+        }
+    }
+
+    private var shouldShowAttachSelection: Bool {
+        switch tabContent {
+        case .aiChat:
+            return false
+        default:
+            return aiChatMenuConfiguration.shouldDisplaySelectionContextMenuItem
         }
     }
 }
@@ -425,6 +439,11 @@ private extension ContextMenuManager {
         NSMenuItem(title: UserText.aiChatTranslate, action: #selector(translate), target: self).withImage(DesignSystemImages.Glyphs.Size12.translateAi)
     }
 
+    func attachToDuckAIMenuItem() -> NSMenuItem {
+        NSMenuItem(title: UserText.aiChatAttachSelection, action: #selector(attachToDuckAI), target: self)
+            .withImage(DesignSystemImages.Glyphs.Size12.textSelectedRight)
+    }
+
     private func makeMenuItem(withTitle title: String, action: Selector, from item: NSMenuItem, with identifier: WKMenuItemIdentifier, keyEquivalent: String? = nil) -> NSMenuItem {
         return makeMenuItem(withTitle: title, action: action, from: item, withIdentifierIn: [identifier], keyEquivalent: keyEquivalent)
     }
@@ -463,10 +482,10 @@ private extension ContextMenuManager {
 
         self.onNewWindow = { navigationAction in
             guard navigationAction.request.url?.matches(url) ?? false else {
-                Logger.navigation.debug("ContextMenuManager.onNewWindow: ignoring `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+                Logger.navigation.debug("ContextMenuManager.onNewWindow: ignoring `\(navigationAction.request.url?.shortDescription ??? "<nil>")`")
                 return nil
             }
-            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new tab for `\(url.absoluteString)`")
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new tab for `\(url.shortDescription)`")
             return .allow(.tab(selected: true, burner: burner))
         }
         webView.loadInNewWindow(url)
@@ -489,6 +508,15 @@ private extension ContextMenuManager {
 
         let request = AIChatTextSummarizationRequest(text: selectedText, websiteURL: webView?.url, websiteTitle: webView?.title, source: .contextMenu)
         mainViewController?.aiChatSummarizer.summarize(request)
+    }
+
+    func attachToDuckAI(_ sender: NSMenuItem) {
+        guard let selectedText else {
+            assertionFailure("Failed to get selected text")
+            return
+        }
+
+        mainViewController?.aiChatSelectionContextAttacher.attach(text: selectedText, url: webView?.url)
     }
 
     func translate(_ sender: NSMenuItem) {
@@ -536,7 +564,7 @@ private extension ContextMenuManager {
         let switchToNewTabWhenOpened = tabsPreferences.switchToNewTabWhenOpened
         onNewWindow = { navigationAction in
             // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
-            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new tab for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new tab for `\(navigationAction.request.url?.shortDescription ??? "<nil>")`")
             return .allow(.tab(selected: switchToNewTabWhenOpened, burner: burner, contextMenuInitiated: true))
         }
         NSApp.sendAction(action, to: originalItem.target, from: originalItem)
@@ -563,11 +591,11 @@ private extension ContextMenuManager {
         onNewWindow = { navigationAction in
             // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
             if burner {
-                Logger.navigation.debug("ContextMenuManager.onNewWindow: opening new burner window for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+                Logger.navigation.debug("ContextMenuManager.onNewWindow: opening new burner window for `\(navigationAction.request.url?.shortDescription ??? "<nil>")`")
                 WindowsManager.openNewWindow(with: navigationAction.request.url ?? .blankPage, source: .link, isBurner: true)
                 return .cancel
             } else {
-                Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new window for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+                Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new window for `\(navigationAction.request.url?.shortDescription ??? "<nil>")`")
                 return .allow(.window(active: true, burner: false))
             }
         }
@@ -594,7 +622,7 @@ private extension ContextMenuManager {
 
         onNewWindow = { navigationAction in
             // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
-            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new window for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new window for `\(navigationAction.request.url?.shortDescription ??? "<nil>")`")
             return .allow(.window(active: true, burner: burner))
         }
         NSApp.sendAction(action, to: originalItem.target, from: originalItem)
@@ -630,7 +658,7 @@ private extension ContextMenuManager {
                 return .cancel
             }
 
-            Logger.navigation.debug("ContextMenuManager.onNewWindow: adding bookmark for `\(url.absoluteString)`")
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: adding bookmark for `\(url.shortDescription)`")
             let title = selectedText ?? url.absoluteString
             NSApp.delegateTyped.bookmarkManager.makeBookmark(for: url, title: title, isFavorite: false)
 
@@ -658,7 +686,7 @@ private extension ContextMenuManager {
                 return .cancel
             }
 
-            Logger.navigation.debug("ContextMenuManager.onNewWindow: copying \(isEmailAddress ? "email addresses" : "link"): `\(url.absoluteString)`")
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: copying \(isEmailAddress ? "email addresses" : "link"): `\(url.shortDescription)`")
             if isEmailAddress {
                 let emailAddresses = url.emailAddresses
                 if !emailAddresses.isEmpty {
@@ -693,7 +721,7 @@ private extension ContextMenuManager {
 
         onNewWindow = { navigationAction in
             // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
-            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new tab for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new tab for `\(navigationAction.request.url?.shortDescription ??? "<nil>")`")
             return .allow(.tab(selected: true, burner: burner))
         }
         NSApp.sendAction(action, to: originalItem.target, from: originalItem)
@@ -719,7 +747,7 @@ private extension ContextMenuManager {
 
         onNewWindow = { navigationAction in
             // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
-            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new window for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new window for `\(navigationAction.request.url?.shortDescription ??? "<nil>")`")
             return .allow(.window(active: true, burner: burner))
         }
         NSApp.sendAction(action, to: originalItem.target, from: originalItem)
@@ -755,7 +783,7 @@ private extension ContextMenuManager {
                 return .cancel
             }
 
-            Logger.navigation.debug("ContextMenuManager.onNewWindow: copying image address: `\(url.absoluteString)`")
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: copying image address: `\(url.shortDescription)`")
             NSPasteboard.general.copy(url)
 
             return .cancel

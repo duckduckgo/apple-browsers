@@ -227,7 +227,7 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
 
         if let url {
-            Logger.aiChat.debug("[SessionState] Updated contextual chat URL: \(url.absoluteString)")
+            Logger.aiChat.debug("[SessionState] Updated contextual chat URL: \(url.shortDescription)")
         } else {
             Logger.aiChat.debug("[SessionState] Cleared contextual chat URL")
         }
@@ -237,7 +237,7 @@ final class AIChatContextualChatSessionState {
         contextualChatURL = url
         frontendState = .restoredChat
         rebuildViewState()
-        Logger.aiChat.debug("[SessionState] Restored chat URL: \(url.absoluteString)")
+        Logger.aiChat.debug("[SessionState] Restored chat URL: \(url.shortDescription)")
     }
 
     // MARK: - Chip State Transitions

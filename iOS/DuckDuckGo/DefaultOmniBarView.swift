@@ -364,6 +364,112 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var onAIChatSendPressed: (() -> Void)?
     var isAIVoiceChatEnabled: Bool = false
 
+    let modelPickerButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        config.image = UIImage(systemName: "chevron.down")?.withConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+        )
+        config.imagePlacement = .trailing
+        config.imagePadding = Metrics.modelPickerChipSpacing
+        config.titleLineBreakMode = .byTruncatingTail
+        config.contentInsets = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: Metrics.modelPickerChipHorizontalPadding,
+            bottom: 0,
+            trailing: Metrics.modelPickerChipHorizontalPadding
+        )
+        config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+            var updated = attributes
+            updated.font = .daxSubheadRegular()
+            return updated
+        }
+        config.background.strokeColor = UIColor(designSystemColor: .lines)
+        config.background.strokeWidth = 1
+        config.cornerStyle = .capsule
+
+        let button = UIButton(configuration: config)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityIdentifier = "AIChat.Omnibar.iPad.ModelPicker"
+        button.isHidden = true
+        // High (not required) hugging so the leading `>=` constraint wins and the title
+        // truncates rather than producing an unsatisfiable layout for long model names.
+        button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        button.titleLabel?.lineBreakMode = .byTruncatingTail
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
+
+    /// Enables the model picker chip (driven by the `iPadDuckAIBarControls` flag).
+    var isModelPickerEnabled: Bool = false {
+        didSet { refreshModelPickerVisibility() }
+    }
+
+    /// The short name shown on the model picker chip. The chip stays hidden while this is empty.
+    var aiChatModelName: String? {
+        didSet {
+            modelPickerButton.configuration?.title = aiChatModelName
+            refreshModelPickerVisibility()
+        }
+    }
+
+    /// The pull-down menu listing selectable models. Setting it enables the chip's primary action.
+    var aiChatModelPickerMenu: UIMenu? {
+        get { modelPickerButton.menu }
+        set {
+            modelPickerButton.menu = newValue
+            modelPickerButton.showsMenuAsPrimaryAction = (newValue != nil)
+        }
+    }
+
+    private var canShowModelPicker: Bool {
+        isModelPickerEnabled && !(aiChatModelName?.isEmpty ?? true)
+    }
+
+    let reasoningPickerButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityIdentifier = "AIChat.Omnibar.iPad.ReasoningPicker"
+        button.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        button.isHidden = true
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
+
+    /// Enables the reasoning picker chip (driven by the `iPadDuckAIBarControls` flag).
+    var isReasoningPickerEnabled: Bool = false {
+        didSet { refreshReasoningPickerVisibility() }
+    }
+
+    /// The glyph for the selected reasoning mode. The chip stays hidden while this is nil —
+    /// i.e. when the selected model doesn't support a reasoning picker.
+    var aiChatReasoningIcon: UIImage? {
+        didSet {
+            reasoningPickerButton.setImage(aiChatReasoningIcon, for: .normal)
+            refreshReasoningPickerVisibility()
+        }
+    }
+
+    /// The pull-down menu listing reasoning modes. Setting it enables the chip's primary action.
+    var aiChatReasoningPickerMenu: UIMenu? {
+        get { reasoningPickerButton.menu }
+        set {
+            reasoningPickerButton.menu = newValue
+            reasoningPickerButton.showsMenuAsPrimaryAction = (newValue != nil)
+        }
+    }
+
+    private var canShowReasoningPicker: Bool {
+        isReasoningPickerEnabled && aiChatReasoningIcon != nil
+    }
+
     let aiChatTextView: UITextView = {
         let textView = UITextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
@@ -470,6 +576,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         searchAreaContainerView.addSubview(aiChatTextView)
         searchAreaContainerView.addSubview(aiChatSendButton)
+        searchAreaContainerView.addSubview(modelPickerButton)
+        searchAreaContainerView.addSubview(reasoningPickerButton)
         searchAreaContainerView.addSubview(aiChatLeftButton)
 
         addSubview(activeOutlineView)
@@ -858,11 +966,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         self.omniBarLongPressInteraction = nil
     }
 
-    /// Returns the expanded-area subview (text view or send button) at the given point.
-    /// When expanded, these views overflow beyond this view's bounds so we must claim them explicitly.
     private func overflowTarget(at point: CGPoint, with event: UIEvent?) -> UIView? {
         guard isSearchAreaExpanded else { return nil }
-        let candidates: [UIView] = [aiChatSendButton, aiChatTextView]
+        let candidates: [UIView] = [aiChatSendButton, modelPickerButton, reasoningPickerButton, aiChatTextView]
         return candidates.first { candidate in
             guard !candidate.isHidden else { return false }
             let localPoint = candidate.convert(point, from: self)
@@ -1014,6 +1120,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         static let duckAITextViewBottomPadding: CGFloat = 8.0
         static let sendButtonSize: CGFloat = 40.0
         static let expansionAnimationDuration: TimeInterval = 0.25
+
+        // Duck.ai model picker chip (iPad), styled to match the iPhone model chip.
+        static let modelPickerChipHeight: CGFloat = 40.0
+        static let modelPickerChipHorizontalPadding: CGFloat = 16.0
+        static let modelPickerChipSpacing: CGFloat = 4.0
+        static let modelPickerToSendButtonSpacing: CGFloat = 8.0
+
+        // Duck.ai reasoning picker chip (iPad), icon-only, sits to the left of the model chip.
+        static let reasoningPickerChipSize: CGFloat = 40.0
+        static let reasoningToModelPickerSpacing: CGFloat = 4.0
 
         static let expandedPadSizeSpacing: CGFloat = 24.0
         static let expandedPadSizeMargins = NSDirectionalEdgeInsets(
@@ -1266,6 +1382,17 @@ extension DefaultOmniBarView {
             aiChatSendButton.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
             aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
             aiChatSendButton.heightAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
+
+            modelPickerButton.trailingAnchor.constraint(equalTo: aiChatSendButton.leadingAnchor, constant: -Metrics.modelPickerToSendButtonSpacing),
+            modelPickerButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
+            modelPickerButton.heightAnchor.constraint(equalToConstant: Metrics.modelPickerChipHeight),
+            modelPickerButton.leadingAnchor.constraint(greaterThanOrEqualTo: aiChatTextView.leadingAnchor),
+
+            reasoningPickerButton.trailingAnchor.constraint(equalTo: modelPickerButton.leadingAnchor, constant: -Metrics.reasoningToModelPickerSpacing),
+            reasoningPickerButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
+            reasoningPickerButton.widthAnchor.constraint(equalToConstant: Metrics.reasoningPickerChipSize),
+            reasoningPickerButton.heightAnchor.constraint(equalToConstant: Metrics.reasoningPickerChipSize),
+            reasoningPickerButton.leadingAnchor.constraint(greaterThanOrEqualTo: aiChatTextView.leadingAnchor),
         ])
 
         let bottomEqual = searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
@@ -1306,8 +1433,12 @@ extension DefaultOmniBarView {
         guard animated else {
             searchAreaContainerView.applyShadowOpacityMultiplier(1)
             aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
+            modelPickerButton.alpha = (isSearchAreaExpanded && canShowModelPicker) ? 1 : 0
+            reasoningPickerButton.alpha = (isSearchAreaExpanded && canShowReasoningPicker) ? 1 : 0
             if !isSearchAreaExpanded {
                 aiChatSendButton.isHidden = true
+                modelPickerButton.isHidden = true
+                reasoningPickerButton.isHidden = true
             }
             applyExpansionConstraints()
             applyExpansionClipping()
@@ -1340,9 +1471,13 @@ extension DefaultOmniBarView {
             if self.isSearchAreaExpanded {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.alpha = 1
+                self.modelPickerButton.alpha = self.canShowModelPicker ? 1 : 0
+                self.reasoningPickerButton.alpha = self.canShowReasoningPicker ? 1 : 0
             } else {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
                 self.aiChatSendButton.alpha = 0
+                self.modelPickerButton.alpha = 0
+                self.reasoningPickerButton.alpha = 0
             }
             self.layoutIfNeeded()
         } completion: { _ in
@@ -1350,6 +1485,8 @@ extension DefaultOmniBarView {
                 self.applyExpansionClipping()
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.isHidden = true
+                self.modelPickerButton.isHidden = true
+                self.reasoningPickerButton.isHidden = true
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
             } else {
@@ -1376,6 +1513,16 @@ extension DefaultOmniBarView {
             aiChatSendButton.alpha = 0
             searchAreaContainerView.bringSubviewToFront(aiChatSendButton)
             updateAIChatSendButton(hasText: !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+            if canShowModelPicker {
+                prepareModelPickerButtonForDisplay()
+            }
+
+            if canShowReasoningPicker {
+                reasoningPickerButton.isHidden = false
+                reasoningPickerButton.alpha = 0
+                searchAreaContainerView.bringSubviewToFront(reasoningPickerButton)
+            }
         } else {
             let currentText = aiChatTextView.text ?? ""
             aiChatTextView.isHidden = true
@@ -1383,6 +1530,38 @@ extension DefaultOmniBarView {
 
             textField.text = currentText
             textField.alpha = 1
+        }
+    }
+
+    private func refreshModelPickerVisibility() {
+        guard isSearchAreaExpanded, canShowModelPicker else {
+            modelPickerButton.isHidden = true
+            return
+        }
+        guard modelPickerButton.isHidden else { return }
+        prepareModelPickerButtonForDisplay()
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
+            self.modelPickerButton.alpha = 1
+        }
+    }
+
+    private func prepareModelPickerButtonForDisplay() {
+        modelPickerButton.isHidden = false
+        modelPickerButton.alpha = 0
+        searchAreaContainerView.bringSubviewToFront(modelPickerButton)
+    }
+
+    private func refreshReasoningPickerVisibility() {
+        guard isSearchAreaExpanded, canShowReasoningPicker else {
+            reasoningPickerButton.isHidden = true
+            return
+        }
+        guard reasoningPickerButton.isHidden else { return }
+        reasoningPickerButton.isHidden = false
+        reasoningPickerButton.alpha = 0
+        searchAreaContainerView.bringSubviewToFront(reasoningPickerButton)
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
+            self.reasoningPickerButton.alpha = 1
         }
     }
 

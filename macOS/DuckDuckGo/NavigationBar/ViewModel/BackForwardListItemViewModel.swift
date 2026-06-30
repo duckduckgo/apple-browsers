@@ -59,11 +59,11 @@ final class BackForwardListItemViewModel {
                 title = historyCoordinating.title(for: url)
             }
 
-            return (title ?? url.host ?? url.absoluteString).truncated(length: MainMenu.Constants.maxTitleLength)
+            return (title ?? url.host ?? url.absoluteString).truncated(to: MainMenu.Constants.maxTitleLength, position: .tail)
 
         case .goBackToClose(let url):
             if let title = backForwardListItem.title ?? url?.absoluteString, !title.isEmpty {
-                return String(format: UserText.closeAndReturnToParentFormat, title.truncated(length: MainMenu.Constants.maxTitleLength))
+                return String(format: UserText.closeAndReturnToParentFormat, title.truncated(to: MainMenu.Constants.maxTitleLength, position: .tail))
             } else {
                 return UserText.closeAndReturnToParent
             }

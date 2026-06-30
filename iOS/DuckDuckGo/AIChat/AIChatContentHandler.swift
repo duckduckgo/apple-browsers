@@ -144,6 +144,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let statisticsLoader: StatisticsLoader
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let debugSettings: AIChatDebugSettingsHandling
+    private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
 
     private var userScript: AIChatUserScriptProviding?
 
@@ -162,6 +163,7 @@ final class AIChatContentHandler: AIChatContentHandling {
          statisticsLoader: StatisticsLoader = .shared,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
@@ -172,6 +174,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.statisticsLoader = statisticsLoader
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.debugSettings = debugSettings
+        self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
         self.getPageContext = getPageContext
     }
 
@@ -233,7 +236,7 @@ final class AIChatContentHandler: AIChatContentHandling {
 
         if isNativeInputParameterSupported(for: aiChatSettings.aiChatURL) {
             queryItems.removeAll { $0.name == AIChatURLParameters.nativeInputName }
-            if unifiedToggleInputFeature.isAvailable {
+            if unifiedToggleInputFeature.isAvailable || iPadDuckAIControlsFeature.isAvailable {
                 queryItems.append(URLQueryItem(name: AIChatURLParameters.nativeInputName, value: AIChatURLParameters.nativeInputValue))
             }
         }
@@ -292,7 +295,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private func updatingNativeInputParameterIfNeeded(in url: URL) -> URL {
         AIChatURLParameters.updatingNativeInputURL(
             from: url,
-            isNativeInputAvailable: unifiedToggleInputFeature.isAvailable,
+            isNativeInputAvailable: unifiedToggleInputFeature.isAvailable || iPadDuckAIControlsFeature.isAvailable,
             isSupportedURL: isNativeInputParameterSupported(for: url)
         )
     }

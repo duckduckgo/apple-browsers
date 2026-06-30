@@ -271,7 +271,8 @@
                 "key": "extension_type",
                 "type": "string",
                 "description": "The web extension type the scriptlets belong to"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_web_extension_scriptlet_validation_error": {

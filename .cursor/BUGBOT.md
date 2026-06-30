@@ -178,3 +178,31 @@ then commit any changed `Package.resolved` files. This commonly appears on Depen
 - A `Package.swift` change that does not alter any dependency version (adding a target or product, source-only changes) - these need not produce a `Package.resolved` change.
 - Lockfile changes that differ **only** in the `originHash` field with no version or revision differences - `originHash` churns across Xcode versions and is not meaningful on its own.
 - A version change to a dependency that is not part of the app build graph (e.g. a test-only or tooling dependency in a package the apps do not link). If you cannot tell whether the dependency reaches the apps, frame the note as a question rather than a required change.
+
+## Embedded Privacy Config and Tracker Data
+
+The app bundles a snapshot of the remote privacy configuration and tracker data set (TDS) so it has a working fallback on first launch and when offline. These embedded files are **fetched from the remote CDN and regenerated** by `scripts/update_embedded.sh`; they are not meant to be edited by hand and are not the source of truth. Each file's hashes are recorded alongside it in a provider, and a guard test fails if a file and its recorded hash drift apart.
+
+### File pairs
+
+Each embedded data file is paired with a provider that records the file's `embeddedDataETag` (its md5) and `embeddedDataSHA` (its sha256). When the file changes, both constants must change with it.
+
+| Embedded data file | Paired provider (holds ETag + SHA) | Guard test |
+|---|---|---|
+| `iOS/Core/ios-config.json` | `iOS/Core/AppPrivacyConfigurationDataProvider.swift` | `AppPrivacyConfigurationTests` |
+| `iOS/Core/trackerData.json` | `iOS/Core/AppTrackerDataSetProvider.swift` | `EmbeddedTrackerDataTests` |
+| `macOS/DuckDuckGo/ContentBlocker/Resources/macos-config.json` | `macOS/DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift` | `AppPrivacyConfigurationTests` |
+| `macOS/DuckDuckGo/ContentBlocker/Resources/trackerData.json` | `macOS/DuckDuckGo/ContentBlocker/AppTrackerDataSetProvider.swift` | `EmbeddedTrackerDataTests` |
+
+Both guard tests are named `testWhenEmbeddedDataIsUpdatedThenUpdateSHAAndEtag` and assert that `sha256(file)` equals the provider's `embeddedDataSHA` constant.
+
+### What to flag
+
+- **A PR modifies an embedded data file (left column) without updating the `embeddedDataSHA` constant in its paired provider (right column) in the same PR.** The constant is the sha256 of the file, so if the file changes and the constant does not, the paired guard test fails on CI. This signature almost always means the file was hand-edited, because the only supported way to change it (`scripts/update_embedded.sh`) always rewrites the provider's `embeddedDataETag` and `embeddedDataSHA` in the same pass. Flag it, and ask the author to revert the hand-edit and regenerate via `scripts/update_embedded.sh` instead of patching the JSON directly.
+
+- **A PR hand-edits the content of an embedded config file (`ios-config.json` / `macos-config.json`) to add, remove, or change a feature or subfeature as part of a feature change.** Warn that **editing the embedded config does not apply the change to the remote configuration, and does not enable a flag for users.** The embedded file is only the local fallback snapshot: the app fetches the live config from the CDN at runtime, and the embedded copy is overwritten the next time `scripts/update_embedded.sh` runs. A flag added only to the embedded file is invisible to remote release management and disappears on the next regeneration. To actually ship a privacy-config change or roll out a feature flag, the change must land in the remote `privacy-configuration` repository (https://github.com/duckduckgo/privacy-configuration), which publishes to the CDN. Frame this as a reminder/question rather than a hard error, since there are occasional legitimate reasons to seed a default-off flag into the snapshot.
+
+### What NOT to flag
+
+- A wholesale embedded-file regeneration: the file is replaced and the paired provider's `embeddedDataETag` and `embeddedDataSHA` are updated together in the same PR (typically titled "Update embedded files", with no unrelated source changes). This is `scripts/update_embedded.sh` doing its job - do not flag it, and do not attach the "does not reach remote" reminder to it, because the new content came from the remote.
+- Changes to a provider Swift file that do not touch its `Constants` block (for example a refactor) when no embedded data file changed.

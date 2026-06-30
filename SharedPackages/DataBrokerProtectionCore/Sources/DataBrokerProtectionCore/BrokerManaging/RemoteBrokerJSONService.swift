@@ -35,6 +35,8 @@ extension FileManager: ZipArchiveHandling {
 }
 
 public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
+    public typealias FeatureFlagging = RemoteBrokerDeliveryFeatureFlagging & OptOutRetryErrorFeatureFlagging
+
     enum Error: Swift.Error, CustomNSError {
         case serverError(httpCode: Int?)
         case clientError
@@ -117,16 +119,17 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     private static let updateCheckInterval = TimeInterval.hours(1)
 
-    private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
+    private let featureFlagger: FeatureFlagging
     private let settings: DataBrokerProtectionSettings
     public let vault: any DataBrokerProtectionSecureVault
+    public var optOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFlagging { featureFlagger }
     private let fileManager: ZipArchiveHandling
     private let urlSession: URLSession
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let localBrokerProvider: BrokerJSONFallbackProvider?
 
-    public init(featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+    public init(featureFlagger: FeatureFlagging,
                 settings: DataBrokerProtectionSettings,
                 vault: any DataBrokerProtectionSecureVault,
                 fileManager: ZipArchiveHandling = FileManager.default,

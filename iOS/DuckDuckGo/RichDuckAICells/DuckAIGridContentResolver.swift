@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import ImageIO
 import AIChat
 import PrivacyConfig
 import os.log
@@ -27,13 +28,17 @@ import os.log
 /// data unavailable, decode failure, …).
 @MainActor
 protocol DuckAIGridItemProviding: AnyObject {
-    func gridItem(for tab: Tab) -> DuckAIGridItem?
+    /// - Parameter liveVoiceActive: when `true`, the tab has a live voice session in progress
+    /// and must render the live voice card regardless of any persisted classification.
+    func gridItem(for tab: Tab, liveVoiceActive: Bool) -> DuckAIGridItem?
 }
 
 /// Loads thumbnail images for `DuckAIGridItem.image` cards.
 @MainActor
 protocol DuckAIThumbnailLoading: AnyObject {
     func loadImage(fileRef: String) async -> UIImage?
+    /// Decodes on the calling thread; only used for the single cell being snapshotted.
+    func loadImageSynchronously(fileRef: String) -> UIImage?
 }
 
 /// Composition of both grid-content capabilities.
@@ -44,6 +49,11 @@ protocol DuckAIGridContentProviding: DuckAIGridItemProviding, DuckAIThumbnailLoa
 /// reading from native chat storage.
 @MainActor
 final class DuckAIGridContentResolver: DuckAIGridContentProviding {
+    
+    private enum Constants {
+        // Card thumbnail is 80×145pt; 512px covers it at 3× + aspectFill crop with margin.
+        static let thumbnailMaxPixelSize = 512
+    }
 
     private let featureFlagger: FeatureFlagger
     private let storageHandler: DuckAiNativeStorageHandling?
@@ -61,12 +71,17 @@ final class DuckAIGridContentResolver: DuckAIGridContentProviding {
         self.aiChatFeatureFlagProvider = AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
     }
 
-    /// `DuckAIGridItemProviding` entry point. Applies the outer feature-flag gate
-    /// and the no-chat-ID gate, then defers to `gridItem(forChatID:)`. Returns
-    /// `nil` when any gate fails — the caller falls back to the screenshot path.
-    func gridItem(for tab: Tab) -> DuckAIGridItem? {
+    /// `DuckAIGridItemProviding` entry point. Applies the outer feature-flag gate, the live-voice
+    /// override, and the no-chat-ID case, then defers to `gridItem(forChatID:)`. Returns `nil` only
+    /// when the rich card can't be shown at all (flag off) — the caller falls back to the screenshot.
+    func gridItem(for tab: Tab, liveVoiceActive: Bool) -> DuckAIGridItem? {
         guard featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) else { return nil }
-        guard let chatID = tab.link?.url.duckAIChatID else { return nil }
+        // A live voice session overrides any persisted classification
+        if liveVoiceActive {
+            return .voice
+        }
+        // No chatID (e.g. a brand-new Duck.ai tab) → the bare empty card, not the screenshot.
+        guard let chatID = tab.link?.url.duckAIChatID else { return .empty(title: nil, chip: nil) }
         return gridItem(forChatID: chatID)
     }
 
@@ -92,28 +107,58 @@ final class DuckAIGridContentResolver: DuckAIGridContentProviding {
     }
 
     func loadImage(fileRef: String) async -> UIImage? {
-        guard let storageHandler, aiChatFeatureFlagProvider.isNativeDataAccessEnabled() else {
+        guard let storageHandler,
+              aiChatFeatureFlagProvider.isNativeDataAccessEnabled() else {
             return nil
         }
+        // Decode off the main thread — this path runs during normal grid scrolling.
         return await Task.detached {
-            do {
-                guard let file = try storageHandler.getFile(uuid: fileRef) else { return nil }
-                return Self.decodeImage(from: file.data)
-            } catch {
-                Logger.aiChat.error("DuckAIGridContentResolver: failed to read file: \(error.localizedDescription)")
-                return nil
-            }
+            Self.readAndDecodeImage(fileRef: fileRef, storageHandler: storageHandler)
         }.value
     }
 
-    /// Native files may be raw image bytes OR a `{data: <base64>, mimeType: ...}` JSON
-    /// wrapper (debug-server dashboard is the reference). Try wrapper first, then raw.
-    nonisolated private static func decodeImage(from data: Data) -> UIImage? {
-        if let wrapper = try? JSONDecoder().decode(FileWrapper.self, from: data),
-           let bytes = Data(base64Encoded: wrapper.data) {
-            return UIImage(data: bytes)
+    func loadImageSynchronously(fileRef: String) -> UIImage? {
+        guard let storageHandler,
+              aiChatFeatureFlagProvider.isNativeDataAccessEnabled() else {
+            return nil
         }
-        return UIImage(data: data)
+        return Self.readAndDecodeImage(fileRef: fileRef, storageHandler: storageHandler)
+    }
+
+    nonisolated private static func readAndDecodeImage(fileRef: String, storageHandler: DuckAiNativeStorageHandling) -> UIImage? {
+        do {
+            guard let file = try storageHandler.getFile(uuid: fileRef) else { return nil }
+            return decodeImage(from: file.data)
+        } catch {
+            Logger.aiChat.error("DuckAIGridContentResolver: failed to read file: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// Native files may be raw image bytes OR a `{data: <base64>, mimeType: ...}` JSON
+    /// wrapper (debug-server dashboard is the reference). Try wrapper first, then raw,
+    /// then downsample to the card's display size so the full-res bitmap is never decoded.
+    nonisolated private static func decodeImage(from data: Data) -> UIImage? {
+        let bytes: Data
+        if let wrapper = try? JSONDecoder().decode(FileWrapper.self, from: data),
+           let decoded = Data(base64Encoded: wrapper.data) {
+            bytes = decoded
+        } else {
+            bytes = data
+        }
+        return downsample(bytes, maxPixelSize: Constants.thumbnailMaxPixelSize)
+    }
+
+    /// Decodes straight from the encoded bytes to a thumbnail-sized `CGImage` via ImageIO
+    nonisolated private static func downsample(_ data: Data, maxPixelSize: Int) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        return UIImage(cgImage: cgImage)
     }
 
     private struct FileWrapper: Decodable {

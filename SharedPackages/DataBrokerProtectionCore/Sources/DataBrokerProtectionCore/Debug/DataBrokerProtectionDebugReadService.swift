@@ -106,7 +106,7 @@ public struct DataBrokerProtectionDebugReadService {
                         submittedSuccessfullyDate: optOut.submittedSuccessfullyDate,
                         removedDate: optOut.extractedProfile.removedDate,
                         history: optOut.historyEventsSortedEarliestFirst.map { historyEvent($0) },
-                        extractedRecord: optOut.extractedProfile)
+                        extractedRecord: debugExtractedRecord(optOut.extractedProfile))
                 })
         }
 
@@ -166,17 +166,35 @@ public struct DataBrokerProtectionDebugReadService {
         }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
-    private func profileQueries(from queryData: [BrokerProfileQueryData]) -> [ProfileQuery] {
+    private func profileQueries(from queryData: [BrokerProfileQueryData]) -> [DebugProfileQuery] {
         var seenIDs = Set<Int64>()
-        var result: [ProfileQuery] = []
+        var result: [DebugProfileQuery] = []
         for data in queryData {
             let query = data.profileQuery
             if let id = query.id {
                 guard seenIDs.insert(id).inserted else { continue }
             }
-            result.append(query)
+            result.append(
+                DebugProfileQuery(id: query.id,
+                                  deprecated: query.deprecated,
+                                  addressCount: query.addresses.count)
+            )
         }
         return result
+    }
+
+    private func debugExtractedRecord(_ profile: ExtractedProfile) -> DebugExtractedRecord {
+        DebugExtractedRecord(id: profile.id,
+                             reportId: profile.reportId,
+                             removedDate: profile.removedDate,
+                             hasName: profile.name?.isEmpty == false,
+                             alternativeNameCount: profile.alternativeNames?.count ?? 0,
+                             addressCount: profile.addresses?.count ?? 0,
+                             phoneCount: profile.phoneNumbers?.count ?? 0,
+                             relativeCount: profile.relatives?.count ?? 0,
+                             hasAge: profile.age?.isEmpty == false,
+                             hasEmail: profile.email?.isEmpty == false,
+                             hasProfileURL: profile.profileUrl?.isEmpty == false)
     }
 
     private func matches(broker: DataBroker, identifier: String) -> Bool {

@@ -32,7 +32,7 @@ public struct DebugSnapshot: Encodable, Equatable {
     public let endpointURL: String
     public let brokerUpdate: BrokerUpdate
     public let brokers: [BrokerSummary]
-    public let profileQueries: [ProfileQuery]
+    public let profileQueries: [DebugProfileQuery]
 
     public struct BrokerUpdate: Encodable, Equatable {
         public let mainConfigETag: String?
@@ -85,8 +85,28 @@ public struct DebugBrokerDetail: Encodable, Equatable {
         public let submittedSuccessfullyDate: Date?
         public let removedDate: Date?
         public let history: [DebugHistoryEvent]
-        public let extractedRecord: ExtractedProfile
+        public let extractedRecord: DebugExtractedRecord
     }
+}
+
+public struct DebugProfileQuery: Encodable, Equatable {
+    public let id: Int64?
+    public let deprecated: Bool
+    public let addressCount: Int
+}
+
+public struct DebugExtractedRecord: Encodable, Equatable {
+    public let id: Int64?
+    public let reportId: String?
+    public let removedDate: Date?
+    public let hasName: Bool
+    public let alternativeNameCount: Int
+    public let addressCount: Int
+    public let phoneCount: Int
+    public let relativeCount: Int
+    public let hasAge: Bool
+    public let hasEmail: Bool
+    public let hasProfileURL: Bool
 }
 
 // MARK: - /api/events

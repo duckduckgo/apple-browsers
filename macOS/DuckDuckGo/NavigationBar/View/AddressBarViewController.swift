@@ -629,9 +629,6 @@ final class AddressBarViewController: NSViewController {
                 if isSuggestionsWindowVisible || self.isAIChatOmnibarVisible {
                     self.layoutShadowView()
                 }
-
-                self.resizeAddressBarIfNeeded()
-                self.setupAddressBarCornerRadius()
             }
             .store(in: &cancellables)
 
@@ -768,11 +765,11 @@ final class AddressBarViewController: NSViewController {
         }
 
         setupAddressBarPlaceHolder()
-        setupAddressBarCornerRadius()
+        refreshAddressBarCornerRadius()
         inactiveAddressBarShadowView.isHidden = selectionState.isSelected
     }
 
-    private func setupAddressBarCornerRadius() {
+    private func refreshAddressBarCornerRadius() {
         let styleProvider = theme.addressBarStyleProvider
 
         activeBackgroundView.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadius
@@ -903,6 +900,9 @@ final class AddressBarViewController: NSViewController {
             innerBorderView.roundedCorners = roundedCorners
             activeBackgroundViewWithSuggestions.roundedCorners = roundedCorners
         }
+
+        resizeAddressBarIfNeeded()
+        refreshAddressBarCornerRadius()
     }
 
     private func layoutShadowView() {
@@ -1453,7 +1453,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         }
 
         resizeAddressBarIfNeeded()
-        setupAddressBarCornerRadius()
+        refreshAddressBarCornerRadius()
     }
 
     /// Transitions from focused duck.ai mode (`.activeWithAIChat`) to unfocused duck.ai mode (`.inactiveWithAIChat`):

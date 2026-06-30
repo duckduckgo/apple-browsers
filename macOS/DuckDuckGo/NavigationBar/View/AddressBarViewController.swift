@@ -177,7 +177,7 @@ final class AddressBarViewController: NSViewController {
             return selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
         }
 
-        return selectionState.isSelected && (!addressBarTextField.value.isEmpty || selectionState.isInAIChatMode)
+        return selectionState.isSelected && (!addressBarTextField.value.isEmpty || selectionState.isInAIChatMode || hasEnteredText)
     }
 
     let themeManager: ThemeManaging

@@ -36,7 +36,6 @@ protocol AddressBarStyleProviding {
     var shouldShowNewSearchIcon: Bool { get }
     var shouldAddPaddingToAddressBarButtons: Bool { get }
     var shouldAddAddressBarShadowWhenInactive: Bool { get }
-    var shouldDisplayAddressBarOuerBorder: Bool { get }
     var shouldLeaveBottomPaddingInSuggestions: Bool { get }
     var shouldUseLegacyAddressBarSpacingMechanism: Bool { get }
 
@@ -133,7 +132,6 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let shouldAddPaddingToAddressBarButtons: Bool = true
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = CurrentPrivacyShieldAddressBarStyleProvider()
     let shouldAddAddressBarShadowWhenInactive: Bool = true
-    let shouldDisplayAddressBarOuerBorder: Bool = true
     let tabBarButtonSize: CGFloat = 28
     let addressBarButtonSize: CGFloat = 28
     let addTabButtonPadding: CGFloat = 32 // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
@@ -241,7 +239,6 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     let shouldShowNewSearchIcon: Bool = true
     let shouldAddPaddingToAddressBarButtons: Bool = true
     let shouldAddAddressBarShadowWhenInactive: Bool = true
-    let shouldDisplayAddressBarOuerBorder: Bool = true
     let shouldLeaveBottomPaddingInSuggestions: Bool = true
     let shouldUseLegacyAddressBarSpacingMechanism: Bool = false
 

@@ -133,8 +133,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// attachments error label and cleared when the user next changes attachments or the model.
     private var lastAttachmentError: String?
 
-    let featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
-
     let themeManager: ThemeManaging
     let omnibarController: AIChatOmnibarController
     var themeUpdateCancellable: AnyCancellable?

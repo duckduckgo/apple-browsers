@@ -1005,7 +1005,6 @@ final class AddressBarViewController: NSViewController {
         let horizontalPadding = shouldUseTallAddressBarLayout ? extendedPadding : idlePadding
         activeBackgroundViewLeadingConstraint.constant = horizontalPadding
         activeBackgroundViewTrailingConstraint.constant = horizontalPadding
-        view.layoutSubtreeIfNeeded()
     }
 
     private func refreshSuggestionsAppearance() {

@@ -594,8 +594,6 @@ extension DefaultOmniBarViewController {
         let toolController = IPadOmnibarToolPickerController(store: controller.modelStore)
         toolPickerController = toolController
         toolController.onToolsUpdated = { [weak self] in
-            // Tool selection can toggle the reasoning picker's visibility (image generation hides
-            // it), so refresh both chips together.
             self?.refreshToolPicker()
             self?.refreshReasoningPicker()
         }
@@ -637,7 +635,6 @@ extension DefaultOmniBarViewController {
         omniBarView.aiChatModelPickerMenu = controller.makeMenu { [weak self] modelId in
             guard let self else { return }
             self.modelPickerController?.handleModelSelection(modelId)
-            // A new model may support a different set of tools, so clear any now-unsupported tool.
             self.toolPickerController?.handleModelChanged()
             self.refreshModelPicker()
             self.refreshReasoningPicker()
@@ -648,8 +645,6 @@ extension DefaultOmniBarViewController {
     private func refreshReasoningPicker() {
         guard let controller = reasoningPickerController else { return }
 
-        // Match the iPhone behavior: the reasoning picker is hidden while a tool that suppresses it
-        // (image generation) is selected.
         let hiddenByTool = toolPickerController?.selectedToolHidesReasoningPicker ?? false
         if controller.isReasoningPickerAvailable, !hiddenByTool {
             omniBarView.aiChatReasoningIcon = controller.currentReasoningMode?.unifiedToggleInputButtonImage

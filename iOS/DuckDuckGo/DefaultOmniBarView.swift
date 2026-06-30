@@ -1174,8 +1174,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         // Duck.ai reasoning picker chip (iPad), icon-only, sits to the left of the model chip.
         static let reasoningPickerChipSize: CGFloat = 40.0
         static let reasoningToModelPickerSpacing: CGFloat = 4.0
-
-        // Duck.ai tool picker chip (iPad), icon-only, pinned to the far left of the controls row.
         static let toolPickerChipSize: CGFloat = 40.0
 
         static let expandedPadSizeSpacing: CGFloat = 24.0
@@ -1441,7 +1439,6 @@ extension DefaultOmniBarView {
             reasoningPickerButton.heightAnchor.constraint(equalToConstant: Metrics.reasoningPickerChipSize),
             reasoningPickerButton.leadingAnchor.constraint(greaterThanOrEqualTo: aiChatTextView.leadingAnchor),
 
-            // Pinned to the far left of the controls row — the mirror image of the send button.
             toolPickerButton.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: Metrics.duckAITextViewBottomPadding),
             toolPickerButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
             toolPickerButton.widthAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),

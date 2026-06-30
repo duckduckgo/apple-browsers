@@ -1909,7 +1909,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let isToggleFeatureEnabled = isSearchModeToggleFeatureActive
         let shouldShowToggle = shouldShowSearchModeToggle
-        // Capture before updateToggleExpansionState(_:) overwrites wasToggleVisible.
         let toggleVisibilityChanged = shouldShowToggle != wasToggleVisible
 
         // Update key view chain when toggle visibility changes
@@ -1918,8 +1917,6 @@ final class AddressBarButtonsViewController: NSViewController {
         searchModeToggleControl?.isHidden = !shouldShowToggle
         updateToggleExpansionState(shouldShowToggle: shouldShowToggle)
 
-        // The trailing padding depends on whether the toggle is shown, so re-run when its
-        // visibility flips (e.g. the toggle hides when visiting a site).
         if toggleVisibilityChanged {
             setupButtonPaddings(isFocused: isTextFieldEditorFirstResponder)
         }

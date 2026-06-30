@@ -742,12 +742,15 @@ final class AddressBarTextField: NSTextField {
     }
 
     enum SuggestionWindowSizes {
+
         private enum ToggleAlignmentOffset {
             static let rebrandedWithToggle: CGFloat = 2
             static let rebrandedWithoutToggle: CGFloat = 1
             static let legacyWithToggle: CGFloat = 4
             static let legacyWithoutToggle: CGFloat = 0
         }
+
+        private static let padding = CGPoint(x: -20, y: 1)
 
         static func verticalOffset(isAppRebranded: Bool, aiChatOmnibarToggleEnabled: Bool) -> CGFloat {
             if isAppRebranded {
@@ -758,7 +761,7 @@ final class AddressBarTextField: NSTextField {
         }
 
         static func padding(isAppRebranded: Bool, aiChatOmnibarToggleEnabled: Bool) -> CGPoint {
-            var output = CGPoint(x: -20, y: 1)
+            var output = padding
             output.y += verticalOffset(isAppRebranded: isAppRebranded, aiChatOmnibarToggleEnabled: aiChatOmnibarToggleEnabled)
             return output
         }

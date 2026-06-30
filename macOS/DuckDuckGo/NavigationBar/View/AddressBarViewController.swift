@@ -376,7 +376,7 @@ final class AddressBarViewController: NSViewController {
 
         setupInactiveShadowView()
         setupActiveOuterBorderSize()
-        setupConstraints()
+        refreshConstraints()
         refreshSuggestionsAppearance()
     }
 
@@ -810,7 +810,7 @@ final class AddressBarViewController: NSViewController {
         activeOuterBorderTopConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
     }
 
-    private func setupConstraints() {
+    private func refreshConstraints() {
         let styleProvider = theme.addressBarStyleProvider
         inactiveBackgroundViewLeadingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewLeadingPadding
         inactiveBackgroundViewTrailingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewTrailingPadding
@@ -908,9 +908,8 @@ final class AddressBarViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
 
         /// Keep the suggestions shadow aligned with the panel by applying the same vertical offset.
-        let offset = AddressBarTextField.SuggestionWindowSizes.verticalOffset(
-            isAppRebranded: themeManager.isAppRebranded,
-            aiChatOmnibarToggleEnabled: featureFlagger.isFeatureOn(.aiChatOmnibarToggle))
+        let isOmnibarEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let offset = AddressBarTextField.SuggestionWindowSizes.verticalOffset(isAppRebranded: themeManager.isAppRebranded, aiChatOmnibarToggleEnabled: isOmnibarEnabled)
         frame.origin.y += offset
         frame.size.height -= offset
 

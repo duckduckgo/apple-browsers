@@ -137,14 +137,14 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
 
     var name: String {
         switch self {
-        case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
-        case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
-        case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown"
-        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success"
-        case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
-        case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
-        case .syncSetupEndedFailed: return "sync_setup_ended_failed"
-        case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"
+        case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown_mac"
+        case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied_mac"
+        case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown_mac"
+        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success_mac"
+        case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed_mac"
+        case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned_mac"
+        case .syncSetupEndedFailed: return "sync_setup_ended_failed_mac"
+        case .syncSetupEndedSuccessful: return "sync_setup_ended_successful_mac"
         }
     }
 

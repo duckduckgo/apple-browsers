@@ -139,7 +139,7 @@ public extension NewTabPageDataModel {
         /// or when the backend omits them, in which case the web falls back to its built-in defaults.
         /// The `= nil` default makes this a trailing optional parameter of the synthesized memberwise
         /// initializer, so the existing `OmnibarConfig(...)` call sites (and tests) compile unchanged.
-        let attachmentLimits: AttachmentLimits? = nil
+        var attachmentLimits: AttachmentLimits? = nil
     }
 
     // MARK: - omnibar_getSuggestions

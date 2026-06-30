@@ -177,7 +177,7 @@ final class AddressBarViewController: NSViewController {
             return selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
         }
 
-        return selectionState.isSelected && (!addressBarTextField.value.isEmpty || selectionState.isInAIChatMode || hasEnteredText)
+        return selectionState.isSelected && (hasEnteredText || !addressBarTextField.value.isEmpty || selectionState.isInAIChatMode)
     }
 
     let themeManager: ThemeManaging
@@ -1109,7 +1109,10 @@ final class AddressBarViewController: NSViewController {
         }
 
         setupAddressBarPlaceHolder()
-        resetTextEntered()
+
+        if selectionState == .inactive {
+            resetTextEntered()
+        }
     }
 
     private func fireAddressBarActivatedPixelIfNeeded() {
@@ -1331,6 +1334,10 @@ private extension AddressBarViewController {
             return
         }
 
+        if !addressBarTextField.value.isUserTyped {
+            return
+        }
+
         hasEnteredText = true
     }
 
@@ -1339,6 +1346,8 @@ private extension AddressBarViewController {
     }
 
     func resizeAddressBarIfNeeded() {
+        guard isViewLoaded else { return }
+
         let usesTallLayout = shouldUseTallAddressBarLayout
         guard usesTallLayout != displaysTallLayout else {
             return
@@ -1420,6 +1429,8 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         }
         sharedTextState?.resetUserInteractionAfterSwitchingModes()
         delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
+
+        resizeAddressBarIfNeeded()
     }
 
     func setAIChatOmnibarVisible(_ visible: Bool, shouldKeepSelection: Bool = false) {

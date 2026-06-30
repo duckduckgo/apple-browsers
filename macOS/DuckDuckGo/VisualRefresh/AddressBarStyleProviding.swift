@@ -261,9 +261,9 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarButtonsContainerViewLeadingPadding: CGFloat = 6
     let addressBarButtonsContainerViewTrailingPadding: CGFloat = 6
     let addressBarInnerBorderViewRadius: CGFloat = 19           // OK - Matches addressBarActiveBackgroundViewRadius
-    let addressBarTextFieldLeadingPadding: CGFloat = 26
+    let addressBarTextFieldLeadingPadding: CGFloat = 23
     let addTabButtonPadding: CGFloat = 32                       // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
-    let aiChatOmnibarTextContainerLeadingPadding: CGFloat = 16
+    let aiChatOmnibarTextContainerLeadingPadding: CGFloat = 13
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = CurrentPrivacyShieldAddressBarStyleProvider()
     let suggestionHighlightCornerRadius: CGFloat = 12           // OK - Pending Height adjustment
     let suggestionIconViewLeadingPadding: CGFloat = 8

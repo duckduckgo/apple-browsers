@@ -291,10 +291,6 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     // MARK: - Feature Flag Helpers
     private let featureFlagger: FeatureFlagger
 
-    private var isAIChatOmnibarEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-    }
-
     /// Designated Initializer
     ///
     init(featureFlagger: FeatureFlagger) {

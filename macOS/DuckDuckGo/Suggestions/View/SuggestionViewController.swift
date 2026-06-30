@@ -338,8 +338,8 @@ extension SuggestionViewController: ThemeUpdateListening {
         let colorsProvider = theme.colorsProvider
 
         backgroundViewTopConstraint.constant = barStyleProvider.topSpaceForSuggestionWindow
-        backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
-        innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
+        backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
+        innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
         backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
 
         tableView.reloadData()

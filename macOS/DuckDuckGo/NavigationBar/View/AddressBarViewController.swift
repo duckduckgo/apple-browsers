@@ -171,13 +171,17 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
+    private var isSearchOrChatSuggestionsWindowVisible: Bool {
+        addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible
+    }
+
     /// True when the nav bar should render at its tall / focused height
     var shouldUseTallAddressBarLayout: Bool {
         guard themeManager.isAppRebranded else {
             return selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
         }
 
-        return selectionState.isSelected && (hasEnteredText || !addressBarTextField.value.isEmpty || selectionState.isInAIChatMode)
+        return selectionState.isSelected && isSearchOrChatSuggestionsWindowVisible
     }
 
     let themeManager: ThemeManaging
@@ -200,7 +204,6 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    private var hasEnteredText: Bool = false
     private var displaysTallLayout: Bool = false
 
     private var isFirstResponder = false {
@@ -574,8 +577,6 @@ final class AddressBarViewController: NSViewController {
                 addressBarButtonsViewController?.textFieldValue = value
                 updateView()
                 updateSwitchToTabBoxAppearance()
-                markTextEnteredIfNeeded()
-                resizeAddressBarIfNeeded()
             }
             .store(in: &cancellables)
     }
@@ -628,6 +629,9 @@ final class AddressBarViewController: NSViewController {
                 if isSuggestionsWindowVisible || self.isAIChatOmnibarVisible {
                     self.layoutShadowView()
                 }
+
+                self.resizeAddressBarIfNeeded()
+                self.setupAddressBarCornerRadius()
             }
             .store(in: &cancellables)
 
@@ -1111,10 +1115,6 @@ final class AddressBarViewController: NSViewController {
         }
 
         setupAddressBarPlaceHolder()
-
-        if selectionState == .inactive {
-            resetTextEntered()
-        }
     }
 
     private func fireAddressBarActivatedPixelIfNeeded() {
@@ -1331,22 +1331,6 @@ extension AddressBarViewController: ThemeUpdateListening {
 
 private extension AddressBarViewController {
 
-    func markTextEnteredIfNeeded() {
-        if addressBarTextField.value.isEmpty {
-            return
-        }
-
-        if !addressBarTextField.value.isUserTyped {
-            return
-        }
-
-        hasEnteredText = true
-    }
-
-    func resetTextEntered() {
-        hasEnteredText = false
-    }
-
     func resizeAddressBarIfNeeded() {
         guard isViewLoaded else { return }
 
@@ -1431,8 +1415,6 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         }
         sharedTextState?.resetUserInteractionAfterSwitchingModes()
         delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
-
-        resizeAddressBarIfNeeded()
     }
 
     func setAIChatOmnibarVisible(_ visible: Bool, shouldKeepSelection: Bool = false) {
@@ -1467,6 +1449,9 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
                 addressBarButtonsViewController?.resetSearchModeToggle()
             }
         }
+
+        resizeAddressBarIfNeeded()
+        setupAddressBarCornerRadius()
     }
 
     /// Transitions from focused duck.ai mode (`.activeWithAIChat`) to unfocused duck.ai mode (`.inactiveWithAIChat`):

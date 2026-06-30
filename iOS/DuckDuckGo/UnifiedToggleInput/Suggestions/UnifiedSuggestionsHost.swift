@@ -52,6 +52,10 @@ final class UnifiedSuggestionsHost {
         return cachedFavoritesController
     }
 
+    func updateOpenedAfterIdle(_ openedAfterIdle: Bool) {
+        cachedFavoritesController?.setOpenedAfterIdle(openedAfterIdle)
+    }
+
     init(config: UnifiedSuggestionsHostConfig) {
         self.config = config
         self.isAddressBarAtBottom = config.isAddressBarAtBottom

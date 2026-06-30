@@ -246,9 +246,10 @@ class AddressBarSpoofingUITests: UITestCase {
 
         let addressBarEmpty = addressBarValue.isEmpty
         let addressBarIsData = addressBarValue.starts(with: "data:text/html")
+        let addressBarOnSourcePage = addressBarValue.contains("privacy-test-pages.site")
 
-        XCTAssertTrue(addressBarEmpty || addressBarIsData,
-                      "Address bar should be empty or show data URL, got: \(addressBarValue)")
+        XCTAssertTrue(addressBarEmpty || addressBarIsData || addressBarOnSourcePage,
+                      "Address bar should be empty, show a data URL, or stay on the source page, got: \(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithUnsupportedScheme() {

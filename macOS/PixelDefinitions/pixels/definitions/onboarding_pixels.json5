@@ -126,5 +126,19 @@
         "owners": ["SabrinaTardio", "rachelmcr"],
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_debug_onboarding_chrome-extension-install_detection-failed": {
+        "description": "Fired when onboarding Chrome extension eligibility detection fails to read Application Support.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_debug_onboarding_chrome-extension-install_install-failed": {
+        "description": "Fired when onboarding Chrome extension install fails to write Application Support.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

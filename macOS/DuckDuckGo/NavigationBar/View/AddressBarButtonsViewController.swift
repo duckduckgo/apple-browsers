@@ -1266,6 +1266,10 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyDashboardButton.setCornerRadius(cornerRadius)
         permissionCenterButton.setCornerRadius(cornerRadius)
         youTubeAdBlockButton.setCornerRadius(cornerRadius)
+
+        if featureFlagger.isFeatureOn(.appRebranding) {
+            trailingButtonsBackground.setCornerRadius(cornerRadius)
+        }
     }
 
     private func setupButtonsSize() {

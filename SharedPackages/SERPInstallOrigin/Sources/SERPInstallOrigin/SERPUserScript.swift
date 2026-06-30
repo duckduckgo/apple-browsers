@@ -45,17 +45,17 @@ public final class SERPUserScript: NSObject, Subfeature {
 
     public let featureName: String = "serp"
 
-    public var messageOriginPolicy: MessageOriginPolicy {
-        .only(rules: [.exact(hostname: "duckduckgo.com")])
-    }
+    public let messageOriginPolicy: MessageOriginPolicy
 
     public weak var broker: UserScriptMessageBroker?
 
     private let handler: SERPUserScriptHandling
 
     public init(platform: DataModel.Platform,
+                serpBaseURL: URL,
                 installOriginEnabled: Bool,
                 installOriginVariantProvider: InstallOriginVariantProviding?) {
+        self.messageOriginPolicy = Self.makeMessageOriginPolicy(for: serpBaseURL)
         self.handler = SERPUserScriptHandler(
             platform: platform,
             installOriginEnabled: installOriginEnabled,
@@ -64,9 +64,16 @@ public final class SERPUserScript: NSObject, Subfeature {
         super.init()
     }
 
-    init(handler: SERPUserScriptHandling) {
+    init(handler: SERPUserScriptHandling, serpBaseURL: URL = URL(string: "https://duckduckgo.com")!) {
+        self.messageOriginPolicy = Self.makeMessageOriginPolicy(for: serpBaseURL)
         self.handler = handler
         super.init()
+    }
+
+    private static func makeMessageOriginPolicy(for serpBaseURL: URL) -> MessageOriginPolicy {
+        let rule = HostnameMatchingRule.makeExactRule(for: serpBaseURL)
+            ?? .exact(hostname: "duckduckgo.com")
+        return .only(rules: [rule])
     }
 
     public func with(broker: UserScriptMessageBroker) {

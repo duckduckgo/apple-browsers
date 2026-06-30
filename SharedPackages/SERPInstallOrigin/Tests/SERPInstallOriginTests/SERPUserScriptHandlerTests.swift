@@ -103,9 +103,45 @@ final class SERPUserScriptHandlerTests: XCTestCase {
         XCTAssertNil(provider.lastCampaign)
     }
 
+    func testWhenSerpBaseURLHasHostnameThenMessageOriginPolicyAllowsThatHostname() {
+        let script = SERPUserScript(
+            platform: .macos,
+            serpBaseURL: URL(string: "https://use-devtesting18.duckduckgo.com")!,
+            installOriginEnabled: true,
+            installOriginVariantProvider: nil
+        )
+
+        XCTAssertTrue(script.messageOriginPolicy.isAllowed("use-devtesting18.duckduckgo.com"))
+        XCTAssertFalse(script.messageOriginPolicy.isAllowed("duckduckgo.com"))
+    }
+
+    func testWhenSerpBaseURLHasNonStandardPortThenMessageOriginPolicyIncludesPort() {
+        let script = SERPUserScript(
+            platform: .macos,
+            serpBaseURL: URL(string: "http://localhost:8080")!,
+            installOriginEnabled: true,
+            installOriginVariantProvider: nil
+        )
+
+        XCTAssertTrue(script.messageOriginPolicy.isAllowed("localhost:8080"))
+        XCTAssertFalse(script.messageOriginPolicy.isAllowed("localhost"))
+    }
+
+    func testWhenSerpBaseURLHasNoHostThenMessageOriginPolicyFallsBackToDuckDuckGo() {
+        let script = SERPUserScript(
+            platform: .macos,
+            serpBaseURL: URL(string: "file:///serp")!,
+            installOriginEnabled: true,
+            installOriginVariantProvider: nil
+        )
+
+        XCTAssertTrue(script.messageOriginPolicy.isAllowed("duckduckgo.com"))
+    }
+
     func testWhenUnknownMethodRequestedThenHandlerThrowsMessageNotImplemented() async throws {
         let script = SERPUserScript(
             platform: .macos,
+            serpBaseURL: URL(string: "https://duckduckgo.com")!,
             installOriginEnabled: true,
             installOriginVariantProvider: MockInstallOriginVariantProvider()
         )
@@ -122,6 +158,7 @@ final class SERPUserScriptHandlerTests: XCTestCase {
         let provider = MockInstallOriginVariantProvider()
         let script = SERPUserScript(
             platform: .macos,
+            serpBaseURL: URL(string: "https://duckduckgo.com")!,
             installOriginEnabled: true,
             installOriginVariantProvider: provider
         )
@@ -133,6 +170,7 @@ final class SERPUserScriptHandlerTests: XCTestCase {
     func testWhenUnknownMethodRequestedThenBrokerReturnsErrorEnvelope() async throws {
         let script = SERPUserScript(
             platform: .macos,
+            serpBaseURL: URL(string: "https://duckduckgo.com")!,
             installOriginEnabled: true,
             installOriginVariantProvider: MockInstallOriginVariantProvider()
         )

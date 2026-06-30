@@ -134,7 +134,7 @@ final class DBPHomeViewController: NSViewController {
                 return
             }
 
-            fireDashboardOpenPixelsIfNeeded(isAuthenticated: isAuthenticated)
+            await fireDashboardOpenPixelsIfNeeded(isAuthenticated: isAuthenticated)
         }
     }
 
@@ -175,13 +175,11 @@ final class DBPHomeViewController: NSViewController {
         }
     }
 
-    private func fireDashboardOpenPixelsIfNeeded(isAuthenticated: Bool) {
-        Task { @MainActor in
-            guard await prerequisiteVerifier.checkStatus() == .valid else { return }
+    private func fireDashboardOpenPixelsIfNeeded(isAuthenticated: Bool) async {
+        guard await prerequisiteVerifier.checkStatus() == .valid else { return }
 
-            interactionPixels?.fireInteractionPixel(isAuthenticated: isAuthenticated)
-            sharedPixelsHandler?.fire(.dashboardOpen(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
-        }
+        interactionPixels?.fireInteractionPixel(isAuthenticated: isAuthenticated)
+        sharedPixelsHandler?.fire(.dashboardOpen(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
     }
 
     private func displayDBPUI() {

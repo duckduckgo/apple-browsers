@@ -1823,7 +1823,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let isAppRebranding = themeManager.isAppRebranded
 
         backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
-        backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
+        backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         if isAppRebranding {
             backgroundView.roundedCorners = [.bottomLeft, .bottomRight]
@@ -1871,17 +1871,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
 
-        innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")
         innerBorderView.backgroundColor = NSColor.clear
-        innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
+        innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         if isAppRebranding {
             innerBorderView.roundedCorners = [.bottomLeft, .bottomRight]
         }
 
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
-        shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
+        shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         NSAppearance.withAppAppearance {
             imageUploadButton.hoverBackgroundColor = .buttonMouseOver

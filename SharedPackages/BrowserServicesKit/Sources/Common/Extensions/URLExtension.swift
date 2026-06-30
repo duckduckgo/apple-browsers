@@ -444,9 +444,9 @@ extension URL {
                 return selfParsed.host == otherParsed.host
             case .port:
                 return selfParsed.port == otherParsed.port
-            case .path where !self.isOpaque && !other.isOpaque:     
+            case .path where !self.isOpaque && !other.isOpaque:
                 return selfParsed.path.dropping(suffix: "/") == otherParsed.path.dropping(suffix: "/")
-            case .path:     
+            case .path:
                 return selfParsed.path == otherParsed.path
             case .query:
                 return selfParsed.query == otherParsed.query

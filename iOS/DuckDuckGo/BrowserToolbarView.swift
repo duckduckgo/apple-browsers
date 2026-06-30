@@ -26,6 +26,10 @@ final class BrowserToolbarView: UIView {
     static let buttonsHeight: CGFloat = 56
     static let omnibarHorizontalInset: CGFloat = -8
     private static let horizontalEdgePadding: CGFloat = 8
+    /// Extra horizontal inset for the button row in the non-floating (legacy) style so the outer
+    /// buttons sit where the production `UIToolbar` placed them. Tuned to match production's
+    /// end-button centres; the floating style keeps the tighter `horizontalEdgePadding`.
+    private static let legacyButtonRowHorizontalPadding: CGFloat = 20
     private static let cornerRadius: CGFloat = 32
     private static let floatingBarOuterInsets = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
     private static let legacyBarOuterInsets = UIEdgeInsets.zero
@@ -337,6 +341,8 @@ final class BrowserToolbarView: UIView {
             self.materialBackgroundView.effect = self.isFloatingStyleEnabled ? self.materialEffect() : nil
             self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
+            let buttonRowPadding = self.isFloatingStyleEnabled ? Self.horizontalEdgePadding : Self.legacyButtonRowHorizontalPadding
+            self.buttonStack.layoutMargins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
             self.updateCornerStyle()
             self.layoutIfNeeded()
         }

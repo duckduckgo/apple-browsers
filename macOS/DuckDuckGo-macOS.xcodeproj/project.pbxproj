@@ -292,6 +292,8 @@
 		1E68BC362ECF69ED0013A943 /* AutoconsentStatsPopoverCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E68BC352ECF69ED0013A943 /* AutoconsentStatsPopoverCoordinator.swift */; };
 		1E68BC372ECF69ED0013A943 /* AutoconsentStatsPopoverCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E68BC352ECF69ED0013A943 /* AutoconsentStatsPopoverCoordinator.swift */; };
 		1E75FA3E2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E75FA3C2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift */; };
+		C0DE0071E018E1FBF0000000 /* CookiePopupProtectionOptInPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0071E018E1FE00000000 /* CookiePopupProtectionOptInPixel.swift */; };
+		C0DE0071E018E1FA30000000 /* CookiePopupProtectionOptInPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0071E018E1FE00000000 /* CookiePopupProtectionOptInPixel.swift */; };
 		0DE0002CB1E0041EDE1E6A00 /* CookiePopupProtectionOptInPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE0001CB1E0041EDE1E6A00 /* CookiePopupProtectionOptInPromoDelegate.swift */; };
 		0DE0003CB1E0041EDE1E6A00 /* CookiePopupProtectionOptInPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE0001CB1E0041EDE1E6A00 /* CookiePopupProtectionOptInPromoDelegate.swift */; };
 		D1D1D1D100000000000000F1 /* WindowDimmingBlockingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D1D1D100000000000000F0 /* WindowDimmingBlockingView.swift */; };
@@ -4939,6 +4941,7 @@
 		1E6783F62E156DA200AE465A /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = NetworkProtectionSystemExtension/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
 		1E68BC352ECF69ED0013A943 /* AutoconsentStatsPopoverCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentStatsPopoverCoordinator.swift; sourceTree = "<group>"; };
 		1E75FA3C2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookiePopupProtectionOptInView.swift; sourceTree = "<group>"; };
+		C0DE0071E018E1FE00000000 /* CookiePopupProtectionOptInPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookiePopupProtectionOptInPixel.swift; sourceTree = "<group>"; };
 		0DE0001CB1E0041EDE1E6A00 /* CookiePopupProtectionOptInPromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookiePopupProtectionOptInPromoDelegate.swift; sourceTree = "<group>"; };
 		D1D1D1D100000000000000F0 /* WindowDimmingBlockingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDimmingBlockingView.swift; sourceTree = "<group>"; };
 		1E7D3C332F2232890099611C /* WebExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = WebExtensions; path = ../SharedPackages/WebExtensions; sourceTree = SOURCE_ROOT; };
@@ -7760,6 +7763,7 @@
 			isa = PBXGroup;
 			children = (
 				1E75FA3C2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift */,
+				C0DE0071E018E1FE00000000 /* CookiePopupProtectionOptInPixel.swift */,
 				0DE0001CB1E0041EDE1E6A00 /* CookiePopupProtectionOptInPromoDelegate.swift */,
 				D1D1D1D100000000000000F0 /* WindowDimmingBlockingView.swift */,
 			);
@@ -15518,6 +15522,7 @@
 				373C82512D8326E8004FBBBE /* FaviconsTabExtension.swift in Sources */,
 				A370E7706B30748FF9DEAD3F /* TabSuspensionExtension.swift in Sources */,
 				1E75FA3F2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift in Sources */,
+				C0DE0071E018E1FA30000000 /* CookiePopupProtectionOptInPixel.swift in Sources */,
 				0DE0003CB1E0041EDE1E6A00 /* CookiePopupProtectionOptInPromoDelegate.swift in Sources */,
 				D1D1D1D100000000000000F2 /* WindowDimmingBlockingView.swift in Sources */,
 				58407D61235669B6AEEFB850 /* TabSuspensionService.swift in Sources */,
@@ -17155,6 +17160,7 @@
 				379858132D730EFB008773F6 /* DefaultHistoryViewDialogPresenter.swift in Sources */,
 				E274EFF62E1D55D500373C41 /* NewTabPageOmnibarSuggestionsProvider.swift in Sources */,
 				1E75FA3E2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift in Sources */,
+				C0DE0071E018E1FBF0000000 /* CookiePopupProtectionOptInPixel.swift in Sources */,
 				0DE0002CB1E0041EDE1E6A00 /* CookiePopupProtectionOptInPromoDelegate.swift in Sources */,
 				D1D1D1D100000000000000F1 /* WindowDimmingBlockingView.swift in Sources */,
 				1D99CDDB2D929EC900656A84 /* PinnedTabsPixel.swift in Sources */,

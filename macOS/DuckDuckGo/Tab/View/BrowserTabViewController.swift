@@ -675,12 +675,12 @@ final class BrowserTabViewController: NSViewController {
     }
 
     /// Presents the Cookie Pop-up Protection opt-in dialog centered over the window.
-    /// `onConfirm` fires when the user taps Confirm — the promo queue uses it to record the result.
+    /// `onConfirm` fires when the user taps Confirm, reporting the resulting Cookie Pop-up Protection preference.
     /// ponytail: the dim/backdrop is a WindowDimmingBlockingView mounted on the window frame view
     /// (contentView.superview) so it covers the WHOLE window — titlebar / tab bar included — and its local
     /// event monitor blocks mouse/scroll from reaching anything behind it. The card is a sibling above the
     /// backdrop so it receives events normally (no manual forwarding).
-    func showCookiePopupProtectionOptInDialog(onConfirm: (() -> Void)? = nil) {
+    func showCookiePopupProtectionOptInDialog(onConfirm: ((CookiePopupPreference) -> Void)? = nil) {
         guard cookiePopupOptInHostingController == nil else { return }
         guard let frameView = view.window?.contentView?.superview else { return }
 
@@ -701,9 +701,11 @@ final class BrowserTabViewController: NSViewController {
         let variant: CookiePopupProtectionOptInVariant = cookiePopupProtectionPreferences.isAutoconsentEnabled ? .whenEnabled : .whenDisabled
 
         let hostingController = NSHostingController(rootView: CookiePopupProtectionOptInView(variant: variant, onConfirm: { [weak self] selectedOption in
-            self?.applyCookiePopupProtectionOptInSelection(selectedOption)
+            let preference = self?.applyCookiePopupProtectionOptInSelection(selectedOption)
             self?.dismissCookiePopupProtectionOptInDialog()
-            onConfirm?()
+            if let preference {
+                onConfirm?(preference)
+            }
         }))
         let cardSize = hostingController.view.fittingSize
         hostingController.view.translatesAutoresizingMaskIntoConstraints = true
@@ -755,9 +757,13 @@ final class BrowserTabViewController: NSViewController {
     }
 
     /// The top option turns on Cookie Pop-up Protection with the most-private handling; the bottom keeps the current setting.
-    private func applyCookiePopupProtectionOptInSelection(_ option: CookiePopupProtectionOptInOption) {
-        guard option == .optIn else { return }
-        cookiePopupProtectionPreferences.cookiePopupPreference = .max
+    /// Returns the resulting preference (for telemetry).
+    @discardableResult
+    private func applyCookiePopupProtectionOptInSelection(_ option: CookiePopupProtectionOptInOption) -> CookiePopupPreference {
+        if option == .optIn {
+            cookiePopupProtectionPreferences.cookiePopupPreference = .max
+        }
+        return cookiePopupProtectionPreferences.cookiePopupPreference
     }
 
     private func presentContextualOnboarding(showLastDialog: Bool = false) {

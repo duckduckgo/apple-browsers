@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Core
 import Persistence
 import SwiftUI
 import UIKit
@@ -51,21 +52,27 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
         guard !store.hasShownLaunchPrompt else { return nil }
-        return ModalPromptConfiguration(viewController: Self.makeViewController())
+        return ModalPromptConfiguration(viewController: Self.makeViewController(onOptionConfirmed: { preference in
+            Pixel.fire(pixel: .cookiePopupOptInOptionConfirmed,
+                       withAdditionalParameters: [PixelParameters.cookiePopupPreference: preference.rawValue])
+        }))
     }
 
     func didPresentModal() {
+        // First launch presentation vs subsequent ones (the latter is dormant while the dialog shows once per install).
+        Pixel.fire(pixel: store.hasShownLaunchPrompt ? .cookiePopupOptInShownRepeat : .cookiePopupOptInShownFirst)
         store.hasShownLaunchPrompt = true
     }
 
     /// Builds the opt-in dialog hosting controller, configured to dismiss itself on Confirm.
     /// Shared with the debug menu's manual presentation.
     @MainActor
-    static func makeViewController() -> UIViewController {
+    static func makeViewController(onOptionConfirmed: ((CookiePopupPreference) -> Void)? = nil) -> UIViewController {
         let variant: CookiePopupProtectionOptInVariant = AppUserDefaults().autoconsentEnabled ? .whenEnabled : .whenDisabled
         weak var controller: UIViewController?
         let hostingController = UIHostingController(rootView: CookiePopupProtectionOptInView(variant: variant, onConfirm: { selectedOption in
-            Self.applyCookiePopupProtectionOptInSelection(selectedOption)
+            let preference = Self.applyCookiePopupProtectionOptInSelection(selectedOption)
+            onOptionConfirmed?(preference)
             controller?.dismiss(animated: true)
         }))
         controller = hostingController
@@ -80,8 +87,12 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
     }
 
     /// The top option turns on Cookie Pop-up Protection with the most-private handling; the bottom keeps the current setting.
-    static func applyCookiePopupProtectionOptInSelection(_ option: CookiePopupProtectionOptInOption) {
-        guard option == .optIn else { return }
-        AppUserDefaults().cookiePopupPreference = .max
+    /// Returns the resulting preference (for telemetry).
+    @discardableResult
+    static func applyCookiePopupProtectionOptInSelection(_ option: CookiePopupProtectionOptInOption) -> CookiePopupPreference {
+        if option == .optIn {
+            AppUserDefaults().cookiePopupPreference = .max
+        }
+        return AppUserDefaults().cookiePopupPreference
     }
 }

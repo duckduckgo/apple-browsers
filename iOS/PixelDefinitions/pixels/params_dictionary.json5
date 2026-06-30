@@ -9,6 +9,12 @@
         "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
         "examples": ["7.175.1"]
     },
+    "cookie_popup_preference": {
+        "key": "cookie_popup_preference",
+        "type": "string",
+        "description": "The resulting Cookie Pop-up Protection preference after the user confirms the opt-in dialog",
+        "enum": ["max", "default", "off"]
+    },
     "atb": {
         "key": "atb",
         "type": "string",

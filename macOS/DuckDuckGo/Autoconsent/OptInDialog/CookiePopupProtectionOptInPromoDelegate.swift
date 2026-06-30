@@ -18,6 +18,8 @@
 
 import AppKit
 import Combine
+import PixelKit
+import WebExtensions
 
 /// Presents the Cookie Pop-up Protection opt-in dialog through the promo queue.
 /// ponytail: always eligible for now — real show conditions come later.
@@ -39,9 +41,16 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
             return .noChange
         }
 
+        // Skip telemetry for force-shows (promo debug menu). First launch presentation vs subsequent ones
+        // (the latter is dormant while the dialog shows once per install).
+        if !force {
+            PixelKit.fire(history.lastShown == nil ? CookiePopupProtectionOptInPixel.shownFirst : .shownRepeat, frequency: .standard)
+        }
+
         return await withCheckedContinuation { continuation in
             showContinuation = continuation
-            browserTabViewController.showCookiePopupProtectionOptInDialog(onConfirm: { [weak self] in
+            browserTabViewController.showCookiePopupProtectionOptInDialog(onConfirm: { [weak self] preference in
+                PixelKit.fire(CookiePopupProtectionOptInPixel.optionConfirmed(preference: preference), frequency: .standard)
                 self?.resume(with: .actioned)
             })
         }

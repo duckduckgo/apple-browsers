@@ -229,6 +229,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
                 isEditing: Bool) {
         let params = Parameters(state: state)
 
+        tabsStyleItem.image = tabsStyle.image
         tabsStyleItem.menu = makeTabsStyleMenu(current: tabsStyle)
         editMenuItem.menu = actions.onEditMenuRequested?()
         multiSelectMenuItem.menu = actions.onMultiSelectMenuRequested?()

@@ -56,7 +56,7 @@ struct DataBrokerProtectionAppEvents {
                let profileQueriesCount = try? dataManager.profileQueriesCount(),
                profileQueriesCount > 0 {
                 Logger.dataBrokerProtection.log("Found \(profileQueriesCount) profile queries in DB. Restarting agent.")
-                restartBackgroundAgent(loginItemsManager: loginItemsManager)
+                await restartBackgroundAgent(loginItemsManager: loginItemsManager)
 
                 // Wait to make sure the agent has had time to restart before attempting to call a method on it
                 try await Task.sleep(nanoseconds: 1_000_000_000)
@@ -81,15 +81,12 @@ struct DataBrokerProtectionAppEvents {
         }
     }
 
-    private func restartBackgroundAgent(loginItemsManager: LoginItemsManager) {
+    private func restartBackgroundAgent(loginItemsManager: LoginItemsManager) async {
         DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerResetLoginItemDaily, frequency: .legacyDaily)
-        Task {
-            await loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
-            NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
-            await loginItemsManager.enableLoginItems([LoginItem.dbpBackgroundAgent])
-            NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
-        }
-
+        await loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
+        await loginItemsManager.enableLoginItems([LoginItem.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
         // restartLoginItems doesn't work when we change the agent name
     }
 }

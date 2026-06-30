@@ -48,10 +48,13 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     /// Manages shared text state for the iPad duck.ai ↔ search mode toggle.
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
     private var modelPickerController: IPadOmnibarModelPickerController?
+    private var reasoningPickerController: IPadOmnibarReasoningPickerController?
 
-    /// The Duck.ai model id selected in the iPad picker, forwarded into `openAIChat` on submission.
-    override var iPadDuckAISelectedModelId: String? {
-        modelPickerController?.currentModelId
+    override var iPadDuckAIControlValues: IPadDuckAIControlValues {
+        IPadDuckAIControlValuesSnapshot(
+            selectedModelId: modelPickerController?.currentModelId,
+            selectedReasoningEffort: reasoningPickerController?.selectedReasoningEffort
+        )
     }
 
     init(dependencies: OmnibarDependencyProvider, isFloatingUIEnabled: Bool) {
@@ -76,8 +79,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         shiftEnter.wantsPriorityOverSystemBehavior = true
         commands.append(shiftEnter)
 
-        // The text view is multi-line, so only claim the arrows when navigating the list or when the caret has no
-        // line to move into; otherwise they fall through to normal caret movement.
         if omniBarView.aiChatTextView.isFirstResponder {
             let hasHighlight = omniDelegate?.hasAIChatSuggestionsHighlight() ?? false
             let canEnterList = omniDelegate?.isAIChatSuggestionsNavigationAvailable() ?? false
@@ -583,18 +584,37 @@ extension DefaultOmniBarViewController {
               dependencies.featureFlagger.isFeatureOn(.iPadDuckAIBarControls) else { return }
 
         let controller = IPadOmnibarModelPickerController()
-        controller.onModelsUpdated = { [weak self] in
-            self?.refreshModelPicker()
-        }
         modelPickerController = controller
+
+        // The reasoning picker shares the model picker's store so both chips reflect the same
+        // selected model and a single `/models` fetch.
+        let reasoningController = IPadOmnibarReasoningPickerController(store: controller.modelStore)
+        reasoningPickerController = reasoningController
+        reasoningController.onReasoningUpdated = { [weak self] in
+            self?.refreshReasoningPicker()
+        }
+
+        controller.onModelsUpdated = { [weak self] in
+            guard let self else { return }
+            // Re-apply any model/reasoning selection unblocked by a subscription refresh, then
+            // refresh both chips (selecting a new model changes which reasoning modes apply).
+            self.modelPickerController?.handleModelsUpdated()
+            self.reasoningPickerController?.handleModelsUpdated()
+            self.refreshModelPicker()
+            self.refreshReasoningPicker()
+        }
+
         omniBarView.isModelPickerEnabled = true
         omniBarView.aiChatModelName = controller.currentModelLabel
+        omniBarView.isReasoningPickerEnabled = true
+        refreshReasoningPicker()
     }
 
     private func handleModelPickerExpansionChanged(isExpanded: Bool) {
         guard isExpanded, let controller = modelPickerController else { return }
         controller.activate()
         refreshModelPicker()
+        refreshReasoningPicker()
     }
 
     private func refreshModelPicker() {
@@ -604,8 +624,21 @@ extension DefaultOmniBarViewController {
             omniBarView.aiChatModelName = shortName
         }
         omniBarView.aiChatModelPickerMenu = controller.makeMenu { [weak self] modelId in
-            self?.modelPickerController?.selectModel(modelId)
+            self?.modelPickerController?.handleModelSelection(modelId)
             self?.refreshModelPicker()
+            self?.refreshReasoningPicker()
+        }
+    }
+
+    private func refreshReasoningPicker() {
+        guard let controller = reasoningPickerController else { return }
+
+        if controller.isReasoningPickerAvailable {
+            omniBarView.aiChatReasoningIcon = controller.currentReasoningMode?.unifiedToggleInputButtonImage
+            omniBarView.aiChatReasoningPickerMenu = controller.makeMenu()
+        } else {
+            omniBarView.aiChatReasoningIcon = nil
+            omniBarView.aiChatReasoningPickerMenu = nil
         }
     }
 }

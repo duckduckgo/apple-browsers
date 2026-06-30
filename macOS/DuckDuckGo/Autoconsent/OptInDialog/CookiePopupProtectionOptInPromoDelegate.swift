@@ -17,7 +17,9 @@
 //
 
 import AppKit
+import BrowserServicesKit
 import Combine
+import FeatureFlags
 import PixelKit
 import WebExtensions
 
@@ -70,8 +72,9 @@ enum CookiePopupProtectionOptInTimeBucket {
 }
 
 /// Presents the Cookie Pop-up Protection opt-in dialog through the promo queue.
-/// Shown at most `maxShowCount` times, only ≥ `minDaysSinceInstall` days after install; confirming permanently
-/// dismisses the promo (via `.actioned`), so it isn't shown again afterwards.
+/// Shown only while the Cookie Pop-up Protection setting feature flag is on, at most `maxShowCount` times,
+/// only ≥ `minDaysSinceInstall` days after install; confirming permanently dismisses the promo (via `.actioned`),
+/// so it isn't shown again afterwards.
 final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
 
     /// Maximum number of times the dialog may be shown.
@@ -98,6 +101,7 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
     }
 
     private func computeEligibility() -> Bool {
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting) else { return false }
         guard store.shownCount < Self.maxShowCount else { return false }
         guard let installDate = LocalStatisticsStore().installDate else { return false }
         let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: Date()).day ?? 0

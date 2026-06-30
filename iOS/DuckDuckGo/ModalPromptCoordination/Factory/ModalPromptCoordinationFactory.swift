@@ -51,7 +51,8 @@ enum ModalPromptCoordinationFactory {
             featureFlagger: dependency.featureFlagger
         )
         let cookiePopupProtectionOptInModalPromptProvider = CookiePopupProtectionOptInModalPromptProvider(
-            store: CookiePopupProtectionOptInPromptStore(keyValueStore: dependency.keyValueFileStoreService)
+            store: CookiePopupProtectionOptInPromptStore(keyValueStore: dependency.keyValueFileStoreService),
+            featureFlagger: dependency.featureFlagger
         )
 
         return ModalPromptCoordinationService(

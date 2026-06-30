@@ -23,6 +23,7 @@ import Persistence
 import SwiftUI
 import UIKit
 import WebExtensions
+import PrivacyConfig
 
 /// Persisted state for the Cookie Pop-up Protection opt-in dialog.
 /// ponytail: the modal prompt queue tracks no per-prompt history, so we keep our own counters + first-shown date.
@@ -98,10 +99,14 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
 
     private let store: CookiePopupProtectionOptInPromptStore
     private let statisticsStore: StatisticsStore
+    private let featureFlagger: FeatureFlagger
 
-    init(store: CookiePopupProtectionOptInPromptStore, statisticsStore: StatisticsStore = StatisticsUserDefaults()) {
+    init(store: CookiePopupProtectionOptInPromptStore,
+         statisticsStore: StatisticsStore = StatisticsUserDefaults(),
+         featureFlagger: FeatureFlagger) {
         self.store = store
         self.statisticsStore = statisticsStore
+        self.featureFlagger = featureFlagger
     }
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
@@ -133,8 +138,10 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
         store.shownCount += 1
     }
 
-    /// Shown at most `maxShowCount` times, only ≥ `minDaysSinceInstall` days after install, and never after the user confirms.
+    /// Shown only while the Cookie Pop-up Protection setting feature flag is on, at most `maxShowCount` times,
+    /// only ≥ `minDaysSinceInstall` days after install, and never after the user confirms.
     private var isEligibleToShow: Bool {
+        guard featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting) else { return false }
         guard !store.hasConfirmed, store.shownCount < Constants.maxShowCount else { return false }
         guard let installDate = statisticsStore.installDate else { return false }
         let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: Date()).day ?? 0

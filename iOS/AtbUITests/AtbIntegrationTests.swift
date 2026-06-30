@@ -46,8 +46,8 @@ class AtbIntegrationTests: XCTestCase {
     private var requestExpectation: XCTestExpectation!
     private var requestExpectationDescription = ""
 
-    override func setUp() {
-        super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
 
         if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {
@@ -56,21 +56,17 @@ class AtbIntegrationTests: XCTestCase {
 
         addRequestHandlers()
 
-        do {
-            // Swifter defaults to background QoS, which can leave localhost requests unanswered
-            // during busy CI app launches.
-            try server.start(0, forceIPv4: true, priority: .userInitiated)
-            let baseURL = "http://\(Constants.serverHost):\(try server.port())"
-            app.launchEnvironment = [
-                "BASE_URL": baseURL,
-                "PIXEL_BASE_URL": baseURL,
-                "ONBOARDING": "false",
-                // usually just has to match an existing variant to prevent one being allocated
-                "VARIANT": "sc"
-            ]
-        } catch {
-            fatalError("Could not start server: \(error)")
-        }
+        // Swifter defaults to background QoS, which can leave localhost requests unanswered
+        // during busy CI app launches.
+        try server.start(0, forceIPv4: true, priority: .userInitiated)
+        let baseURL = "http://\(Constants.serverHost):\(try server.port())"
+        app.launchEnvironment = [
+            "BASE_URL": baseURL,
+            "PIXEL_BASE_URL": baseURL,
+            "ONBOARDING": "false",
+            // usually just has to match an existing variant to prevent one being allocated
+            "VARIANT": "sc"
+        ]
 
         resetExpectedRequestsForLaunch()
         app.launch()

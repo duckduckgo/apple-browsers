@@ -21,14 +21,19 @@ import UIKit
 import Core
 import DesignResourcesKit
 
-/// The production tab switcher chrome: a custom top title bar plus the storyboard `UIToolbar`,
-/// driven by `DefaultTabSwitcherBarsStateHandler`. This preserves the existing behaviour exactly;
+/// The production tab switcher chrome: a custom top title bar plus a `BrowserToolbarView` bottom
+/// bar, driven by `DefaultTabSwitcherBarsStateHandler`. This preserves the existing behaviour;
 /// it is the path used whenever floating UI is disabled.
+///
+/// The bottom bar reuses the browser's `BrowserToolbarView` (rather than the storyboard `UIToolbar`)
+/// so the button positions line up exactly with the browser/NTP toolbar during the tab-switcher
+/// transition. The storyboard `UIToolbar` is removed from the hierarchy and otherwise unused.
 @MainActor
 final class LegacyTabSwitcherChrome: TabSwitcherChrome {
 
     private let titleBarView = TabSwitcherTitleBarView()
     private lazy var borderView = StyledTopBottomBorderView()
+    private let bottomToolbar = BrowserToolbarView()
     private let toolbar: UIToolbar
     private let appSettings: AppSettings
     private var barsHandler: TabSwitcherBarsStateHandling
@@ -72,8 +77,8 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
 
     func decorate(theme: Theme) {
         titleBarView.tintColor = theme.barTintColor
-        toolbar.barTintColor = theme.barBackgroundColor
-        toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
+        bottomToolbar.setLegacyBackgroundTransparent(true)
+        bottomToolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
     }
 
     func update(state: TabSwitcherToolbarState,
@@ -86,12 +91,12 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
         titleBarView.setCenterView(isEditing ? nil : centerView)
         titleBarView.setLeadingButtons(barsHandler.topBarLeftButtons)
         titleBarView.setTrailingButtons(barsHandler.topBarRightButtons)
-        toolbar.items = barsHandler.bottomBarItems
-        toolbar.isHidden = barsHandler.isBottomBarHidden
+        bottomToolbar.setToolbarButtons(barsHandler.bottomBarButtonViews)
+        bottomToolbar.isHidden = barsHandler.isBottomBarHidden
     }
 
     func applyCollectionContentInset(to collectionView: UICollectionView) {
-        collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : toolbar.frame.height
+        collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : bottomToolbar.frame.height
     }
 
     func layout(addressBarPosition: AddressBarPosition,
@@ -104,24 +109,26 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
         // Remove existing constraints to avoid conflicts
         borderView.translatesAutoresizingMaskIntoConstraints = false
         titleBarView.translatesAutoresizingMaskIntoConstraints = false
-        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        bottomToolbar.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
-        let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, toolbar, contentView, borderView]
+        // Drop the storyboard UIToolbar from the hierarchy; `bottomToolbar` replaces it.
+        toolbar.removeFromSuperview()
+
+        let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, bottomToolbar, contentView, borderView]
         viewsToRemoveConstraintsFor.forEach { targetView in
             targetView.removeFromSuperview()
         }
 
         hostView.addSubview(titleBarView)
-        hostView.addSubview(toolbar)
+        hostView.addSubview(bottomToolbar)
         hostView.addSubview(contentView)
         hostView.addSubview(borderView)
 
-        let toolbarAppearance = UIToolbarAppearance()
-        toolbarAppearance.configureWithTransparentBackground()
-        toolbarAppearance.shadowColor = .clear
-        toolbar.standardAppearance = toolbarAppearance
-        toolbar.compactAppearance = toolbarAppearance
+        // Keep the bar transparent (the tab switcher provides its own backdrop) and matched to
+        // the browser's button layout.
+        bottomToolbar.setFloatingStyleEnabled(false)
+        bottomToolbar.setLegacyBackgroundTransparent(true)
         borderView.updateForAddressBarPosition(addressBarPosition)
         titleBarView.updateForAddressBarPosition(isBottom: addressBarPosition.isBottom)
         // On large ipad view don't show the bottom divider
@@ -162,7 +169,7 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
         NSLayoutConstraint.activate([
             titleBarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             titleBarView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor) : nil,
+            isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor) : nil,
             !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: topGuide.topAnchor) : nil,
 
             pagingScrollView.topAnchor.constraint(equalTo: isBottomBar ? topGuide.topAnchor : titleBarView.bottomAnchor),
@@ -170,7 +177,7 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
             pagingScrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 
             interfaceMode.isLarge ? pagingScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
-                pagingScrollView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
+                pagingScrollView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : bottomToolbar.topAnchor),
 
             borderView.topAnchor.constraint(equalTo: isBottomBar ? topGuide.topAnchor : titleBarView.bottomAnchor),
             borderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -178,12 +185,12 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
 
             // On iPad large mode constrain to the bottom as the toolbar is hidden
             interfaceMode.isLarge ? borderView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
-                borderView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
+                borderView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : bottomToolbar.topAnchor),
 
             // Always at the bottom
-            toolbar.constrainView(view, by: .width, constant: toolbarWidthMod),
-            toolbar.constrainView(view, by: .centerX),
-            toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            bottomToolbar.constrainView(view, by: .width, constant: toolbarWidthMod),
+            bottomToolbar.constrainView(view, by: .centerX),
+            bottomToolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ].compactMap { $0 })
     }
 

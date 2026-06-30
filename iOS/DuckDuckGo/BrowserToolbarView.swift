@@ -26,6 +26,10 @@ final class BrowserToolbarView: UIView {
     static let buttonsHeight: CGFloat = 56
     static let omnibarHorizontalInset: CGFloat = -8
     private static let horizontalEdgePadding: CGFloat = 8
+    /// Extra horizontal inset for the button row in the non-floating (legacy) style so the outer
+    /// buttons sit where the production `UIToolbar` placed them. Tuned to match production's
+    /// end-button centres; the floating style keeps the tighter `horizontalEdgePadding`.
+    private static let legacyButtonRowHorizontalPadding: CGFloat = 20
     private static let cornerRadius: CGFloat = 32
     private static let floatingBarOuterInsets = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
     private static let legacyBarOuterInsets = UIEdgeInsets.zero
@@ -57,7 +61,11 @@ final class BrowserToolbarView: UIView {
         let stack = UIStackView()
         stack.axis = .horizontal
         stack.alignment = .center
-        stack.distribution = .equalSpacing
+        // Equal center-to-center spacing (not equal gaps) so a wider button — e.g. the tab-count
+        // control — doesn't shift the other columns. With equal-width end buttons this keeps the
+        // centre (fire) button at the bar's midpoint, matching the tab switcher's bottom bar so the
+        // buttons stay put across the tab-switcher transition.
+        stack.distribution = .equalCentering
         stack.isLayoutMarginsRelativeArrangement = true
         stack.layoutMargins = UIEdgeInsets(top: 0, left: BrowserToolbarView.horizontalEdgePadding, bottom: 0, right: BrowserToolbarView.horizontalEdgePadding)
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -97,6 +105,9 @@ final class BrowserToolbarView: UIView {
     private weak var hostedOmnibarView: UIView?
     private weak var hostedExpandedContentView: UIView?
     private var isFloatingStyleEnabled = false
+    /// The tab switcher reuses this bar purely for button-position parity with the browser, but
+    /// paints its own backdrop — so in the non-floating style its own background must stay clear.
+    private var isLegacyBackgroundTransparent = false
     private static var barOuterInsets: UIEdgeInsets {
         floatingBarOuterInsets
     }
@@ -171,6 +182,14 @@ final class BrowserToolbarView: UIView {
         guard isFloatingStyleEnabled != enabled else { return }
         isFloatingStyleEnabled = enabled
         applyCurrentStyle(animated: animated)
+    }
+
+    /// Keeps the bar's own background clear in the non-floating style (used by the tab switcher,
+    /// which provides its own backdrop). No-op for the floating style, which is always clear.
+    func setLegacyBackgroundTransparent(_ transparent: Bool) {
+        guard isLegacyBackgroundTransparent != transparent else { return }
+        isLegacyBackgroundTransparent = transparent
+        applyCurrentStyle(animated: false)
     }
 
     func setToolbarButtons(_ views: [UIView]) {
@@ -312,6 +331,7 @@ final class BrowserToolbarView: UIView {
 
     private func applyCurrentStyle(animated: Bool) {
         let insets = isFloatingStyleEnabled ? Self.floatingBarOuterInsets : Self.legacyBarOuterInsets
+        let legacyBackgroundColor: UIColor = isLegacyBackgroundTransparent ? .clear : ThemeManager.shared.currentTheme.barBackgroundColor
         let updates = {
             self.materialBackgroundLeadingConstraint.constant = insets.left
             self.materialBackgroundTrailingConstraint.constant = -insets.right
@@ -319,8 +339,10 @@ final class BrowserToolbarView: UIView {
             self.materialBackgroundBottomConstraint.constant = -insets.bottom
             self.materialBackgroundView.layer.shadowOpacity = self.isFloatingStyleEnabled ? 0.12 : 0
             self.materialBackgroundView.effect = self.isFloatingStyleEnabled ? self.materialEffect() : nil
-            self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : ThemeManager.shared.currentTheme.barBackgroundColor
-            self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : ThemeManager.shared.currentTheme.barBackgroundColor
+            self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
+            self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
+            let buttonRowPadding = self.isFloatingStyleEnabled ? Self.horizontalEdgePadding : Self.legacyButtonRowHorizontalPadding
+            self.buttonStack.layoutMargins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
             self.updateCornerStyle()
             self.layoutIfNeeded()
         }

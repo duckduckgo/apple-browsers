@@ -141,7 +141,8 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
     /// Shown only while the Cookie Pop-up Protection setting feature flag is on, at most `maxShowCount` times,
     /// only ≥ `minDaysSinceInstall` days after install, and never after the user confirms.
     private var isEligibleToShow: Bool {
-        guard featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting) else { return false }
+        guard featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting),
+              featureFlagger.isFeatureOn(.cookiePopupOptInDialog) else { return false }
         guard !store.hasConfirmed, store.shownCount < Constants.maxShowCount else { return false }
         guard let installDate = statisticsStore.installDate else { return false }
         let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: Date()).day ?? 0

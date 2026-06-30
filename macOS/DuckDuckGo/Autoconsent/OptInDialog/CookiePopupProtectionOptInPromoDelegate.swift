@@ -101,7 +101,9 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
     }
 
     private func computeEligibility() -> Bool {
-        guard Application.appDelegate.featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting) else { return false }
+        let featureFlagger = Application.appDelegate.featureFlagger
+        guard featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting),
+              featureFlagger.isFeatureOn(.cookiePopupOptInDialog) else { return false }
         guard store.shownCount < Self.maxShowCount else { return false }
         guard let installDate = LocalStatisticsStore().installDate else { return false }
         let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: Date()).day ?? 0

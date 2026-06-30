@@ -19,7 +19,28 @@
 
 import AIChat
 import Foundation
+import os.log
 import Subscription
+
+/// The subscription upsell flow that a gated Duck.ai selection should route to.
+enum DuckAISubscriptionUpsellingFlow {
+    case purchase
+    case upgrade
+    case none
+}
+
+extension AIChatUserTier {
+    func upgradeFlow(for requiredTier: AIChatModelPublicAccessTier) -> DuckAISubscriptionUpsellingFlow {
+        switch (self, requiredTier) {
+        case (.plus, .pro):
+            return .upgrade
+        case (.free, .plus), (.free, .pro):
+            return .purchase
+        default:
+            return .none
+        }
+    }
+}
 
 /// Routes the Duck.ai subscription purchase / upgrade flows triggered by tapping a gated
 /// model or reasoning level.
@@ -40,7 +61,8 @@ extension DuckAISubscriptionUpselling {
         source: SubscriptionFlowSource,
         isAITabState: Bool
     ) -> Bool {
-        if userTier == .free, requiredTier == .plus || requiredTier == .pro {
+        switch userTier.upgradeFlow(for: requiredTier) {
+        case .purchase:
             UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
                 source: source,
                 currentTier: userTier,
@@ -49,9 +71,7 @@ extension DuckAISubscriptionUpselling {
             )
             presentPurchaseFlow(source: source, isAITabState: isAITabState)
             return true
-        }
-
-        if userTier == .plus, requiredTier == .pro {
+        case .upgrade:
             UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
                 source: source,
                 currentTier: userTier,
@@ -60,9 +80,15 @@ extension DuckAISubscriptionUpselling {
             )
             presentUpgradeFlow(source: source, isAITabState: isAITabState)
             return true
+        case .none:
+            switch source {
+            case .modelPicker:
+                Logger.unifiedInputState.debug("No native subscription flow for gated model")
+            case .reasoningPicker:
+                Logger.unifiedInputState.debug("No native subscription flow for gated reasoning mode")
+            }
+            return false
         }
-
-        return false
     }
 }
 

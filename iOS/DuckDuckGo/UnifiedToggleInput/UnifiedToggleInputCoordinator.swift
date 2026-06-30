@@ -1466,16 +1466,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return false
         }
 
-        let routed = subscriptionUpsellPresenter.routeGatedSelection(
+        return subscriptionUpsellPresenter.routeGatedSelection(
             requiredTier: requiredPublicTier,
             userTier: subscriptionState.userTier,
             source: .modelPicker,
             isAITabState: isAITabState
         )
-        if !routed {
-            Logger.unifiedInputState.debug("No native subscription flow for gated model")
-        }
-        return routed
     }
 
     private func refreshModelPickerMenuAfterRejectedSelection() {
@@ -1568,16 +1564,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     @discardableResult
     private func routeGatedReasoningModeSelection(requiredPublicTier: AIChatModelPublicAccessTier) -> Bool {
-        let routed = subscriptionUpsellPresenter.routeGatedSelection(
+        return subscriptionUpsellPresenter.routeGatedSelection(
             requiredTier: requiredPublicTier,
             userTier: subscriptionState.userTier,
             source: .reasoningPicker,
             isAITabState: isAITabState
         )
-        if !routed {
-            Logger.unifiedInputState.debug("No native subscription flow for gated reasoning mode")
-        }
-        return routed
     }
 
     func selectTool(_ tool: AIChatRAGTool) {

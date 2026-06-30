@@ -246,9 +246,6 @@ class AddressBarSpoofingUITests: UITestCase {
 
         let addressBarEmpty = addressBarValue.isEmpty
         let addressBarIsData = addressBarValue.starts(with: "data:text/html")
-        // data: URL popups are now blocked outright, so window.open() of the base64 payload
-        // opens no window and the address bar stays on the legitimate source page. That is a
-        // safe, non-spoofed outcome alongside an empty bar or an honestly-shown data: URL.
         let addressBarOnSourcePage = addressBarValue.contains("privacy-test-pages.site")
 
         XCTAssertTrue(addressBarEmpty || addressBarIsData || addressBarOnSourcePage,

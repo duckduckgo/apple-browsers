@@ -603,6 +603,205 @@ final class TabNavigationPopupTests: UITestCase, TabNavigationTestHelpers {
         XCTAssertEqual(app.windows.firstMatch.title, foregroundWindow.title, "New window should be frontmost when opened in foreground")
     }
 
+    // MARK: - Scheme Blocking Tests
+    // window.open() path — popup window (with full WKWindowFeatures options)
+
+    func testWhenJavascriptSchemePopupIsRequestedThenNoWindowIsCreated() {
+        app.setSwitchToNewTab(enabled: false)
+
+        openTestPage("Scheme Block Source #1") {
+            """
+            <a href='javascript:window.open("javascript:void(0)", "popup", "directories=0,toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=1000,height=800")'>Open popup</a>
+            """
+        }
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Scheme Block Source #1")).firstMatch
+        let link = mainWindow.webViews["Scheme Block Source #1"].links["Open popup"]
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        link.click()
+
+        XCTAssertFalse(app.windows.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "No popup window should be created for javascript: URLs")
+        XCTAssertEqual(mainWindow.tabs.count, 1)
+    }
+
+    func testWhenDataSchemePopupIsRequestedThenNoWindowIsCreated() {
+        app.setSwitchToNewTab(enabled: false)
+
+        openTestPage("Scheme Block Source #2") {
+            """
+            <a href='javascript:window.open("data:text/html,hello", "popup", "directories=0,toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=1000,height=800")'>Open popup</a>
+            """
+        }
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Scheme Block Source #2")).firstMatch
+        let link = mainWindow.webViews["Scheme Block Source #2"].links["Open popup"]
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        link.click()
+
+        XCTAssertFalse(app.windows.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "No popup window should be created for data: URLs")
+        XCTAssertEqual(mainWindow.tabs.count, 1)
+    }
+
+    // window.open() path — new tab (_blank)
+
+    func testWhenJavascriptSchemeNewTabIsRequestedThenNoTabIsCreated() {
+        app.setSwitchToNewTab(enabled: false)
+
+        openTestPage("Scheme Block Source #3") {
+            """
+            <a href='javascript:window.open("javascript:void(0)", "_blank")'>Open new tab</a>
+            """
+        }
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Scheme Block Source #3")).firstMatch
+        let link = mainWindow.webViews["Scheme Block Source #3"].links["Open new tab"]
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        link.click()
+
+        XCTAssertFalse(mainWindow.tabs.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "No new tab should be created for javascript: URLs")
+        XCTAssertEqual(app.windows.count, 1)
+    }
+
+    func testWhenDataSchemeNewTabIsRequestedThenNoTabIsCreatedAndAddressBarIsUnchanged() {
+        app.setSwitchToNewTab(enabled: false)
+
+        openTestPage("Scheme Block Source #4") {
+            """
+            <a href='javascript:window.open("data:text/html,hello", "_blank")'>Open new tab</a>
+            """
+        }
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Scheme Block Source #4")).firstMatch
+        let link = mainWindow.webViews["Scheme Block Source #4"].links["Open new tab"]
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        link.click()
+
+        XCTAssertFalse(mainWindow.tabs.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "No new tab should be created for data: URLs")
+        XCTAssertEqual(app.windows.count, 1)
+        // Source page must remain active — the data: URL must not appear in the address bar.
+        XCTAssertTrue(mainWindow.webViews["Scheme Block Source #4"].exists,
+                      "Source page should remain active after blocked data: URL open attempt")
+    }
+
+    // Modifier-click path — cmd+click / cmd+opt+click / middle-click on direct scheme links.
+    // These go through decidePolicy → loadInNewWindow → createChildWebView, a separate code path from window.open().
+
+    func testWhenJavascriptSchemeLinkIsCommandClickedThenNoTabIsCreated() {
+        app.setSwitchToNewTab(enabled: false)
+
+        openTestPage("Scheme Block Source #5") {
+            """
+            <a href='javascript:void(0)'>JS link</a>
+            """
+        }
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Scheme Block Source #5")).firstMatch
+        let link = mainWindow.webViews["Scheme Block Source #5"].links["JS link"]
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command]) {
+            link.click()
+        }
+
+        XCTAssertFalse(mainWindow.tabs.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Cmd+click on javascript: link must not open a new tab")
+        XCTAssertEqual(app.windows.count, 1)
+    }
+
+    func testWhenJavascriptSchemeLinkIsCommandOptionClickedThenNoWindowIsCreated() {
+        app.setSwitchToNewTab(enabled: false)
+
+        openTestPage("Scheme Block Source #6") {
+            """
+            <a href='javascript:void(0)'>JS link</a>
+            """
+        }
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Scheme Block Source #6")).firstMatch
+        let link = mainWindow.webViews["Scheme Block Source #6"].links["JS link"]
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command, .option]) {
+            link.click()
+        }
+
+        XCTAssertFalse(app.windows.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Cmd+Opt+click on javascript: link must not open a new window")
+        XCTAssertEqual(mainWindow.tabs.count, 1)
+    }
+
+    func testWhenJavascriptSchemeLinkIsMiddleClickedThenNoTabIsCreated() {
+        app.setSwitchToNewTab(enabled: false)
+
+        openTestPage("Scheme Block Source #7") {
+            """
+            <a href='javascript:void(0)'>JS link</a>
+            """
+        }
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Scheme Block Source #7")).firstMatch
+        let link = mainWindow.webViews["Scheme Block Source #7"].links["JS link"]
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        link.middleClick()
+
+        XCTAssertFalse(mainWindow.tabs.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Middle-click on javascript: link must not open a new tab")
+        XCTAssertEqual(app.windows.count, 1)
+    }
+
+    func testWhenDataSchemeLinkIsCommandClickedThenNoTabIsCreated() {
+        app.setSwitchToNewTab(enabled: false)
+
+        openTestPage("Scheme Block Source #8") {
+            """
+            <a href='data:text/html,hello'>Data link</a>
+            """
+        }
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Scheme Block Source #8")).firstMatch
+        let link = mainWindow.webViews["Scheme Block Source #8"].links["Data link"]
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command]) {
+            link.click()
+        }
+
+        XCTAssertFalse(mainWindow.tabs.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Cmd+click on data: link must not open a new tab")
+        XCTAssertEqual(app.windows.count, 1)
+    }
+
+    func testWhenDataSchemeLinkIsCommandOptionClickedThenNoWindowIsCreated() {
+        app.setSwitchToNewTab(enabled: false)
+
+        openTestPage("Scheme Block Source #9") {
+            """
+            <a href='data:text/html,hello'>Data link</a>
+            """
+        }
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Scheme Block Source #9")).firstMatch
+        let link = mainWindow.webViews["Scheme Block Source #9"].links["Data link"]
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCUIElement.perform(withKeyModifiers: [.command, .option]) {
+            link.click()
+        }
+
+        XCTAssertFalse(app.windows.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Cmd+Opt+click on data: link must not open a new window")
+        XCTAssertEqual(mainWindow.tabs.count, 1)
+    }
+
+    func testWhenDataSchemeLinkIsMiddleClickedThenNoTabIsCreated() {
+        app.setSwitchToNewTab(enabled: false)
+
+        openTestPage("Scheme Block Source #10") {
+            """
+            <a href='data:text/html,hello'>Data link</a>
+            """
+        }
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Scheme Block Source #10")).firstMatch
+        let link = mainWindow.webViews["Scheme Block Source #10"].links["Data link"]
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        link.middleClick()
+
+        XCTAssertFalse(mainWindow.tabs.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Middle-click on data: link must not open a new tab")
+        XCTAssertEqual(app.windows.count, 1)
+    }
+
     // MARK: - Fire Window Popup Navigation Tests
 
     func testFireWindowPopupCommandClickOpensBackgroundTab() {

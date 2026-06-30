@@ -46,6 +46,17 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     /// Manages shared text state for the iPad duck.ai ↔ search mode toggle.
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
+    private var modelPickerController: IPadOmnibarModelPickerController?
+    private var reasoningPickerController: IPadOmnibarReasoningPickerController?
+    private var toolPickerController: IPadOmnibarToolPickerController?
+
+    override var iPadDuckAIControlValues: IPadDuckAIControlValues {
+        IPadDuckAIControlValuesSnapshot(
+            selectedModelId: modelPickerController?.currentModelId,
+            selectedReasoningEffort: reasoningPickerController?.selectedReasoningEffort,
+            selectedTools: toolPickerController?.selectedToolsForSubmission
+        )
+    }
 
     override func loadView() {
         view = omniBarView
@@ -64,8 +75,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         shiftEnter.wantsPriorityOverSystemBehavior = true
         commands.append(shiftEnter)
 
-        // The text view is multi-line, so only claim the arrows when navigating the list or when the caret has no
-        // line to move into; otherwise they fall through to normal caret movement.
         if omniBarView.aiChatTextView.isFirstResponder {
             let hasHighlight = omniDelegate?.hasAIChatSuggestionsHighlight() ?? false
             let canEnterList = omniDelegate?.isAIChatSuggestionsNavigationAvailable() ?? false
@@ -114,8 +123,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniBarView.aiChatTextView.addGestureRecognizer(highlightDismissTap)
 
         omniBarView.isAIVoiceChatEnabled = DuckAIVoiceShortcutFeature(featureFlagger: dependencies.featureFlagger).isAvailable
+        setUpModelPickerIfNeeded()
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
-            self?.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
+            guard let self else { return }
+            self.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
+            self.handleModelPickerExpansionChanged(isExpanded: isExpanded)
         }
 
         // Handle address bar position changes to set the shadow correctly
@@ -445,7 +457,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
 // MARK: - iPad Duck.ai Mode Toggle
 //
-// On iPad, the address bar has a search/duck.ai toggle (gated by the iPadAIToggle feature flag).
+// On iPad, the address bar has a search/duck.ai toggle.
 // When the user switches between modes, the text must transfer seamlessly between the UITextField
 // (search mode) and the UITextView (duck.ai expanded mode) while keeping the keyboard visible.
 
@@ -472,6 +484,7 @@ extension DefaultOmniBarViewController {
                 omniBarView.setSearchAreaExpanded(false, animated: false)
                 omniBarView.aiChatTextView.resignFirstResponder()
                 omniDelegate?.onPromptSubmitted(query, tools: nil)
+                toolPickerController?.resetSelection()
             }
         } else {
             omniDelegate?.onOmniQuerySubmitted(query)
@@ -559,6 +572,102 @@ extension DefaultOmniBarViewController {
 
 }
 
+// MARK: - iPad Duck.ai Model Picker
+
+extension DefaultOmniBarViewController {
+
+    private func setUpModelPickerIfNeeded() {
+        guard dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled,
+              dependencies.featureFlagger.isFeatureOn(.iPadDuckAIBarControls) else { return }
+
+        let controller = IPadOmnibarModelPickerController()
+        modelPickerController = controller
+
+        // The reasoning and tool pickers share the model picker's store so all chips reflect the
+        // same selected model and a single `/models` fetch.
+        let reasoningController = IPadOmnibarReasoningPickerController(store: controller.modelStore)
+        reasoningPickerController = reasoningController
+        reasoningController.onReasoningUpdated = { [weak self] in
+            self?.refreshReasoningPicker()
+        }
+
+        let toolController = IPadOmnibarToolPickerController(store: controller.modelStore)
+        toolPickerController = toolController
+        toolController.onToolsUpdated = { [weak self] in
+            self?.refreshToolPicker()
+            self?.refreshReasoningPicker()
+        }
+
+        controller.onModelsUpdated = { [weak self] in
+            guard let self else { return }
+            // Re-apply any model/reasoning selection unblocked by a subscription refresh, then
+            // refresh every chip (a new model changes which reasoning modes and tools apply).
+            self.modelPickerController?.handleModelsUpdated()
+            self.reasoningPickerController?.handleModelsUpdated()
+            self.toolPickerController?.handleModelChanged()
+            self.refreshModelPicker()
+            self.refreshReasoningPicker()
+            self.refreshToolPicker()
+        }
+
+        omniBarView.isModelPickerEnabled = true
+        omniBarView.aiChatModelName = controller.currentModelLabel
+        omniBarView.isReasoningPickerEnabled = true
+        omniBarView.isToolPickerEnabled = true
+        refreshReasoningPicker()
+        refreshToolPicker()
+    }
+
+    private func handleModelPickerExpansionChanged(isExpanded: Bool) {
+        guard isExpanded, let controller = modelPickerController else { return }
+        controller.activate()
+        refreshModelPicker()
+        refreshReasoningPicker()
+        refreshToolPicker()
+    }
+
+    private func refreshModelPicker() {
+        guard let controller = modelPickerController else { return }
+
+        if let shortName = controller.currentModelLabel {
+            omniBarView.aiChatModelName = shortName
+        }
+        omniBarView.aiChatModelPickerMenu = controller.makeMenu { [weak self] modelId in
+            guard let self else { return }
+            self.modelPickerController?.handleModelSelection(modelId)
+            self.toolPickerController?.handleModelChanged()
+            self.refreshModelPicker()
+            self.refreshReasoningPicker()
+            self.refreshToolPicker()
+        }
+    }
+
+    private func refreshReasoningPicker() {
+        guard let controller = reasoningPickerController else { return }
+
+        let hiddenByTool = toolPickerController?.selectedToolHidesReasoningPicker ?? false
+        if controller.isReasoningPickerAvailable, !hiddenByTool {
+            omniBarView.aiChatReasoningIcon = controller.currentReasoningMode?.unifiedToggleInputButtonImage
+            omniBarView.aiChatReasoningPickerMenu = controller.makeMenu()
+        } else {
+            omniBarView.aiChatReasoningIcon = nil
+            omniBarView.aiChatReasoningPickerMenu = nil
+        }
+    }
+
+    private func refreshToolPicker() {
+        guard let controller = toolPickerController else { return }
+
+        if controller.isToolPickerAvailable {
+            omniBarView.aiChatToolPickerMenu = controller.makeMenu()
+            omniBarView.isToolSelected = controller.isToolSelected
+        } else {
+            omniBarView.aiChatToolPickerMenu = nil
+            omniBarView.isToolSelected = false
+        }
+    }
+}
+
 // MARK: - OmniBarEditingStateViewControllerDelegate
 
 extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
@@ -635,7 +744,7 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
             selectedTextEntryMode = tabMode
         }
         editingStateViewController?.dismissAnimated { [weak self] in
-            // Fix address bar non-activation bug when cancelling the edit from the duck.ai experiment completion dialog.
+            // Fix address bar non-activation bug when cancelling the edit from the Duck.ai fire onboarding completion dialog.
             self?.editingStateViewController = nil
         }
     }

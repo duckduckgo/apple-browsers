@@ -269,12 +269,12 @@ extension Pixel {
         case onboardingIntroChooseSearchExperienceImpressionUnique
         case onboardingIntroAIChatSelected
         case onboardingIntroSearchOnlySelected
-        case onboardingIntroDuckAIExperimentToggleImpressionUnique
-        case onboardingIntroDuckAIExperimentToggleContinuePressedSearch
-        case onboardingIntroDuckAIExperimentToggleContinuePressedAI
-        case onboardingDuckAIExperimentFireDialogShownUnique
-        case onboardingDuckAIExperimentFireButtonCTAPressed
-        case onboardingDuckAIExperimentFinalDialogShownUnique
+        case onboardingIntroDuckAIToggleImpressionUnique
+        case onboardingIntroDuckAIToggleContinuePressedSearch
+        case onboardingIntroDuckAIToggleContinuePressedAI
+        case onboardingDuckAIFireDialogShownUnique
+        case onboardingDuckAIFireButtonCTAPressed
+        case onboardingDuckAIFinalDialogShownUnique
         case onboardingChatPathTryVisitSiteUnique
         case onboardingChatPathTrackersBlockedUnique
         case onboardingSyncAutoRestoreUserFromDuckAiFlow
@@ -980,6 +980,9 @@ extension Pixel {
         case debugInteractionRepeatedFailedScroll
         case debugInteractionWedgedRecognizer
 
+        case debugInteractionRecoveryAttempted
+        case debugInteractionRecoveryOutcome
+
         case debugPromptCoordinationFailedToSaveLastPresentationDate
         case debugPromptCoordinationFailedToRetrieveLastPresentationDate
 
@@ -1633,6 +1636,18 @@ extension Pixel {
         case aiChatSettingsAutoContextDisabled
         case aiChatSettingsDefaultTogglePositionChanged
 
+        // AI Features telemetry (cross-platform, deliberately no `m_` platform prefix so the
+        // name + params match macOS exactly). See `name` for the wire strings.
+        case aiFeaturesStateDaily
+        case aiFeaturesDisabled
+        case aiFeaturesSearchAssistNever
+        case aiFeaturesSearchAssistOnDemand
+        case aiFeaturesSearchAssistSometimes
+        case aiFeaturesSearchAssistOften
+        case aiFeaturesHideImagesOn
+        case aiFeaturesHideImagesOff
+        case serpSettingsUnrecognizedValue
+
         case aiChatOpen
         case aiChatMetricStartNewConversation
         case aiChatMetricStartNewConversationButtonClicked
@@ -2282,12 +2297,12 @@ extension Pixel.Event {
         case .onboardingIntroChooseSearchExperienceImpressionUnique: return "m_preonboarding_choose_search_experience_impressions_unique"
         case .onboardingIntroAIChatSelected: return "m_preonboarding_aichat_selected"
         case .onboardingIntroSearchOnlySelected: return "m_preonboarding_search_only_selected"
-        case .onboardingIntroDuckAIExperimentToggleImpressionUnique: return "m_preonboarding_duckai_toggle-screen-impression_unique"
-        case .onboardingIntroDuckAIExperimentToggleContinuePressedSearch: return "m_preonboarding_duckai_toggle-continue-pressed_search"
-        case .onboardingIntroDuckAIExperimentToggleContinuePressedAI: return "m_preonboarding_duckai_toggle-continue-pressed_ai"
-        case .onboardingDuckAIExperimentFireDialogShownUnique: return "m_preonboarding_duckai_fire-dialog-impression_unique"
-        case .onboardingDuckAIExperimentFireButtonCTAPressed: return "m_preonboarding_duckai_fire-button-pressed"
-        case .onboardingDuckAIExperimentFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
+        case .onboardingIntroDuckAIToggleImpressionUnique: return "m_preonboarding_duckai_toggle-screen-impression_unique"
+        case .onboardingIntroDuckAIToggleContinuePressedSearch: return "m_preonboarding_duckai_toggle-continue-pressed_search"
+        case .onboardingIntroDuckAIToggleContinuePressedAI: return "m_preonboarding_duckai_toggle-continue-pressed_ai"
+        case .onboardingDuckAIFireDialogShownUnique: return "m_preonboarding_duckai_fire-dialog-impression_unique"
+        case .onboardingDuckAIFireButtonCTAPressed: return "m_preonboarding_duckai_fire-button-pressed"
+        case .onboardingDuckAIFinalDialogShownUnique: return "m_preonboarding_duckai_final-dialog-impression_unique"
         case .onboardingChatPathTryVisitSiteUnique: return "m_onboarding_chat-path_try-visit-site_unique"
         case .onboardingChatPathTrackersBlockedUnique: return "m_onboarding_chat-path_trackers-blocked_unique"
         case .onboardingSyncAutoRestoreUserFromDuckAiFlow: return "m_onboarding_duck-ai_sync-auto-restore-user"
@@ -2975,6 +2990,8 @@ extension Pixel.Event {
 
         case .debugInteractionRepeatedFailedScroll: return "m_debug_interaction_repeated_failed_scroll"
         case .debugInteractionWedgedRecognizer: return "m_debug_interaction_wedged_recognizer"
+        case .debugInteractionRecoveryAttempted: return "m_debug_interaction_recovery_attempted"
+        case .debugInteractionRecoveryOutcome: return "m_debug_interaction_recovery_outcome"
 
             // MARK: - Debug Prompt Coordination
 
@@ -3540,6 +3557,17 @@ extension Pixel.Event {
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
 
+        // AI Features telemetry: no `m_` prefix so the wire names are identical to macOS.
+        case .aiFeaturesStateDaily: return "ai_features_state_daily"
+        case .aiFeaturesDisabled: return "ai_features_disabled"
+        case .aiFeaturesSearchAssistNever: return "ai_features_search_assist_never"
+        case .aiFeaturesSearchAssistOnDemand: return "ai_features_search_assist_on_demand"
+        case .aiFeaturesSearchAssistSometimes: return "ai_features_search_assist_sometimes"
+        case .aiFeaturesSearchAssistOften: return "ai_features_search_assist_often"
+        case .aiFeaturesHideImagesOn: return "ai_features_hide_images_on"
+        case .aiFeaturesHideImagesOff: return "ai_features_hide_images_off"
+        case .serpSettingsUnrecognizedValue: return "serp_settings_unrecognized_value"
+
         case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_duck-ai_native-storage_migration_done_\(key)_unique"
         case .duckAiNativeStorageMigrationDoneCount(let key): return "m_duck-ai_native-storage_migration_done_\(key)_count"
         case .duckAiNativeStorageMigrationDoneBlankCount: return "m_duck-ai_native-storage_migration_done_blank_count"
@@ -4098,6 +4126,7 @@ public extension Pixel.Event {
     enum MaliciousSiteProtectionEvent: Equatable {
         case errorPageShown(category: ThreatKind, clientSideHit: Bool?)
         case visitSite(category: ThreatKind)
+        case leaveSite(category: ThreatKind)
         case iframeLoaded(category: ThreatKind)
         case settingToggled(to: Bool)
         case matchesApiTimeout
@@ -4113,6 +4142,8 @@ public extension Pixel.Event {
                 self = .errorPageShown(category: category, clientSideHit: clientSideHit)
             case .visitSite(category: let category):
                 self = .visitSite(category: category)
+            case .leaveSite(category: let category):
+                self = .leaveSite(category: category)
             case .iframeLoaded(category: let category):
                 self = .iframeLoaded(category: category)
             case .settingToggled(let enabled):
@@ -4140,6 +4171,8 @@ public extension Pixel.Event {
                 return MaliciousSiteProtection.Event.errorPageShown(category: category, clientSideHit: clientSideHit)
             case .visitSite(let category):
                 return MaliciousSiteProtection.Event.visitSite(category: category)
+            case .leaveSite(category: let category):
+                return MaliciousSiteProtection.Event.leaveSite(category: category)
             case .iframeLoaded(let category):
                 return MaliciousSiteProtection.Event.iframeLoaded(category: category)
             case .settingToggled(let enabled):

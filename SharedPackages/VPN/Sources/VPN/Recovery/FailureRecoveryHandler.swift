@@ -105,6 +105,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
                     excludeLocalNetworks: excludeLocalNetworks,
                     excludeCGNAT: excludeCGNAT,
                     dnsSettings: dnsSettings)
+                try Task.checkCancellation()
                 switch result {
                 case .noRecoveryNecessary:
                     eventHandler(.completed(.healthy))
@@ -112,6 +113,8 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
                     try await updateConfig(generateConfigResult)
                     eventHandler(.completed(.unhealthy))
                 }
+            } catch is CancellationError {
+                throw CancellationError()
             } catch let error as NetworkProtectionErrorConvertible {
                 eventHandler(.failed(error.networkProtectionError))
                 throw error.networkProtectionError
@@ -178,6 +181,9 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
                 do {
                     try await action()
                     Logger.networkProtectionTunnelFailureMonitor.log("🟢 Failure recovery success!")
+                    return
+                } catch is CancellationError {
+                    Logger.networkProtectionTunnelFailureMonitor.log("🟢 Failure recovery cancelled.")
                     return
                 } catch {
                     Logger.networkProtectionTunnelFailureMonitor.log("🟢 Failure recovery failed. Retrying...")

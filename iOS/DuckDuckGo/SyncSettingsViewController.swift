@@ -1010,7 +1010,6 @@ private enum SyncSetupPixelValue {
     static let pairing = "pairing"
     static let linking = "linking"
     static let sessionTimeout = "session_timeout"
-    static let transportFailure = "transport_failure"
     static let needsUpgrade = "needs_upgrade"
     static let incompatibleCode = "incompatible_code"
     static let unrecognizedCode = "unrecognized_code"
@@ -1028,6 +1027,12 @@ private enum SyncSetupPixelValue {
     static let recoveryCodePreparationFailed = "recovery_code_preparation_failed"
     static let peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
     static let unexpectedFailure = "unexpected_failure"
+    static let fetchPublicKeyFailed = "fetch_public_key_failed"
+    static let transmitExchangeKeyFailed = "transmit_exchange_key_failed"
+    static let fetchExchangeRecoveryKeyFailed = "fetch_exchange_recovery_key_failed"
+    static let transmitExchangeRecoveryKeyFailed = "transmit_exchange_recovery_key_failed"
+    static let fetchConnectRecoveryKeyFailed = "fetch_connect_recovery_key_failed"
+    static let transmitConnectRecoveryKeyFailed = "transmit_connect_recovery_key_failed"
     static let host = "host"
     static let joiner = "joiner"
 }
@@ -1092,13 +1097,18 @@ private extension SyncConnectionError {
         switch self {
         case .failedToLogIn:
             return SyncSetupPixelValue.invalidCredentials
-        case .failedToFetchPublicKey,
-                .failedToTransmitExchangeRecoveryKey,
-                .failedToFetchConnectRecoveryKey,
-                .failedToTransmitExchangeKey,
-                .failedToFetchExchangeRecoveryKey,
-                .failedToTransmitConnectRecoveryKey:
-            return SyncSetupPixelValue.transportFailure
+        case .failedToFetchPublicKey:
+            return SyncSetupPixelValue.fetchPublicKeyFailed
+        case .failedToTransmitExchangeRecoveryKey:
+            return SyncSetupPixelValue.transmitExchangeRecoveryKeyFailed
+        case .failedToFetchConnectRecoveryKey:
+            return SyncSetupPixelValue.fetchConnectRecoveryKeyFailed
+        case .failedToTransmitExchangeKey:
+            return SyncSetupPixelValue.transmitExchangeKeyFailed
+        case .failedToFetchExchangeRecoveryKey:
+            return SyncSetupPixelValue.fetchExchangeRecoveryKeyFailed
+        case .failedToTransmitConnectRecoveryKey:
+            return SyncSetupPixelValue.transmitConnectRecoveryKeyFailed
         case .pollingForRecoveryKeyTimedOut:
             return SyncSetupPixelValue.sessionTimeout
         case .updateRequired:

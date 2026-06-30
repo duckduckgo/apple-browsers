@@ -222,7 +222,6 @@
                 "description": "The reason Sync setup failed, when it can be mapped safely.",
                 "enum": [
                     "session_timeout",
-                    "transport_failure",
                     "invalid_credentials",
                     "already_upgraded",
                     "already_paired",
@@ -235,7 +234,13 @@
                     "relay_channel_unavailable",
                     "recovery_code_preparation_failed",
                     "peer_recovery_code_unavailable",
-                    "unexpected_failure"
+                    "unexpected_failure",
+                    "fetch_public_key_failed",
+                    "transmit_exchange_key_failed",
+                    "fetch_exchange_recovery_key_failed",
+                    "transmit_exchange_recovery_key_failed",
+                    "fetch_connect_recovery_key_failed",
+                    "transmit_connect_recovery_key_failed"
                 ]
             }
         ]

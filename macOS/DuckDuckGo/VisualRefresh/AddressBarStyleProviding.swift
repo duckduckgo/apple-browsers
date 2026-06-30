@@ -231,7 +231,7 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarTopPaddingForDefaultFocused: CGFloat = 3
     private let addressBarTopPaddingForPopUpWindow: CGFloat = 7
     private let addressBarBottomPaddingForDefault: CGFloat = 7
-    private let addressBarBottomPaddingForHomePage: CGFloat = 7
+    private let addressBarBottomPaddingForDefaultFocused: CGFloat = 3
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
     private let addressBarTrailingStackViewOmnibarPadding: CGFloat = -2
     private let addressBarTrailingStackViewFocusedPadding: CGFloat = 4
@@ -323,7 +323,7 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {     // REVIEW
         switch type {
         case .default, .homePage:
-            return focused ? addressBarTopPaddingForDefaultFocused : addressBarTopPaddingForDefault
+            return focused ? addressBarBottomPaddingForDefaultFocused : addressBarBottomPaddingForDefault
         case .popUpWindow:
             return addressBarBottomPaddingForPopUpWindow
         }

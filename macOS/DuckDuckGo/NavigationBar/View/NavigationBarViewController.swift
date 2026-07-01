@@ -622,7 +622,7 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 
-        // update synchronously for off-screen view
+        // Update Synchronously
         prepareNavigationBar()
         heightChange()
     }

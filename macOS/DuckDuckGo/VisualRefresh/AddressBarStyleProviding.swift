@@ -69,7 +69,7 @@ protocol AddressBarStyleProviding {
     var topSpaceForSuggestionWindow: CGFloat { get }
 }
 
-/* TODO: To be removed in a follow-up
+/* Will be removed in a follow-up!
 
 final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     private let navigationBarHeightForDefault: CGFloat = 48

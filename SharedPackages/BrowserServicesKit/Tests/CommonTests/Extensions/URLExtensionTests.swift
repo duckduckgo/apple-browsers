@@ -750,7 +750,9 @@ final class URLEqualityComponentsTests {
         #expect(URL(string: "https://example.com/#section")!.hasFragment)
         #expect(URL(string: "https://example.com/page#anchor")!.hasFragment)
         #expect(!URL(string: "https://example.com/")!.hasFragment)
-        #expect(!URL(string: "https://example.com/#")!.hasFragment)  // empty fragment → false
+        #expect(URL(string: "https://example.com/#")!.hasFragment)
+        #expect(!URL(string: "https://example.com")!.hasFragment)
+        #expect(URL(string: "https://example.com#")!.hasFragment)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -758,7 +760,7 @@ final class URLEqualityComponentsTests {
     func hasFragment_opaque_nativeURL_literalHash() {
         #expect(URL(string: "about:blank#section")!.hasFragment)
         #expect(!URL(string: "about:blank")!.hasFragment)
-        #expect(!URL(string: "about:blank#")!.hasFragment)  // empty fragment
+        #expect(URL(string: "about:blank#")!.hasFragment)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -772,24 +774,22 @@ final class URLEqualityComponentsTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("hasFragment — MockWebKitURL: fragment recovered from originalDataAsString", .timeLimit(.minutes(1)))
-    func hasFragment_opaque_mockedWebKitURL() {
-        let withFrag = URL(string: "about:blank#section")!
-        let noFrag   = URL(string: "about:blank")!
-        let empty    = URL(string: "about:blank#")!
-        let data     = URL(string: "data:text/html,hello#anchor")!
-
-        #expect(withFrag.hasFragment)
-        #expect(!noFrag.hasFragment)
-        #expect(!empty.hasFragment)   // empty string after '#'
-        #expect(data.hasFragment)
+    @Test("hasFragment — opaque URL with literal # in data: and about: schemes", .timeLimit(.minutes(1)))
+    func hasFragment_opaque_literalHash_dataAndAbout() {
+        #expect(URL(string: "about:blank#section")!.hasFragment)
+        #expect(!URL(string: "about:blank")!.hasFragment)
+        #expect(URL(string: "about:blank#")!.hasFragment)
+        #expect(URL(string: "data:text/html,hello#anchor")!.hasFragment)
+        #expect(URL(string: "data:text/html,hello#")!.hasFragment)
+        #expect(!URL(string: "data:text/html,hello")!.hasFragment)
+        #expect(!URL(string: "data:text/html,hello%23world!")!.hasFragment)
     }
 
     // MARK: - originalWebKitString
 
     @available(iOS 16, macOS 13, *)
-    @Test("originalWebKitString — MockWebKitURL returns injected original string", .timeLimit(.minutes(1)))
-    func originalWebKitString_mock_returnsInjectedString() {
+    @Test("originalWebKitString — returns the URL's absolute string", .timeLimit(.minutes(1)))
+    func originalWebKitString_returnsAbsoluteString() {
         let url = URL(string: "about:blank#section")!
         #expect(url.originalWebKitString == "about:blank#section")
     }
@@ -822,12 +822,11 @@ final class URLEqualityComponentsTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("equals([.path]) — path only; with trailing-slash normalisation", .timeLimit(.minutes(1)))
+    @Test("equals([.path]) — path only; trailing slash is normalised", .timeLimit(.minutes(1)))
     func equalsPathOnly() {
         let a = URL(string: "https://example.com:443/path/to/page?q=1#frag")!
         #expect(a.equals(URL(string: "http://other.com/path/to/page?q=2#other")!, by: [.path]))
         #expect(!a.equals(URL(string: "https://example.com/different/path")!, by: [.path]))
-        // Trailing slash is NOT normalised — paths differ literally.
         #expect(a.equals(URL(string: "https://example.com/path/to/page/")!, by: [.path]))
     }
 
@@ -963,9 +962,10 @@ final class URLEqualityComponentsTests {
         ("http://example.com/page",       "http://other.com/page",          false, #line),
         // Different port → not equal
         ("http://example.com:8080/",      "http://example.com:9090/",       false, #line),
-        // Different path → not equal (no trailing-slash normalisation)
+        // Different path → not equal
         ("http://example.com/a",          "http://example.com/b",           false, #line),
-        ("http://example.com/page/",      "http://example.com/page",        true, #line),
+        // Trailing slash is normalised
+        ("http://example.com/page/",      "http://example.com/page",        true,  #line),
         // about: with literal # → fragment distinguished
         ("about:blank#section",           "about:blank#section",            true,  #line),
         ("about:blank#section",           "about:blank#other",              false, #line),
@@ -992,12 +992,12 @@ final class URLEqualityComponentsTests {
         #expect(a.equals(b, by: .fuzzyIdentity) == expected, sourceLocation: loc)
     }
 
-    // MARK: - equals — MockWebKitURL: about: URLs with %23 fragment
+    // MARK: - equals — opaque about: URLs
 
     @available(iOS 16, macOS 13, *)
-    @Test("equals — MockWebKitURL about: sameDocument ignores fragment, fuzzyIdentity distinguishes",
+    @Test("equals — about: sameDocument ignores fragment, fuzzyIdentity distinguishes",
           .timeLimit(.minutes(1)))
-    func webKit_aboutURL_fragmentAwareness() {
+    func opaque_aboutURL_fragmentAwareness() {
         let blank  = URL(string: "about:blank")!
         let sec    = URL(string: "about:blank#section")!
         let other  = URL(string: "about:blank#other")!
@@ -1020,12 +1020,12 @@ final class URLEqualityComponentsTests {
         #expect(sec.equals(other,  by: [.path]))      // "blank" == "blank"
     }
 
-    // MARK: - equals — MockWebKitURL: data: URLs with %23 fragment
+    // MARK: - equals — opaque data: URLs
 
     @available(iOS 16, macOS 13, *)
-    @Test("equals — MockWebKitURL data: path and fragment separated correctly",
+    @Test("equals — data: path and fragment separated correctly",
           .timeLimit(.minutes(1)))
-    func webKit_dataURL_pathAndFragmentSeparated() {
+    func opaque_dataURL_pathAndFragmentSeparated() {
         let noFrag   = URL(string: "data:text/html,hello")!
         let anchor   = URL(string: "data:text/html,hello#anchor")!
         let other    = URL(string: "data:text/html,hello#other")!
@@ -1065,7 +1065,7 @@ final class URLEqualityComponentsTests {
         #expect(!anchor.equals(sameAnchor, by: [.path, .fragment]))   // path same, frag differs
     }
 
-    // MARK: - %23 behaviour: NSURL vs native URL vs MockWebKitURL
+    // MARK: - Foundation contracts and NSURL behaviour
 
     @available(iOS 16, macOS 13, *)
     @Test("URL.fragment is nil for opaque URL with %23 (Foundation contract)", .timeLimit(.minutes(1)))
@@ -1088,35 +1088,32 @@ final class URLEqualityComponentsTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("NSURL with #fragment: sameDocument true",
+    @Test("NSURL with literal # fragment: sameDocument true, fuzzyIdentity detects fragment",
           .timeLimit(.minutes(1)))
-    func nsURL_percentEncoded_limitationWithoutWebKitString() {
+    func nsURL_literalHashFragment_equality() {
         let blank  = NSURL(string: "about:blank")! as URL
         let hashed = NSURL(string: "about:blank#section")! as URL
 
-        // sameDocument: both NSURL paths are "" → path matches → true
+        // sameDocument: fragment is ignored → true
         #expect(blank.equals(hashed, by: .sameDocument))
+        // fuzzyIdentity: nil vs "section" → false
+        #expect(!blank.equals(hashed, by: .fuzzyIdentity))
 
-        // about: with literal # is correctly detected even via NSURL
-        let literal = NSURL(string: "about:blank#section")! as URL
-        #expect(blank.equals(literal, by: .sameDocument))
-        #expect(!blank.equals(literal, by: .fuzzyIdentity))  // nil vs "section"
-
+        // Two NSURL about:blank#section instances are equal under fuzzyIdentity
         let other = URL(string: "about:blank#section")!
         #expect(hashed.equals(other, by: .fuzzyIdentity))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("MockWebKitURL resolves %23 fragments that NSURL cannot", .timeLimit(.minutes(1)))
-    func mockWebKitURL_resolves_percentEncodedFragments_thatNSURLCannot() {
+    @Test("equals — about: literal # fragments: sameDocument equal, fuzzyIdentity distinct",
+          .timeLimit(.minutes(1)))
+    func opaque_aboutURL_fragmentEquality() {
         let sec   = URL(string: "about:blank#section")!
         let other = URL(string: "about:blank#other")!
 
-        // With original string: fragment is correctly read → fuzzyIdentity distinguishes them
         #expect(!sec.equals(other, by: .fuzzyIdentity))
         #expect(!sec.equals(other, by: [.fragment]))
-
-        // sameDocument still true (path "blank" == "blank")
+        // sameDocument ignores fragment → still equal
         #expect(sec.equals(other, by: .sameDocument))
     }
 
@@ -1127,40 +1124,28 @@ final class URLEqualityComponentsTests {
     func equalsSameDocumentCompletesForLargeDataURL() {
         let payload  = String(repeating: "A", count: 20 * 1024 * 1024)
         let anchor   = String(repeating: "z", count: 1024 * 1024)
-        let nsStr1   = "data:text/html," + payload                      // no fragment
-        let orig1    = "data:text/html," + payload                      // original WTF::URL
-        let orig2    = "data:text/html," + payload + "#" + anchor       // original WTF::URL with fragment
+        let base     = "data:text/html," + payload
+        let withFrag = base + "#" + anchor
 
-        // — Native URL(string:) path —
-        guard let nativeUrl1 = URL(string: nsStr1),
-              let nativeUrl2 = URL(string: orig2) else {
-            Issue.record("Failed to construct 20 MB native data: URLs"); return
+        // Use NSURL so originalWebKitString returns the original string and
+        // URLComponents(webKitUrl:) exercises the large-string parsing path.
+        guard let url1 = NSURL(string: base) as URL?,
+              let url2 = NSURL(string: withFrag) as URL? else {
+            Issue.record("Failed to construct 20 MB data: URLs"); return
         }
-        let nativeStart   = Date()
-        let nativeResult  = nativeUrl1.equals(nativeUrl2, by: .sameDocument)
-        let nativeElapsed = Date().timeIntervalSince(nativeStart)
-        #expect(nativeResult == true)
-        #expect(nativeElapsed < 0.5,
-                "native equals(.sameDocument) took \(nativeElapsed)s — should not be O(n²)")
-        Logger.general.info("equalsSameDocumentCompletesForLargeDataURL (native): \(nativeElapsed)s")
 
-        // — MockWebKitURL path (simulates URLs from WKNavigationAction) —
-        // The NSURL absoluteString has %23 for the fragment; the original string has a literal #.
-        guard let wkUrl1 = URL(string: orig1),
-              let wkUrl2 = URL(string: orig2) else {
-            Issue.record("Failed to construct 20 MB MockWebKit data: URLs"); return
-        }
-        let wkStart   = Date()
-        let wkResult  = wkUrl1.equals(wkUrl2, by: .sameDocument)
-        let wkElapsed = Date().timeIntervalSince(wkStart)
-        #expect(wkResult == true)
-        #expect(wkElapsed < 0.5,
-                "WebKit equals(.sameDocument) took \(wkElapsed)s — should not be O(n²)")
-        Logger.general.info("equalsSameDocumentCompletesForLargeDataURL (WebKit): \(wkElapsed)s")
+        let start   = Date()
+        let result  = url1.equals(url2, by: .sameDocument)
+        let elapsed = Date().timeIntervalSince(start)
 
-        // Verify fuzzyIdentity correctly distinguishes fragment presence via WebKit string
-        #expect(!wkUrl1.equals(wkUrl2, by: .fuzzyIdentity),
-                "wkUrl1 has no fragment, wkUrl2 has one — must differ under fuzzyIdentity")
+        #expect(result == true)
+        #expect(elapsed < 0.3, "equals(.sameDocument) took \(elapsed)s — should not be O(n²)")
+        Logger.general.info("equalsSameDocumentCompletesForLargeDataURL: \(elapsed)s")
+
+        // fuzzyIdentity must detect absent-vs-present fragment
+        #expect(!url1.equals(url2, by: .fuzzyIdentity),
+                "url1 has no fragment, url2 has one — must differ under fuzzyIdentity")
     }
+
 }
 // swiftlint:enable comma

@@ -35,7 +35,8 @@ extension URL {
     }
 
     public var originalWebKitString: String? {
-        (self as NSURL).value(forKey: Selector.originalDataAsString) as? String
+        guard NSURL.instancesRespond(to: NSSelectorFromString(URL.Selector.originalDataAsString)) else { return nil }
+        return (self as NSURL).value(forKey: Selector.originalDataAsString) as? String
     }
 
     /// URL without the scheme and the '/' suffix of the path.
@@ -388,9 +389,8 @@ extension URL {
 
     /// Returns `true` if the URL has a fragment (including empty fragments like http://example.com/#fragment)
     public var hasFragment: Bool {
-        guard let components = URLComponents(webKitUrl: self),
-              let fragment = components.fragment else { return false }
-        return true
+        guard let components = URLComponents(webKitUrl: self) else { return false }
+        return components.fragment != nil
     }
 
     /// `true` when the URL is opaque (scheme without authority), e.g. `about:`, `data:`, `javascript:`.

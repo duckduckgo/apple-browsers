@@ -42,8 +42,7 @@ extension URLComponents {
 #endif
 
         guard webKitUrl.isOpaque,
-              NSURL.instancesRespond(to: NSSelectorFromString(URL.Selector.originalDataAsString)),
-              let originalString = (webKitUrl as NSURL).value(forKey: URL.Selector.originalDataAsString) as? String,
+              let originalString = webKitUrl.originalWebKitString,
               let swiftNativeURLComponents = URLComponents(string: originalString) else {
             self.init(url: webKitUrl, resolvingAgainstBaseURL: false)
             return

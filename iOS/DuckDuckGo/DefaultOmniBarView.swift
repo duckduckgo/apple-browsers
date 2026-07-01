@@ -513,6 +513,53 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         isToolPickerEnabled && toolPickerButton.menu != nil
     }
 
+    let attachButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityIdentifier = "AIChat.Omnibar.iPad.Attach"
+        button.accessibilityLabel = UserText.aiChatToolbarAttachButtonAccessibilityLabel
+        button.setImage(DesignSystemImages.Glyphs.Size24.attach, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        button.isHidden = true
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
+
+    /// Enables the attach button (driven by the `iPadDuckAIBarControls` flag).
+    var isAttachButtonEnabled: Bool = false {
+        didSet { refreshAttachButtonVisibility() }
+    }
+
+    /// The menu offering photo / camera / file pickers. Setting it enables the button's primary
+    /// action; setting it nil hides the button — i.e. when the selected model accepts no attachments.
+    var aiChatAttachmentMenu: UIMenu? {
+        get { attachButton.menu }
+        set {
+            attachButton.menu = newValue
+            attachButton.showsMenuAsPrimaryAction = (newValue != nil)
+            refreshAttachButtonVisibility()
+        }
+    }
+
+    private var canShowAttachButton: Bool {
+        isAttachButtonEnabled && attachButton.menu != nil
+    }
+
+    /// The strip of pending attachments shown above the toolbar row when attachments are present.
+    let attachmentsStripView: UnifiedToggleInputAttachmentsStripView = {
+        let strip = UnifiedToggleInputAttachmentsStripView(
+            sizing: .iPadOmnibar,
+            horizontalPadding: Metrics.duckAITextViewBottomPadding
+        )
+        strip.translatesAutoresizingMaskIntoConstraints = false
+        strip.isHidden = true
+        return strip
+    }()
+
     let aiChatTextView: UITextView = {
         let textView = UITextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
@@ -541,6 +588,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var expandedHeightConstraint: NSLayoutConstraint?
     private var searchFieldBottomEqualConstraint: NSLayoutConstraint?
     private var searchFieldBottomGTEConstraint: NSLayoutConstraint?
+    private var attachmentsStripHeightConstraint: NSLayoutConstraint?
+    /// Active when no attachments: the text view fills down to the toolbar row (its default).
+    private var textViewBottomToContainerConstraint: NSLayoutConstraint?
+    /// Active when attachments are present: the text view stops above the attachments strip.
+    private var textViewBottomToStripConstraint: NSLayoutConstraint?
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
@@ -721,6 +773,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         chromeContentContainerView.addSubview(modelPickerButton)
         chromeContentContainerView.addSubview(reasoningPickerButton)
         chromeContentContainerView.addSubview(toolPickerButton)
+        chromeContentContainerView.addSubview(attachButton)
+        chromeContentContainerView.addSubview(attachmentsStripView)
         chromeContentContainerView.addSubview(aiChatLeftButton)
 
         addSubview(activeOutlineView)
@@ -1153,7 +1207,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func overflowTarget(at point: CGPoint, with event: UIEvent?) -> UIView? {
         guard isSearchAreaExpanded else { return nil }
-        let candidates: [UIView] = [aiChatSendButton, modelPickerButton, reasoningPickerButton, toolPickerButton, aiChatTextView]
+        // The strip and attach button sit above the text view (which is brought to front for typing),
+        // so route taps to them before falling back to the text view.
+        let candidates: [UIView] = [aiChatSendButton, modelPickerButton, reasoningPickerButton, toolPickerButton, attachButton, attachmentsStripView, aiChatTextView]
         return candidates.first { candidate in
             guard !candidate.isHidden else { return false }
             let localPoint = candidate.convert(point, from: self)
@@ -1322,6 +1378,13 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         static let reasoningPickerChipSize: CGFloat = 40.0
         static let reasoningToModelPickerSpacing: CGFloat = 4.0
         static let toolPickerChipSize: CGFloat = 40.0
+
+        // Duck.ai attach button (iPad), sits on the far left, to the left of the tool picker.
+        static let attachButtonSize: CGFloat = 40.0
+        static let attachToToolPickerSpacing: CGFloat = 4.0
+        // Vertical gaps around the attachments strip when it grows the expanded search area.
+        static let attachmentsStripToButtonRowSpacing: CGFloat = 8.0
+        static let attachmentsStripToTextViewSpacing: CGFloat = 4.0
 
         static let expandedPadSizeSpacing: CGFloat = 24.0
         static let expandedPadSizeMargins = NSDirectionalEdgeInsets(
@@ -1600,11 +1663,29 @@ extension DefaultOmniBarView {
     }
 
     func setUpExpandedSearchAreaConstraints() {
+        // The text view fills down to the toolbar row by default; when attachments are present this
+        // is swapped for `textViewBottomToStripConstraint` so the text stops above the strip.
+        let textBottomToContainer = aiChatTextView.bottomAnchor.constraint(
+            equalTo: searchAreaContainerView.bottomAnchor,
+            constant: -Metrics.duckAITextViewBottomPadding
+        )
+        textViewBottomToContainerConstraint = textBottomToContainer
+
+        let textBottomToStrip = aiChatTextView.bottomAnchor.constraint(
+            equalTo: attachmentsStripView.topAnchor,
+            constant: -Metrics.attachmentsStripToTextViewSpacing
+        )
+        textBottomToStrip.isActive = false
+        textViewBottomToStripConstraint = textBottomToStrip
+
+        let stripHeight = attachmentsStripView.heightAnchor.constraint(equalToConstant: 0)
+        attachmentsStripHeightConstraint = stripHeight
+
         NSLayoutConstraint.activate([
             aiChatTextView.topAnchor.constraint(equalTo: searchAreaView.textField.topAnchor),
             aiChatTextView.leadingAnchor.constraint(equalTo: searchAreaView.textField.leadingAnchor),
             aiChatTextView.trailingAnchor.constraint(equalTo: searchAreaView.textField.trailingAnchor),
-            aiChatTextView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+            textBottomToContainer,
 
             aiChatSendButton.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: -Metrics.duckAITextViewBottomPadding),
             aiChatSendButton.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
@@ -1622,10 +1703,20 @@ extension DefaultOmniBarView {
             reasoningPickerButton.heightAnchor.constraint(equalToConstant: Metrics.reasoningPickerChipSize),
             reasoningPickerButton.leadingAnchor.constraint(greaterThanOrEqualTo: aiChatTextView.leadingAnchor),
 
-            toolPickerButton.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: Metrics.duckAITextViewBottomPadding),
+            attachButton.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: Metrics.duckAITextViewBottomPadding),
+            attachButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
+            attachButton.widthAnchor.constraint(equalToConstant: Metrics.attachButtonSize),
+            attachButton.heightAnchor.constraint(equalToConstant: Metrics.attachButtonSize),
+
+            toolPickerButton.leadingAnchor.constraint(equalTo: attachButton.trailingAnchor, constant: Metrics.attachToToolPickerSpacing),
             toolPickerButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
             toolPickerButton.widthAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),
             toolPickerButton.heightAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),
+
+            attachmentsStripView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+            attachmentsStripView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            attachmentsStripView.bottomAnchor.constraint(equalTo: aiChatSendButton.topAnchor, constant: -Metrics.attachmentsStripToButtonRowSpacing),
+            stripHeight,
         ])
 
         let bottomEqual = searchAreaContainerView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
@@ -1669,15 +1760,22 @@ extension DefaultOmniBarView {
             modelPickerButton.alpha = (isSearchAreaExpanded && canShowModelPicker) ? 1 : 0
             reasoningPickerButton.alpha = (isSearchAreaExpanded && canShowReasoningPicker) ? 1 : 0
             toolPickerButton.alpha = (isSearchAreaExpanded && canShowToolPicker) ? 1 : 0
+            attachButton.alpha = (isSearchAreaExpanded && canShowAttachButton) ? 1 : 0
             if !isSearchAreaExpanded {
                 aiChatSendButton.isHidden = true
                 modelPickerButton.isHidden = true
                 reasoningPickerButton.isHidden = true
                 toolPickerButton.isHidden = true
+                attachButton.isHidden = true
             }
             applyExpansionConstraints()
+            let showStrip = applyAttachmentsConstraints()
+            attachmentsStripView.alpha = showStrip ? 1 : 0
             applyExpansionClipping()
             layoutIfNeeded()
+            if !showStrip {
+                attachmentsStripView.isHidden = true
+            }
             // After layout so observers (the popover) anchor against the final frame.
             onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
             if isSearchAreaExpanded, !aiChatTextView.isFirstResponder {
@@ -1701,6 +1799,7 @@ extension DefaultOmniBarView {
         }
 
         applyExpansionConstraints()
+        let showStrip = applyAttachmentsConstraints()
 
         UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             if self.isSearchAreaExpanded {
@@ -1709,15 +1808,21 @@ extension DefaultOmniBarView {
                 self.modelPickerButton.alpha = self.canShowModelPicker ? 1 : 0
                 self.reasoningPickerButton.alpha = self.canShowReasoningPicker ? 1 : 0
                 self.toolPickerButton.alpha = self.canShowToolPicker ? 1 : 0
+                self.attachButton.alpha = self.canShowAttachButton ? 1 : 0
             } else {
                 self.searchAreaShadowView?.applyShadowOpacityMultiplier(0)
                 self.aiChatSendButton.alpha = 0
                 self.modelPickerButton.alpha = 0
                 self.reasoningPickerButton.alpha = 0
                 self.toolPickerButton.alpha = 0
+                self.attachButton.alpha = 0
             }
+            self.attachmentsStripView.alpha = showStrip ? 1 : 0
             self.layoutIfNeeded()
         } completion: { _ in
+            if !showStrip {
+                self.attachmentsStripView.isHidden = true
+            }
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
                 self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
@@ -1725,6 +1830,7 @@ extension DefaultOmniBarView {
                 self.modelPickerButton.isHidden = true
                 self.reasoningPickerButton.isHidden = true
                 self.toolPickerButton.isHidden = true
+                self.attachButton.isHidden = true
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
             } else {
@@ -1766,6 +1872,12 @@ extension DefaultOmniBarView {
                 toolPickerButton.isHidden = false
                 toolPickerButton.alpha = 0
                 searchAreaContainerView.bringSubviewToFront(toolPickerButton)
+            }
+
+            if canShowAttachButton {
+                attachButton.isHidden = false
+                attachButton.alpha = 0
+                searchAreaContainerView.bringSubviewToFront(attachButton)
             }
         } else {
             let currentText = aiChatTextView.text ?? ""
@@ -1820,6 +1932,68 @@ extension DefaultOmniBarView {
         searchAreaContainerView.bringSubviewToFront(toolPickerButton)
         UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
             self.toolPickerButton.alpha = 1
+        }
+    }
+
+    private func refreshAttachButtonVisibility() {
+        guard isSearchAreaExpanded, canShowAttachButton else {
+            attachButton.isHidden = true
+            return
+        }
+        guard attachButton.isHidden else { return }
+        attachButton.isHidden = false
+        attachButton.alpha = 0
+        searchAreaContainerView.bringSubviewToFront(attachButton)
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
+            self.attachButton.alpha = 1
+        }
+    }
+
+    /// Sets the strip height, text-view bottom anchor, and expanded-area growth for the current
+    /// attachments and expansion state, without animating. Returns whether the strip should be shown.
+    /// The `expandedHeightConstraint` is only active while expanded, so this is inert when collapsed.
+    @discardableResult
+    private func applyAttachmentsConstraints() -> Bool {
+        let showStrip = isSearchAreaExpanded && !attachmentsStripView.attachments.isEmpty
+        let stripHeight = showStrip ? attachmentsStripView.contentHeight : 0
+        let growth = showStrip
+            ? stripHeight + Metrics.attachmentsStripToButtonRowSpacing + Metrics.attachmentsStripToTextViewSpacing
+            : 0
+
+        attachmentsStripHeightConstraint?.constant = stripHeight
+        expandedHeightConstraint?.constant = Metrics.expandedSearchAreaHeight + growth
+
+        textViewBottomToContainerConstraint?.isActive = !showStrip
+        textViewBottomToStripConstraint?.isActive = showStrip
+
+        if showStrip {
+            attachmentsStripView.isHidden = false
+            searchAreaContainerView.bringSubviewToFront(attachmentsStripView)
+        }
+        return showStrip
+    }
+
+    /// Grows the expanded search area to fit the attachments strip when attachments are present, and
+    /// collapses it back when empty. Called by the omnibar controller whenever the strip changes.
+    func updateAttachmentsLayout(animated: Bool) {
+        let showStrip = applyAttachmentsConstraints()
+
+        guard animated else {
+            attachmentsStripView.alpha = showStrip ? 1 : 0
+            layoutIfNeeded()
+            if !showStrip {
+                attachmentsStripView.isHidden = true
+            }
+            return
+        }
+
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+            self.attachmentsStripView.alpha = showStrip ? 1 : 0
+            self.layoutIfNeeded()
+        } completion: { _ in
+            if !showStrip {
+                self.attachmentsStripView.isHidden = true
+            }
         }
     }
 

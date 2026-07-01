@@ -26,6 +26,9 @@ import SwiftUI
 struct SystemDisabledPermissionInfoView: View {
     let domain: String
     let permissionType: PermissionType
+    /// Selects the duck.ai mic-prompt copy (voice chat vs dictation). Only consulted for the
+    /// `.microphone` + duck.ai branch; defaults to voice chat for all other callers.
+    var micPromptSource: DuckAiMicPermissionSource = .voiceChat
 
     private var promptText: String {
         switch permissionType {
@@ -34,10 +37,15 @@ struct SystemDisabledPermissionInfoView: View {
         case .geolocation:
             return String(format: UserText.locationPermissionAuthorizationFormat, domain)
         case .microphone:
-            // On duck.ai the only mic use is voice chat, so phrase the prompt around that
-            // rather than the generic "website would like to…" form.
+            // On duck.ai the only mic uses are voice chat and dictation, so phrase the prompt
+            // around the triggering flow rather than the generic "website would like to…" form.
             if domain == URL.duckAi.host {
-                return UserText.duckAiVoiceChatMicrophonePrompt
+                switch micPromptSource {
+                case .voiceChat:
+                    return UserText.duckAiVoiceChatMicrophonePrompt
+                case .dictation:
+                    return UserText.duckAiDictationMicrophonePrompt
+                }
             }
             return String(format: UserText.microphonePermissionAuthorizationFormat, domain)
         default:

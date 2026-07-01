@@ -66,6 +66,11 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// remediation prompt (e.g. when the OS has denied microphone access to the app).
     case voiceChatStartFailed
 
+    /// Posted by the FE when `getUserMedia` rejects while attempting to start Duck.ai
+    /// dictation. Mirrors `voiceChatStartFailed` but drives dictation-specific remediation
+    /// copy on the system-permission prompt.
+    case dictationStartFailed
+
     /// Posted by the FE when a new chat is created in image-generation mode (e.g. the user
     /// tapped the sidebar's "New Image" entry). Native uses this to mirror the FE's active
     /// tool state in the Unified Input toolbar.

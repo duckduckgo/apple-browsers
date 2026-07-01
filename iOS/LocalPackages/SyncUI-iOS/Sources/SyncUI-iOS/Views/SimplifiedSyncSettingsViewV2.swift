@@ -20,6 +20,7 @@
 import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
+import UIComponents
 
 // V2 of the Sync & Backup settings screen, gated behind the simplifiedSyncSetupV2 feature
 // flag. Started as a copy of SimplifiedSyncSettingsView and is being reshaped for the
@@ -105,7 +106,7 @@ extension SimplifiedSyncSettingsViewV2 {
 
     @ViewBuilder
     var syncDisabledSections: some View {
-        alreadySetUpSection
+        recoverSyncedDataSection
         getDesktopBrowserSection(source: .notActivated)
     }
 
@@ -123,9 +124,9 @@ extension SimplifiedSyncSettingsViewV2 {
     @ViewBuilder
     var headerSection: some View {
         Section {
-            VStack(spacing: 20) {
+            VStack(spacing: 8) {
                 ZStack {
-                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-128" : "Sync-New-128-legacy", bundle: .module)
+                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-DDG-Devices-Feature-128" : "Sync-New-128-legacy", bundle: .module)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
@@ -139,26 +140,37 @@ extension SimplifiedSyncSettingsViewV2 {
                 }
                 .padding(.top, -16)
 
-                ZStack {
-                    Text(model.isAIChatSyncEnabled ? UserText.simplifiedSyncHeaderMessage : UserText.simplifiedSyncHeaderMessageBasic)
-                        .daxBodyRegular()
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .opacity(model.isSyncEnabled ? 0 : 1)
-                        .accessibilityHidden(model.isSyncEnabled)
+                VStack(spacing: 13) {
+                    VStack(spacing: 4) {
+                        Text(UserText.simplifiedSyncHeaderTitle)
+                            .daxTitle2()
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
 
-                    Button(action: model.scanQRCode) {
-                        HStack(spacing: 8) {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size16.qr)
-                            Text(UserText.simplifiedSyncAnotherDeviceButton)
-                        }
+                        syncStatusIndicator
                     }
-                    .buttonStyle(PrimaryButtonStyle(disabled: !model.isConnectingDevicesAvailable, compact: true, fullWidth: false))
-                    .disabled(!model.isConnectingDevicesAvailable)
-                    .padding(.vertical, 10)
-                    .opacity(model.isSyncEnabled ? 1 : 0)
-                    .allowsHitTesting(model.isSyncEnabled)
-                    .accessibilityHidden(!model.isSyncEnabled)
+
+                    ZStack {
+                        Text(model.isAIChatSyncEnabled ? UserText.simplifiedSyncHeaderMessage : UserText.simplifiedSyncHeaderMessageBasic)
+                            .daxBodyRegular()
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                            .opacity(model.isSyncEnabled ? 0 : 1)
+                            .accessibilityHidden(model.isSyncEnabled)
+
+                        Button(action: model.scanQRCode) {
+                            HStack(spacing: 8) {
+                                Image(uiImage: DesignSystemImages.Glyphs.Size16.qr)
+                                Text(UserText.simplifiedSyncAnotherDeviceButton)
+                            }
+                        }
+                        .buttonStyle(PrimaryButtonStyle(disabled: !model.isConnectingDevicesAvailable, compact: true, fullWidth: false))
+                        .disabled(!model.isConnectingDevicesAvailable)
+                        .padding(.vertical, 10)
+                        .opacity(model.isSyncEnabled ? 1 : 0)
+                        .allowsHitTesting(model.isSyncEnabled)
+                        .accessibilityHidden(!model.isSyncEnabled)
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
@@ -167,6 +179,14 @@ extension SimplifiedSyncSettingsViewV2 {
         }
         .listRowInsets(EdgeInsets())
         .listRowBackground(Color(designSystemColor: .background))
+    }
+
+    @ViewBuilder
+    var syncStatusIndicator: some View {
+        StatusIndicatorView(
+            status: model.isSyncEnabled ? .on : .off,
+            text: model.isSyncEnabled ? UserText.simplifiedSyncStatusOn : UserText.simplifiedSyncStatusOff
+        )
     }
 
     @ViewBuilder
@@ -197,7 +217,7 @@ extension SimplifiedSyncSettingsViewV2 {
     var syncToggleSection: some View {
         Section {
             HStack {
-                Text(UserText.simplifiedSyncToggleTitle)
+                Text(UserText.simplifiedSyncToggleTitleThisDevice)
                     .daxBodyRegular()
                 Spacer()
                 if model.isBusy && !model.isSyncEnabled {
@@ -222,37 +242,41 @@ extension SimplifiedSyncSettingsViewV2 {
             }
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
             .disabled(model.isBusy || (!model.isSyncEnabled && !model.isAccountCreationAvailable))
+
+            if !model.isSyncEnabled {
+                syncWithAnotherDeviceButton
+            }
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }
 
     @ViewBuilder
-    var alreadySetUpSection: some View {
-        Section {
-            Button {
-                model.scanQRCode()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
-                        .foregroundColor(Color(designSystemColor: .accentPrimary))
-                    Text(UserText.simplifiedSyncWithAnotherDeviceButton)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .accentPrimary))
-                }
+    var syncWithAnotherDeviceButton: some View {
+        Button {
+            model.scanQRCode()
+        } label: {
+            HStack(spacing: 8) {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
+                Text(UserText.simplifiedSyncWithAnotherDeviceButton)
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
             }
-            .disabled(!model.isAccountCreationAvailable)
+        }
+        .disabled(!model.isAccountCreationAvailable)
+    }
 
+    @ViewBuilder
+    var recoverSyncedDataSection: some View {
+        Section {
             Button {
                 model.delegate?.fireSyncSetupPixel(event: .recoverSyncedDataTapped)
                 model.beginRecoverFlow()
             } label: {
-                HStack(spacing: 8) {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.note)
-                        .foregroundColor(Color(designSystemColor: .accentPrimary))
-                    Text(UserText.simplifiedUseRecoveryCodeButton)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .accentPrimary))
-                }
+                Text(UserText.simplifiedRecoverSyncedDataButton)
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .sheet(isPresented: $model.isRecoverSyncedDataSheetVisible) {
                 RecoverSyncedDataView(model: model, onCancel: {
@@ -260,8 +284,6 @@ extension SimplifiedSyncSettingsViewV2 {
                 })
             }
             .disabled(!model.isAccountRecoveryAvailable)
-        } header: {
-            Text(UserText.simplifiedAlreadySetUpSectionHeader)
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }

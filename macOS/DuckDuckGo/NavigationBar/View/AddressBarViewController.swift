@@ -772,12 +772,20 @@ final class AddressBarViewController: NSViewController {
 
     private func refreshAddressBarCornerRadius() {
         let styleProvider = theme.addressBarStyleProvider
+        let isSuggestionsWindowVisible = isSearchOrChatSuggestionsWindowVisible
 
         activeBackgroundView.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadius
         activeBackgroundViewWithSuggestions.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
         activeOuterBorderView.cornerRadius = styleProvider.addressBarActiveOuterBorderViewRadius
         inactiveBackgroundView.cornerRadius = styleProvider.addressBarInactiveBackgroundViewRadius
-        innerBorderView.cornerRadius = styleProvider.addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: isSearchOrChatSuggestionsWindowVisible)
+        innerBorderView.cornerRadius = styleProvider.addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: isSuggestionsWindowVisible)
+
+        if featureFlagger.isFeatureOn(.appRebranding) {
+            let roundedCorners: RoundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
+
+            innerBorderView.roundedCorners = roundedCorners
+            activeBackgroundViewWithSuggestions.roundedCorners = roundedCorners
+        }
     }
 
     private func setupInactiveShadowView() {
@@ -895,15 +903,10 @@ final class AddressBarViewController: NSViewController {
         inactiveAddressBarShadowView.isHidden = isSuggestionsWindowVisible
 
         if themeManager.isAppRebranded {
-            /// We're disabling rounded corners at the bottom edges, so that we seamlessly blend in with the Suggestions / Omnibar UI
-            let roundedCorners: RoundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
-
-            innerBorderView.roundedCorners = roundedCorners
-            activeBackgroundViewWithSuggestions.roundedCorners = roundedCorners
+            /// When Suggestions appears we'll update the Bar Height and Corner Radiuses
+            resizeAddressBarIfNeeded()
+            refreshAddressBarCornerRadius()
         }
-
-        resizeAddressBarIfNeeded()
-        refreshAddressBarCornerRadius()
     }
 
     private func layoutShadowView() {

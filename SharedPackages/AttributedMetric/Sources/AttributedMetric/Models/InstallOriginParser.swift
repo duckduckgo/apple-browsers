@@ -28,14 +28,6 @@ struct InstallOriginComponents: Equatable {
     let source: String?
     let campaign: String?
     let content: String?
-
-    init(funnel: String, entry: String, source: String?, campaign: String?, content: String?) {
-        self.funnel = funnel
-        self.entry = entry
-        self.source = source
-        self.campaign = campaign
-        self.content = content
-    }
 }
 
 enum InstallOriginParser {

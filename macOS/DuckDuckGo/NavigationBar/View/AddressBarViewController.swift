@@ -30,6 +30,7 @@ import WebExtensions
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)
+    func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController, allowsAsync: Bool)
     func addressBarViewControllerSearchModeToggleChanged(_ addressBarViewController: AddressBarViewController, isAIChatMode: Bool)
     /// Called when the user unfocuses the address bar while duck.ai mode is selected for the current tab.
     /// The panel should stay on screen, but the suggestions row should collapse.
@@ -1341,7 +1342,7 @@ private extension AddressBarViewController {
         }
 
         displaysTallLayout = usesTallLayout
-        delegate?.resizeAddressBarForHomePage(self)
+        delegate?.resizeAddressBarForHomePage(self, allowsAsync: false)
     }
 }
 
@@ -1504,7 +1505,9 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         isAIChatOmnibarVisible = true
         selectionState = .activeWithAIChat
         mode = .editing(.aiChat)
-        delegate?.resizeAddressBarForHomePage(self)
+
+        // Important: Resizing hte Address Bar must be synchronous. Otherwise we'll observe the Omnibar jumping onscreen
+        delegate?.resizeAddressBarForHomePage(self, allowsAsync: false)
         delegate?.addressBarViewControllerDidRefocusInAIChatMode(self)
     }
 }

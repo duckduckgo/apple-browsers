@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import PersistenceTestingUtils
@@ -102,7 +103,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             syncErrorHandler: SyncErrorHandler(),
             webExtensionAvailability: nil,
             dockCustomization: DockCustomizerMock(),
-            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: MockKeyValueStore()),
+            reinstallUserDetection: MockReinstallingUserDetecting(),
             installDateProvider: { Date() }
         )
 

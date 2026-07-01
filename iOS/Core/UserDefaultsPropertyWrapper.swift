@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 
 // Inspired by https://swiftsenpai.com/swift/create-the-perfect-userdefaults-wrapper-using-property-wrapper/
@@ -57,7 +58,6 @@ public struct UserDefaultsWrapper<T> {
         case privacyButtonPulseShown = "com.duckduckgo.ios.privacyButtonPulseShown"
         case daxBrowsingFinalDialogShown = "com.duckduckgo.ios.daxOnboardingFinalDialogSeen"
         case daxSubscriptionPromotionDialogShown = "com.duckduckgo.ios.daxPrivacyProPromotionDialogShown"
-
         case notFoundCache = "com.duckduckgo.ios.favicons.notFoundCache"
         case faviconTabsCacheNeedsCleanup = "com.duckduckgo.ios.favicons.tabsCacheNeedsCleanup"
 
@@ -115,6 +115,8 @@ public struct UserDefaultsWrapper<T> {
         case voiceSearchEnabled = "com.duckduckgo.app.voiceSearchEnabled"
 
         case autoconsentEnabled = "com.duckduckgo.ios.autoconsentEnabled"
+        case cookiePopupPreference = "com.duckduckgo.ios.cookiePopupPreference"
+        case didMigrateCookiePopupPreference = "com.duckduckgo.ios.cookiePopupPreference.didMigrate"
 
         case shouldScheduleRulesCompilationOnAppLaunch = "com.duckduckgo.ios.shouldScheduleRulesCompilationOnAppLaunch"
 

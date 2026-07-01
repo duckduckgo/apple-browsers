@@ -98,7 +98,7 @@ extension SimplifiedScanOrShowCodeView {
         VStack(spacing: 0) {
             Spacer()
 
-            Image("SyncCameraPermission")
+            Image(rebrandable: "SyncCameraPermission")
                 .padding(.bottom, 20)
 
             Text(UserText.cameraPermissionRequired)
@@ -138,7 +138,7 @@ extension SimplifiedScanOrShowCodeView {
         VStack(spacing: 0) {
             Spacer()
 
-            Image("SyncCameraUnavailable")
+            Image(rebrandable: "SyncCameraUnavailable")
                 .padding(.bottom, 20)
 
             Text(UserText.cameraIsUnavailableTitle)

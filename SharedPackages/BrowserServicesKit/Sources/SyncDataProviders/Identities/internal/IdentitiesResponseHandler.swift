@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import DDGSync
 import Foundation
 import GRDB

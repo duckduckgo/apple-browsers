@@ -77,6 +77,7 @@ fastlane/test_output
 # DuckDuckGo
 
 Configuration/ExternalDeveloper.xcconfig
+LocalOverrides.xcconfig
 scripts/assets
 
 DuckDuckGoTests/NetworkProtectionVPNLocationViewModelTests.swift*.plist

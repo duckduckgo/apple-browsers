@@ -24,6 +24,7 @@ extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockTutorialView: View {
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-tutorial", withExtension: "mp4")
 
@@ -36,17 +37,23 @@ extension OnboardingRebranding.OnboardingView {
             static let borderVerticalPadding: CGFloat = -1
         }
 
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+
         private let title: String
         private let message: String
+        @Binding var isVisible: Bool
         private let cta: String
         private let action: () -> Void
 
         init(title: String,
              message: String,
+             isVisible: Binding<Bool>,
              cta: String,
              action: @escaping () -> Void) {
             self.title = title
             self.message = message
+            self._isVisible = isVisible
             self.cta = cta
             self.action = action
         }
@@ -68,8 +75,15 @@ extension OnboardingRebranding.OnboardingView {
                 content: AnyView(
                     videoContent
                 ),
+                showContent: $showContent,
                 title: {
-                    Text(title)
+                    TypingText(title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
+                        }
+                    })
                         .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                         .font(onboardingTheme.typography.title)
                         .multilineTextAlignment(.center)
@@ -81,8 +95,11 @@ extension OnboardingRebranding.OnboardingView {
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                 }
             )
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
+            .environment(\.typingAnimationSkip, false)
         }
 
+        /// Scales the border image and video proportionally to fill the available width.
         private var videoContent: some View {
             GeometryReader { geometry in
                 let width = geometry.size.width

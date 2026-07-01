@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 
 #if os(macOS)

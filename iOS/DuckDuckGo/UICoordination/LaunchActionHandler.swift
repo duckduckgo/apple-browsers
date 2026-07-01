@@ -40,6 +40,20 @@ enum LaunchAction {
         }
     }
 
+    var url: URL? {
+        switch self {
+        case .openURL(let url):
+            return url
+        case .handleShortcutItem, .handleUserActivity, .standardLaunch:
+            return nil
+        }
+    }
+
+}
+
+@MainActor
+protocol OnboardingPresenting: AnyObject {
+    func startOnboardingFlowIfNotSeenBefore(url: URL?)
 }
 
 @MainActor
@@ -112,7 +126,7 @@ final class LaunchActionHandler: LaunchActionHandling {
     }
     
     private func openURL(_ url: URL) {
-        Logger.sync.debug("App launched with url \(url.absoluteString)")
+        Logger.sync.debug("App launched with url \(url.shortDescription)")
         fireAppLaunchedWithExternalLinkPixel(url: url)
         guard urlHandler.shouldProcessDeepLink(url) else { return }
         NotificationCenter.default.post(name: AutofillLoginListAuthenticator.Notifications.invalidateContext, object: nil)

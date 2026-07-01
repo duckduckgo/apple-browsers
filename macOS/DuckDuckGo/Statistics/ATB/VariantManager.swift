@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Darwin
 import Foundation
 import os.log

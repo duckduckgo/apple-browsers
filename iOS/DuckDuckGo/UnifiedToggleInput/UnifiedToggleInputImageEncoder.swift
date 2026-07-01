@@ -22,16 +22,17 @@ import UIKit
 
 enum UnifiedToggleInputImageEncoder {
 
-    static func encode(_ attachments: [AIChatImageAttachment]) -> [AIChatNativePrompt.NativePromptImage]? {
-        guard !attachments.isEmpty else { return nil }
+    static func encode(_ attachments: [UnifiedToggleInputAttachment]) -> [AIChatNativePrompt.NativePromptImage]? {
         let images = attachments.compactMap { attachment -> AIChatNativePrompt.NativePromptImage? in
-            if let jpegData = attachment.image.jpegData(compressionQuality: 0.85) {
+            guard case .image(let imageAttachment) = attachment else { return nil }
+
+            if let jpegData = imageAttachment.image.jpegData(compressionQuality: 0.85) {
                 return AIChatNativePrompt.NativePromptImage(
                     data: jpegData.base64EncodedString(),
                     format: "jpeg"
                 )
             }
-            guard let pngData = attachment.image.pngData() else { return nil }
+            guard let pngData = imageAttachment.image.pngData() else { return nil }
             return AIChatNativePrompt.NativePromptImage(
                 data: pngData.base64EncodedString(),
                 format: "png"

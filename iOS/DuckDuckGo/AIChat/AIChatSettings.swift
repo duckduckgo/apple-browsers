@@ -66,6 +66,20 @@ final class AIChatSettings: AIChatSettingsProvider {
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
         self.switchBarFunnel = switchBarFunnel
+
+        migrateAddressBarSettingIfNeeded()
+    }
+
+    /// One-shot: if a user had the legacy Address Bar toggle off, carry that into the
+    /// Tab Bar toggle so the iPad chrome shortcut doesn't silently re-enable the
+    /// surface under a new name.
+    private func migrateAddressBarSettingIfNeeded() {
+        guard keyValueStore.object(forKey: .showAIChatTabBarKey) == nil,
+              let legacyAddressBarValue = keyValueStore.object(forKey: .showAIChatAddressBarKey) as? Bool,
+              legacyAddressBarValue == false else {
+            return
+        }
+        keyValueStore.set(false, forKey: .showAIChatTabBarKey)
     }
 
     // MARK: - Public
@@ -120,6 +134,21 @@ final class AIChatSettings: AIChatSettingsProvider {
     var isAIChatTabSwitcherUserSettingsEnabled: Bool {
         keyValueStore.bool(.showAIChatTabSwitcherKey, defaultValue: .showAIChatTabSwitcherDefaultValue)
             && isAIChatEnabled
+    }
+
+    /// Master on/off for the iPad tabs-bar Duck.ai shortcut (the single "Tab Bar" Settings toggle).
+    var isAIChatTabBarUserSettingsEnabled: Bool {
+        keyValueStore.bool(.showAIChatTabBarKey, defaultValue: .showAIChatTabBarDefaultValue)
+            && isAIChatEnabled
+    }
+
+    /// Per-half visibility, toggled from the chip's long-press menu (not Settings).
+    var isAIChatTabBarDuckAIButtonVisible: Bool {
+        keyValueStore.bool(.showAIChatTabBarDuckAIButtonKey, defaultValue: .showAIChatTabBarDuckAIButtonDefaultValue)
+    }
+
+    var isAIChatTabBarContextualSheetButtonVisible: Bool {
+        keyValueStore.bool(.showAIChatTabBarContextualSheetKey, defaultValue: .showAIChatTabBarContextualSheetDefaultValue)
     }
 
     var isAIChatVoiceSearchUserSettingsEnabled: Bool {
@@ -236,6 +265,38 @@ final class AIChatSettings: AIChatSettingsProvider {
         }
     }
 
+    func enableAIChatTabBarUserSettings(enable: Bool) {
+        keyValueStore.set(enable, forKey: .showAIChatTabBarKey)
+        // Re-enabling restores both halves — the only way back if the user hid both from the menu.
+        if enable {
+            keyValueStore.set(true, forKey: .showAIChatTabBarDuckAIButtonKey)
+            keyValueStore.set(true, forKey: .showAIChatTabBarContextualSheetKey)
+        }
+        triggerSettingsChangedNotification()
+    }
+
+    func setAIChatTabBarDuckAIButtonVisible(_ visible: Bool) {
+        keyValueStore.set(visible, forKey: .showAIChatTabBarDuckAIButtonKey)
+        disableTabBarShortcutIfBothHalvesHidden()
+        triggerSettingsChangedNotification()
+    }
+
+    func setAIChatTabBarContextualSheetButtonVisible(_ visible: Bool) {
+        keyValueStore.set(visible, forKey: .showAIChatTabBarContextualSheetKey)
+        disableTabBarShortcutIfBothHalvesHidden()
+        triggerSettingsChangedNotification()
+    }
+
+    /// When the user hides both halves from the chip's menu, the shortcut shows nothing — turn the
+    /// master Tab Bar toggle off so it reflects reality. Re-enabling it restores both halves.
+    private func disableTabBarShortcutIfBothHalvesHidden() {
+        let duckAIVisible = keyValueStore.bool(.showAIChatTabBarDuckAIButtonKey, defaultValue: .showAIChatTabBarDuckAIButtonDefaultValue)
+        let bottomSheetVisible = keyValueStore.bool(.showAIChatTabBarContextualSheetKey, defaultValue: .showAIChatTabBarContextualSheetDefaultValue)
+        if !duckAIVisible && !bottomSheetVisible {
+            keyValueStore.set(false, forKey: .showAIChatTabBarKey)
+        }
+    }
+
     func enableChatSuggestions(enable: Bool) {
         keyValueStore.set(enable, forKey: .showChatSuggestionsKey)
         triggerSettingsChangedNotification()
@@ -305,6 +366,9 @@ private extension String {
     static let showAIChatAddressBarKey = "aichat.settings.showAIChatAddressBar"
     static let showAIChatVoiceSearchKey = "aichat.settings.showAIChatVoiceSearch"
     static let showAIChatTabSwitcherKey = "aichat.settings.showAIChatTabSwitcher"
+    static let showAIChatTabBarKey = "aichat.settings.showAIChatTabBar"
+    static let showAIChatTabBarDuckAIButtonKey = "aichat.settings.showAIChatTabBarDuckAIButton"
+    static let showAIChatTabBarContextualSheetKey = "aichat.settings.showAIChatTabBarContextualSheet"
     static let showAIChatExperimentalSearchInputKey = "aichat.settings.showAIChatExperimentalSearchInput"
     static let showChatSuggestionsKey = "aichat.settings.showChatSuggestions"
     static let isAIChatAutomaticContextAttachmentEnabledKey = "aichat.settings.isAIChatAutomaticContextAttachmentEnabled"
@@ -318,6 +382,9 @@ enum LegacyAiChatUserDefaultsKeys {
     static let showAIChatAddressBarKey: String = .showAIChatAddressBarKey
     static let showAIChatVoiceSearchKey: String = .showAIChatVoiceSearchKey
     static let showAIChatTabSwitcherKey: String = .showAIChatTabSwitcherKey
+    static let showAIChatTabBarKey: String = .showAIChatTabBarKey
+    static let showAIChatTabBarDuckAIButtonKey: String = .showAIChatTabBarDuckAIButtonKey
+    static let showAIChatTabBarContextualSheetKey: String = .showAIChatTabBarContextualSheetKey
     static let showAIChatExperimentalSearchInputKey: String = .showAIChatExperimentalSearchInputKey
     static let defaultOmnibarModeKey: String = .defaultOmnibarModeKey
 
@@ -332,6 +399,9 @@ private extension Bool {
     static let showAIChatAddressBarDefaultValue = true
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
+    static let showAIChatTabBarDefaultValue = true
+    static let showAIChatTabBarDuckAIButtonDefaultValue = true
+    static let showAIChatTabBarContextualSheetDefaultValue = true
     static let showAIChatExperimentalSearchInputDefaultValue = false
     static let showChatSuggestionsDefaultValue = true
 

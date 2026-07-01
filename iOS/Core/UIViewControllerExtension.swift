@@ -77,6 +77,15 @@ extension UIViewController {
         view.addSubview(childController.view)
         childController.didMove(toParent: self)
     }
+
+    var topPresentedViewController: UIViewController {
+        var output: UIViewController = self
+        while let presented = output.presentedViewController {
+            output = presented
+        }
+
+        return output
+    }
 }
 
 extension Core.Bookmark {

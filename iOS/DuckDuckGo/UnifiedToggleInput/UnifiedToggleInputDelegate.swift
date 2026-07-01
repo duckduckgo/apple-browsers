@@ -21,10 +21,23 @@ import AIChat
 
 @MainActor
 protocol UnifiedToggleInputDelegate: AnyObject {
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?)
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?)
     func unifiedToggleInputDidSubmitQuery(_ query: String)
     func unifiedToggleInputDidRequestVoiceSearch()
-    func unifiedToggleInputDidRequestAIChat()
+    func unifiedToggleInputDidRequestAIVoiceChat()
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String)
     func unifiedToggleInputDidChangeHeight()
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode)
+    func unifiedToggleInputDidRequestFire()
+    func unifiedToggleInputDidRequestAppMenu()
+    /// Destination state the UTI should snap to at the start of an inline-dismiss animation.
+    func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot
+    func unifiedToggleInputDidTapClearText()
+    func unifiedToggleInputDidTapToActivate()
+}
+
+extension UnifiedToggleInputDelegate {
+    func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot { .empty }
+    func unifiedToggleInputDidTapClearText() {}
+    func unifiedToggleInputDidTapToActivate() {}
 }

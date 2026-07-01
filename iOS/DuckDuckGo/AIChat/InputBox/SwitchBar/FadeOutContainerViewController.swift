@@ -19,7 +19,6 @@
 
 import UIKit
 import Combine
-import PrivacyConfig
 
 protocol FadeOutContainerViewControllerDelegate: AnyObject {
     func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode)
@@ -35,11 +34,14 @@ final class FadeOutContainerViewController: UIViewController {
     @Published private(set) var transitionProgress: CGFloat = 0.0
 
     private let switchBarHandler: SwitchBarHandling
-    private let featureFlagger: FeatureFlagger
     private var cancellables = Set<AnyCancellable>()
 
     private(set) var searchPageContainer: UIView!
     private(set) var chatPageContainer: UIView!
+
+    var isSwipeEnabled: Bool = true {
+        didSet { panGestureRecognizer?.isEnabled = isSwipeEnabled }
+    }
 
     private var panGestureRecognizer: UIPanGestureRecognizer!
     private let swipeVelocityThreshold: CGFloat = 500
@@ -47,11 +49,11 @@ final class FadeOutContainerViewController: UIViewController {
 
     private var displayLink: CADisplayLink?
     private var targetProgress: CGFloat = 0.0
+    private var visibleMode: TextEntryMode?
+    private var transitionID = 0
 
-    init(switchBarHandler: SwitchBarHandling,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+    init(switchBarHandler: SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
-        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -74,8 +76,8 @@ final class FadeOutContainerViewController: UIViewController {
         setupBindings()
     }
 
-    func setMode(_ mode: TextEntryMode) {
-        updateVisibility(animated: true)
+    func setMode(_ mode: TextEntryMode, animated: Bool = true) {
+        updateVisibility(to: mode, animated: animated)
     }
 
     // MARK: - Private
@@ -84,9 +86,10 @@ final class FadeOutContainerViewController: UIViewController {
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
-            .sink { [weak self] _ in
-                guard let self, switchBarHandler.isUsingFadeOutAnimation else { return }
-                self.updateVisibility(animated: true)
+            .sink { [weak self] mode in
+                guard let self else { return }
+                guard mode == self.switchBarHandler.currentToggleState else { return }
+                self.updateVisibility(to: mode, animated: true)
             }
             .store(in: &cancellables)
     }
@@ -119,6 +122,7 @@ final class FadeOutContainerViewController: UIViewController {
     private func setupSwipeGestures() {
         panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture(_:)))
         panGestureRecognizer.delegate = self
+        panGestureRecognizer.isEnabled = isSwipeEnabled
         view.addGestureRecognizer(panGestureRecognizer)
     }
 
@@ -145,43 +149,56 @@ final class FadeOutContainerViewController: UIViewController {
     }
 
     private func configureInitialState() {
-        let isSearchMode = switchBarHandler.currentToggleState == .search
+        let currentMode = switchBarHandler.currentToggleState
+        let isSearchMode = currentMode == .search
         searchPageContainer.alpha = isSearchMode ? 1.0 : 0.0
         chatPageContainer.alpha = isSearchMode ? 0.0 : 1.0
         transitionProgress = isSearchMode ? 0.0 : 1.0
+        visibleMode = currentMode
     }
 
-    private func updateVisibility(animated: Bool) {
+    private func updateVisibility(to mode: TextEntryMode, animated: Bool) {
         guard searchPageContainer != nil, chatPageContainer != nil else { return }
+        guard visibleMode != mode else { return }
 
-        let isSearchMode = switchBarHandler.currentToggleState == .search
-        targetProgress = isSearchMode ? 0.0 : 1.0
+        visibleMode = mode
+        transitionID += 1
+        let currentTransitionID = transitionID
+        let isSearchMode = mode == .search
+        let targetProgress = isSearchMode ? 0.0 : 1.0
+        self.targetProgress = targetProgress
 
         let isShowingSuggestions = delegate?.fadeOutContainerViewControllerIsShowingSuggestions(self) ?? false
         let shouldHideSearchImmediately = !isSearchMode && isShowingSuggestions
+        // Going to the Search favorites grid (blank query → not a suggestions list): drop the Duck.ai
+        // recents instantly so a recents row never crossfades on top of the grid. List↔list still fades.
+        let shouldHideChatImmediately = isSearchMode && !isShowingSuggestions
         let keepSearchVisible = delegate?.fadeOutContainerViewControllerShouldKeepSearchVisible(self) ?? false
 
         if shouldHideSearchImmediately && !keepSearchVisible {
             searchPageContainer.alpha = 0.0
+        }
+        if shouldHideChatImmediately {
+            chatPageContainer.alpha = 0.0
         }
 
         let animations = {
             if !shouldHideSearchImmediately && !keepSearchVisible {
                 self.searchPageContainer.alpha = isSearchMode ? 1.0 : 0.0
             }
-            if !keepSearchVisible {
+            if !keepSearchVisible && !shouldHideChatImmediately {
                 self.chatPageContainer.alpha = isSearchMode ? 0.0 : 1.0
             }
         }
 
         let completion: (Bool) -> Void = { [weak self] finished in
-            self?.stopDisplayLink()
+            guard let self, self.transitionID == currentTransitionID else { return }
 
-            guard let self, finished else { return }
+            self.stopDisplayLink()
+            guard finished else { return }
 
-            self.updateTransitionProgress(self.targetProgress)
-            let newMode: TextEntryMode = isSearchMode ? .search : .aiChat
-            self.delegate?.fadeOutContainerViewController(self, didTransitionToMode: newMode)
+            self.updateTransitionProgress(targetProgress)
+            self.delegate?.fadeOutContainerViewController(self, didTransitionToMode: mode)
         }
 
         if animated {
@@ -213,7 +230,7 @@ final class FadeOutContainerViewController: UIViewController {
         updateTransitionProgress(currentProgress)
     }
 
-    private func updateTransitionProgress(_ progress: CGFloat) {
+    func updateTransitionProgress(_ progress: CGFloat) {
         transitionProgress = progress
         delegate?.fadeOutContainerViewController(self, didUpdateTransitionProgress: progress)
     }

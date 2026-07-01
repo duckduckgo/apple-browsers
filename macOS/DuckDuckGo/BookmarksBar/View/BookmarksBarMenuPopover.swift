@@ -19,12 +19,10 @@
 import AppKit
 import Foundation
 
-protocol BookmarksBarMenuPopoverDelegate: NSPopoverDelegate {
-    func openNextBookmarksMenu(_ sender: BookmarksBarMenuPopover)
-    func openPreviousBookmarksMenu(_ sender: BookmarksBarMenuPopover)
-}
-
-final class BookmarksBarMenuPopover: NSPopover {
+/// Legacy NSPopover-backed bookmarks-bar menu popover. Used when the
+/// `bookmarksBarMenusCustomWindow` feature flag is disabled — keeps pre-macOS-26
+/// behavior identical to `main`.
+final class BookmarksBarMenuPopover: NSPopover, BookmarksBarMenuPopoverPresenting {
 
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
@@ -32,9 +30,7 @@ final class BookmarksBarMenuPopover: NSPopover {
 
     private(set) var preferredEdge: NSRectEdge?
 
-    private var bookmarksMenuPopoverDelegate: BookmarksBarMenuPopoverDelegate? {
-        delegate as? BookmarksBarMenuPopoverDelegate
-    }
+    weak var bookmarksBarMenuDelegate: BookmarksBarMenuPopoverDelegate?
 
     static let popoverInsets = NSEdgeInsets(top: 13, left: 13, bottom: 13, right: 13)
 
@@ -48,6 +44,7 @@ final class BookmarksBarMenuPopover: NSPopover {
         self.shouldHideAnchor = true
         self.animates = false
         self.behavior = .transient
+        self.delegate = self
 
         setupContentController()
     }
@@ -67,7 +64,7 @@ final class BookmarksBarMenuPopover: NSPopover {
     var viewController: BookmarksBarMenuViewController { contentViewController as! BookmarksBarMenuViewController }
 
     private func setupContentController() {
-        let controller = BookmarksBarMenuViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: rootFolder)
+        let controller = BookmarksBarMenuViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: rootFolder, usesCustomWindowChrome: false)
         controller.delegate = self
         contentViewController = controller
     }
@@ -114,13 +111,13 @@ final class BookmarksBarMenuPopover: NSPopover {
         } else { // context menu
             // align the menu popover content by the left edge of the positioning view but keeping the popover frame inside the screen bounds
             frame.origin.x = min(max(screenFrame.minX, screenPoint.x - Self.popoverInsets.left), screenFrame.maxX - frame.width)
-            // aling the menu popover content top edge by the bottom edge of the positioning view but keeping the popover frame inside the screen bounds
+            // align the menu popover content top edge by the bottom edge of the positioning view but keeping the popover frame inside the screen bounds
             frame.origin.y = min(max(screenFrame.minY, screenPoint.y - frame.size.height - Self.popoverInsets.top), screenFrame.maxY)
         }
         return frame
     }
 
-    /// close other `BookmarksBarMenuPopover`-s and `BookmarkListPopover`-s shown from the main window when opening a new one
+    /// close other `BookmarksBarMenuPopover`-s shown from the main window when opening a new one
     static func closeBookmarkListPopovers(shownIn window: NSWindow?, except popoverToKeep: BookmarksBarMenuPopover? = nil) {
         guard let window,
               // ignore when opening a submenu from another BookmarkListPopover
@@ -138,26 +135,44 @@ final class BookmarksBarMenuPopover: NSPopover {
         super.close()
     }
 
+    // MARK: - BookmarksBarMenuPopoverPresenting
+
+    /// No-op: NSPopover repositions itself via `adjustFrame(_:)`.
+    func updatePresentedFrameIfNeeded() {}
 }
+
+// MARK: - NSPopoverDelegate forwarding
+
+extension BookmarksBarMenuPopover: NSPopoverDelegate {
+
+    func popoverShouldClose(_ popover: NSPopover) -> Bool {
+        bookmarksBarMenuDelegate?.bookmarksBarMenuPopoverShouldClose(self) ?? true
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        bookmarksBarMenuDelegate?.bookmarksBarMenuPopoverDidClose(self)
+    }
+}
+
+// MARK: - BookmarksBarMenuViewControllerDelegate
 
 extension BookmarksBarMenuPopover: BookmarksBarMenuViewControllerDelegate {
 
     func closeBookmarksPopovers(_ sender: BookmarksBarMenuViewController) {
-        var window = sender.view.window
-        // find root BookmarkListPopover in Bookmarks menu structure
+        var window: NSWindow? = sender.view.window
+        // find root BookmarksBarMenuPopover in bookmarks menu hierarchy
         while let parent = window?.parent, parent.contentViewController?.nextResponder is Self {
             window = parent
         }
         guard let popover = window?.contentViewController?.nextResponder as? Self else {
-            assertionFailure("Expected BookmarkListPopover as \(window?.debugDescription ?? "<nil>")‘s contentViewController nextResponder")
+            assertionFailure("Expected BookmarksBarMenuPopover as \(window?.debugDescription ?? "<nil>")‘s contentViewController nextResponder")
             return
         }
-        // close root BookmarkListPopover
         popover.close()
     }
 
     func popover(shouldPreventClosure: Bool) {
-        var window = contentViewController?.view.window
+        var window: NSWindow? = contentViewController?.view.window
         while let popover = window?.contentViewController?.nextResponder as? Self {
             popover.behavior = shouldPreventClosure ? .applicationDefined : .transient
             window = window?.parent
@@ -165,11 +180,11 @@ extension BookmarksBarMenuPopover: BookmarksBarMenuViewControllerDelegate {
     }
 
     func openNextBookmarksMenu(_ sender: BookmarksBarMenuViewController) {
-        bookmarksMenuPopoverDelegate?.openNextBookmarksMenu(self)
+        bookmarksBarMenuDelegate?.openNextBookmarksMenu(self)
     }
 
     func openPreviousBookmarksMenu(_ sender: BookmarksBarMenuViewController) {
-        bookmarksMenuPopoverDelegate?.openPreviousBookmarksMenu(self)
+        bookmarksBarMenuDelegate?.openPreviousBookmarksMenu(self)
     }
 
 }

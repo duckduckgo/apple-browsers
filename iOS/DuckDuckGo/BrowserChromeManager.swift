@@ -22,8 +22,10 @@ import UIKit
 protocol BrowserChromeDelegate: AnyObject {
     
     func setBarsHidden(_ hidden: Bool, animated: Bool, customAnimationDuration: CGFloat?)
+    func resetBars(animated: Bool)
     func setNavigationBarHidden(_ hidden: Bool)
     func setRefreshControlEnabled(_ isEnabled: Bool)
+    func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool)
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?)
     
@@ -31,6 +33,7 @@ protocol BrowserChromeDelegate: AnyObject {
     var isToolbarHidden: Bool { get }
     var toolbarHeight: CGFloat { get }
     var barsMaxHeight: CGFloat { get }
+    var isInMinimalChromeLayout: Bool { get }
 
     var omniBar: any OmniBar { get }
     var tabBarContainer: UIView { get }
@@ -103,7 +106,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         
         if scrollView.fullyZoomedOut {
             animator.revealBars(animated: true)
-        } else if abs(scrollView.zoomScale - startZoomScale) > Constants.zoomThreshold {
+        } else if abs(scrollView.zoomScale - startZoomScale) > Constants.zoomThreshold, delegate?.canHideBars ?? true {
             animator.hideBars(animated: true)
         }
     }
@@ -160,8 +163,8 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         return heightAllowsHide && (delegate?.canHideBars ?? true)
     }
 
-    func reset() {
-        animator.revealBars(animated: true)
+    func reset(animated: Bool = true) {
+        animator.revealBars(animated: animated)
     }
 }
 

@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import DataBrokerProtection_macOS
 import FeatureFlags
 import Freemium
@@ -291,6 +292,19 @@ final class BrowserTabViewController: NSViewController {
         if let leading = sidebarContainerLeadingConstraint?.constant, leading < 0 {
             aiChatSidebarResizeDelegate?.sidebarHostDidChangeAvailableWidth(view.bounds.width)
         }
+    }
+
+    /// Re-sync the WKWebView to its container after navigation. The webview is sized by frame +
+    /// autoresizing, so a direct frame set during navigation can leave it full-width (rendered
+    /// behind the sidebar) inside an already-narrowed container, with nothing re-running the
+    /// container's `layout()`. `needsLayout = true` forces that layout (a bare `layoutSubtreeIfNeeded`
+    /// is a no-op when nothing marked it dirty). No-op when the sidebar is hidden (leading < 0 means
+    /// it is pulled into view, matching the idiom in `viewDidLayout`).
+    private func reconcileWebContentLayoutForSidebarIfNeeded() {
+        guard let leading = sidebarContainerLeadingConstraint?.constant, leading < 0,
+              let webViewContainer else { return }
+        webViewContainer.needsLayout = true
+        webViewContainer.layoutSubtreeIfNeeded()
     }
 
     override func viewWillAppear() {
@@ -846,8 +860,12 @@ final class BrowserTabViewController: NSViewController {
                     return Just(()).eraseToAnyPublisher()
                 }
 
-                // Pre-set the webview frame so WebKit renders at the correct size while offscreen
-                if let bounds = self?.view.bounds {
+                // Pre-set the webview frame so WebKit renders at the correct size while offscreen,
+                // accounting for an open AI Chat sidebar so it doesn't render full-width and reflow
+                // (or end up rendered behind the sidebar).
+                if let self {
+                    var bounds = self.view.bounds
+                    bounds.size.width -= max(0, -(self.sidebarContainerLeadingConstraint?.constant ?? 0))
                     tabViewModel.tab.webView.frame = bounds
                 }
 
@@ -892,6 +910,8 @@ final class BrowserTabViewController: NSViewController {
 
         tabViewModel?.tab.webViewDidFinishNavigationPublisher.sink { [weak self] in
             guard let self else { return }
+            // keep the web content sized to the sidebar-adjusted bounds after navigation
+            self.reconcileWebContentLayoutForSidebarIfNeeded()
             // remove dialog on reload
             if tabViewModel?.tab == lastTab && self.lastURL == tabViewModel?.tab.url && self.lastURL != nil {
                 self.removeExistingDialog()
@@ -901,6 +921,12 @@ final class BrowserTabViewController: NSViewController {
             self.presentContextualOnboarding()
             self.lastURL = self.tabViewModel?.tab.url
             self.lastTab = self.tabViewModel?.tab
+        }.store(in: &tabViewModelCancellables)
+
+        // Same-document (SPA) navigations don't emit on webViewDidFinishNavigationPublisher,
+        // so reconcile the web content layout for them here too.
+        tabViewModel?.tab.webViewDidPerformSameDocumentNavigationPublisher.sink { [weak self] in
+            self?.reconcileWebContentLayoutForSidebarIfNeeded()
         }.store(in: &tabViewModelCancellables)
     }
 
@@ -1255,7 +1281,6 @@ final class BrowserTabViewController: NSViewController {
             }
             let burnerHomePageViewController = BurnerHomePageViewController(
                 subscriptionManager: subscriptionManager,
-                featureFlagger: featureFlagger,
                 promoDelegate: subscriptionPromoDelegate,
                 dateProvider: dateProvider
             )
@@ -1318,7 +1343,7 @@ final class BrowserTabViewController: NSViewController {
                 dockPreferences: dockPreferences,
                 accessibilityPreferences: accessibilityPreferences,
                 duckPlayerPreferences: duckPlayer.preferences,
-                youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: duckPlayer.preferences, pixelFiring: PixelKit.shared),
+                youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: duckPlayer.preferences, pixelFiring: PixelKit.shared, adBlockingAvailability: adBlockingAvailability),
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                 pinningManager: pinningManager,
@@ -1683,7 +1708,7 @@ extension BrowserTabViewController: TabDelegate {
     }
     func runPrintOperation(with request: PrintDialogRequest) -> ModalSheetCancellable? {
         guard let window = view.window,
-              let webView = tabViewModel?.tab.webView else { return nil }
+              tabViewModel?.tab.webView != nil else { return nil }
 
         let printOperation = request.parameters
         // prevent running already started operation (e.g. when the same pinned tab is open in 2 windows)

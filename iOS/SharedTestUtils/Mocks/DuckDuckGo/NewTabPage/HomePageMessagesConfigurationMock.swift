@@ -41,7 +41,9 @@ class HomePageMessagesConfigurationMock: HomePageMessagesConfiguration {
     }
 
     private(set) var didRefresh: Bool = false
-    func refresh() {
+    private(set) var lastRefreshOpenedAfterIdle: Bool?
+    func refresh(openedAfterIdle: Bool) {
         didRefresh = true
+        lastRefreshOpenedAfterIdle = openedAfterIdle
     }
 }

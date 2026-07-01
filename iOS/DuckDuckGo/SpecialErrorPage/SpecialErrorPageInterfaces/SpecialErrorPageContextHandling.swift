@@ -32,6 +32,11 @@ protocol SpecialErrorPageContextHandling: SpecialErrorPageThreatProvider {
     /// A boolean value indicating whether the WebView request requires showing a special error page.
     var isSpecialErrorPageRequest: Bool { get }
 
+    /// The URL of the page that failed to load and is being replaced by the special error page. Always
+    /// set alongside `isSpecialErrorPageRequest` becoming `true`, so callers can identify the specific
+    /// navigation action that loads the error page (vs. an unrelated nav initiated during the same window).
+    var failedURL: URL? { get }
+
     /// Attaches a web view to the special error page handling.
     func attachWebView(_ webView: WKWebView)
 

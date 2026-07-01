@@ -336,6 +336,13 @@ class TabLazyLoaderTests: XCTestCase {
 
         await waitForLoadingDidFinishEvent(lazyLoader) {
             lazyLoader.scheduleLazyLoading()
+
+            // The lazy loader's reaction to selection is deferred to the next
+            // runloop turn, so spin until the first reload lands before asserting.
+            let deadline = Date(timeIntervalSinceNow: 1)
+            while reloadedTabsUrls.isEmpty && Date() < deadline {
+                RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.01))
+            }
             XCTAssertEqual(reloadedTabsUrls, [newTab.url])
 
             // unpause lazy loading here
@@ -383,6 +390,31 @@ class TabLazyLoaderTests: XCTestCase {
         // With a pinned tab selected, materialization should start from the first unpinned
         // tab (index 0) and expand outward, not from the pinned tab's positional index.
         XCTAssertEqual(materializedIndices, [0, 1, 2])
+    }
+
+    // The lazy loader's reaction to a selection-driven `isSelectedTabLoading = false`
+    // must be asynchronous. If it fires synchronously, it can re-enter
+    // `tabCollection.replaceTab → didReplaceTabAt → reloadItems` while a tab insert
+    // is mid-flight on the collection view, raising NSInternalInconsistencyException
+    // (APPLE-MACOS-BD7).
+    @MainActor
+    func testWillReloadNextTab_DoesNotMaterializeSynchronously() {
+        var materializeCount = 0
+        let selected = TabMock(isUrl: false)
+        dataSource.selectedTab = selected
+        dataSource.totalTabCount = 1
+        dataSource.unloadedTabCount = 1
+        dataSource.isUnloadedHandler = { _ in true }
+        dataSource.materializeHandler = { _ in
+            materializeCount += 1
+            return TabMock()
+        }
+
+        let lazyLoader = TabLazyLoader(dataSource: dataSource)!
+        lazyLoader.scheduleLazyLoading()
+
+        dataSource.isSelectedTabLoadingSubject.send(false)
+        XCTAssertEqual(materializeCount, 0, "materialize must not fire synchronously")
     }
 
     @MainActor

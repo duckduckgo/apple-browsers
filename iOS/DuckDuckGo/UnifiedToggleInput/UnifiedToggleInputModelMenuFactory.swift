@@ -25,17 +25,15 @@ struct UnifiedToggleInputModelMenuFactory {
     func makeMenu(
         models: [AIChatModel],
         selectedId: String?,
-        hasActiveSubscription: Bool,
-        advancedSectionTitle: String,
-        basicSectionTitle: String,
+        plusSectionTitle: String,
+        proSectionTitle: String,
         onSelect: @escaping (String) -> Void
     ) -> UIMenu {
         let description = UnifiedToggleInputModelMenu.build(
             models: models,
             selectedId: selectedId,
-            hasActiveSubscription: hasActiveSubscription,
-            advancedSectionTitle: advancedSectionTitle,
-            basicSectionTitle: basicSectionTitle
+            plusSectionTitle: plusSectionTitle,
+            proSectionTitle: proSectionTitle
         )
 
         let modelLookup = Dictionary(uniqueKeysWithValues: models.map { ($0.id, $0) })
@@ -45,19 +43,14 @@ struct UnifiedToggleInputModelMenuFactory {
                 return UIAction(
                     title: item.name,
                     image: model?.menuIcon,
-                    attributes: item.isDisabled ? .disabled : [],
+                    attributes: [],
                     state: item.isSelected ? .on : .off
                 ) { _ in
                     onSelect(item.modelId)
                 }
             }
 
-            var options: UIMenu.Options = .displayInline
-            if !section.items.contains(where: { $0.isDisabled }) {
-                options.insert(.singleSelection)
-            }
-
-            return UIMenu(title: section.title, options: options, children: actions)
+            return UIMenu(title: section.title, options: [.displayInline, .singleSelection], children: actions)
         }
 
         return UIMenu(children: sections)

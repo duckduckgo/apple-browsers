@@ -25,6 +25,15 @@
 /* No comment provided by engineer. */
 "%@s" = "%@s";
 
+/* Accessibility label for the text half of the iPad Duck.ai chrome chip; tapping opens a new Duck.ai tab. The visible label reads \"Duck.ai\". */
+"accessibility.label.aiChat.openDuckAI" = "Ava Duck.ai";
+
+/* Accessibility value when the Duck.ai contextual sheet is closed. */
+"accessibility.value.aiChat.contextualSheet.closed" = "Suletud";
+
+/* Accessibility value when the Duck.ai contextual sheet is open. */
+"accessibility.value.aiChat.contextualSheet.open" = "Avatud";
+
 /* No comment provided by engineer. */
 "Account" = "account";
 
@@ -55,14 +64,32 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Lisa";
 
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
+"action.title.aiChat.hideContextualSheetButton" = "Peida lehe alaserva otsetee";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the Duck.ai (open) button half. */
+"action.title.aiChat.hideDuckAIButton" = "Peida Duck.ai otsetee";
+
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Duck.ai vestlused";
 
 /* Start new AI Chat action in the menu list */
 "action.title.aiChat.new" = "Uus vestlus";
 
+/* Title of the long-press menu item on the iPad Duck.ai chrome chip that deep-links to Settings → AI Features. */
+"action.title.aiChat.openSettings" = "Ava tehisintellekti seaded";
+
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai seaded";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the bottom-sheet button half. */
+"action.title.aiChat.showContextualSheetButton" = "Kuva lehe alaserva otsetee";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the Duck.ai (open) button half. */
+"action.title.aiChat.showDuckAIButton" = "Kuva Duck.ai otsetee";
+
+/* Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. */
+"action.title.aiChat.toggleContextualSheet" = "Duck.ai lehe sisse/välja lülitamine";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Paroolid";
@@ -78,6 +105,12 @@
 
 /* Copy action */
 "action.title.copy" = "Kopeeri";
+
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Kopeeri puhas link";
+
+/* Copy link action */
+"action.title.copy.link" = "Kopeeri link";
 
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL on kopeeritud";
@@ -117,6 +150,7 @@
 
 /* Open in New Fire Tab action */
 "action.title.newFireTabForUrl" = "Ava Fire vahekaardil";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Uus vaheleht";
 
@@ -177,6 +211,12 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Description of the Ad Blocking feature in settings */
+"ad.blocking.description" = "Blokeerib invasiivsed jälgijad enne nende laadimist, kõrvaldades tõhusalt reklaamid, mis tuginevad jälgimisele";
+
+/* Section header for YouTube-specific ad blocking settings */
+"ad.blocking.youtube.section.header" = "YouTube'i reklaamide blokeerimine";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "All";
 
@@ -207,11 +247,95 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI funktsioonid";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Vali foto";
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Vestlus";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
-"aichat.attachment.option.take.photo" = "Tee foto";
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transkript";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Häälvestlus";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Uus vestlus";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Kuulan…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Kuulan…";
+
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Vestlused";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Vestluse ajalugu";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Chati seaded";
+
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Saad vestluse kohta lisada ainult %d faili.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Me ei saa lisatud faile lugeda, sest vähemalt üks neist on krüptitud.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Lisatud failid ületavad %d MB suuruse kogumahu piirangut.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "See fail on liiga suur. Maksimaalne faili suurus on %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Ühel lisatud failidest on rohkem lehekülgi, kui me toetame. Palun laadi üles failid, millel on %d lehekülge või vähem.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Me ei saa ühte lisatud failidest lugeda. Palun kontrolli, et see poleks rikutud, ja proovi uuesti.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Saad vestlusele lisada ainult %d pilti.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Saad korraga lisada ainult %d pilti.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Lisa fail";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Lisa pilt";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
+"aichat.attachment.option.take.photo" = "Tee pilt";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "See sõnum on manustega saatmiseks liiga pikk.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Manused pole ajutiselt saadaval. Proovi hiljem uuesti.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Seda failitüüpi ei toetata.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Seda failitüüpi ei toetata, palun lisa %1$@ või %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Seda failitüüpi ei toetata, palun lisa %@.";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Uus";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Uus Fire vahekaart";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Uus otsing";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Uus vahekaart";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Uus häälvestlus";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analüütiliste ülesannete jaoks";
@@ -231,17 +355,56 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Arutlus";
 
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Leia QR-kood oma teises seadmes DuckDuckGo rakendusest, minnes menüüsse **Seaded** › **Sync & Backup** › **Sünkrooni teise seadmega**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Mitte praegu";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "QR-koodi skannimine";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Sünkroniseerime vestlused sinu seadmete vahel!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Sünkrooni teise seadmega";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Loobu sünkroonimise reklaamist";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Kasuta funktsiooni „Sync & Backup“, et pääseda oma vestlustele ligi kõikidelt seadmetelt.";
+
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Määra toon, pikkus ja käitumine";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Kohanda vastuseid";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Muuda tekst piltideks";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Loo pilt";
+
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "Praeguse teabe leidmine";
+"aichat.toolbar.tools.websearch.subtitle" = "Vastused veebist";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Veebiotsing";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Olemasolevaid järjehoidjaid ei dubleerita.";
+
+/* Button title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-button" = "Sain aru";
+
+/* Description for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-description" = "Oled selle kontoga juba mõlemas seadmes seotud.";
+
+/* Title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-title" = "Juba seotud";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Mõned järjehoidjad on valesti vormindatud või liiga pikad ja neid ei sünkroonitud.";
@@ -251,6 +414,21 @@
 
 /* Title for alert shown when sync bookmarks paused for too many items */
 "alert.sync-bookmarks-paused-title" = "Järjehoidja sünkroonimine on peatatud";
+
+/* Button title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-button" = "Sain aru";
+
+/* Description for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-description" = "Proovi uuesti.";
+
+/* Title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-title" = "Sünkroonimine tühistati sinu teisest seadmest.";
+
+/* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-description" = "Külasta oma brauseris veebilehte duck.ai, ava menüü Seaded, seejärel vali jaotisest „Sync & Backup“ „Lülita sisse“ ja seejärel „Sünkrooni teise seadmega“.";
+
+/* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-title" = "Skanni see kood Duck.ai seadetest.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Mõned paroolid on valesti vormindatud või liiga pikad ja neid ei sünkroonitud.";
@@ -275,6 +453,9 @@
 
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Sünkroonimise sätted";
+
+/* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
+"alert.sync-from-another-connected-device-description" = "Sünkrooni see seade juba ühendatud DuckDuckGo brauserist mõnes teises seadmes.";
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sünkroonimine on peatatud. Kui soovid selle seadme sünkroonimist jätkata, loo uuesti ühendus, kasutades mõnda teist seadet või taastamiskoodi.";
@@ -308,6 +489,12 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup pole ajutiselt saadaval.";
+
+/* Description for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-description" = "Seda koodi ei toeteta rakenduse praeguses versioonis.";
+
+/* Title for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-title" = "Värskenda DuckDuckGo brauserit ja proovi uuesti.";
 
 /* Title of the warning message that tells the user that there was an error with the sync feature. */
 "alert.sync.warning.sync-error" = "Sünkroonimisviga";
@@ -890,12 +1077,6 @@
 
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Kas salvestada see parool?";
-
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Ei aitäh";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Mitte praegu";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Salvesta oma parool turvaliselt seadmesse DuckDuckGo paroolide ja automaatse täitmisega.";
@@ -1515,9 +1696,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Silumine";
 
-/* No comment provided by engineer. */
-"Delete" = "Kustuta";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "seade";
 
@@ -1629,17 +1807,26 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo tehisintellekti funktsioonid on privaatsed ja valikulised. Sinu andmeid ei kasutata tehisintellekti treenimiseks.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Lisa lehe sisu";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Küsi lehe kohta";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Lisa lehe sisu";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Loo lehekülje kokkuvõte";
 
 /* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
 "duckai.quick.action.summarize.page" = "Kokkuvõte lehelt";
+
+/* Destructive button confirming deletion of a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.button" = "Kustuta";
+
+/* Message of the confirmation alert shown before deleting a recent Duck.ai chat. %@ is the chat title. */
+"duckai.recent.chat.remove.confirmation.message" = "\"%@\" kustutatakse jäädavalt kõikjalt.";
+
+/* Title of the confirmation alert shown before deleting a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.title" = "Kas kustutada see vestlus?";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Lisa Duck.ai juhtimiskeskusesse";
@@ -1668,8 +1855,14 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Brauseri menüü";
 
+/* Subtitle for the Tab Bar toggle row in Manage Duck.ai Shortcuts settings */
+"duckai.settings.enable.tab-bar-subtitle" = "Kuva brauseri vahekaartide ribal või aadressiribal, olenevalt akna suurusest.";
+
+/* Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar) */
+"duckai.settings.enable.tab-bar-toggle" = "Vahekaartide riba";
+
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Vahekaartide ekraan";
+"duckai.settings.enable.tab-switcher-toggle" = "Vahekaardihalduri ekraan";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Häälotsing";
@@ -1698,11 +1891,8 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Vestle Duck.ai-ga Siri abil!";
 
-/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Kõik vestlused on %@ privaatsed";
-
-/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "privaatsed";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS-ile";
@@ -1739,6 +1929,9 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Mitte kunagi";
+
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "Ava YouTube'i rakendus";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
@@ -1945,6 +2138,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Sisesta mittenegatiivne päevade arv. Installikuupäevaks määratakse sama palju päevi tagasi.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -1985,6 +2181,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Viimati kasutatud Fire vahekaart";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Sulge vaheleht";
+
+/* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.deleteTab" = "Kustuta vahekaart";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Tagasi vahelehele";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Veel valikuid";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Tagasi %@ juurde";
 
@@ -1993,6 +2202,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Tagasi %1$@, %2$@ juurde";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Privaatsed vahekaardid";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2335,6 +2547,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire vahekaart";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
@@ -2383,6 +2596,18 @@
 /* Home tab title */
 "homeTab.title" = "Avaleht";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Mitut sündmust ei toetata. Proovi selle asemel allalaaditud faili avada.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Seda faili ei saa töödelda. Proovi selle asemel allalaaditud faili avada.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Toetamata ajavöönd. Proovi selle asemel allalaaditud faili avada.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Sündmus lisatud Apple Calendari";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 
@@ -2402,7 +2627,7 @@
 "input.field.placeholder.duckai" = "Küsi ükskõik mida privaatselt";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "Küsi lisaküsimus...";
+"input.field.placeholder.duckai.followup" = "Vasta...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Paigalda laiendus";
@@ -2482,11 +2707,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Laadi uuesti";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Lähtesta suum";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Vali";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Kuva kõik vahekaardid";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Suurenda";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Vähenda";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Viimati töödeldud: %@";
@@ -2779,6 +3013,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Andmemaht";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Soovitatav on see välja lülitada, et kogu liiklus läbiks VPN-i. Kui teil on probleeme selliste funktsioonidega nagu WiFi-kõned, sõnumside või kõnepost, proovige need sisse lülitada.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Välista operaatoriteenused";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Suuna kohalik võrguliiklus VPN-ist mööda ja loo ühendus kohtvõrgu seadmete, nt printeriga.";
 
@@ -2827,6 +3067,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo suunab DNS-päringud meie DNS-serverite kaudu, nii et sinu internetiteenuse pakkuja ei näe, milliseid veebisaite sa külastad.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Kopeeri VPN-i diagnostika";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Lisa nende anonüümsete VPN-diagnostikate koopia, kui võtad ühendust tugiteenusega, et aidata meil sinu ühenduse tõrkeotsingut teha.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Kopeeritud lõikelauale";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Lõikelauale kopeerimine ebaõnnestus";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "KKK ja tugi";
 
@@ -2839,6 +3091,12 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Otseteed";
 
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Soovitatav võrkudes, mida sa ei usalda, nt. avalik wifi hotellides, baarides jne. Kui teil on probleeme funktsioonidega (nt CarPlay, AirDrop jne) või teiste seadmetega ühenduse loomisega, proovige see välja lülitada. [Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Range marsruutimine";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Kinnita";
 
@@ -2847,6 +3105,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Mitte praegu";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Tehisintellekti funktsioonid on privaatsed ja valikulised.\nSaad muudatusi teha suvandis Seaded > Tehisintellekti funktsioonid.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Kas soovid aadressiribal hõlpsat juurdepääsu privaatsele tehisintellekti vestlusele?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Otsi ja Duck.ai";
@@ -2896,6 +3160,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Liiguta aadressiriba alla";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Liiguta aadressiriba üles";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Hallatavad küpsised";
 
@@ -2913,6 +3183,51 @@
 
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Vali oma brauser";
+
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Ma pesitsen sinu igapäevaste tehisintellektiga vestluste ja sirvimise jaoks käeulatuses.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Kõik vestlused on anonüümsed";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Kõigi AI funktsioonide kasutamiseks pole vaja kontot";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Ei kasuta kunagi sinu vestlusi tehisintellekti treenimiseks";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "Juurdepääs ChatGPT-le, Claude'ile ja teistele – kõik ühes kohas";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Proovi Duck.ai-d!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Populaarsed AI-d";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "AI-kaitsed aktiveeritud!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "Kas sa tahad DuckDuckGo oma vaikebrauseriks teha?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Alusta privaatset AI-vestlust Duck.ai-ga või lülita sisse, et otsida kaitstud sirvimist.\n\nSaad Duck.ai't kasutada kõikjal, kus näed vestluse ikooni [[chat_icon]]";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Pakume ka tasulist tellimust, kus on täiustatud tehisintellekti mudelid GPT-lt ja Claude'lt, kõrgemad vestluspiirangud, turvaline VPN ja palju muud.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Proovi nüüd privaatset AI-vestlust!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Kas oled valmis privaatselt ChatGPT, Claude'i ja teiste tehisintellektidega tasuta vestlema brauseris, mis sind aktiivselt kaitseb?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "Alusta AI-vestlust";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Pea meeles: sa saad Duck.ai kasutada kõikjal, kus näed vestluse ikooni [[chat_icon]]";
 
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo pakub ka %1$@, mis on saadaval koos %2$@ ja %3$@-ga.";
@@ -2958,6 +3273,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Kaitsed aktiveeritud!";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Kasuta aadressiriba, et otsida ja külastada saite või alusta privaatset AI-vestlust Duck.ai abil.\n\nDuck.ai-d saad kasutada kõikjal, kus näed vestluse ikooni [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Privaatseid AI-vestlusi saad igal ajal kustutada Fire Buttoni abil. Proovi! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "See on Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Küsi ükskõik mida privaatselt";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Otsi privaatselt";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Selgitage aktsiaturgu nagu ma oleksin 10-aastane";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planeeri ideaalne päev Londonis";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Millised on 10 põnevat fakti teaduse, looduse ja ajaloo kohta?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Kas oled valmis alustama?\nProovi otsingut või tehisintellekti vestlust!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Küsi AI-lt";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Jäta vahele";
@@ -3014,7 +3359,7 @@
 "onboarding.rebranding.first-search-done.title" = "See on DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Kas oled valmis kiiremaks brauseriks, mis sind kaitseb ja laseb sul otsustada, millal ja kuidas tehisintellekti kasutada?";
+"onboarding.rebranding.intro.message" = "Kas oled valmis kasutama kiiremat brauserit, mis annab sulle kontrolli?\n\nTehisintellekt on alati valikuline ja privaatsuskaitse on alati sisse lülitatud.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Tere!";
@@ -3269,6 +3614,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Previews" = "Eelvaated";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Esmane/esimene Tegevus";
 
 /* No comment provided by engineer. */
@@ -3301,26 +3649,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Avada teises rakenduses?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Mine tagasi";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Proovisime seda privaatselt laadida, aga see ei kuvata.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Kas soovid selle lehe Safaris avada?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Avatud Safaris";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Kahjuks ei õnnestunud lehte laadida.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "See leht laaditakse ainult Safaris";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Avatud Safaris";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Sellel veebisaidil on vale turvasertifikaat ja selle külastamine ei pruugi olla turvaline.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Jää DuckDuckGo juurde";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Mõned veebisaidi funktsioonid ei pruugi selle brauseriga ühilduda.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "See sait soovib avaneda Safaris.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo ei saa seda lehte laadida.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Hiljutised töötlemislogid";
@@ -3354,6 +3696,10 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Kas kustutada Fire vahekaardid ja nende andmed?";
+
+/* Title for fire confirmation dialog asking user to delete a single tab and its site data */
+"scoped.fire.confirmation.alert.single.tab.title" = "Kas kustutada vahekaart ja saidi andmed?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Kas kustutada vahekaardid ja saidi andmed?";
 
@@ -3362,6 +3708,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Kustuta kõik";
+
+/* Button to delete a single tab and its site data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.tab.button" = "Kustuta vahekaart";
 
 /* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Kustuta see vestlus";
@@ -3454,7 +3803,10 @@
 "settings.address.trackers.animation" = "Näita aadressiribal";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Vali, mida näed, kui naased pärast %@ tegevusetuse perioodi möödumist.";
+"settings.afterInactivity.footer.format" = "Vali, mida näed, kui naased DuckDuckGo-sse pärast %@ tegevusetuse perioodi.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Vali, mida näed DuckDuckGo-sse naastes.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 tund";
@@ -3468,14 +3820,17 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minutit";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Puudub";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 sekund";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d sekundit";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Pärast tegevusetust";
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Tegevusetuse taimer";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Viimati kasutatud vahekaart";
@@ -3483,8 +3838,14 @@
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Uus vaheleht";
 
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Pärast tegevusetust";
+
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Proovi uut valikut lülituda otsingu ja Duck.ai vahel aadressiribal.";
+
+/* Settings row that opens Duck.ai in a new tab */
+"settings.aichat.duckai.settings" = "Duck.ai seaded";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Duck.ai otseteede haldamine";
@@ -3501,6 +3862,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Otsingu Assist seaded";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Mitte kunagi";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Sageli";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "Nõudmisel";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Mõnikord";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Otsingu Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Saada lehe sisu automaatselt Duck.ai-le";
 
@@ -3510,11 +3886,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Vestluse soovitused";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Kasuta DuckDuckGot ilma tehisintellektita";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Keelab Duck.ai, peidab otsingus tehisintellektiga toetatud vastused ja filtreerib pildiotsingu tulemustest teadaolevaid tehisintellekti rämpsposti saite.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "Tehisintellekt on brauseris praegu keelatud, seega sa ei näe enam tehisintellekti abil saadud vastuseid ja näed pildiotsingu tulemustes vähem tehisintellekti loodud pilte.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Peida AI loodud pildid";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Eemaldab tehisintellekti loodud pildid pildiotsingu tulemustest";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Väljas";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Sees";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtreerib pildiotsingu tulemustest välja teadaolevad tehisintellekti rämpsposti saidid. [Lisainfo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alati sisse lülitatud";
@@ -3524,6 +3918,12 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Aadressiriba asukoht";
+
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Peida kerimise ajal vahekaartide riba";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Saadaval enamikul veebisaitidel. Duck.ai, kaardid ja mängud võivad vahekaartide riba nähtavana hoida.";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ava lingid seotud rakendustes";
@@ -3631,7 +4031,7 @@
 "settings.cookie.pop-up-protection.protection" = "Küpsiste hüpikakna kaitse";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo proovib valida kõige privaatsemad saadaolevad seaded ja peidab need hüpikaknad sinu eest.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo proovib valida kõige privaatsemad saadaolevad seaded ja peidab need hüpikaknad sinu eest.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Halda küpsiste hüpikaknaid";
@@ -4200,6 +4600,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Tellimuse taastamine...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Mitte praegu";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGol on ka **valikuline tasuline tellimus**, millel on turvaline **VPN** ja **täiustatud privaatne tehisintellekt**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Eemalda sellest seadmest";
 
@@ -4314,6 +4720,21 @@
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Kas kustutada serveri andmed?";
 
+/* Caption for a button to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.action" = "Sünkrooni kohe";
+
+/* Message for the dialog to confirm sync setup with another DuckDuckGo device */
+"sync.pairing-v2.confirmation.ddg.message" = "„%@” pääseb ligi sinu sünkroonitud DuckDuckGo paroolidele, automaatse täitmise andmetele ja Duck.ai vestlustele.";
+
+/* Message for the dialog to confirm sync setup with a third-party device */
+"sync.pairing-v2.confirmation.third-party.message" = "„%@” pääseb ligi sinu sünkroonitud Duck.ai vestlustele.";
+
+/* Title of the dialog to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.title" = "Kas sünkroonida uus seade?";
+
+/* Fallback device name for confirmation dialogs */
+"sync.pairing-v2.unknown-peer-name" = "teine seade";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Kontot pole vaja. Otsast lõpuni krüptimine tähendab, et keegi peale sinu ei näe sinu järjehoidjaid, isegi mitte meie.";
 
@@ -4377,9 +4798,6 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Kas seade eemaldada?";
 
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kood kopeeritud";
-
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Seade sünkrooniti edukalt!";
 
@@ -4401,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Kas lülitada Sync & Backup välja?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Eemaldage";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "See seade ei pääse enam sinu sünkroonitud andmetele ligi.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Kas lülitada sünkroonimine välja?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Ava seade, et seadistada Sync & Backup";
 
@@ -4430,6 +4839,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Sulge vaheleht";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Sulge avalehe vahekaart";
 
@@ -4441,6 +4851,7 @@
 
 /* New tab title */
 "tab.new.title" = "Uus vaheleht";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Ava avalehe vahekaart";
 
@@ -4449,6 +4860,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Ava Fire vahekaart";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Ava \"%1$@\" aadressil %2$@";
 
@@ -4532,6 +4944,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kontakti lisamine ebaõnnestus. Proovi kontaktfail hoopis allalaadimisest avada.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kontakt lisatud";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Versioon: %@";
@@ -4863,14 +5281,59 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Hangi DuckDuckGo for Windows!";
 
-/* Explanation text for YouTube Ad Blocking feature */
-"youtube.ad.blocking.explanation" = "DuckDuckGo eemaldab YouTube'ist videoreklaamid, et saaksid videoid katkestusteta vaadata.";
+/* Body text of the bottom sheet asking the user to send an anonymous breakage report */
+"youtube.ad.blocking.breakage-report.message" = "Saada DuckDuckGo-le anonüümne rikketeade. Aita muuta reklaamide blokeerimine kõigi jaoks paremaks!";
 
-/* Settings screen title for YouTube Ad Blocking */
-"youtube.ad.blocking.title" = "YouTube'i reklaamide blokeerimine";
+/* Primary action sending an anonymous YouTube ad-blocking breakage report */
+"youtube.ad.blocking.breakage-report.send" = "Saada rikketeade";
+
+/* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
+"youtube.ad.blocking.breakage-report.title" = "YouTube'i reklaamiblokeerija ei tööta?";
+
+/* Settings cell subtitle indicating YouTube ad blocking will re-enable on next app launch */
+"youtube.ad.blocking.disabled-until-relaunch" = "Inaktiveeritud kuni taaskäivitamiseni";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo blokeerib YouTube'is videoreklaamid, nii et saad videoid katkestusteta vaadata.";
+
+/* Browsing menu row that turns YouTube ad blocking back on after the user has disabled it */
+"youtube.ad.blocking.menu.enable" = "Luba YouTube'i reklaamide blokeerimine";
+
+/* Browsing menu row that opens the YouTube ad-block mode picker */
+"youtube.ad.blocking.menu.toggle" = "Keela YouTube'i reklaamide blokeerimine";
+
+/* Picker option keeping YouTube ad blocking always off */
+"youtube.ad.blocking.mode.always-off" = "Alati välja lülitatud";
+
+/* Picker option keeping YouTube ad blocking always on */
+"youtube.ad.blocking.mode.always-on" = "Alati sisse lülitatud";
+
+/* Picker option disabling YouTube ad blocking until the next app launch */
+"youtube.ad.blocking.mode.disable-until-relaunch" = "Inaktiveeri kuni taaskäivitamiseni";
+
+/* Title of the YouTube ad-block mode picker bottom sheet */
+"youtube.ad.blocking.picker.title" = "YouTube'i reklaamide blokeerimine";
+
+/* Settings screen title for Ad Blocking */
+"youtube.ad.blocking.title" = "Reklaamide blokeerimine";
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Reklaamide blokeerimine YouTube'is";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Kui DuckDuckGo on sisse lülitatud, tuvastab see anonüümselt reklaamiblokeerimise häireid või YouTube'i vigu, et parandada kõigi kasutuskogemust. DuckDuckGo ei näe kunagi, milliseid videoid sa vaatad, ega mingeid isikuandmeid.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Loe edasi";
+
+/* Acknowledgement button on the YouTube ad-blocking unavailable bottom sheet */
+"youtube.ad.blocking.unavailable.got-it" = "Sain aru";
+
+/* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.message" = "YouTube'i hiljutised muudatused on mõjutanud reklaamide blokeerimist. Töötame nende probleemide lahendamise nimel ja täname sind mõistva suhtumise eest";
+
+/* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.title" = "YouTube'i reklaamiblokeerija pole saadaval";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Järjehoidjad";
@@ -4887,3 +5350,52 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mida soovite importida?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "„%@“ kohta ei leitud vasteid";
+
+
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Vestlused";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Hiljutisi vestlusi pole";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Ava Duck.ai";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Otsi";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Kinnitatud";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Hiljutised";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Ühtegi vastet ei leitud";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Vestlusi ei õnnestunud laadida";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Duck.ai vestluste laadimisel läks midagi valesti. Proovi hiljem uuesti.";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Kustuta vestlus";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Laadi alla vestlus";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Kinnita vestlus";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Eemalda kinnitus vestluselt";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Kustuta vestlused";
+
+/* Do not translate - stringsdict entry */
+"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";

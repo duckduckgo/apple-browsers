@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Core
 import DDGSync
 import DesignResourcesKit
@@ -339,7 +340,6 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
                 }
                 
                 NotificationCenter.default.post(name: .autofillSaveEvent, object: nil)
-                AutofillOnboardingExperimentPixelReporter().firePasswordsSaved()
             } catch let error {
                 handleSecureVaultError(error)
             }

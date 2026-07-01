@@ -19,6 +19,7 @@
 import Foundation
 import WebKit
 import Common
+import FoundationExtensions
 import UserScript
 import PixelKit
 import Combine

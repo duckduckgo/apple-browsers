@@ -98,6 +98,111 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "m_ntp_after_idle_escape_hatch_tab_switcher_tapped_after_idle": {
+        "description": "Fires when the user taps the tab switcher pill next to the escape hatch card. The escape hatch is only shown after idle return.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_close_tab_tapped": {
+        "description": "Fires when the user taps the close-tab action on the NTP escape hatch card.",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_burn_with_confirmation_tapped": {
+        "description": "Fires when the user taps the burn-tab action on the NTP escape hatch card and the fire confirmation prompt is shown.",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_burn_immediately_tapped": {
+        "description": "Fires when the user taps the burn-tab action on the NTP escape hatch card and the tab is burned immediately without confirmation.",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_new_tab": {
+        "description": "Fires when the user changes the after-inactivity setting to New Tab from the NTP escape hatch.",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_last_used_tab": {
+        "description": "Fires when the user changes the after-inactivity setting to Last Used Tab from the NTP escape hatch.",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_hidden_from_menu": {
+        "description": "Fires when the user hides the Return-to-tab shortcut via the 'Don't Show This' item in the NTP escape hatch card menu.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_shown": {
+        "description": "Fires when the NTP escape hatch 'Return to tab' card becomes visible. Denominator for the menu-engagement funnel (card impression -> menu impression -> action).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_menu_shown": {
+        "description": "Fires when the user opens the NTP escape hatch card menu (three-dots button or long-press). Counts a menu impression regardless of which gesture opened it.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_return_to_tab_tapped_from_menu": {
+        "description": "Fires when the user selects 'Return to Tab' from the NTP escape hatch card menu. Menu-specific; the generic return_to_page_tapped pixel also fires (it covers taps from any surface).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_close_tab_tapped_from_menu": {
+        "description": "Fires when the user selects 'Close Tab' from the NTP escape hatch card menu. Menu-specific; the generic close_tab_tapped pixel also fires (it covers the swipe action too).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_burn_with_confirmation_tapped_from_menu": {
+        "description": "Fires when the user selects 'Delete Tab' from the NTP escape hatch card menu and the fire confirmation prompt is shown. Menu-specific; the generic burn_with_confirmation_tapped pixel also fires (it covers the swipe and fire-button surfaces too).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_burn_immediately_tapped_from_menu": {
+        "description": "Fires when the user selects 'Delete Tab' from the NTP escape hatch card menu and the tab is burned immediately without confirmation. Menu-specific; the generic burn_immediately_tapped pixel also fires (it covers the swipe and fire-button surfaces too).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_swipe_action_performed": {
+        "description": "Fires when the user performs the primary swipe action on the NTP escape hatch card (close for regular tabs, delete for fire tabs). Distinguishes swipe usage from the menu and fire-button surfaces.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_escape_hatch_burn_tapped_from_button": {
+        "description": "Fires when the user taps the dedicated Fire (delete tab) button on the NTP escape hatch card. Distinguishes the fire-button surface from the menu and swipe; the generic burn_immediately/with_confirmation pixels also fire.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_ntp_after_idle_setting_changed_to_new_tab": {
         "description": "Fires when the user changes the after-inactivity setting to New Tab.",
         "owners": ["SabrinaTardio"],
@@ -111,5 +216,68 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_last_tab_shortcut_setting_enabled": {
+        "description": "Fires when the user enables the Last Tab Shortcut from the General settings toggle.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_last_tab_shortcut_setting_disabled": {
+        "description": "Fires when the user disables the Last Tab Shortcut from the General settings toggle.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_ntp_after_idle_setting_idle_interval_changed": {
+        "description": "Fires when the user changes the inactivity-timer interval. The selected interval is reported via the idle_interval_seconds parameter.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "idle_interval_seconds",
+                "type": "string",
+                "description": "Selected inactivity-timer threshold in seconds. 0 means None (NTP is shown every time the user returns).",
+                "enum": ["0", "60", "300", "600", "1800", "3600", "43200"]
+            }
+        ]
+    },
+    "m_app_open_tab_count_idle_ntp_daily": {
+        "description": "Fires once per day on app foreground for users whose effective after-inactivity setting is New Tab. Carries the same bucketed tab-count and staleness parameters as m_tab_manager_opened_daily so the two distributions can be compared. Supports the Tab Bloat investigation: determines whether defaulting users to a new tab on idle return causes tabs to accumulate.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "expires": "2026-11-20",
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "browsingMode",
+            "tabCount",
+            "newTabCount",
+            "tabActive7d",
+            "tabInactive1w",
+            "tabInactive2w",
+            "tabInactive3w"
+        ]
+    },
+    "m_app_open_tab_count_idle_last_tab_daily": {
+        "description": "Fires once per day on app foreground for users whose effective after-inactivity setting is Last Used Tab. Carries the same bucketed tab-count and staleness parameters as m_tab_manager_opened_daily so the two distributions can be compared. Supports the Tab Bloat investigation: determines whether defaulting users to a new tab on idle return causes tabs to accumulate.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "expires": "2026-11-20",
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "browsingMode",
+            "tabCount",
+            "newTabCount",
+            "tabActive7d",
+            "tabInactive1w",
+            "tabInactive2w",
+            "tabInactive3w"
+        ]
     }
 }

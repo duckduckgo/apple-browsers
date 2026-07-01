@@ -12,35 +12,35 @@
         "owners": ["jotaemepereira"],
         "triggers": ["scheduled"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_fire_window_configuration_open-fire-window-by-default_enabled": {
         "description": "Daily pixel fired when open fire window by default preference is enabled",
         "owners": ["jotaemepereira"],
         "triggers": ["scheduled"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_fire_window_configuration_open-fire-window-by-default_disabled": {
         "description": "Daily pixel fired when open fire window by default preference is disabled",
         "owners": ["jotaemepereira"],
         "triggers": ["scheduled"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_fire_window_configuration_fire-animation_enabled": {
         "description": "Daily pixel fired when fire animation is enabled",
         "owners": ["jotaemepereira"],
         "triggers": ["scheduled"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_fire_window_configuration_fire-animation_disabled": {
         "description": "Daily pixel fired when fire animation is disabled",
         "owners": ["jotaemepereira"],
         "triggers": ["scheduled"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_fire_window_subscription_promo_displayed": {
         "description": "Fired when the subscription promo card is displayed on the Fire Window home page",
@@ -65,5 +65,26 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "freeTrial"]
+    },
+    "m_mac_firewindow_opened": {
+        "description": "Aggregate daily pixel — fires once per user per day on any Fire Window open (manual or automatic).",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_firewindow_opened_manual": {
+        "description": "Fires when the user explicitly opens a Fire Window via a menu, context menu, popover, history view, or similar UI action.",
+        "owners": ["alessandroboron"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_firewindow_opened_automatic": {
+        "description": "Fires when a Fire Window is opened without an explicit \"Open Fire Window\" choice (e.g. Open Fire Window by default preference, or startup window type set to Fire Window).",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

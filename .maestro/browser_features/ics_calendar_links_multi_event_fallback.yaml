@@ -1,0 +1,23 @@
+# ics_calendar_links_multi_event_fallback.yaml
+# Multi-VEVENT .ics should fall back to QuickLook (and show the multi-event toast).
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+- runFlow:
+    file: ../shared/setup.yaml
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/features/download/calendar-multi.ics"
+- pressKey: Enter
+
+- extendedWaitUntil:
+    visible:
+        id: "QLOverlayDoneButtonAccessibilityIdentifier"
+    timeout: 10000

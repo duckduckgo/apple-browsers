@@ -18,6 +18,7 @@
 
 import Bookmarks
 import Combine
+import ConcurrencyExtensions
 import Foundation
 import os.log
 import SharedTestUtilities

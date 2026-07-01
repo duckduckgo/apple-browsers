@@ -17,7 +17,9 @@
 //
 
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import LoginItems
 import VPN
 import ServiceManagement
@@ -68,6 +70,9 @@ extension NetworkProtectionStatusView {
         }
 
         public typealias UninstallHandler = (UninstallReason) async -> Void
+
+        private let subscriptionExpiredViewAppearHandler: (() -> Void)?
+        private let subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)?
 
         /// The NetP service.
         ///
@@ -131,6 +136,8 @@ extension NetworkProtectionStatusView {
 
         // MARK: - Initialization & Deinitialization
 
+        private let subscribeButtonOrigin: String?
+
         public init(controller: TunnelController,
                     onboardingStatusPublisher: OnboardingStatusPublisher,
                     statusReporter: NetworkProtectionStatusReporter,
@@ -142,12 +149,18 @@ extension NetworkProtectionStatusView {
                     runLoopMode: RunLoop.Mode? = nil,
                     userDefaults: UserDefaults,
                     locationFormatter: VPNLocationFormatting,
-                    uninstallHandler: @escaping UninstallHandler) {
+                    uninstallHandler: @escaping UninstallHandler,
+                    subscriptionExpiredViewAppearHandler: (() -> Void)? = nil,
+                    subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)? = nil,
+                    subscribeButtonOrigin: String? = nil) {
 
             self.tunnelController = controller
             self.onboardingStatusPublisher = onboardingStatusPublisher
             self.statusReporter = statusReporter
             self.menuItems = menuItems
+            self.subscriptionExpiredViewAppearHandler = subscriptionExpiredViewAppearHandler
+            self.subscriptionExpiredViewSubscribeButtonClickPixelHandler = subscriptionExpiredViewSubscribeButtonClickPixelHandler
+            self.subscribeButtonOrigin = subscribeButtonOrigin
             self.agentLoginItem = agentLoginItem
             self.isExtensionUpdateOffered = isExtensionUpdateOfferedPublisher.value
             self.isMenuBarStatusView = isMenuBarStatusView
@@ -195,7 +208,9 @@ extension NetworkProtectionStatusView {
         }
 
         func refreshLoginItemStatus() {
-            self.loginItemNeedsApproval = agentLoginItem?.status == .requiresApproval
+            Task { @MainActor in
+                self.loginItemNeedsApproval = await self.agentLoginItem?.status() == .requiresApproval
+            }
         }
 
         func openLoginItemSettings() {
@@ -208,9 +223,14 @@ extension NetworkProtectionStatusView {
         }
 
         func openSubscription() {
+            subscriptionExpiredViewSubscribeButtonClickPixelHandler?()
             Task {
-                await uiActionHandler.showSubscription()
+                await uiActionHandler.showSubscription(origin: subscribeButtonOrigin)
             }
+        }
+
+        func subscriptionExpiredViewDidAppear() {
+            subscriptionExpiredViewAppearHandler?()
         }
 
         func openFeedbackForm() {

@@ -19,7 +19,7 @@
 import SwiftUI
 import SwiftUIExtensions
 
-public struct VPNExclusionSuggestionAlert: ModalView {
+public struct VPNExclusionSuggestionAlert: View {
 
     public enum UserAction: Sendable {
         case stopVPN

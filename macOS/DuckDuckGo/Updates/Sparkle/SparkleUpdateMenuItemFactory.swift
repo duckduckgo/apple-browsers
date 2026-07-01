@@ -18,6 +18,7 @@
 
 import AppUpdaterShared
 import Cocoa
+import DesignResourcesKitIcons
 
 final class SparkleUpdateMenuItemFactory {
 
@@ -34,7 +35,7 @@ final class SparkleUpdateMenuItemFactory {
         let item = NSMenuItem(title: title)
         item.target = controller
         item.action = #selector(SparkleUpdateControllerObjC.runUpdateFromMenuItem)
-        item.image = NSImage.updateMenuItemIcon
+        item.image = DesignSystemImages.Glyphs.Size12.updateRecolorable
         return item
     }
 

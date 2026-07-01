@@ -20,6 +20,7 @@
 import Foundation
 import PrivacyConfig
 import Common
+import FoundationExtensions
 import Networking
 import os.log
 
@@ -86,7 +87,9 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let shortcut = "shortcut"
     public static let browsingMode = "browsing_mode"
+    public static let tabState = "tab_state"
     public static let authVersion = "authVersion"
     public static let lastUsed = "last_used"
 

@@ -522,4 +522,6 @@ private final class MockAIChatViewControllerManagerDelegate: AIChatViewControlle
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String) {
         submittedQuery = query
     }
+
+    func aiChatViewControllerManagerDidReceivePromptSubmission(_ manager: AIChatViewControllerManager) {}
 }

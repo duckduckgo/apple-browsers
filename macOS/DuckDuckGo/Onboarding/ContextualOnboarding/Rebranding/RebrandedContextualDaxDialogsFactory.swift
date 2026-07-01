@@ -67,7 +67,7 @@ extension OnboardingRebranding {
 
 /// 1px hairline rule applied along the bottom edge of the panel background.
 /// Uses `Color`s switched by `colorScheme` because `Color(nsColor:)` with a
-/// dynamic provider requires macOS 12+ and can't be stored in a `static let`.
+/// dynamic provider can't be stored in a `static let`.
 private struct PanelBottomBorder: View {
     @Environment(\.colorScheme) private var colorScheme
 
@@ -90,7 +90,8 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
-        AnyView(
+        onboardingPixelReporter.measureDialogShown(dialogType: type)
+        return AnyView(
             ContextualDialogView(
                 type: type,
                 delegate: delegate,

@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import Lottie
+import MetricBuilder
 
 struct AutofillExtensionPromotionHeaderView: View {
     var primaryButtonAction: (() -> Void)?
@@ -61,16 +62,13 @@ struct AutofillExtensionPromotionHeaderView: View {
                 dismissButtonAction?()
             } label: {
                 Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                    .foregroundColor(.primary)
             }
-            .frame(width: 44, height: 44)
-            .contentShape(Rectangle())
-            .padding(.trailing, 4)
-            .padding(.top, 4)
+            .buttonStyle(CloseButtonStyle())
             .accessibilityIdentifier("Button_DismissExtensionPromo")
+            .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
         .background(
-            RoundedRectangle(cornerRadius: 24.0)
+            RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
                 .foregroundColor(Color(designSystemColor: .surface))
                 .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 8)
         )

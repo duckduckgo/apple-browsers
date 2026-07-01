@@ -267,6 +267,70 @@ extension PermissionManagerTests {
     }
 }
 
+// MARK: - PermissionDecisionOverriding Tests
+
+extension PermissionManagerTests {
+
+    func testWhenDecisionOverrideReturnsValueThenPermissionUsesItInsteadOfStorage() {
+        store.permissions = [.entity2] // (.microphone, .deny)
+        let override = StubOverride(stub: [.microphone: .allow])
+        let overriddenManager = PermissionManager(store: store, decisionOverride: override)
+
+        let result = overriddenManager.permission(forDomain: PermissionEntity.entity2.domain.droppingWwwPrefix(),
+                                                  permissionType: .microphone)
+
+        XCTAssertEqual(result, .allow, "Override should win over the persisted .deny")
+    }
+
+    func testWhenDecisionOverrideReturnsNilThenPermissionFallsThroughToStorage() {
+        store.permissions = [.entity2] // (.microphone, .deny)
+        // Override targets a different permission type so it returns nil for microphone.
+        let override = StubOverride(stub: [.camera: .allow])
+        let overriddenManager = PermissionManager(store: store, decisionOverride: override)
+
+        let result = overriddenManager.permission(forDomain: PermissionEntity.entity2.domain.droppingWwwPrefix(),
+                                                  permissionType: .microphone)
+
+        XCTAssertEqual(result, .deny, "Override returned nil so storage should win")
+    }
+
+    func testWhenDecisionOverrideAbsentThenPermissionUsesStorage() {
+        store.permissions = [.entity2]
+        // No override passed → behaviour identical to before.
+        let result = manager.permission(forDomain: PermissionEntity.entity2.domain.droppingWwwPrefix(),
+                                        permissionType: .microphone)
+
+        XCTAssertEqual(result, .deny)
+    }
+
+    func testWhenDecisionOverrideAppliesItReceivesNormalizedDomain() {
+        store.permissions = []
+        let override = CapturingOverride(stub: .allow)
+        let overriddenManager = PermissionManager(store: store, decisionOverride: override)
+
+        _ = overriddenManager.permission(forDomain: "www.duckduckgo.com", permissionType: .microphone)
+
+        XCTAssertEqual(override.capturedDomain, "duckduckgo.com",
+                       "Override should be consulted with the www-stripped domain so callers don't need to normalize twice")
+    }
+
+    func testPersistedDecisionReturnsRawValueIgnoringOverride() {
+        store.permissions = [.entity2] // (.microphone, .deny)
+        let override = StubOverride(stub: [.microphone: .allow])
+        let overriddenManager = PermissionManager(store: store, decisionOverride: override)
+
+        let raw = overriddenManager.persistedDecision(forDomain: PermissionEntity.entity2.domain.droppingWwwPrefix(),
+                                                     permissionType: .microphone)
+
+        XCTAssertEqual(raw, .deny, "persistedDecision must bypass the override so cleanup paths see what's actually stored")
+    }
+
+    func testPersistedDecisionReturnsNilWhenNothingPersisted() {
+        store.permissions = []
+        XCTAssertNil(manager.persistedDecision(forDomain: "example.com", permissionType: .microphone))
+    }
+}
+
 // MARK: - PermissionType Round-Trip Tests
 
 extension PermissionManagerTests {
@@ -311,4 +375,24 @@ fileprivate extension PermissionEntity {
     static let entity2 = PermissionEntity(permission: .init(id: .init(), decision: .deny),
                                           domain: "www.domain2.com",
                                           type: .microphone)
+}
+
+/// Returns a stubbed decision keyed by `PermissionType`; ignores domain.
+private final class StubOverride: PermissionDecisionOverriding {
+    private let stub: [PermissionType: PersistedPermissionDecision]
+    init(stub: [PermissionType: PersistedPermissionDecision]) { self.stub = stub }
+    func decision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
+        stub[permissionType]
+    }
+}
+
+/// Records the last domain it was called with so we can assert the manager normalises before dispatch.
+private final class CapturingOverride: PermissionDecisionOverriding {
+    private let stub: PersistedPermissionDecision?
+    private(set) var capturedDomain: String?
+    init(stub: PersistedPermissionDecision?) { self.stub = stub }
+    func decision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
+        capturedDomain = domain
+        return stub
+    }
 }

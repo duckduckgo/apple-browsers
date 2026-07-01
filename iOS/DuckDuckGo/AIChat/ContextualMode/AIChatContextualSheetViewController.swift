@@ -20,10 +20,12 @@
 import AIChat
 import Combine
 import Common
+import FoundationExtensions
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Lottie
+import MetricBuilder
 import OSLog
 import PrivacyConfig
 import SwiftUI
@@ -41,6 +43,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
 
     /// Called when the user taps expand to open duck.ai in a new tab with the current chat URL
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL)
+
+    /// Called when the user taps "View all chats" and the native chat history page should open.
+    func aiChatContextualSheetViewControllerDidRequestViewAllChats(_ viewController: AIChatContextualSheetViewController)
 
     /// Called when the user requests to open AI Chat settings
     func aiChatContextualSheetViewControllerDidRequestOpenSettings(_ viewController: AIChatContextualSheetViewController)
@@ -84,7 +89,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let headerButtonSize: CGFloat = 44
         static let headerHorizontalPadding: CGFloat = 16
         static let titleSpacing: CGFloat = 8
-        static let sheetCornerRadius: CGFloat = 24
         static let contentTopPadding: CGFloat = 8
         static let dimmingAlpha: CGFloat = 0.3
         static let iPadPopoverWidth: CGFloat = 375
@@ -181,7 +185,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var recentChatsButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(DesignSystemImages.Glyphs.Size24.list, for: .normal)
+        button.setImage(DesignSystemImages.Glyphs.Size24.chats, for: .normal)
         button.tintColor = UIColor(designSystemColor: .textPrimary)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(recentChatsButtonTapped), for: .touchUpInside)
@@ -242,6 +246,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
         button.accessibilityTraits = .button
+        button.accessibilityIdentifier = "AIChat.ContextualSheet.CloseButton"
         return button
     }()
 
@@ -325,7 +330,7 @@ final class AIChatContextualSheetViewController: UIViewController {
             pixelHandler.fireSessionRestored()
         }
 
-        Logger.aiChat.debug("[SheetVC] Web VC created with URL: \(webVC.initialURL?.absoluteString ?? "nil")")
+        Logger.aiChat.debug("[SheetVC] Web VC created with URL: \(webVC.initialURL?.shortDescription ?? "nil")")
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -344,6 +349,13 @@ final class AIChatContextualSheetViewController: UIViewController {
         removeKeyboardObserver()
         pixelHandler.fireSheetDismissed()
         hideDimmingView(animated: animated)
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if isBeingDismissed {
+            delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -368,7 +380,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         sheet.prefersGrabberVisible = true
         sheet.prefersEdgeAttachedInCompactHeight = true
-        sheet.preferredCornerRadius = Constants.sheetCornerRadius
+        sheet.preferredCornerRadius = SheetMetrics.cornerRadius
     }
 
     // MARK: - Actions
@@ -376,7 +388,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     @objc private func expandButtonTapped() {
         pixelHandler.fireExpandButtonTapped()
         let url = sessionState.contextualChatURL ?? aiChatSettings.aiChatURL
-        Logger.aiChat.debug("[AIChatContextual] Expand tapped with URL: \(url.absoluteString)")
+        Logger.aiChat.debug("[AIChatContextual] Expand tapped with URL: \(url.shortDescription)")
         delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
     }
 
@@ -679,7 +691,7 @@ private extension AIChatContextualSheetViewController {
             }
             sheet.prefersGrabberVisible = false
             if #unavailable(iOS 26) {
-                sheet.preferredCornerRadius = Constants.sheetCornerRadius
+                sheet.preferredCornerRadius = SheetMetrics.cornerRadius
             }
         }
     }
@@ -803,8 +815,14 @@ extension AIChatContextualSheetViewController: AIChatRecentChatsPopupViewModelDe
     func recentChatsPopupDidSelectViewAll() {
         dismissRecentChatsPopup()
         pixelHandler.fireViewAllChatsTapped()
-        let url = AIChatURLParameters.sidebarOpenURL(from: aiChatSettings.aiChatURL)
-        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+        // The native chat history page is an iPhone-only experience; fall back to the duck.ai sidebar
+        // when the flag is off or on iPad.
+        if featureFlagger.isFeatureOn(.aiChatNativeChatHistory), UIDevice.current.userInterfaceIdiom != .pad {
+            delegate?.aiChatContextualSheetViewControllerDidRequestViewAllChats(self)
+        } else {
+            let url = AIChatURLParameters.sidebarOpenURL(from: aiChatSettings.aiChatURL)
+            delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+        }
     }
 
     func recentChatsPopupDidDismiss() {
@@ -821,7 +839,7 @@ extension AIChatContextualSheetViewController: AIChatContextualWebViewController
     }
 
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?) {
-        Logger.aiChat.debug("[AIChatContextual] Received contextual chat URL update: \(String(describing: url?.absoluteString))")
+        Logger.aiChat.debug("[AIChatContextual] Received contextual chat URL update: \(url?.shortDescription ?? "nil")")
         delegate?.aiChatContextualSheetViewController(self, didUpdateContextualChatURL: url)
     }
 
@@ -847,11 +865,15 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
-        // Coordinator handles state transitions
+        webViewController?.notifyFrontendPromptSubmissionAcknowledged()
     }
 
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {
         webViewController?.markFrontendAsReady()
+    }
+
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {
+        delegate?.aiChatContextualSheetViewController(self, didRequestToLoad: url)
     }
 }
 
@@ -883,8 +905,7 @@ private extension AIChatContextualSheetViewController {
         case .nativeInput:
             // When returning to native input (new chat), reload the default URL on existing web VC
             if isWebViewVisible, let webVC = webViewController {
-                let defaultURL = aiChatSettings.aiChatURL.appendingParameter(name: "placement", value: "sidebar")
-                webVC.loadChatURL(defaultURL)
+                webVC.loadDefaultChatURL()
                 isWebViewVisible = false
             }
             fireButton.isHidden = true
@@ -922,8 +943,9 @@ private extension AIChatContextualSheetViewController {
     
     func setupUI() {
         view.backgroundColor = UIColor(Color(singleUseColor: .duckAIContextualSheetBackground))
+        view.accessibilityIdentifier = "AIChat.ContextualSheet" // Anchor for UI tests asserting the sheet is presented.
 
-        view.layer.cornerRadius = Constants.sheetCornerRadius
+        view.layer.cornerRadius = SheetMetrics.cornerRadius
         view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner] // Top corners only
 
         view.layer.shadowColor = UIColor(designSystemColor: .shadowPrimary).cgColor
@@ -1015,7 +1037,7 @@ private extension AIChatContextualSheetViewController {
         let shadowPath = UIBezierPath(
             roundedRect: view.bounds,
             byRoundingCorners: [.topLeft, .topRight],
-            cornerRadii: CGSize(width: Constants.sheetCornerRadius, height: Constants.sheetCornerRadius)
+            cornerRadii: CGSize(width: SheetMetrics.cornerRadius, height: SheetMetrics.cornerRadius)
         )
         view.layer.shadowPath = shadowPath.cgPath
     }
@@ -1088,8 +1110,17 @@ extension AIChatContextualSheetViewController: UISheetPresentationControllerDele
     func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
         isCurrentlyMediumDetent = sheetPresentationController.selectedDetentIdentifier == .medium
     }
+}
 
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+// MARK: - Duck.ai Wide Event
+
+extension AIChatContextualSheetViewController {
+
+    func notifySheetDismissed() {
+        webViewController?.notifySheetDismissed()
+    }
+
+    func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
+        webViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
     }
 }

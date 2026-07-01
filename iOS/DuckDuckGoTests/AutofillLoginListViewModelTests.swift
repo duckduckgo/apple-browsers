@@ -553,6 +553,21 @@ class AutofillLoginListViewModelTests: XCTestCase {
         XCTAssertNil(model.getSurveyToPresent())
     }
 
+    func testDismissSyncPromo_DismissesPasswordPromoWithUserTappedReason() {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   syncPromoManager: syncPromoManager)
+
+        model.dismissSyncPromo()
+
+        XCTAssertEqual(syncPromoManager.dismissedTouchpoint, .passwords)
+        XCTAssertEqual(syncPromoManager.dismissalReason, .userTapped)
+    }
+
     func testWhenAllConditionsAreMetThenSurveyIsReturnedAndWhenDismissedNotSurveyIsReturned() {
         let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                    tld: tld,
@@ -913,4 +928,24 @@ class MockAutofillLoginListViewModel: AutofillLoginListViewModel {
             storageConfiguration: .autofillConfig
         )
     }
+}
+
+private final class MockSyncPromoManager: SyncPromoManaging {
+    private(set) var dismissedTouchpoint: SyncPromoManager.Touchpoint?
+    private(set) var dismissalReason: SyncPromoManager.DismissalReason?
+
+    func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool {
+        false
+    }
+
+    func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason) {
+        dismissedTouchpoint = touchpoint
+        dismissalReason = reason
+    }
+
+    func resetPromos() {}
 }

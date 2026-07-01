@@ -26,6 +26,7 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
     private let tabSwitcherView = TabSwitcherStaticView()
     private var longPressRecognizer: UILongPressGestureRecognizer!
     weak var delegate: TabSwitcherButtonDelegate?
+
     var showMenuOnLongPress: Bool {
         didSet {
             configureLongPressBehavior()
@@ -77,19 +78,8 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
 
     var tabCount: Int = 0 {
         didSet {
-            refresh()
+            tabSwitcherView.updateCount(tabCount)
         }
-    }
-
-    private func refresh() {
-        if tabCount == 0 {
-            tabSwitcherView.updateCount(nil, isSymbol: false)
-            return
-        }
-
-        let useSymbol = tabCount >= Constants.maxTextTabs
-        let text = useSymbol ? "∞" : "\(tabCount)"
-        tabSwitcherView.updateCount(text, isSymbol: useSymbol)
     }
 
     var hasUnread: Bool {
@@ -184,10 +174,6 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
 
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         delegate?.launchNewTabWithCurrentMode(self)
-    }
-
-    private struct Constants {
-        static let maxTextTabs = 100
     }
 }
 

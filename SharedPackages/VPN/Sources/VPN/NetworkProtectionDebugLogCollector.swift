@@ -20,7 +20,6 @@ import Foundation
 import OSLog
 import os
 
-@available(macOS 12.0, *)
 final class NetworkProtectionDebugLogCollector {
 
     enum LogCollectionError: Error {

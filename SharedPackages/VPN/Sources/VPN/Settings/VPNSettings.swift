@@ -33,6 +33,7 @@ public final class VPNSettings {
         case setIncludeAllNetworks(_ includeAllNetworks: Bool)
         case setEnforceRoutes(_ enforceRoutes: Bool)
         case setExcludeLocalNetworks(_ excludeLocalNetworks: Bool)
+        case setExcludeCGNAT(_ excludeCGNAT: Bool)
         case setExcludeAPNs(_ excludeAPNs: Bool)
         case setExcludeCellularServices(_ excludeCellularServices: Bool)
         case setExcludeDeviceCommunication(_ excludeDeviceCommunication: Bool)
@@ -130,6 +131,13 @@ public final class VPNSettings {
                 Change.setExcludeLocalNetworks(excludeLocalNetworks)
             }.eraseToAnyPublisher()
 
+        let excludeCGNATPublisher = excludeCGNATPublisher
+            .dropFirst()
+            .removeDuplicates()
+            .map { excludeCGNAT in
+                Change.setExcludeCGNAT(excludeCGNAT)
+            }.eraseToAnyPublisher()
+
         let excludeAPNsPublisher = excludeAPNsPublisher
             .dropFirst()
             .removeDuplicates()
@@ -212,6 +220,7 @@ public final class VPNSettings {
             includeAllNetworksPublisher,
             enforceRoutesPublisher,
             excludeLocalNetworksPublisher,
+            excludeCGNATPublisher,
             excludeAPNsPublisher,
             excludeCellularServicesPublisher,
             excludeDeviceCommunicationPublisher,
@@ -232,8 +241,8 @@ public final class VPNSettings {
 
     public func resetToDefaults() {
         defaults.resetNetworkProtectionSettingConnectOnLogin()
-        defaults.resetNetworkProtectionSettingEnforceRoutes()
         defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
+        defaults.resetNetworkProtectionSettingExcludeCGNAT()
         defaults.resetNetworkProtectionSettingExcludeAPNs()
         defaults.resetNetworkProtectionSettingExcludeCellularServices()
         defaults.resetNetworkProtectionSettingExcludeDeviceCommunication()
@@ -243,15 +252,17 @@ public final class VPNSettings {
         defaults.resetNetworkProtectionSettingSelectedServer()
         defaults.resetDNSSettings()
         defaults.resetNetworkProtectionSettingShowInMenuBar()
+        defaults.resetVPNSettingEnforceRoutes()
     }
 
     public func resetTunnelFlagsToDefaults() {
-        defaults.resetNetworkProtectionSettingEnforceRoutes()
         defaults.resetNetworkProtectionSettingIncludeAllNetworks()
         defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
+        defaults.resetNetworkProtectionSettingExcludeCGNAT()
         defaults.resetNetworkProtectionSettingExcludeAPNs()
         defaults.resetNetworkProtectionSettingExcludeCellularServices()
         defaults.resetNetworkProtectionSettingExcludeDeviceCommunication()
+        defaults.resetVPNSettingEnforceRoutes()
     }
 
     // MARK: - Applying Changes
@@ -264,6 +275,8 @@ public final class VPNSettings {
             self.enforceRoutes = enforceRoutes
         case .setExcludeLocalNetworks(let excludeLocalNetworks):
             self.excludeLocalNetworks = excludeLocalNetworks
+        case .setExcludeCGNAT(let excludeCGNAT):
+            self.excludeCGNAT = excludeCGNAT
         case .setExcludeAPNs(let excludeAPNs):
             self.excludeAPNs = excludeAPNs
         case .setExcludeCellularServices(let excludeCellularServices):
@@ -326,16 +339,28 @@ public final class VPNSettings {
     // MARK: - Enforce Routes
 
     public var enforceRoutesPublisher: AnyPublisher<Bool, Never> {
-        defaults.networkProtectionSettingEnforceRoutesPublisher
+        defaults.vpnSettingEnforceRoutesPublisher
     }
 
     public var enforceRoutes: Bool {
         get {
-            defaults.networkProtectionSettingEnforceRoutes
+            defaults.vpnSettingEnforceRoutes
         }
 
         set {
-            defaults.networkProtectionSettingEnforceRoutes = newValue
+            defaults.vpnSettingEnforceRoutes = newValue
+        }
+    }
+
+    /// Forces `enforceRoutes` back to its safe default when Strict routing isn't available to this
+    /// user, so a value relaxed while the feature was available can't persist after it's withdrawn.
+    ///
+    /// Callers pass the resolved availability (not a feature flagger) so this stays free of the
+    /// app-side flag system — keeping it usable from contexts that can't evaluate flags.
+    public func resetEnforceRoutesIfUnavailable(strictRoutingAvailable: Bool) {
+        guard strictRoutingAvailable else {
+            defaults.resetVPNSettingEnforceRoutes()
+            return
         }
     }
 
@@ -352,6 +377,48 @@ public final class VPNSettings {
 
         set {
             defaults.networkProtectionSettingExcludeLocalNetworks = newValue
+        }
+    }
+
+    // MARK: - Exclude CGNAT
+
+    public var excludeCGNATPublisher: AnyPublisher<Bool, Never> {
+        defaults.networkProtectionSettingExcludeCGNATPublisher
+    }
+
+    public var excludeCGNAT: Bool {
+        get {
+            defaults.networkProtectionSettingExcludeCGNAT
+        }
+
+        set {
+            defaults.networkProtectionSettingExcludeCGNAT = newValue
+        }
+    }
+
+    /// Syncs `excludeCGNAT` against the feature-flag state. When the flag is off, the
+    /// value is forced to `false`. When on, the stored value is left alone (the storage
+    /// default produces the experimental on-by-default for users with the flag).
+    /// Call at app launch, tunnel start, and when the VPN settings screen appears so
+    /// readers of the raw value (tunnel, metadata) always see the effective value.
+    public func updateExcludeCGNAT(isFeatureEnabled: Bool) {
+        let effective = isFeatureEnabled ? excludeCGNAT : false
+        guard excludeCGNAT != effective else { return }
+        excludeCGNAT = effective
+    }
+
+    // MARK: - Orphan Proxy Detection
+
+    /// When `false`, the tunnel stops writing its heartbeat (see `TunnelHeartbeatStore`), which in turn
+    /// disables the transparent proxy's orphan detection. Resolved from a remote kill switch by the app
+    /// and delivered to the tunnel via the startup options snapshot. Defaults to `true`.
+    public var isOrphanProxyDetectionEnabled: Bool {
+        get {
+            defaults.networkProtectionSettingOrphanProxyDetectionEnabled
+        }
+
+        set {
+            defaults.networkProtectionSettingOrphanProxyDetectionEnabled = newValue
         }
     }
 

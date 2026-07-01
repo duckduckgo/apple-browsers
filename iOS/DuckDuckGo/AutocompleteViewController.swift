@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import UIKit
 import Core
 import DesignResourcesKit
@@ -38,6 +39,19 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private static let session = URLSession(configuration: .ephemeral)
 
     var selectedSuggestion: Suggestion?
+
+    /// The keyboard-highlighted suggestion. Reads the live model selection (unlike `selectedSuggestion`, which is never set).
+    var highlightedSuggestion: Suggestion? {
+        model.selection?.suggestion
+    }
+
+    var isKeyboardSelectionAtFirstRow: Bool {
+        model.isSelectionAtFirstRow
+    }
+
+    func clearKeyboardSelection() {
+        model.selection = nil
+    }
 
     weak var delegate: AutocompleteViewControllerDelegate?
     weak var presentationDelegate: AutocompleteViewControllerPresentationDelegate?
@@ -157,6 +171,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         cancelInFlightRequests()
         self.query = query
         model.query = query
+    }
+
+    func refreshSuggestions() {
+        requestSuggestions(query: self.query)
     }
 
     func setSectionTitle(_ title: String?) {
@@ -352,14 +370,20 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         switch suggestion {
         case .historyEntry(_, let url, _):
             Task {
-                await historyManager.deleteHistoryForURL(url)
-                Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
-                DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
-                requestSuggestions(query: self.query)
+                await deleteURLSuggestion(suggestion, url: url)
             }
         default:
             assertionFailure("Only history items can be deleted")
         }
+    }
+
+    private func deleteURLSuggestion(_ suggestion: Suggestion, url: URL) async {
+        await historyManager.deleteHistoryForURL(url)
+        requestSuggestions(query: self.query)
+        delegate?.autocomplete(deletedSuggestion: suggestion)
+
+        Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
+        DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
     }
 
     private func createPixelIndexParam(for index: Int?) -> [String: String] {
@@ -371,27 +395,6 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
 
 private extension SuggestionResult {
     static let empty = SuggestionResult(topHits: [], duckduckgoSuggestions: [], localSuggestions: [])
-
-    /// Returns a copy containing only URL-based suggestions (websites, bookmarks, history).
-    /// Excludes search phrases, open tabs, and AI chat suggestions.
-    func filteringToURLsOnly() -> SuggestionResult {
-        SuggestionResult(
-            topHits: topHits.filter(\.isURLSuggestion),
-            duckduckgoSuggestions: duckduckgoSuggestions.filter(\.isURLSuggestion),
-            localSuggestions: localSuggestions.filter(\.isURLSuggestion)
-        )
-    }
-}
-
-private extension Suggestion {
-    var isURLSuggestion: Bool {
-        switch self {
-        case .website, .bookmark, .historyEntry, .openTab:
-            return true
-        case .phrase, .internalPage, .unknown, .askAIChat:
-            return false
-        }
-    }
 }
 
 extension HistoryEntry: HistorySuggestion {

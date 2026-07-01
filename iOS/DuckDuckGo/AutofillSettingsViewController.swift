@@ -21,6 +21,7 @@ import UIKit
 import Core
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import DDGSync
 import SwiftUI
 import Persistence

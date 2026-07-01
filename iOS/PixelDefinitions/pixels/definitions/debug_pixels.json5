@@ -49,6 +49,13 @@
             }
         ]
     },
+    "debug_tabs-bar_cell-index-out-of-range": {
+        "description": "Fires when the iPad tabs bar collection view requests a cell for an index that no longer exists in the tabs model (a desync between the layout and the model). The view now renders a placeholder instead of crashing. Expecting minimal numbers of these pixels - ideally zero.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_pixel_fire_suppressed_storage_error": {
         "description": "Fired when a daily or unique pixel is suppressed because the storage write for its last-fire date failed. Indicates a broken pixel store that would otherwise cause repeated firing.",
         "owners": ["samsymons"],
@@ -66,5 +73,102 @@
                 "description": "The name of the pixel that was suppressed due to the storage write failure"
             }
         ]
+    },
+    "m_debug_interaction_repeated_failed_scroll": {
+        "description": "Fires when the native web scroll view did not move after repeated vertical drags on a scrollable page (3 consecutive failed attempts within 30s). Observability for the 'web page visible, taps work, scroll dead' freeze; this measures the symptom (scroll did not move), NOT a confirmed browser bug.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "attempt_count_bucket",
+                "description": "Bucketed number of consecutive failed scroll attempts when the streak fired.",
+                "type": "string",
+                "enum": ["3", "4_5", "6_plus"]
+            },
+            {
+                "key": "direction",
+                "description": "Dominant drag direction across the failed attempts.",
+                "type": "string",
+                "enum": ["up", "down", "mixed"]
+            },
+            {
+                "key": "mechanism",
+                "description": "Gesture-environment state at the moment the freeze is confirmed. 'wedged:<type>' means a recognizer is stuck active with no touches (e.g. wedged:swipe_tabs); 'none_wedged' means no stuck recognizer was found, consistent with the phantom-touch hypothesis.",
+                "type": "string"
+            },
+            {
+                "key": "web_scroll_pan_state",
+                "description": "State of the web scroll view's pan recognizer at the freeze instant.",
+                "type": "string",
+                "enum": ["possible", "began", "changed", "ended", "cancelled", "failed", "none"]
+            },
+            {
+                "key": "web_scroll_pan_touches",
+                "description": "Touches on the web scroll pan at the freeze instant.",
+                "type": "string",
+                "enum": ["0", "1", "2_plus"]
+            },
+            {
+                "key": "wk_deferring_count_bucket",
+                "description": "Count of WKWebView deferring gates found.",
+                "type": "string",
+                "enum": ["0", "1", "2", "3_plus"]
+            },
+            {
+                "key": "wk_possible_zero_touch_count_bucket",
+                "description": "WebKit/private recognizers in .possible with 0 touches (gate suspects).",
+                "type": "string",
+                "enum": ["0", "1", "2", "3_plus"]
+            },
+            {
+                "key": "window_active_no_touch_bucket",
+                "description": "Recognizers active (began/changed) with 0 touches, window-wide.",
+                "type": "string",
+                "enum": ["0", "1", "2_plus"]
+            }
+        ],
+        "expires": "2026-09-21"
+    },
+    "m_debug_interaction_wedged_recognizer": {
+        "description": "Fires when a non-scroll gesture recognizer is found in an active (began/changed) state with no touches down, and is still wedged on a re-check ~1s later, while a web page is shown. Reliable mechanism signal for a recognizer that may be starving the web scroll pan.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "recognizer",
+                "description": "Bucketed class of the wedged recognizer.",
+                "type": "string",
+                "enum": ["web_scroll_pan", "pull_to_refresh_pan", "swipe_tabs", "edge_pan", "tap", "long_press", "other_pan", "other"]
+            }
+        ],
+        "expires": "2026-09-21"
+    },
+    "m_debug_interaction_recovery_attempted": {
+        "description": "Scoped auto-recovery attempted after a confirmed scroll freeze (gated by webScrollFreezeAutoRecovery, internal/off by default). Fires immediately before the recovery sequence runs.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-09-21"
+    },
+    "m_debug_interaction_recovery_outcome": {
+        "description": "Outcome on the next scroll event after an auto-recovery attempt. Emitted only when a prior recovery was attempted.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "outcome",
+                "description": "Whether the scroll recovered after the auto-recovery attempt.",
+                "type": "string",
+                "enum": ["recovered", "still_frozen"]
+            }
+        ],
+        "expires": "2026-09-21"
     }
 }

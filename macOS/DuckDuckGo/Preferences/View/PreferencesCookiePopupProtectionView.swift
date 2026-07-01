@@ -18,14 +18,22 @@
 
 import AppKit
 import Combine
+import FeatureFlags
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import WebExtensions
 
 extension Preferences {
 
     struct CookiePopupProtectionView: View {
         @ObservedObject var model: CookiePopupProtectionPreferences
+
+        private let featureFlagger = NSApp.delegateTyped.featureFlagger
+
+        private var isCookiePopupPreferenceSettingEnabled: Bool {
+            featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting)
+        }
 
         var body: some View {
             PreferencePane(UserText.cookiePopUpProtection, spacing: 4) {
@@ -45,11 +53,33 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 3: Search Settings
+                // SECTION 3: Cookie Pop-up Preference
                 PreferencePaneSection {
-                    ToggleMenuItem(UserText.autoconsentCheckboxTitle, isOn: $model.isAutoconsentEnabled)
+                    if isCookiePopupPreferenceSettingEnabled {
+                        Picker(UserText.cookiePopupPreferenceTitle, selection: $model.cookiePopupPreference) {
+                            ForEach(CookiePopupPreference.allCases, id: \.self) { preference in
+                                Text(preference.displayName).tag(preference)
+                            }
+                        }
+                        TextMenuItemCaption(UserText.cookiePopupPreferenceExplanation)
+                    } else {
+                        ToggleMenuItem(UserText.autoconsentCheckboxTitle, isOn: $model.isAutoconsentEnabled)
+                    }
                 }
             }
+        }
+    }
+}
+
+private extension CookiePopupPreference {
+    var displayName: String {
+        switch self {
+        case .max:
+            return UserText.cookiePopupPreferenceBlockAll
+        case .default:
+            return UserText.cookiePopupPreferenceBlockStandard
+        case .off:
+            return UserText.cookiePopupPreferenceDoNotBlock
         }
     }
 }

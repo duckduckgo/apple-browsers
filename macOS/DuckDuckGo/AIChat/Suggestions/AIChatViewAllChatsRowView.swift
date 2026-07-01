@@ -179,25 +179,33 @@ final class AIChatViewAllChatsRowView: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
 
-        let isHighlighted = isSelected || isHovered
-        if isHighlighted {
-            let tintColor = themeProvider.selectedTintColor
-            backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
-            titleLabel.textColor = tintColor
-            openDuckAILabel.textColor = tintColor
-            iconImageView.contentTintColor = tintColor
-            arrowImageView.contentTintColor = tintColor
-            keyboardShortcutView.isHighlighted = true
-        } else {
-            backgroundLayer.backgroundColor = NSColor.clear.cgColor
-            titleLabel.textColor = Constants.textColor
-            openDuckAILabel.textColor = themeProvider.accentPrimaryColor
-            iconImageView.contentTintColor = Constants.iconColor
-            arrowImageView.contentTintColor = themeProvider.accentPrimaryColor
-            keyboardShortcutView.isHighlighted = false
+        // See AIChatSuggestionRowView.updateAppearance for the appearance note.
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            let isHighlighted = isSelected || isHovered
+            if isHighlighted {
+                let tintColor = themeProvider.selectedTintColor
+                backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
+                titleLabel.textColor = tintColor
+                openDuckAILabel.textColor = tintColor
+                iconImageView.contentTintColor = tintColor
+                arrowImageView.contentTintColor = tintColor
+                keyboardShortcutView.isHighlighted = true
+            } else {
+                backgroundLayer.backgroundColor = NSColor.clear.cgColor
+                titleLabel.textColor = Constants.textColor
+                openDuckAILabel.textColor = themeProvider.accentPrimaryColor
+                iconImageView.contentTintColor = Constants.iconColor
+                arrowImageView.contentTintColor = themeProvider.accentPrimaryColor
+                keyboardShortcutView.isHighlighted = false
+            }
         }
 
         CATransaction.commit()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateAppearance()
     }
 
     // MARK: - Mouse Tracking

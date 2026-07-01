@@ -34,6 +34,7 @@ protocol AIChatViewControllerManagerDelegate: AnyObject {
     func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager)
     func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager)
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String)
+    func aiChatViewControllerManagerDidReceivePromptSubmission(_ manager: AIChatViewControllerManager)
 }
 
 final class AIChatViewControllerManager {
@@ -124,9 +125,11 @@ final class AIChatViewControllerManager {
                     tools: [AIChatRAGTool]? = nil,
                     modelId: String? = nil,
                     reasoningEffort: AIChatReasoningEffort? = nil,
+                    images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                    files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     on viewController: UIViewController) {
         open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
-             modelId: modelId, reasoningEffort: reasoningEffort,
+             modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
              presentationMode: .modal, viewController: viewController)
     }
 
@@ -149,11 +152,13 @@ final class AIChatViewControllerManager {
                                tools: [AIChatRAGTool]? = nil,
                                modelId: String? = nil,
                                reasoningEffort: AIChatReasoningEffort? = nil,
+                               images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                               files: [AIChatNativePrompt.NativePromptFile]? = nil,
                                in containerView: UIView,
                                parentViewController: UIViewController,
                                completion: (() -> Void)? = nil) {
         open(query, payload: payload, autoSend: autoSend, flowType: flowType, tools: tools,
-             modelId: modelId, reasoningEffort: reasoningEffort,
+             modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
              presentationMode: .container, containerView: containerView,
              viewController: parentViewController, completion: completion)
     }
@@ -186,6 +191,8 @@ final class AIChatViewControllerManager {
                       tools: [AIChatRAGTool]? = nil,
                       modelId: String? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil,
+                      images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                      files: [AIChatNativePrompt.NativePromptFile]? = nil,
                       presentationMode: AIChatPresentationMode,
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
@@ -219,6 +226,8 @@ final class AIChatViewControllerManager {
                     tools: tools,
                     modelId: modelId,
                     reasoningEffort: reasoningEffort,
+                    images: images,
+                    files: files,
                     presentationMode: presentationMode,
                     containerView: containerView,
                     viewController: viewController,
@@ -235,6 +244,8 @@ final class AIChatViewControllerManager {
                 tools: tools,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort,
+                images: images,
+                files: files,
                 presentationMode: presentationMode,
                 containerView: containerView,
                 viewController: viewController,
@@ -253,6 +264,8 @@ final class AIChatViewControllerManager {
                               tools: [AIChatRAGTool]?,
                               modelId: String?,
                               reasoningEffort: AIChatReasoningEffort?,
+                              images: [AIChatNativePrompt.NativePromptImage]?,
+                              files: [AIChatNativePrompt.NativePromptFile]?,
                               presentationMode: AIChatPresentationMode,
                               containerView: UIView?,
                               viewController: UIViewController?,
@@ -269,6 +282,8 @@ final class AIChatViewControllerManager {
                 tools: tools,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort,
+                images: images,
+                files: files,
                 on: viewController,
                 voiceMode: voiceMode
             )
@@ -282,6 +297,8 @@ final class AIChatViewControllerManager {
                 tools: tools,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort,
+                images: images,
+                files: files,
                 in: containerView,
                 parentViewController: viewController,
                 completion: completion
@@ -301,6 +318,8 @@ final class AIChatViewControllerManager {
                                        tools: [AIChatRAGTool]?,
                                        modelId: String?,
                                        reasoningEffort: AIChatReasoningEffort?,
+                                       images: [AIChatNativePrompt.NativePromptImage]?,
+                                       files: [AIChatNativePrompt.NativePromptFile]?,
                                        on viewController: UIViewController,
                                        voiceMode: Bool = false) {
         let aiChatViewController = createAIChatViewController(presentationMode: .modal)
@@ -313,6 +332,8 @@ final class AIChatViewControllerManager {
             tools: tools,
             modelId: modelId,
             reasoningEffort: reasoningEffort,
+            images: images,
+            files: files,
             voiceMode: voiceMode
         )
         let roundedPageSheet = RoundedPageSheetContainerViewController(
@@ -335,6 +356,8 @@ final class AIChatViewControllerManager {
                                         tools: [AIChatRAGTool]?,
                                         modelId: String?,
                                         reasoningEffort: AIChatReasoningEffort?,
+                                        images: [AIChatNativePrompt.NativePromptImage]?,
+                                        files: [AIChatNativePrompt.NativePromptFile]?,
                                         in containerView: UIView,
                                         parentViewController: UIViewController,
                                         completion: (() -> Void)? = nil) {
@@ -347,7 +370,9 @@ final class AIChatViewControllerManager {
             flowType: flowType,
             tools: tools,
             modelId: modelId,
-            reasoningEffort: reasoningEffort
+            reasoningEffort: reasoningEffort,
+            images: images,
+            files: files
         )
 
         parentViewController.addChild(aiChatViewController)
@@ -440,6 +465,8 @@ final class AIChatViewControllerManager {
                                          tools: [AIChatRAGTool]?,
                                          modelId: String?,
                                          reasoningEffort: AIChatReasoningEffort?,
+                                         images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                                         files: [AIChatNativePrompt.NativePromptFile]? = nil,
                                          voiceMode: Bool = false) {
         if voiceMode {
             aiChatViewController.loadVoiceMode()
@@ -454,6 +481,15 @@ final class AIChatViewControllerManager {
                 tools: tools,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort
+            )
+            storePromptWithAttachmentsIfNeeded(
+                query,
+                autoSend: autoSend,
+                tools: tools,
+                modelId: modelId,
+                reasoningEffort: reasoningEffort,
+                images: images,
+                files: files
             )
         }
 
@@ -484,6 +520,30 @@ final class AIChatViewControllerManager {
     }
 }
 
+private extension AIChatViewControllerManager {
+
+    func storePromptWithAttachmentsIfNeeded(_ query: String,
+                                            autoSend: Bool,
+                                            tools: [AIChatRAGTool]?,
+                                            modelId: String?,
+                                            reasoningEffort: AIChatReasoningEffort?,
+                                            images: [AIChatNativePrompt.NativePromptImage]?,
+                                            files: [AIChatNativePrompt.NativePromptFile]?) {
+        guard images?.isEmpty == false || files?.isEmpty == false else { return }
+
+        let prompt = AIChatNativePrompt.queryPrompt(
+            query,
+            autoSubmit: autoSend,
+            toolChoice: tools?.map(\.rawValue),
+            images: images,
+            files: files,
+            modelId: modelId,
+            reasoningEffort: reasoningEffort
+        )
+        AIChatPromptHandler.shared.setData(prompt)
+    }
+}
+
 // MARK: - UserContentControllerDelegate
 
 extension AIChatViewControllerManager: UserContentControllerDelegate {
@@ -506,6 +566,10 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
         }
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)
+        aiChatUserScript?.setOpenLinkHandler { [weak self] url in
+            guard let self, let chatViewController = self.chatViewController else { return }
+            self.aiChatViewController(chatViewController, didRequestToLoad: url)
+        }
         aiChatUserScript?.webView = chatViewController?.webView
     }
 }
@@ -572,6 +636,7 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
         if metric.metricName == .userDidSubmitPrompt
             || metric.metricName == .userDidSubmitFirstPrompt {
             NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+            delegate?.aiChatViewControllerManagerDidReceivePromptSubmission(self)
 
             if let tier = metric.modelTier, case .plus = tier {
                 freeTrialConversionService.markDuckAIActivated()

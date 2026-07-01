@@ -5,28 +5,28 @@
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_notification_clicked": {
         "description": "Fired when the user clicks a web notification and the originating tab is focused",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_notification_system_authorization_requested": {
         "description": "Fired right before showing the macOS system notification authorization prompt",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_notification_system_authorization_granted": {
         "description": "Fired when the user grants notification permission in the macOS system prompt",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_web_notification_error": {
         "description": "Fired when a web notification fails to post to UNUserNotificationCenter",
@@ -36,6 +36,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             "errorDomain",
             "errorCode",
             {

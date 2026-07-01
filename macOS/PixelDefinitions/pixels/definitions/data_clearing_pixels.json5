@@ -5,6 +5,6 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

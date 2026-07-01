@@ -269,7 +269,6 @@ struct SyncPromoView: View {
         .frame(height: 300)
 }
 
-@available(macOS 12.0, *)
 #Preview("Auto") {
     ResizablePreviewView(maxSize: CGSize(width: 500, height: 500),
                          minSize: CGSize(width: 224, height: 80)) {

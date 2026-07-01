@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import Navigation
 import UniformTypeIdentifiers
 import os.log
@@ -71,7 +72,7 @@ final class FileDownloadManager: FileDownloadManagerProtocol {
             destination = .prompt
         }
         let task = WebKitDownloadTask(download: download, destination: destination, fireWindowSession: fireWindowSession)
-        Logger.fileDownload.debug("add \(String(describing: download)): \(download.originalRequest?.url?.absoluteString ?? "<nil>") -> \(destination.debugDescription): \(task)")
+        Logger.fileDownload.debug("add \(String(describing: download)): \(download.originalRequest?.url?.shortDescription ?? "<nil>") -> \(destination.debugDescription): \(task)")
 
         let shouldCancelDownloadIfDelegateIsGone = delegate != nil
         self.downloadTaskDelegates[task] = { [weak delegate] in

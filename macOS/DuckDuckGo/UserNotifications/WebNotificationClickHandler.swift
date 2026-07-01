@@ -19,11 +19,10 @@
 import Foundation
 import PixelKit
 
-/// Protocol for finding and focusing tabs, enabling isolated testing.
+/// Protocol for focusing tabs, enabling isolated testing.
 @MainActor
 protocol WebNotificationTabFinding: AnyObject {
-    func findTab(byUUID uuid: String) -> Tab?
-    func focusTab(_ tab: Tab)
+    func focusTab(byUUID uuid: String) -> Tab?
     func focusBrowser()
 }
 
@@ -45,13 +44,12 @@ final class WebNotificationClickHandler {
     ///   - tabUUID: The UUID of the tab that created the notification.
     ///   - notificationId: The notification's unique identifier.
     func handleClick(tabUUID: String, notificationId: String) {
-        guard let tab = tabFinder.findTab(byUUID: tabUUID) else {
-            // Tab was closed; just focus the browser window
+        guard let tab = tabFinder.focusTab(byUUID: tabUUID) else {
+            // No tab with this UUID; just focus the browser window
             tabFinder.focusBrowser()
             return
         }
 
-        tabFinder.focusTab(tab)
         PixelKit.fire(WebNotificationPixel.clicked, frequency: .dailyAndCount)
         tab.webNotifications?.sendClickEvent(notificationId: notificationId)
     }

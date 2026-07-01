@@ -23,7 +23,7 @@ extension PromoServiceFactory {
     @MainActor
     static func defaultBrowserAndDockInactiveModal(service: DefaultBrowserAndDockPromptService) -> Promo {
         let delegate = DefaultBrowserAndDockPromoDelegate(type: .inactive, service: service)
-        return Promo(
+        return InternalPromo(
             id: "default-browser-and-dock-inactive-modal",
             triggers: [.windowBecameKey, .appLaunched],
             initiated: .app,
@@ -36,7 +36,7 @@ extension PromoServiceFactory {
     @MainActor
     static func defaultBrowserAndDockPopover(service: DefaultBrowserAndDockPromptService) -> Promo {
         let delegate = DefaultBrowserAndDockPromoDelegate(type: .active(.popover), service: service)
-        return Promo(
+        return InternalPromo(
             id: "default-browser-and-dock-popover",
             triggers: [.windowBecameKey, .appLaunched],
             initiated: .app,
@@ -49,7 +49,7 @@ extension PromoServiceFactory {
     @MainActor
     static func defaultBrowserAndDockBanner(service: DefaultBrowserAndDockPromptService) -> Promo {
         let delegate = DefaultBrowserAndDockPromoDelegate(type: .active(.banner), service: service)
-        return Promo(
+        return InternalPromo(
             id: "default-browser-and-dock-banner",
             triggers: [.windowBecameKey, .appLaunched],
             initiated: .app,

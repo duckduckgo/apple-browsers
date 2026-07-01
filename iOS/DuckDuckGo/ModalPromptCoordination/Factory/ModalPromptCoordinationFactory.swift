@@ -91,7 +91,8 @@ private extension ModalPromptCoordinationFactory {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: isIPad
+            isIPad: isIPad,
+            omniBarFocuser: dependency.omniBarFocuser
         )
     }
 
@@ -120,6 +121,7 @@ extension ModalPromptCoordinationFactory {
         let subscriptionPromoPresenter: SubscriptionPromoPresenting
         let subscriptionPromoCoordinator: SubscriptionPromoCoordinating
         let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+        let omniBarFocuser: OmniBarFocuserProvider
     }
 
 }

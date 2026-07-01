@@ -21,6 +21,7 @@ import SwiftUI
 import DataBrokerProtectionCore
 import Subscription
 import Common
+import FoundationExtensions
 import LoginItems
 import BrowserServicesKit
 import PixelKit

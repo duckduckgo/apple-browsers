@@ -32,6 +32,7 @@ final class SyncPromoManagerTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
+        PixelFiringMock.tearDown()
         customSuite = UserDefaults(suiteName: testGroupName)
         customSuite.removePersistentDomain(forName: testGroupName)
         syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
@@ -39,6 +40,7 @@ final class SyncPromoManagerTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        PixelFiringMock.tearDown()
         UserDefaults.app = .standard
         syncService = nil
 
@@ -92,7 +94,7 @@ final class SyncPromoManagerTests: XCTestCase {
 
         let syncPromoManager = SyncPromoManager(syncService: syncService, featureFlagger: featureFlagger)
         syncPromoManager.resetPromos()
-        syncPromoManager.dismissPromoFor(.bookmarks)
+        syncPromoManager.dismissPromoFor(.bookmarks, reason: .userTapped)
 
         XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.bookmarks, count: 1))
     }
@@ -153,7 +155,7 @@ final class SyncPromoManagerTests: XCTestCase {
 
         let syncPromoManager = SyncPromoManager(syncService: syncService, featureFlagger: featureFlagger)
         syncPromoManager.resetPromos()
-        syncPromoManager.dismissPromoFor(.passwords)
+        syncPromoManager.dismissPromoFor(.passwords, reason: .userTapped)
 
         XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.passwords, count: 1))
     }
@@ -206,7 +208,7 @@ final class SyncPromoManagerTests: XCTestCase {
 
         let syncPromoManager = SyncPromoManager(syncService: syncService, featureFlagger: featureFlagger)
         syncPromoManager.resetPromos()
-        syncPromoManager.dismissPromoFor(.dataImport)
+        syncPromoManager.dismissPromoFor(.dataImport, reason: .userTapped)
 
         XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.dataImport, count: 1))
     }
@@ -221,12 +223,229 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.dataImport, count: 0))
     }
 
+    // MARK: - AI Chat Tests
+
+    func testWhenAllConditionsMetThenShouldPresentPromoForAIChat() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSync, .aiChatSyncPromo])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true))
+        syncPromoManager.resetPromos()
+
+        XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 1))
+    }
+
+    func testWhenSyncFeatureFlagDisabledThenShouldNotPresentPromoForAIChat() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.aiChatSync, .aiChatSyncPromo])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true))
+        syncPromoManager.resetPromos()
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 1))
+    }
+
+    func testWhenAIChatHistoryIsEmptyThenShouldNotPresentPromoForAIChat() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSync, .aiChatSyncPromo])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true))
+        syncPromoManager.resetPromos()
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 0))
+    }
+
+    func testWhenAIChatSyncPromoFeatureFlagDisabledThenShouldNotPresentPromoForAIChat() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSync])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true))
+        syncPromoManager.resetPromos()
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 1))
+    }
+
+    func testWhenAIChatSyncFeatureFlagDisabledThenShouldNotPresentPromoForAIChat() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSyncPromo])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true))
+        syncPromoManager.resetPromos()
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 1))
+    }
+
+    func testWhenAIChatHistoryDisabledThenShouldNotPresentPromoForAIChat() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSync, .aiChatSyncPromo])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: false))
+        syncPromoManager.resetPromos()
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 1))
+    }
+
+    func testWhenSyncServiceAuthStateActiveThenShouldNotPresentPromoForAIChat() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSync, .aiChatSyncPromo])
+        syncService.authState = .active
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true))
+        syncPromoManager.resetPromos()
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 1))
+    }
+
+    func testWhenSyncPromoAIChatDismissedThenShouldNotPresentPromoForAIChat() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSync, .aiChatSyncPromo])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true))
+        syncPromoManager.resetPromos()
+        syncPromoManager.dismissPromoFor(.aiChat, reason: .userTapped)
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 1))
+    }
+
+    func testWhenImpressionsBelowCapThenShouldPresentPromoForAIChat() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSync, .aiChatSyncPromo])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true))
+        syncPromoManager.resetPromos()
+
+        syncPromoManager.recordImpressionFor(.aiChat)
+        syncPromoManager.recordImpressionFor(.aiChat)
+
+        XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 1))
+    }
+
+    func testWhenImpressionsReachCapThenShouldNotPresentPromoForAIChat() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSync, .aiChatSyncPromo])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true))
+        syncPromoManager.resetPromos()
+
+        for _ in 0..<SyncPromoManager.aiChatImpressionCap {
+            syncPromoManager.recordImpressionFor(.aiChat)
+        }
+
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 1))
+    }
+
+    func testWhenResetPromosThenAIChatImpressionsAreCleared() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSync, .aiChatSyncPromo])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true))
+        syncPromoManager.resetPromos()
+
+        for _ in 0..<SyncPromoManager.aiChatImpressionCap {
+            syncPromoManager.recordImpressionFor(.aiChat)
+        }
+        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 1))
+
+        syncPromoManager.resetPromos()
+
+        XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.aiChat, count: 1))
+    }
+
+    func testRecordImpressionIsNoOpForUncappedTouchpoints() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.syncPromotionBookmarks, .sync])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true))
+        syncPromoManager.resetPromos()
+
+        for _ in 0..<10 {
+            syncPromoManager.recordImpressionFor(.bookmarks)
+        }
+
+        XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.bookmarks, count: 1))
+    }
+
+    // MARK: - Pixels
+
+    func testDismissPromoFiresDismissedPixelWithTouchpointAndReason() {
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                pixelFiring: PixelFiringMock.self)
+
+        for touchpoint in [SyncPromoManager.Touchpoint.bookmarks, .passwords, .dataImport, .aiChat] {
+            PixelFiringMock.tearDown()
+
+            syncPromoManager.dismissPromoFor(touchpoint, reason: .userTapped)
+
+            XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
+            XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.syncPromoDismissed.name)
+            XCTAssertEqual(PixelFiringMock.lastParams, [
+                "source": touchpoint.rawValue,
+                "reason": SyncPromoManager.DismissalReason.userTapped.rawValue
+            ])
+        }
+    }
+
+    func testRecordImpressionForAIChatWhenCapReachedFiresDismissedPixelWithImpressionCapReason() {
+        let featureFlagger = createFeatureFlagger(withFeatureFlagsEnabled: [.sync, .aiChatSync, .aiChatSyncPromo])
+        syncService.authState = .inactive
+
+        let syncPromoManager = SyncPromoManager(syncService: syncService,
+                                                featureFlagger: featureFlagger,
+                                                privacyConfigurationManager: makePrivacyConfigManager(historyEnabled: true),
+                                                pixelFiring: PixelFiringMock.self)
+        syncPromoManager.resetPromos()
+
+        for _ in 0..<SyncPromoManager.aiChatImpressionCap {
+            syncPromoManager.recordImpressionFor(.aiChat)
+        }
+
+        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
+        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.syncPromoDismissed.name)
+        XCTAssertEqual(PixelFiringMock.lastParams, [
+            "source": SyncPromoManager.Touchpoint.aiChat.rawValue,
+            "reason": SyncPromoManager.DismissalReason.impressionCap.rawValue
+        ])
+    }
+
     // MARK: - Mock Creation
 
     private func createFeatureFlagger(withFeatureFlagsEnabled featureFlags: [FeatureFlag]) -> FeatureFlagger {
         let mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enabledFeatureFlags.append(contentsOf: featureFlags)
         return mockFeatureFlagger
+    }
+
+    private func makePrivacyConfigManager(historyEnabled: Bool) -> MockPrivacyConfigurationManager {
+        let manager = MockPrivacyConfigurationManager()
+        let config = MockPrivacyConfiguration()
+        config.isFeatureKeyEnabled = { feature, _ in
+            feature == .duckAiChatHistory ? historyEnabled : true
+        }
+        manager.privacyConfig = config
+        return manager
     }
 
 }

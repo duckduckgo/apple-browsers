@@ -25,6 +25,7 @@ import BrowserServicesKit
 import SyncUI_iOS
 import Persistence
 import Common
+import FoundationExtensions
 import Configuration
 import SystemSettingsPiPTutorial
 import AIChat
@@ -60,6 +61,8 @@ class SettingsLegacyViewProvider: ObservableObject {
     let webExtensionManager: WebExtensionManaging?
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
+    let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -80,6 +83,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          webExtensionManager: WebExtensionManaging?,
          syncAutoRestoreHandler: SyncAutoRestoreHandling,
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
@@ -101,6 +106,8 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.webExtensionManager = webExtensionManager
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
     }
     
     enum LegacyView {
@@ -153,6 +160,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            freemiumPIRDebugSettings: self.freemiumPIRDebugSettings,
+            freemiumDBPUserStateManager: self.freemiumDBPUserStateManager,
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,

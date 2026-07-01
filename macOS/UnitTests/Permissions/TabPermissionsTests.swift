@@ -25,7 +25,6 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 // swiftlint:disable opening_brace
-@available(macOS 12.0, *)
 final class TabPermissionsTests: XCTestCase {
 
     struct URLs {

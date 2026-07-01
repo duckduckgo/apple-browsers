@@ -20,6 +20,7 @@ import AppKit
 import BWIntegration
 import BWManagementShared
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 import PixelKit

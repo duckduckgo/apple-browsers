@@ -43,7 +43,8 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var executionConfig: BrokerJobExecutionConfig { get }
     var featureFlagger: DBPFeatureFlagging { get }
-    var applicationNameForUserAgent: String? { get }
+    var applicationNameForUserAgentProvider: () -> String? { get }
+    var contentBlocking: DBPWebViewContentBlocking? { get }
 
     var webViewHandler: WebViewHandler? { get set }
     var actionsHandler: ActionsHandler? { get }
@@ -287,6 +288,7 @@ public extension SubJobWebRunning {
         }
         do {
             let totalTimeout = executionConfig.getEmailDataTotalTimeout
+            stageCalculator.setStage(.emailGetData)
             recordDebugEvent(kind: .wait,
                              actionType: action.actionType,
                              details: "Polling email-data endpoint (polling interval \(action.pollingTime)s, total timeout \(totalTimeout)s)")
@@ -304,6 +306,9 @@ public extension SubJobWebRunning {
             recordDebugEvent(kind: .wait,
                              actionType: action.actionType,
                              details: "Email data received (\(fetched.count) keys)")
+            if actionsHandler?.stepType == .optOut {
+                stageCalculator.fireOptOutEmailGetData()
+            }
             await executeNextStep()
         } catch {
             recordDebugEvent(kind: .actionResponse,
@@ -369,8 +374,15 @@ public extension SubJobWebRunning {
         if let handler = handler { // This help us swapping up the WebViewHandler on tests
             self.webViewHandler = handler
         } else {
-            let applicationName: String? = featureFlagger.isWebViewUserAgentOn ? applicationNameForUserAgent : nil
-            self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker, executionConfig: executionConfig, shouldContinueActionHandler: shouldRunNextStep, applicationNameForUserAgent: applicationName)
+            let applicationNameProvider: () -> String? = featureFlagger.isWebViewUserAgentOn ? applicationNameForUserAgentProvider : { nil }
+            self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig,
+                                                                               prefs: prefs,
+                                                                               delegate: self,
+                                                                               isFakeBroker: isFakeBroker,
+                                                                               executionConfig: executionConfig,
+                                                                               shouldContinueActionHandler: shouldRunNextStep,
+                                                                               applicationNameForUserAgentProvider: applicationNameProvider,
+                                                                               contentBlocking: contentBlocking)
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)

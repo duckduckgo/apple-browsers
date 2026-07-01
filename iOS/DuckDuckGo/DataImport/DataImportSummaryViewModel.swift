@@ -319,7 +319,7 @@ final class DataImportSummaryViewModel: ObservableObject {
         if let importHubPixelContext {
             Pixel.fire(pixel: .importHubResultSyncPromoDismissed, withAdditionalParameters: importHubPixelContext.parameters)
         }
-        syncPromoManager.dismissPromoFor(.dataImport)
+        syncPromoManager.dismissPromoFor(.dataImport, reason: .userTapped)
         dismiss()
     }
 

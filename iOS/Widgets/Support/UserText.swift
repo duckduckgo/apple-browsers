@@ -257,13 +257,70 @@ struct UserText {
                                                                   value: "Choose your shortcuts",
                                                                   comment: "Description for editing custom shortcuts")
 
-    // MARK: - Quick Actions Medium
+    // MARK: - Quick Actions Medium Configuration
+    //
+    // The four NSLocalizedString constants below are not consumed in Swift code.
+    // The MediumConfigurationIntent references the same keys via
+    // `LocalizedStringResource("...")`, which AppIntents requires inline at the
+    // call site. These constants exist so the build phase's `extractLocStrings`
+    // tool picks the keys up and writes them into Localizable.strings.
 
-    static let quickActionsMediumWidgetGalleryDisplayName = NSLocalizedString("widget.gallery.quickactions.medium.display.name",
-                                                                  value: "Shortcuts",
-                                                                  comment: "Display name for medium quick actions widget in widget gallery")
+    static let quickActionsMediumWidgetEditShortcut1Label = NSLocalizedString("widget.gallery.medium.customshortcuts.edit.shortcut1",
+                                                                  value: "Shortcut 1",
+                                                                  comment: "Label for first shortcut slot in medium widget configuration")
 
-    static let quickActionsMediumWidgetGalleryDescription = NSLocalizedString("widget.gallery.quickactions.medium.display.description",
-                                                                  value: "Shortcuts to your favorite actions.",
-                                                                  comment: "Description of medium quickActions widget in widget gallery")
+    static let quickActionsMediumWidgetEditShortcut2Label = NSLocalizedString("widget.gallery.medium.customshortcuts.edit.shortcut2",
+                                                                  value: "Shortcut 2",
+                                                                  comment: "Label for second shortcut slot in medium widget configuration")
+
+    static let quickActionsMediumWidgetEditShortcut3Label = NSLocalizedString("widget.gallery.medium.customshortcuts.edit.shortcut3",
+                                                                  value: "Shortcut 3",
+                                                                  comment: "Label for third shortcut slot in medium widget configuration")
+
+    static let quickActionsMediumWidgetEditShortcut4Label = NSLocalizedString("widget.gallery.medium.customshortcuts.edit.shortcut4",
+                                                                  value: "Shortcut 4",
+                                                                  comment: "Label for fourth shortcut slot in medium widget configuration")
+
+    // MARK: - Shortcut Option Display Representations
+    //
+    // Same pattern as above: ShortcutOption's `caseDisplayRepresentations` and
+    // `typeDisplayRepresentation` reference these keys via `LocalizedStringResource`
+    // inline. These NSLocalizedString constants feed `extractLocStrings`.
+
+    static let shortcutOptionTypeName = NSLocalizedString("widget.shortcut.option.type-name",
+                                                          value: "Shortcut Option",
+                                                          comment: "Type name shown in the widget configuration picker for the shortcut option enum")
+
+    static let shortcutOptionPasswords = NSLocalizedString("widget.shortcut.option.passwords",
+                                                           value: "Passwords",
+                                                           comment: "Display name shown in the widget configuration picker for the Passwords shortcut option")
+
+    static let shortcutOptionDuckAI = NSLocalizedString("widget.shortcut.option.duck-ai",
+                                                        value: "Duck.ai",
+                                                        comment: "Display name shown in the widget configuration picker for the Duck.ai shortcut option")
+
+    static let shortcutOptionDuckAIVoice = NSLocalizedString("widget.shortcut.option.duck-ai-voice",
+                                                             value: "Duck.ai Voice",
+                                                             comment: "Display name shown in the widget configuration picker for the Duck.ai Voice shortcut option")
+
+    static let shortcutOptionVoiceSearch = NSLocalizedString("widget.shortcut.option.voice-search",
+                                                             value: "Voice Search",
+                                                             comment: "Display name shown in the widget configuration picker for the Voice Search shortcut option")
+
+    static let shortcutOptionFavorites = NSLocalizedString("widget.shortcut.option.favorites",
+                                                           value: "Favorites",
+                                                           comment: "Display name shown in the widget configuration picker for the Favorites shortcut option")
+
+    static let shortcutOptionDuckAddress = NSLocalizedString("widget.shortcut.option.duck-address",
+                                                             value: "Duck Address",
+                                                             comment: "Display name shown in the widget configuration picker for the Duck Address (email protection) shortcut option")
+
+    static let shortcutOptionVPN = NSLocalizedString("widget.shortcut.option.vpn",
+                                                     value: "VPN",
+                                                     comment: "Display name shown in the widget configuration picker for the VPN shortcut option")
+
+    static let shortcutOptionBookmarks = NSLocalizedString("widget.shortcut.option.bookmarks",
+                                                           value: "Bookmarks",
+                                                           comment: "Display name shown in the widget configuration picker for the Bookmarks shortcut option")
+
 }

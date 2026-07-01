@@ -255,6 +255,8 @@ struct SettingsRootView: View {
             PrivateSearchView().environmentObject(viewModel)
         case .appearance, .customizeAddressBarButton, .customizeToolbarButton:
             SettingsAppearanceView().environmentObject(viewModel)
+        case .general:
+            SettingsGeneralView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
                 let model = SubscriptionSettingsViewModel(userScriptsDependencies: viewModel.userScriptsDependencies)

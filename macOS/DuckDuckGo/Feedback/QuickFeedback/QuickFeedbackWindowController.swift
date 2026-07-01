@@ -22,14 +22,19 @@ import WebKit
 @MainActor
 final class QuickFeedbackWindowController: NSWindowController {
 
-    let webView: WKWebView
+    private let tab: Tab
     private let signOutBar = NSView()
     private let signOutButton = NSButton()
     private var signOutBarHeightConstraint: NSLayoutConstraint!
 
+    /// Exposed so the autofill overlay anchors to this panel rather than the main browser window.
+    private(set) var webViewContainer: NSView!
+
     var onSignOutRequested: (() -> Void)?
 
-    init(webViewConfiguration: WKWebViewConfiguration) {
+    init(tab: Tab) {
+        self.tab = tab
+
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 700),
             styleMask: [.titled, .closable, .resizable, .utilityWindow],
@@ -41,9 +46,6 @@ final class QuickFeedbackWindowController: NSWindowController {
         panel.isReleasedWhenClosed = false
         panel.minSize = NSSize(width: 450, height: 500)
         panel.center()
-
-        webView = WKWebView(frame: .zero, configuration: webViewConfiguration)
-        webView.translatesAutoresizingMaskIntoConstraints = false
 
         super.init(window: panel)
 
@@ -83,8 +85,12 @@ final class QuickFeedbackWindowController: NSWindowController {
         signOutBar.addSubview(signOutButton)
         signOutBar.addSubview(separator)
 
+        let webViewContainer = WebViewContainerView(tab: tab, webView: tab.webView, frame: .zero)
+        webViewContainer.translatesAutoresizingMaskIntoConstraints = false
+        self.webViewContainer = webViewContainer
+
         contentView.addSubview(signOutBar)
-        contentView.addSubview(webView)
+        contentView.addSubview(webViewContainer)
 
         panel.contentView = contentView
 
@@ -103,10 +109,10 @@ final class QuickFeedbackWindowController: NSWindowController {
             separator.trailingAnchor.constraint(equalTo: signOutBar.trailingAnchor),
             separator.bottomAnchor.constraint(equalTo: signOutBar.bottomAnchor),
 
-            webView.topAnchor.constraint(equalTo: signOutBar.bottomAnchor),
-            webView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            webView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            webViewContainer.topAnchor.constraint(equalTo: signOutBar.bottomAnchor),
+            webViewContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            webViewContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            webViewContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
         ])
     }
 

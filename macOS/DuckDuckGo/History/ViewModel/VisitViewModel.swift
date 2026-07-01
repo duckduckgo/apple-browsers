@@ -39,7 +39,7 @@ final class VisitViewModel {
     }
 
     var titleTruncated: String {
-        title.truncated(length: MainMenu.Constants.maxTitleLength)
+        title.truncated(to: MainMenu.Constants.maxTitleLength, position: .tail)
     }
 
     @MainActor

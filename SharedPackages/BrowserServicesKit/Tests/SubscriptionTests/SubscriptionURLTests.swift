@@ -127,6 +127,21 @@ final class SubscriptionURLTests: XCTestCase {
         XCTAssertEqual(url, expectedURL)
     }
 
+    func testSubscriptionPurchaseFlowPathContainsPath() throws {
+        XCTAssertTrue(SubscriptionPurchaseFlowPath.contains("/subscriptions"))
+        XCTAssertTrue(SubscriptionPurchaseFlowPath.contains("/subscriptions/plans"))
+        XCTAssertTrue(SubscriptionPurchaseFlowPath.contains("/pro"))
+        XCTAssertTrue(SubscriptionPurchaseFlowPath.contains("/pro/plans"))
+        XCTAssertFalse(SubscriptionPurchaseFlowPath.contains("/subscriptions/manage"))
+    }
+
+    func testSubscriptionPurchaseFlowPathIdentifiesPlansPaths() throws {
+        XCTAssertTrue(SubscriptionPurchaseFlowPath.isPlansPath("/subscriptions/plans"))
+        XCTAssertTrue(SubscriptionPurchaseFlowPath.isPlansPath("/pro/plans"))
+        XCTAssertFalse(SubscriptionPurchaseFlowPath.isPlansPath("/subscriptions"))
+        XCTAssertFalse(SubscriptionPurchaseFlowPath.isPlansPath("/pro"))
+    }
+
     func testCustomBaseSubscriptionURLForPlansURL() throws {
         // Given
         let customBaseURL = URL(string: "https://dax.duck.co/subscriptions")!

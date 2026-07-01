@@ -19,6 +19,7 @@
 
 import Core
 import Common
+import FoundationExtensions
 import PageRefreshMonitor
 import PixelExperimentKit
 import Configuration

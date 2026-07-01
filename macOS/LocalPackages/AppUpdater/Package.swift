@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "AppUpdater",
-    platforms: [ .macOS("11.4") ],
+    platforms: [ .macOS("12.3") ],
     products: [
         .library(name: "AppUpdaterShared", targets: ["AppUpdaterShared"]),
         .library(name: "AppStoreAppUpdater", targets: ["AppStoreAppUpdater"]),
@@ -15,6 +15,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.8.1"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../FeatureFlags"),
     ],
     targets: [
@@ -23,8 +24,12 @@ let package = Package(
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "FeatureFlags", package: "FeatureFlags"),
                 .product(name: "Navigation", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
             ],
@@ -66,6 +71,9 @@ let package = Package(
                 "AppUpdaterShared",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "FeatureFlags", package: "FeatureFlags"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
@@ -82,6 +90,9 @@ let package = Package(
                 "AppUpdaterShared",
                 "AppUpdaterTestHelpers",
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
             ]
         ),

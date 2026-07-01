@@ -19,6 +19,8 @@
 
 import XCTest
 import AIChat
+import BrowserServicesKitTestsUtils
+import WebKit
 
 @testable import Core
 @testable import DuckDuckGo
@@ -429,10 +431,151 @@ class TabTests: XCTestCase {
         XCTAssertNil(decodedTab?.contextualChatURL)
     }
 
+    // MARK: - Per-Tab Model Selection Persistence
+
+    func testWhenTabWithSelectedModelEncodedThenDecodesSuccessfully() {
+        let tabToEncode = Tab(
+            link: link(),
+            fireTab: false,
+            unifiedInputState: UnifiedInputTabState(
+                selectedModelID: "claude-opus-4-6",
+                selectedReasoningMode: .extendedReasoning,
+                selectedTool: .webSearch
+            )
+        )
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedModelID, "claude-opus-4-6")
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedReasoningMode, .extendedReasoning)
+        XCTAssertEqual(decodedTab?.unifiedInputState.selectedTool, .webSearch)
+    }
+
+    func testWhenTabWithNilSelectedModelEncodedThenDecodesAsNil() {
+        let tabToEncode = Tab(link: link(), fireTab: false)
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedModelID)
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedReasoningMode)
+        XCTAssertNil(decodedTab?.unifiedInputState.selectedTool)
+    }
+
+    func testWhenTabEncodedBeforeSelectedModelPropertiesAddedThenDecodesWithNil() {
+        let tab = Tab(coder: CoderStub(properties: ["link": link(), "viewed": false]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.unifiedInputState.selectedModelID)
+        XCTAssertNil(tab?.unifiedInputState.selectedReasoningMode)
+        XCTAssertNil(tab?.unifiedInputState.selectedTool)
+    }
+
+    func testWhenTabHasInvalidReasoningModeRawValueThenDecodesAsNil() {
+        let tab = Tab(coder: CoderStub(properties: [
+            "link": link(),
+            "viewed": false,
+            "selectedReasoningMode": "not-a-real-mode"
+        ]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.unifiedInputState.selectedReasoningMode)
+    }
+
+    func testWhenTabHasInvalidSelectedToolRawValueThenDecodesAsNil() {
+        let tab = Tab(coder: CoderStub(properties: [
+            "link": link(),
+            "viewed": false,
+            "selectedTool": "not-a-real-tool"
+        ]))
+
+        XCTAssertNotNil(tab)
+        XCTAssertNil(tab?.unifiedInputState.selectedTool)
+    }
+
     private func link() -> Link {
         return Link(title: "title", url: URL(string: "http://example.com")!)
     }
 
+}
+
+final class TabViewControllerAIChatNewWindowDecisionTests: XCTestCase {
+
+    func testWhenNewTargetBlankFromAIChatToExternalHTTPSThenOpenInNewTab() {
+        let url = URL(string: "https://example.com/cat")!
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url))
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: aiChatURL(),
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .openInNewTab(url))
+    }
+
+    func testWhenNewTargetBlankFromAIChatToAnotherAIChatURLThenLoadInSameTab() {
+        let url = URL(string: "https://duck.ai/chat?duckai=4&chatID=123")!
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url))
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: aiChatURL(),
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .loadInTab(url))
+    }
+
+    func testWhenNewTargetBlankFromAIChatToNonHTTPSchemeThenIgnore() {
+        let url = URL(string: "mailto:test@example.com")!
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url))
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: aiChatURL(),
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .ignore)
+    }
+
+    func testWhenNewTargetBlankFromNonAIChatTabThenIgnore() {
+        let url = URL(string: "https://example.com/cat")!
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url))
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: URL(string: "https://example.com")!,
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .ignore)
+    }
+
+    func testWhenLinkActivatedWithTargetFrameFromAIChatThenIgnore() {
+        let url = URL(string: "https://example.com/cat")!
+        let targetFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com")
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), targetFrame: targetFrame)
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: aiChatURL(),
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .ignore)
+    }
+
+    func testWhenNavigationTypeIsNotLinkActivatedFromAIChatThenIgnore() {
+        let url = URL(string: "https://example.com/cat")!
+        let navigationAction = MockNavigationAction(request: URLRequest(url: url), navigationType: .other)
+
+        let decision = TabViewController.aiChatNewWindowDecision(currentURL: aiChatURL(),
+                                                                 navigationAction: navigationAction)
+
+        XCTAssertEqual(decision, .ignore)
+    }
+
+    private func aiChatURL() -> URL {
+        URL(string: "https://duck.ai/chat?duckai=4")!
+    }
 }
 
 private class CoderStub: NSCoder {

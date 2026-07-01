@@ -117,24 +117,24 @@ final class QuantisedTimePastTests: XCTestCase {
     }
 
     func testDaysBetween() {
-        let calendar = Calendar.current
-        let baseDate = Date(timeIntervalSince1970: 0)
+        let calendar = Calendar.eastern
 
-        let sameDayStart = calendar.startOfDay(for: baseDate)
-        let sameDayEnd = calendar.date(byAdding: .hour, value: 12, to: sameDayStart)!
-        XCTAssertEqual(QuantisedTimePast.daysBetween(from: sameDayStart, to: sameDayEnd), 0)
+        let baseDate = calendar.date(from: DateComponents(year: 2024, month: 1, day: 1, hour: 12))!
 
-        let oneDayLater = calendar.date(byAdding: .day, value: 1, to: sameDayStart)!
-        XCTAssertEqual(QuantisedTimePast.daysBetween(from: sameDayStart, to: oneDayLater), 1)
+        let sameDayEnd = calendar.date(byAdding: .hour, value: 11, to: baseDate)!
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: baseDate, to: sameDayEnd), 0)
 
-        let threeDaysLater = calendar.date(byAdding: .day, value: 3, to: sameDayStart)!
-        XCTAssertEqual(QuantisedTimePast.daysBetween(from: sameDayStart, to: threeDaysLater), 3)
+        let oneDayLater = calendar.date(byAdding: .day, value: 1, to: baseDate)!
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: baseDate, to: oneDayLater), 1)
 
-        let sevenDaysLater = calendar.date(byAdding: .day, value: 7, to: sameDayStart)!
-        XCTAssertEqual(QuantisedTimePast.daysBetween(from: sameDayStart, to: sevenDaysLater), 7)
+        let threeDaysLater = calendar.date(byAdding: .day, value: 3, to: baseDate)!
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: baseDate, to: threeDaysLater), 3)
 
-        let futureDate = calendar.date(byAdding: .day, value: -1, to: sameDayStart)!
-        XCTAssertEqual(QuantisedTimePast.daysBetween(from: sameDayStart, to: futureDate), -1)
+        let sevenDaysLater = calendar.date(byAdding: .day, value: 7, to: baseDate)!
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: baseDate, to: sevenDaysLater), 7)
+
+        let previousDay = calendar.date(byAdding: .day, value: -1, to: baseDate)!
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: baseDate, to: previousDay), -1)
 
         let startDate = calendar.date(from: DateComponents(year: 2024, month: 1, day: 15))!
         let endDate = calendar.date(from: DateComponents(year: 2024, month: 1, day: 20))!
@@ -143,6 +143,20 @@ final class QuantisedTimePastTests: XCTestCase {
         let acrossMonths = calendar.date(from: DateComponents(year: 2024, month: 1, day: 30))!
         let nextMonth = calendar.date(from: DateComponents(year: 2024, month: 2, day: 2))!
         XCTAssertEqual(QuantisedTimePast.daysBetween(from: acrossMonths, to: nextMonth), 3)
+    }
+
+    func testDaysBetweenUsesETCalendarDays() {
+        let et = Calendar.eastern
+
+        let installAt11pm = et.date(from: DateComponents(year: 2025, month: 1, day: 15, hour: 23, minute: 0))!
+        let nextMorning = et.date(from: DateComponents(year: 2025, month: 1, day: 16, hour: 1, minute: 0))!
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: installAt11pm, to: nextMorning), 1,
+                       "Crossing ET midnight counts as 1 day even though < 24h elapsed")
+
+        let sameETDay = et.date(from: DateComponents(year: 2025, month: 1, day: 15, hour: 2, minute: 0))!
+        let laterSameDay = et.date(from: DateComponents(year: 2025, month: 1, day: 15, hour: 23, minute: 59))!
+        XCTAssertEqual(QuantisedTimePast.daysBetween(from: sameETDay, to: laterSameDay), 0,
+                       "Same ET calendar day returns 0 even if > 21h elapsed")
     }
 
     func testEquatableNegativeCases() {

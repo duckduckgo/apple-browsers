@@ -1,0 +1,42 @@
+<body>
+<strong>{iOS|macOS} Sentry review — releases {version}.x</strong>
+
+Reviewed on {today}. Scope: unresolved issues with events in {release list} whose latest event falls within the last <code>{TIME_RANGE}</code>.
+
+<strong>Totals</strong>
+• N unresolved issues with events in {version}.x in the last {TIME_RANGE}
+• M issues first seen in {version}.x (new regressions) with events in the last {TIME_RANGE}
+
+Full list in Sentry: <a href="...">unresolved in {version}.x</a>
+New-in-{version}.x only: <a href="...">firstRelease filter</a>
+
+<em>Each entry below: <strong>tracking task</strong> · Sentry short-ID(s) · stats · description. Blame uses initials + PR links — the PR page shows the author.</em>
+
+<hr>
+
+<strong>🔴 HIGH — {cluster name or "new high-volume"}</strong>
+• <a href="...">Tracking</a> · <a href="...">SHORT-ID</a>[, <a href="...">SHORT-ID-2</a>, ...] · {U} users, {E} events · {signal} in <code>culprit</code> — {1–2 sentence description}. Likely caused by <a href="...">#NNNN</a> ({INITIALS}).
+
+<strong>🟡 MEDIUM — Other new issues</strong>
+• <a href="...">Tracking</a> · <a href="...">SHORT-ID</a> · ...
+• <a href="...">SHORT-ID</a> · 1 user, 1 event · <code>culprit</code> — {1-event-total carve-out: no Tracking link, no PR attribution, no description; see SKILL.md step 4. Use Sentry's all-time `count`, not windowed.}
+
+<strong>🟡 MEDIUM — Fix already shipped in v{later-version}</strong>
+• <a href="...">Tracking</a> · <a href="...">SHORT-ID</a> · {U} users, {E} events · {signal} in <code>culprit</code> — {one-line description}. Tracking task tagged <code>{platform}-app-release-{later-version}</code>; users on {analysed-version} will continue to see this until they update. No further action needed for this release.
+
+<strong>🟢 LOW — OS-level / low signal / Jetsam OOM</strong>
+• <a href="...">SHORT-ID</a> · {U} users · {signal} <code>culprit</code> — {one-liner; no tracking task created for LOW}
+
+<hr>
+
+<strong>⚠️ Pre-existing (not new, but high-volume)</strong>
+• <a href="...">SHORT-ID</a> · {U} users, {E} events · {signal} <code>culprit</code> — {one-liner; no tracking task}
+
+<hr>
+
+<strong>Recommended next step</strong>
+{Numbered priority list. See SKILL.md "Reporting tone" for required scope-anchoring.}
+
+<strong>Initials legend</strong>
+{initials} — see PR links for authors.
+</body>

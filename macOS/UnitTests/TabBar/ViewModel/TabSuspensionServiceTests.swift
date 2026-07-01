@@ -237,6 +237,28 @@ final class TabSuspensionServiceTests: XCTestCase {
         XCTAssertEqual(call?.frequency, .dailyAndCount)
     }
 
+    func testWhenNoWindowsOpen_ThenPixelIsNotFired() {
+        featureFlagger.enabledFeatureFlags = [.tabSuspension]
+        sut = makeSUT(tabCollectionViewModels: [])
+
+        postMemoryPressure()
+
+        XCTAssertTrue(mockPixelFiring.fireCalls.isEmpty)
+    }
+
+    func testWhenOnlyBurnerWindowsOpen_ThenPixelIsNotFired() {
+        featureFlagger.enabledFeatureFlags = [.tabSuspension]
+        let burnerMode = BurnerMode(isBurner: true)
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, burnerMode: burnerMode, lastSelectedAt: now.addingTimeInterval(-20 * 60))
+        let tabCollection = TabCollection(tabs: [tab])
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(), burnerMode: burnerMode)
+        sut = makeSUT(tabCollectionViewModels: [vm])
+
+        postMemoryPressure()
+
+        XCTAssertTrue(mockPixelFiring.fireCalls.isEmpty)
+    }
+
     func testWhenFeatureFlagDisabled_ThenPixelIsNotFired() {
         featureFlagger.enabledFeatureFlags = []
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now.addingTimeInterval(-20 * 60))

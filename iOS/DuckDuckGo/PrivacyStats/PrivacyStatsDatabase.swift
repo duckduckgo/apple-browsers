@@ -22,6 +22,7 @@ import CoreData
 import PrivacyStats
 import Persistence
 import Common
+import FoundationExtensions
 
 /// iOS-specific wrapper to provide the PrivacyStats Core Data stack.
 final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {

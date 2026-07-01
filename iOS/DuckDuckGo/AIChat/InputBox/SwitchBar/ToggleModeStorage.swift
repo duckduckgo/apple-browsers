@@ -37,6 +37,8 @@ final class ToggleModeStorage: ToggleModeStoring {
     }
 
     func save(_ mode: TextEntryMode) {
+        let current = store.object(forKey: key) as? String
+        guard mode.rawValue != current else { return }
         store.set(mode.rawValue, forKey: key)
     }
 

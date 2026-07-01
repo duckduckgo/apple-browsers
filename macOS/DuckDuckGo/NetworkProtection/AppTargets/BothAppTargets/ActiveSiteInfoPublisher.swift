@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import CombineExtensions
 import Foundation
 import NetworkProtectionProxy
 import NetworkProtectionUI

@@ -29,12 +29,11 @@ import SpecialErrorPages
 import Subscription
 import TrackerRadarKit
 import UserScript
+import WebExtensions
 import WebKit
 
 final class UserScripts: UserScriptsProvider {
 
-    let contentBlockerUserScript: ContentBlockerRulesUserScript
-    let surrogatesScript: SurrogatesUserScript
     let autofillUserScript: AutofillUserScript
     let loginFormDetectionScript: LoginFormDetectionUserScript?
     let contentScopeUserScript: ContentScopeUserScript
@@ -61,34 +60,40 @@ final class UserScripts: UserScriptsProvider {
     private(set) var findInPageScript = FindInPageUserScript()
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var printingSubfeature = PrintingSubfeature()
-    private(set) var debugScript = DebugUserScript()
+    private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
+    let webEventsSubfeature: WebEventsSubfeature
 
     private let isAutoconsentExtensionAvailable: Bool
 
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         keyValueStore: ThrowingKeyValueStoring,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         adBlockingAvailability: AdBlockingAvailabilityProviding) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
-        contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
-        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
 
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
         do {
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                                                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                                                                                excludedFeatures: [PrivacyFeature.autoconsent.rawValue])
+            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                                                        privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
-                                                                scriptContext: .contentScope,
-                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue],
-                                                                privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+                                                                scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData),
+                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue],
+                                                                privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                         properties: sourceProvider.contentScopeProperties,
                                                                         scriptContext: .contentScopeIsolated,
-                                                                        privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+                                                                        privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
@@ -97,10 +102,16 @@ final class UserScripts: UserScriptsProvider {
         }
         autoconsentUserScript = AutoconsentUserScript(
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
-            webExtensionAvailability: sourceProvider.webExtensionAvailability
+            webExtensionAvailability: sourceProvider.webExtensionAvailability,
+            featureFlagger: featureFlagger
         )
 
-        let isNativeStorageBridgeAvailable = featureFlagger.isFeatureOn(.aiChatNativeStorage) && duckAiNativeStorageHandler != nil
+        // `setupSucceeded == nil` (setup still in flight) is treated as "available"
+        // so the launch path is not blocked. Only force the JS fallback when a
+        // permanent setup failure has been observed.
+        let isNativeStorageBridgeAvailable = featureFlagger.isFeatureOn(.aiChatNativeStorage)
+            && duckAiNativeStorageHandler != nil
+            && duckAiNativeStorageHandler?.setupSucceeded != false
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
         let aiChatSettings = AIChatSettings()
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
@@ -110,7 +121,7 @@ final class UserScripts: UserScriptsProvider {
                                                           isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
-        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings, featureFlagger: featureFlagger))
+        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings))
 
         if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
@@ -139,7 +150,23 @@ final class UserScripts: UserScriptsProvider {
             featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: subscriptionNavigationHandler,
             debugHost: aiChatDebugSettings.messagePolicyHostname)
+        let youTubeAdBlockingStorage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        webEventsSubfeature = WebEventsSubfeature(
+            isUserOptedIn: {
+                let analyticsEnabled = (try? youTubeAdBlockingStorage.value(for: \.youTubeAnalyticsEnabled)) ?? false
+                return adBlockingAvailability.isEnabled && analyticsEnabled
+            },
+            onEvent: { type, loginState in
+                guard let pixel = Pixel.Event.adBlockingDetectedEvent(type: type) else { return }
+                DailyPixel.fire(
+                    pixel: pixel,
+                    withAdditionalParameters: ["loginState": loginState.rawValue]
+                )
+            }
+        )
+
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: webEventsSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
@@ -148,6 +175,7 @@ final class UserScripts: UserScriptsProvider {
         }
         contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
         contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
+        contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()
@@ -161,10 +189,7 @@ final class UserScripts: UserScriptsProvider {
 
     lazy var userScripts: [UserScript] = {
         var scripts: [UserScript?] = [
-            debugScript,
             findInPageScript,
-            surrogatesScript,
-            contentBlockerUserScript,
             fullScreenVideoScript,
             autofillUserScript,
             loginFormDetectionScript,

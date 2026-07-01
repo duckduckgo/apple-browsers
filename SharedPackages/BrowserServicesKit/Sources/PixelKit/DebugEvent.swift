@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 
 /// Implementation of ``PixelKitEvent`` with specific logic for debug events.

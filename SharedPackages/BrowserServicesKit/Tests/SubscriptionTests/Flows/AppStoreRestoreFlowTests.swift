@@ -22,7 +22,7 @@ import SubscriptionTestingUtilities
 @testable import Networking
 import NetworkingTestingUtils
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 final class AppStoreRestoreFlowTests: XCTestCase {
 
     private var sut: DefaultAppStoreRestoreFlow!
@@ -168,7 +168,7 @@ final class AppStoreRestoreFlowTests: XCTestCase {
 
 // MARK: - Mock
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 private final class MockPendingTransactionHandler: PendingTransactionHandling {
     var markPurchasePendingCalled = false
     var handleSubscriptionActivatedCalled = false

@@ -50,8 +50,11 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
          configurationURLProvider: ConfigurationURLProviding,
          syncService: DDGSyncing,
          winBackOfferService: WinBackOfferService,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          subscriptionDataReporter: SubscriptionDataReporting,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
          dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
         remoteMessagingActionHandler = RemoteMessagingActionHandler(
@@ -79,6 +82,9 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
             configurationURLProvider: configurationURLProvider,
             syncService: syncService,
             winBackOfferService: winBackOfferService,
+            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            idleReturnEligibilityManager: idleReturnEligibilityManager,
             dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate
         )
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()
@@ -132,11 +138,12 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
     }
 
     private func prefetchRemoteMessageImages() {
-        guard let message = remoteMessagingClient.store.fetchScheduledRemoteMessage(surfaces: .allCases),
-              let imageUrl = message.content?.imageUrl else {
+        guard let message = remoteMessagingClient.store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .any) else {
             return
         }
-        remoteMessagingImageLoader.prefetch([imageUrl])
+        let imageUrls = message.content?.allImageUrls ?? []
+        guard !imageUrls.isEmpty else { return }
+        remoteMessagingImageLoader.prefetch(imageUrls)
     }
 
 }

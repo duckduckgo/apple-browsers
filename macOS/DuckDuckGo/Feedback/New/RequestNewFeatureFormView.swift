@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
@@ -123,7 +124,8 @@ struct RequestNewFeatureFormView: View {
     private enum ComponentHeights {
         static let header: CGFloat = 72  // 24 padding + ~24 button/text + 24 padding
         static let textInputSection: CGFloat = 159  // Same as problem form
-        static let footer: CGFloat = 122  // Same as problem form structure
+        // Same as problem form structure; taller on Liquid Glass to fit the pill buttons (8/8 padding) + larger bottom inset
+        static var footer: CGFloat { AppVersion.isLiquidGlassSupported ? 137 : 133 }
     }
 
     private func calculateTotalHeight() -> CGFloat {
@@ -163,11 +165,12 @@ struct RequestNewFeatureFormView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 20)
-        .padding([.leading, .trailing, .bottom], 24)
+        .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+        .padding(.bottom, 24)
     }
 
     private func featurePills() -> some View {
-        let horizontalPadding: CGFloat = 24
+        let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 24
         return FlexibleView(
             availableWidth: RequestNewFeatureFormViewController.Constants.width - (horizontalPadding * 2),
             data: viewModel.availableFeatures,
@@ -203,7 +206,7 @@ struct RequestNewFeatureFormView: View {
 
     private func incognitoInfoSection() -> some View {
         IncognitoInfoBox()
-            .padding([.leading, .trailing], 24)
+            .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
             .padding(.bottom, 16)
             .transition(.opacity)
             .background(
@@ -256,7 +259,7 @@ struct RequestNewFeatureFormView: View {
                     }
                 )
         }
-        .padding([.leading, .trailing], 24)
+        .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
         .padding(.bottom, 8)
     }
 
@@ -270,7 +273,7 @@ struct RequestNewFeatureFormView: View {
             Text(UserText.feedbackDisclaimer)
                 .caption2()
                 .multilineTextAlignment(.leading)
-                .padding([.leading, .trailing], 24)
+                .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
 
             HStack(spacing: 10) {
                 Button {
@@ -279,7 +282,7 @@ struct RequestNewFeatureFormView: View {
                     Text(UserText.cancel)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(DismissActionButtonStyle())
+                .buttonStyle(DismissActionButtonStyle(topPadding: 8, bottomPadding: 8, pillShape: true))
 
                 Button {
                     viewModel.submitFeedback()
@@ -289,10 +292,10 @@ struct RequestNewFeatureFormView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .disabled(!viewModel.shouldEnableSubmit)
-                .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit))
+                .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit, topPadding: 8, bottomPadding: 8, pillShape: true))
             }
-            .padding([.leading, .trailing], 24)
-            .padding(.bottom, 16)
+            .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+            .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
         }
     }
 }

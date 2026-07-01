@@ -20,7 +20,9 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import ConcurrencyExtensions
 import FeatureFlags
+import FoundationExtensions
 import Lottie
 import OSLog
 

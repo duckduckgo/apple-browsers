@@ -24,6 +24,7 @@ import Networking
 @testable import Core
 @testable import DuckDuckGo
 import Common
+import FoundationExtensions
 import Subscription
 import PixelKit
 
@@ -100,6 +101,16 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
                 PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )
+    }
+
+    func testOSDistributionActiveSubscription() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .osDistributionActiveSubscription)
+
+        let osMajorVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+        let expectedName = "os_distribution_active_subscriptions_major_version_\(osMajorVersion)_ios_phone_monthly"
+        XCTAssertTrue(firedPixels.contains { $0.name == expectedName },
+                      "Expected \(expectedName). Fired: \(firedPixels.map(\.name))")
     }
 
     func testGetTokensErrorPixel() {

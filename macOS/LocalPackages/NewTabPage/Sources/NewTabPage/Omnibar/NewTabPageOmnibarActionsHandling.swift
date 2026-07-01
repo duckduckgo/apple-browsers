@@ -31,7 +31,9 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
                     images: [NewTabPageDataModel.SubmitChatImage]?,
                     mode: String?,
                     toolChoice: [String]?,
-                    reasoningEffort: String?)
+                    reasoningEffort: String?,
+                    pageContexts: [NewTabPageDataModel.OmnibarPageContext]?,
+                    files: [NewTabPageDataModel.OmnibarPromptFile]?)
 
     @MainActor
     func openAiChat(_ chatId: String, isPinned: Bool, trigger: NewTabPageDataModel.OpenAiChatTrigger, target: NewTabPageDataModel.OpenTarget)

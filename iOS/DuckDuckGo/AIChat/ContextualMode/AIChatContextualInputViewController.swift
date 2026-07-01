@@ -162,6 +162,10 @@ final class AIChatContextualInputViewController: UIViewController {
     func setChipTapCallback(_ callback: @escaping () -> Void) {
         nativeInputViewController.setChipTapCallback(callback)
     }
+
+    func updateQuickActions(with actions: [AIChatContextualQuickAction]) {
+        quickActionsView.configure(with: actions)
+    }
 }
 
 // MARK: - Private Setup
@@ -262,13 +266,8 @@ private extension AIChatContextualInputViewController {
         }
     }
 
-    internal func updateQuickActions(with actions: [AIChatContextualQuickAction]) {
-        quickActionsView.configure(with: actions)
-    }
-
     func configureWelcomeLabel() {
         let font = UIFont(name: "DuckSansDisplay-Medium", size: 25) ?? UIFont.daxTitle2()
-        let privatelyColor = UIColor(designSystemColor: .shieldPrivacy)
 
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center
@@ -279,7 +278,7 @@ private extension AIChatContextualInputViewController {
             .paragraphStyle: paragraphStyle
         ]
 
-        let shieldImage = DesignSystemImages.Color.Size42.shieldUtility
+        let shieldImage = DesignSystemImages.Color.Size32.shieldUtility
         let iconAttachment = NSTextAttachment()
         iconAttachment.image = shieldImage
         let iconVerticalOffset = (font.capHeight - shieldImage.size.height) / 2
@@ -293,11 +292,6 @@ private extension AIChatContextualInputViewController {
         if let placeholderRange = fullText.range(of: placeholder) {
             let nsRange = NSRange(placeholderRange, in: fullText)
             mutableText.replaceCharacters(in: nsRange, with: iconString)
-
-            if let privateRange = mutableText.string.range(of: UserText.aiChatWelcomePrivateWord) {
-                let privateNSRange = NSRange(privateRange, in: mutableText.string)
-                mutableText.addAttribute(.foregroundColor, value: privatelyColor, range: privateNSRange)
-            }
         }
 
         welcomeLabel.attributedText = mutableText

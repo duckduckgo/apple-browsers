@@ -195,7 +195,11 @@ final class TabViewControllerMock: UIViewController, TabViewOnboardingDelegate {
     }
 
     func didAcknowledgeContextualOnboardingSearch() {
-        
+
+    }
+
+    func didNavigateAwayFromContextualOnboardingDialog() {
+
     }
 
 }

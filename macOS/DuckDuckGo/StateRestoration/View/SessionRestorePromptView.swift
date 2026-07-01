@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUI
 import SwiftUIExtensions
 
@@ -59,7 +60,7 @@ struct SessionRestorePromptView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }
-                .buttonStyle(StandardButtonStyle())
+                .buttonStyle(StandardButtonStyle(pillShape: true))
                 .accessibilityIdentifier("session.restore.prompt.reject")
 
                 Button {
@@ -71,14 +72,14 @@ struct SessionRestorePromptView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, pillShape: true))
                 .accessibilityIdentifier("session.restore.prompt.accept")
             }
         }
         .multilineTextAlignment(.center)
-        .padding(.horizontal, 16)
         .padding(.top, 8)
-        .padding(.bottom, 16)
+        .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 16)
+        .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
         .frame(width: Const.width)
     }
 }

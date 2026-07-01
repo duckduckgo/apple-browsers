@@ -32,6 +32,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../../../SharedPackages/DataBrokerProtectionCore"),
     ],
     targets: [
@@ -39,6 +40,10 @@ let package = Package(
             name: "DataBrokerProtection-iOS",
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),

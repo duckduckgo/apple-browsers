@@ -24,7 +24,7 @@ let package = Package(
     name: "SystemFrameworksExtensions",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(
@@ -32,14 +32,34 @@ let package = Package(
             targets: ["FoundationExtensions"]
         ),
         .library(
+            name: "CombineExtensions",
+            targets: ["CombineExtensions"]
+        ),
+        .library(
+            name: "ConcurrencyExtensions",
+            targets: ["ConcurrencyExtensions"]
+        ),
+        .library(
             name: "UIKitExtensions",
             targets: ["UIKitExtensionsProxy"]
         ),
     ],
+    dependencies: [
+    ],
     targets: [
         // MARK: - Shared Targets
         .target(
-            name: "FoundationExtensions"
+            name: "FoundationExtensions",
+            exclude: ["README.md"]
+        ),
+        .target(
+            name: "CombineExtensions"
+        ),
+        .target(
+            name: "ConcurrencyExtensions",
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
         ),
 
         // MARK: - Platform Specific Targets
@@ -60,6 +80,10 @@ let package = Package(
         .testTarget(
             name: "FoundationExtensionsTests",
             dependencies: ["FoundationExtensions"]
+        ),
+        .testTarget(
+            name: "ConcurrencyExtensionsTests",
+            dependencies: ["ConcurrencyExtensions"]
         ),
     ]
 )

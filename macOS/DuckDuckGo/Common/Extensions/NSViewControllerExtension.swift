@@ -18,6 +18,7 @@
 
 import AppKit
 import AppKitExtensions
+import ConcurrencyExtensions
 import DeveloperToolsSupport
 import Foundation
 

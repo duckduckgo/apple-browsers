@@ -25,19 +25,27 @@ import MetricBuilder
 
 extension OnboardingRebranding {
 
+    /// https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12205-38684&m=dev
     struct OnboardingTrySiteDialog: View {
         @Environment(\.onboardingTheme) private var theme
 
         var message = UserText.Onboarding.ContextualOnboarding.onboardingTryASiteMessage
         let viewModel: OnboardingSiteSuggestionsViewModel
-        let onManualDismiss: () -> Void
+        let onManualDismiss: (() -> Void)?
 
         var body: some View {
             ScrollView(.vertical, showsIndicators: false) {
-                OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
-                    OnboardingTrySiteDialogContent(message: message, viewModel: viewModel)
+                if let onManualDismiss {
+                    OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {
+                        OnboardingTrySiteDialogContent(message: message, viewModel: viewModel)
+                    }
+                    .padding(theme.contextualOnboardingMetrics.containerPadding)
+                } else {
+                    OnboardingBubbleView(tailPosition: nil) {
+                        OnboardingTrySiteDialogContent(message: message, viewModel: viewModel)
+                    }
+                    .padding(theme.contextualOnboardingMetrics.containerPadding)
                 }
-                .padding(theme.contextualOnboardingMetrics.containerPadding)
             }
             .applyMaxDialogWidth(iPhoneLandscape: theme.contextualOnboardingMetrics.maxContainerWidth, iPad: theme.contextualOnboardingMetrics.maxContainerWidth)
         }

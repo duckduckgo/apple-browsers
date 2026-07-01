@@ -19,7 +19,6 @@
 import XCTest
 import PrivacyConfig
 import SubscriptionTestingUtilities
-@testable import FeatureFlags
 @testable import Subscription
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -29,22 +28,18 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
     var sut: SubscriptionPromoViewModel!
     var subscriptionManager: SubscriptionManagerMock!
     var persistor: MockSubscriptionPromoPersisting!
-    var featureFlagger: MockFeatureFlagger!
 
     override func setUp() {
         super.setUp()
         subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.resultSubscription = .failure(SubscriptionManagerError.noTokenAvailable)
         persistor = MockSubscriptionPromoPersisting()
-        featureFlagger = MockFeatureFlagger()
-        featureFlagger.enableFeatures([.subscriptionPromoFireWindow])
     }
 
     override func tearDown() {
         sut = nil
         subscriptionManager = nil
         persistor = nil
-        featureFlagger = nil
         super.tearDown()
     }
 
@@ -313,18 +308,6 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         XCTAssertFalse(delegate.isVisible)
     }
 
-    // MARK: - Feature Flag
-
-    func testWhenFeatureFlagDisabled_ThenDoesNotShowPromo() {
-        persistor.fireTabVisitCount = 3
-        featureFlagger.enabledFeatureFlags = []
-        sut = makeSUT()
-
-        sut.updateForTab(.notEvaluated)
-
-        XCTAssertFalse(sut.shouldShowPromo)
-    }
-
     // MARK: - Date Provider
 
     func testWhenDateProviderOverridesPastCooldown_ThenShowsPromo() {
@@ -409,7 +392,6 @@ final class SubscriptionPromoViewModelTests: XCTestCase {
         subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: purchasePlatform)
         return SubscriptionPromoViewModel(
             subscriptionManager: subscriptionManager,
-            featureFlagger: featureFlagger,
             persistor: persistor,
             locale: locale,
             dateProvider: dateProvider,

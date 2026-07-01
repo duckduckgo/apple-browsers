@@ -177,7 +177,7 @@ jobs:
         retention-days: 5
 
     - name: Upload variant DMG to S3
-      if: ${{ env.DRY_RUN != 'true' && !env.DMG_URL }}
+      if: ${{ env.DRY_RUN != 'true' }}
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}

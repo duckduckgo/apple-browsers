@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 import Persistence
@@ -133,11 +134,13 @@ final class TabSuspensionService {
         Logger.tabSuspension.info("Critical memory pressure event received, starting tab suspension")
 
         let cutoffDate = dateProvider().addingTimeInterval(-minimumInactiveInterval)
+        var didInspectAnyTab = false
         var suspendedCount = 0
         var reclaimedBytes: UInt64 = 0
 
         for viewModel in windowControllersManager.allTabCollectionViewModels where !viewModel.isBurner {
             for (index, tab) in viewModel.tabCollection.tabs.enumerated() where !tab.isSuspended {
+                didInspectAnyTab = true
                 if tab.lastSelectedAt == nil || tab.lastSelectedAt! < cutoffDate {
                     let webProcessMemory: UInt64 = {
                         guard case let .loaded(loadedTab) = tab,
@@ -154,6 +157,11 @@ final class TabSuspensionService {
                     }
                 }
             }
+        }
+
+        guard didInspectAnyTab else {
+            Logger.tabSuspension.info("No tabs to inspect for suspension")
+            return
         }
 
         guard suspendedCount > 0 else {

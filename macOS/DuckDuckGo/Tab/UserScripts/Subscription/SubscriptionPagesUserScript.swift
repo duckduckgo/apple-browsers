@@ -19,6 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Combine
 import Navigation
 import WebKit

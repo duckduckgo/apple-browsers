@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Configuration
 import Core
 import Foundation
@@ -99,7 +100,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                              ],
                                              includedParameters: [.appVersion])
             }
-        case .reportConnectionAttempt(attempt: let attempt):
+        case .reportConnectionAttempt(attempt: let attempt, source: let source):
             switch attempt {
             case .connecting:
                 Logger.networkProtection.log("🔵 Connection attempt detected")
@@ -109,11 +110,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 Logger.networkProtection.log("🟢 Connection attempt successful")
             }
 
+            let sourceParameters = ["source": source.rawValue]
+
             switch attempt {
             case .connecting:
                 if loopDetector.connectionLoopDetected { return }
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptConnecting,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: sourceParameters,
                                              includedParameters: [.appVersion])
             case .success:
                 let versionStore = NetworkProtectionLastVersionRunStore(userDefaults: .networkProtectionGroupDefaults)
@@ -121,11 +125,13 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptSuccess,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: sourceParameters,
                                              includedParameters: [.appVersion])
             case .failure:
                 if loopDetector.connectionLoopDetected { return }
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptFailure,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: sourceParameters,
                                              includedParameters: [.appVersion])
             }
         case .reportTunnelFailure(result: let result):
@@ -372,11 +378,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                     withAdditionalParameters: [:],
                     includedParameters: [.appVersion]) { _ in }
             }
-        case .tunnelStartOnDemandWithoutAccessToken:
+        case .tunnelStartOnDemandWithoutAccessToken(let error):
             Logger.networkProtection.error("🔴 Starting tunnel without an auth token")
             if loopDetector.connectionLoopDetected { return }
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                         error: error)
         case .adapterEndTemporaryShutdownStateAttemptFailure(let error):
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure, error: error)
         case .adapterEndTemporaryShutdownStateRecoverySuccess:
@@ -539,10 +546,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             Self.makeUnprotectedFileStore(containerURL: $0, name: "vpn-loop-detector", fallback: UserDefaults.networkProtectionGroupDefaults)
         } ?? UserDefaults.networkProtectionGroupDefaults
 
-        let loopDetector = ConnectionFailureLoopDetector(
-            store: loopDetectorStore,
-            isFeatureEnabled: featureFlagger.isFeatureOn(.vpnConnectionFailureLoopDetection)
-        )
+        let loopDetector = ConnectionFailureLoopDetector(store: loopDetectorStore)
 
         self.wideEvent = WideEvent(useMockRequests: {
 #if DEBUG || REVIEW || ALPHA
@@ -587,15 +591,18 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                          withAdditionalParameters: parameters)
         }
 
-        let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
-                                            authService: authService,
-                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+        let isAuthV2WideEventEnabled = {
 #if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
+            return true
 #else
             return authEnvironment == .production
 #endif
-        }))
+        }
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
+                                                                                    isFeatureEnabled: isAuthV2WideEventEnabled)
+        let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                            authService: authService,
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
 
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                              baseURL: subscriptionEnvironment.serviceEnvironment.url)
@@ -608,13 +615,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                              pixelHandler: pixelHandler,
                                                              initForPurchase: false,
                                                              wideEvent: wideEvent,
-                                                             isAuthV2WideEventEnabled: {
-#if DEBUG
-            return true // Allow the refresh event when using staging in debug mode, for easier testing
-#else
-            return subscriptionEnvironment.serviceEnvironment == .production
-#endif
-        })
+                                                             isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
+                                                             authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
         entitlementsCheck = {
             Logger.networkProtection.log("Subscription Entitlements check...")
             do {
@@ -725,6 +727,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
             appVersion: AppVersion.shared.versionNumber,
             source: (UIDevice.current.userInterfaceIdiom == .phone ? PixelKit.Source.iOS : PixelKit.Source.iPadOS).rawValue,
+            session: "ios-vpn-tunnel",
             defaultHeaders: [:],
             defaults: pixelKitDefaults
         ) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in

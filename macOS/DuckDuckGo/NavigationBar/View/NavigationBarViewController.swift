@@ -20,7 +20,9 @@ import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import DesignResourcesKitIcons
 import Freemium
 import History
@@ -687,7 +689,11 @@ final class NavigationBarViewController: NSViewController {
         if pinningManager.isPinned(.autofill) && !isInPopUpWindow {
             passwordManagementButton.isHidden = false
         } else {
-            passwordManagementButton.isShown = popovers.isPasswordManagementPopoverShown || isAutoFillAutosaveMessageVisible
+            // Keep the button visible while the onboarding popover is anchored to it, otherwise hiding the button
+            // collapses the stack view and the popover detaches to a stray position.
+            passwordManagementButton.isShown = popovers.isPasswordManagementPopoverShown
+                || isAutoFillAutosaveMessageVisible
+                || popovers.isAutofillOnboardingPopoverShown
         }
 
         popovers.passwordManagementDomain = nil
@@ -1079,8 +1085,9 @@ final class NavigationBarViewController: NSViewController {
     private func setupNavigationButtonColors() {
         let allButtons: [MouseOverButton] = [
             goBackButton, goForwardButton, refreshOrStopButton, homeButton,
-            downloadsButton, shareButton, passwordManagementButton, bookmarkListButton, optionsButton
-        ]
+            downloadsButton, shareButton, passwordManagementButton, bookmarkListButton, optionsButton,
+            networkProtectionButton, feedbackButton
+        ].compactMap { $0 }
 
         let colorsProvider = theme.colorsProvider
 
@@ -1473,11 +1480,13 @@ final class NavigationBarViewController: NSViewController {
 
     private func toggleNetworkProtectionPopover() {
         guard Application.appDelegate.subscriptionManager.isUserAuthenticated else {
+            PixelKit.fire(SubscriptionPixel.subscriptionToolbarButtonClicked)
             popovers.toggleVPNUpsellPopover(from: networkProtectionButton)
             vpnUpsellVisibilityManager.dismissNotificationDot()
             return
         }
 
+        PixelKit.fire(SubscriptionPixel.subscriptionToolbarVPNButtonClicked)
         popovers.toggleNetworkProtectionPopover(from: networkProtectionButton, withDelegate: networkProtectionButtonModel)
     }
 
@@ -1839,11 +1848,9 @@ final class NavigationBarViewController: NSViewController {
                 .targetting(self)
                 .withImage(theme.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage)
         case .feedback:
-            let icon = (DesignSystemImages.Color.Size16.feedback.copy() as? NSImage) ?? DesignSystemImages.Color.Size16.feedback
-            icon.isTemplate = false
             return NSMenuItem(title: UserText.feedbackShortcutTooltip, action: #selector(quickFeedbackButtonClicked), keyEquivalent: "")
                 .targetting(self)
-                .withImage(icon)
+                .withImage(DesignSystemImages.Glyphs.Size16.feedback)
         case .share:
             return NSMenuItem(title: UserText.shareMenuItem, action: #selector(overflowMenuRequestedSharePopover), keyEquivalent: "")
                 .targetting(self)
@@ -1947,24 +1954,30 @@ extension NavigationBarViewController: NSMenuDelegate {
         HomeButtonMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences, pinningManager: pinningManager)
         let shareTitle = pinningManager.shortcutTitle(for: .share)
         menu.addItem(withTitle: shareTitle, action: #selector(toggleSharePanelPinning), keyEquivalent: "")
+            .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
 
         let downloadsTitle = pinningManager.shortcutTitle(for: .downloads)
         menu.addItem(withTitle: downloadsTitle, action: #selector(toggleDownloadsPanelPinning), keyEquivalent: "J")
+            .withImage(DesignSystemImages.Glyphs.Size12.download)
 
         let autofillTitle = pinningManager.shortcutTitle(for: .autofill)
         menu.addItem(withTitle: autofillTitle, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "A")
+            .withImage(DesignSystemImages.Glyphs.Size12.keyLogin)
 
         let bookmarksTitle = pinningManager.shortcutTitle(for: .bookmarks)
         menu.addItem(withTitle: bookmarksTitle, action: #selector(toggleBookmarksPanelPinning), keyEquivalent: "K")
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
 
         if !isInPopUpWindow && DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager).isVPNVisible() {
             let networkProtectionTitle = pinningManager.shortcutTitle(for: .networkProtection)
             menu.addItem(withTitle: networkProtectionTitle, action: #selector(toggleNetworkProtectionPanelPinning), keyEquivalent: "")
+                .withImage(DesignSystemImages.Glyphs.Size12.vpnUnlock)
         }
 
         if !isInPopUpWindow && NSApp.delegateTyped.internalUserDecider.isInternalUser {
             let feedbackTitle = pinningManager.shortcutTitle(for: .feedback)
             menu.addItem(withTitle: feedbackTitle, action: #selector(toggleFeedbackPanelPinning), keyEquivalent: "")
+                .withImage(DesignSystemImages.Glyphs.Size12.feedback)
         }
     }
 
@@ -2053,9 +2066,10 @@ extension NavigationBarViewController: NSMenuDelegate {
         button.target = self
         button.action = #selector(quickFeedbackButtonClicked)
 
-        let icon = (DesignSystemImages.Color.Size16.feedback.copy() as? NSImage) ?? DesignSystemImages.Color.Size16.feedback
-        icon.isTemplate = false
-        button.image = icon
+        button.image = DesignSystemImages.Glyphs.Size16.feedback
+        let iconsColor = theme.colorsProvider.iconsColor
+        button.contentTintColor = iconsColor
+        button.normalTintColor = iconsColor
         button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
         button.setCornerRadius(theme.toolbarButtonsCornerRadius)
 
@@ -2217,7 +2231,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     func optionsButtonMenuRequestedSubscriptionPurchasePage(_ menu: NSMenu) {
         let url = subscriptionManager.url(for: .purchase)
         showTab(.subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appMenu.rawValue)))
-        PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
+        PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression(origin: SubscriptionFunnelOrigin.appMenu.rawValue))
     }
 
     func optionsButtonMenuRequestedWinBackOfferPurchasePage(_ menu: NSMenu) {

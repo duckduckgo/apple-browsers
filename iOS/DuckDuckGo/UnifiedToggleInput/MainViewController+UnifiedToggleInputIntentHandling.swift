@@ -24,9 +24,9 @@ extension MainViewController {
     func handleUnifiedToggleInputIntent(_ intent: UnifiedToggleInputIntent) {
         switch intent {
         case .showCollapsed:
-            handleShowCollapsedIntent()
+            handleShowCollapsedIntent(animationStyle: intent.animationStyle(layoutTarget: viewCoordinator.superview))
         case .showExpanded:
-            handleShowExpandedIntent()
+            handleShowExpandedIntent(animationStyle: intent.animationStyle(layoutTarget: viewCoordinator.superview))
         case .showOmnibarEditing(let height, let pendingHeight):
             handleShowOmnibarEditingIntent(height: height, pendingHeight: pendingHeight)
         case .showOmnibarInactive:
@@ -38,7 +38,7 @@ extension MainViewController {
         case .hide:
             handleHideIntent()
         }
-        updateFloatingSubmitVisibility()
+        updateFloatingReturnKeyVisibility()
     }
 
     func syncBottomOmnibarAnchorIfNeeded(for coordinator: UnifiedToggleInputCoordinator) {
@@ -68,53 +68,145 @@ extension MainViewController {
 
 private extension MainViewController {
 
-    func handleShowCollapsedIntent() {
+    func handleShowCollapsedIntent(animationStyle: UTIAnimationStyle) {
+        animationStyle.perform { [self] in
+            applyAITabCollapsedPose()
+        }
+    }
+
+    /// The visual end-state for `.aiTab(.collapsed)`: chrome background, content anchored to UTI
+    /// top, container shown at the bottom anchored to the keyboard guide, and the card in the
+    /// collapsed pose with footer accessories. Whether this snaps or animates is decided by the
+    /// caller (which wraps this in `UTIAnimationStyle.perform`).
+    private func applyAITabCollapsedPose() {
         if unifiedToggleInputCoordinator?.isAITabState == true {
             applyUnifiedInputChromeBackground(.aiTabChatChromeHidden)
-            viewCoordinator.stopContentContainerBehindInput()
+            viewCoordinator.anchorContentContainerToInputTop()
         }
         viewCoordinator.showUnifiedToggleInput()
+        if let coordinator = unifiedToggleInputCoordinator,
+           coordinator.isAITabState,
+           coordinator.cardPosition == .bottom {
+            viewCoordinator.setNavBarContainerBottomToKeyboard()
+        }
         viewCoordinator.suggestionTrayContainer.isHidden = true
         if let coordinator = unifiedToggleInputCoordinator {
+            coordinator.viewController.apply(coordinator.computeRenderState().viewConfig, animated: false)
             updateUnifiedInputContentVisibility(for: coordinator)
         } else {
             viewCoordinator.hideUnifiedInputContent()
         }
     }
 
-    func handleShowExpandedIntent() {
+    func handleShowExpandedIntent(animationStyle: UTIAnimationStyle) {
+        // WKWebView snaps to the new size in one frame while the outer layer animates; mask the
+        // gap with a snapshot of the chat at its old visual state.
+        let snapshotMask = installContentContainerSnapshotMaskForAITabExpandIfNeeded()
+        animationStyle.perform({ [self] in
+            applyAITabExpandedPose()
+        }, completion: { _ in
+            snapshotMask?.removeFromSuperview()
+        })
+        adjustUI(withKeyboardFrame: latestKeyboardFrame, in: animationStyle.duration, animationCurve: .curveEaseInOut)
+    }
+
+    /// Captures a snapshot of `contentContainer` at its current (pre-expand) size and pins a
+    /// clipping wrapper that follows the container's frame. Caller removes the wrapper on
+    /// animation completion.
+    private func installContentContainerSnapshotMaskForAITabExpandIfNeeded() -> UIView? {
+        guard let coordinator = unifiedToggleInputCoordinator,
+              coordinator.isAITabState,
+              let target = viewCoordinator.contentContainer,
+              let parent = target.superview,
+              let snapshot = target.snapshotView(afterScreenUpdates: false) else { return nil }
+
+        let oldSize = target.bounds.size
+
+        let wrapper = UIView()
+        wrapper.translatesAutoresizingMaskIntoConstraints = false
+        wrapper.clipsToBounds = true
+        wrapper.isUserInteractionEnabled = false
+
+        snapshot.translatesAutoresizingMaskIntoConstraints = false
+        wrapper.addSubview(snapshot)
+        // Sit just above `target` — masks the WKWebView's model-layer snap, but stays below the
+        // AI-tab header so the pill drop shadows that bleed into the content area aren't clipped.
+        parent.insertSubview(wrapper, aboveSubview: target)
+
+        NSLayoutConstraint.activate([
+            wrapper.topAnchor.constraint(equalTo: target.topAnchor),
+            wrapper.leadingAnchor.constraint(equalTo: target.leadingAnchor),
+            wrapper.trailingAnchor.constraint(equalTo: target.trailingAnchor),
+            wrapper.bottomAnchor.constraint(equalTo: target.bottomAnchor),
+
+            snapshot.topAnchor.constraint(equalTo: wrapper.topAnchor),
+            snapshot.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
+            snapshot.widthAnchor.constraint(equalToConstant: oldSize.width),
+            snapshot.heightAnchor.constraint(equalToConstant: oldSize.height)
+        ])
+        parent.layoutIfNeeded()
+        return wrapper
+    }
+
+    /// Visual end-state for `.aiTab(.expanded)`: container shown, chrome and content anchor
+    /// configured for the AI-tab pose, card applied to expanded layout, content visibility
+    /// updated. Whether this snaps or animates is decided by the caller (which wraps this in
+    /// `UTIAnimationStyle.perform`).
+    private func applyAITabExpandedPose() {
         viewCoordinator.showUnifiedToggleInput()
-        if let coordinator = unifiedToggleInputCoordinator {
-            if coordinator.isAITabState {
-                if coordinator.cardPosition == .bottom {
-                    viewCoordinator.setNavBarContainerBottomToKeyboard()
-                }
-                let chromeBackgroundState = aiTabChromeBackgroundState(for: coordinator.computeRenderState())
-                applyUnifiedInputChromeBackground(chromeBackgroundState)
-                viewCoordinator.extendContentContainerBehindInput()
+        guard let coordinator = unifiedToggleInputCoordinator else { return }
+        let renderState = coordinator.computeRenderState()
+        if coordinator.isAITabState {
+            if coordinator.cardPosition == .bottom {
+                viewCoordinator.setNavBarContainerBottomToKeyboard()
             }
-            updateUnifiedInputContentVisibility(for: coordinator)
+            applyUnifiedInputChromeBackground(aiTabChromeBackgroundState(for: renderState))
+            viewCoordinator.anchorContentContainerToInputTop()
         }
-        adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0, animationCurve: .curveEaseInOut)
+        coordinator.viewController.apply(renderState.viewConfig, animated: false)
+        updateUnifiedInputContentVisibility(for: coordinator, renderState: renderState)
     }
 
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
+        coordinator.contentViewController.refreshSuggestionsCaches()
+
         let omnibarPlaceholderWindowX = currentOmnibarPlaceholderWindowX()
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
 
+        let isLogoToLogo = newTabPageViewController?.isShowingLogo == true
+        // Favorites hand off seamlessly too: the embedded grid is already laid out where the NTP grid is,
+        // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
+        let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
+        let isBottom = coordinator.cardPosition.isBottom
+
         viewCoordinator.showUnifiedToggleInputOmnibar(expandedHeight: height)
         viewCoordinator.suggestionTrayContainer.isHidden = true
         updateUnifiedInputContentVisibility(for: coordinator)
-        viewCoordinator.unifiedInputContentContainer.alpha = 0
+
+        if !isLogoToLogo {
+            // Hide the real NTP favorites while focusing so the UTI's embedded favorites don't
+            // cross-dissolve against them (mirrors the defocus hide-reveal). Revealed again on dismiss.
+            newTabPageViewController?.setFavoritesHidden(true)
+        }
+        // Seamless handoffs (logo/favorites) show the content immediately; only other content fades in.
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        viewCoordinator.unifiedInputContentContainer.alpha = isSeamlessHandoff ? 1 : 0
 
         if let omnibarPlaceholderWindowX {
-            coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
+            coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
         }
 
-        let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom)
+        if isLogoToLogo {
+            // Hide the NTP logo during the seamless logo→logo focus so it doesn't double with the
+            // focused SwiftUI logo; revealed again on dismiss. (Alpha is already 1 via the seamless
+            // handoff above — the focused logo rests at the NTP anchor by construction, no manual swap.)
+            newTabPageViewController?.setLogoHidden(true)
+        }
+
+        let duration = Constants.omnibarTransitionDuration(isBottom: isBottom)
         UIView.animate(
             withDuration: duration,
             delay: 0,
@@ -128,10 +220,11 @@ private extension MainViewController {
                 if let pendingHeight {
                     self.viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
                 }
-                // Lay out before pushContentInsets — it reads bar.frame.height.
                 self.viewCoordinator.superview.layoutIfNeeded()
                 coordinator.pushContentInsets()
-                self.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                if !isSeamlessHandoff {
+                    self.viewCoordinator.unifiedInputContentContainer.alpha = 1
+                }
                 coordinator.viewController.setTextHorizontalShift(0)
             }
         )
@@ -159,7 +252,7 @@ private extension MainViewController {
             let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom)
             let slideUTIText: () -> Void = { [weak coordinator] in
                 guard let coordinator, let omnibarPlaceholderWindowX else { return }
-                coordinator.viewController.alignPlaceholderHorizontally(toWindowX: omnibarPlaceholderWindowX)
+                coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
             }
             viewCoordinator.hideUnifiedToggleInputOmnibar(additionalAnimations: slideUTIText, completion: onDismissed)
             if let coordinator, let omnibarPlaceholderColor, let utiPlaceholderColor {

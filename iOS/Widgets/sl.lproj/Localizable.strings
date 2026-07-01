@@ -85,17 +85,23 @@
 /* Title for editing custom shortcuts */
 "widget.gallery.customshortcuts.edit.title" = "Konfiguracija bližnjic";
 
+/* Label for first shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut1" = "Bližnjica 1";
+
+/* Label for second shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut2" = "Bližnjica 2";
+
+/* Label for third shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut3" = "Bližnjica 3";
+
+/* Label for fourth shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut4" = "Bližnjica 4";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Hitro poiščite shranjena gesla DuckDuckGo.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Iskanje gesel";
-
-/* Description of medium quickActions widget in widget gallery */
-"widget.gallery.quickactions.medium.display.description" = "Bližnjice do vaših najljubših dejanj.";
-
-/* Display name for medium quick actions widget in widget gallery */
-"widget.gallery.quickactions.medium.display.name" = "Bližnjice";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Samo z enim dotikom zasebno poiščite ali obiščite priljubljena spletna mesta.";
@@ -129,6 +135,33 @@
 
 /* Placeholder text in search field on the search and favorites widget */
 "widget.search.duckduckgo" = "Iščite po DuckDuckGo";
+
+/* Display name shown in the widget configuration picker for the Bookmarks shortcut option */
+"widget.shortcut.option.bookmarks" = "Zaznamki";
+
+/* Display name shown in the widget configuration picker for the Duck Address (email protection) shortcut option */
+"widget.shortcut.option.duck-address" = "Naslov Duck Address";
+
+/* Display name shown in the widget configuration picker for the Duck.ai shortcut option */
+"widget.shortcut.option.duck-ai" = "Duck.ai";
+
+/* Display name shown in the widget configuration picker for the Duck.ai Voice shortcut option */
+"widget.shortcut.option.duck-ai-voice" = "Duck.ai Voice";
+
+/* Display name shown in the widget configuration picker for the Favorites shortcut option */
+"widget.shortcut.option.favorites" = "Priljubljeni";
+
+/* Display name shown in the widget configuration picker for the Passwords shortcut option */
+"widget.shortcut.option.passwords" = "Gesla";
+
+/* Type name shown in the widget configuration picker for the shortcut option enum */
+"widget.shortcut.option.type-name" = "Možnost bližnjice";
+
+/* Display name shown in the widget configuration picker for the Voice Search shortcut option */
+"widget.shortcut.option.voice-search" = "Glasovno iskanje";
+
+/* Display name shown in the widget configuration picker for the VPN shortcut option */
+"widget.shortcut.option.vpn" = "VPN";
 
 /* VPN connect button text */
 "widget.vpn.button.connect" = "Poveži";

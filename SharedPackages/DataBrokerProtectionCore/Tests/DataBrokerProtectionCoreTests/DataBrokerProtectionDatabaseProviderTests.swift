@@ -489,6 +489,20 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
+    func testHasScanHistoryEvents_whenScanHistoryEventsExist_returnsTrue() throws {
+        XCTAssertTrue(try sut.hasScanHistoryEvents())
+    }
+
+    func testHasScanHistoryEvents_whenNoScanHistoryEventsExist_returnsFalse() throws {
+        // Given
+        let (freshProvider, url) = try createFreshTestVault()
+
+        // Then
+        XCTAssertFalse(try freshProvider.hasScanHistoryEvents())
+
+        try? FileManager.default.removeItem(at: url)
+    }
+
     private func createFreshTestVault() throws -> (DefaultDataBrokerProtectionDatabaseProvider, URL) {
         let freshVaultURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: "DBP",

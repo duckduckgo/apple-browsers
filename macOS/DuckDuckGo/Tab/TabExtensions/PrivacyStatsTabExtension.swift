@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import ContentBlocking
 import Foundation
 import Navigation
@@ -64,10 +65,16 @@ final class PrivacyStatsTabExtension: NSObject {
             return
         }
         switch tracker.type {
-        case .tracker, .trackerWithSurrogate:
+        case .tracker:
             Task {
                 await privacyStats.recordBlockedTracker(entityName)
             }
+        case .trackerWithSurrogate:
+            // `surrogateInjected` is always paired with `resourceObserved` (the `.tracker`
+            // case above) for the same URL by the TrackerProtection subfeature, so counting
+            // it again would double-count `recordBlockedTracker` for every surrogate-blocked
+            // request relative to a script-only blocked request.
+            break
         case .thirdPartyRequest:
             break
         }

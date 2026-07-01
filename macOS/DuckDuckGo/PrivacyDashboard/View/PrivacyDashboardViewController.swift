@@ -22,6 +22,7 @@ import Combine
 import PrivacyConfig
 import PrivacyDashboard
 import Common
+import FoundationExtensions
 import PixelKit
 import PixelExperimentKit
 import os.log
@@ -418,10 +419,18 @@ extension PrivacyDashboardViewController {
 
         var loadedWebExtensions: String?
         var adBlockingScriptletsVersion: String?
+        var cpmExtensionLoaded = false
+        var cpmExtensionDroppedCallbacks = 0
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             loadedWebExtensions = webExtensionManager.loadedWebExtensionsString()
             adBlockingScriptletsVersion = webExtensionManager.adBlockingScriptletsVersion()
+            cpmExtensionLoaded = webExtensionManager.isAutoconsentExtensionLoaded
+            cpmExtensionDroppedCallbacks = webExtensionManager.eventsListener.droppedCallbacksCount
         }
+        let cookieConsentInfo = currentTab.privacyInfo?.cookieConsentManaged?.withCPMRuntimeInfo(
+            extensionLoaded: cpmExtensionLoaded,
+            droppedCallbacks: cpmExtensionDroppedCallbacks
+        )
 
         let websiteBreakage = BrokenSiteReport(siteUrl: currentURL,
                                                category: category.lowercased(),
@@ -445,7 +454,7 @@ extension PrivacyDashboardViewController {
                                                jsPerformance: jsPerformance,
                                                extendedPerformanceMetrics: privacyAwareWebVitals,
                                                userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
-                                               cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,
+                                               cookieConsentInfo: cookieConsentInfo,
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
                                                privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
                                                isPirEnabled: isPirEnabled,

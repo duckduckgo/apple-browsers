@@ -26,6 +26,7 @@ import Core
 import DataBrokerProtection_iOS
 import AIChat
 import WebExtensions
+import DuckUI
 
 extension DebugScreensViewModel {
 
@@ -81,21 +82,30 @@ extension DebugScreensViewModel {
 
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
-            .action(title: "Show New AddressBar Modal", showNewAddressBarModal),
-            .action(title: "Reset New Address Bar Picker Data", resetNewAddressBarPickerData),
             .action(title: "Reset Fire Mode Promotion", { _ in
                 FireModePromotionsCoordinator.resetState()
                 ActionMessageView.present(message: "Fire Mode Promotion state reset")
             }),
             .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
-            .action(title: "Reset AI Toggle Selection", resetAIToggleSelection),
 
             // MARK: SwiftUI Views
+            .view(title: "DuckUI", { _ in
+                DuckUIDebugMenuView()
+            }),
+            .view(title: "Ad Blocking", { d in
+                AdBlockingDebugView(keyValueStore: d.keyValueStore)
+            }),
             .view(title: "AI Chat", { dependencies in
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
             }),
+            .view(title: "Duck.ai Toggle Prompt", { _ in
+                DuckAIToggleDebugView()
+            }),
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()
+            }),
+            .view(title: "Interaction Diagnostics", { _ in
+                InteractionDiagnosticsDebugScreen()
             }),
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
@@ -201,7 +211,9 @@ extension DebugScreensViewModel {
                     DataBrokerProtectionDebugViewController(coder: coder,
                                                             databaseDelegate: self.dependencies.databaseDelegate,
                                                             debuggingDelegate: self.dependencies.debuggingDelegate,
-                                                            runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate)
+                                                            runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate,
+                                                            freemiumPIRDebugSettings: self.dependencies.freemiumPIRDebugSettings,
+                                                            freemiumDBPUserStateManager: self.dependencies.freemiumDBPUserStateManager)
                 }
             }) : nil,
             webExtensionsDebugScreen,
@@ -244,6 +256,9 @@ extension DebugScreensViewModel {
             }),
             .controller(title: "Onboarding", { d in
                 class OnboardingDebugViewController: UIHostingController<OnboardingDebugView>, OnboardingDelegate {
+
+                    func didStartOnboardingInterlude(_ interlude: OnboardingIntroStep.Interlude) {}
+
                     func onboardingCompleted(controller: UIViewController) {
                         controller.presentingViewController?.dismiss(animated: true)
                     }
@@ -260,22 +275,18 @@ extension DebugScreensViewModel {
                 let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(initialFlow: defaultFlow) { flow in
                     guard let capturedController else { return }
 
-                    let controller: Onboarding = if flow.isRebranding {
-                        OnboardingIntroViewController.rebranded(
-                            onboardingPixelReporter: OnboardingPixelReporter(),
-                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
-                            daxDialogsManager: d.daxDialogManager,
-                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
-                        )
-                    } else {
-                        OnboardingIntroViewController.legacy(
-                            onboardingPixelReporter: OnboardingPixelReporter(),
-                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
-                            daxDialogsManager: d.daxDialogManager,
-                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
-                        )
-                    }
-                    controller.delegate = capturedController
+                    let viewModel = OnboardingIntroFactory.makeViewModel(
+                        pixelReporter: OnboardingPixelReporter(),
+                        systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
+                        daxDialogsManager: d.daxDialogManager,
+                        syncAutoRestoreHandler: d.syncAutoRestoreHandler,
+                        onboardingManager: OnboardingManager()
+                    )
+                    let controller = OnboardingIntroFactory.makeController(
+                        viewModel: viewModel,
+                        isRebranded: flow.isRebranding,
+                        delegate: capturedController
+                    )
                     controller.modalPresentationStyle = .overFullScreen
                     capturedController.parent?.present(controller: controller, fromView: capturedController.view)
                 })
@@ -290,24 +301,6 @@ extension DebugScreensViewModel {
         ].compactMap { $0 }
     }
     
-    private func showNewAddressBarModal(_ dependencies: DebugScreen.Dependencies) {
-        guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
-
-        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: AIChatSettings())
-        pickerViewController.modalPresentationStyle = .pageSheet
-        pickerViewController.modalTransitionStyle = .coverVertical
-        pickerViewController.isModalInPresentation = true
-
-        controller.present(pickerViewController, animated: true)
-    }
-    
-    private func resetNewAddressBarPickerData(_ dependencies: DebugScreen.Dependencies) {
-        let pickerStorage = NewAddressBarPickerStore()
-        pickerStorage.reset()
-        
-        ActionMessageView.present(message: "New Address Bar Picker data reset successfully")
-    }
-
     private func resetModalPromptsCooldownPeriod(_ dependencies: DebugScreen.Dependencies) {
         let store = PromptCooldownKeyValueFilesStore(
             keyValueStore: dependencies.keyValueStore,
@@ -315,12 +308,6 @@ extension DebugScreensViewModel {
         )
 
         store.lastPresentationTimestamp = nil
-    }
-
-    private func resetAIToggleSelection(_ dependencies: DebugScreen.Dependencies) {
-        AIChatSettings().resetAIChatSearchInputUserSettings()
-
-        ActionMessageView.present(message: "AI Toggle selection reset")
     }
 
     private var webExtensionsDebugScreen: DebugScreen? {

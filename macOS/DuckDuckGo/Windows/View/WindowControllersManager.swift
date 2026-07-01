@@ -21,6 +21,8 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import History
 import os.log
 import PrivacyConfig
@@ -372,14 +374,13 @@ extension WindowControllersManager {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
             guard let index = tabCollectionViewModel.indexInAllTabs(where: {
                 if let tabId {
-                    return $0.id == tabId
+                    return $0.uuid == tabId
                 }
                 return $0.content.urlForWebView == url || (url.isSettingsURL && $0.content.urlForWebView?.isSettingsURL == true)
             }) else { continue }
 
             windowController.window?.makeKeyAndOrderFront(self)
-            tabCollectionViewModel.select(at: index)
-            if let tab = tabCollectionViewModel.tabViewModel(at: index)?.tab,
+            if let tab = tabCollectionViewModel.selectTab(at: index),
                tab.content.urlForWebView != url && url != URL.empty {
                 // navigate to another settings pane
                 tab.setContent(.contentFromURL(url, source: .switchToOpenTab))
@@ -580,26 +581,22 @@ extension WindowControllersManagerProtocol {
         }
     }
 
-    var allTabViewModels: [TabViewModel] {
-        return allTabCollectionViewModels.flatMap {
-            $0.tabViewModels.values.compactMap { $0 as? TabViewModel }
-        }
-    }
-
-    func allTabViewModels(for burnerMode: BurnerMode, includingPinnedTabs: Bool = false) -> [TabViewModel] {
+    func allTabViewModels(for burnerMode: BurnerMode, includingPinnedTabs: Bool = false) -> [any TabBarViewModel] {
         let currentBurnerModeTabCollectionViewModels = allTabCollectionViewModels
             .filter { tabCollectionViewModel in
                 tabCollectionViewModel.burnerMode == burnerMode
             }
-        let tabViewModelsWithOriginalOrder = currentBurnerModeTabCollectionViewModels.flatMap {
-            (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
+        let unpinnedTabBarViewModels = currentBurnerModeTabCollectionViewModels.flatMap { tabCollectionViewModel in
+            (0..<tabCollectionViewModel.tabViewModels.count).compactMap { index in
+                tabCollectionViewModel.tabBarViewModel(at: .unpinned(index))
+            }
         }
-        let pinnedTabSuggestions = includingPinnedTabs ? pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap({
-            (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
-        }) : []
-        let result = pinnedTabSuggestions + tabViewModelsWithOriginalOrder
-
-        return result
+        let pinnedTabBarViewModels: [any TabBarViewModel] = includingPinnedTabs ? pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { pinnedManager in
+            (0..<pinnedManager.tabViewModels.count).compactMap { index in
+                pinnedManager.tabBarViewModel(at: index)
+            }
+        } : []
+        return pinnedTabBarViewModels + unpinnedTabBarViewModels
     }
 
     func windowController(for tabCollectionViewModel: TabCollectionViewModel) -> MainWindowController? {
@@ -616,30 +613,19 @@ extension WindowControllersManagerProtocol {
 
     // MARK: - Web Notifications Support
 
-    /// Finds a tab by its UUID across all windows.
+    /// Focuses the tab with the given UUID across all windows, materializing it if unloaded.
     /// - Parameter uuid: The tab's UUID.
-    /// - Returns: The tab if found, nil otherwise.
-    func findTab(byUUID uuid: String) -> Tab? {
+    /// - Returns: The loaded tab if found, nil otherwise.
+    @discardableResult
+    func focusTab(byUUID uuid: String) -> Tab? {
         for windowController in mainWindowControllers {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
             if let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == uuid }) {
-                return tabCollectionViewModel.tabViewModel(at: index)?.tab
+                windowController.window?.makeKeyAndOrderFront(nil)
+                return tabCollectionViewModel.selectTab(at: index)
             }
         }
         return nil
-    }
-
-    /// Focuses the window containing the given tab and selects the tab.
-    /// - Parameter tab: The tab to focus.
-    func focusTab(_ tab: Tab) {
-        for windowController in mainWindowControllers {
-            let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
-            if let index = tabCollectionViewModel.indexInAllTabs(of: tab) {
-                windowController.window?.makeKeyAndOrderFront(nil)
-                tabCollectionViewModel.select(at: index)
-                return
-            }
-        }
     }
 
     /// Focuses the most recently active browser window.

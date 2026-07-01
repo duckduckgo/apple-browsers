@@ -58,6 +58,21 @@ final class AddressBarSharedTextState: ObservableObject {
     /// Persists across tab switches so the user doesn't lose a prepared prompt's attachments when bouncing between tabs.
     @Published private(set) var aiChatAttachments: [AIChatImageAttachment] = []
 
+    /// The duck.ai tab attachments (Attach Page Content) for this tab.
+    /// Persists across tab switches alongside the prompt text and image attachments so the user
+    /// can keep curating the prompt when bouncing between browser tabs.
+    @Published private(set) var aiChatTabAttachments: [AIChatTabAttachment] = []
+
+    /// The duck.ai file attachments (PDFs etc.) for this tab. Persists across tab switches.
+    @Published private(set) var aiChatFileAttachments: [AIChatFileAttachment] = []
+
+    /// Unified, insertion-ordered list of duck.ai panel attachments — both image uploads and
+    /// page-content tabs. The omnibar carousel renders directly from this list to preserve the
+    /// chronological order in which the user attached items (e.g. tab, image, tab, tab); the
+    /// per-type lists above are derived from this list for the image-side and submit-side code
+    /// paths that already work with one type at a time.
+    @Published private(set) var aiChatPanelAttachments: [AIChatPanelAttachment] = []
+
     /// Resets the shared state to initial values.
     /// - Parameter clearingDuckAIState: Pass `false` from tab-switch restore paths. Tab switches must not
     ///   wipe per-tab duck.ai state — that includes the prompt text, selection, interaction flag, mode,
@@ -79,6 +94,15 @@ final class AddressBarSharedTextState: ObservableObject {
         if !aiChatAttachments.isEmpty {
             aiChatAttachments = []
         }
+        if !aiChatTabAttachments.isEmpty {
+            aiChatTabAttachments = []
+        }
+        if !aiChatFileAttachments.isEmpty {
+            aiChatFileAttachments = []
+        }
+        if !aiChatPanelAttachments.isEmpty {
+            aiChatPanelAttachments = []
+        }
     }
 
     /// Sets the duck.ai mode flag for this tab without touching text state.
@@ -98,11 +122,101 @@ final class AddressBarSharedTextState: ObservableObject {
     /// image instance are unchanged — id alone isn't enough because `replaceAttachment` swaps in a
     /// resized `NSImage` while keeping the same id, and we need that resized version to land in
     /// shared state so a subsequent tab switch restores the resized image, not the placeholder.
+    ///
+    /// Also reconciles `aiChatPanelAttachments` so the carousel's chronological order is preserved:
+    /// existing image entries keep their slots (or get refreshed in place for resize replacements),
+    /// removed images drop out, and new images are appended at the end.
     func setAIChatAttachments(_ attachments: [AIChatImageAttachment]) {
-        let unchanged = attachments.count == aiChatAttachments.count
-            && zip(attachments, aiChatAttachments).allSatisfy { $0.id == $1.id && $0.image === $1.image }
-        guard !unchanged else { return }
+        // `AIChatImageAttachment: Equatable` compares by `id` + image instance identity (see
+        // its own conformance), which is exactly the change-detection rule we want here.
+        guard attachments != aiChatAttachments else { return }
         aiChatAttachments = attachments
+        aiChatPanelAttachments = reconcilePanelAttachments(updatedImages: attachments)
+    }
+
+    /// Replaces the duck.ai tab attachment list for this tab. Skips the write when the list is
+    /// element-wise equal to the current one to avoid spurious publisher emissions during the
+    /// tab-switch restore path (which echoes the current list back through the same setter).
+    ///
+    /// Also reconciles `aiChatPanelAttachments` to keep insertion order — see the equivalent doc
+    /// on `setAIChatAttachments(_:)`.
+    func setAIChatTabAttachments(_ attachments: [AIChatTabAttachment]) {
+        guard attachments != aiChatTabAttachments else { return }
+        aiChatTabAttachments = attachments
+        aiChatPanelAttachments = reconcilePanelAttachments(updatedTabs: attachments)
+    }
+
+    /// Replaces the duck.ai file attachment list for this tab. Same idempotency + reconcile
+    /// semantics as the image and tab setters — id-equality is the change check (`AIChatFileAttachment`
+    /// is immutable once attached).
+    func setAIChatFileAttachments(_ attachments: [AIChatFileAttachment]) {
+        // `AIChatFileAttachment: Equatable` is id-only (files are immutable post-init), which
+        // matches the change-detection rule we want here.
+        guard attachments != aiChatFileAttachments else { return }
+        aiChatFileAttachments = attachments
+        aiChatPanelAttachments = reconcilePanelAttachments(updatedFiles: attachments)
+    }
+
+    /// Walks the current panel attachment list and produces a new one based on a fresh list of
+    /// one attachment kind (images, tabs, or files). Entries of the *other* kinds keep their
+    /// positions; entries of *this* kind are replaced from the new list (preserving order,
+    /// dropping removed ones), and any genuinely new ids are appended.
+    /// Exactly one parameter should be non-nil per call.
+    private func reconcilePanelAttachments(
+        updatedImages: [AIChatImageAttachment]? = nil,
+        updatedTabs: [AIChatTabAttachment]? = nil,
+        updatedFiles: [AIChatFileAttachment]? = nil
+    ) -> [AIChatPanelAttachment] {
+        if let updatedImages {
+            return reconcile(
+                replacingKindWith: updatedImages.map(AIChatPanelAttachment.image),
+                matchesKind: { if case .image = $0 { return true } else { return false } }
+            )
+        }
+        if let updatedTabs {
+            return reconcile(
+                replacingKindWith: updatedTabs.map(AIChatPanelAttachment.tab),
+                matchesKind: { if case .tab = $0 { return true } else { return false } }
+            )
+        }
+        if let updatedFiles {
+            return reconcile(
+                replacingKindWith: updatedFiles.map(AIChatPanelAttachment.file),
+                matchesKind: { if case .file = $0 { return true } else { return false } }
+            )
+        }
+        return aiChatPanelAttachments
+    }
+
+    /// Replaces all entries of a single kind in the panel attachment list with a fresh list of
+    /// that kind, preserving the position of *other-kind* entries. Newly-introduced ids of the
+    /// replaced kind are appended at the end. Used by `reconcilePanelAttachments` once per
+    /// kind so the cyclomatic complexity stays linear.
+    private func reconcile(
+        replacingKindWith updatedOfKind: [AIChatPanelAttachment],
+        matchesKind: (AIChatPanelAttachment) -> Bool
+    ) -> [AIChatPanelAttachment] {
+        let updatedById: [String: AIChatPanelAttachment] = Dictionary(
+            uniqueKeysWithValues: updatedOfKind.map { ($0.attachmentId, $0) }
+        )
+        var consumed = Set<String>()
+        var result: [AIChatPanelAttachment] = []
+        for entry in aiChatPanelAttachments {
+            if matchesKind(entry) {
+                if let updated = updatedById[entry.attachmentId] {
+                    result.append(updated)
+                    consumed.insert(entry.attachmentId)
+                }
+                // else: dropped from the new list — omit.
+            } else {
+                result.append(entry)
+            }
+        }
+        for entry in updatedOfKind where !consumed.contains(entry.attachmentId) {
+            result.append(entry)
+        }
+
+        return result
     }
 
     func resetUserInteraction() {

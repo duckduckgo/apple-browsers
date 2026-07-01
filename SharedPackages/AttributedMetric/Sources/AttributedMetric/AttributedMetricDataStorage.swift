@@ -55,7 +55,6 @@ public protocol AttributedMetricDataStoring {
 
     /// Removes all stored metric data.
     func removeAll()
-    func removeAllExceptInstallDate()
 }
 
 public enum DataStorageError: DDGError {
@@ -141,13 +140,6 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
     public func removeAll() {
         Logger.attributedMetric.log("Removing all data")
         for key in StorageKey.allCases {
-            userDefaults.removeObject(forKey: key.rawValue)
-        }
-    }
-
-    public func removeAllExceptInstallDate() {
-        Logger.attributedMetric.log("Removing all data except Install Date")
-        for key in StorageKey.allCases where key != StorageKey.installDate {
             userDefaults.removeObject(forKey: key.rawValue)
         }
     }

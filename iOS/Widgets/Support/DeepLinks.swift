@@ -31,4 +31,5 @@ struct DeepLinks {
     static let openPasswords = AppDeepLinkSchemes.openPasswords.url
     static let openAIChat = AppDeepLinkSchemes.openAIChat.url
     static let openAIVoiceChat = AppDeepLinkSchemes.openAIVoiceChat.url
+    static let openBookmarks = AppDeepLinkSchemes.openBookmarks.url
 }

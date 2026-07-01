@@ -18,6 +18,11 @@
 //
 
 import UIKit
+import DesignResourcesKitIcons
+
+enum OmniBarMetrics {
+    static var cornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 22 : 16 }
+}
 
 enum OmniBarLayoutMode {
     /// No external buttons visible, full-width search bar (iPhone portrait, iPad compact, editing)
@@ -100,6 +105,8 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     /// Callback triggered when the omnibar branding area is tapped while in AI Chat mode
     var onAIChatBrandingPressed: (() -> Void)? { get set }
+    var longPressMenuProvider: (() -> UIMenu?)? { get set }
+    var onLongPressMenuDisplayed: (() -> Void)? { get set }
 
     // static function is needed to allow creation of DefaultOmniBarView from xib
     static func create() -> Self
@@ -108,9 +115,21 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func hideButtons()
     func revealButtons()
     func setBookmarksPosition(leading: Bool, hidden: Bool)
+    func refreshLongPressMenuAvailability()
 
     // Fire mode
     func refreshFireMode(fireMode: Bool)
+    func prepareForMoveTransition()
+    func moveTransitionCompleted()
+
+    /// Sets `alpha` on the search-area containers whose alpha cascades to every icon-bearing child.
+    func setIconContainersAlpha(_ alpha: CGFloat)
+
+    /// Hides the bar's pill background, shadow, and text field while leaving icon subviews intact.
+    func hideBarChrome()
+
+    /// Restores bar pill background, shadow, and text field. Idempotent.
+    func restoreBarChrome()
 }
 
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.

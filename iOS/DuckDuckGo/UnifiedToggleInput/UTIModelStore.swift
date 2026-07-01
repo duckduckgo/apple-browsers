@@ -26,11 +26,14 @@ final class UTIModelStore {
 
     var models: [AIChatModel] = []
     var subscriptionState: SubscriptionState = .free
+    var attachmentLimits: AIChatAttachmentTierLimits?
 
     private let modelsService: AIChatModelsProviding
     private(set) var preferences: AIChatPreferencesPersisting
     private let subscriptionManager: any SubscriptionManager
     private var modelsFetchTask: Task<Void, Never>?
+
+    private var liveModelId: String?
 
     var onModelsUpdated: (() -> Void)?
 
@@ -45,22 +48,23 @@ final class UTIModelStore {
     }
 
     var persistedModelId: String? {
-        let id = preferences.selectedModelId
-        if let id, !models.isEmpty {
-            if let model = models.first(where: { $0.id == id }) {
-                return model.entityHasAccess ? id : firstAccessibleModelId
-            }
-            return firstAccessibleModelId
-        }
-        return id ?? firstAccessibleModelId
+        if let resolved = resolve(modelId: liveModelId) { return resolved }
+        if let resolved = resolve(modelId: preferences.selectedModelId) { return resolved }
+        return firstAccessibleModelId
     }
 
     var currentModelId: String? {
-        preferences.selectedModelId
+        liveModelId
     }
 
     var selectedReasoningMode: AIChatReasoningMode? {
         preferences.selectedReasoningMode
+    }
+
+    var submissionReasoningEffort: AIChatReasoningEffort? {
+        guard let selectedModel else { return nil }
+        guard selectedReasoningMode != nil || selectedModel.supportsReasoningPicker else { return nil }
+        return selectedModel.resolvedReasoningEffort(from: selectedReasoningMode)
     }
 
     var selectedModel: AIChatModel? {
@@ -68,8 +72,24 @@ final class UTIModelStore {
         return models.first(where: { $0.id == persistedModelId })
     }
 
+    var displayShortName: String? {
+        if let liveModelId,
+           let shortName = models.first(where: { $0.id == liveModelId })?.shortName {
+            return shortName
+        }
+        return preferences.selectedModelShortName
+    }
+
     var selectedModelSupportsImageUpload: Bool {
         selectedModel?.supportsImageUpload ?? false
+    }
+
+    var selectedModelSupportsFileUpload: Bool {
+        selectedModel?.supportsFileUpload ?? false
+    }
+
+    var selectedModelSupportedFileTypes: [String] {
+        selectedModel?.supportedFileTypes ?? []
     }
 
     func selectedModelSupports(tool: AIChatRAGTool) -> Bool {
@@ -81,6 +101,13 @@ final class UTIModelStore {
         models.first(where: { $0.entityHasAccess })?.id
     }
 
+    private func resolve(modelId id: String?) -> String? {
+        guard let id else { return nil }
+        guard !models.isEmpty else { return id }
+        guard let model = models.first(where: { $0.id == id }) else { return nil }
+        return model.entityHasAccess ? id : nil
+    }
+
     func fetchModels() {
         modelsFetchTask?.cancel()
         modelsFetchTask = Task { [weak self] in
@@ -89,27 +116,48 @@ final class UTIModelStore {
             guard !Task.isCancelled else { return }
             self.subscriptionState = state
             do {
-                let remoteModels = try await modelsService.fetchModels()
+                let response = try await modelsService.fetchModels()
                 guard !Task.isCancelled else { return }
-                self.models = Self.resolveModels(from: remoteModels, userTier: state.userTier)
+                self.models = Self.resolveModels(from: response.models, userTier: state.userTier)
+                self.attachmentLimits = response.attachmentLimits?.limits(for: state.userTier)
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningModeIfNeeded()
                 self.onModelsUpdated?()
             } catch {
+                guard !Task.isCancelled else { return }
+                self.attachmentLimits = nil
+                self.onModelsUpdated?()
                 os_log(.error, "Failed to fetch models: %{public}@", error.localizedDescription)
             }
         }
     }
 
-    func updateSelectedModel(_ modelId: String) {
-        preferences.selectedModelId = modelId
-        preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+    func updateSelectedModel(_ modelId: String, isNewChatContext: Bool) {
+        liveModelId = modelId
+        if isNewChatContext {
+            preferences.selectedModelId = modelId
+            preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+        }
         clearStaleReasoningModeIfNeeded()
     }
 
     func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
         guard selectedModel?.availableReasoningModes.contains(mode) == true else { return }
         preferences.selectedReasoningMode = mode
+    }
+
+    /// Applies a reasoning mode coming from a trusted source (e.g. a stored chat
+    /// payload's `reasoningMode` field) without the model-supports validity check.
+    /// Mirrors `applyPersistedSelection`'s bypass — both are safe to call before `models`
+    /// has finished loading. `clearStaleReasoningModeIfNeeded()` in `fetchModels`
+    /// will null this out if the resolved model turns out not to support `mode`.
+    func applyChatPersistedReasoningMode(_ mode: AIChatReasoningMode?) {
+        preferences.selectedReasoningMode = mode
+    }
+
+    func applyPersistedSelection(modelID: String?, reasoningMode: AIChatReasoningMode?) {
+        liveModelId = modelID
+        preferences.selectedReasoningMode = reasoningMode
     }
 
     static func resolveModels(from remoteModels: [AIChatRemoteModel], userTier: AIChatUserTier) -> [AIChatModel] {
@@ -121,6 +169,7 @@ final class UTIModelStore {
                     shortName: remote.modelShortName,
                     provider: .from(id: remote.id, providerString: remote.provider),
                     supportsImageUpload: remote.supportsImageUpload,
+                    supportedFileTypes: remote.supportedFileTypes ?? [],
                     supportedImageFormats: remote.supportsImageUpload ? ["png", "jpeg", "webp"] : [],
                     supportedTools: remote.supportedTools.compactMap(AIChatRAGTool.init(rawValue:)),
                     entityHasAccess: remote.entityHasAccess,
@@ -134,8 +183,11 @@ final class UTIModelStore {
 
     nonisolated func resolveSubscriptionState() async -> SubscriptionState {
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            guard subscription.isActive, let tier = subscription.tier else {
+            guard let subscription = try await subscriptionManager.getSubscription() else {
+                return .free
+            }
+            guard subscription.isActive,
+                  let tier = subscription.tier else {
                 return .free
             }
             let userTier: AIChatUserTier
@@ -149,17 +201,15 @@ final class UTIModelStore {
         }
     }
 
-    func cacheSelectedModelShortName(_ shortName: String) {
-        preferences.selectedModelShortName = shortName
-    }
-
     func clearStaleModelSelectionIfNeeded() {
-        guard let selectedId = preferences.selectedModelId, !models.isEmpty else { return }
+        guard !models.isEmpty else { return }
 
-        let selectedModel = models.first(where: { $0.id == selectedId })
-        let isStale = selectedModel == nil || selectedModel?.entityHasAccess == false
+        if let id = liveModelId, !models.contains(where: { $0.id == id && $0.entityHasAccess }) {
+            liveModelId = nil
+        }
 
-        if isStale {
+        if let preferredId = preferences.selectedModelId,
+           !models.contains(where: { $0.id == preferredId && $0.entityHasAccess }) {
             preferences.selectedModelId = nil
             preferences.selectedModelShortName = nil
         }

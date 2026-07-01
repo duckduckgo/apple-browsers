@@ -33,6 +33,9 @@ public protocol AIChatPreferencesPersisting {
     /// Consumers that need cross-component sync must share the same instance.
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { get }
     var selectedReasoningMode: AIChatReasoningMode? { get set }
+    /// The last user-selected RAG tool, used to seed `LastUsedInputDefaults` after relaunch
+    /// so new tabs inherit the previous session's tool choice rather than nil.
+    var selectedTool: AIChatRAGTool? { get set }
 }
 
 /// Reference type so that a single instance can be shared across components (e.g. the native address-bar
@@ -44,6 +47,7 @@ public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
         case selectedModelShortName = "aichat.omnibar.selected-model-short-name"
         case selectedReasoningEffort = "aichat.omnibar.selected-reasoning-effort"
         case selectedReasoningMode = "aichat.omnibar.selected-reasoning-mode"
+        case selectedTool = "aichat.omnibar.selected-tool"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -110,10 +114,30 @@ public final class AIChatPreferencesPersistor: AIChatPreferencesPersisting {
             return AIChatReasoningMode(rawValue: rawValue)
         }
         set {
+            let current = try? keyValueStore.object(forKey: Key.selectedReasoningMode.rawValue) as? String
+            guard newValue?.rawValue != current else { return }
             if let value = newValue?.rawValue {
                 try? keyValueStore.set(value, forKey: Key.selectedReasoningMode.rawValue)
             } else {
                 try? keyValueStore.removeObject(forKey: Key.selectedReasoningMode.rawValue)
+            }
+        }
+    }
+
+    public var selectedTool: AIChatRAGTool? {
+        get {
+            guard let rawValue = try? keyValueStore.object(forKey: Key.selectedTool.rawValue) as? String else {
+                return nil
+            }
+            return AIChatRAGTool(rawValue: rawValue)
+        }
+        set {
+            let current = try? keyValueStore.object(forKey: Key.selectedTool.rawValue) as? String
+            guard newValue?.rawValue != current else { return }
+            if let value = newValue?.rawValue {
+                try? keyValueStore.set(value, forKey: Key.selectedTool.rawValue)
+            } else {
+                try? keyValueStore.removeObject(forKey: Key.selectedTool.rawValue)
             }
         }
     }

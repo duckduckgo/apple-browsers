@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import GRDB
 import SecureStorage
 
@@ -639,6 +640,9 @@ public class DefaultAutofillSecureVault<T: AutofillDatabaseProvider>: AutofillSe
             return
         }
 
+        if let cardNumber = String(data: creditCard.cardNumberData, encoding: .utf8) {
+            creditCard.cardSuffix = SecureVaultModels.CreditCard.suffix(from: cardNumber)
+        }
         creditCard.cardNumberData = try l2Encrypt(data: creditCard.cardNumberData, using: l2Key)
 
         var syncableCreditCardToStore = syncableCreditCard

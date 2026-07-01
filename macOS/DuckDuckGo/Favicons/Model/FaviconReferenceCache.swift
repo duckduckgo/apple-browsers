@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import os.log
 
@@ -54,6 +55,10 @@ protocol FaviconReferenceCaching {
     func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async
     @MainActor
     func burnDomains(_ baseDomains: Set<String>, exceptBookmarks bookmarkManager: BookmarkManager, exceptSavedLogins logins: Set<String>, exceptHistoryDomains history: Set<String>, tld: TLD) async
+
+    /// Debug/admin: removes every host and URL favicon reference from memory + store.
+    @MainActor
+    func removeAllReferences() async
 }
 
 final class FaviconReferenceCache: FaviconReferenceCaching {
@@ -237,6 +242,19 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
         }).value
     }
 
+    // MARK: - Debug / admin removal
+
+    @MainActor
+    func removeAllReferences() async {
+        // Resolve from the store (the source of truth) so a full reset also clears references this
+        // in-memory cache may not have loaded yet, rather than only the in-memory ones.
+        let (storedHostReferences, storedUrlReferences) = (try? await storing.loadFaviconReferences()) ?? ([], [])
+        hostReferences.removeAll()
+        urlReferences.removeAll()
+        await removeHostReferencesFromStore(storedHostReferences)
+        await removeUrlReferencesFromStore(storedUrlReferences)
+    }
+
     // MARK: - Private
 
     @MainActor
@@ -288,7 +306,7 @@ final class FaviconReferenceCache: FaviconReferenceCaching {
         Task {
             do {
                 try await self.storing.save(urlReference: urlReference)
-                Logger.favicons.debug("URL reference saved successfully. document URL: \(urlReference.documentUrl.absoluteString)")
+                Logger.favicons.debug("URL reference saved successfully. document URL: \(urlReference.documentUrl.shortDescription)")
             } catch {
                 Logger.favicons.error("Saving of URL reference failed: \(error.localizedDescription)")
             }

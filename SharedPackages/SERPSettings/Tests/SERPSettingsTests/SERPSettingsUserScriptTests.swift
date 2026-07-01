@@ -55,29 +55,8 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
     // MARK: - getNativeSettings message tests
 
-    func testGetNativeSettingsIsNil_whenFeatureFlagIsOffAndDataIsAvailable() async throws {
-        // Given - Feature flag is OFF but data exists
-        mockProvider.mockIsSERPSettingsFeatureOn = false
-
-        let testSettings = ["theme": "dark", "layout": "compact"]
-        mockProvider.storeSERPSettings(settings: testSettings)
-
-        // When - Call getNativeSettings handler
-        guard let handler = userScript.handler(forMethodNamed: SERPSettingsUserScriptMessages.getNativeSettings.rawValue) else {
-            XCTFail("Handler should exist")
-            return
-        }
-
-        let result = try await handler([:], WKScriptMessage.mock())
-
-        // Then - Should return nil because feature flag is off
-        XCTAssertNil(result, "Should return nil when feature flag is off, even if data exists")
-    }
-
-    func testGetNativeSettingsIsEmpty_ifNoDataIsPresentAndFeatureFlagIsOn() async throws {
-        // Given - Feature flag is ON but no data exists
-        mockProvider.mockIsSERPSettingsFeatureOn = true
-        // Don't store any data
+    func testGetNativeSettingsIsEmpty_ifNoDataIsPresent() async throws {
+        // Given - No data exists
 
         // When - Call getNativeSettings handler
         guard let handler = userScript.handler(forMethodNamed: SERPSettingsUserScriptMessages.getNativeSettings.rawValue) else {
@@ -95,9 +74,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
     }
 
     func testGetNativeSettingsReturnsPersistedSettings_whenSettingsArePersistedInNative() async throws {
-        // Given - Feature flag is ON and data exists
-        mockProvider.mockIsSERPSettingsFeatureOn = true
-
+        // Given - data exists
         let testSettings = ["theme": "dark", "layout": "compact"]
         mockProvider.storeSERPSettings(settings: testSettings)
 
@@ -110,7 +87,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
         let result = try await handler([:], WKScriptMessage.mock())
 
         // Then - Should return the stored settings
-        XCTAssertNotNil(result, "Should return settings when feature is on and data exists")
+        XCTAssertNotNil(result, "Should return settings when data exists")
 
         // The result is Encodable (JSONBlob wrapping Data), we need to verify the stored data
         // We can verify by checking the storage directly
@@ -130,28 +107,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
     // MARK: - updateNativeSettings message tests
 
-    func testUpdateNativeSettingsReturnsNilAndDoesNotStoreAnything_ifFeatureFlagIsOff() async throws {
-        // Given - Feature flag is OFF
-        mockProvider.mockIsSERPSettingsFeatureOn = false
-
-        // When - Call updateNativeSettings handler
-        guard let handler = userScript.handler(forMethodNamed: SERPSettingsUserScriptMessages.updateNativeSettings.rawValue) else {
-            XCTFail("Handler should exist")
-            return
-        }
-
-        let result = try await handler([:], WKScriptMessage.mock())
-
-        // Then - Should return nil and storeSERPSettings should have not been called
-        XCTAssertNil(result, "Should return nil when feature flag is off, even if data exists")
-        XCTAssertFalse(mockProvider.wasStoreSettingsCalled)
-        XCTAssertNil(try mockProvider.keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage))
-    }
-
-    func testUpdateNativeSettingsReturnsNilAndStoresSERPSettings_ifFeatureFlagIsOn() async throws {
-        // Given - Feature flag is OFF
-        mockProvider.mockIsSERPSettingsFeatureOn = true
-
+    func testUpdateNativeSettingsReturnsNilAndStoresSERPSettings() async throws {
         // When - Call updateNativeSettings handler
         guard let handler = userScript.handler(forMethodNamed: SERPSettingsUserScriptMessages.updateNativeSettings.rawValue) else {
             XCTFail("Handler should exist")
@@ -162,7 +118,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
         let result = try await handler(parameters, WKScriptMessage.mock())
 
         // Then - Should return nil and storeSERPSettings should have been called
-        XCTAssertNil(result, "Should return nil when feature flag is off, even if data exists")
+        XCTAssertNil(result, "updateNativeSettings handler should always return nil")
         XCTAssertTrue(mockProvider.wasStoreSettingsCalled)
 
         // Then - data sent by the SERP should be stored correctly

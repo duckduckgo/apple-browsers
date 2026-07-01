@@ -18,6 +18,7 @@
 
 import Cocoa
 import Common
+import FoundationExtensions
 
 final class NetworkProtectionButton: MouseOverButton, NotificationDotProviding {
 

@@ -19,7 +19,7 @@
 
 import Foundation
 
-public class Link: NSObject, NSCoding {
+public class Link: NSObject, NSCoding, NSCopying {
 
     struct Constants {
         static let ddgSuffix = " at DuckDuckGo"
@@ -65,6 +65,10 @@ public class Link: NSObject, NSCoding {
         coder.encode(title, forKey: NSCodingKeys.title)
         coder.encode(url, forKey: NSCodingKeys.url)
         coder.encode(localFileURL, forKey: NSCodingKeys.localPath)
+    }
+
+    public func copy(with zone: NSZone? = nil) -> Any {
+        Link(title: title, url: url, localPath: localFileURL)
     }
 
     public override func isEqual(_ other: Any?) -> Bool {

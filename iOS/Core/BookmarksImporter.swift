@@ -19,6 +19,7 @@
 
 import Bookmarks
 import Common
+import FoundationExtensions
 import Foundation
 import Persistence
 import SwiftSoup

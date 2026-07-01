@@ -75,7 +75,7 @@ extension NewTabPageDataModel.FreemiumPIRBannerMessage {
     }
 }
 
-final class FreemiumDBPPromoDelegate: PromoDelegate {
+final class FreemiumDBPPromoDelegate: InternalPromoDelegate {
 
     private let coordinator: FreemiumDBPPromotionViewCoordinator
     private let historyProvider: PromoHistoryProviding?

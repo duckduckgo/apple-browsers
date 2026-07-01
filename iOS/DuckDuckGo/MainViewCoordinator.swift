@@ -47,6 +47,8 @@ class MainViewCoordinator {
     var tabBarContainer: UIView!
     var aiChatTabChatHeaderContainer: UIView!
     var unifiedToggleInputContainer: UIView!
+    var aiTabCollapsedTopSeparator: UIView!
+    private var aiTabCollapsedTopSeparatorLogicallyVisible = false
     var unifiedInputContentContainer: UIView!
 
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
@@ -228,13 +230,17 @@ class MainViewCoordinator {
 
         navigationBarContainer.bringSubviewToFront(unifiedToggleInputContainer)
 
+        if addressBarPosition == .top {
+            setAddressBarBottomActive(false)
+            setNavBarContainerBottomToToolbar(active: false)
+            setAddressBarTopActive(true)
+        }
         constraints.navigationBarContainerHeight.constant = expandedHeight
         superview.layoutIfNeeded()
     }
 
     func updateUnifiedToggleInputColors(inputView: UIView?) {
         inputView?.backgroundColor = .clear
-        unifiedToggleInputContainer.backgroundColor = .clear
     }
 
     @MainActor
@@ -252,12 +258,17 @@ class MainViewCoordinator {
         if !constraints.navigationBarContainerBottom.isActive {
             constraints.navigationBarContainerBottom.isActive = true
         }
-        setNavBarContainerBottomToKeyboard()
+        // Hidden toolbars keep their 49pt frame in auto layout — pinning the UTI above an
+        // invisible toolbar (landscape minimal chrome) would leave a toolbar-sized gap, so
+        // fall back to the safe-area floor when there's no visible toolbar to respect.
+        let floor: NSLayoutYAxisAnchor? = toolbar.isHidden ? nil : toolbar.topAnchor
+        setNavBarContainerBottomToKeyboard(floorAnchor: floor)
     }
 
 
     func hideUnifiedToggleInput() {
         unifiedToggleInputContainer.isHidden = true
+        setAITabCollapsedTopSeparatorVisible(false)
         unifiedToggleInputContainer.backgroundColor = .clear
         setNavBarContainerBottomToToolbar()
         if addressBarPosition == .top {
@@ -265,6 +276,23 @@ class MainViewCoordinator {
             setAddressBarTopActive(true)
         }
         constraints.navigationBarContainerHeight.constant = standardNavigationBarContainerHeight
+    }
+
+    func setAITabCollapsedTopSeparatorVisible(_ visible: Bool) {
+        aiTabCollapsedTopSeparatorLogicallyVisible = visible
+        applyAITabCollapsedTopSeparatorVisibility()
+    }
+
+    /// Enforces the invariant: the separator can only be visible above a visible chrome. The
+    /// separator is anchored to the safe area, not to `navigationBarContainer`, so hiding the
+    /// chrome doesn't hide the separator transitively — we have to re-apply on either change.
+    private func applyAITabCollapsedTopSeparatorVisibility() {
+        let visible = aiTabCollapsedTopSeparatorLogicallyVisible && !navigationBarContainer.isHidden
+        guard aiTabCollapsedTopSeparator.isHidden == visible else { return }
+        aiTabCollapsedTopSeparator.isHidden = !visible
+        if visible {
+            superview.bringSubviewToFront(aiTabCollapsedTopSeparator)
+        }
     }
 
     // MARK: - Omnibar Editing Layout
@@ -289,6 +317,14 @@ class MainViewCoordinator {
         animator.startAnimation()
     }
 
+    /// Hides chrome and brings the omnibar collection above UTI so icons can fade in on top of the collapsing UTI.
+    func prepareOmnibarForInlineDismissReveal() {
+        guard !isNavigationChromeHidden, let barView = omniBar?.barView else { return }
+        barView.hideBarChrome()
+        navigationBarCollectionView.alpha = 1
+        navigationBarContainer.bringSubviewToFront(navigationBarCollectionView)
+    }
+
     /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.
     func animateUnifiedToggleInputOmnibarDismissLayout() {
         if addressBarPosition.isBottom {
@@ -309,10 +345,12 @@ class MainViewCoordinator {
             unifiedToggleInputContainer.isHidden = false
             unifiedToggleInputContainer.alpha = 1
         } else {
-            // Snap omnibar in, no fade — crossfading would produce visible double-text mid-dismiss.
+            // Snap chrome (pill + text field) back now that UTI is gone; icons faded in alongside the collapse.
             navigationBarCollectionView.alpha = 1
             unifiedToggleInputContainer.isHidden = true
             unifiedToggleInputContainer.alpha = 1
+            omniBar?.barView.restoreBarChrome()
+            omniBar?.barView.setIconContainersAlpha(1)
         }
     }
 
@@ -354,8 +392,25 @@ class MainViewCoordinator {
     }
 
     func hideAITabChrome() {
+        cancelInFlightLayoutAnimations()
         hideAIChatTabChatHeader()
         setNavigationChromeHidden(false)
+    }
+
+    /// Hides the bottom `navigationBarContainer` (the flanked UTI on AI tabs) and re-anchors the
+    /// content container to the safe area, giving voice mode the full height between the AI
+    /// header and the home indicator. Idempotent.
+    func setAITabBottomChromeHidden(_ hidden: Bool) {
+        guard navigationBarContainer.isHidden != hidden else { return }
+        navigationBarContainer.isHidden = hidden
+        applyAITabCollapsedTopSeparatorVisibility()
+        if hidden {
+            setContentContainerBottomAnchorMode(.safeArea)
+        } else if isNavigationChromeHidden {
+            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+        } else {
+            setContentContainerBottomAnchorMode(.toolbar)
+        }
     }
 
     func showAIChatTabChatHeader() {
@@ -447,11 +502,11 @@ class MainViewCoordinator {
         case .omnibarEditing, .aiTabSearchChromeHidden:
             UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            UIColor(singleUseColor: .duckAIContextualSheetBackground)
+            UIColor(designSystemColor: .surfaceCanvas)
         }
     }
 
-    func setNavBarContainerBottomToKeyboard() {
+    func setNavBarContainerBottomToKeyboard(floorAnchor: NSLayoutYAxisAnchor? = nil) {
         constraints.navigationBarContainerBottom.isActive = false
         constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
 
@@ -460,9 +515,13 @@ class MainViewCoordinator {
         constraints.navigationBarContainerBottom.priority = .defaultHigh
         constraints.navigationBarContainerBottom.isActive = true
 
-        // Prevent the nav bar from going below safe area when keyboard is hidden
+        // Cap how far the nav bar can follow the keyboard guide down. Default floor is the
+        // safe-area bottom (AI tab — toolbar is hidden, so the UTI is meant to sit at the
+        // screen bottom). Callers anchored above a visible toolbar pass `toolbar.topAnchor`
+        // so the UTI doesn't slide over the toolbar when the keyboard is dragged off-screen.
+        let floor = floorAnchor ?? superview.safeAreaLayoutGuide.bottomAnchor
         let safeAreaFloor = navigationBarContainer.bottomAnchor
-            .constraint(lessThanOrEqualTo: superview.safeAreaLayoutGuide.bottomAnchor)
+            .constraint(lessThanOrEqualTo: floor)
         safeAreaFloor.isActive = true
         constraints.navigationBarContainerBottomSafeAreaFloor = safeAreaFloor
 
@@ -477,12 +536,16 @@ class MainViewCoordinator {
         case safeArea
     }
 
-    func extendContentContainerBehindInput() {
-        setContentContainerBottomAnchorMode(.toolbar)
-    }
-
-    func stopContentContainerBehindInput() {
-        setContentContainerBottomAnchorMode(.unifiedToggleInput)
+    /// Anchors the contentContainer to the UTI's top — except when the bottom chrome is hidden
+    /// (voice / FE-hidden chat input), in which case the UTI's frame still sits at the bottom of
+    /// the screen and anchoring there would leave a gap below the webview. Falls through to
+    /// `.safeArea` then, matching what `setAITabBottomChromeHidden(true)` would set.
+    func anchorContentContainerToInputTop() {
+        if navigationBarContainer.isHidden {
+            setContentContainerBottomAnchorMode(.safeArea)
+        } else {
+            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+        }
     }
 
     private func setContentContainerBottomAnchorMode(_ mode: ContentContainerBottomAnchorMode) {
@@ -491,14 +554,14 @@ class MainViewCoordinator {
         constraints.contentContainerBottomToSafeArea.isActive = mode == .safeArea
     }
 
-    private func setNavBarContainerBottomToToolbar() {
+    private func setNavBarContainerBottomToToolbar(active: Bool = true) {
         constraints.navigationBarContainerBottom.isActive = false
         constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
         constraints.navigationBarContainerBottomSafeAreaFloor = nil
         constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
             .constraint(equalTo: toolbar.topAnchor)
         constraints.navigationBarContainerBottom.constant = 0
-        constraints.navigationBarContainerBottom.isActive = true
+        constraints.navigationBarContainerBottom.isActive = active
         isNavBarContainerBottomKeyboardBased = false
     }
 

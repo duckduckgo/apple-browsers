@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import BrowserServicesKit
 import Combine
 import DuckPlayer
 import Foundation
@@ -53,6 +54,12 @@ struct DuckPlayerPreferencesUserDefaultsPersistor: DuckPlayerPreferencesPersisto
 }
 
 final class DuckPlayerPreferences: ObservableObject {
+
+    /// Posted when `duckPlayerMode` is mutated outside the normal Settings path (e.g. the debug
+    /// menu writing directly to UserDefaults). Subscribers re-read from the persistor so any open
+    /// Settings pane bound to this `@Published` property refreshes.
+    static let duckPlayerModeDidChangeNotification = Notification.Name("duckPlayerModeDidChange")
+
     private let internalUserDecider: InternalUserDecider
     private let duckPlayerContingencyHandler: DuckPlayerContingencyHandler
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -60,9 +67,12 @@ final class DuckPlayerPreferences: ObservableObject {
     @Published
     var duckPlayerMode: DuckPlayerMode {
         didSet {
+            guard !isHandlingExternalChange else { return }
             persistor.duckPlayerModeBool = duckPlayerMode.boolValue
         }
     }
+
+    private var isHandlingExternalChange = false
 
     @Published
     var duckPlayerAutoplay: Bool {
@@ -143,6 +153,22 @@ final class DuckPlayerPreferences: ObservableObject {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.internalUserDecider = internalUserDecider
         self.duckPlayerContingencyHandler = DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: privacyConfigurationManager)
+
+        NotificationCenter.default
+            .publisher(for: Self.duckPlayerModeDidChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshDuckPlayerModeFromStore()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refreshDuckPlayerModeFromStore() {
+        let resolved = DuckPlayerMode(persistor.duckPlayerModeBool)
+        guard resolved != duckPlayerMode else { return }
+        isHandlingExternalChange = true
+        duckPlayerMode = resolved
+        isHandlingExternalChange = false
     }
 
     private var persistor: DuckPlayerPreferencesPersistor

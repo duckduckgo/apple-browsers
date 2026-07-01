@@ -40,9 +40,9 @@ struct SubscriptionSettingsHeaderView: View {
         VStack(alignment: .center, spacing: 8) {
             switch state {
             case .expired:
-                Image(.privacyProHeaderAlert)
+                Image(rebrandable: "PrivacyProHeaderAlert")
             default:
-                Image(.privacyProHeader)
+                Image(rebrandable: "PrivacyProHeader")
             }
             Text(UserText.subscriptionTitle)
                 .daxTitle2()

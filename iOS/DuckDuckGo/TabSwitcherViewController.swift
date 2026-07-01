@@ -19,6 +19,7 @@
 
 import UIKit
 import Common
+import FoundationExtensions
 import Core
 import DDGSync
 import WebKit
@@ -154,6 +155,8 @@ class TabSwitcherViewController: UIViewController {
     let privacyStats: PrivacyStatsProviding
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
+    private let duckAIGridContentProvider: DuckAIGridContentProviding?
+    private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
     var tabsModel: TabsModelManaging {
         tabManager.tabsModel(for: selectedBrowsingMode)
     }
@@ -168,7 +171,6 @@ class TabSwitcherViewController: UIViewController {
     private let initialTrackerCountState: TabSwitcherTrackerCountViewModel.State
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
-    private(set) var aichatIPadTabFeature: AIChatIPadTabFeatureProviding
 
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
@@ -194,7 +196,6 @@ class TabSwitcherViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
                    aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-                   aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature(),
                    privacyStats: PrivacyStatsProviding,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    historyManager: HistoryManaging,
@@ -202,7 +203,9 @@ class TabSwitcherViewController: UIViewController {
                    keyValueStore: ThrowingKeyValueStoring,
                    tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
                    daxDialogsManager: DaxDialogsManaging,
-                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State) {
+                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State,
+                   duckAIGridContentProvider: DuckAIGridContentProviding?,
+                   duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -212,7 +215,6 @@ class TabSwitcherViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
-        self.aichatIPadTabFeature = aichatIPadTabFeature
         self.privacyStats = privacyStats
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.historyManager = historyManager
@@ -220,6 +222,8 @@ class TabSwitcherViewController: UIViewController {
         self.tabSwitcherSettings = tabSwitcherSettings
         self.daxDialogsManager = daxDialogsManager
         self.initialTrackerCountState = initialTrackerCountState
+        self.duckAIGridContentProvider = duckAIGridContentProvider
+        self.duckAIVoiceSessionTracker = duckAIVoiceSessionTracker
         let tabCountModel = TabCountModel()
         self.tabCountModel = tabCountModel
         self.pickerItems = BrowsingMode.allCases.map { $0.segmentedPickerItem(tabCountModel: tabCountModel) }
@@ -268,8 +272,8 @@ class TabSwitcherViewController: UIViewController {
 
     func showFireTabsTipIfNeeded() {
         guard #available(iOS 17.0, *) else { return }
-        guard fireModeCapability.isFireModeEnabled else { return }
-        guard selectedBrowsingMode != .fire else { return }
+        guard !LaunchOptionsHandler().isAutomationSession else { return }
+        guard fireModeCapability.isFireModeEnabled, selectedBrowsingMode != .fire else { return }
         guard let sourceView = segmentedPickerHostingController?.view else { return }
 
         fireTabsTipTask?.cancel()
@@ -290,8 +294,8 @@ class TabSwitcherViewController: UIViewController {
         }
 
         fireTabsTipTask = Task { @MainActor [weak self] in
-            guard let self else { return }
             for await shouldDisplay in tip.shouldDisplayUpdates {
+                guard let self else { return }
                 if shouldDisplay {
                     self.fireModePromotionsCoordinator?.markTabSwitcherTipShown()
                     let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
@@ -483,7 +487,9 @@ class TabSwitcherViewController: UIViewController {
                 previewsSource: previewsSource,
                 tabSwitcherSettings: tabSwitcherSettings,
                 trackerCountViewModel: nil,
-                isFireModeEnabled: isFireModeEnabled)
+                isFireModeEnabled: isFireModeEnabled,
+                duckAIGridContentProvider: duckAIGridContentProvider,
+                duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
             firePageController?.pageDelegate = self
             firePageController?.onNewFireTab = { [weak self] in
                 self?.addNewTab()
@@ -503,7 +509,9 @@ class TabSwitcherViewController: UIViewController {
             previewsSource: previewsSource,
             tabSwitcherSettings: tabSwitcherSettings,
             trackerCountViewModel: trackerCountViewModel,
-            isFireModeEnabled: isFireModeEnabled)
+            isFireModeEnabled: isFireModeEnabled,
+            duckAIGridContentProvider: duckAIGridContentProvider,
+            duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
         normalPageController.pageDelegate = self
         embedPageController(normalPageController, in: normalPageContainer)
 
@@ -572,7 +580,7 @@ class TabSwitcherViewController: UIViewController {
 
         barsHandler.onDuckChatTapped = { [weak self] in
             guard let self else { return }
-            if self.aichatFullModeFeature.isAvailable || self.aichatIPadTabFeature.isAvailable {
+            if self.aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
                 self.addNewAIChatTab()
             } else {
                 self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)
@@ -824,6 +832,16 @@ extension TabSwitcherViewController {
         toolbar.barTintColor = theme.barBackgroundColor
         toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
 
+        // This may move when the feature is further developed
+        applyFloatingUIIfNeeded()
+    }
+
+    private func applyFloatingUIIfNeeded() {
+        let floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
+        FloatingUIChromeStyler().decorateTabSwitcherIfNeeded(
+            manager: floatingUIManager,
+            view: view
+        )
     }
 
 }

@@ -39,8 +39,10 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
     func onChatHistorySelected(url: URL)
+    func onViewAllChatsSelected()
     func onDismissRequested()
     func onSwitchToTab(_ tab: Tab)
+    func onTabSwitcherRequested()
     func onTryFireModeRequested()
     func onToggleModeSwitched(to mode: TextEntryMode)
     func onVoiceModeRequested()
@@ -116,6 +118,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let aiChatSyncCleaner: AIChatSyncCleaning?
     private let voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
 
@@ -125,6 +128,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var navigationActionBarManager: NavigationActionBarManager?
     private var suggestionTrayManager: SuggestionTrayManager?
     private var aiChatHistoryManager: AIChatHistoryManager?
+    /// Held in a dedicated property (not `cancellables`) so each new chat-history install
+    /// auto-cancels the previous subscription on assignment — avoids stale viewModels firing.
+    private var chatHistoryHasSuggestionsCancellable: AnyCancellable?
     private var isShowingURLFallback = false
 
     private var chatHasResults: Bool {
@@ -141,6 +147,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Escape Hatch
     private var escapeHatchModel: EscapeHatchModel?
 
+    /// When true, the Dax logo view is not added to the hierarchy during `installDaxLogoView()`.
+    /// Used by the chat-path onboarding completion flow so the logo never flashes during the
+    /// editing-state transition. Cleared on the first `setLogoHidden(false)` call, which also
+    /// installs the view lazily so later visibility updates work as normal.
+    private var isDaxLogoInstallSuppressed = false
+
     private weak var contentAnimator: UIViewPropertyAnimator?
 
     // MARK: - Initialization
@@ -151,19 +163,26 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                   featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
                   privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
                   aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+                  aiChatSyncCleaner: AIChatSyncCleaning? = nil,
                   voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-                  escapeHatch: EscapeHatchModel? = nil) {
+                  escapeHatchModel: EscapeHatchModel? = nil,
+                  initialLogoHidden: Bool = false) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
+        self.isDaxLogoInstallSuppressed = initialLogoHidden
         self.daxLogoManager = DaxLogoManager(isFireTab: switchBarHandler.isFireTab)
+        if initialLogoHidden {
+            self.daxLogoManager.setForcedHidden(true)
+        }
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.voiceShortcutFeature = voiceShortcutFeature
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
-        self.escapeHatchModel = escapeHatch
+        self.aiChatSyncCleaner = aiChatSyncCleaner
+        self.escapeHatchModel = escapeHatchModel
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -196,7 +215,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if aiChatHistoryManager == nil && featureFlagger.isFeatureOn(.aiChatSuggestions) && aiChatSettings.isChatSuggestionsEnabled {
+        if aiChatHistoryManager == nil {
             installChatHistoryList()
         }
 
@@ -234,10 +253,18 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     func setLogoYOffset(_ offset: CGFloat) {
-        daxLogoManager.containerYCenterConstraint?.constant = offset
+        daxLogoManager.setLogoYOffset(offset)
     }
 
     func setLogoHidden(_ hidden: Bool) {
+        // If we suppressed the initial install (chat-path EOJ handoff), lazily install the Dax now
+        // so subsequent visibility updates can show it normally.
+        if !hidden && isDaxLogoInstallSuppressed {
+            isDaxLogoInstallSuppressed = false
+            if isViewLoaded {
+                installDaxLogoView()
+            }
+        }
         daxLogoManager.setForcedHidden(hidden)
     }
 
@@ -302,6 +329,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installSwitchBarVC()
         installSwipeContainer()
         installSuggestionsTray()
+        installChatHistoryList()
         installDaxLogoView()
         installNavigationActionBar()
 
@@ -361,18 +389,22 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
         let suggestionTrayEscapeHatch = switchBarHandler.isFireTab ? nil : escapeHatchModel
-        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatch: suggestionTrayEscapeHatch)
+        manager.installInContainerView(searchContainer, parentViewController: containerViewController, escapeHatchModel: suggestionTrayEscapeHatch)
         suggestionTrayManager = manager
     }
 
     private func installChatHistoryList() {
-        guard let swipeContainerManager else { return }
+        guard featureFlagger.isFeatureOn(.aiChatSuggestions),
+              aiChatSettings.isChatSuggestionsEnabled,
+              let swipeContainerManager else { return }
+        aiChatHistoryManager?.tearDown()
+        aiChatHistoryManager = nil
         let manager = makeAIChatHistoryManager()
         
         manager.delegate = self
         swipeContainerManager.installChatHistory(using: manager)
         manager.subscribeToTextChanges(switchBarHandler.currentTextPublisher)
-        manager.hasSuggestionsPublisher
+        chatHistoryHasSuggestionsCancellable = manager.hasSuggestionsPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] hasSuggestions in
                 guard let self else { return }
@@ -382,50 +414,42 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                     self.view.layoutIfNeeded()
                 }
             }
-            .store(in: &cancellables)
+        manager.onFetchCompleted = { [weak self] _, _ in
+            guard let self else { return }
+            self.scheduleAnimation {
+                self.updateDaxVisibility()
+                self.view.layoutIfNeeded()
+            }
+        }
         aiChatHistoryManager = manager
 
-        if let escapeHatchModel {
-            manager.setEscapeHatch(escapeHatchModel, onTapped: { [weak self] in
-                self?.delegate?.onSwitchToTab(escapeHatchModel.targetTab)
-            })
-        }
+        manager.setEscapeHatch(escapeHatchModel)
     }
     
     /// Creates ad configured for the current tab.
     /// Fire tabs use a no-op reader that always returns empty results,
     /// preventing chat history from being fetched or displayed.
     private func makeAIChatHistoryManager() -> AIChatHistoryManager {
-        let suggestionsReader: AIChatSuggestionsReading
-        if switchBarHandler.isFireTab {
-            suggestionsReader = NilSuggestionsReader()
-        } else {
-            let reader = SuggestionsReader(
-                featureFlagger: featureFlagger,
-                privacyConfig: privacyConfigurationManager,
-                nativeStorageHandler: duckAiNativeStorageHandler,
-                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            )
-            let historySettings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-            suggestionsReader = AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
-        }
+        let (chatManager, _) = AIChatHistoryManager.makeHistoryManager(isFireTab: switchBarHandler.isFireTab,
+                                                                       isIPadExperience: false,
+                                                                       featureFlagger: featureFlagger,
+                                                                       privacyConfigurationManager: privacyConfigurationManager,
+                                                                       chatSyncCleaner: aiChatSyncCleaner,
+                                                                       chatSettings: aiChatSettings,
+                                                                       nativeStorageHandler: duckAiNativeStorageHandler)
 
-        return AIChatHistoryManager(suggestionsReader: suggestionsReader,
-                                    aiChatSettings: aiChatSettings,
-                                    viewModel: AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount))
+        return chatManager
     }
 
     private func installDaxLogoView() {
+        // Chat-path EOJ handoff: skip the install entirely so nothing can render during the
+        // editing-state transition. The view is installed lazily in `setLogoHidden(false)`.
+        guard !isDaxLogoInstallSuppressed else { return }
         if switchBarHandler.isFireTab {
-            let escapeHatchTap: (() -> Void)? = escapeHatchModel.map { model in
-                { [weak self] in self?.delegate?.onSwitchToTab(model.targetTab) }
-            }
             daxLogoManager.installInViewController(self,
                                                    asSubviewOf: contentContainerView,
                                                    anchorView: switchBarVC.view,
-                                                   isTopBarPosition: isUsingTopBarPosition,
-                                                   escapeHatch: escapeHatchModel,
-                                                   onEscapeHatchTap: escapeHatchTap)
+                                                   isTopBarPosition: isUsingTopBarPosition)
         } else if let view = switchBarVC.segmentedPickerView {
             daxLogoManager.installInViewController(self,
                                                    asSubviewOf: contentContainerView,
@@ -579,6 +603,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {
 
+        // Skip animation when off-window to prevent spring from capturing unsettled bounds.
+        guard view.window != nil else {
+            UIView.performWithoutAnimation { animation() }
+            completion?(.end)
+            return
+        }
+
         if contentAnimator?.state == .stopped {
             contentAnimator = nil
         }
@@ -638,7 +669,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     /// list transitions naturally from full results to URL-only during the fade animation.
     private func prepareURLFallbackForModeTransition(to mode: TextEntryMode) {
         guard mode == .aiChat, shouldShowURLFallback else { return }
-        daxLogoManager.updateVisibility(isHomeDaxVisible: false, isAIDaxVisible: false)
+        daxLogoManager.updateVisibility(isHomeDaxVisible: false, isAIDaxVisible: false, committedMode: mode)
         suggestionTrayManager?.showURLOnlySuggestions(for: switchBarHandler.currentText, animated: false)
     }
 
@@ -691,6 +722,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
         let isShowingChatHistory = aiChatHistoryManager?.hasSuggestions == true
+        let isAIChatHistoryPending = aiChatHistoryManager != nil
+            && aiChatHistoryManager?.hasSettled(forQuery: switchBarHandler.currentText) != true
+            && switchBarHandler.currentToggleState == .aiChat
+            && !switchBarHandler.isFireTab
 
         let hasRemoteMessages = suggestionTrayManager?.hasRemoteMessages ?? false
         let hasEscapeHatchWithoutFavoritesOrMessages = escapeHatchModel != nil && !(suggestionTrayManager?.hasFavorites ?? false) && !hasRemoteMessages
@@ -698,16 +733,29 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let isURLFallbackShowingContent = isShowingURLFallback && (suggestionTrayManager?.isShowingSuggestionTray ?? false)
 
-        let isAIDaxVisible: Bool
-        if switchBarHandler.isUsingFadeOutAnimation {
-            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent && !shouldDisplaySuggestionTray
-        } else {
-            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled && !isShowingChatHistory && !isURLFallbackShowingContent
-        }
+        let isAIDaxVisible = Self.isAIDaxVisible(
+            isHorizontallyCompactLayoutEnabled: isHorizontallyCompactLayoutEnabled,
+            isShowingChatHistory: isShowingChatHistory,
+            isURLFallbackShowingContent: isURLFallbackShowingContent,
+            shouldDisplaySuggestionTray: shouldDisplaySuggestionTray,
+            isAIChatHistoryPending: isAIChatHistoryPending
+        )
 
-        daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
+        daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible, committedMode: switchBarHandler.currentToggleState)
         let escapeHatchOffset: CGFloat = (escapeHatchModel != nil && !switchBarHandler.isFireTab) ? Constants.escapeHatchLogoZoneHeight : 0
         daxLogoManager.setEscapeHatchBaseOffset(escapeHatchOffset)
+    }
+
+    static func isAIDaxVisible(isHorizontallyCompactLayoutEnabled: Bool,
+                               isShowingChatHistory: Bool,
+                               isURLFallbackShowingContent: Bool,
+                               shouldDisplaySuggestionTray: Bool,
+                               isAIChatHistoryPending: Bool) -> Bool {
+        !isAIChatHistoryPending
+        && !isHorizontallyCompactLayoutEnabled
+        && !isShowingChatHistory
+        && !isURLFallbackShowingContent
+        && !shouldDisplaySuggestionTray
     }
 
 }
@@ -793,6 +841,10 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
         delegate?.onSwitchToTab(tab)
     }
 
+    func suggestionTrayManagerDidRequestTabSwitcher(_ manager: SuggestionTrayManager) {
+        delegate?.onTabSwitcherRequested()
+    }
+
     func suggestionTrayManagerDidRequestTryFireMode(_ manager: SuggestionTrayManager) {
         delegate?.onTryFireModeRequested()
     }
@@ -863,6 +915,10 @@ extension OmniBarEditingStateViewController: AIChatHistoryManagerDelegate {
 
     func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL) {
         delegate?.onChatHistorySelected(url: url)
+    }
+
+    func aiChatHistoryManagerDidSelectViewAllChats(_ manager: AIChatHistoryManager) {
+        delegate?.onViewAllChatsSelected()
     }
 }
 

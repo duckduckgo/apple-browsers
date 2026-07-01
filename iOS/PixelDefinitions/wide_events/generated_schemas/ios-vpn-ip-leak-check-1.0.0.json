@@ -20,7 +20,7 @@
                 "name": {
                     "type": "string",
                     "description": "The name of the application",
-                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental"]
+                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental", "PacketTunnelProvider"]
                 },
                 "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
                 "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }

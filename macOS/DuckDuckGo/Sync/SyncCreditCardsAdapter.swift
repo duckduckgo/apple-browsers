@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import DDGSync
 import Foundation
 import Persistence
@@ -57,6 +58,7 @@ final class SyncCreditCardsAdapter {
     func setUpProviderIfNeeded(
         secureVaultFactory: AutofillVaultFactory,
         metadataStore: SyncMetadataStore,
+        keyValueStore: ThrowingKeyValueStoring,
         metricsEventsHandler: EventMapping<MetricsEvent>? = nil,
         privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager
     ) {
@@ -68,6 +70,7 @@ final class SyncCreditCardsAdapter {
             let provider = try CreditCardsProvider(
                 secureVaultFactory: secureVaultFactory,
                 secureVaultErrorReporter: SecureVaultReporter.shared,
+                keyValueStore: keyValueStore,
                 metadataStore: metadataStore,
                 metricsEvents: metricsEventsHandler,
                 syncDidUpdateData: { [weak self] in

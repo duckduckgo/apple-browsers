@@ -39,3 +39,7 @@ VPN_APP_GROUP = $(GROUP_ID_PREFIX).netp
 
 // Prevents asserts from crashing experimental TF builds
 OTHER_SWIFT_FLAGS[config=Experimental][arch=*][sdk=*] = $(inherited) -assert-config Release
+
+COMPILATION_CACHE_ENABLE_CACHING = YES
+
+#include? "../LocalOverrides.xcconfig"

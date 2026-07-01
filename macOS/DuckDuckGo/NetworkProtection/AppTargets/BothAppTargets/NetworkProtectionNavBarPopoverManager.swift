@@ -20,7 +20,9 @@ import AppLauncher
 import AppKit
 import BrowserServicesKit
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import LoginItems
@@ -29,6 +31,7 @@ import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
 import os.log
+import PixelKit
 import Subscription
 import SwiftUI
 import VPNAppState
@@ -43,6 +46,7 @@ protocol NetworkProtectionIPCClient {
 
     func start(completion: @escaping (Error?) -> Void)
     func stop(completion: @escaping (Error?) -> Void)
+    func refreshSystemState() async throws
     func command(_ command: VPNCommand) async throws
 }
 
@@ -69,18 +73,21 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
     private var cancellables = Set<AnyCancellable>()
 
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
+    private let pixelHandler: (SubscriptionPixel) -> Void
 
     init(ipcClient: VPNControllerXPCClient,
          vpnUninstaller: VPNUninstalling,
          vpnUIPresenting: VPNUIPresenting,
          proxySettings: TransparentProxySettings = .init(defaults: .netP),
-         freeTrialConversionService: FreeTrialConversionInstrumentationService) {
+         freeTrialConversionService: FreeTrialConversionInstrumentationService,
+         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
 
         self.ipcClient = ipcClient
         self.vpnUninstaller = vpnUninstaller
         self.vpnUIPresenting = vpnUIPresenting
         self.proxySettings = proxySettings
         self.freeTrialConversionService = freeTrialConversionService
+        self.pixelHandler = pixelHandler
 
         let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: Application.appDelegate.windowControllersManager)
 
@@ -161,6 +168,12 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
         /// Since the favicon doesn't have a publisher we force refreshing here
         activeSitePublisher.refreshActiveSiteInfo()
 
+        Task { [ipcClient] in
+            try? await ipcClient.refreshSystemState()
+        }
+
+        pixelHandler(.subscriptionToolbarVPNPopoverShown)
+
         let popover: NSPopover = {
             let vpnAppState = VPNAppState(defaults: .netP)
             let vpnSettings = VPNSettings(defaults: .netP)
@@ -218,6 +231,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 CurrentValuePublisher(initialValue: false, publisher: Just(false).eraseToAnyPublisher())
             }
 
+            let pixelHandler = self.pixelHandler
             let statusViewModel = NetworkProtectionStatusView.Model(
                 controller: controller,
                 onboardingStatusPublisher: onboardingStatusPublisher,
@@ -236,7 +250,14 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                     try? await self?.vpnUninstaller.uninstall(
                         removeSystemExtension: true,
                         showNotification: showNotification)
-                })
+                },
+                subscriptionExpiredViewAppearHandler: {
+                    pixelHandler(.subscriptionToolbarVPNPopoverExpiredViewShown)
+                },
+                subscriptionExpiredViewSubscribeButtonClickPixelHandler: {
+                    pixelHandler(.subscriptionToolbarVPNPopoverExpiredViewSubscribeButtonClicked)
+                },
+                subscribeButtonOrigin: SubscriptionFunnelOrigin.vpnToolbarRevoked.rawValue)
 
             let tipsModel = VPNTipsModel(statusObserver: statusReporter.statusObserver,
                                          activeSitePublisher: activeSitePublisher,

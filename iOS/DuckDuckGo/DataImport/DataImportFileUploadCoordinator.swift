@@ -21,6 +21,7 @@ import UIKit
 import Bookmarks
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Core
 import UniformTypeIdentifiers
 import DDGSync
@@ -253,7 +254,6 @@ private extension DataImportFileUploadCoordinator {
         recordImportedDataTypes(from: summary)
 
         AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
-        AutofillOnboardingExperimentPixelReporter().fireImportCompleted()
 
         let summaryViewController = DataImportSummaryViewController(
             summary: summary,

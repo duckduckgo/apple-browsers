@@ -21,6 +21,7 @@ import XCTest
 import Persistence
 import PersistenceTestingUtils
 import Common
+import FoundationExtensions
 import Testing
 @testable import DuckDuckGo
 

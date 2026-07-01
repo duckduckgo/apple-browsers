@@ -19,6 +19,7 @@
 import Foundation
 import PixelKit
 import Common
+import FoundationExtensions
 
 // A type that send pixels that needs attributions parameters.
 protocol AttributionPixelHandler {

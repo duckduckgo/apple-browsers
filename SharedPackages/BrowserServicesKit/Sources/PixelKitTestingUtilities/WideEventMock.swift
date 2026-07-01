@@ -26,6 +26,7 @@ public final class WideEventMock: WideEventManaging {
     public var updates: [WideEventData] = []
     public var completions: [(WideEventData, WideEventStatus)] = []
     public var discarded: [WideEventData] = []
+    private var completedIDs: Set<String> = []
 
     public var onStart: ((WideEventData) -> Void)?
     public var onUpdate: ((WideEventData) -> Void)?
@@ -56,25 +57,28 @@ public final class WideEventMock: WideEventManaging {
 
     public func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock) {
         completions.append((data, status))
+        completedIDs.insert(data.globalData.id)
         self.onComplete?(data, status)
         onComplete(true, nil)
     }
 
     public func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus) async throws -> Bool {
         completions.append((data, status))
+        completedIDs.insert(data.globalData.id)
         onComplete?(data, status)
         return true
     }
 
     public func discardFlow<T: WideEventData>(_ data: T) {
         discarded.append(data)
+        completedIDs.insert(data.globalData.id)
     }
 
     public func getFlowData<T: WideEventData>(_ type: T.Type, globalID: String) -> T? {
-        return started.first { ($0 as? T)?.globalData.id == globalID } as? T
+        return started.first { ($0 as? T)?.globalData.id == globalID && !completedIDs.contains($0.globalData.id) } as? T
     }
 
     public func getAllFlowData<T: WideEventData>(_ type: T.Type) -> [T] {
-        return started.compactMap { $0 as? T }
+        return started.compactMap { $0 as? T }.filter { !completedIDs.contains($0.globalData.id) }
     }
 }

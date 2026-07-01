@@ -17,116 +17,102 @@
 //  limitations under the License.
 //
 
+import AIChat
+import Bookmarks
+import Combine
+import Suggestions
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
+@MainActor
 final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
-    // MARK: - computeEscapeHatchInsets
-    //
-    // The formula produces two CGFloat values used as `additionalTopInset` for the
-    // suggestion tray (Search) and the chat history list (Duck.ai). Each constant is
-    // gated by `hasEscapeHatch`, so the result naturally collapses to (0, 0) when no
-    // hatch is present.
-    //
-    // Reference constants (from `Metrics` enum in the VC):
-    //   escapeHatchBaseTopInset              = 44
-    //   escapeHatchTopBarTrayPullUp          = -10
-    //   chatHistoryBottomBarCompensation     = 1
-    //   escapeHatchEmptyListBoost            = 165
-    //   landscapeDuckAiAlignmentPullUp       = -1
-
-    // MARK: - No hatch (natural collapse to zero)
-
-    func test_computeEscapeHatchInsets_whenNoHatch_returnsZeroForBothRegardlessOfOtherFlags() {
-        let insets = UnifiedInputContentContainerViewController.computeEscapeHatchInsets(
-            hasEscapeHatch: false,
-            isBottomBar: true,
-            chatHasSuggestions: true,
-            isLandscape: true
+    func testDuckAISuggestionsDidRequestSyncSetup_PresentsIntroSheetAndCallbackRequestsSyncSetup() {
+        let presenter = MockAIChatSyncIntroSheetPresenter()
+        let delegate = MockUnifiedInputContentContainerDelegate()
+        let viewController = UnifiedInputContentContainerViewController(
+            switchBarHandler: MockUnifiedInputSwitchBarHandler(),
+            aiChatSyncIntroSheetPresenter: presenter
         )
-        XCTAssertEqual(insets.tray, 0)
-        XCTAssertEqual(insets.chat, 0)
+        viewController.delegate = delegate
+
+        viewController.duckAISuggestionsDidRequestSyncSetup()
+
+        XCTAssertTrue(presenter.presentingViewController === viewController)
+        XCTAssertEqual(delegate.syncSetupRequestCount, 0)
+
+        presenter.onSyncSetupRequested?()
+
+        XCTAssertEqual(delegate.syncSetupRequestCount, 1)
     }
+}
 
-    // MARK: - Portrait top bar (isBottomBar: false, isLandscape: false)
+private final class MockAIChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting {
+    private(set) weak var presentingViewController: UIViewController?
+    private(set) var onSyncSetupRequested: (() -> Void)?
 
-    func test_computeEscapeHatchInsets_whenPortraitTopBarAndNoChats_returnsTrayPullUpAndEmptyListBoost() {
-        let insets = UnifiedInputContentContainerViewController.computeEscapeHatchInsets(
-            hasEscapeHatch: true,
-            isBottomBar: false,
-            chatHasSuggestions: false,
-            isLandscape: false
-        )
-        // Tray: 0 (base, no bottom bar) + (-10) (top bar pull-up) = -10
-        XCTAssertEqual(insets.tray, -10)
-        // Chat: 0 (base) - 0 (compensation) + 165 (empty list boost) + 0 (no landscape) = 165
-        XCTAssertEqual(insets.chat, 165)
+    func present(from viewController: UIViewController, onSyncSetupRequested: @escaping () -> Void) {
+        presentingViewController = viewController
+        self.onSyncSetupRequested = onSyncSetupRequested
     }
+}
 
-    func test_computeEscapeHatchInsets_whenPortraitTopBarAndWithChats_returnsTrayPullUpAndNoBoost() {
-        let insets = UnifiedInputContentContainerViewController.computeEscapeHatchInsets(
-            hasEscapeHatch: true,
-            isBottomBar: false,
-            chatHasSuggestions: true,
-            isLandscape: false
-        )
-        XCTAssertEqual(insets.tray, -10)
-        // Chat: 0 - 0 + 0 (chats present → no boost) + 0 = 0
-        XCTAssertEqual(insets.chat, 0)
+private final class MockUnifiedInputContentContainerDelegate: UnifiedInputContentContainerViewControllerDelegate {
+    private(set) var syncSetupRequestCount = 0
+
+    func unifiedInputEditingStateDidSubmitQuery(_ query: String) {}
+    func unifiedInputEditingStateDidSubmitPrompt(_ query: String, tools: [AIChatRAGTool]?) {}
+    func unifiedInputEditingStateDidSelectFavorite(_ favorite: BookmarkEntity) {}
+    func unifiedInputEditingStateDidEditFavorite(_ favorite: BookmarkEntity) {}
+    func unifiedInputEditingStateDidSelectSuggestion(_ suggestion: Suggestion) {}
+    func unifiedInputEditingStateDidRequestTextUpdate(_ text: String) {}
+    func unifiedInputEditingStateDidSelectChatHistory(url: URL) {}
+    func unifiedInputEditingStateDidSelectViewAllChats() {}
+    func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab) {}
+    func unifiedInputEditingStateDidRequestTabSwitcher() {}
+    func unifiedInputEditingStateDidRequestTryFireMode() {}
+    func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {}
+
+    func unifiedInputEditingStateDidRequestSyncSetup() {
+        syncSetupRequestCount += 1
     }
+}
 
-    // MARK: - Portrait bottom bar (isBottomBar: true, isLandscape: false)
+private final class MockUnifiedInputSwitchBarHandler: SwitchBarHandling {
+    var currentText: String = ""
+    var currentToggleState: TextEntryMode = .search
+    var isVoiceSearchEnabled = false
+    var isAIVoiceChatEnabled = false
+    var hasUserInteractedWithText = false
+    var isCurrentTextValidURL = false
+    var buttonState: SwitchBarButtonState = .noButtons
+    var isTopBarPosition = true
+    var isToggleEnabled = true
+    var isFireTab = false
+    var isUsingExpandedBottomBarHeight = false
+    var isUsingFadeOutAnimation = false
+    var shouldDisableAutocorrectOnEmpty = false
+    var hidesVoiceButton = false
+    var hasSubmittedPrompt = false
+    var modeParameters: [String: String] = [:]
 
-    func test_computeEscapeHatchInsets_whenPortraitBottomBarAndNoChats_returnsDismissButtonInsetMinusCompensation() {
-        let insets = UnifiedInputContentContainerViewController.computeEscapeHatchInsets(
-            hasEscapeHatch: true,
-            isBottomBar: true,
-            chatHasSuggestions: false,
-            isLandscape: false
-        )
-        // Tray: 44 (dismiss button clearance) + 0 (no pull-up in bottom bar) = 44
-        XCTAssertEqual(insets.tray, 44)
-        // Chat: 44 - 1 (compensation) + 0 (no boost in bottom bar) + 0 = 43
-        XCTAssertEqual(insets.chat, 43)
-    }
+    var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var currentTextPublisher: AnyPublisher<String, Never> { Empty().eraseToAnyPublisher() }
+    var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { Empty().eraseToAnyPublisher() }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
+    var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
+    var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
+    var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
+    var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
 
-    func test_computeEscapeHatchInsets_whenPortraitBottomBarAndWithChats_returnsSameAsNoChats() {
-        let insets = UnifiedInputContentContainerViewController.computeEscapeHatchInsets(
-            hasEscapeHatch: true,
-            isBottomBar: true,
-            chatHasSuggestions: true,
-            isLandscape: false
-        )
-        // In bottom bar, chatHasSuggestions doesn't change anything (empty list boost is gated on !isBottomBar).
-        XCTAssertEqual(insets.tray, 44)
-        XCTAssertEqual(insets.chat, 43)
-    }
-
-    // MARK: - Landscape (isLandscape: true, auto-switches to top bar)
-
-    func test_computeEscapeHatchInsets_whenLandscapeAndNoChats_returnsTrayPullUpAndLandscapeAlignment() {
-        let insets = UnifiedInputContentContainerViewController.computeEscapeHatchInsets(
-            hasEscapeHatch: true,
-            isBottomBar: false,
-            chatHasSuggestions: false,
-            isLandscape: true
-        )
-        XCTAssertEqual(insets.tray, -10)
-        // Empty list boost is suppressed in landscape (otherwise hatch ends up under UTI/keyboard).
-        // Chat: 0 - 0 + 0 (landscape suppresses boost) + (-1) (landscape alignment) = -1
-        XCTAssertEqual(insets.chat, -1)
-    }
-
-    func test_computeEscapeHatchInsets_whenLandscapeAndWithChats_returnsLandscapeAlignmentOnly() {
-        let insets = UnifiedInputContentContainerViewController.computeEscapeHatchInsets(
-            hasEscapeHatch: true,
-            isBottomBar: false,
-            chatHasSuggestions: true,
-            isLandscape: true
-        )
-        XCTAssertEqual(insets.tray, -10)
-        // Chat: 0 - 0 + 0 + (-1) = -1 (same as no chats, since empty list boost is already 0)
-        XCTAssertEqual(insets.chat, -1)
-    }
+    func updateCurrentText(_ text: String) {}
+    func submitText(_ text: String) {}
+    func setToggleState(_ state: TextEntryMode) {}
+    func clearText() {}
+    func microphoneButtonTapped() {}
+    func markUserInteraction() {}
+    func clearButtonTapped() {}
+    func updateBarPosition(isTop: Bool) {}
 }

@@ -85,17 +85,23 @@
 /* Title for editing custom shortcuts */
 "widget.gallery.customshortcuts.edit.title" = "Gyorsparancsok konfigurálása";
 
+/* Label for first shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut1" = "Gyorsparancs 1";
+
+/* Label for second shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut2" = "Gyorsparancs 2";
+
+/* Label for third shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut3" = "Gyorsparancs 3";
+
+/* Label for fourth shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut4" = "Gyorsparancs 4";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Gyorsan kereshetsz a DuckDuckGo mentett jelszavai között.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Jelszavak keresése";
-
-/* Description of medium quickActions widget in widget gallery */
-"widget.gallery.quickactions.medium.display.description" = "Gyorsparancsok a kedvenc műveleteidhez.";
-
-/* Display name for medium quick actions widget in widget gallery */
-"widget.gallery.quickactions.medium.display.name" = "Gyorsparancsok";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Látogasd meg a kedvenc weboldalaidat és keress rajtuk privát módon, mindössze egyetlen koppintással.";
@@ -129,6 +135,33 @@
 
 /* Placeholder text in search field on the search and favorites widget */
 "widget.search.duckduckgo" = "DuckDuckGo keresés";
+
+/* Display name shown in the widget configuration picker for the Bookmarks shortcut option */
+"widget.shortcut.option.bookmarks" = "Könyvjelzők";
+
+/* Display name shown in the widget configuration picker for the Duck Address (email protection) shortcut option */
+"widget.shortcut.option.duck-address" = "Duck-cím";
+
+/* Display name shown in the widget configuration picker for the Duck.ai shortcut option */
+"widget.shortcut.option.duck-ai" = "Duck.ai";
+
+/* Display name shown in the widget configuration picker for the Duck.ai Voice shortcut option */
+"widget.shortcut.option.duck-ai-voice" = "Duck.ai-hang";
+
+/* Display name shown in the widget configuration picker for the Favorites shortcut option */
+"widget.shortcut.option.favorites" = "Kedvencek";
+
+/* Display name shown in the widget configuration picker for the Passwords shortcut option */
+"widget.shortcut.option.passwords" = "Jelszavak";
+
+/* Type name shown in the widget configuration picker for the shortcut option enum */
+"widget.shortcut.option.type-name" = "Gyorsparancs opció";
+
+/* Display name shown in the widget configuration picker for the Voice Search shortcut option */
+"widget.shortcut.option.voice-search" = "Beszédhangalapú keresés";
+
+/* Display name shown in the widget configuration picker for the VPN shortcut option */
+"widget.shortcut.option.vpn" = "VPN";
 
 /* VPN connect button text */
 "widget.vpn.button.connect" = "Csatlakozás";

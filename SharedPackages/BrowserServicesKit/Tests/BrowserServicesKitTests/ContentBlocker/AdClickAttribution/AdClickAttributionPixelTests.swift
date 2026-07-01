@@ -243,7 +243,7 @@ final class AdClickAttributionPixelTests: XCTestCase {
                                             eventReporting: mockEventMapping)
 
         logic.attributionDetection(mockDetection, didDetectVendor: "vendor.com")
-        logic.onDidFinishNavigation(host: "https://vendor.com")
+        logic.onDidFinishNavigation(host: "vendor.com")
 
         logic.onRequestDetected(request: DetectedRequest(url: "example.com",
                                                          eTLDplus1: "example.com",

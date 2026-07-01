@@ -17,27 +17,27 @@
 //
 
 import AppKit
+import BrowserServicesKit
 import Combine
-import Common
-import os.log
 import WebKit
 
 @MainActor
 final class QuickFeedbackService: NSObject {
 
     private var windowController: QuickFeedbackWindowController?
+    private var currentTab: Tab?
     private var screenshotData: Data?
     private let diagnosticsCollector: QuickFeedbackDiagnosticsCollector
-    private let appVersion: AppVersion
-
-    private let dataStore: WKWebsiteDataStore
     private var cancellables = Set<AnyCancellable>()
 
-    private static let asanaFormHost = "form.asana.com"
-    private static let asanaCookieDomain = "asana.com"
-    private static let feedbackStoreIdentifier = UUID(uuidString: "D1A2B3C4-E5F6-7890-ABCD-EF1234567890")!
+    private var contentOverlayPopover: ContentOverlayPopover?
 
-    private static let earlyInjectionScript = """
+    /// Suffix match (not substring) so only Asana-owned cookies are cleared on sign-out.
+    private static let asanaDomainSuffix = "asana.com"
+
+    /// Hides the form section until the autofiller's `hideIrrelevantFields` runs (8s fallback)
+    /// and suppresses `beforeunload` prompts that would block the panel closing.
+    private static let popupModeEarlyInjectionScript = """
     (function() {
         var s = document.createElement('style');
         s.id = 'ddg-form-hider';
@@ -64,20 +64,9 @@ final class QuickFeedbackService: NSObject {
 
     init(
         diagnosticsCollector: QuickFeedbackDiagnosticsCollector,
-        appVersion: AppVersion = AppVersion(),
         firePublisher: AnyPublisher<Fire.BurningData?, Never>
     ) {
         self.diagnosticsCollector = diagnosticsCollector
-        self.appVersion = appVersion
-        // macOS 14+ uses an isolated persistent store so Fire doesn't clear
-        // the Asana session. On older macOS (no forIdentifier API), we fall
-        // back to .default() where Fire will clear cookies. Acceptable since
-        // internal users on macOS < 14 are extremely rare.
-        if #available(macOS 14.0, *) {
-            self.dataStore = WKWebsiteDataStore(forIdentifier: Self.feedbackStoreIdentifier)
-        } else {
-            self.dataStore = .default()
-        }
 
         super.init()
 
@@ -93,92 +82,107 @@ final class QuickFeedbackService: NSObject {
     func openFeedbackPopup(from window: NSWindow? = nil) {
         captureScreenshot(from: window)
 
-        if let existing = windowController {
+        if let existing = windowController, let tab = currentTab {
             existing.window?.makeKeyAndOrderFront(nil)
-            navigateToForm()
+            tab.internalFeedbackForm?.popupContext = makePopupContext()
+            tab.webView.load(URLRequest(url: .internalFeedbackForm))
             return
         }
 
-        let controller = createWindowController()
-        windowController = controller
+        let tab = makeFeedbackTab()
+        currentTab = tab
 
-        controller.window?.makeKeyAndOrderFront(nil)
-
-        Task {
-            await copyAsanaCookiesFromDefaultStore()
-            navigateToForm()
-        }
-    }
-
-    private func createWindowController() -> QuickFeedbackWindowController {
-        let config = WKWebViewConfiguration()
-        config.websiteDataStore = dataStore
-        config.processPool = WKProcessPool()
-
-        let userScript = WKUserScript(
-            source: Self.earlyInjectionScript,
-            injectionTime: .atDocumentStart,
-            forMainFrameOnly: true
-        )
-        config.userContentController.addUserScript(userScript)
-        let controller = QuickFeedbackWindowController(webViewConfiguration: config)
-        controller.webView.navigationDelegate = self
-        controller.window?.delegate = self
+        let controller = QuickFeedbackWindowController(tab: tab)
         controller.onSignOutRequested = { [weak self] in
             self?.signOut()
         }
+        controller.window?.delegate = self
+        windowController = controller
 
-        return controller
+        tab.autofill?.setDelegate(self)
+
+        controller.window?.makeKeyAndOrderFront(nil)
     }
 
-    private func navigateToForm() {
-        guard let webView = windowController?.webView else { return }
-        let request = URLRequest(url: .internalFeedbackForm)
-        webView.load(request)
+    // MARK: - Tab construction
+
+    private func makeFeedbackTab() -> Tab {
+        // `.none` then explicit `load`: ensures the early-injection script is registered
+        // before document-start fires on the first navigation.
+        let tab = Tab(
+            content: .none,
+            shouldLoadInBackground: false,
+            burnerMode: .regular
+        )
+        tab.setDelegate(self)
+        tab.webView.configuration.userContentController.addUserScript(
+            WKUserScript(source: Self.popupModeEarlyInjectionScript,
+                         injectionTime: .atDocumentStart,
+                         forMainFrameOnly: true)
+        )
+        tab.internalFeedbackForm?.popupContext = makePopupContext()
+        tab.webView.load(URLRequest(url: .internalFeedbackForm))
+        return tab
     }
+
+    private func makePopupContext() -> InternalFeedbackFormPopupContext {
+        InternalFeedbackFormPopupContext(
+            quickMode: true,
+            diagnostics: diagnosticsCollector.collectDiagnostics(),
+            screenshotData: screenshotData
+        )
+    }
+
+    // MARK: - Popup lifecycle
 
     private func hidePopup() {
+        contentOverlayPopover?.viewController.closeContentOverlayPopover()
         windowController?.window?.orderOut(nil)
         screenshotData = nil
     }
 
     private func forceClosePopup() {
+        contentOverlayPopover?.viewController.closeContentOverlayPopover()
+        contentOverlayPopover = nil
         windowController?.window?.orderOut(nil)
         windowController = nil
+        currentTab = nil
         screenshotData = nil
+    }
+
+    // MARK: - Autofill overlay
+
+    private func overlayPopoverCreatingIfNeeded() -> ContentOverlayPopover? {
+        if let existing = contentOverlayPopover {
+            return existing
+        }
+        guard let anchorView = windowController?.webViewContainer,
+              let appDelegate = Application.appDelegate else {
+            return nil
+        }
+        let popover = ContentOverlayPopover(
+            currentTabView: anchorView,
+            privacyConfigurationManager: appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+            webTrackingProtectionPreferences: appDelegate.webTrackingProtectionPreferences,
+            featureFlagger: appDelegate.featureFlagger,
+            tld: appDelegate.tld,
+            pinningManager: appDelegate.pinningManager
+        )
+        contentOverlayPopover = popover
+        return popover
     }
 
     private func signOut() {
         windowController?.setSignOutVisible(false)
 
-        if dataStore === WKWebsiteDataStore.default() {
-            dataStore.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { [weak self] records in
-                let asanaRecords = records.filter { $0.displayName.contains("asana") }
-                self?.dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: asanaRecords) {
-                    Task { @MainActor [weak self] in
-                        self?.navigateToForm()
-                    }
-                }
-            }
-        } else {
-            dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) { [weak self] in
+        let dataStore = WKWebsiteDataStore.default()
+        dataStore.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
+            let asanaRecords = records.filter { $0.displayName.hasSuffix(Self.asanaDomainSuffix) }
+            dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: asanaRecords) {
                 Task { @MainActor [weak self] in
-                    self?.navigateToForm()
+                    self?.currentTab?.webView.load(URLRequest(url: .internalFeedbackForm))
                 }
             }
-        }
-    }
-
-    // MARK: - Cookie Sync
-
-    private func copyAsanaCookiesFromDefaultStore() async {
-        guard dataStore !== WKWebsiteDataStore.default() else { return }
-
-        let defaultCookies = await WKWebsiteDataStore.default().httpCookieStore.allCookies()
-        let asanaCookies = defaultCookies.filter { $0.domain.hasSuffix(Self.asanaCookieDomain) }
-
-        for cookie in asanaCookies {
-            await dataStore.httpCookieStore.setCookie(cookie)
         }
     }
 
@@ -204,71 +208,58 @@ final class QuickFeedbackService: NSObject {
         let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
         screenshotData = bitmapRep.representation(using: .png, properties: [:])
     }
+}
 
-    // MARK: - JS Injection
+// MARK: - TabDelegate
 
-    private func injectQuickModeScript() {
-        guard let webView = windowController?.webView else { return }
+extension QuickFeedbackService: TabDelegate {
 
-        guard let url = Bundle.main.url(forResource: "internal-feedback-autofiller", withExtension: "js"),
-              let template = try? String(contentsOf: url, encoding: .utf8) else {
-            Logger.general.error("Failed to load internal-feedback-autofiller.js from bundle")
-            return
-        }
+    var isInPopUpWindow: Bool { true }
 
-        let bootstrapScript = template
-            .replacingOccurrences(of: "%QUICK_MODE%", with: "null")
-            .replacingOccurrences(of: "%DIAGNOSTICS%", with: "")
-            .replacingOccurrences(of: "%SCREENSHOT_BASE64%", with: "")
-            .replacingOccurrences(of: "%OS_VERSION%", with: "")
-            .replacingOccurrences(of: "%APP_VERSION%", with: "")
-
-        let appVersionModel = AppVersionModel(appVersion: appVersion)
-
-        let payload: [String: Any] = [
-            "osVersion": appVersion.osVersionMajorMinorPatch,
-            "appVersion": "\(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))",
-            "quickMode": true,
-            "diagnostics": diagnosticsCollector.collectDiagnostics(),
-            "screenshotBase64": screenshotData?.base64EncodedString() ?? "",
-        ]
-
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: payload),
-              let json = String(data: jsonData, encoding: .utf8) else {
-            Logger.general.error("Failed to serialize quick feedback payload")
-            return
-        }
-
-        webView.evaluateJavaScript(bootstrapScript) { [weak self] _, error in
-            if let error {
-                Logger.general.error("Quick feedback JS bootstrap failed: \(error.localizedDescription)")
-                return
-            }
-            self?.windowController?.webView.evaluateJavaScript("window.__ddgQuickFeedbackAutofill(\(json))") { _, error in
-                if let error {
-                    Logger.general.error("Quick feedback autofill failed: \(error.localizedDescription)")
-                }
+    func tab(_ tab: Tab, createdChild childTab: Tab, of kind: NewWindowPolicy) {
+        // Asana help links and similar new-window navigations open in a regular browser window.
+        switch kind {
+        case .popup(origin: let origin, size: let contentSize):
+            WindowsManager.openPopUpWindow(with: childTab, origin: origin, contentSize: contentSize)
+        case .window(active: let active, _):
+            WindowsManager.openNewWindow(with: childTab, showWindow: active)
+        case .tab(selected: let selected, _, _):
+            if let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
+                parentWindowController.mainViewController.tabCollectionViewModel.insertOrAppend(tab: childTab, selected: selected)
+            } else {
+                WindowsManager.openNewWindow(with: childTab, showWindow: true)
             }
         }
     }
-}
 
-// MARK: - WKNavigationDelegate
+    func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool) {}
+    func tabDidStartNavigation(_ tab: Tab) {}
 
-extension QuickFeedbackService: WKNavigationDelegate {
+    /// Bar visibility follows the rendered page: visible only when the form URL is loaded
+    /// (i.e. user is signed in). Hidden on the login screen and during transient navigations.
+    func tabPageDOMLoaded(_ tab: Tab) {
+        let isOnFeedbackForm = tab.webView.url.map(InternalFeedbackFormTabExtension.isInternalFeedbackURL) ?? false
+        windowController?.setSignOutVisible(isOnFeedbackForm)
+    }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        guard let url = webView.url else { return }
+    func closeTab(_ tab: Tab) {
+        forceClosePopup()
+    }
 
-        let isAsanaForm = url.host == Self.asanaFormHost
+    func websiteAutofillUserScriptCloseOverlay(_ websiteAutofillUserScript: WebsiteAutofillUserScript?) {
+        overlayPopoverCreatingIfNeeded()?.websiteAutofillUserScriptCloseOverlay(websiteAutofillUserScript)
+    }
 
-        if !isAsanaForm {
-            windowController?.setSignOutVisible(false)
-            return
-        }
-
-        windowController?.setSignOutVisible(true)
-        injectQuickModeScript()
+    func websiteAutofillUserScript(_ websiteAutofillUserScript: WebsiteAutofillUserScript,
+                                   willDisplayOverlayAtClick: CGPoint?,
+                                   serializedInputContext: String,
+                                   inputPosition: CGRect) {
+        overlayPopoverCreatingIfNeeded()?.websiteAutofillUserScript(
+            websiteAutofillUserScript,
+            willDisplayOverlayAtClick: willDisplayOverlayAtClick,
+            serializedInputContext: serializedInputContext,
+            inputPosition: inputPosition
+        )
     }
 }
 

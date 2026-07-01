@@ -82,14 +82,12 @@ final class PermissionModel {
     }
 
     private func subscribe(to webView: WKWebView) {
-        if #available(macOS 12, *) {
-            webView.publisher(for: \.cameraCaptureState).sink { [weak self] _ in
-                self?.updatePermissions()
-            }.store(in: &cancellables)
-            webView.publisher(for: \.microphoneCaptureState).sink { [weak self] _ in
-                self?.updatePermissions()
-            }.store(in: &cancellables)
-        } // else: will receive mediaCaptureStateDidChange()
+        webView.publisher(for: \.cameraCaptureState).sink { [weak self] _ in
+            self?.updatePermissions()
+        }.store(in: &cancellables)
+        webView.publisher(for: \.microphoneCaptureState).sink { [weak self] _ in
+            self?.updatePermissions()
+        }.store(in: &cancellables)
 
         let geolocationProvider = webView.configuration.processPool.geolocationProvider
         geolocationProvider?.isActivePublisher.sink { [weak self] _ in
@@ -482,7 +480,7 @@ final class PermissionModel {
             }
         }
     }
-    @available(macOS 12.0, *)
+
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL? = nil, decisionHandler: @escaping (WKPermissionDecision) -> Void) {
         self.permissions(permissions, requestedForDomain: domain, url: url) { isGranted in
             decisionHandler(isGranted ? .grant : .deny)

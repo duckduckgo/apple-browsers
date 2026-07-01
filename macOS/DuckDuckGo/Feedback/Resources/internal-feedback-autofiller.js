@@ -1,8 +1,8 @@
 var quickMode = %QUICK_MODE%;
-var diagnosticsText = '%DIAGNOSTICS%';
-var screenshotBase64 = '%SCREENSHOT_BASE64%';
-var osVersion = '%OS_VERSION%';
-var appVersion = '%APP_VERSION%';
+var diagnosticsText = %DIAGNOSTICS%;
+var screenshotBase64 = %SCREENSHOT_BASE64%;
+var osVersion = %OS_VERSION%;
+var appVersion = %APP_VERSION%;
 
 function openDropdown(label) {
     const dropdown = document.querySelector(`[aria-label^="${label}"]`);
@@ -89,6 +89,22 @@ function hideFormQuestion(labelText) {
     }
 }
 
+function rehideFieldsWhenReturningToNativeApps() {
+    var wasNativeApps = true;
+    const observer = new MutationObserver(() => {
+        const selected = document.querySelector('[aria-label^="Which product area or team does this feedback relate to?"]');
+        if (!selected) return;
+        const isNativeApps = selected.textContent.trim().includes('Native Apps');
+        if (isNativeApps && !wasNativeApps) {
+            fillOutFormAfterNativeAppsSelected();
+        }
+        wasNativeApps = isNativeApps;
+    });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+}
+
+var quickModeUIInjected = false;
+
 function addEmailFieldPadding() {
     var emailLabel = Array.from(document.querySelectorAll('label'))
         .find(function(l) {
@@ -104,7 +120,6 @@ function addEmailFieldPadding() {
 
 function hideIrrelevantFields() {
     const fieldsToHide = [
-        'Which product area or team',
         'Which platform?',
         'Which macOS version',
         'Which version of the DuckDuckGo',
@@ -116,11 +131,15 @@ function hideIrrelevantFields() {
     ];
     fieldsToHide.forEach(hideFormQuestion);
 
+    if (quickModeUIInjected) return;
+    quickModeUIInjected = true;
+
     addEmailFieldPadding();
     moveSubmitButtonUnderDescription();
     injectDiagnosticsSection();
     injectScreenshotSection();
     hookSubmitForDiagnostics();
+    rehideFieldsWhenReturningToNativeApps();
 
     var hider = document.getElementById('ddg-form-hider');
     if (hider) {
@@ -228,7 +247,7 @@ function injectDiagnosticsSection() {
     details.appendChild(summary);
 
     var pre = document.createElement('pre');
-    pre.textContent = diagnosticsText.replace(/\\n/g, '\n');
+    pre.textContent = diagnosticsText;
     pre.style.cssText = 'font-size: 11px; background: #f5f5f5; padding: 10px; border-radius: 4px; margin: 6px 0 0; overflow-x: auto; white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto;';
     details.appendChild(pre);
 
@@ -365,10 +384,9 @@ function hookSubmitForDiagnostics() {
 
         var diagsCb = document.getElementById('ddg-include-diagnostics');
         if (diagsCb && diagsCb.checked && diagnosticsText) {
-            var decodedDiags = diagnosticsText.replace(/\\n/g, '\n');
             var combined = userText
-                ? userText + '\n\n' + decodedDiags
-                : decodedDiags;
+                ? userText + '\n\n' + diagnosticsText
+                : diagnosticsText;
 
             var setter = Object.getOwnPropertyDescriptor(
                 window.HTMLTextAreaElement.prototype, 'value'
@@ -422,19 +440,6 @@ function handleNativeAppsDropdown() {
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 }
 
-window.__ddgQuickFeedbackAutofill = function(data) {
-    quickMode = data.quickMode;
-    diagnosticsText = data.diagnostics || '';
-    screenshotBase64 = data.screenshotBase64 || '';
-    osVersion = data.osVersion || '';
-    appVersion = data.appVersion || '';
-    waitForElement('h1', 'Internal Product Feedback Form')
-        .then(function() { handleNativeAppsDropdown(); })
-        .catch(function() { console.error('Internal Product Feedback Form is not loaded after 5s'); });
-};
-
-if (quickMode !== null) {
-    waitForElement('h1', 'Internal Product Feedback Form')
-        .then(_ => handleNativeAppsDropdown())
-        .catch(_ => console.error('Internal Product Feedback Form is not loaded after 5s'));
-}
+waitForElement('h1', 'Internal Product Feedback Form')
+    .then(_ => handleNativeAppsDropdown())
+    .catch(_ => console.error('Internal Product Feedback Form is not loaded after 5s'));

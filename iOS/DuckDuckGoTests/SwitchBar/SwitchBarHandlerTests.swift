@@ -37,7 +37,6 @@ final class SwitchBarHandlerTests: XCTestCase {
     private var sut: SwitchBarHandler!
     private var mockVoiceSearchHelper: MockVoiceSearchHelper!
     private var mockStorage: MockKeyValueStore!
-    private var mockFeatureFlagger: MockFeatureFlagger!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -45,7 +44,6 @@ final class SwitchBarHandlerTests: XCTestCase {
         MockDevicePlatform.isIphone = true
         mockVoiceSearchHelper = MockVoiceSearchHelper()
         mockStorage = MockKeyValueStore()
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         cancellables = Set<AnyCancellable>()
         createSUT()
     }
@@ -55,16 +53,14 @@ final class SwitchBarHandlerTests: XCTestCase {
         sut = nil
         mockVoiceSearchHelper = nil
         mockStorage = nil
-        mockFeatureFlagger = nil
         super.tearDown()
     }
 
-    private func createSUT(devicePlatform: DevicePlatformProviding.Type = MockDevicePlatform.self, featureFlagger: FeatureFlagger? = nil) {
+    private func createSUT(devicePlatform: DevicePlatformProviding.Type = MockDevicePlatform.self) {
         sut = SwitchBarHandler(
             voiceSearchHelper: mockVoiceSearchHelper,
             aiChatSettings: MockAIChatSettingsProvider(),
             sessionStateMetrics: SessionStateMetrics(storage: mockStorage),
-            featureFlagger: featureFlagger ?? mockFeatureFlagger,
             devicePlatform: devicePlatform,
             isFireTab: false
         )

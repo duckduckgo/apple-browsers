@@ -24,10 +24,12 @@ import Bookmarks
 import simd
 import WidgetKit
 import Common
+import FoundationExtensions
 import PrivacyDashboard
 import PixelExperimentKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DuckPlayer
 import UIComponents
 
 extension TabViewController {
@@ -134,33 +136,64 @@ extension TabViewController {
     }
     
     func buildAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
-        var entries = [BrowsingMenuEntry]()
-
-        entries.append(buildNewTabEntry())
-
-        entries.append(buildNewAIChatEntry())
-
-        return entries
+        if unifiedToggleInputFeature.isAvailable {
+            return [
+                buildNewTabEntry(),
+                buildSettingsEntry(useSmallIcon: false),
+            ]
+        }
+        return [
+            buildNewTabEntry(),
+            buildNewAIChatEntry(),
+        ]
     }
-    
+
     func buildAITabMenu(useSmallIcon: Bool = true,
                         includeSettings: Bool = true,
                         separateUtilityItems: Bool = false,
                         useDetailTextForZoom: Bool = false) -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
-        
+
+        if unifiedToggleInputFeature.isAvailable {
+            // Duck.ai-first layout: a Duck.ai cluster leads, then the standard shortcut cluster.
+            // Settings lives in the header tiles; Zoom/Find/Print and site-utility items are omitted.
+            entries.append(buildNewAIChatEntry(withSmallIcon: useSmallIcon))
+            entries.append(buildAINewVoiceChatEntry(useSmallIcon: useSmallIcon))
+            // Native sheet on iPhone when the flag is on; Duck.ai web sidebar otherwise.
+            if isNativeChatHistoryAvailable {
+                entries.append(buildDuckAiChatsEntry(withSmallIcon: useSmallIcon))
+            } else {
+                entries.append(buildAIChatsEntry(useSmallIcon: useSmallIcon))
+            }
+            entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon, useAIGlyph: true))
+
+            entries.append(.separator)
+
+            entries.append(buildOpenBookmarksEntry(useSmallIcon: useSmallIcon))
+
+            if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
+                entries.append(buildAutoFillEntry(useSmallIcon: useSmallIcon))
+            }
+
+            entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
+
+            return entries
+        }
+
+        // Legacy layout (unifiedToggleInput OFF): preserves the Duck.ai Chats list row and
+        // the bottom Duck.ai Settings row that the F9 rework promotes to header tiles.
         entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon, addPrint: !separateUtilityItems, useDetailTextForZoom: useDetailTextForZoom))
 
         entries.append(.separator)
-        
+
         entries.append(buildOpenBookmarksEntry(useSmallIcon: useSmallIcon))
-        
+
         if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
             entries.append(buildAutoFillEntry(useSmallIcon: useSmallIcon))
         }
-        
+
         entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
-        
+
         entries.append(buildAIChatSidebarEntry(useSmallIcon: useSmallIcon))
 
         if separateUtilityItems {
@@ -169,7 +202,7 @@ extension TabViewController {
         }
 
         entries.append(.separator)
-        
+
         entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon))
 
         if includeSettings {
@@ -266,6 +299,10 @@ extension TabViewController {
             }
 
             entries.append(.separator)
+        }
+
+        if isNativeChatHistoryAvailable {
+            entries.append(buildDuckAiChatsEntry())
         }
 
         entries.append(buildOpenBookmarksEntry())
@@ -507,7 +544,75 @@ extension TabViewController {
             self?.openNewChatInNewTab()
         })
     }
+
+    /// Duck.ai header tile shown on website/NTP menus when Unified Toggle Input is on:
+    /// the monochrome Duck.ai mark branded "Duck.ai", opening a new chat (same action as New Chat).
+    private func buildDuckAIHeaderTile() -> BrowsingMenuEntry {
+        .regular(name: UserText.duckAiFeatureName,
+                 accessibilityLabel: UserText.duckAiFeatureName,
+                 image: DesignSystemImages.Glyphs.Size24.duckAi,
+                 action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
+            Pixel.fire(pixel: .browsingMenuAIChat)
+            self?.openNewChatInNewTab()
+        })
+    }
+
+    private func buildDuckAiChatsEntry(withSmallIcon smallIcon: Bool = true) -> BrowsingMenuEntry {
+        // Size24 `chats` forced to `.alwaysTemplate` so it tints in dark mode; Size16 falls back
+        // to `aiChatHistory` (no `chats` glyph at 16px).
+        let image = smallIcon
+            ? DesignSystemImages.Glyphs.Size16.aiChatHistory
+            : DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
+        return .regular(name: UserText.actionChats,
+                        accessibilityLabel: UserText.actionChats,
+                        image: image,
+                        action: { [weak self] in
+            self?.openAIChatHistory()
+        })
+    }
     
+    /// Mirrors the Plus-menu "New Voice Chat": starts a Duck.ai voice session.
+    private func buildAINewVoiceChatEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        .regular(name: UserText.aiChatHeaderNewVoiceChatTitle,
+                 accessibilityLabel: UserText.aiChatHeaderNewVoiceChatTitle,
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.voice : DesignSystemImages.Glyphs.Size24.voice,
+                 action: { [weak self] in
+            guard let self else { return }
+            self.delegate?.tabDidRequestNewVoiceChat(self)
+        })
+    }
+
+    /// Opens the recent-chats sidebar. Size24 `chats` forced to `.alwaysTemplate` for dark mode;
+    /// Size16 falls back to `aiChatHistory` (no `chats` at 16px).
+    private func buildAIChatsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        let image = useSmallIcon
+            ? DesignSystemImages.Glyphs.Size16.aiChatHistory
+            : DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
+        return .regular(name: UserText.aiChatAppMenuChats,
+                        accessibilityLabel: UserText.aiChatAppMenuChats,
+                        image: image,
+                        action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
+            self?.submitToggleSidebarAction()
+        })
+    }
+
+    /// Website app-menu "Chats": opens Duck.ai in a new tab with the chats sidebar showing.
+    /// Used off a Duck.ai tab, where the in-page sidebar toggle isn't available.
+    private func buildOpenChatListEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        let image = useSmallIcon
+            ? DesignSystemImages.Glyphs.Size16.aiChatHistory
+            : DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
+        return .regular(name: UserText.aiChatAppMenuChats,
+                        accessibilityLabel: UserText.aiChatAppMenuChats,
+                        image: image,
+                        action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
+            self?.openChatListInNewTab()
+        })
+    }
+
     private func buildAIChatSidebarEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionAIChatHistory,
                  accessibilityLabel: UserText.actionAIChatHistory,
@@ -517,14 +622,30 @@ extension TabViewController {
             self?.submitToggleSidebarAction()
         })
     }
-    
-    private func buildAIChatSettingsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        .regular(name: UserText.actionAIChatSettings,
+
+    private func buildAIChatSettingsEntry(useSmallIcon: Bool = true, useAIGlyph: Bool = false) -> BrowsingMenuEntry {
+        let largeIcon = useAIGlyph ? DesignSystemImages.Glyphs.Size24.aiChatSettings : DesignSystemImages.Glyphs.Size24.settings
+        return .regular(name: UserText.actionAIChatSettings,
                  accessibilityLabel: UserText.actionAIChatSettings,
-                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatSettings : DesignSystemImages.Glyphs.Size24.settings,
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatSettings : largeIcon,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
             self?.submitOpenSettingsAction()
+        })
+    }
+
+    /// Website app-menu "Duck.ai Settings": opens Duck.ai in a new tab on its settings view.
+    /// Used off a Duck.ai tab, where the in-page `submitOpenSettingsAction` isn't available.
+    private func buildOpenSettingsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        let image = useSmallIcon
+            ? DesignSystemImages.Glyphs.Size16.aiChatSettings
+            : DesignSystemImages.Glyphs.Size24.aiChatSettings
+        return .regular(name: UserText.actionAIChatSettings,
+                        accessibilityLabel: UserText.actionAIChatSettings,
+                        image: image,
+                        action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
+            self?.openSettingsInNewTab()
         })
     }
 
@@ -726,6 +847,10 @@ extension TabViewController {
         delegate?.tabDidRequestAIChat(tab: self)
     }
 
+    private func openAIChatHistory() {
+        delegate?.tabDidRequestAIChatHistory(tab: self, source: .browserMenu)
+    }
+
     private func buildToggleProtectionEntry(forDomain domain: String, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
         let isProtected = !config.isUserUnprotected(domain: domain)
@@ -791,17 +916,20 @@ extension TabViewController {
 
     private func buildVPNEntry(useSmallIcon: Bool = true, showStatusStringInDetail: Bool = false) -> BrowsingMenuEntry {
         let vpnPromoHelper = VPNSubscriptionPromotionHelper()
+        let promoStatus = vpnPromoHelper.subscriptionPromoStatus
         var image: UIImage = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOff : DesignSystemImages.Glyphs.Size24.vpnUnlocked
         var showNotificationDot: Bool = true
         var customDotColor: UIColor?
         var accessibilityLabel: String?
         var detailText: String?
 
-        switch vpnPromoHelper.subscriptionPromoStatus {
+        switch promoStatus {
         case .promo:
             vpnPromoHelper.subscriptionPromoWasShown()
+            Pixel.fire(pixel: .subscriptionEntryAppMenuImpression)
         case .noPromo:
             showNotificationDot = false
+            Pixel.fire(pixel: .subscriptionEntryAppMenuImpression)
         case .subscribed:
             if case .connected = AppDependencyProvider.shared.connectionObserver.recentValue {
                 image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOn : DesignSystemImages.Glyphs.Size24.vpn
@@ -823,6 +951,12 @@ extension TabViewController {
                                          detailText: showStatusStringInDetail ? detailText : nil) { [weak self] in
             self?.onOpenVPNAction(with: vpnPromoHelper)
             Pixel.fire(pixel: .browsingMenuVPN)
+            switch promoStatus {
+            case .promo, .noPromo:
+                Pixel.fire(pixel: .subscriptionEntryAppMenuSubscriptionClick)
+            case .subscribed:
+                break
+            }
         }
     }
 
@@ -858,13 +992,19 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeAITabMenu() -> [BrowsingMenuEntry] {
-        buildAITabMenu(useSmallIcon: false, includeSettings: false, separateUtilityItems: true, useDetailTextForZoom: true)
+        buildAITabMenu(useSmallIcon: false,
+                       includeSettings: unifiedToggleInputFeature.isAvailable,
+                       separateUtilityItems: true,
+                       useDetailTextForZoom: true)
     }
-    
+
     func makeAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
-        // Add settings to the header.
-        // It'll be filtered out in `makeAITabMenu`
-        buildAITabMenuHeaderContent() + [makeSettingsEntry()]
+        if unifiedToggleInputFeature.isAvailable {
+            return buildAITabMenuHeaderContent()
+        }
+        // Legacy: the list omits Settings (`includeSettings: false` above) and the sheet header
+        // appends Settings as a third tile alongside [New Tab | New Chat].
+        return buildAITabMenuHeaderContent() + [makeSettingsEntry()]
     }
     
     func makeBrowsingMenu(with bookmarksInterface: MenuBookmarksInteracting,
@@ -887,14 +1027,46 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeChatEntry() -> BrowsingMenuEntry? {
         let settings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
         guard settings.isAIChatBrowsingMenuUserSettingsEnabled else { return nil }
-        
+
+        if unifiedToggleInputFeature.isAvailable {
+            return buildDuckAIHeaderTile()
+        }
+
         if aiChatFullModeFeature.isAvailable {
             return buildNewAIChatEntry(withSmallIcon: false)
         } else {
             return buildChatEntry(withSmallIcon: false)
         }
     }
-    
+
+    /// The native AI chat history sheet is an iPhone-only experience; iPad keeps the existing Duck.ai web entrypoints.
+    private var isNativeChatHistoryAvailable: Bool {
+        UIDevice.current.userInterfaceIdiom != .pad && featureFlagger.isFeatureOn(.aiChatNativeChatHistory)
+    }
+
+    func makeDuckAiChatsEntry() -> BrowsingMenuEntry? {
+        guard isNativeChatHistoryAvailable else { return nil }
+        return buildDuckAiChatsEntry(withSmallIcon: false)
+    }
+
+    /// The Duck.ai cluster shown in the website app menu when Unified Toggle Input is on.
+    /// Returns no entries when the user has disabled AI Chat (same gate as the header chat tile),
+    /// which lets the builder skip the whole section.
+    func makeDuckAIMenuItems() -> [BrowsingMenuEntry] {
+        guard unifiedToggleInputFeature.isAvailable, shouldShowAIChatInMenu else { return [] }
+
+        // Native sheet on iPhone when the flag is on; Duck.ai web sidebar on iPad or when the flag is off.
+        let chatsEntry: BrowsingMenuEntry = isNativeChatHistoryAvailable
+            ? buildDuckAiChatsEntry(withSmallIcon: false)
+            : buildOpenChatListEntry(useSmallIcon: false)
+        return [
+            buildNewAIChatEntry(withSmallIcon: false),
+            buildAINewVoiceChatEntry(useSmallIcon: false),
+            chatsEntry,
+            buildOpenSettingsEntry(useSmallIcon: false)
+        ]
+    }
+
     func makeSettingsEntry() -> BrowsingMenuEntry {
         buildSettingsEntry(useSmallIcon: false)
     }
@@ -989,5 +1161,30 @@ extension TabViewController: BrowsingMenuEntryBuilding {
             guard let self else { return }
             self.delegate?.tabDidRequestFireMode(tab: self)
         }
+    }
+
+    func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry? {
+        guard validLink?.url.isPlayableYoutubeVideoContent == true,
+              adBlockingAvailability.isFeatureSupported,
+              !adBlockingAvailability.isRemotelyDisabled
+        else { return nil }
+
+        let isEnabled = adBlockingAvailability.isEnabledByUser && !adBlockingAvailability.isDisabledUntilRelaunch
+        let title = isEnabled ? UserText.youTubeAdBlockingMenuToggle : UserText.youTubeAdBlockingMenuEnable
+
+        return .regular(name: title,
+                        image: DesignSystemImages.Glyphs.Size24.videoAdBlocked,
+                        action: { [weak self] in
+            guard let self else { return }
+            if isEnabled {
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingMenuDisableTapped,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                self.delegate?.tabDidRequestYouTubeAdBlockPicker(tab: self)
+            } else {
+                DailyPixel.fireDailyAndCount(pixel: .webExtensionAdBlockingMenuEnableTapped,
+                                             pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                self.delegate?.tabDidRequestSetYouTubeAdBlockingEnabled(true, tab: self)
+            }
+        })
     }
 }

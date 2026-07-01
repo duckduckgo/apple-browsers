@@ -18,7 +18,6 @@
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",
@@ -61,14 +60,16 @@
                 ]
             },
             {
-                "key": "feature.data.ext.session_duration_ms",
-                "type": "integer",
-                "description": "Duration from surface shown to session end (in ms)."
+                "key": "feature.data.ext.session_duration_ms_bucketed",
+                "type": "string",
+                "description": "Duration from surface shown to session end, bucketed (lower end of bucket, in ms)",
+                "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
             },
             {
-                "key": "feature.data.ext.time_to_first_interaction_ms",
-                "type": "integer",
-                "description": "Duration from surface shown to first user interaction or terminal action (in ms)."
+                "key": "feature.data.ext.time_to_first_interaction_ms_bucketed",
+                "type": "string",
+                "description": "Duration from surface shown to first user interaction or terminal action, bucketed (lower end of bucket, in ms)",
+                "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
             },
             {
                 "key": "feature.data.ext.page_engaged",
@@ -84,6 +85,21 @@
                 "key": "feature.data.ext.back_pressed",
                 "type": "boolean",
                 "description": "Whether the user pressed back/cancel during the session."
+            },
+            {
+                "key": "feature.data.ext.opening_screen_changed",
+                "type": "boolean",
+                "description": "Whether the user changed the Opening Screen option from the escape hatch's settings menu during the session."
+            },
+            {
+                "key": "feature.data.ext.close_tab_tapped",
+                "type": "boolean",
+                "description": "Whether the user closed the open tab from the escape hatch's menu during the session."
+            },
+            {
+                "key": "feature.data.ext.burn_tab_tapped",
+                "type": "boolean",
+                "description": "Whether the user burned the open tab from the escape hatch's menu during the session."
             }
         ]
     }

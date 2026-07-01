@@ -20,6 +20,7 @@ import AppKit
 import AppKitExtensions
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 import Persistence
@@ -166,6 +167,8 @@ extension URL {
     static let settings = URL(string: "duck://settings")!
     static let bookmarks = URL(string: "duck://bookmarks")!
     static let history = URL(string: "duck://history")!
+    /// Debug-only favicon manager page (Debug ▸ Favicon Browser). Served by `DuckURLSchemeHandler`.
+    static let favicons = URL(string: "duck://favicons")!
     // base url for Error Page Alternate HTML loaded into Web View
     static let error = URL(string: "duck://error")!
 
@@ -194,6 +197,11 @@ extension URL {
 
     var isNTP: Bool {
         return navigationalScheme == .duck && host == URL.newtab.host
+    }
+
+    /// `duck://favicons` (and its sub-paths) — the debug-only favicon manager page.
+    var isFavicons: Bool {
+        return navigationalScheme == .duck && host == URL.favicons.host
     }
 
 #endif
@@ -261,7 +269,7 @@ extension URL {
     }
 
     static func duckAIAtb(atbWithVariant: String, setAtb: String?) -> URL {
-        var params: [String: String?] = [
+        let params: [String: String?] = [
             DuckDuckGoParameters.ATB.activityType: DuckDuckGoParameters.ATB.duckAIValue,
             DuckDuckGoParameters.ATB.atb: atbWithVariant,
             DuckDuckGoParameters.ATB.setAtb: setAtb
@@ -525,7 +533,7 @@ extension URL {
     }
 
     static var cookieConsentPopUpManagement: URL {
-        return URL(string: "\(base)/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management")!
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection")!
     }
 
     static var gpcLearnMore: URL {
@@ -612,6 +620,10 @@ extension URL {
 
     static var aiChatHelpPages: URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai")!
+    }
+
+    static var hideAIGeneratedImagesLearnMore: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results")!
     }
 
     // MARK: - Search Settings

@@ -19,8 +19,10 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import Core
 import DuckUI
+import MetricBuilder
 
 struct ImportPasswordsViaSyncView: View {
 
@@ -31,7 +33,7 @@ struct ImportPasswordsViaSyncView: View {
         ScrollView {
             VStack(spacing: 0) {
                 ImportOverview(viewModel: viewModel)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 8)
 
                 Divider()
                     .padding(.vertical, 32)
@@ -58,43 +60,46 @@ struct ImportPasswordsViaSyncView: View {
         @State private var navigate = false
 
         var body: some View {
-            Image(.syncDesktopNew128)
+            VStack(spacing: 8) {
+                Image(rebrandable: "Desktop-Sync-Passwords-128")
 
-            Text(UserText.autofillImportPasswordsViaSyncTitle)
-                .daxTitle2()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .multilineTextAlignment(.center)
-                .padding(.top, 16)
+                VStack(spacing: 4) {
+                    Text(UserText.autofillImportPasswordsViaSyncTitle)
+                        .daxTitle2()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .multilineTextAlignment(.center)
 
-            Text(UserText.autofillImportPasswordsViaSyncSubtitle)
-                .daxBodyRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .multilineTextAlignment(.center)
-                .padding(.top, 8)
+                    Text(UserText.autofillImportPasswordsViaSyncSubtitle)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 8)
 
-            Button {
-                viewModel.buttonPressed(.getBrowser)
-                self.navigate = true
-            } label: {
-                Text(ImportPasswordsViaSyncViewModel.ButtonType.getBrowser.title)
-                    .frame(width: viewModel.maxButtonWidth())
+                VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
+                    Button {
+                        viewModel.buttonPressed(.getBrowser)
+                        self.navigate = true
+                    } label: {
+                        Text(ImportPasswordsViaSyncViewModel.ButtonType.getBrowser.title)
+                    }
+                    .buttonStyle(PrimaryButtonStyle(fullWidth: true))
+
+                    Button {
+                        viewModel.buttonPressed(.sync)
+                    } label: {
+                        Text(ImportPasswordsViaSyncViewModel.ButtonType.sync.title)
+                    }
+                    .buttonStyle(SecondaryFillButtonStyle(fullWidth: true))
+                }
+                .padding(.vertical, 8)
             }
-            .buttonStyle(PrimaryButtonStyle(fullWidth: false))
-            .padding(.top, 24)
-
-            Button {
-                viewModel.buttonPressed(.sync)
-            } label: {
-                Text(ImportPasswordsViaSyncViewModel.ButtonType.sync.title)
-                    .frame(width: viewModel.maxButtonWidth())
-            }
-            .buttonStyle(SecondaryFillButtonStyle(fullWidth: false))
-            .padding(.top, 8)
-
-            NavigationLink(destination: DesktopDownloadView(viewModel: .init(platform: .desktop)), isActive: $navigate) {
-                EmptyView()
-            }
-
+            .background(
+                NavigationLink(destination: DesktopDownloadView(viewModel: .init(platform: .desktop)), isActive: $navigate) {
+                    EmptyView()
+                }
+            )
         }
     }
 
@@ -158,11 +163,15 @@ struct NumberBadge: View {
             .daxHeadline()
             .background(
                 Circle()
-                    .fill(colorScheme == .dark ? darkBulletColor : lightBulletColor)
+                    .fill(AppRebrand.isAppRebranded() ?
+                          Color(designSystemColor: .accentGlowSecondary)
+                          : colorScheme == .dark ? darkBulletColor : lightBulletColor)
                     .frame(width: 24, height: 24)
             )
             .frame(width: 10)
-            .foregroundColor(Color(designSystemColor: .accent))
+            .foregroundColor(AppRebrand.isAppRebranded() ?
+                             Color(designSystemColor: .accentTextPrimary)
+                             : Color(designSystemColor: .accentPrimary))
             .fixedSize()
             .padding(10)
     }

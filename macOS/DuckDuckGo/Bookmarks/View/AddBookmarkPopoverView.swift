@@ -34,9 +34,7 @@ struct AddBookmarkPopoverView: View {
         if let addFolderViewModel = model.addFolderViewModel {
             AddBookmarkFolderPopoverView(model: addFolderViewModel)
         } else {
-            addBookmarkView.onAppear {
-                syncButtonModel.viewDidLoad()
-            }
+            addBookmarkView
         }
     }
 

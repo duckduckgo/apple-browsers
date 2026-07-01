@@ -56,6 +56,12 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isWebSearchEnabled: Bool = false
 
+    @Published var isAttachTabsEnabled: Bool = false
+
+    var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAttachTabsEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
     @Published var isVoiceChatAccessEnabled: Bool = false
 
     /// Mirrors the real `NewTabPageOmnibarConfigProvider.isVoiceChatAccessEnabledPublisher`
@@ -63,6 +69,12 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     /// fires on init) and then de-duplicates subsequent flag flips.
     var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> {
         $isVoiceChatAccessEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    @Published var showAskAiSuggestion: Bool = true
+
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> {
+        $showAskAiSuggestion.dropFirst().eraseToAnyPublisher()
     }
 
     @Published var selectedModelId: String?

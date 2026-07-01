@@ -33,7 +33,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(PostIdleSessionWideEventData.metadata.pixelName == "post_idle_session")
         #expect(PostIdleSessionWideEventData.metadata.featureName == "post_idle_session")
         #expect(PostIdleSessionWideEventData.metadata.type == "ios-post-idle-session")
-        #expect(PostIdleSessionWideEventData.metadata.version == "1.0.0")
+        #expect(PostIdleSessionWideEventData.metadata.version == "1.2.0")
     }
 
     // MARK: - jsonParameters
@@ -46,11 +46,14 @@ struct PostIdleSessionWideEventDataTests {
 
         #expect(params["feature.data.ext.surface"] as? String == "ntp")
         #expect(params["feature.data.ext.status_reason"] == nil)
-        #expect(params["feature.data.ext.session_duration_ms"] == nil)
-        #expect(params["feature.data.ext.time_to_first_interaction_ms"] == nil)
+        #expect(params["feature.data.ext.session_duration_ms_bucketed"] == nil)
+        #expect(params["feature.data.ext.time_to_first_interaction_ms_bucketed"] == nil)
         #expect(params["feature.data.ext.page_engaged"] as? Bool == false)
         #expect(params["feature.data.ext.toggle_used"] as? Bool == false)
         #expect(params["feature.data.ext.back_pressed"] as? Bool == false)
+        #expect(params["feature.data.ext.opening_screen_changed"] as? Bool == false)
+        #expect(params["feature.data.ext.close_tab_tapped"] as? Bool == false)
+        #expect(params["feature.data.ext.burn_tab_tapped"] as? Bool == false)
     }
 
     @available(iOS 16, *)
@@ -114,35 +117,65 @@ struct PostIdleSessionWideEventDataTests {
         let data = PostIdleSessionWideEventData(surface: .ntp,
                                                 pageEngaged: true,
                                                 toggleUsed: true,
-                                                backPressed: true)
+                                                backPressed: true,
+                                                openingScreenChanged: true,
+                                                closeTabTapped: true,
+                                                burnTabTapped: true)
         let params = data.jsonParameters()
         #expect(params["feature.data.ext.page_engaged"] as? Bool == true)
         #expect(params["feature.data.ext.toggle_used"] as? Bool == true)
         #expect(params["feature.data.ext.back_pressed"] as? Bool == true)
+        #expect(params["feature.data.ext.opening_screen_changed"] as? Bool == true)
+        #expect(params["feature.data.ext.close_tab_tapped"] as? Bool == true)
+        #expect(params["feature.data.ext.burn_tab_tapped"] as? Bool == true)
     }
 
     // MARK: - Durations
 
     @available(iOS 16, *)
-    @Test("Session duration is computed in ms when sessionInterval is closed", .timeLimit(.minutes(1)))
-    func sessionDurationIsComputedInMs() {
+    @Test("Session duration is bucketed when sessionInterval is closed", .timeLimit(.minutes(1)))
+    func sessionDurationIsBucketed() {
         let start = Date()
         let data = PostIdleSessionWideEventData(surface: .ntp, startedAt: start)
-        data.sessionInterval.end = start.addingTimeInterval(2.5) // 2500ms
+        data.sessionInterval.end = start.addingTimeInterval(2.5) // 2500ms → bucket "1000"
 
         let params = data.jsonParameters()
-        #expect(params["feature.data.ext.session_duration_ms"] as? Int == 2500)
+        #expect(params["feature.data.ext.session_duration_ms_bucketed"] as? String == "1000")
     }
 
     @available(iOS 16, *)
-    @Test("First interaction duration is computed in ms when interval is closed", .timeLimit(.minutes(1)))
-    func firstInteractionDurationIsComputedInMs() {
+    @Test("First interaction duration is bucketed when interval is closed", .timeLimit(.minutes(1)))
+    func firstInteractionDurationIsBucketed() {
         let start = Date()
         let data = PostIdleSessionWideEventData(surface: .ntp, startedAt: start)
-        data.firstInteractionInterval.end = start.addingTimeInterval(0.5) // 500ms (exactly representable in float)
+        data.firstInteractionInterval.end = start.addingTimeInterval(0.5) // 500ms → bucket "0"
 
         let params = data.jsonParameters()
-        #expect(params["feature.data.ext.time_to_first_interaction_ms"] as? Int == 500)
+        #expect(params["feature.data.ext.time_to_first_interaction_ms_bucketed"] as? String == "0")
+    }
+
+    @available(iOS 16, *)
+    @Test("Duration bucketing selects correct threshold", .timeLimit(.minutes(1)))
+    func durationBucketingSelectsCorrectThreshold() {
+        let start = Date()
+
+        func bucketFor(seconds: TimeInterval) -> String? {
+            let data = PostIdleSessionWideEventData(surface: .ntp, startedAt: start)
+            data.sessionInterval.end = start.addingTimeInterval(seconds)
+            return data.jsonParameters()["feature.data.ext.session_duration_ms_bucketed"] as? String
+        }
+
+        #expect(bucketFor(seconds: 0) == "0")
+        #expect(bucketFor(seconds: 0.999) == "0")
+        #expect(bucketFor(seconds: 1.0) == "1000")
+        #expect(bucketFor(seconds: 4.999) == "1000")
+        #expect(bucketFor(seconds: 5.0) == "5000")
+        #expect(bucketFor(seconds: 10.0) == "10000")
+        #expect(bucketFor(seconds: 30.0) == "30000")
+        #expect(bucketFor(seconds: 60.0) == "60000")
+        #expect(bucketFor(seconds: 300.0) == "300000")
+        #expect(bucketFor(seconds: 600.0) == "600000")
+        #expect(bucketFor(seconds: 9999.0) == "600000")
     }
 
     @available(iOS 16, *)
@@ -157,29 +190,28 @@ struct PostIdleSessionWideEventDataTests {
     // MARK: - Completion decision
 
     @available(iOS 16, *)
-    @Test("App launch trigger always completes as UNKNOWN with app_terminated reason", .timeLimit(.minutes(1)))
-    func appLaunchAlwaysCompletesAsUnknownAppTerminated() async {
+    @Test("App launch trigger returns keepPending so sessionStarted handles orphan cleanup", .timeLimit(.minutes(1)))
+    func appLaunchReturnsKeepPending() async {
         let data = PostIdleSessionWideEventData(surface: .ntp)
         let decision = await data.completionDecision(for: .appLaunch)
 
-        if case .complete(.unknown(let reason)) = decision {
-            #expect(reason == PostIdleSessionWideEventData.appTerminatedReason)
-            #expect(reason == "app_terminated")
+        if case .keepPending = decision {
+            // expected
         } else {
-            Issue.record("Expected .complete(.unknown(reason:)), got \(decision)")
+            Issue.record("Expected .keepPending, got \(decision)")
         }
     }
 
     @available(iOS 16, *)
-    @Test("App launch trigger completes orphan with all surface variants", .timeLimit(.minutes(1)))
-    func appLaunchCompletesAllSurfaceVariants() async {
+    @Test("App launch trigger returns keepPending for all surface variants", .timeLimit(.minutes(1)))
+    func appLaunchReturnsKeepPendingForAllSurfaces() async {
         for surface in PostIdleSessionWideEventData.Surface.allCases {
             let data = PostIdleSessionWideEventData(surface: surface)
             let decision = await data.completionDecision(for: .appLaunch)
-            if case .complete = decision {
+            if case .keepPending = decision {
                 // ok
             } else {
-                Issue.record("Expected .complete for surface \(surface), got \(decision)")
+                Issue.record("Expected .keepPending for surface \(surface), got \(decision)")
             }
         }
     }
@@ -197,6 +229,9 @@ struct PostIdleSessionWideEventDataTests {
         original.pageEngaged = true
         original.toggleUsed = true
         original.backPressed = true
+        original.openingScreenChanged = true
+        original.closeTabTapped = true
+        original.burnTabTapped = true
 
         let encoded = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(PostIdleSessionWideEventData.self, from: encoded)
@@ -210,5 +245,8 @@ struct PostIdleSessionWideEventDataTests {
         #expect(decoded.pageEngaged == true)
         #expect(decoded.toggleUsed == true)
         #expect(decoded.backPressed == true)
+        #expect(decoded.openingScreenChanged == true)
+        #expect(decoded.closeTabTapped == true)
+        #expect(decoded.burnTabTapped == true)
     }
 }

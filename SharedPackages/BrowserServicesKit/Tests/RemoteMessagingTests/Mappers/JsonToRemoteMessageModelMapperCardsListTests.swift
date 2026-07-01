@@ -17,6 +17,7 @@
 //
 
 import Testing
+import Foundation
 import RemoteMessagingTestsUtils
 @testable import RemoteMessaging
 
@@ -301,6 +302,67 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         #expect(items.first?.placeholderImage == expectedPlaceholder)
     }
 
+    @Test("Two-lines item parses imageUrl when present in JSON", .timeLimit(.minutes(1)))
+    func twoLinesItemParsesImageUrl() throws {
+        // GIVEN
+        let item = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(
+            id: "item1",
+            imageUrl: "https://example.com/image.png"
+        )
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [item])
+
+        // WHEN
+        let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
+
+        // THEN
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        #expect(items.first?.imageUrl == URL(string: "https://example.com/image.png"))
+    }
+
+    @Test("Two-lines item has nil imageUrl when JSON field is absent", .timeLimit(.minutes(1)))
+    func twoLinesItemHasNilImageUrlWhenAbsent() throws {
+        // GIVEN
+        let item = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(id: "item1")
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [item])
+
+        // WHEN
+        let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
+
+        // THEN
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        #expect(items.first?.imageUrl == nil)
+    }
+
+    @Test("Two-lines item has nil imageUrl when JSON value is an empty string", .timeLimit(.minutes(1)))
+    func twoLinesItemRejectsEmptyImageUrl() throws {
+        let invalidUrl = ""
+        // GIVEN
+        let item = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(
+            id: "item1",
+            imageUrl: invalidUrl
+        )
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [item])
+
+        // WHEN
+        let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
+
+        // THEN
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        #expect(items.first?.imageUrl == nil)
+    }
+
     @Test("Check Item With Nil Action Is Handled Correctly")
     func nilActionIsValid() {
         // GIVEN
@@ -355,6 +417,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
             ("KeyImport", .keyImport),
             ("NewTabOptions", .newTabOptions),
             ("SplitBarMobile", .splitBarMobile),
+            ("YoutubeNew", .youtubeNew),
             ("PIR", .pir),
             ("Subscription", .subscription),
             (nil, nil)
@@ -699,7 +762,8 @@ struct JsonToRemoteMessageModelMapperTitledSectionTests {
             primaryAction: .urlInContext,
             matchingRules: nil,
             exclusionRules: nil,
-            itemIDs: ["item1"]
+            itemIDs: ["item1"],
+            imageUrl: nil
         )
         let item = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(id: "item1")
         let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [sectionWithExtraFields, item])
@@ -877,7 +941,7 @@ struct JsonToRemoteMessageModelMapperFeaturedItemTests {
 
         #expect(items.count == 2)
 
-        guard case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, primaryActionText, primaryAction) = items.first?.type else {
+        guard case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, _, primaryActionText, primaryAction) = items.first?.type else {
             Issue.record("Expected featuredTwoLinesSingleActionItem type")
             return
         }
@@ -967,6 +1031,45 @@ struct JsonToRemoteMessageModelMapperFeaturedItemTests {
         #expect(items.last?.id == "item1")
     }
 
+    @Test("Featured item parses imageUrl when present in JSON", .timeLimit(.minutes(1)))
+    func featuredItemParsesImageUrl() throws {
+        // GIVEN
+        let featuredItem = RemoteMessageResponse.JsonListItem.mockFeaturedItem(
+            id: "featured1",
+            imageUrl: "https://example.com/featured.png"
+        )
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [featuredItem])
+
+        // WHEN
+        let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
+
+        // THEN
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        #expect(items.first?.imageUrl == URL(string: "https://example.com/featured.png"))
+    }
+
+    @Test("Featured item has nil imageUrl when JSON field is absent", .timeLimit(.minutes(1)))
+    func featuredItemHasNilImageUrlWhenAbsent() throws {
+        // GIVEN
+        let featuredItem = RemoteMessageResponse.JsonListItem.mockFeaturedItem(id: "featured1")
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [featuredItem])
+
+        // WHEN
+        let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))
+
+        // THEN
+        guard case let .cardsList(_, _, _, items, _, _) = result else {
+            Issue.record("Expected cardsList message type")
+            return
+        }
+
+        #expect(items.first?.imageUrl == nil)
+    }
+
     @Test("Check Featured Item With Primary Action Text Maps Correctly")
     func featuredItemWithPrimaryActionText() throws {
         // GIVEN
@@ -987,7 +1090,7 @@ struct JsonToRemoteMessageModelMapperFeaturedItemTests {
             return
         }
 
-        guard case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, _, primaryActionText, _) = items.first?.type else {
+        guard case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, _, _, primaryActionText, _) = items.first?.type else {
             Issue.record("Expected featuredTwoLinesSingleActionItem type")
             return
         }
@@ -1037,7 +1140,8 @@ private extension RemoteMessageResponse.JsonListItem {
         primaryActionText: String? = nil,
         primaryAction: RemoteMessageResponse.JsonMessageAction? = .init(type: "url", value: "https://example.com", additionalParameters: nil),
         matchingRules: [Int]? = nil,
-        exclusionRules: [Int]? = nil
+        exclusionRules: [Int]? = nil,
+        imageUrl: String? = nil
     ) -> RemoteMessageResponse.JsonListItem {
         RemoteMessageResponse.JsonListItem(
             id: id,
@@ -1049,7 +1153,8 @@ private extension RemoteMessageResponse.JsonListItem {
             primaryAction: primaryAction,
             matchingRules: matchingRules,
             exclusionRules: exclusionRules,
-            itemIDs: nil
+            itemIDs: nil,
+            imageUrl: imageUrl
         )
     }
 
@@ -1068,7 +1173,8 @@ private extension RemoteMessageResponse.JsonListItem {
             primaryAction: nil,
             matchingRules: nil,
             exclusionRules: nil,
-            itemIDs: itemIDs
+            itemIDs: itemIDs,
+            imageUrl: nil
         )
     }
 
@@ -1080,7 +1186,8 @@ private extension RemoteMessageResponse.JsonListItem {
         primaryActionText: String? = nil,
         primaryAction: RemoteMessageResponse.JsonMessageAction? = .init(type: "url_in_context", value: "https://example.com", additionalParameters: nil),
         matchingRules: [Int]? = nil,
-        exclusionRules: [Int]? = nil
+        exclusionRules: [Int]? = nil,
+        imageUrl: String? = nil
     ) -> RemoteMessageResponse.JsonListItem {
         RemoteMessageResponse.JsonListItem(
             id: id,
@@ -1092,7 +1199,8 @@ private extension RemoteMessageResponse.JsonListItem {
             primaryAction: primaryAction,
             matchingRules: matchingRules,
             exclusionRules: exclusionRules,
-            itemIDs: nil
+            itemIDs: nil,
+            imageUrl: imageUrl
         )
     }
 

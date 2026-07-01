@@ -21,6 +21,7 @@ import AppUpdaterShared
 import BrowserServicesKit
 import Cocoa
 import Common
+import FoundationExtensions
 import Configuration
 import Networking
 import Crashes
@@ -45,17 +46,12 @@ extension AppDelegate {
 
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
+        PixelKit.fire(UpdateFlowPixels.checkForUpdatesFromMainMenu, frequency: .dailyAndCount)
         if StandardApplicationBuildType().isAppStoreBuild {
-            PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .mainMenu))
             NSWorkspace.shared.open(.appStore)
         } else if StandardApplicationBuildType().isSparkleBuild {
-            if let warning = SupportedOSChecker().supportWarning,
-               case .unsupported = warning {
-                // Show not supported info
-                if NSAlert.osNotSupported(warning).runModal() != .cancel {
-                    let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
-                    NSWorkspace.shared.open(url)
-                }
+            if SupportedOSChecker().showsSupportWarning {
+                BigSurEndOfSupportNoticePresenter(keyValueStore: keyValueStore).show()
             }
             showAbout(sender)
         }
@@ -70,8 +66,21 @@ extension AppDelegate {
     }
 
     @objc func newBurnerWindow(_ sender: Any?) {
+        // Distinguish between "user pressed ⌘N and Open Fire Window by default is enabled" vs
+        // "user explicitly chose to open a Fire Window".
+        //
+        // If the user opens a Fire Window by pressing ⌘N while they have "Open Fire Window by default"
+        // enabled, we record that path as an automatic Fire Window open.
+        //
+        // Every other invocation — mouse clicks on the menu item, the Dock menu, the Fire popover button,
+        // and ⇧⌘N when the preference is off — is an explicit user choice and is recorded as a manual
+        // Fire Window open.
+        let isKeyShortcut = NSApp.currentEvent?.type == .keyDown
+        let isFireWindowOpenedDueToDefaultPreferenceEnabled: Bool = isKeyShortcut
+            && visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled
         DispatchQueue.main.async {
-            WindowsManager.openNewWindow(burnerMode: BurnerMode(isBurner: true))
+            WindowsManager.openNewWindow(burnerMode: BurnerMode(isBurner: true),
+                                         isOpenedAutomatically: isFireWindowOpenedDueToDefaultPreferenceEnabled)
         }
     }
 
@@ -532,6 +541,7 @@ extension AppDelegate {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
         Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
         OnboardingActionsManager.isOnboardingFinished = true
+        OnboardingActionsManager.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: Application.appDelegate.featureFlagger)
         Application.appDelegate.windowControllersManager.updatePreventUserInteraction(prevent: false)
         Application.appDelegate.windowControllersManager.replaceTabWith(Tab(content: .newtab))
     }
@@ -579,7 +589,6 @@ extension AppDelegate {
         duckPlayer.preferences.duckPlayerMode = .alwaysAsk
         UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
         homePageSetUpDependencies.clearAll()
-        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
     @MainActor
@@ -793,11 +802,6 @@ extension AppDelegate {
         duckPlayer.preferences.youtubeOverlayInteracted = false
     }
 
-    @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowAllFeatures.rawValue)
-        homePageSetUpDependencies.clearAll()
-    }
-
     @objc func resetOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
     }
@@ -907,7 +911,7 @@ extension AppDelegate {
             throw error
         }
         if let configurationUrl {
-            Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
+            Logger.config.debug("New configuration URL set to \(configurationUrl.shortDescription)")
         } else {
             Logger.config.log("New configuration URL reset to default")
         }
@@ -1250,17 +1254,29 @@ extension MainViewController {
     }
 
     @objc func zoomIn(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.zoomIn()
+        performZoomIn(entryPoint: .forMainMenuBarZoomAction)
+    }
+
+    func performZoomIn(entryPoint: WebViewZoomEntryPoint) {
+        activeTabViewModel?.zoomIn(entryPoint: entryPoint)
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
     }
 
     @objc func zoomOut(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.zoomOut()
+        performZoomOut(entryPoint: .forMainMenuBarZoomAction)
+    }
+
+    func performZoomOut(entryPoint: WebViewZoomEntryPoint) {
+        activeTabViewModel?.zoomOut(entryPoint: entryPoint)
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
     }
 
     @objc func actualSize(_ sender: Any) {
-        getActiveTabAndIndex()?.tab.webView.resetZoomLevel()
+        performActualSize(entryPoint: .actualSize)
+    }
+
+    func performActualSize(entryPoint: WebViewZoomEntryPoint) {
+        activeTabViewModel?.resetZoom(entryPoint: entryPoint)
     }
 
     @objc func summarize(_ sender: Any) {
@@ -1324,6 +1340,12 @@ extension MainViewController {
     @objc func toggleDuckAIChromeSidebarButtonVisibility(_ sender: Any?) {
         guard featureFlagger.isFeatureOn(.aiChatChromeSidebar) else { return }
         duckAIChromeButtonsVisibilityManager.toggleVisibility(for: .sidebar)
+    }
+
+    @objc func toggleDuckAISidebar(_ sender: Any?) {
+        guard featureFlagger.isFeatureOn(.aiChatChromeSidebar),
+              aiChatMenuConfig.shouldDisplayAnyAIChatFeature else { return }
+        aiChatCoordinator.toggleSidebar()
     }
 
     @objc func toggleAutofillShortcut(_ sender: Any) {
@@ -1465,6 +1487,11 @@ extension MainViewController {
     @objc func showManageBookmarks(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .bookmarks)
+    }
+
+    @objc func inspectFavicons(_ sender: Any?) {
+        makeKeyIfNeeded()
+        browserTabViewController.openNewTab(with: .url(.favicons, source: .ui))
     }
 
     @objc func showHistory(_ sender: Any?) {
@@ -1625,7 +1652,7 @@ extension MainViewController {
         let debugPersistor = NewTabPageNextStepsCardsDebugPersistor()
         guard let card = debugPersistor.debugVisibleCards.first else { return }
         persistor.setTimesShown(10, for: card)
-        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: nil)
     }
 
     @objc func debugShiftNewTabOpeningDate(_ sender: Any?) {
@@ -1671,12 +1698,12 @@ extension MainViewController {
     @MainActor
     @objc func crashAllTabs() {
         let windowControllersManager = Application.appDelegate.windowControllersManager
-        let allTabViewModels = windowControllersManager.allTabViewModels
-
-        for tabViewModel in allTabViewModels {
-            let tab = tabViewModel.tab
-            if tab.canKillWebContentProcess {
-                tab.killWebContentProcess()
+        for tabCollectionViewModel in windowControllersManager.allTabCollectionViewModels {
+            for case let tabViewModel as TabViewModel in tabCollectionViewModel.tabViewModels.values {
+                let tab = tabViewModel.tab
+                if tab.canKillWebContentProcess {
+                    tab.killWebContentProcess()
+                }
             }
         }
     }
@@ -1892,6 +1919,11 @@ extension MainViewController: NSMenuItemValidation {
         case #selector(MainViewController.summarize(_:)):
             return aiChatMenuConfig.shouldDisplaySummarizationMenuItem
 
+        case #selector(MainViewController.toggleDuckAISidebar(_:)):
+            let isOpen = aiChatCoordinator.isSidebarOpenForCurrentTab()
+            menuItem.title = isOpen ? UserText.aiChatHideSidebar : UserText.aiChatShowSidebar
+            return true
+
         default:
             return true
         }
@@ -1921,7 +1953,7 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
             return recentlyClosedCoordinator.canReopenRecentlyClosedTab
 
-        // Reopen All Windows From Last Session
+        // Reopen All Windows and Tabs From Last Session
         case #selector(AppDelegate.reopenAllWindowsFromLastSession(_:)):
             return stateRestorationManager.canRestoreLastSessionState
 

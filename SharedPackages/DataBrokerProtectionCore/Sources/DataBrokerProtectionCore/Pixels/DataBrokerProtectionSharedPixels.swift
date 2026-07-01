@@ -63,6 +63,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let actionIDKey = "action_id"
         public static let stepTypeKey = "stepType"
         public static let environmentKey = "environment"
+        public static let subscribedKey = "subscribed"
         public static let httpCode = "http_code"
         public static let backendServiceCallSite = "backend_service_callsite"
         public static let isImmediateOperation = "is_manual_scan"
@@ -139,18 +140,36 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutSubmit(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutEmailReceive(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutEmailConfirm(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
+    case optOutEmailGetData(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutValidate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutFillForm(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutConditionFound(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutConditionNotFound(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutFinish(dataBroker: String, attemptId: UUID, duration: Double, parent: String)
 
-    // KPIs - engagement
+    // engagement
     case dailyActiveUser(isAuthenticated: Bool, needBackgroundAppRefresh: Bool?, isFreeScan: Bool?)
     case weeklyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
     case monthlyActiveUser(isAuthenticated: Bool, isFreeScan: Bool?)
 
-    // KPIs - events
+    // user interaction (PIR dashboard presentations)
+    case dailyInteractedUser(isAuthenticated: Bool, isFreeScan: Bool?)
+    case weeklyInteractedUser(isAuthenticated: Bool, isFreeScan: Bool?)
+    case monthlyInteractedUser(isAuthenticated: Bool, isFreeScan: Bool?)
+
+    // dashboard opens
+    case dashboardOpen(isAuthenticated: Bool, isFreeScan: Bool?)
+
+    // first scan
+    case firstScan(isAuthenticated: Bool, isFreeScan: Bool?)
+
+    // freemium → paid upsell
+    case freemiumUpsell
+
+    // Temporary Freemium PIR monitoring
+    case freemiumPIRMaintenanceScanSkipped
+
+    // events
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
     case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
     case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
@@ -215,6 +234,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .optOutSubmit: return "dbp_optout_stage_submit"
         case .optOutEmailReceive: return "dbp_optout_stage_email-receive"
         case .optOutEmailConfirm: return "dbp_optout_stage_email-confirm"
+        case .optOutEmailGetData: return "dbp_optout_stage_email-get-data"
         case .optOutValidate: return "dbp_optout_stage_validate"
         case .optOutFillForm: return "dbp_optout_stage_fill-form"
         case .optOutConditionFound: return "dbp_optout_stage_condition-found"
@@ -249,10 +269,27 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .secureVaultDatabaseRecreated: return "dbp_secure_vault_database_recreated"
         case .failedToOpenDatabase: return "dbp_failed-to-open-database_error"
 
-            // KPIs - engagement
+            // engagement
         case .dailyActiveUser: return "dbp_engagement_dau"
         case .weeklyActiveUser: return "dbp_engagement_wau"
         case .monthlyActiveUser: return "dbp_engagement_mau"
+
+            // user interaction
+        case .dailyInteractedUser: return "dbp_interaction_dau"
+        case .weeklyInteractedUser: return "dbp_interaction_wau"
+        case .monthlyInteractedUser: return "dbp_interaction_mau"
+
+            // dashboard opens
+        case .dashboardOpen: return "dbp_dashboard_open"
+
+            // first scan
+        case .firstScan: return "dbp_first_scan_u"
+
+            // freemium upsell
+        case .freemiumUpsell: return "dbp_freemium_upsell_u"
+
+            // Temporary Freemium PIR monitoring
+        case .freemiumPIRMaintenanceScanSkipped: return "dbp_freemium_pir_maintenance_scan_skipped"
 
         case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"
         case .weeklyReportStalledScans: return "dbp_event_weekly-report_stalled-scans"
@@ -344,6 +381,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
              .optOutCaptchaSolve(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutEmailReceive(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutEmailConfirm(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
+             .optOutEmailGetData(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutValidate(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutFillForm(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutConditionFound(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
@@ -487,8 +525,16 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             }
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .weeklyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
-                .monthlyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan):
+                .monthlyActiveUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .dailyInteractedUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .weeklyInteractedUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .monthlyInteractedUser(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .dashboardOpen(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
+                .firstScan(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan):
             return addingFreeScanParamIfNeeded(to: [Consts.isAuthenticated: isAuthenticated.description], isFreeScan: isFreeScan)
+        case .freemiumUpsell,
+                .freemiumPIRMaintenanceScanSkipped:
+            return [:]
         case .scanningEventNewMatch(let dataBrokerURL),
                 .scanningEventReAppearance(let dataBrokerURL):
             return [Consts.dataBrokerParamKey: dataBrokerURL]
@@ -620,6 +666,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutSubmit,
                 .optOutEmailReceive,
                 .optOutEmailConfirm,
+                .optOutEmailGetData,
                 .optOutValidate,
                 .optOutFillForm,
                 .optOutConditionFound,
@@ -628,6 +675,13 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .dailyActiveUser,
                 .weeklyActiveUser,
                 .monthlyActiveUser,
+                .dailyInteractedUser,
+                .weeklyInteractedUser,
+                .monthlyInteractedUser,
+                .dashboardOpen,
+                .firstScan,
+                .freemiumUpsell,
+                .freemiumPIRMaintenanceScanSkipped,
                 .weeklyReportBackgroundTaskSession,
                 .weeklyReportStalledScans,
                 .weeklyReportStalledOptOuts,
@@ -700,32 +754,29 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
     public init(pixelKit: PixelKit, platform: Platform) {
         self.pixelKit = pixelKit
         self.platform = platform
-        super.init { _, _, _, _ in
-        }
-
-        self.eventMapper = { event, _, parameters, _ in
+        super.init { event, _, parameters, _ in
             switch event {
             case .generateEmailHTTPErrorDaily:
-                self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .emptyAccessTokenDaily:
-                self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultDatabaseRecreated:
-                self.pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _, _, _),
                     .actionFailedError(let error, _, _, _, _, _, _, _),
                     .otherError(let error, _, _, _):
-                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .databaseError(let error, _),
                     .cocoaError(let error, _),
                     .miscError(let error, _),
                     .userScriptLoadJSFailed(_, let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),
                     .secureVaultKeyStoreReadError(let error, _, _),
                     .secureVaultKeyStoreUpdateError(let error),
                     .failedToOpenDatabase(let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndStandard, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndStandard, withNamePrefix: platform.pixelNamePrefix)
             case .parentChildMatches,
                     .optOutStart,
                     .optOutEmailGenerate,
@@ -735,6 +786,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .optOutSubmit,
                     .optOutEmailReceive,
                     .optOutEmailConfirm,
+                    .optOutEmailGetData,
                     .optOutValidate,
                     .optOutFinish,
                     .optOutSubmitSuccess,
@@ -750,6 +802,10 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .dailyActiveUser,
                     .weeklyActiveUser,
                     .monthlyActiveUser,
+                    .dailyInteractedUser,
+                    .weeklyInteractedUser,
+                    .monthlyInteractedUser,
+                    .dashboardOpen,
                     .weeklyReportBackgroundTaskSession,
                     .weeklyReportStalledScans,
                     .weeklyReportStalledOptOuts,
@@ -780,12 +836,16 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .serviceEmailConfirmationJobSuccess,
                     .updateDataBrokersSuccess:
 
-                self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+            case .freemiumPIRMaintenanceScanSkipped:
+                pixelKit.fire(event, frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+            case .firstScan, .freemiumUpsell:
+                pixelKit.fire(event, frequency: .uniqueByName, withNamePrefix: platform.pixelNamePrefix)
             case .updateDataBrokersFailure(_, _, _, let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
 #if os(iOS)
             case .scanStarted:
-                self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+                pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
 #endif
 
             }

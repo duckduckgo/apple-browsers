@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 
 /// NSLocalizedString format parser for CSV/HTML data import instructions screen

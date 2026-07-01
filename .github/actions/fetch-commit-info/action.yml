@@ -25,11 +25,28 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
         head_commit=$(git rev-parse HEAD)
-        author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
+        author=""
+        commit_message=""
+
+        if [[ -f "${GITHUB_EVENT_PATH:-}" ]]; then
+          event_head_commit=$(jq -r '.head_commit.id // .after // ""' "$GITHUB_EVENT_PATH")
+          if [[ "$event_head_commit" == "$head_commit" ]]; then
+            author=$(jq -r '.head_commit.author.username // .head_commit.committer.username // ""' "$GITHUB_EVENT_PATH")
+            commit_message=$(jq -r '.head_commit.message // ""' "$GITHUB_EVENT_PATH")
+          fi
+        fi
+
+        if [[ -z "$commit_message" ]]; then
+          commit_message=$(git log -1 --format=%B "$head_commit")
+        fi
+
+        if [[ -z "$author" ]]; then
+          author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq '.author.login // ""')
+        fi
+
         echo "commit_author=${author}" >> $GITHUB_OUTPUT
 
         # Check if this is a merge commit from a PR
-        commit_message=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .commit.message)
 
         # Extract PR number from commit message
         # Format 1: "Merge pull request #123 from ..." (merge commits)

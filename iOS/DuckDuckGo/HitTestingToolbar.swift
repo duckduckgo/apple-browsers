@@ -24,6 +24,11 @@ class HitTestingToolbar: UIToolbar {
     static let hitWidth: CGFloat = 45
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        // Mirror UIView.hitTest's standard preconditions — without this guard the custom logic
+        // below bypasses isHidden / alpha / interaction-disabled and returns hits for buttons
+        // sitting inside a hidden toolbar (iOS 26 hosts the bar items in a SwiftUI-backed glass
+        // layer that doesn't inherit the toolbar's isHidden for hit-testing).
+        guard !isHidden, alpha >= 0.01, isUserInteractionEnabled else { return nil }
 
         let item = items?.first(where: {
             // Only interested in buttons with custom views

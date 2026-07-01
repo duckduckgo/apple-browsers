@@ -49,6 +49,7 @@ struct SettingsCellView: View, Identifiable {
 
     var label: String
     var subtitle: String?
+    var renderSubtitleAsMarkdown: Bool = false
     var image: Image?
     var action: () -> Void = {}
     var enabled: Bool = true
@@ -77,9 +78,11 @@ struct SettingsCellView: View, Identifiable {
     ///   - webLinkIndicator: Adds a link indicator on the right
     ///   - isButton: Disables the tap actions on the cell if true
     ///   - optionalBadgeText: If non nil displays badges next to the item for feature discovery with the specified text
-    init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, accessoryAccessibilityIdentifier: String = "", enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, optionalBadgeText: String? = nil, shouldShowWinBackOffer: Bool = false) {
+    ///   - renderSubtitleAsMarkdown: When true, the subtitle is parsed as Markdown so links are tappable and tinted with the accent color.
+    init(label: String, subtitle: String? = nil, renderSubtitleAsMarkdown: Bool = false, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, accessoryAccessibilityIdentifier: String = "", enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, optionalBadgeText: String? = nil, shouldShowWinBackOffer: Bool = false) {
         self.label = label
         self.subtitle = subtitle
+        self.renderSubtitleAsMarkdown = renderSubtitleAsMarkdown
         self.image = image
         self.action = action
         self.enabled = enabled
@@ -167,9 +170,16 @@ struct SettingsCellView: View, Identifiable {
                             }
                             // Subtitle
                             if let subtitleText = subtitle {
-                                Text(subtitleText)
-                                    .daxFootnoteRegular()
-                                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                                Group {
+                                    if renderSubtitleAsMarkdown {
+                                        Text(LocalizedStringKey(subtitleText))
+                                            .tint(Color(designSystemColor: .accentPrimary))
+                                    } else {
+                                        Text(subtitleText)
+                                    }
+                                }
+                                .daxFootnoteRegular()
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
                             }
                         }.fixedSize(horizontal: false, vertical: true)
                             .layoutPriority(0.7)
@@ -216,7 +226,7 @@ struct SettingsCellView: View, Identifiable {
                 .layoutPriority(1)
         case .toggle(let isOn):
             Toggle("", isOn: isOn)
-                .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accent)))
+                .toggleStyle(SwitchToggleStyle(tint: Color(designSystemColor: .accentPrimary)))
                 .fixedSize()
                 .accessibilityIdentifier(accessoryAccessibilityIdentifier)
         case .image(let image):
@@ -239,6 +249,8 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
 
     let label: String
     let subtitle: String?
+    let renderSubtitleAsMarkdown: Bool
+    let image: Image?
     let options: [T?]
     @Binding var selectedOption: T
 
@@ -252,29 +264,46 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
     /// - Parameters:
     ///   - label: The label to display above the Picker.
     ///   - subtitle: Optional subtitle text displayed below the label.
+    ///   - renderSubtitleAsMarkdown: When true, the subtitle is parsed as Markdown so links are tappable and tinted with the accent color.
+    ///   - image: Optional image displayed to the left of the label.
     ///   - options: An array of options of generic type `T` that conforms to CustomStringConvertible.
     ///   - selectedOption: A binding to a state variable that represents the selected option.
-    init(label: String, subtitle: String? = nil, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
+    init(label: String, subtitle: String? = nil, renderSubtitleAsMarkdown: Bool = false, image: Image? = nil, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
         self.label = label
         self.subtitle = subtitle
+        self.renderSubtitleAsMarkdown = renderSubtitleAsMarkdown
+        self.image = image
         self.options = options
         self._selectedOption = selectedOption
         self.iconProvider = iconProvider
     }
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(label)
-                    .daxBodyRegular()
-                    .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary): Color(designSystemColor: .textSecondary))
-                if let subtitle {
-                    Text(subtitle)
+        HStack(alignment: .center) {
+            HStack(alignment: .top) {
+                if let image {
+                    image
+                        .padding(.top, -2)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(label)
+                        .daxBodyRegular()
+                        .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary): Color(designSystemColor: .textSecondary))
+                    if let subtitle {
+                        Group {
+                            if renderSubtitleAsMarkdown {
+                                Text(LocalizedStringKey(subtitle))
+                                    .tint(Color(designSystemColor: .accentPrimary))
+                            } else {
+                                Text(subtitle)
+                            }
+                        }
                         .daxFootnoteRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
+                    }
                 }
+                .layoutPriority(-1)
             }
-            .layoutPriority(-1)
             Spacer(minLength: 16)
             Menu {
                 ForEach(options, id: \.self) { option in

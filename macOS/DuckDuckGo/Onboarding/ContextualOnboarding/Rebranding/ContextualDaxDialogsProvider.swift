@@ -57,7 +57,9 @@ final class ContextualDaxDialogsProvider: ContextualDaxDialogsFactory {
     }
 
     private var factory: ContextualDaxDialogsFactory {
-        if featureFlagger.isFeatureOn(.onboardingRebranding) {
+        // Rebranded panel layout breaks on macOS 12 and below. For now, we'll just
+        // ensure we show the legacy contextual dialogs on those versions.
+        if #available(macOS 13.0, *), featureFlagger.isFeatureOn(.onboardingRebranding) {
             rebrandedDaxDialogsFactory
         } else {
             legacyDaxDialogsFactory

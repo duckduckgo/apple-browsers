@@ -75,7 +75,7 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
             return .noAction // don‘t delete history records from History View, burning is done by FireCoordinator
         case .burn(options: .some(let options)) where options.includeCookiesAndSiteData:
             return .burn
-        case .burn(let options):
+        case .burn:
             return .delete
         }
     }

@@ -1,0 +1,9 @@
+{
+    "m_custom-product-page_duck-ai_opened-ai-chat": {
+        "description": "Fired when the user opens AI Chat from the custom product page",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

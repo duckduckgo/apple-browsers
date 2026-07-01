@@ -19,6 +19,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import DataBrokerProtectionCore
 
 public class BrokerProfileJobEventsHandler: EventMapping<JobEvent> {
@@ -28,7 +29,7 @@ public class BrokerProfileJobEventsHandler: EventMapping<JobEvent> {
 
     public init(
         userNotificationService: DataBrokerProtectionUserNotificationService,
-        freemiumUserStateManager: FreemiumDBPUserStateManaging = DisabledFreemiumDBPUserStateManager()
+        freemiumUserStateManager: FreemiumDBPUserStateManaging
     ) {
         self.userNotificationService = userNotificationService
         self.freemiumUserStateManager = freemiumUserStateManager

@@ -124,7 +124,7 @@ final class CircularButton: UIButton {
         }
         let background = isFireTab
             ? UIColor(singleUseColor: .fireModeAccent)
-            : UIColor(designSystemColor: .accent)
+            : UIColor(designSystemColor: .accentPrimary)
         let pressedBackground = isFireTab
             ? UIColor(singleUseColor: .fireModeAccentTertiary)
             : UIColor(designSystemColor: .accentTertiary)
@@ -132,6 +132,16 @@ final class CircularButton: UIButton {
                   background: background,
                   pressedForeground: activeForeground,
                   pressedBackground: pressedBackground)
+    }
+
+    func applyAIVoiceChatStyle() {
+        setColors(foreground: UIColor(designSystemColor: .textPrimary),
+                  background: UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground))
+    }
+
+    func applyReturnKeyStyle() {
+        setColors(foreground: UIColor(designSystemColor: .textPrimary),
+                  background: UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground))
     }
 
     override func layoutSubviews() {

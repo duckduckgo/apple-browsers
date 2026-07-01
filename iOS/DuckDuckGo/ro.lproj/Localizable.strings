@@ -25,6 +25,15 @@
 /* No comment provided by engineer. */
 "%@s" = "%@s";
 
+/* Accessibility label for the text half of the iPad Duck.ai chrome chip; tapping opens a new Duck.ai tab. The visible label reads \"Duck.ai\". */
+"accessibility.label.aiChat.openDuckAI" = "Deschide Duck.ai";
+
+/* Accessibility value when the Duck.ai contextual sheet is closed. */
+"accessibility.value.aiChat.contextualSheet.closed" = "Închis";
+
+/* Accessibility value when the Duck.ai contextual sheet is open. */
+"accessibility.value.aiChat.contextualSheet.open" = "Deschis";
+
 /* No comment provided by engineer. */
 "Account" = "account";
 
@@ -55,14 +64,32 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Adăugați";
 
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
+"action.title.aiChat.hideContextualSheetButton" = "Ascunde comanda rapidă din partea de jos a foii";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the Duck.ai (open) button half. */
+"action.title.aiChat.hideDuckAIButton" = "Ascunde comanda rapidă Duck.ai";
+
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Chaturi Duck.ai";
 
 /* Start new AI Chat action in the menu list */
 "action.title.aiChat.new" = "Chat nou";
 
+/* Title of the long-press menu item on the iPad Duck.ai chrome chip that deep-links to Settings → AI Features. */
+"action.title.aiChat.openSettings" = "Deschide Setări IA";
+
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Setări Duck.ai";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the bottom-sheet button half. */
+"action.title.aiChat.showContextualSheetButton" = "Afișează comanda rapidă din partea de jos a foii";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the Duck.ai (open) button half. */
+"action.title.aiChat.showDuckAIButton" = "Afișează comanda rapidă Duck.ai";
+
+/* Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. */
+"action.title.aiChat.toggleContextualSheet" = "Comută foaia Duck.ai";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Parole";
@@ -78,6 +105,12 @@
 
 /* Copy action */
 "action.title.copy" = "Copiere";
+
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Copiază linkul curat";
+
+/* Copy link action */
+"action.title.copy.link" = "Copiază linkul";
 
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL copiat";
@@ -116,7 +149,8 @@
 "action.title.newFireTabAction" = "Nouă filă Fire";
 
 /* Open in New Fire Tab action */
-"action.title.newFireTabForUrl" = "Deschide într-o filă Fire";
+"action.title.newFireTabForUrl" = "Deschide în fila Fire";
+
 /* Create New Tab action */
 "action.title.newTabAction" = "Filă nouă";
 
@@ -177,6 +211,12 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Description of the Ad Blocking feature in settings */
+"ad.blocking.description" = "Blochează tehnologiile de urmărire invazive înainte de a se încărca, eliminând eficient reclamele care se bazează pe urmărire";
+
+/* Section header for YouTube-specific ad blocking settings */
+"ad.blocking.youtube.section.header" = "Blocarea reclamelor pe YouTube";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Partea de jos";
 
@@ -199,7 +239,7 @@
 "addWidget.settings.secondParagraph.%@" = "Atinge butonul plus %@.";
 
 /* No comment provided by engineer. */
-"addWidget.settings.title" = "Găsește și selectează DuckDuckGo. Apoi alege un widget.";
+"addWidget.settings.title" = "Găsește și selectează **DuckDuckGo**. Apoi alege un widget.";
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Atinge o dată pentru a ajunge la site-urile tale preferate.";
@@ -207,11 +247,95 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Caracteristici AI";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Alege o fotografie";
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Chat";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transcriere";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Chat vocal";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Chat nou";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Ascultare în curs...";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Ascult...";
+
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Chaturi";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Istoricul chaturilor";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Setări pentru chat";
+
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Poți atașa doar %d fișiere per conversație.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "Nu putem citi fișierele atașate deoarece cel puțin unul dintre ele este criptat.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Fișierele atașate depășesc limita totală de %d MB.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Fișierul acesta este prea mare. Dimensiunea maximă a fișierului este de %d MB.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Unul dintre fișierele atașate are mai multe pagini decât acceptăm. Încarcă fișiere cu %d pagini sau mai puține.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Nu putem citi unul dintre fișierele pe care le-ai atașat. Verifică dacă nu este deteriorat și încearcă din nou.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Poți atașa doar %d imagini per conversație.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Poți atașa doar %d imagini odată.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Adaugă fișier";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Adaugă imagine";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fă o fotografie";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Acel mesaj este prea lung pentru a fi trimis cu atașări.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Atașările nu sunt disponibile temporar. Încearcă din nou mai târziu.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Acest tip de fișier nu este acceptat.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Acest tip de fișier nu este acceptat, atașează un %1$@ sau un %2$@.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Acest tip de fișier nu este acceptat, atașează un %@.";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Nou";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Noua filă Fire";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Căutare nouă";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Filă nouă";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Chat vocal nou";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Pentru sarcini analitice";
@@ -231,17 +355,56 @@
 /* Title for the reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.reasoning.title" = "Raționament";
 
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Găsește codul QR în aplicația DuckDuckGo de pe celălalt dispozitiv, accesând **Setări** › **Sync & Backup** › **Sincronizează cu alt dispozitiv**.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Nu acum";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "Scanează codul QR";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Haide să-ți sincronizăm chaturile pe toate dispozitivele!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Sincronizează cu un alt dispozitiv";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Ignoră promovarea sincronizării";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Accesează-ți chaturile pe toate dispozitivele folosind Sync & Backup.";
+
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Setează tonul, durata și comportamentul";
+
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Personalizează răspunsurile";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Transformă textul în imagini";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Creează imaginea";
+
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "Găsește informații actuale";
+"aichat.toolbar.tools.websearch.subtitle" = "Obține răspunsuri de pe web";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Căutare pe web";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Marcajele existente nu vor fi duplicate.";
+
+/* Button title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-button" = "Am înțeles";
+
+/* Description for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-description" = "Ești deja asociat cu acest cont pe ambele dispozitive.";
+
+/* Title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-title" = "Deja asociat";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Unele semne de carte sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";
@@ -251,6 +414,21 @@
 
 /* Title for alert shown when sync bookmarks paused for too many items */
 "alert.sync-bookmarks-paused-title" = "Sincronizarea marcajelor este întreruptă";
+
+/* Button title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-button" = "Am înțeles";
+
+/* Description for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-description" = "Încearcă din nou.";
+
+/* Title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-title" = "Sincronizarea a fost anulată de pe celălalt dispozitiv.";
+
+/* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-description" = "În browser, accesează duck.ai, Accesează Setări, apoi din secțiunea „Sync & Backup” selectează „Activează” și apoi „Sincronizează cu un alt dispozitiv”.";
+
+/* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-title" = "Scanează acest cod din Setările Duck.ai.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Unele parole sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";
@@ -275,6 +453,9 @@
 
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Setări de sincronizare";
+
+/* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
+"alert.sync-from-another-connected-device-description" = "Sincronizează acest dispozitiv dintr-un browser DuckDuckGo deja conectat pe un alt dispozitiv.";
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sincronizarea a fost întreruptă. Dacă dorești să continui sincronizarea acestui dispozitiv, reconectează-te folosind un alt dispozitiv sau codul de recuperare.";
@@ -308,6 +489,12 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup sunt temporar indisponibile.";
+
+/* Description for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-description" = "Acest cod nu este acceptat în versiunea existentă a aplicației.";
+
+/* Title for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-title" = "Actualizează browserul DuckDuckGo și încearcă din nou.";
 
 /* Title of the warning message that tells the user that there was an error with the sync feature. */
 "alert.sync.warning.sync-error" = "Eroare de sincronizare";
@@ -890,12 +1077,6 @@
 
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Dorești să salvezi această parolă?";
-
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Nu, mulțumesc";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Nu acum";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Stochează în siguranță parola pe dispozitiv, cu Parole și completare automată DuckDuckGo.";
@@ -1515,9 +1696,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Depanează";
 
-/* No comment provided by engineer. */
-"Delete" = "Ștergere";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "dispozitiv";
 
@@ -1629,17 +1807,26 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funcțiile AI ale DuckDuckGo sunt private și opționale. Datele tale nu sunt folosite pentru a antrena AI.";
 
-/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
-"duckai.quick.action.attach" = "Atașează conținutul paginii";
-
 /* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
 "duckai.quick.action.ask.about.page" = "Întreabă despre pagină";
+
+/* Title for the attach page content quick action chip in Duck.ai contextual sheet */
+"duckai.quick.action.attach" = "Atașează conținutul paginii";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Rezumă această pagină";
 
 /* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
 "duckai.quick.action.summarize.page" = "Rezumă pagina";
+
+/* Destructive button confirming deletion of a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.button" = "Ștergere";
+
+/* Message of the confirmation alert shown before deleting a recent Duck.ai chat. %@ is the chat title. */
+"duckai.recent.chat.remove.confirmation.message" = "„%@” va fi șters definitiv de peste tot.";
+
+/* Title of the confirmation alert shown before deleting a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.title" = "Ștergi acest chat?";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Adaugă Duck.ai la Centrul de control";
@@ -1668,8 +1855,14 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Meniu browser";
 
+/* Subtitle for the Tab Bar toggle row in Manage Duck.ai Shortcuts settings */
+"duckai.settings.enable.tab-bar-subtitle" = "Afișează în bara de file a browserului sau în bara de adrese, în funcție de dimensiunea ferestrei.";
+
+/* Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar) */
+"duckai.settings.enable.tab-bar-toggle" = "Bara de file";
+
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Ecranul cu file";
+"duckai.settings.enable.tab-switcher-toggle" = "Ecranul managerului de file";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Căutare vocală";
@@ -1698,11 +1891,8 @@
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Vorbește cu Duck.ai folosind Siri!";
 
-/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. The word 'private' is highlighted in green. */
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
 "duckai.welcome.message" = "Toate chaturile sunt %@ private";
-
-/* The word 'private' in the Duck.ai welcome message, displayed in green to emphasize privacy. Must match the word used in duckai.welcome.message. */
-"duckai.welcome.private.word" = "private";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo pentru iOS";
@@ -1739,6 +1929,9 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Niciodată";
+
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "Deschide în aplicația YouTube";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
@@ -1945,6 +2138,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Completează un număr nenegativ de zile. Data instalării va fi setată cu acel număr de zile în urmă.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -1985,6 +2181,19 @@
 
 /* Title shown on the escape hatch card when the target is a fire tab */
 "escapeHatch.fireTab.title" = "Fila Fire utilizată ultima dată";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Închide fila";
+
+/* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.deleteTab" = "Șterge fila";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Înapoi la filă";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Mai multe opțiuni";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "Înapoi la %@";
 
@@ -1993,6 +2202,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Înapoi la %1$@, %2$@";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "File private";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2335,6 +2547,7 @@
 
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Filă Fire";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Curent de aer";
 
@@ -2383,6 +2596,18 @@
 /* Home tab title */
 "homeTab.title" = "Pagina de pornire";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Nu sunt acceptate evenimente multiple. Încearcă să deschizi în schimb fișierul descărcat.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Acest fișier nu poate fi prelucrat. Încearcă să deschizi în schimb fișierul descărcat.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Fus orar neacceptat. Încearcă să deschizi în schimb fișierul descărcat.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Eveniment adăugat în Calendarul Apple";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Identificator: %1$@ | %2$@ | %3$@";
 
@@ -2402,7 +2627,7 @@
 "input.field.placeholder.duckai" = "Întreabă orice în mod privat";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "Pune o întrebare suplimentară...";
+"input.field.placeholder.duckai.followup" = "Răspunde...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Instalează extensia";
@@ -2482,11 +2707,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Reîncarcă";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Resetează focalizarea";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Selecție";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Afișează toate filele";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Mărește";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Micșorează";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Ultima procesare: %@";
@@ -2779,6 +3013,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Volum de date";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "Recomandat dezactivat, astfel încât tot traficul să treacă prin VPN. Dacă ai probleme cu funcții precum apelurile prin Wi-Fi, mesageria sau mesageria vocală, încearcă să le activezi.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Exclude serviciile operatorului de telefonie mobilă";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Lasă traficul local să ocolească VPN-ul și să se conecteze la dispozitivele din rețeaua locală, cum ar fi o imprimantă.";
 
@@ -2827,6 +3067,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo direcționează interogările DNS prin serverele noastre DNS, astfel încât furnizorul tău de internet să nu poată vedea ce site-uri web vizitezi.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "Copiază diagnosticul VPN";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Include o copie a acestor diagnostice VPN anonimizate când contactezi Serviciul de asistență pentru a ne ajuta să-ți reparăm conexiunea.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Copiat în clipboard";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Nu s-a putut copia în clipboard";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "Întrebări frecvente și asistență";
 
@@ -2839,6 +3091,12 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Scurtături";
 
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Recomandat pentru rețele în care nu ai încredere, de ex. Wi-Fi public în hoteluri, baruri etc. Dacă ai probleme cu unele funcții (cum ar fi CarPlay, AirDrop etc.) sau cu conectarea la alte dispozitive, încearcă să dezactivezi. [Află mai multe](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Rutare strictă";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirmare";
 
@@ -2847,6 +3105,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Nu acum";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Funcțiile IA sunt private și opționale.\nPoți face modificări în Setări > Funcții IA.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Vrei acces rapid la chat privat cu inteligență artificială în bara de adrese?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Caută pe Duck.ai";
@@ -2896,6 +3160,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Mută bara de adrese în partea de jos";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Mută bara de adrese în partea de sus";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Modulele cookie au fost gestionate";
 
@@ -2913,6 +3183,51 @@
 
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Alege browserul";
+
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Mă voi afla la îndemâna tuturor chaturilor și a navigărilor tale zilnice cu IA.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Toate chaturile sunt anonimizate";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Nu ai nevoie de un cont pentru a accesa toate funcțiile IA";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Nu folosește niciodată chaturile tale pentru a antrena IA";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "Accesează ChatGPT, Claude și multe altele, toate într-un singur loc";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Încearcă Duck.ai!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Sisteme de IA populare";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "Protecții IA activate!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "Vrei să setezi DuckDuckGo ca browser implicit?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Începe o conversație privată cu IA cu Duck.ai sau comută la Căutare pentru navigare protejată.\n\nPoți folosi Duck.ai de oriunde vezi pictograma de chat [[chat_icon]]";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "De asemenea, oferim un abonament plătit cu modele avansate de inteligență artificială cu limite de chat mai mari de la GPT și Claude, un VPN securizat și multe altele.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Acum, încearcă un chat privat cu IA!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Ești gata să discuți în privat cu ChatGPT, Claude și alte sisteme de IA în mod gratuit, într-un browser care te protejează activ?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "Pornește chatul IA";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Nu uita: poți folosi Duck.ai oriunde vezi pictograma de chat [[chat_icon]]";
 
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo are, de asemenea, un %1$@, disponibil cu un %2$@ și %3$@.";
@@ -2958,6 +3273,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Mecanismele de protecție au fost activate!";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Folosește bara de adrese pentru a căuta și vizita site-uri sau comută la Duck.ai pentru chat privat cu IA.\n\nPoți folosi Duck.ai de oriunde vezi pictograma de chat [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Chaturi private cu IA pe care le poți șterge oricând cu butonul „Fire Button”. Încearcă! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Acesta este Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Întreabă orice în mod privat";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Caută în mod privat";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Explică-mi piața bursieră ca și cum aș avea 10 ani";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planifică o zi perfectă în Londra";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Care sunt 10 lucruri fascinante despre știință, natură și istorie?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Ești gata să începi?\nÎncearcă o căutare sau un chat IA!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Întreabă IA";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Ignorare";
@@ -3014,7 +3359,7 @@
 "onboarding.rebranding.first-search-done.title" = "Acesta este DuckDuckGo Search!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Ești gata pentru un browser mai rapid, care te protejează și îți permite să decizi când și cum să folosești inteligența artificială?";
+"onboarding.rebranding.intro.message" = "Ești gata pentru un browser mai rapid, care îți oferă control deplin?\n\nInteligența artificială este întotdeauna opțională, iar protecția confidențialității este întotdeauna activată.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Salut!";
@@ -3269,6 +3614,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Previews" = "Previzualizări";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Acțiune primară/principală";
 
 /* No comment provided by engineer. */
@@ -3301,26 +3649,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Deschizi în altă aplicație?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Înapoi";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Am încercat să o încărcăm în mod privat, dar nu se afișează.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Vrei să deschizi această pagină în Safari?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Deschide în Safari";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Din păcate, pagina nu s-a putut încărca.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Această pagină se încarcă doar în Safari";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Deschide în Safari";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Acest site are un certificat de securitate incorect și vizitarea sa este posibil să nu prezinte siguranță.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "Rămâi pe DuckDuckGo";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Este posibil ca unele funcții ale site-ului să nu fie compatibile cu acest browser.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Acest site vrea să se deschidă în Safari.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo nu poate încărca această pagină.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Jurnale de procesare recente";
@@ -3354,6 +3696,10 @@
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Ștergi filele Fire și datele aferente?";
+
+/* Title for fire confirmation dialog asking user to delete a single tab and its site data */
+"scoped.fire.confirmation.alert.single.tab.title" = "Dorești să ștergi fila și datele de pe site?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Dorești să ștergi filele și datele site-ului?";
 
@@ -3362,6 +3708,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Șterge toate";
+
+/* Button to delete a single tab and its site data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.tab.button" = "Șterge fila";
 
 /* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Șterge acest chat";
@@ -3454,7 +3803,10 @@
 "settings.address.trackers.animation" = "Afișează în bara de adrese";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "Alege ce vezi când revii după %@ de inactivitate.";
+"settings.afterInactivity.footer.format" = "Alege ce vezi când revii la DuckDuckGo după %@ de inactivitate.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "Alege ce vezi când revii la DuckDuckGo.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 oră";
@@ -3468,14 +3820,17 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d minute";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Niciuna";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 secundă";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d secunde";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "După inactivitate";
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Cronometru de inactivitate";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Ultima filă utilizată";
@@ -3483,8 +3838,14 @@
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Filă nouă";
 
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "După inactivitate";
+
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Încearcă noua opțiune de a comuta între căutare și Duck.ai în bara de adrese.";
+
+/* Settings row that opens Duck.ai in a new tab */
+"settings.aichat.duckai.settings" = "Setări Duck.ai";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Gestionează comenzile rapide Duck.ai";
@@ -3501,6 +3862,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Setări Search Assist";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Niciodată";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Des";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "La cerere";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Uneori";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Search Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Trimite automat conținutul paginii către Duck.ai";
 
@@ -3510,11 +3886,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Sugestii de chat";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Folosește DuckDuckGo fără IA";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Dezactivează Duck.ai, ascunde răspunsurile asistate de IA în căutare și filtrează site-urile de spam cunoscute bazate pe IA din rezultatele căutării de imagini.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "IA este în prezent dezactivată în browser, așa că nu vei mai vedea răspunsuri asistate de IA și vei vedea mai puține imagini generate de IA în rezultatele căutării de imagini.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ascunde imaginile generate de IA";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrează imaginile generate de IA din rezultatele căutării de imagini";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Oprit";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Pornit";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrează site-urile spam cunoscute, bazate pe IA, din rezultatele căutării de imagini. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Întotdeauna activat";
@@ -3524,6 +3918,12 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Poziția barei de adrese";
+
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Ascunde bara de file la derulare";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Disponibil pe majoritatea site-urilor. Duck.ai, hărțile și jocurile pot menține bara de file vizibilă.";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Deschide linkuri în aplicațiile asociate";
@@ -3631,7 +4031,7 @@
 "settings.cookie.pop-up-protection.protection" = "Protecție pentru ferestre pop-up aferente modulelor cookie";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo va încerca să selecteze cele mai private setări disponibile și să ascundă aceste ferestre pop-up pentru tine.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo va încerca să selecteze cele mai private setări disponibile și să ascundă aceste ferestre pop-up pentru tine.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Gestionare pop-up-uri pentru module cookie";
@@ -4200,6 +4600,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Se restabilește abonamentul...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Nu acum";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo oferă și un **abonament opțional cu plată**, cu un **VPN** securizat și **IA avansată, privată**.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Elimină de pe acest dispozitiv";
 
@@ -4314,6 +4720,21 @@
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Ștergi datele serverului?";
 
+/* Caption for a button to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.action" = "Sincronizează acum";
+
+/* Message for the dialog to confirm sync setup with another DuckDuckGo device */
+"sync.pairing-v2.confirmation.ddg.message" = "„%@” va avea acces la parolele tale sincronizate din DuckDuckGo, la datele de completare automată și la conversațiile din Duck.ai.";
+
+/* Message for the dialog to confirm sync setup with a third-party device */
+"sync.pairing-v2.confirmation.third-party.message" = "„%@” va putea accesa chaturile tale Duck.ai sincronizate.";
+
+/* Title of the dialog to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.title" = "Sincronizezi un nou dispozitiv?";
+
+/* Fallback device name for confirmation dialogs */
+"sync.pairing-v2.unknown-peer-name" = "celălalt dispozitiv";
+
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Nu este nevoie să ai un cont. Criptarea de la un punct la altul (end-to-end) înseamnă că nimeni în afară de tine nu îți poate vedea marcajele, nici măcar noi.";
 
@@ -4377,9 +4798,6 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Elimini dispozitivul?";
 
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Cod copiat";
-
 /* Toast message shown after sync is enabled by connecting with another device */
 "sync.simplified.device-synced.toast" = "Dispozitivul a fost sincronizat!";
 
@@ -4401,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Oprești Sync & Backup?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Elimină";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Acest dispozitiv nu va mai putea accesa datele tale sincronizate.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Oprești sincronizarea?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Deblochează dispozitivul pentru a configura Sync & Backup";
 
@@ -4430,6 +4839,7 @@
 
 /* Accessibility label on tab cell */
 "tab.close.closeNewTab" = "Închidere filă";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Închide fila de pornire";
 
@@ -4441,6 +4851,7 @@
 
 /* New tab title */
 "tab.new.title" = "Filă nouă";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Deschide fila de pornire";
 
@@ -4449,6 +4860,7 @@
 
 /* Accessibility label on tab cell */
 "tab.open.newFireTab" = "Deschide o filă Fire";
+
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Deschide \"%1$@\" la %2$@";
 
@@ -4532,6 +4944,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Nu se poate adăuga contactul. Încearcă să deschizi fișierul contactului din Descărcări.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Contact adăugat";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Versiune: %@";
@@ -4863,14 +5281,59 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Descarcă DuckDuckGo pentru Windows!";
 
-/* Explanation text for YouTube Ad Blocking feature */
-"youtube.ad.blocking.explanation" = "DuckDuckGo elimină reclamele video de pe YouTube, astfel încât să poți viziona videoclipuri fără întrerupere.";
+/* Body text of the bottom sheet asking the user to send an anonymous breakage report */
+"youtube.ad.blocking.breakage-report.message" = "Trimite un raport anonim despre erori către DuckDuckGo. Ajută la îmbunătățirea blocării reclamelor pentru toată lumea!";
 
-/* Settings screen title for YouTube Ad Blocking */
-"youtube.ad.blocking.title" = "Blocarea reclamelor pe YouTube";
+/* Primary action sending an anonymous YouTube ad-blocking breakage report */
+"youtube.ad.blocking.breakage-report.send" = "Trimite raportul de erori";
+
+/* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
+"youtube.ad.blocking.breakage-report.title" = "Blocarea reclamelor YouTube nu funcționează?";
+
+/* Settings cell subtitle indicating YouTube ad blocking will re-enable on next app launch */
+"youtube.ad.blocking.disabled-until-relaunch" = "Dezactivat până la relansare";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo blochează reclamele video pe YouTube, astfel încât să poți viziona videoclipuri fără întrerupere.";
+
+/* Browsing menu row that turns YouTube ad blocking back on after the user has disabled it */
+"youtube.ad.blocking.menu.enable" = "Activează blocarea reclamelor pe YouTube";
+
+/* Browsing menu row that opens the YouTube ad-block mode picker */
+"youtube.ad.blocking.menu.toggle" = "Dezactivează blocarea reclamelor pe YouTube";
+
+/* Picker option keeping YouTube ad blocking always off */
+"youtube.ad.blocking.mode.always-off" = "Întotdeauna dezactivat";
+
+/* Picker option keeping YouTube ad blocking always on */
+"youtube.ad.blocking.mode.always-on" = "Întotdeauna activat";
+
+/* Picker option disabling YouTube ad blocking until the next app launch */
+"youtube.ad.blocking.mode.disable-until-relaunch" = "Dezactivează până la relansare";
+
+/* Title of the YouTube ad-block mode picker bottom sheet */
+"youtube.ad.blocking.picker.title" = "Blocarea reclamelor pe YouTube";
+
+/* Settings screen title for Ad Blocking */
+"youtube.ad.blocking.title" = "Blocarea reclamelor";
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "Blochează reclamele pe YouTube";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "În cazul activării, DuckDuckGo va detecta anonim interferențele de blocare a reclamelor sau erorile YouTube, pentru a îmbunătăți experiența pentru toți utilizatorii. DuckDuckGo nu vede niciodată videoclipurile pe care le vizionezi sau orice informație de identificare personală.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Află mai multe";
+
+/* Acknowledgement button on the YouTube ad-blocking unavailable bottom sheet */
+"youtube.ad.blocking.unavailable.got-it" = "Am înțeles";
+
+/* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.message" = "Blocarea reclamelor a fost afectată de modificările recente aduse YouTube. Lucrăm pentru a remedia aceste probleme și apreciem înțelegerea ta";
+
+/* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.title" = "Blocarea reclamelor pe YouTube indisponibilă";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Semne de carte";
@@ -4887,3 +5350,52 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Nu există potriviri pentru „%@”";
+
+
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Chaturi";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Nu există chaturi recente";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Deschide Duck.ai";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Caută";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Fixat";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Recent";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Nu s-au găsit potriviri";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Nu s-au putut încărca chaturile";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "A apărut o eroare la încărcarea chaturilor tale Duck.ai. Încearcă din nou mai târziu.";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Șterge chatul";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Descarcă chatul";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Fixează chatul";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Anulează fixarea chatului";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Șterge chaturile";
+
+/* Do not translate - stringsdict entry */
+"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";

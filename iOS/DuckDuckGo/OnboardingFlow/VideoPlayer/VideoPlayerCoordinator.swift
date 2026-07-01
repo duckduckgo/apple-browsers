@@ -19,6 +19,7 @@
 
 import AVKit
 import Combine
+import CombineExtensions
 import CombineSchedulers
 
 struct VideoPlayerConfiguration {

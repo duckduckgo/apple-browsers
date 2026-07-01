@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Combine
 
 /// This protocol defines a common interface for feature flags managed by FeatureFlagger.
@@ -74,10 +75,10 @@ public protocol FeatureFlagDescribing: CaseIterable {
     ///        case .sync:
     ///            return .disabled
     ///        case .duckPlayer:
-    ///            return .remoteReleasable(.subfeature(DuckPlayerSubfeature.enableDuckPlayer))
+    ///            return .remoteReleasable(DuckPlayerSubfeature.enableDuckPlayer)
     ///        case .myInternalFeature:
     ///            // Defaults to internal-only, but can be promoted via remote config
-    ///            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
+    ///            return .remoteReleasable(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests)
     ///        }
     ///    }
     /// }
@@ -186,15 +187,7 @@ public enum FeatureFlagSource {
     case disabled
 
     /// Toggled remotely using PrivacyConfiguration for all users
-    case remoteReleasable(PrivacyConfigFeatureLevel)
-}
-
-public enum PrivacyConfigFeatureLevel {
-    /// Corresponds to a given top-level privacy config feature
-    case feature(PrivacyFeature)
-
-    /// Corresponds to a given subfeature of a privacy config feature
-    case subfeature(any PrivacySubfeature)
+    case remoteReleasable(any PrivacySubfeature)
 }
 
 public protocol FeatureFlagger: AnyObject {
@@ -414,8 +407,8 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         switch featureFlag.source {
         case .disabled:
             return false
-        case .remoteReleasable(let featureType):
-            return isEnabled(featureType, defaultValue: resolveDefault(featureFlag.defaultValue))
+        case .remoteReleasable(let subfeature):
+            return isEnabled(subfeature, defaultValue: resolveDefault(featureFlag.defaultValue))
         }
     }
 
@@ -451,30 +444,23 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         switch featureFlag.source {
         case .disabled:
             return nil
-        case .remoteReleasable(let featureType):
-            if case .subfeature(let subfeature) = featureType {
-                if let resolvedCohortID = resolveCohort(subfeature.rawValue, parentID: subfeature.parent.rawValue, allowCohortAssignment: allowCohortAssignment) {
-                    return featureFlag.cohortType?.cohort(for: resolvedCohortID)
-                }
+        case .remoteReleasable(let subfeature):
+            if let resolvedCohortID = resolveCohort(subfeature.rawValue, parentID: subfeature.parent.rawValue, allowCohortAssignment: allowCohortAssignment) {
+                return featureFlag.cohortType?.cohort(for: resolvedCohortID)
             }
             // Fall back to defaultValue cohort ONLY when feature is missing from remote config
             if case .internalOnlyWithCohort(let cohort) = featureFlag.defaultValue,
                internalUserDecider.isInternalUser,
-               isFeatureMissingFromRemoteConfig(featureType) {
+               isFeatureMissingFromRemoteConfig(subfeature) {
                 return cohort
             }
             return nil
         }
     }
 
-    private func isFeatureMissingFromRemoteConfig(_ featureType: PrivacyConfigFeatureLevel) -> Bool {
+    private func isFeatureMissingFromRemoteConfig(_ subfeature: any PrivacySubfeature) -> Bool {
         let config = privacyConfigManager.privacyConfig
-        switch featureType {
-        case .feature(let feature):
-            return config.stateFor(featureKey: feature) == .disabled(.featureMissing)
-        case .subfeature(let subfeature):
-            return config.stateFor(subfeatureID: subfeature.rawValue, parentFeatureID: subfeature.parent.rawValue) == .disabled(.featureMissing)
-        }
+        return config.stateFor(subfeatureID: subfeature.rawValue, parentFeatureID: subfeature.parent.rawValue) == .disabled(.featureMissing)
     }
 
     public func resolveCohort(_ subfeatureID: SubfeatureID, parentID: ParentFeatureID, allowCohortAssignment: Bool = true) -> CohortID? {
@@ -503,13 +489,8 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         }
     }
 
-    private func isEnabled(_ featureType: PrivacyConfigFeatureLevel, defaultValue: Bool) -> Bool {
-        switch featureType {
-        case .feature(let feature):
-            return privacyConfigManager.privacyConfig.isEnabled(featureKey: feature, defaultValue: defaultValue)
-        case .subfeature(let subfeature):
-            return privacyConfigManager.privacyConfig.isSubfeatureEnabled(subfeature, defaultValue: defaultValue)
-        }
+    private func isEnabled(_ subfeature: any PrivacySubfeature, defaultValue: Bool) -> Bool {
+        return privacyConfigManager.privacyConfig.isSubfeatureEnabled(subfeature, defaultValue: defaultValue)
     }
 }
 

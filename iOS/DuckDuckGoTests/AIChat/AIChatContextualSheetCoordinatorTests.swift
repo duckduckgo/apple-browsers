@@ -33,11 +33,16 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var triggerContextCollectionCallCount = 0
         var triggerContextCollectionReturnValue = true
         var clearCallCount = 0
+        var clearAttachedContextCallCount = 0
         var resubscribeCallCount = 0
 
         private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
         var contextPublisher: AnyPublisher<AIChatPageContext?, Never> {
             contextSubject.eraseToAnyPublisher()
+        }
+
+        func sendContext(_ context: AIChatPageContext?) {
+            contextSubject.send(context)
         }
 
         func triggerContextCollection() -> Bool {
@@ -53,6 +58,11 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         func resubscribe() {
             resubscribeCallCount += 1
         }
+
+        func clearAttachedContext() {
+            clearAttachedContextCallCount += 1
+            contextSubject.send(nil)
+        }
     }
 
     private final class MockDelegate: AIChatContextualSheetCoordinatorDelegate {
@@ -67,6 +77,12 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL) {
             didRequestExpandURLs.append(url)
+        }
+
+        var viewAllChatsCallCount = 0
+
+        func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {
+            viewAllChatsCallCount += 1
         }
 
         func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator) {
@@ -113,8 +129,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockPresentingVC: MockPresentingViewController!
     private var mockSettings: MockAIChatSettingsProvider!
     private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
+    private var originatingTabURLSubject: CurrentValueSubject<URL?, Never>!
     private var cancellables: Set<AnyCancellable>!
 
     // MARK: - Setup
@@ -124,8 +142,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         super.setUp()
         mockSettings = MockAIChatSettingsProvider()
         mockFeatureFlagger = MockFeatureFlagger()
+        mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
         mockPageContextHandler = MockPageContextHandler()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
+        originatingTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
         sut = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
             aiChatSettings: mockSettings,
@@ -133,7 +153,12 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: mockFeatureFlagger,
-            pageContextHandler: mockPageContextHandler
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            pageContextHandler: mockPageContextHandler,
+            tabURLPublishers: AIChatTabURLPublishers(
+                originating: originatingTabURLSubject.eraseToAnyPublisher(),
+                didFinish: PassthroughSubject<URL?, Never>().eraseToAnyPublisher()
+            )
         )
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()
@@ -148,8 +173,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockPresentingVC = nil
         mockSettings = nil
         mockFeatureFlagger = nil
+        mockUnifiedToggleInputFeature = nil
         mockPageContextHandler = nil
         contentBlockingSubject = nil
+        originatingTabURLSubject = nil
         cancellables = nil
         super.tearDown()
     }
@@ -313,6 +340,18 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
     }
 
+    @MainActor
+    func testRemoveChipRequestClearsAttachedContextFromHandler() async {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext())
+
+        sut.aiChatContextualSheetViewControllerDidRequestRemoveChip(sut.sheetViewController!)
+
+        XCTAssertEqual(sut.sessionState.chipState, .placeholder)
+        XCTAssertEqual(mockPageContextHandler.clearAttachedContextCallCount, 1)
+    }
+
     // MARK: - Session Timer Tests
 
     // MARK: - Multiple Page Contexts Tests
@@ -452,6 +491,47 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(secondPresenter.presentCallCount, 0)
     }
 
+    // MARK: - originatingURLPublisher Tests
+
+    @MainActor
+    func test_originatingURLPublisher_emitsTabURL() throws {
+        var received: [URL?] = []
+        sut.originatingURLPublisher
+            .sink { received.append($0) }
+            .store(in: &cancellables)
+
+        originatingTabURLSubject.send(URL(string: "https://example.com")!)
+
+        XCTAssertEqual(received.last??.absoluteString, "https://example.com")
+    }
+
+    @MainActor
+    func test_originatingURLPublisher_emitsNilOnClear() throws {
+        let url = URL(string: "https://example.com")!
+        originatingTabURLSubject.send(url)
+
+        var received: [URL?] = []
+        sut.originatingURLPublisher
+            .sink { received.append($0) }
+            .store(in: &cancellables)
+
+        originatingTabURLSubject.send(nil)
+
+        XCTAssertEqual(received, [url, nil])
+    }
+
     // MARK: - Helpers
+
+    private func makeTestContext(title: String = "Test Page") -> AIChatPageContext {
+        let contextData = AIChatPageContextData(
+            title: title,
+            favicon: [],
+            url: "https://example.com",
+            content: "Test content",
+            truncated: false,
+            fullContentLength: 12
+        )
+        return AIChatPageContext(contextData: contextData, favicon: nil)
+    }
 
 }

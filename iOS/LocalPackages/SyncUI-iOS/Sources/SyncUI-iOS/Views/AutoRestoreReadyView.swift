@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import UIKit
 
 public struct AutoRestoreReadyView: View {
@@ -46,7 +47,7 @@ public struct AutoRestoreReadyView: View {
                 }
                 .frame(height: 56)
 
-                Image("Sync-Pending-128")
+                Image(rebrandable: "Sync-Pending-128")
                     .padding(20)
 
                 Text(UserText.autoRestoreReadyTitle)
@@ -77,12 +78,7 @@ public struct AutoRestoreReadyView: View {
                 } label: {
                     Text(UserText.autoRestoreReadyScanCodeLink)
                 }
-                .buttonStyle(GhostButtonStyle())
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(designSystemColor: .accent), lineWidth: 1)
-                        .padding(1)
-                )
+                .buttonStyle(SecondaryButtonStyle())
                 .frame(maxWidth: 360)
                 .padding(.horizontal, 30)
                 .padding(.bottom, 8)

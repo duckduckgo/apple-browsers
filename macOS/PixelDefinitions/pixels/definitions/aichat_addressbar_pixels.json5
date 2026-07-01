@@ -5,56 +5,56 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_activated_toggle_off": {
         "description": "Fired when user selects address bar and toggle settings is OFF (search mode)",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_toggle_changed_aichat": {
         "description": "Fired when user changes toggle to duck.ai",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_toggle_changed_search": {
         "description": "Fired when user changes toggle to search",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_aichat_submit_prompt": {
         "description": "Fired when user submits prompt from duck.ai panel",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_aichat_submit_url": {
         "description": "Fired when user submits URL from duck.ai panel",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_suggestion_aichat_submitted_mouse": {
         "description": "Fired when user submits a prompt from the suggestion for duck.ai by clicking with the mouse",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_suggestion_aichat_submitted_keyboard": {
         "description": "Fired when user submits a prompt from the suggestion for duck.ai by pressing enter",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     "m_mac_aichat_recent_chat_selected_pinned_mouse": {
@@ -76,28 +76,28 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_recent_chat_selected_keyboard": {
         "description": "Fired when user selects a non-pinned recent chat by pressing enter",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_image_attached": {
         "description": "Fired when user attaches an image via the file picker in the duck.ai omnibar",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_image_removed": {
         "description": "Fired when user removes an attached image in the duck.ai omnibar",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_submit_with_image": {
         "description": "Fired when user submits a prompt that includes one or more image attachments",
@@ -107,10 +107,130 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "imageCount",
                 "type": "integer",
                 "description": "Number of images attached to the submitted prompt"
+            }
+        ]
+    },
+    "m_mac_aichat_addressbar_submit_with_tabs": {
+        "description": "Fired when user submits a prompt that includes one or more page-content tab attachments via the omnibar's Attach Page Content menu",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tabCount",
+                "type": "integer",
+                "description": "Number of tabs attached to the submitted prompt"
+            }
+        ]
+    },
+    "m_mac_aichat_addressbar_file_attached": {
+        "description": "Fired when user attaches a file (PDF etc.) via the file picker in the duck.ai omnibar",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_file_removed": {
+        "description": "Fired when user removes an attached file (PDF etc.) in the duck.ai omnibar by clicking the × on the carousel card",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_file_validation_failed": {
+        "description": "Fired when a file picked for the duck.ai omnibar is rejected at pick-time by the attachment validator (too large, over the total-size budget, too many pages, unsupported type, encrypted, or unreadable)",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "description": "Reason for the file validation failure.",
+                "type": "string",
+                "enum": ["size_exceeded", "count_exceeded", "unsupported_type", "encrypted", "unreadable", "other"]
+            }
+        ]
+    },
+    "m_mac_aichat_addressbar_attach_tabs_picker_shown": {
+        "description": "Fired when user opens the duck.ai omnibar attach menu's 'Add Page Content' submenu, which lists open tabs whose page content can be attached",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_attach_tab_chosen": {
+        "description": "Fired when user toggles a tab ON in the duck.ai omnibar's 'Add Page Content' submenu — i.e. adds that tab's page content as an attachment",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_attach_tab_removed": {
+        "description": "Fired when user toggles a tab OFF from inside the duck.ai omnibar's 'Add Page Content' submenu — i.e. removes that tab's page content attachment by clicking its row again",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_attach_picker_canceled": {
+        "description": "Fired when user dismisses the duck.ai omnibar's 'Add Page Content' submenu without toggling any tab on or off during that open session",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_mention_picker_shown": {
+        "description": "Fired when the duck.ai omnibar's @-mention tab picker appears — i.e. the user typed @ in the prompt and the picker became visible",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_mention_tab_chosen": {
+        "description": "Fired when user picks a previously-unattached tab in the duck.ai omnibar's @-mention picker — i.e. adds that tab as an attachment via @",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_mention_tab_removed": {
+        "description": "Fired when user picks an already-attached tab in the duck.ai omnibar's @-mention picker — i.e. removes that tab's page-content attachment via @",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_mention_picker_canceled": {
+        "description": "Fired when user dismisses the duck.ai omnibar's @-mention picker without accepting any row (Esc, click outside, caret leaves the @-token, etc.). Pressing Enter while the picker shows the empty-state row also counts here: it falls through to the omnibar's prompt submit, the panel dismisses on focus loss, and the user never picked a tab — semantically a cancel.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_submit_with_files": {
+        "description": "Fired when user submits a prompt that includes one or more file (PDF etc.) attachments",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "fileCount",
+                "type": "integer",
+                "description": "Number of files attached to the submitted prompt"
             }
         ]
     },
@@ -119,90 +239,90 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_reasoning_effort_selected": {
         "description": "Fired when user selects a reasoning effort from the native omnibar picker",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_new_voice_chat_omnibar_native": {
         "description": "Fired when user opens a new Duck.ai voice chat from the native omnibar",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_recent_chat_delete_button_clicked": {
         "description": "Fired when user clicks the delete button on a recent chat suggestion in the address bar",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_recent_chat_delete_confirmed": {
         "description": "Fired when user confirms deletion of a recent chat suggestion in the address bar",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_recent_chat_delete_cancelled": {
         "description": "Fired when user cancels deletion of a recent chat suggestion in the address bar",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_view_all_chats_clicked": {
         "description": "Fired when user taps 'View all chats' from the native address bar omnibar",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_image_generation_activated": {
         "description": "Fired when user selects the Create Image tool to enter image generation mode",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_image_generation_deactivated": {
         "description": "Fired when user dismisses the image generation chip (X button)",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_image_generation_submitted": {
         "description": "Fired when user submits a prompt while image generation mode is active",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_web_search_activated": {
         "description": "Fired when user selects the Web Search tool to enter web search mode",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_web_search_deactivated": {
         "description": "Fired when user dismisses the web search chip (X button)",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_addressbar_web_search_submitted": {
         "description": "Fired when user submits a prompt while web search mode is active",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

@@ -122,6 +122,19 @@ final class AIChatTabExtension {
                     self?.aiChatUserScript?.handler.submitAIChatPageContext(pageContext)
                     self?.temporaryPageContext = nil
                 }
+
+                if let selections = self?.temporarySelectionContexts, !selections.isEmpty {
+                    selections.forEach {
+                        self?.aiChatUserScript?.handler.messageHandling.appendSelectionContext($0)
+                        self?.aiChatUserScript?.handler.submitAIChatSelectionContext($0)
+                    }
+                    self?.temporarySelectionContexts = []
+                }
+
+                if self?.temporaryOpenSettingsRequest == true {
+                    self?.aiChatUserScript?.requestOpenSettingsAction()
+                    self?.temporaryOpenSettingsRequest = false
+                }
             }
         }.store(in: &cancellables)
     }
@@ -202,6 +215,16 @@ final class AIChatTabExtension {
         aiChatUserScript.handler.submitAIChatNativePrompt(prompt)
     }
 
+    private var temporaryOpenSettingsRequest = false
+    func requestOpenSettings() {
+        guard let aiChatUserScript else {
+            // User script not yet loaded — apply when it becomes available
+            temporaryOpenSettingsRequest = true
+            return
+        }
+        aiChatUserScript.requestOpenSettingsAction()
+    }
+
     private var temporaryPageContext: AIChatPageContextData?
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         // Page Context functionality is only for the sidebar.
@@ -227,6 +250,25 @@ final class AIChatTabExtension {
         aiChatUserScript.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
         aiChatUserScript.handler.submitAIChatPageContext(pageContext)
     }
+
+    private var temporarySelectionContexts: [AIChatSelectionContextData] = []
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
+        // Selection context, like page context, is only for the sidebar.
+        guard isLoadedInSidebar else {
+            return
+        }
+
+        guard let aiChatUserScript else {
+            // User script not yet loaded — buffer and flush in order once it is.
+            temporarySelectionContexts.append(selection)
+            return
+        }
+
+        // Store for the `getAIChatSelectionContext` pull (covers the FE-not-ready-for-push race),
+        // then push for the already-live case. Mirrors `submitAIChatPageContext`.
+        aiChatUserScript.handler.messageHandling.appendSelectionContext(selection)
+        aiChatUserScript.handler.submitAIChatSelectionContext(selection)
+    }
 }
 
 extension AIChatTabExtension: NavigationResponder {
@@ -239,6 +281,11 @@ extension AIChatTabExtension: NavigationResponder {
               !navigationAction.navigationType.isSameDocumentNavigation,
               navigationAction.isUserInitiated
         else {
+            return .next
+        }
+
+        // Downloads must stay in the sidebar webview: a redirect drops the download intent and blob: URLs are unresolvable elsewhere.
+        if navigationAction.shouldDownload {
             return .next
         }
 
@@ -320,6 +367,8 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func setAIChatRestorationData(_ data: AIChatRestorationData?)
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData)
+    func requestOpenSettings()
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }

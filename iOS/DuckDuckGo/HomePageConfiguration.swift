@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import RemoteMessaging
 import Common
+import FoundationExtensions
 import Core
 import Bookmarks
 import os.log
@@ -48,14 +49,14 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         self.subscriptionDataReporter = subscriptionDataReporter
         self.fireModePromotionEligibility = fireModePromotionEligibility
         self.isStillOnboarding = isStillOnboarding
-        homeMessages = buildHomeMessages()
+        homeMessages = buildHomeMessages(openedAfterIdle: false)
     }
 
-    func refresh() {
-        homeMessages = buildHomeMessages()
+    func refresh(openedAfterIdle: Bool = false) {
+        homeMessages = buildHomeMessages(openedAfterIdle: openedAfterIdle)
     }
 
-    private func buildHomeMessages() -> [HomeMessage] {
+    private func buildHomeMessages(openedAfterIdle: Bool) -> [HomeMessage] {
         var messages = homeMessageStorage.messagesToBeShown
 
         if isStillOnboarding() {
@@ -67,7 +68,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
             return messages
         }
 
-        guard let remoteMessage = remoteMessageToShow() else {
+        guard let remoteMessage = remoteMessageToShow(openedAfterIdle: openedAfterIdle) else {
             return messages
         }
 
@@ -75,8 +76,15 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         return messages
     }
 
-    private func remoteMessageToShow() -> HomeMessage? {
-        guard let remoteMessageToPresent = remoteMessagingStore.fetchScheduledRemoteMessage(surfaces: .newTabPage) else { return nil }
+    private func remoteMessageToShow(openedAfterIdle: Bool) -> HomeMessage? {
+        let remoteMessageToPresent: RemoteMessageModel?
+        if openedAfterIdle,
+           let idleMessage = remoteMessagingStore.fetchScheduledRemoteMessage(surfaces: .newTabPage, triggerFilter: .specific(.afterIdle)) {
+            remoteMessageToPresent = idleMessage
+        } else {
+            remoteMessageToPresent = remoteMessagingStore.fetchScheduledRemoteMessage(surfaces: .newTabPage, triggerFilter: .noTrigger)
+        }
+        guard let remoteMessageToPresent else { return nil }
         Logger.remoteMessaging.info("Remote message to show: \(remoteMessageToPresent.id, privacy: .public)")
         return .remoteMessage(remoteMessage: remoteMessageToPresent)
     }

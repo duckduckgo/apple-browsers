@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex,nofollow">
+<title>Install ${TITLE}</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1c1c1e;
+    --muted: #6c6c70;
+    --accent: #de5833;
+    --card: #f5f5f7;
+    --border: #e5e5ea;
+    --warn-bg: #fff3cd;
+    --warn-fg: #664d03;
+    --warn-border: #ffe69c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --fg: #f2f2f7;
+      --muted: #98989d;
+      --card: #1c1c1e;
+      --border: #2c2c2e;
+      --warn-bg: #2b2400;
+      --warn-fg: #ffe69c;
+      --warn-border: #4a3f00;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 32px 20px calc(env(safe-area-inset-bottom) + 32px) 20px;
+  }
+  h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .subtitle { color: var(--muted); font-size: 15px; margin: 0 0 24px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px 16px;
+    margin-bottom: 24px;
+    font-size: 14px;
+  }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; gap: 12px; }
+  .row + .row { border-top: 1px solid var(--border); }
+  .row .k { color: var(--muted); flex-shrink: 0; }
+  .row .v {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    text-align: right;
+    word-break: break-all;
+  }
+
+  a.install {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: var(--accent);
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 17px;
+    font-weight: 600;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  a.install:active { opacity: 0.85; }
+
+  .hint {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: center;
+    margin: 0 4px;
+  }
+
+  .warn {
+    display: none;
+    background: var(--warn-bg);
+    color: var(--warn-fg);
+    border: 1px solid var(--warn-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .warn strong { display: block; margin-bottom: 4px; }
+
+  body.not-safari .install { display: none; }
+  body.not-safari .warn { display: block; }
+  body.not-ios .hint::after {
+    content: " You'll need to open this page on the iPhone you want to install on.";
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>${TITLE}</h1>
+  <p class="subtitle">Internal ad-hoc build &middot; tap Install to add it to your iPhone.</p>
+
+  <div class="warn">
+    <strong>Open this page in Safari.</strong>
+    iOS only allows over-the-air installs to start from Safari. If you opened this from Slack, Asana, Mail, or another app, tap and hold the link, choose &ldquo;Open in Safari&rdquo;, then tap Install there.
+  </div>
+
+  <div class="card">
+    <div class="row"><span class="k">Version</span><span class="v">${BUNDLE_VERSION} (${BUILD_NUMBER})</span></div>
+    <div class="row"><span class="k">Build type</span><span class="v">${BUILD_TYPE}</span></div>
+    <div class="row"><span class="k">Bundle ID</span><span class="v">${BUNDLE_ID}</span></div>
+    <div class="row"><span class="k">Commit</span><span class="v">${COMMIT_SHORT_SHA}</span></div>
+    <div class="row"><span class="k">Built</span><span class="v">${BUILD_TIMESTAMP}</span></div>
+  </div>
+
+  <a class="install" href="itms-services://?action=download-manifest&amp;url=${MANIFEST_URL_ENCODED}">Install on iPhone</a>
+  <p class="hint">Your device&rsquo;s UDID must already be registered in the DuckDuckGo iOS provisioning profile. If install fails with &ldquo;Unable to install,&rdquo; that&rsquo;s the most likely reason.</p>
+</main>
+<script>
+(function () {
+  var ua = navigator.userAgent || "";
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  // Safari on iOS contains "Safari" but in-app webviews and other browsers add identifying tokens.
+  var isInAppOrOtherBrowser = /CriOS|FxiOS|EdgiOS|OPiOS|GSA|FBAN|FBAV|Instagram|Slack|Asana|Line|Twitter|LinkedIn|Snapchat|MicroMessenger/i.test(ua);
+  var isSafari = isIOS && /Safari/.test(ua) && !isInAppOrOtherBrowser;
+  if (!isSafari) document.body.classList.add("not-safari");
+  if (!isIOS) document.body.classList.add("not-ios");
+})();
+</script>
+</body>
+</html>

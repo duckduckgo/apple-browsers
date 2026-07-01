@@ -22,6 +22,7 @@ import SecureStorage
 import PixelKit
 import PrivacyConfig
 import Common
+import FoundationExtensions
 import UniformTypeIdentifiers
 
 /// A DataImporter that can import Safari archives as well as standalone Safari exports
@@ -275,6 +276,13 @@ final class SafariArchiveImporter: DataImporter {
     // MARK: - Private
 
     private func readContentsForSelectedFile() throws -> ImportArchiveContents {
+        // Reject a directly-selected file with a disguising double extension (e.g. foo.swift.html).
+        // Archives are exempt here (their own name is irrelevant); their entries are validated
+        // individually inside ImportArchiveReader.
+        if sourceFileType != .archive, archiveURL.lastPathComponent.hasMultipleFileExtensions {
+            return ImportArchiveReader.Contents(passwords: [], bookmarks: [], creditCards: [])
+        }
+
         switch sourceFileType {
         case .archive:
             return try archiveReader.readContents(from: archiveURL)

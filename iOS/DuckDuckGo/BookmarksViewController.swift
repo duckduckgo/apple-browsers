@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import UIKit
 import Core
 import DDGSync
@@ -150,7 +151,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             self?.segueToSync(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
             Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": SyncPromoManager.Touchpoint.bookmarks.rawValue])
         }, dismissButtonAction: { [weak self] in
-            self?.syncPromoManager.dismissPromoFor(.bookmarks)
+            self?.syncPromoManager.dismissPromoFor(.bookmarks, reason: .userTapped)
             self?.refreshTableHeaderView()
         }))
 

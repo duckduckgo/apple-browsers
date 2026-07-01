@@ -50,3 +50,14 @@ struct AutofillDeleteButtonCell: View {
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }}
+
+#Preview {
+    List {
+        AutofillDeleteButtonCell(
+            deleteButtonText: "Delete Password",
+            confirmationTitle: "Are you sure you want to delete this saved password?",
+            confirmationButtonTitle: "Delete Password",
+            onDelete: {}
+        )
+    }
+}

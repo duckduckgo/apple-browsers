@@ -275,7 +275,8 @@ extension TabIndex {
 
         /// Given of the nature of when this method is called, the tab index being manipulated (self) could be the tab to the right.
         /// So we need to check for self to see if it exists, if it exists, we return it.
-        if viewModel.tabViewModel(at: self) != nil {
+        /// Use `tabBarViewModel(at:)` so unloaded tabs are not skipped — they materialize on selection.
+        if viewModel.tabBarViewModel(at: self) != nil {
             return self
         }
 

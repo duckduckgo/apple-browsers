@@ -19,11 +19,13 @@
 import AppKit
 import Combine
 import Common
+import ConcurrencyExtensions
 import CoreGraphics
+import FoundationExtensions
 import OSLog
 import PixelKit
-import SwiftUI
 import QuartzCore
+import SwiftUI
 
 /// Delegate protocol for WarnBeforeQuitManager (mockable DuckDuckGo_Privacy_Browser.Application) to handle event interception
 @MainActor

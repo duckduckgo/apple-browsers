@@ -20,12 +20,14 @@ import AppKit
 import AppLauncher
 import BrowserServicesKit
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import LoginItems
-import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
 import PixelKit
 import SystemExtensions
+import VPN
 
 protocol VPNUninstalling {
     func uninstall(
@@ -210,7 +212,7 @@ final class VPNUninstaller: VPNUninstalling {
             throw UninstallError.cancelled(reason: .alreadyUninstalling)
         }
 
-        guard vpnMenuLoginItem.status.isInstalled else {
+        guard await vpnMenuLoginItem.status().isInstalled else {
             throw UninstallError.cancelled(reason: .alreadyUninstalled)
         }
 
@@ -261,7 +263,7 @@ final class VPNUninstaller: VPNUninstalling {
 
         // When the agent is registered as a login item, we want to unregister it
         // and stop it from running, which is achieved by the next call.
-        removeAgents()
+        await removeAgents()
 
         // When the agent was started directly (not as a login item) we want to stop it,
         // as the above call won't do anything for it.
@@ -280,8 +282,8 @@ final class VPNUninstaller: VPNUninstalling {
         try await ipcServiceLauncher.disable()
     }
 
-    func removeAgents() {
-        loginItemsManager.disableLoginItems(LoginItemsManager.vpnLoginItems)
+    func removeAgents() async {
+        await loginItemsManager.disableLoginItems(LoginItemsManager.vpnLoginItems)
     }
 
     func removeSystemExtension() async throws {

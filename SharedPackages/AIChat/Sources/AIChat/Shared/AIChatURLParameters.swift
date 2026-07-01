@@ -27,6 +27,10 @@ public enum AIChatURLParameters {
     public static let autoSubmitPromptQueryValue = "1"
     /// Repeating parameter for selecting one or more RAG tools.
     public static let toolChoiceName = "toolChoice"
+    /// Flag indicating the host app renders the chat input natively.
+    public static let nativeInputName = "native-input"
+    /// Value used with `nativeInputName` when native input is enabled.
+    public static let nativeInputValue = "true"
     /// Flow selector key used for onboarding-specific Duck.ai behavior.
     public static let flowQueryName = "flow"
     /// Flow selector value for mobile app onboarding.
@@ -38,6 +42,9 @@ public enum AIChatURLParameters {
 
     public static let sidebarName = "sidebar"
     public static let sidebarOpenValue = "open"
+
+    public static let settingsName = "settings"
+    public static let settingsOpenValue = "open"
 
     /// Appends `?mode=voice` to the given base URL.
     public static func voiceModeURL(from baseURL: URL) -> URL {
@@ -52,6 +59,36 @@ public enum AIChatURLParameters {
     /// Appends `?sidebar=open` to the given base URL.
     public static func sidebarOpenURL(from baseURL: URL) -> URL {
         baseURL.addingOrReplacing(URLQueryItem(name: sidebarName, value: sidebarOpenValue))
+    }
+
+    /// Appends `?settings=open` to the given base URL.
+    public static func settingsOpenURL(from baseURL: URL) -> URL {
+        baseURL.addingOrReplacing(URLQueryItem(name: settingsName, value: settingsOpenValue))
+    }
+
+    /// Appends `?native-input=true` to the given base URL.
+    public static func nativeInputURL(from baseURL: URL) -> URL {
+        baseURL.addingOrReplacing(URLQueryItem(name: nativeInputName, value: nativeInputValue))
+    }
+
+    /// Removes `native-input` from the given base URL.
+    public static func removingNativeInputURL(from baseURL: URL) -> URL {
+        guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+            return baseURL
+        }
+        var queryItems = components.queryItems ?? []
+        queryItems.removeAll { $0.name == nativeInputName }
+        components.queryItems = queryItems.isEmpty ? nil : queryItems
+        return components.url ?? baseURL
+    }
+
+    /// Adds or removes `native-input` for URLs that support the native input contract.
+    public static func updatingNativeInputURL(from baseURL: URL, isNativeInputAvailable: Bool, isSupportedURL: Bool) -> URL {
+        guard isSupportedURL else { return baseURL }
+        if isNativeInputAvailable {
+            return nativeInputURL(from: baseURL)
+        }
+        return removingNativeInputURL(from: baseURL)
     }
 
     private static func modeURL(from baseURL: URL, mode: String) -> URL {

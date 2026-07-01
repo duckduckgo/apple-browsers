@@ -26,6 +26,7 @@ import NetworkProtectionIPC
 import PixelKit
 import PrivacyDashboard
 import Common
+import FoundationExtensions
 
 protocol PopoverPresenter {
     func show(_ popover: NSPopover, positionedBelow view: NSView)
@@ -154,6 +155,10 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     var isPasswordManagementPopoverShown: Bool {
         autofillPopoverPresenter.popoverIsShown
+    }
+
+    var isAutofillOnboardingPopoverShown: Bool {
+        autofillOnboardingPopover?.isShown ?? false
     }
 
     var isSaveCredentialsPopoverShown: Bool {

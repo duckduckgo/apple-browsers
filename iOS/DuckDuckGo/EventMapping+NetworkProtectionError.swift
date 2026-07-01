@@ -20,6 +20,7 @@
 import Foundation
 import VPN
 import Common
+import FoundationExtensions
 import Core
 
 extension EventMapping where Event == NetworkProtectionError {

@@ -55,20 +55,3 @@ public protocol FreemiumDBPUserStateManaging {
     /// Clears every stored value. For debug tools.
     func resetAllState()
 }
-
-/// No-op default used until the real FreemiumDBPUserStateManager is wired in.
-/// Reads return pre-freemium defaults; writes are dropped.
-public struct DisabledFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
-    public init() {}
-
-    public var didActivate: Bool { false }
-    public var firstProfileSavedTimestamp: Date? { nil }
-    public var firstScanResult: FreemiumFirstScanResult? { nil }
-    public var upgradeToSubscriptionTimestamp: Date? { nil }
-
-    public func recordProfileSavedIfNeeded() async {}
-    public func recordFirstScanResultIfNeeded(hasMatches: Bool) async {}
-    public func recordSubscriptionUpgradeIfEligible() async {}
-
-    public func resetAllState() {}
-}

@@ -92,42 +92,6 @@ final class ToggleModeStorageTests: XCTestCase {
     }
 }
 
-// MARK: - Tab.preferredTextEntryMode NSCoding
-
-final class TabPreferredTextEntryModeCodingTests: XCTestCase {
-
-    func testRoundTripPreservesMode() throws {
-        let tabAI = Tab(link: Link(title: nil, url: URL(string: "https://example.com")!), preferredTextEntryMode: .aiChat)
-        let tabSearch = Tab(link: Link(title: nil, url: URL(string: "https://example.com")!), preferredTextEntryMode: .search)
-
-        let dataAI = try NSKeyedArchiver.archivedData(withRootObject: tabAI, requiringSecureCoding: false)
-        let decodedAI = try NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(dataAI) as? Tab
-        XCTAssertEqual(decodedAI?.preferredTextEntryMode, .aiChat)
-
-        let dataSearch = try NSKeyedArchiver.archivedData(withRootObject: tabSearch, requiringSecureCoding: false)
-        let decodedSearch = try NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(dataSearch) as? Tab
-        XCTAssertEqual(decodedSearch?.preferredTextEntryMode, .search)
-    }
-
-    func testLegacyTabWithoutStoredModeInfersFromURL() {
-        // Tab with regular URL — should default to .search
-        let regularTab = Tab(coder: LegacyCoderStub(properties: [
-            "link": Link(title: nil, url: URL(string: "https://example.com")!)
-        ]))
-        XCTAssertEqual(regularTab?.preferredTextEntryMode, .search)
-
-        // Tab with duck.ai URL — should infer .aiChat
-        let aiTab = Tab(coder: LegacyCoderStub(properties: [
-            "link": Link(title: nil, url: URL(string: "https://duck.ai/chat")!)
-        ]))
-        XCTAssertEqual(aiTab?.preferredTextEntryMode, .aiChat)
-
-        // Tab with no URL — should default to .search
-        let emptyTab = Tab(coder: LegacyCoderStub(properties: [:]))
-        XCTAssertEqual(emptyTab?.preferredTextEntryMode, .search)
-    }
-}
-
 // MARK: - SwitchBarHandler Default Mode
 
 final class SwitchBarHandlerDefaultModeTests: XCTestCase {
@@ -171,102 +135,7 @@ final class SwitchBarHandlerDefaultModeTests: XCTestCase {
             aiChatSettings: settings,
             toggleModeStorage: toggleModeStorage,
             sessionStateMetrics: SessionStateMetrics(storage: MockKeyValueStore()),
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
             isFireTab: false
         )
     }
-}
-
-// MARK: - Tab Creation Mode Inheritance
-
-final class TabCreationModeInheritanceTests: XCTestCase {
-
-    func testTabsInheritModeFromCurrentSettingAndRetainItAfterChange() {
-        let settings = MockAIChatSettingsProvider(defaultOmnibarMode: .search)
-        let store = MockKeyValueStore()
-        let storage = ToggleModeStorage(store: store)
-
-        let resolve: () -> TextEntryMode = {
-            settings.defaultOmnibarMode.resolvedTextEntryMode { storage.restore() }
-        }
-
-        // Create tabs with search setting
-        let tab1 = Tab(link: nil, preferredTextEntryMode: resolve())
-        let tab2 = Tab(link: nil, preferredTextEntryMode: resolve())
-        let tab3 = Tab(link: nil, preferredTextEntryMode: resolve())
-
-        // Change setting to duck.ai
-        settings.defaultOmnibarMode = .duckAI
-
-        // Create tabs with duck.ai setting
-        let tab4 = Tab(link: nil, preferredTextEntryMode: resolve())
-        let tab5 = Tab(link: nil, preferredTextEntryMode: resolve())
-
-        // Original tabs retain their mode
-        XCTAssertEqual(tab1.preferredTextEntryMode, .search)
-        XCTAssertEqual(tab2.preferredTextEntryMode, .search)
-        XCTAssertEqual(tab3.preferredTextEntryMode, .search)
-
-        // New tabs have the updated mode
-        XCTAssertEqual(tab4.preferredTextEntryMode, .aiChat)
-        XCTAssertEqual(tab5.preferredTextEntryMode, .aiChat)
-    }
-
-    func testLastUsedSettingPicksUpCommittedMode() {
-        let settings = MockAIChatSettingsProvider(defaultOmnibarMode: .lastUsed)
-        let store = MockKeyValueStore()
-        let storage = ToggleModeStorage(store: store)
-
-        let resolve: () -> TextEntryMode = {
-            settings.defaultOmnibarMode.resolvedTextEntryMode { storage.restore() }
-        }
-
-        // No stored value — defaults to search
-        let tab1 = Tab(link: nil, preferredTextEntryMode: resolve())
-        XCTAssertEqual(tab1.preferredTextEntryMode, .search)
-
-        // Simulate commit: user submitted in aiChat mode
-        storage.save(.aiChat)
-
-        // New tab inherits last committed mode
-        let tab2 = Tab(link: nil, preferredTextEntryMode: resolve())
-        XCTAssertEqual(tab2.preferredTextEntryMode, .aiChat)
-
-        // Simulate commit: user submitted in search mode
-        storage.save(.search)
-
-        let tab3 = Tab(link: nil, preferredTextEntryMode: resolve())
-        XCTAssertEqual(tab3.preferredTextEntryMode, .search)
-    }
-}
-
-// MARK: - Helpers
-
-/// Simulates a legacy NSCoder that does NOT contain the preferredTextEntryMode key,
-/// mimicking tabs created before the feature was introduced.
-private class LegacyCoderStub: NSCoder {
-
-    private let properties: [String: Any]
-
-    init(properties: [String: Any]) {
-        self.properties = properties
-    }
-
-    override func containsValue(forKey key: String) -> Bool {
-        return properties.keys.contains(key)
-    }
-
-    override func decodeObject(forKey key: String) -> Any? {
-        return properties[key]
-    }
-
-    override func decodeBool(forKey key: String) -> Bool {
-        return (properties[key] as? Bool) ?? false
-    }
-
-    override func decodeInteger(forKey key: String) -> Int {
-        return (properties[key] as? Int) ?? 0
-    }
-
-    override var allowsKeyedCoding: Bool { true }
 }

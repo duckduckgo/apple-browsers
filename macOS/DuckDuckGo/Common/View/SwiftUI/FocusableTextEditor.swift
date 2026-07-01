@@ -18,7 +18,6 @@
 
 import SwiftUI
 
-@available(macOS 12, *)
 struct FocusableTextEditor: View {
 
     @Binding var text: String

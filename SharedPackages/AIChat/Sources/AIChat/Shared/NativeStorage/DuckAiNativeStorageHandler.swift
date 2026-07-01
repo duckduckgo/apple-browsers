@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import DuckAiDataStore
 import Foundation
 import os.log
@@ -29,7 +30,7 @@ import Persistence
 /// Both backings conform to `DuckAiNativeStorageHandling` and are interchangeable from
 /// the caller's point of view; this class forwards every protocol call to the chosen
 /// implementation.
-public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
+public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, DuckAiNativeChatsObserving {
 
     /// Default subdirectory name for the on-disk store. Callers compose this with the
     /// platform-appropriate base location (group container on iOS, application support on macOS).
@@ -59,14 +60,21 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
                 let dataStore = try DuckAiNativeDataStore(
                     databaseURL: path.appendingPathComponent("chats.db"),
                     filesDirectoryURL: path.appendingPathComponent("files"),
-                    key: encryptionKey
+                    key: encryptionKey,
+                    setupCompletion: { result in
+                        switch result {
+                        case .success:
+                            pixelFiring.fire(.initSuccess)
+                        case .failure(let error):
+                            pixelFiring.fire(.initError(error))
+                        }
+                    }
                 )
                 self.backing = DuckAiNativeDiskStorageHandler(
                     settingsStore: settingsStore.throwingKeyedStoring(),
                     dataStore: dataStore
                 )
                 Logger.aiChat.debug("DuckAiNativeStorageHandler: disk store initialized at \(path.path)")
-                pixelFiring.fire(.initSuccess)
             } catch {
                 pixelFiring.fire(.initError(error))
                 throw error
@@ -90,6 +98,15 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     public func putChats(_ chats: [DuckAiChatRecord]) throws { try backing.putChats(chats) }
     public func getChat(chatId: String) throws -> DuckAiChatRecord? { try backing.getChat(chatId: chatId) }
     public func getAllChats() throws -> [DuckAiChatRecord] { try backing.getAllChats() }
+    public func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
+        if let observing = backing as? DuckAiNativeChatsObserving {
+            return observing.chatsPublisher()
+        }
+        // Backing doesn't support observation (memory / null) — emit current state once.
+        return Just((try? backing.getAllChats()) ?? [])
+            .setFailureType(to: Error.self)
+            .eraseToAnyPublisher()
+    }
     public func deleteChat(chatId: String) throws { try backing.deleteChat(chatId: chatId) }
     public func deleteAllChats() throws { try backing.deleteAllChats() }
 
@@ -103,4 +120,6 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     public func isMigrationDone() throws -> Bool { try backing.isMigrationDone() }
     public func isMigrationDone(key: String) throws -> Bool { try backing.isMigrationDone(key: key) }
     public func markMigrationDone(key: String) throws { try backing.markMigrationDone(key: key) }
+
+    public var setupSucceeded: Bool? { backing.setupSucceeded }
 }

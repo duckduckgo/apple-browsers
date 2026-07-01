@@ -28,13 +28,14 @@ final class UnifiedToggleInputToolbarView: UIView {
     // MARK: - Constants
 
     private enum Constants {
-        static let verticalPadding: CGFloat = 8
+        static let topPadding: CGFloat = 4
+        static let bottomPadding: CGFloat = 4
         static let horizontalPadding: CGFloat = 8
         static let toolButtonSize: CGFloat = 40
         static let selectedToolIconSize: CGFloat = 24
         static let selectedToolClearButtonSize: CGFloat = 24
         static let leftGroupSpacing: CGFloat = 4
-        static let rightGroupSpacing: CGFloat = 8
+        static let rightGroupSpacing: CGFloat = 4
         static let chipHeight: CGFloat = 40
         static let chipCornerRadius: CGFloat = 20
         static let chipHorizontalPadding: CGFloat = 16
@@ -43,11 +44,11 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Callbacks
 
-    var onAttachTapped: (() -> Void)?
     var onSelectedToolClearTapped: (() -> Void)?
     var onSubmitTapped: (() -> Void)?
     var onVoiceTapped: (() -> Void)?
     var onStopGeneratingTapped: (() -> Void)?
+    var onReturnKeyTapped: (() -> Void)?
 
     // MARK: - State
 
@@ -59,24 +60,44 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonState() }
     }
 
+    var isSubmitBlockedByRecoveryCard: Bool = false {
+        didSet { updateSubmitButtonAppearance() }
+    }
+
+    var usesNewPromptSubmitStyle: Bool = false {
+        didSet { updateSubmitButtonAppearance() }
+    }
+
     private var isFireTab: Bool = false
+    private var preservesSubmitStyleDuringDismissal = false
+    private var isImageButtonAvailable = true
 
     func refreshFireMode(fireMode: Bool) {
         isFireTab = fireMode
-        // Apply fire-mode dark trait to content children only; submit keeps OS trait so `.fireModeAccent` tracks the OS.
-        let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
-        [toolsButton, imageButton, modelChipButton, selectedToolChipView, stopButton].forEach {
-            $0.overrideUserInterfaceStyle = style
+        overrideUserInterfaceStyle = fireMode ? .dark : .unspecified
+        updateSubmitButtonAppearance()
+    }
+
+    var isGenerating: Bool = false {
+        didSet {
+            updateGeneratingVisibility()
+            updateToolbarControlsEnabledState()
+        }
+    }
+
+    func prepareForToolbarVisibilityChange(showToolbar: Bool) {
+        if showToolbar {
+            preservesSubmitStyleDuringDismissal = false
+        } else {
+            preservesSubmitStyleDuringDismissal = preservesSubmitStyleDuringDismissal || usesNewPromptSubmitStyle
         }
         updateSubmitButtonAppearance()
     }
 
-    var isSubmitButtonHidden: Bool = false {
-        didSet { updateGeneratingVisibility() }
-    }
-
-    var isGenerating: Bool = false {
-        didSet { updateGeneratingVisibility() }
+    func finalizeToolbarShown() {
+        guard preservesSubmitStyleDuringDismissal else { return }
+        preservesSubmitStyleDuringDismissal = false
+        updateSubmitButtonAppearance()
     }
 
     var modelName: String = "4o-mini" {
@@ -99,6 +120,18 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
+    /// Programmatically opens the model chip's pull-down menu. Returns `true` when the OS
+    /// exposes an API to trigger it (iOS 17.4+, where `performPrimaryAction()` lands), `false`
+    /// otherwise.
+    @discardableResult
+    func presentModelPickerMenu() -> Bool {
+        if #available(iOS 17.4, *) {
+            modelChipButton.performPrimaryAction()
+            return true
+        }
+        return false
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { reasoningButton.menu }
         set {
@@ -112,6 +145,14 @@ final class UnifiedToggleInputToolbarView: UIView {
         set {
             toolsButton.menu = newValue
             toolsButton.showsMenuAsPrimaryAction = (newValue != nil)
+        }
+    }
+
+    var attachmentMenu: UIMenu? {
+        get { imageButton.menu }
+        set {
+            imageButton.menu = newValue
+            imageButton.showsMenuAsPrimaryAction = (newValue != nil)
         }
     }
 
@@ -140,7 +181,15 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     var isImageButtonEnabled: Bool {
         get { imageButton.isEnabled }
-        set { imageButton.isEnabled = newValue }
+        set {
+            isImageButtonAvailable = newValue
+            updateToolbarControlsEnabledState()
+        }
+    }
+
+    var isReturnKeyHidden: Bool {
+        get { returnKeyButton.isHidden }
+        set { returnKeyButton.isHidden = newValue }
     }
 
     private var modelChipExplicitlyHidden = false
@@ -156,7 +205,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     private(set) lazy var imageButton: UIButton = makeToolButton(
         image: DesignSystemImages.Glyphs.Size24.attach,
         accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
-        action: #selector(attachTapped)
+        action: nil
     )
 
     private lazy var reasoningButton: UIButton = {
@@ -213,7 +262,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     }()
 
     private lazy var selectedToolIconView: UIImageView = {
-        let imageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.globe)
+        let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.tintColor = UIColor(designSystemColor: .textPrimary)
         imageView.contentMode = .scaleAspectFit
@@ -263,6 +312,28 @@ final class UnifiedToggleInputToolbarView: UIView {
         return view
     }()
 
+    private lazy var returnKeyButton: CircularButton = {
+        let button = CircularButton()
+        button.isShadowHidden = true
+        button.setImage(DesignSystemImages.Glyphs.Size24.enter, for: .normal)
+        button.applyReturnKeyStyle()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isHidden = true
+        // Priorities collapse(required) > width > hugging so the button is 40pt when shown yet
+        // collapses to zero when hidden, instead of keeping a frame that overlaps submit.
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        button.accessibilityLabel = UserText.aiChatToolbarReturnKeyButtonAccessibilityLabel
+        button.addTarget(self, action: #selector(returnKeyTapped), for: .touchUpInside)
+        let width = button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize)
+        width.priority = .required - 1
+        NSLayoutConstraint.activate([
+            width,
+            button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
+        ])
+        return button
+    }()
+
     private lazy var submitButton: CircularButton = {
         let button = CircularButton()
         button.isShadowHidden = true
@@ -279,13 +350,14 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
-    private lazy var stopButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(DesignSystemImages.Glyphs.Size16.stopSquare, for: .normal)
-        button.tintColor = .white
-        button.backgroundColor = UIColor(designSystemColor: .destructivePrimary)
-        button.layer.cornerRadius = 14
-        button.clipsToBounds = true
+    private lazy var stopButton: CircularButton = {
+        let button = CircularButton()
+        button.isShadowHidden = true
+        button.setImage(DesignSystemImages.Glyphs.Size24.stopSquare, for: .normal)
+        button.setColors(
+            foreground: UIColor(designSystemColor: .textPrimary),
+            background: UIColor(singleUseColor: .unifiedToggleInputStopButtonBackground)
+        )
         button.translatesAutoresizingMaskIntoConstraints = false
         button.accessibilityLabel = UserText.aiChatToolbarStopGeneratingButtonAccessibilityLabel
         button.setContentHuggingPriority(.required, for: .horizontal)
@@ -293,6 +365,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.accessibilityIdentifier = "AIChat.Toolbar.Button.StopGenerating"
         button.addTarget(self, action: #selector(stopGeneratingTapped), for: .touchUpInside)
         button.isHidden = true
+
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
             button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
@@ -326,7 +399,7 @@ private extension UnifiedToggleInputToolbarView {
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, submitButton, stopButton])
+        let rightGroup = UIStackView(arrangedSubviews: [reasoningButton, modelChipButton, returnKeyButton, submitButton, stopButton])
         rightGroup.axis = .horizontal
         rightGroup.spacing = Constants.rightGroupSpacing
         rightGroup.alignment = .center
@@ -343,13 +416,14 @@ private extension UnifiedToggleInputToolbarView {
         NSLayoutConstraint.activate([
             outerStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             outerStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
-            outerStack.topAnchor.constraint(equalTo: topAnchor, constant: Constants.verticalPadding),
-            outerStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.verticalPadding),
+            outerStack.topAnchor.constraint(equalTo: topAnchor, constant: Constants.topPadding),
+            outerStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.bottomPadding),
             modelChipButton.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.45)
         ])
 
         updateChipVisibility()
         updateSubmitButtonState()
+        updateToolbarControlsEnabledState()
     }
 
     func makeToolButton(image: DesignSystemImage, accessibilityLabel: String, action: Selector?) -> UIButton {
@@ -396,7 +470,8 @@ private extension UnifiedToggleInputToolbarView {
     private func updateChipVisibility() {
         modelChipButton.isHidden = modelChipExplicitlyHidden
         selectedToolChipView.isHidden = (selectedTool == nil)
-        selectedToolChipView.accessibilityLabel = selectedTool == .webSearch ? UserText.aiChatToolbarWebSearchToolTitle : nil
+        selectedToolIconView.image = selectedTool?.toolbarChipIcon
+        selectedToolChipView.accessibilityLabel = selectedTool?.toolbarChipAccessibilityLabel
     }
 
     func updateSubmitButtonState() {
@@ -405,11 +480,27 @@ private extension UnifiedToggleInputToolbarView {
 
     func updateSubmitButtonAppearance() {
         let showVoice = isAIVoiceChatActive && !isSubmitEnabled
-        let icon = showVoice ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.arrowUp
+        let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
+        let icon: UIImage? = {
+            if showVoice {
+                return DesignSystemImages.Glyphs.Size24.voice
+            } else if usesReturnKeyStyle {
+                return DesignSystemImages.Glyphs.Size24.arrowRight
+            } else {
+                return DesignSystemImages.Glyphs.Size24.arrowUp
+            }
+        }()
         submitButton.setImage(icon, for: .normal)
-        let isActive = isSubmitEnabled || showVoice
+        let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
+        let isActive = submitAllowed || showVoice
         submitButton.isEnabled = isActive
-        submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
+        if showVoice {
+            submitButton.applyAIVoiceChatStyle()
+        } else if usesReturnKeyStyle {
+            submitButton.applyReturnKeyStyle()
+        } else {
+            submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
+        }
     }
 
     func updateGeneratingVisibility() {
@@ -418,12 +509,21 @@ private extension UnifiedToggleInputToolbarView {
             stopButton.isHidden = false
         } else {
             stopButton.isHidden = true
-            submitButton.isHidden = isSubmitButtonHidden
+            submitButton.isHidden = false
         }
     }
 
-    @objc private func attachTapped() { onAttachTapped?() }
+    func updateToolbarControlsEnabledState() {
+        let controlsAreEnabled = !isGenerating
+        imageButton.isEnabled = controlsAreEnabled && isImageButtonAvailable
+        toolsButton.isEnabled = controlsAreEnabled
+        reasoningButton.isEnabled = controlsAreEnabled
+        modelChipButton.isEnabled = controlsAreEnabled
+        selectedToolClearButton.isEnabled = controlsAreEnabled
+    }
+
     @objc private func selectedToolClearTapped() { onSelectedToolClearTapped?() }
+    @objc private func returnKeyTapped() { onReturnKeyTapped?() }
     @objc private func submitTapped() {
         if isAIVoiceChatActive && !isSubmitEnabled {
             onVoiceTapped?()
@@ -432,4 +532,31 @@ private extension UnifiedToggleInputToolbarView {
         }
     }
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
+}
+
+private extension AIChatRAGTool {
+
+    var toolbarChipIcon: DesignSystemImage? {
+        switch self {
+        case .webSearch:
+            return DesignSystemImages.Glyphs.Size24.globe
+        case .imageGeneration:
+            return DesignSystemImages.Glyphs.Size24.images
+        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
+            // Not surfaced in the unified-input tools menu — defensive fallback only.
+            return nil
+        }
+    }
+
+    var toolbarChipAccessibilityLabel: String? {
+        switch self {
+        case .webSearch:
+            return UserText.aiChatToolbarWebSearchToolTitle
+        case .imageGeneration:
+            return UserText.aiChatToolbarImageGenerationToolTitle
+        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
+            // Not surfaced in the unified-input tools menu — defensive fallback only.
+            return nil
+        }
+    }
 }

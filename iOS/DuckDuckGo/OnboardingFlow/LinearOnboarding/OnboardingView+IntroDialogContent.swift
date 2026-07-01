@@ -32,6 +32,7 @@ extension OnboardingView {
         private var isSkipped: Binding<Bool>
         private let continueAction: () -> Void
         private let skipAction: () -> Void
+        private let onSkipOnboardingPresented: () -> Void
 
         @State private var showSkipOnboarding = false
 
@@ -42,7 +43,8 @@ extension OnboardingView {
             showCTA: Binding<Bool> = .constant(false),
             isSkipped: Binding<Bool>,
             continueAction: @escaping () -> Void,
-            skipAction: @escaping () -> Void
+            skipAction: @escaping () -> Void,
+            onSkipOnboardingPresented: @escaping () -> Void
         ) {
             self.title = title
             self.skipOnboardingView = skipOnboardingView
@@ -51,13 +53,21 @@ extension OnboardingView {
             self.isSkipped = isSkipped
             self.continueAction = continueAction
             self.skipAction = skipAction
+            self.onSkipOnboardingPresented = onSkipOnboardingPresented
         }
 
         var body: some View {
-            if showSkipOnboarding {
-                skipOnboardingView
-            } else {
-                introContent
+            Group {
+                if showSkipOnboarding {
+                    skipOnboardingView
+                } else {
+                    introContent
+                }
+            }
+            .onChange(of: showSkipOnboarding) { newValue in
+                if newValue {
+                    onSkipOnboardingPresented()
+                }
             }
         }
 

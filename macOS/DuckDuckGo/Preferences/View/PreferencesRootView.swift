@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -207,6 +208,10 @@ enum Preferences {
                         guard let url = WinBackOfferURL.subscriptionURL(for: .winBackSettings) else { return }
                         pixelHandler(.subscriptionWinBackOfferSettingsPageCTAClicked, .standard)
                         showTab(.subscription(url))
+                    case .didOpenSubscriptionPurchase:
+                        pixelHandler(.subscriptionEntrySettingsImpression, .standard)
+                    case .didClickPurchase:
+                        pixelHandler(.subscriptionEntrySettingsSubscriptionClick, .standard)
                     }
                 }
             }
@@ -225,22 +230,20 @@ enum Preferences {
                     wideEvent.startFlow(subscriptionRestoreEmailSettingsWideEventData)
                     PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
-                    if #available(macOS 12.0, *) {
-                        Task {
-                            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
-                                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager())
-                            let subscriptionRestoreAppleSettingsWideEventData = SubscriptionRestoreWideEventData(
-                                restorePlatform: .appleAccount,
-                                funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
-                            )
-                            let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
-                                                                                                     appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                                                     uiHandler: subscriptionUIHandler,
-                                                                                                     subscriptionRestoreWideEventData: subscriptionRestoreAppleSettingsWideEventData)
-                            await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
+                    Task {
+                        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                                               storePurchaseManager: subscriptionManager.storePurchaseManager())
+                        let subscriptionRestoreAppleSettingsWideEventData = SubscriptionRestoreWideEventData(
+                            restorePlatform: .appleAccount,
+                            funnelName: SubscriptionRestoreFunnelOrigin.appSettings.rawValue
+                        )
+                        let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
+                                                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                                                 uiHandler: subscriptionUIHandler,
+                                                                                                 subscriptionRestoreWideEventData: subscriptionRestoreAppleSettingsWideEventData)
+                        await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
 
-                            PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
-                        }
+                        PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                     }
                 })
 
@@ -382,7 +385,7 @@ enum Preferences {
                 showTab(.subscription(url))
 
                 if subscriptionURL == .purchase {
-                    pixelHandler(.subscriptionOfferScreenImpression, .standard)
+                    pixelHandler(.subscriptionOfferScreenImpression(origin: SubscriptionFunnelOrigin.appSettings.rawValue), .standard)
                 }
             }
         }

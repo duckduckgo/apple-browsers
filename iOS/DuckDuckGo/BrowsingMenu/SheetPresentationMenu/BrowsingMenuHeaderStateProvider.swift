@@ -32,6 +32,7 @@ final class BrowsingMenuHeaderStateProvider {
         dataSource: BrowsingMenuHeaderDataSource,
         isNewTabPage: Bool = false,
         isAITab: Bool = false,
+        usesDuckAILogo: Bool = false,
         isError: Bool,
         hasLink: Bool,
         url: URL? = nil,
@@ -43,7 +44,7 @@ final class BrowsingMenuHeaderStateProvider {
 
         if isAIHeaderVisible {
             cancelRunningFaviconTask()
-            dataSource.update(forAITab: UserText.duckAiFeatureName)
+            dataSource.update(forAITab: UserText.duckAiFeatureName, usesDuckAILogo: usesDuckAILogo)
         } else if isHeaderVisible {
 
             let serpLogoURL = easterEggLogoURL.flatMap { URL(string: $0) }

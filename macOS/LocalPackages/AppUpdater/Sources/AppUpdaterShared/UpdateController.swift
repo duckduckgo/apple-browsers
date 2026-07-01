@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import FeatureFlags
 import Foundation
 import Navigation
@@ -31,7 +32,6 @@ import WebKit
 
 public protocol AppStoreUpdateControllerFactory {
     static func instantiate(internalUserDecider: InternalUserDecider,
-                            featureFlagger: FeatureFlagger,
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             isOnboardingFinished: @escaping () -> Bool) -> any UpdateController
@@ -43,6 +43,7 @@ public protocol SparkleUpdateControllerFactory {
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
+                            applicationUpdateDetector: ApplicationUpdateDetector,
                             allowCustomUpdateFeed: Bool,
                             isAutoUpdatePaused: @escaping () -> Bool,
                             wideEvent: WideEventManaging,
@@ -190,8 +191,7 @@ public protocol UpdateController: UpdateControllerObjC {
     /// Performs an immediate update check, bypassing rollout restrictions and rate limiting.
     ///
     /// **App Store vs Sparkle Behavior:**
-    /// - **App Store**: Immediate cloud API call to check latest version (with feature flag)
-    ///   - Legacy mode: Direct redirect to App Store without version check
+    /// - **App Store**: Immediate cloud API call to check latest version
     /// - **Sparkle**: Immediate appcast check, bypasses gradual rollout percentages
     ///
     /// **Rollout Bypassing**:

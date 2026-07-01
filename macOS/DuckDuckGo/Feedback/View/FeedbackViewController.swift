@@ -19,6 +19,7 @@
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import SwiftUI
 import SwiftUIExtensions
 
@@ -307,10 +308,12 @@ final class FeedbackViewController: NSViewController {
 
     private weak var unsupportedOsChildView: NSView?
     private func showUnsupportedOsViewIfNeeded() {
-        if let warning = supportedOSChecker.supportWarning,
+        if supportedOSChecker.showsSupportWarning,
            unsupportedOsChildView == nil {
 
-            let view = NSHostingView(rootView: Preferences.UnsupportedDeviceInfoBox(warning: warning).padding(.horizontal, 20))
+            let canUpgradeOS = OSUpgradeCapabilityOverridePersistor()
+                .canUpgradeOS(default: supportedOSChecker.osUpgradeCapability.canUpgradeOS)
+            let view = NSHostingView(rootView: Preferences.UnsupportedDeviceInfoBox(canUpgradeOS: canUpgradeOS).padding(.horizontal, 20))
             unsupportedOsView.addAndLayout(view)
             unsupportedOsView.isHidden = false
             unsupportedOsChildView = view

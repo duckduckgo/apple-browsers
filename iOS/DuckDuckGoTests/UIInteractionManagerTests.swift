@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import Foundation
+import UIKit
 import Testing
 @testable import DuckDuckGo
 
@@ -61,16 +61,28 @@ final class MockLaunchActionHandler: LaunchActionHandling {
 
 }
 
+final class MockOnboardingPresenting: OnboardingPresenting {
+    private(set) var didCallPresentOnboarding = false
+    private(set) var capturedURL: URL?
+
+    func startOnboardingFlowIfNotSeenBefore(url: URL?) {
+        didCallPresentOnboarding = true
+        capturedURL = url
+    }
+}
+
 @MainActor
 final class UIInteractionManagerTests {
 
     let mockAuthService = MockAuthenticationService()
     let mockAutoClearService = MockAutoClearService()
     let mockLaunchActionHandler = MockLaunchActionHandler()
+    let mockOnboardingPresenter = MockOnboardingPresenting()
     lazy var uiInteractionManager = UIInteractionManager(
         authenticationService: mockAuthService,
         autoClearService: mockAutoClearService,
-        launchActionHandler: mockLaunchActionHandler
+        launchActionHandler: mockLaunchActionHandler,
+        onboardingPresenter: mockOnboardingPresenter
     )
 
     @Test("Start method calls onWebViewReadyForInteractions and opens URL")
@@ -117,6 +129,97 @@ final class UIInteractionManagerTests {
                     #expect(self.mockLaunchActionHandler.handleLaunchActionCalled)
                     continuation.resume()
                 }
+            )
+        }
+    }
+
+    @Test("Start method presents onboarding with nil URL for standard launch")
+    func startPresentsOnboardingWithNilURLForStandardLaunch() async {
+        await withCheckedContinuation { continuation in
+            uiInteractionManager.start(
+                launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: true),
+                onWebViewReadyForInteractions: {
+                    #expect(self.mockOnboardingPresenter.didCallPresentOnboarding)
+                    #expect(self.mockOnboardingPresenter.capturedURL == nil)
+                    continuation.resume()
+                },
+                onAppReadyForInteractions: { }
+            )
+        }
+    }
+
+    @Test("Start method presents onboarding with nil URL for shortcut item")
+    func startPresentsOnboardingWithNilURLForShortcutItem() async {
+        let shortcutItem = UIApplicationShortcutItem(type: "test", localizedTitle: "Test")
+        await withCheckedContinuation { continuation in
+            uiInteractionManager.start(
+                launchAction: .handleShortcutItem(shortcutItem),
+                onWebViewReadyForInteractions: {
+                    #expect(self.mockOnboardingPresenter.didCallPresentOnboarding)
+                    #expect(self.mockOnboardingPresenter.capturedURL == nil)
+                    continuation.resume()
+                },
+                onAppReadyForInteractions: { }
+            )
+        }
+    }
+
+    @Test("Start method presents onboarding with nil URL for user activity")
+    func startPresentsOnboardingWithNilURLForUserActivity() async {
+        let userActivity = NSUserActivity(activityType: "test")
+        await withCheckedContinuation { continuation in
+            uiInteractionManager.start(
+                launchAction: .handleUserActivity(userActivity),
+                onWebViewReadyForInteractions: {
+                    #expect(self.mockOnboardingPresenter.didCallPresentOnboarding)
+                    #expect(self.mockOnboardingPresenter.capturedURL == nil)
+                    continuation.resume()
+                },
+                onAppReadyForInteractions: { }
+            )
+        }
+    }
+
+    @Test("Start method presents onboarding before handling immediate launch actions")
+    func startPresentsOnboardingBeforeHandlingImmediateLaunchActions() async {
+        // Override the onboarding coordinator to track order of operations
+        final class MockOnboardingPresenter: OnboardingPresenting {
+            private(set) var didCallPresentOnboarding = false
+            private(set) var didPresentOnboardingBeforeHandlingActions: Bool = false
+
+            private let launchActionHandler: MockLaunchActionHandler
+
+            init(launchActionHandler: MockLaunchActionHandler) {
+                self.launchActionHandler = launchActionHandler
+            }
+
+            func startOnboardingFlowIfNotSeenBefore(url: URL?) {
+                didCallPresentOnboarding = true
+                // Check if launch action was already called
+                didPresentOnboardingBeforeHandlingActions = !launchActionHandler.handleLaunchActionCalled
+            }
+        }
+
+        let url = URL(string: "https://example.com")!
+        let mockLaunchActionHandler = MockLaunchActionHandler()
+        let mockOnboardingPresenter = MockOnboardingPresenter(launchActionHandler: mockLaunchActionHandler)
+
+        let sut = UIInteractionManager(
+            authenticationService: mockAuthService,
+            autoClearService: mockAutoClearService,
+            launchActionHandler: mockLaunchActionHandler,
+            onboardingPresenter: mockOnboardingPresenter
+        )
+
+        await withCheckedContinuation { continuation in
+            sut.start(
+                launchAction: .openURL(url),
+                onWebViewReadyForInteractions: {
+                    #expect(mockOnboardingPresenter.didCallPresentOnboarding)
+                    #expect(mockOnboardingPresenter.didPresentOnboardingBeforeHandlingActions == true)
+                    continuation.resume()
+                },
+                onAppReadyForInteractions: { }
             )
         }
     }

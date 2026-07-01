@@ -46,15 +46,18 @@ struct SuggestionTrayDependencies {
 /// Protocol for handling suggestion tray events
 protocol SuggestionTrayManagerDelegate: AnyObject {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectSuggestion suggestion: Suggestion)
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, didDeleteSuggestion suggestion: Suggestion)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity)
     func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsSwitchToTab tab: Tab)
+    func suggestionTrayManagerDidRequestTabSwitcher(_ manager: SuggestionTrayManager)
     func suggestionTrayManagerDidRequestTryFireMode(_ manager: SuggestionTrayManager)
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager)
 }
 
 extension SuggestionTrayManagerDelegate {
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, didDeleteSuggestion suggestion: Suggestion) {}
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {}
 }
 
@@ -64,9 +67,10 @@ final class SuggestionTrayManager: NSObject {
     // MARK: - Properties
     
     weak var delegate: SuggestionTrayManagerDelegate?
-    
+
     private let switchBarHandler: SwitchBarHandling
     private let dependencies: SuggestionTrayDependencies
+    private let autocompleteHorizontalInset: CGFloat
     private var cancellables = Set<AnyCancellable>()
     
     private(set) var suggestionTrayViewController: SuggestionTrayViewController?
@@ -108,9 +112,10 @@ final class SuggestionTrayManager: NSObject {
 
     // MARK: - Initialization
     
-    init(switchBarHandler: SwitchBarHandling, dependencies: SuggestionTrayDependencies) {
+    init(switchBarHandler: SwitchBarHandling, dependencies: SuggestionTrayDependencies, autocompleteHorizontalInset: CGFloat = 0) {
         self.switchBarHandler = switchBarHandler
         self.dependencies = dependencies
+        self.autocompleteHorizontalInset = autocompleteHorizontalInset
         super.init()
         setupBindings()
     }
@@ -133,8 +138,16 @@ final class SuggestionTrayManager: NSObject {
         suggestionTrayViewController?.additionalTopInset = inset
     }
 
-    /// Installs the suggestion tray in the provided container view
-    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController, escapeHatch: EscapeHatchModel? = nil) {
+    /// Installs the suggestion tray in the provided container view.
+    ///
+    /// - Parameter deferAutocompleteReveal: When `true`, the autocomplete surface stays hidden until
+    ///   its first results arrive, so the underlying content (favorites NTP / Dax) isn't briefly
+    ///   covered by an empty surface flashing in. Only the unified toggle input surface opts in;
+    ///   other hosts (legacy omnibar editing, iPad chat history, swipe container) keep the default (false).
+    func installInContainerView(_ containerView: UIView,
+                                parentViewController: UIViewController,
+                                escapeHatchModel: EscapeHatchModel? = nil,
+                                deferAutocompleteReveal: Bool = false) {
         guard suggestionTrayViewController == nil else { return }
         
 
@@ -152,6 +165,8 @@ final class SuggestionTrayManager: NSObject {
             hideBorder: true)
 
         controller.coversFullScreen = true
+        controller.deferAutocompleteReveal = deferAutocompleteReveal
+        controller.autocompleteHorizontalInset = autocompleteHorizontalInset
 
         parentViewController.addChild(controller)
         containerView.addSubview(controller.view)
@@ -176,7 +191,7 @@ final class SuggestionTrayManager: NSObject {
             self.delegate?.suggestionTrayManagerDidUpdateVisibility(self)
         }
         controller.didMove(toParent: parentViewController)
-        controller.setEscapeHatch(escapeHatch)
+        controller.setEscapeHatch(escapeHatchModel)
 
         showInitialSuggestions()
         containerView.layoutIfNeeded()
@@ -220,6 +235,11 @@ final class SuggestionTrayManager: NSObject {
     /// Shows the suggestion tray for the initial selected state
     func showInitialSuggestions() {
         updateSuggestionTrayForCurrentState()
+    }
+
+    /// Re-fetches autocomplete suggestions for the current query without changing tray
+    func refreshCurrentSuggestions() {
+        suggestionTrayViewController?.refreshSuggestionsIfNeeded()
     }
     
     // MARK: - Private Methods
@@ -316,7 +336,11 @@ extension SuggestionTrayManager: AutocompleteViewControllerDelegate {
     func autocomplete(selectedSuggestion suggestion: Suggestion) {
         delegate?.suggestionTrayManager(self, didSelectSuggestion: suggestion)
     }
-    
+
+    func autocomplete(deletedSuggestion suggestion: Suggestion) {
+        delegate?.suggestionTrayManager(self, didDeleteSuggestion: suggestion)
+    }
+
     func autocomplete(highlighted suggestion: Suggestion, for query: String) {
     }
     
@@ -347,6 +371,10 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
 
     func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
         delegate?.suggestionTrayManager(self, requestsSwitchToTab: tab)
+    }
+
+    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+        delegate?.suggestionTrayManagerDidRequestTabSwitcher(self)
     }
 
     func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {

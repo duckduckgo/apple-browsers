@@ -18,6 +18,7 @@
 
 import SwiftUI
 import Combine
+import CombineExtensions
 #if os(iOS)
 import MetricBuilder
 import UIKit
@@ -27,6 +28,7 @@ public enum ContextualOnboardingBackgroundType {
     case tryASearch
     case tryASearchCompleted
     case tryVisitingASiteNTP
+    case tryVisitingASiteChatPath
     case trackers
     case fireDialog
     case endOfJourney
@@ -40,9 +42,17 @@ public enum ContextualOnboardingBackgroundType {
             return .bottomTrailing
         case .endOfJourneyNTPChat:
             return .bottomLeading
-        case .endOfJourney, .endOfJourneyNTP, .privacyProTrial:
+        case .endOfJourney, .endOfJourneyNTP, .privacyProTrial, .tryVisitingASiteChatPath:
             return .bottom
         }
+    }
+
+    /// When `true`, the image is rendered with `aspectRatio(.fill)` and an explicit
+    /// `frame(width:)` equal to the container width — matching how linear-flow backgrounds
+    /// are displayed in `RebrandedScrollableOnboardingBackground`. When `false`, the standard
+    /// `scaledToFit` contextual rendering is used and `frame(width: nil)` is a no-op.
+    var fillsContainerWidth: Bool {
+        self == .tryVisitingASiteChatPath
     }
 
     var image: Image {
@@ -53,6 +63,8 @@ public enum ContextualOnboardingBackgroundType {
             return OnboardingRebrandingImages.Contextual.searchDoneBackground
         case .tryVisitingASiteNTP:
             return OnboardingRebrandingImages.Contextual.tryASiteBackground
+        case .tryVisitingASiteChatPath:
+            return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
         case .trackers:
             return OnboardingRebrandingImages.Contextual.trackerBlockedBackground
         case .fireDialog:
@@ -72,6 +84,23 @@ public enum ContextualOnboardingBackgroundType {
 private enum ContextualBackgroundStyleMetrics {
     static let referenceBackgroundImageHeight: CGFloat = 290
     static let referenceBackgroundImageOffset: CGFloat = 90
+}
+
+/// Inner-shadow approximation of Figma's "Inline Dax Dialog" effect token — originally two
+/// stacked INNER_SHADOW passes (Shadow/Purple `#3E228C @ 6 %` offset (0,-4) blur 8, and
+/// Shadow/Blue `#1E42A4 @ 9 %` offset (0,-1) blur 0) — collapsed into a single vertical
+/// gradient band painted along the panel's inside-bottom edge. The effect mimics the web
+/// view beneath the panel casting a shadow upward onto the contextual onboarding.
+///
+/// A `LinearGradient` band is used in place of `ShadowStyle.inner(...)` (iOS 16+) so the
+/// implementation works on the Onboarding package's iOS 15 deployment target.
+private enum ContextualBackgroundShadowMetrics {
+    /// Opacity-weighted blend of `Shadow/Purple` (#3E228C @ 6 %) and `Shadow/Blue` (#1E42A4
+    /// @ 9 %). Resulting tint ≈ #2B359A; combined alpha ≈ 0.15.
+    static let color = Color(red: 43.0 / 255.0, green: 53.0 / 255.0, blue: 154.0 / 255.0).opacity(0.15)
+    /// Vertical extent of the inner-shadow band. Inherits Shadow/Purple's blur radius —
+    /// Shadow/Blue's pass had zero blur (a 1 px hairline) so it doesn't widen the band.
+    static let height: CGFloat = 8
 }
 
 extension OnboardingRebranding.OnboardingStyles {
@@ -111,23 +140,29 @@ extension OnboardingRebranding.OnboardingStyles {
                 theme.colorPalette.background
                     .ignoresSafeArea()
                     .overlay(
-                        ZStack(alignment: backgroundType.alignment) {
-                            Color.clear
-                            backgroundType.image
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxHeight: maxHeightMetrics)
-                                .background(
-                                    GeometryReader { proxy in
-                                        Color.clear
-                                            .preference(key: BackgroundIllustrationHeightPreferenceKey.self, value: proxy.size.height)
-                                            .preference(key: BackgroundIllustrationBottomPreferenceKey.self, value: proxy.frame(in: .global).maxY)
-                                    }
-                                )
-                                .offset(y: calculateImageOffset())
-                                #if os(iOS)
-                                .animation(.easeInOut(duration: 0.3), value: keyboardResponder.keyboardFrame)
-                                #endif
+                        // `GeometryReader` provides the pixel-exact container width needed so that
+                        // linear-style backgrounds (`.fillsContainerWidth`) can use `aspectRatio(.fill)`
+                        // and scale correctly. For all other types `frame(width: nil)` is a no-op.
+                        GeometryReader { geo in
+                            ZStack(alignment: backgroundType.alignment) {
+                                Color.clear
+                                backgroundType.image
+                                    .resizable()
+                                    .aspectRatio(contentMode: backgroundType.fillsContainerWidth ? .fill : .fit)
+                                    .frame(width: backgroundType.fillsContainerWidth ? geo.size.width : nil)
+                                    .frame(maxHeight: maxHeightMetrics, alignment: .bottom)
+                                    .background(
+                                        GeometryReader { proxy in
+                                            Color.clear
+                                                .preference(key: BackgroundIllustrationHeightPreferenceKey.self, value: proxy.size.height)
+                                                .preference(key: BackgroundIllustrationBottomPreferenceKey.self, value: proxy.frame(in: .global).maxY)
+                                        }
+                                    )
+                                    .offset(y: calculateImageOffset())
+                                    #if os(iOS)
+                                    .animation(.easeInOut(duration: 0.3), value: keyboardResponder.keyboardFrame)
+                                    #endif
+                            }
                         }
                     )
                     .clipped()
@@ -145,6 +180,7 @@ extension OnboardingRebranding.OnboardingStyles {
                 content
             }
             .ignoresSafeArea(.keyboard)
+            .ignoresSafeArea(.container, edges: ignoredContainerEdges)
         }
 
         // Calculates the vertical offset needed to adjust the background image when the keyboard appears.
@@ -190,7 +226,18 @@ extension OnboardingRebranding.OnboardingStyles {
         #if os(iOS)
         private static let maxHeightContextualAssets = MetricBuilder<CGFloat?>(default: nil).iPad(200).iPhone(landscape: 200)
         private static let maxHeightNewTabPageAssets = MetricBuilder<CGFloat?>(default: nil).iPad(290).iPhone(landscape: 290)
+        /// Height cap for linear-flow backgrounds reused in the contextual NTP dialog.
+        /// Matches `chooseSearchExperienceDialog.backgroundMaxHeight` from the linear onboarding
+        /// and is sized to show the illustration correctly at each form factor.
+        private static let maxHeightLinearStyleNTPAssets = MetricBuilder<CGFloat?>(default: 296).iPad(294).iPhone(landscape: 294)
         #endif
+
+        /// Pushes the modifier's frame past the home-indicator inset on iPhone landscape so
+        /// the screen background fills the entire device width and height; portrait and iPad
+        /// keep respecting the bottom safe area.
+        private var ignoredContainerEdges: Edge.Set {
+            vSizeClass == .compact ? [.horizontal, .bottom] : .horizontal
+        }
 
         var maxHeightMetrics: CGFloat? {
             #if os(iOS)
@@ -199,6 +246,8 @@ extension OnboardingRebranding.OnboardingStyles {
                 return Self.maxHeightContextualAssets.build(v: vSizeClass, h: hSizeClass)
             case .tryASearch, .tryVisitingASiteNTP, .endOfJourneyNTP, .endOfJourneyNTPChat, .privacyProTrial:
                 return Self.maxHeightNewTabPageAssets.build(v: vSizeClass, h: hSizeClass)
+            case .tryVisitingASiteChatPath:
+                return Self.maxHeightLinearStyleNTPAssets.build(v: vSizeClass, h: hSizeClass)
             }
             #else
             return nil
@@ -210,7 +259,25 @@ extension OnboardingRebranding.OnboardingStyles {
         let backgroundType: ContextualOnboardingBackgroundType
 
         func body(content: Content) -> some View {
-            content.modifier(backgroundStyle)
+            content
+                .modifier(backgroundStyle)
+                #if os(iOS)
+                // Inner-shadow band painted along the panel's inside-bottom edge. Reads as the
+                // web view (sitting beneath the panel in the tab's stack view) casting a shadow
+                // upward onto the contextual onboarding. Merges Figma's "Inline Dax Dialog"
+                // effect — two stacked INNER_SHADOW passes (Shadow/Purple offset (0,-4) blur 8,
+                // and Shadow/Blue offset (0,-1) blur 0) — into a single vertical gradient,
+                // since `ShadowStyle.inner(...)` is iOS 16+ and the package targets iOS 15.
+                .overlay(alignment: .bottom) {
+                    LinearGradient(
+                        colors: [.clear, ContextualBackgroundShadowMetrics.color],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: ContextualBackgroundShadowMetrics.height)
+                    .allowsHitTesting(false)
+                }
+                #endif
         }
 
         private var backgroundStyle: ContextualBackgroundStyle {
@@ -273,26 +340,29 @@ public extension View {
     ///
     /// The background appears immediately without entrance animation.
     ///
-    /// - Parameter backgroundType: The type of background illustration to display.
+    /// - Parameters:
+    ///   - backgroundType: The type of background illustration to display.
+    ///   - keyboardBehavior: How the background responds to keyboard appearance. Defaults to `.adjustForKeyboard`.
     func applyNewTabOnboardingBackground(
-        backgroundType: ContextualOnboardingBackgroundType
+        backgroundType: ContextualOnboardingBackgroundType,
+        keyboardBehavior: KeyboardBehavior = .adjustForKeyboard
     ) -> some View {
-        #if os(iOS)
-            self.modifier(
-                OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(
-                    backgroundType: backgroundType,
-                    imageOffsetY: 0,
-                    keyboardBehavior: .adjustForKeyboard
-                )
+#if os(iOS)
+        self.modifier(
+            OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(
+                backgroundType: backgroundType,
+                imageOffsetY: 0,
+                keyboardBehavior: keyboardBehavior
             )
-        #elseif os(macOS)
-            self.modifier(
-                OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(
-                    backgroundType: backgroundType,
-                    imageOffsetY: 0
-                )
+        )
+#elseif os(macOS)
+        self.modifier(
+            OnboardingRebranding.OnboardingStyles.ContextualBackgroundStyle(
+                backgroundType: backgroundType,
+                imageOffsetY: 0
             )
-        #endif
+        )
+#endif
     }
 
     /// Applies an animated background for contextual onboarding dialogs.

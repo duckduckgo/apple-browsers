@@ -28,18 +28,26 @@ enum MIMEType: String {
     case xhtml = "application/xhtml+xml"
     case html = "text/html"
     case calendar = "text/calendar"
+    case contact = "text/vcard"
     case unknown
     
     init(from string: String?) {
-        self = MIMEType(rawValue: string ?? "") ?? .unknown
+        switch string {
+        // Legacy/alternate vCard MIME strings that aren't enum raw values.
+        case "text/x-vcard", "text/directory":
+            self = .contact
+        default:
+            self = MIMEType(rawValue: string ?? "") ?? .unknown
+        }
     }
 
     init(from string: String?, fileExtension: String?) {
         let initialMIMEType = MIMEType(from: string)
 
-        switch (initialMIMEType, fileExtension) {
+        switch (initialMIMEType, fileExtension?.lowercased()) {
         case (.octetStream, "pkpass"): self = .passbook
         case (.octetStream, "pkpasses"): self = .multipass
+        case (.octetStream, "vcf"), (.octetStream, "vcard"): self = .contact
         default: self = initialMIMEType
         }
     }

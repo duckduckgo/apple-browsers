@@ -33,8 +33,17 @@ public enum SingleUseColor {
     /// Duck.ai contextual background color
     case duckAIContextualSheetBackground
 
+    /// Duck.ai web view background color (#FFFFFF light / #111111 dark)
+    case duckAIWebViewBackground
+
     /// Card background for the unified toggle input bar (white in light, #3D3D3D in dark)
     case unifiedToggleInputCardBackground
+    case unifiedToggleInputAttachmentErrorBannerBackground
+    case unifiedToggleInputAttachmentErrorText
+    case unifiedToggleInputAttachmentErrorIcon
+
+    /// Stop-generating button background in the unified toggle input bar: translucent overlay on the card (6% black in light, 12% white in dark).
+    case unifiedToggleInputStopButtonBackground
 
     /// Tab switcher tracker count info panel background color
     case tabSwitcherTrackerCountBackground
@@ -53,6 +62,9 @@ public enum SingleUseColor {
     case fireModeAccentTertiary
     case fireModeBackground
     case fireModeCardBackground
+
+    // Duck.ai Grid Cell
+    case duckAIVoiceCellBackground
 }
 
 // MARK: - Onboarding Rebranding 2026
@@ -65,27 +77,34 @@ public extension SingleUseColor {
         case textLink
 
         case accentPrimary
-
-        case accentAltPrimary
-        case accentAltGlowPrimary
+        case accentPrimaryPressed
+        case accentPrimaryText
+        case accentGlowPrimary
 
         case backdrop
-
-        case surfaceTertiary
 
         case buttonsPrimaryDefault
         case buttonsPrimaryPressed
         case buttonsPrimaryText
+        case buttonsContentDisabled
 
         case buttonsSecondaryDefault
         case buttonsSecondaryPressed
         case buttonsSecondaryText
-        case backgroundAccent // This in Figma is accentAltGlowPrimary but in the components screen default value is different than onboarding value
+        case buttonsSecondaryDisabledBackground
+        case buttonsSecondaryDisabledText
+
+        case destructivePrimary
+        case destructivePrimaryPressed
+        case destructivePrimaryText
+        case destructiveGlowPrimary
 
         case controlsFillPrimary
 
         case decorationPrimary
         case decorationSecondary
+
+        case alertGreen
     }
 
 }

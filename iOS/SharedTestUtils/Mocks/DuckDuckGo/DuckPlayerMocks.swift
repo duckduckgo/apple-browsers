@@ -582,6 +582,7 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     enum Message: Equatable {
         case setBarsHidden(Bool)
+        case resetBars
         case setNavigationBarHidden(Bool)
         case setBarsVisibility(CGFloat)
         case setRefreshControlEnabled(Bool)
@@ -591,6 +592,10 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     func setBarsHidden(_ hidden: Bool, animated: Bool) {
         receivedMessages.append(.setBarsHidden(hidden))
+    }
+
+    func resetBars(animated: Bool) {
+        receivedMessages.append(.resetBars)
     }
 
     func setNavigationBarHidden(_ hidden: Bool) {
@@ -605,6 +610,10 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
         receivedMessages.append(.setRefreshControlEnabled(isEnabled))
     }
 
+    func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
+        // no-op
+    }
+
     var canHideBars: Bool = false
 
     var isToolbarHidden: Bool = false
@@ -612,6 +621,8 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
     var toolbarHeight: CGFloat = 0.0
 
     var barsMaxHeight: CGFloat = 30
+
+    var isInMinimalChromeLayout: Bool = false
 
     var omniBar: OmniBar = DefaultOmniBarViewController(
         dependencies: MockOmnibarDependency(

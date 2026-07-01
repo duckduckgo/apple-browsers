@@ -20,15 +20,16 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct PrivateSearchView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var description: SettingsDescription {
-        SettingsDescription(imageName: "SettingsPrivateSearchContent",
-                                     title: UserText.privateSearch,
-                                     status: .alwaysOn,
-                                     explanation: UserText.privateSearchExplanation)
+        return SettingsDescription(imageName: "Search-pondwater-128",
+                                   title: UserText.privateSearch,
+                                   status: .alwaysOn,
+                                   explanation: UserText.privateSearchExplanation)
     }
 
     var body: some View {
@@ -67,7 +68,9 @@ struct PrivateSearchViewSettings: View {
 
         Section {
             // More Search Settings
-            NavigationLink(destination: SERPSettingsView(page: .general, featureFlagger: viewModel.featureFlagger)) {
+            NavigationLink(destination: SERPSettingsView(page: .general,
+                                                         contentBlockingAssetsPublisher: viewModel.contentBlockingAssetsPublisher,
+                                                         keyValueStore: viewModel.keyValueStore)) {
                 SettingsCellView(label: UserText.moreSearchSettings,
                                  subtitle: UserText.moreSearchSettingsExplanation)
             }

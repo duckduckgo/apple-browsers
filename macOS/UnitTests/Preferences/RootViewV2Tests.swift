@@ -71,8 +71,7 @@ final class RootViewV2Tests: XCTestCase {
                 featureFlagger: MockFeatureFlagger()
             ),
             aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: featureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: sharedDuckPlayerPreferences,
@@ -188,8 +187,9 @@ final class RootViewV2Tests: XCTestCase {
     @MainActor
     func testPurchaseSubscriptionViewModel_WinBackOfferPixel() throws {
         // Given
-        let expectation = expectation(description: "Wait for pixel to be fired")
-        var capturedPixel: SubscriptionPixel?
+        let expectation = expectation(description: "Wait for pixels to be fired")
+        expectation.expectedFulfillmentCount = 2
+        var capturedPixels: [SubscriptionPixel] = []
 
         mockWinBackOfferVisibilityManager.isOfferAvailable = true
         let rootView = Preferences.RootViewV2(
@@ -203,7 +203,7 @@ final class RootViewV2Tests: XCTestCase {
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in },
             pixelHandler: { pixel, _ in
-                capturedPixel = pixel
+                capturedPixels.append(pixel)
                 expectation.fulfill()
             }
         )
@@ -215,11 +215,18 @@ final class RootViewV2Tests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertNotNil(capturedPixel, "Should have fired a pixel")
-        if case .subscriptionWinBackOfferSettingsPageCTAClicked = capturedPixel! {
-            // Correct pixel fired
+        XCTAssertEqual(capturedPixels.count, 2, "purchaseAction should fire exactly two pixels when win-back offer is available")
+
+        if case .subscriptionEntrySettingsSubscriptionClick = capturedPixels[0] {
+            // Correct pixel fired first
         } else {
-            XCTFail("Should fire subscriptionWinBackOfferSettingsPageCTAClicked pixel")
+            XCTFail("Should fire subscriptionEntrySettingsSubscriptionClick first")
+        }
+
+        if case .subscriptionWinBackOfferSettingsPageCTAClicked = capturedPixels[1] {
+            // Correct pixel fired second
+        } else {
+            XCTFail("Should fire subscriptionWinBackOfferSettingsPageCTAClicked second")
         }
     }
 

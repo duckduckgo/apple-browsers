@@ -71,9 +71,11 @@ protocol FireModePromotionCoordinating {
 final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
 
     static let ntpExpirationInterval: TimeInterval = 3 * 24 * 60 * 60
+    static let tabSwitcherTipExpirationInterval: TimeInterval = 3 * 24 * 60 * 60
+
+    /// This and related menu promotion code needs to be cleaned up if not used.
     static let menuExpirationInterval: TimeInterval = 14 * 24 * 60 * 60
     static let menuMaxOpenCount = 5
-    static let tabSwitcherTipExpirationInterval: TimeInterval = 3 * 24 * 60 * 60
 
     private let fireModeCapability: FireModeCapable
     private let storage: any KeyedStoring<FireModePromotionKeys>
@@ -124,18 +126,14 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
         guard fireModeCapability.isFireModeEnabled else { return false }
         guard hasBurnedTabs else { return false }
         guard !hasVisitedFireMode else { return false }
-        guard !isDismissed && !isEngaged else { return false }
-
-        if let firstSeen = firstSeenDate {
-            guard Date().timeIntervalSince(firstSeen) < Self.ntpExpirationInterval else { return false }
-        }
-
+        guard !isDismissed && !isEngaged && ntpFirstSeenDate == nil else { return false }
+        // Expiration is no longer relevant as we only show it once.
         return true
     }
 
     func markNTPPromotionShown() {
-        if firstSeenDate == nil {
-            firstSeenDate = Date()
+        if ntpFirstSeenDate == nil {
+            ntpFirstSeenDate = Date()
         }
         DailyPixel.fireDailyAndCount(pixel: .fireModeNTPPromotionShown)
     }
@@ -198,7 +196,7 @@ final class FireModePromotionsCoordinator: FireModePromotionCoordinating {
         set { storage.hasVisitedFireMode = newValue }
     }
 
-    private var firstSeenDate: Date? {
+    private var ntpFirstSeenDate: Date? {
         get { storage.ntpFirstSeenDate }
         set { storage.ntpFirstSeenDate = newValue }
     }

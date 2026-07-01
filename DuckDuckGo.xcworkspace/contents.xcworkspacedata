@@ -5,6 +5,9 @@
       location = "group:SharedPackages"
       name = "SharedPackages">
       <FileRef
+         location = "group:ICSParser">
+      </FileRef>
+      <FileRef
          location = "group:DebugServer">
       </FileRef>
       <FileRef

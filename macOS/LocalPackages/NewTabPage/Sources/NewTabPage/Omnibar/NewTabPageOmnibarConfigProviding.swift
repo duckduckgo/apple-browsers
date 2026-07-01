@@ -43,11 +43,24 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isWebSearchEnabled: Bool { get }
 
+    /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
+    /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
+    /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.
+    var isAttachTabsEnabled: Bool { get }
+    var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
     /// Whether the 1-click voice-chat affordance is currently enabled. Published so the client
     /// can push an `omnibar_onConfigUpdate` when the underlying feature flag flips at runtime,
     /// keeping an open NTP in sync without a reload.
     var isVoiceChatAccessEnabled: Bool { get }
     var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the inline "Ask Duck.ai: <query>" entry should be shown in the NTP omnibar's
+    /// suggestions dropdown. Mirrors the user's "Autocomplete suggestions" preference so the
+    /// dropdown matches the address bar. Published so the client can push an
+    /// `omnibar_onConfigUpdate` when the toggle flips, keeping an open NTP in sync.
+    var showAskAiSuggestion: Bool { get }
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> { get }
 
     var selectedModelId: String? { get set }
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { get }

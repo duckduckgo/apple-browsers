@@ -20,6 +20,7 @@
 import SwiftUI
 import Foundation
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 
 struct SubscriptionPIRMoveToDesktopView: View {
@@ -80,7 +81,7 @@ struct SubscriptionPIRMoveToDesktopView: View {
         
     private var baseView: some View {
         VStack(alignment: .center, spacing: Constants.generalSpacing) {
-            Image(.personalInformationHero)
+            Image(rebrandable: "Personal-Information-Remover-128")
                 .aspectRatio(contentMode: .fill)
                 .padding(.top, Constants.generalSpacing)
             VStack {
@@ -137,11 +138,11 @@ struct SubscriptionPIRMoveToDesktopView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .foregroundColor(Color(designSystemColor: .accent))
+            .foregroundColor(Color(designSystemColor: .accentPrimary))
             .daxButton()
             .overlay(
                 RoundedRectangle(cornerRadius: Constants.cornerRadius)
-                    .stroke(Color(designSystemColor: .accent), lineWidth: 1)
+                    .stroke(Color(designSystemColor: .accentPrimary), lineWidth: 1)
                 
             )
             .padding(.horizontal, Constants.generalSpacing)
@@ -158,11 +159,11 @@ struct SubscriptionPIRMoveToDesktopView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .foregroundColor(Color(designSystemColor: .accent))
+            .foregroundColor(Color(designSystemColor: .accentPrimary))
             .daxButton()
             .overlay(
                 RoundedRectangle(cornerRadius: Constants.cornerRadius)
-                    .stroke(Color(designSystemColor: .accent), lineWidth: 1)
+                    .stroke(Color(designSystemColor: .accentPrimary), lineWidth: 1)
                 
             )
             .padding(.horizontal, Constants.generalSpacing)

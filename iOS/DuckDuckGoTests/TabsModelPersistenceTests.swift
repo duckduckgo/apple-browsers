@@ -78,12 +78,12 @@ class TabsModelPersistenceTests: XCTestCase {
     }
 
     func testWhenModelSavedThenGetIsNotNil() throws {
-        _ = persistence.save(model: model, for: .normal)
+        _ = persistence.saveSynchronously(model: model, for: .normal)
         XCTAssertNotNil(try persistence.getTabsModel(for: .normal))
     }
 
     func testWhenModelIsSavedThenGetLoadsCompleteTabs() throws {
-        _ = persistence.save(model: model, for: .normal)
+        _ = persistence.saveSynchronously(model: model, for: .normal)
 
         let loaded = try persistence.getTabsModel(for: .normal)
         XCTAssertNotNil(loaded)
@@ -95,7 +95,7 @@ class TabsModelPersistenceTests: XCTestCase {
     func testWhenModelIsSavedThenGetLoadsModelWithCurrentSelection() throws {
         let model = self.model
         model.select(tab: model.tabs[1])
-        _ = persistence.save(model: model, for: .normal)
+        _ = persistence.saveSynchronously(model: model, for: .normal)
 
         let loaded = try persistence.getTabsModel(for: .normal)
         XCTAssertNotNil(loaded)
@@ -138,7 +138,7 @@ class TabsModelPersistenceTests: XCTestCase {
 
     func testWhenFireModelSavedThenGetReturnsModel() throws {
         let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
-        _ = persistence.save(model: fireModel, for: .fire)
+        _ = persistence.saveSynchronously(model: fireModel, for: .fire)
 
         let loaded = try persistence.getTabsModel(for: .fire)
         XCTAssertNotNil(loaded)
@@ -147,16 +147,16 @@ class TabsModelPersistenceTests: XCTestCase {
 
     func testWhenFireModelSavedThenGetLoadsWithFireMode() throws {
         let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
-        _ = persistence.save(model: fireModel, for: .fire)
+        _ = persistence.saveSynchronously(model: fireModel, for: .fire)
 
         let loaded = try persistence.getTabsModel(for: .fire)
         XCTAssertEqual(loaded?.mode, .fire)
     }
 
     func testWhenClearAllThenBothKeysCleared() throws {
-        _ = persistence.save(model: model, for: .normal)
+        _ = persistence.saveSynchronously(model: model, for: .normal)
         let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
-        _ = persistence.save(model: fireModel, for: .fire)
+        _ = persistence.saveSynchronously(model: fireModel, for: .fire)
 
         persistence.clearAll()
 
@@ -165,9 +165,9 @@ class TabsModelPersistenceTests: XCTestCase {
     }
 
     func testWhenClearNormalThenFireModelUntouched() throws {
-        _ = persistence.save(model: model, for: .normal)
+        _ = persistence.saveSynchronously(model: model, for: .normal)
         let fireModel = TabsModel(tabs: [firstTab], desktop: false, mode: .fire)
-        _ = persistence.save(model: fireModel, for: .fire)
+        _ = persistence.saveSynchronously(model: fireModel, for: .fire)
 
         persistence.clear(for: .normal)
 
@@ -183,4 +183,62 @@ class TabsModelPersistenceTests: XCTestCase {
         XCTAssertNil(loaded)
     }
 
+    // MARK: - Async save + flush
+
+    func testSave_returnsSuccessImmediately() throws {
+        // The async path returns `.success` without waiting for the disk write.
+        let result = persistence.save(model: model, for: .normal)
+        if case .failure = result {
+            XCTFail("save should return success immediately")
+        }
+    }
+
+    func testFlush_blocksUntilPendingWriteCompletes() throws {
+        let countingStore = CountingThrowingKeyValueStore()
+        let persistence = TabsModelPersistence(normalStore: countingStore,
+                                               fireStore: try MockKeyValueFileStore(throwOnInit: nil),
+                                               legacyStore: MockKeyValueStore())
+        _ = persistence.save(model: model, for: .normal)
+        persistence.flush()
+        XCTAssertEqual(countingStore.setCount, 1, "flush should have waited for the queued write")
+    }
+
+    func testSaveSynchronously_propagatesStoreError() throws {
+        let throwingStore = try MockKeyValueFileStore(throwOnInit: nil)
+        throwingStore.shouldThrowOnSet = true
+        let persistence = TabsModelPersistence(normalStore: throwingStore,
+                                               fireStore: try MockKeyValueFileStore(throwOnInit: nil),
+                                               legacyStore: MockKeyValueStore())
+        let result = persistence.saveSynchronously(model: model, for: .normal)
+        if case .success = result {
+            XCTFail("saveSynchronously should propagate store error")
+        }
+    }
+
+}
+
+/// Counts `set` calls so tests can assert how many disk writes actually landed.
+private final class CountingThrowingKeyValueStore: ThrowingKeyValueStoring, @unchecked Sendable {
+    private(set) var setCount = 0
+    private(set) var storedValue: Any?
+    private let lock = NSLock()
+
+    func object(forKey defaultName: String) throws -> Any? {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedValue
+    }
+
+    func set(_ value: Any?, forKey defaultName: String) throws {
+        lock.lock()
+        setCount += 1
+        storedValue = value
+        lock.unlock()
+    }
+
+    func removeObject(forKey defaultName: String) throws {
+        lock.lock()
+        storedValue = nil
+        lock.unlock()
+    }
 }

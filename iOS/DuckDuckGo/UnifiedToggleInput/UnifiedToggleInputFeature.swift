@@ -18,26 +18,76 @@
 //
 
 import Foundation
-import PrivacyConfig
 import Common
-import UIKit
+import FoundationExtensions
+import Core
+import PrivacyConfig
 
 protocol UnifiedToggleInputFeatureProviding {
     var isAvailable: Bool { get }
+    /// When true, the UTI hides the Search↔Duck.ai toggle on Duck.ai tabs regardless of the
+    /// user's toggle-enabled setting. Backed by `FeatureFlag.aiChatTabHideToggle`.
+    ///
+    /// No protocol-extension default: every conformer (including test mocks) must declare an
+    /// explicit value so test coverage isn't silently masked by a convenient fallback.
+    var isToggleHiddenOnDuckAITab: Bool { get }
 }
 
 struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
-    private let featureFlagger: any FeatureFlagger
+    private static let isEligibleKey = "com.duckduckgo.unifiedToggleInput.eligible"
+    private static let isToggleHiddenOnDuckAITabKey = "com.duckduckgo.unifiedToggleInput.aiChatTabHideToggle.session.enabled"
+
+    /// Forward-only "this device has had UTI" bit. Persists across launches and flag flips and is
+    /// cleared only by uninstall. Lets the new-user cutoff (`unifiedToggleInputIncludeNewUsers`)
+    /// stop *new* users without revoking UTI from anyone already granted.
+    private static let hasGrantedKey = "com.duckduckgo.unifiedToggleInput.hasGranted"
+
+    /// Snapshot the feature flags once per session. Call early at launch, before any consumer reads `isAvailable` / `isToggleHiddenOnDuckAITab`.
+    static func resolve(using featureFlagger: FeatureFlagger,
+                        devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+        let featureOn = featureFlagger.isFeatureOn(.unifiedToggleInput)
+        let includeNewUsers = featureFlagger.isFeatureOn(.unifiedToggleInputIncludeNewUsers)
+        let hasGranted = UserDefaults.app.bool(forKey: hasGrantedKey)
+
+        // Eligible when the `unifiedToggleInput` flag is on AND the user either already had UTI
+        // (sticky grant) or new users are still being included. That flag off revokes UTI from everyone.
+        let isEligible = featureOn && (hasGranted || includeNewUsers)
+        UserDefaults.app.set(isEligible, forKey: isEligibleKey)
+        UserDefaults.app.set(featureFlagger.isFeatureOn(.aiChatTabHideToggle), forKey: isToggleHiddenOnDuckAITabKey)
+
+        // Lock in the grant the first launch UTI is actually available on this device, so a later
+        // new-user cutoff never revokes it. Device-gated so a device that never showed UTI is not
+        // wrongly treated as granted if UTI later expands beyond iPhone.
+        if isEligible && devicePlatform.isIphone && !hasGranted {
+            UserDefaults.app.set(true, forKey: hasGrantedKey)
+        }
+    }
+
     private let devicePlatform: DevicePlatformProviding.Type
 
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
-        self.featureFlagger = featureFlagger
+    init(devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.devicePlatform = devicePlatform
     }
 
-    var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.unifiedToggleInput) && devicePlatform.isIphone
+    private var isEligible: Bool {
+        UserDefaults.app.bool(forKey: Self.isEligibleKey)
     }
+
+    var isAvailable: Bool {
+        isEligible && devicePlatform.isIphone
+    }
+
+    var isToggleHiddenOnDuckAITab: Bool {
+        UserDefaults.app.bool(forKey: Self.isToggleHiddenOnDuckAITabKey)
+    }
+
+#if DEBUG
+    /// Test-only: clears the persisted UTI state (sticky grant + eligibility snapshot) so each test
+    /// starts from a clean, un-granted device without depending on a follow-up `resolve(...)`.
+    static func resetPersistedStateForTesting() {
+        UserDefaults.app.removeObject(forKey: hasGrantedKey)
+        UserDefaults.app.removeObject(forKey: isEligibleKey)
+    }
+#endif
 }

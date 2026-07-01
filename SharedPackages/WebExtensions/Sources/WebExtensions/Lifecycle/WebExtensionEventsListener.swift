@@ -17,11 +17,13 @@
 //
 
 import WebKit
+import os.log
 
 @available(macOS 15.4, iOS 18.4, *)
 public protocol WebExtensionEventsListening {
 
     var controller: WKWebExtensionController? { get set }
+    var droppedCallbacksCount: Int { get }
 
     func didOpenWindow(_ window: WKWebExtensionWindow)
     func didCloseWindow(_ window: WKWebExtensionWindow)
@@ -40,50 +42,61 @@ public protocol WebExtensionEventsListening {
 public final class WebExtensionEventsListener: WebExtensionEventsListening {
 
     public weak var controller: WKWebExtensionController?
+    public private(set) var droppedCallbacksCount = 0
 
     public init() {}
 
     public func didOpenWindow(_ window: WKWebExtensionWindow) {
-        controller?.didOpenWindow(window)
+        notifyController { $0.didOpenWindow(window) }
     }
 
     public func didCloseWindow(_ window: WKWebExtensionWindow) {
-        controller?.didCloseWindow(window)
+        notifyController { $0.didCloseWindow(window) }
     }
 
     public func didFocusWindow(_ window: WKWebExtensionWindow) {
-        controller?.didFocusWindow(window)
+        notifyController { $0.didFocusWindow(window) }
     }
 
     public func didOpenTab(_ tab: WKWebExtensionTab) {
-        controller?.didOpenTab(tab)
+        notifyController { $0.didOpenTab(tab) }
     }
 
     public func didCloseTab(_ tab: WKWebExtensionTab, windowIsClosing: Bool) {
-        controller?.didCloseTab(tab, windowIsClosing: windowIsClosing)
+        notifyController { $0.didCloseTab(tab, windowIsClosing: windowIsClosing) }
     }
 
     public func didActivateTab(_ tab: WKWebExtensionTab, previousActiveTab: WKWebExtensionTab?) {
-        controller?.didActivateTab(tab, previousActiveTab: previousActiveTab)
+        notifyController { $0.didActivateTab(tab, previousActiveTab: previousActiveTab) }
     }
 
     public func didSelectTabs(_ tabs: [WKWebExtensionTab]) {
-        controller?.didSelectTabs(tabs)
+        notifyController { $0.didSelectTabs(tabs) }
     }
 
     public func didDeselectTabs(_ tabs: [WKWebExtensionTab]) {
-        controller?.didDeselectTabs(tabs)
+        notifyController { $0.didDeselectTabs(tabs) }
     }
 
     public func didMoveTab(_ tab: WKWebExtensionTab, from oldIndex: Int, in oldWindow: WKWebExtensionWindow) {
-        controller?.didMoveTab(tab, from: oldIndex, in: oldWindow)
+        notifyController { $0.didMoveTab(tab, from: oldIndex, in: oldWindow) }
     }
 
     public func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {
-        controller?.didReplaceTab(oldTab, with: tab)
+        notifyController { $0.didReplaceTab(oldTab, with: tab) }
     }
 
     public func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {
-        controller?.didChangeTabProperties(properties, for: tab)
+        notifyController { $0.didChangeTabProperties(properties, for: tab) }
+    }
+
+    private func notifyController(_ callback: (WKWebExtensionController) -> Void, caller: String = #function) {
+        guard let controller else {
+            droppedCallbacksCount += 1
+            Logger.webExtensions.warning("⚠️ Dropped web extension callback '\(caller, privacy: .public)' — controller is nil (total dropped: \(self.droppedCallbacksCount, privacy: .public))")
+            return
+        }
+
+        callback(controller)
     }
 }

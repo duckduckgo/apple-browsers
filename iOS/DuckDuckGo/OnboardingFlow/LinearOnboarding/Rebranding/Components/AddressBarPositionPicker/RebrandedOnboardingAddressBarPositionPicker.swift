@@ -24,7 +24,21 @@ import Onboarding
 extension OnboardingRebranding.OnboardingView {
 
     struct OnboardingAddressBarPositionPicker: View {
-        @StateObject private var viewModel = OnboardingAddressBarPositionPickerViewModel()
+        @StateObject private var viewModel: OnboardingAddressBarPositionPickerViewModel
+
+        init(
+            topOption: OnboardingAddressBarPositionContent.OptionContent,
+            bottomOption: OnboardingAddressBarPositionContent.OptionContent,
+            defaultIndicator: String
+        ) {
+            _viewModel = StateObject(
+                wrappedValue: OnboardingAddressBarPositionPickerViewModel(
+                    topOption: topOption,
+                    bottomOption: bottomOption,
+                    defaultIndicator: defaultIndicator
+                )
+            )
+        }
 
         var body: some View {
             VStack(spacing: AddressBarPositionPickerMetrics.itemSpacing) {
@@ -133,7 +147,7 @@ private struct AddressBarPositionButtonStyle: ButtonStyle {
 
     private func backgroundColor(isSelected: Bool, isPressed: Bool) -> Color {
         if isSelected {
-            return Color(singleUseColor: .rebranding(.accentAltGlowPrimary))
+            return OnboardingRebrandColor.accentAltGlowPrimary
         } else if isPressed {
             return Color(designSystemColor: .buttonsGhostPressedFill)
         } else {

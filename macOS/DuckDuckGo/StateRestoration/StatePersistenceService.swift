@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 
 final class StatePersistenceService {

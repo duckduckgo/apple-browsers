@@ -18,11 +18,15 @@
 
 import PackageDescription
 
+let strictConcurrencySettings: [SwiftSetting] = [
+    .enableExperimentalFeature("StrictConcurrency")
+]
+
 let package = Package(
     name: "AttributedMetric",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(name: "AttributedMetric", targets: ["AttributedMetric"]),
@@ -37,13 +41,15 @@ let package = Package(
             dependencies: [
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit")
-            ]
+            ],
+            swiftSettings: strictConcurrencySettings
         ),
         .target(
             name: "AttributedMetricTestsUtils",
             dependencies: [
                 "AttributedMetric"
-            ]
+            ],
+            swiftSettings: strictConcurrencySettings
         ),
         .testTarget(
             name: "AttributedMetricTests",
@@ -51,7 +57,8 @@ let package = Package(
                 "AttributedMetric",
                 "AttributedMetricTestsUtils",
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit")
-            ]
+            ],
+            swiftSettings: strictConcurrencySettings
         )
     ]
 )

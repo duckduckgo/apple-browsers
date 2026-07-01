@@ -56,7 +56,15 @@ extension MainViewController {
                 UIKeyCommand(title: "", action: #selector(keyboardNoOperation), input: "tap link", modifierFlags: [.command, .shift],
                              discoverabilityTitle: UserText.keyCommandOpenInNewTab),
                 UIKeyCommand(title: "", action: #selector(keyboardNoOperation), input: "tap link", modifierFlags: [.command],
-                             discoverabilityTitle: UserText.keyCommandOpenInNewBackgroundTab)
+                             discoverabilityTitle: UserText.keyCommandOpenInNewBackgroundTab),
+                UIKeyCommand(title: "", action: #selector(keyboardZoomIn), input: "=", modifierFlags: [.command],
+                             discoverabilityTitle: UserText.keyCommandZoomIn),
+                UIKeyCommand(title: "", action: #selector(keyboardZoomIn), input: "+", modifierFlags: [.command],
+                             discoverabilityTitle: UserText.keyCommandZoomIn),
+                UIKeyCommand(title: "", action: #selector(keyboardZoomOut), input: "-", modifierFlags: [.command],
+                             discoverabilityTitle: UserText.keyCommandZoomOut),
+                UIKeyCommand(title: "", action: #selector(keyboardZoomReset), input: "0", modifierFlags: [.command],
+                             discoverabilityTitle: UserText.keyCommandResetZoom)
             ]
         }
         
@@ -139,6 +147,21 @@ extension MainViewController {
     @objc func keyboardReload() {
         guard isShortcutEnabled() else { return }
         self.currentTab?.refresh()
+    }
+
+    @objc func keyboardZoomIn() {
+        guard isShortcutEnabled() else { return }
+        currentTab?.zoomIn()
+    }
+
+    @objc func keyboardZoomOut() {
+        guard isShortcutEnabled() else { return }
+        currentTab?.zoomOut()
+    }
+
+    @objc func keyboardZoomReset() {
+        guard isShortcutEnabled() else { return }
+        currentTab?.resetTextZoom()
     }
 
     @objc func keyboardFindNext() {
@@ -258,7 +281,7 @@ extension MainViewController {
     @objc func keyboardNoOperation() { }
 
     private func isShortcutEnabled() -> Bool {
-        !experimentDuckAIFireOnboardingFlow.controlsLocked
+        !duckAIFireOnboardingFlow.controlsLocked
     }
 
     private func saveBookmark(favorite: Bool) {

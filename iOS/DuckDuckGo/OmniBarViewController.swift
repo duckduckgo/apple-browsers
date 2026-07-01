@@ -20,6 +20,7 @@
 import UIKit
 import PrivacyDashboard
 import AIChat
+import Common
 import Core
 import Kingfisher
 import DesignResourcesKitIcons
@@ -33,6 +34,10 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     /// Access to iPad-specific expandable search area features.
     var expandableBarView: ExpandableOmniBarView? { barView as? ExpandableOmniBarView }
+
+    /// Overridden by `DefaultOmniBarViewController` when the iPad Duck.ai controls are active.
+    /// Empty here (all values `nil`).
+    var iPadDuckAIControlValues: IPadDuckAIControlValues { IPadDuckAIControlValuesSnapshot() }
 
     var isBackButtonEnabled: Bool {
         get { barView.backButton.isEnabled }
@@ -55,7 +60,12 @@ class OmniBarViewController: UIViewController, OmniBar {
     // -
 
     let dependencies: OmnibarDependencyProvider
-    weak var omniDelegate: OmniBarDelegate?
+    weak var omniDelegate: OmniBarDelegate? {
+        didSet {
+            guard isViewLoaded else { return }
+            barView.refreshLongPressMenuAvailability()
+        }
+    }
 
     // MARK: - State
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
@@ -152,6 +162,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         registerNotifications()
         assignActions()
         configureEditingMenu()
+        configureLongPressMenuProvider()
 
         enableInteractionsWithPointer()
 
@@ -160,6 +171,18 @@ class OmniBarViewController: UIViewController, OmniBar {
         decorate()
 
         refreshState(state)
+    }
+
+    private func configureLongPressMenuProvider() {
+        guard dependencies.featureFlagger.isFeatureOn(.omniBarLongPressMenu) else { return }
+        barView.longPressMenuProvider = { [weak self] in
+            guard let self else { return nil }
+            return self.omniDelegate?.menuForOmniBarLongPress(in: self.state)
+        }
+        barView.onLongPressMenuDisplayed = { [weak self] in
+            self?.omniDelegate?.onOmniBarLongPressMenuDisplayed()
+        }
+        barView.refreshLongPressMenuAvailability()
     }
 
     private func enableInteractionsWithPointer() {
@@ -376,8 +399,22 @@ class OmniBarViewController: UIViewController, OmniBar {
         textField.resignFirstResponder()
     }
 
+    func setEditingStateLogoHidden(_ hidden: Bool) {
+        // Overridden in DefaultOmniBarViewController for the experimental editing state.
+    }
+
+    /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
+    func enterAIChatMode() {
+        refreshState(state.onEnterAIChatState)
+    }
+
+    /// Sticky flag: true once the user types in the field, until the page URL is (re)displayed. A tap or
+    /// cursor move doesn't set it. Lets callers tell an unedited page URL from a user-entered query.
+    var userDidEditText = false
+
     func refreshText(forUrl url: URL?, forceFullURL: Bool) {
         guard !textField.isEditing else { return }
+        userDidEditText = false
         guard let url = url else {
             textField.text = nil
             return
@@ -392,6 +429,14 @@ class OmniBarViewController: UIViewController, OmniBar {
     
     func refreshFireMode(fireMode: Bool) {
         barView.refreshFireMode(fireMode: fireMode)
+    }
+
+    func prepareForMoveTransition() {
+        barView.prepareForMoveTransition()
+    }
+
+    func moveTransitionCompleted() {
+        barView.moveTransitionCompleted()
     }
 
     func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int) {
@@ -518,7 +563,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             return
         }
 
-        if privacyInfo.url.isDuckAIURL, dependencies.aichatIPadTabFeature.isAvailable {
+        if privacyInfo.url.isDuckAIURL, DevicePlatform.isIpad {
             showCustomIcon(icon: .duckAI)
             return
         }
@@ -702,6 +747,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
 
         updateInterface(from: oldState, to: state)
+        barView.refreshLongPressMenuAvailability()
 
         UIView.animate(withDuration: 0.0) { [weak self] in
             self?.view.layoutIfNeeded()
@@ -839,7 +885,13 @@ class OmniBarViewController: UIViewController, OmniBar {
         expandableBarView?.aiChatTextView.text = nil
         expandableBarView?.updateTextFieldPlaceholderVisibility(hasText: false)
         expandableBarView?.updateAIChatSendButton(hasText: false)
-        omniDelegate?.onOmniQueryUpdated("")
+        // Notify the active mode's delegate so its suggestions refresh for the now-empty query — Duck.ai
+        // text changes route through `onAIChatQueryUpdated`, which `onOmniQueryUpdated` ignores.
+        if selectedTextEntryMode == .aiChat {
+            omniDelegate?.onAIChatQueryUpdated("")
+        } else {
+            omniDelegate?.onOmniQueryUpdated("")
+        }
     }
 
     private func updateLeftIconContainerState(oldState: any OmniBarState, newState: any OmniBarState) {
@@ -916,6 +968,11 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func onPrivacyIconPressed() {
         let isPrivacyIconHighlighted = privacyIconContextualOnboardingAnimator.isPrivacyIconHighlighted(barView.privacyInfoContainer.privacyIcon)
+        // Remove the contextual-onboarding pulse synchronously on tap so it disappears the
+        // instant the user engages with the icon, regardless of how `isPrivacyIconHighlighted`
+        // resolves (its gate looks for an outer-`PrivacyIconView` anchor only, while the show
+        // path actually anchors to the inner `shieldAnimationView` when available).
+        privacyIconContextualOnboardingAnimator.forceDismissPrivacyIconAnimation(barView.privacyInfoContainer.privacyIcon)
         omniDelegate?.onPrivacyIconPressed(isHighlighted: isPrivacyIconHighlighted)
     }
 
@@ -1024,6 +1081,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
 extension OmniBarViewController: UITextFieldDelegate {
     @objc func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        userDidEditText = true
         self.refreshState(self.state.onEditingStartedState)
         return true
     }
@@ -1077,14 +1135,6 @@ extension OmniBarViewController: UITextFieldDelegate {
     /// Shows the logo after full-screen transition completes.
     func showLogoAfterTransition() {
         barView.privacyInfoContainer.privacyIcon.showLogoAfterTransition()
-    }
-}
-
-extension OmniBarViewController {
-
-    /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
-    func enterAIChatMode() {
-        refreshState(state.onEnterAIChatState)
     }
 }
 

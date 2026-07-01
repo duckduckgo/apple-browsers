@@ -1,0 +1,54 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_unified_input_search
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+        ff.experimentalAddressBar: "true"
+
+# Dismiss any launch-time modal BEFORE navigating the Browsing Menu (set_search_and_duckai's
+# first action taps the menu, which a lingering modal would otherwise block).
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+# Focus NTP omnibar — segmented toggle appears
+- tapOn:
+    id: "searchEntry"
+- assertVisible:
+    id: "AddressBar.Button.DuckAI"
+
+# Ensure Search mode is active (no AI toolbar)
+- tapOn:
+    id: "AddressBar.Button.Search"
+- assertNotVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Submit a navigation via the unified input in Search mode and confirm the page loads.
+# Uses the deterministic privacy-test-pages site (as release_tests/ai-chat.yaml does) rather
+# than a live SERP, so the assertion is stable and actually proves submission navigated —
+# omnibar-collapse alone does not.
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertVisible: ".*Privacy Test Pages.*"
+
+# Toggle is gone (navigated away from NTP) and the browser AI entry point returns.
+- assertNotVisible:
+    id: "AddressBar.Button.DuckAI"
+- assertVisible:
+    id: "Browser.OmniBar.Button.AIChat"

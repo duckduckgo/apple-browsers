@@ -37,8 +37,12 @@ public extension NewTabPageDataModel {
         /// Empty when the model does not support reasoning, or when the reasoning-effort
         /// feature is disabled natively — in which case the picker is hidden web-side.
         public let supportedReasoningEffort: [String]
+        /// MIME types the model accepts as file attachments (e.g. `["application/pdf"]`). Empty
+        /// when the model accepts no files; the web uses this to drive the file picker's `accept`
+        /// and to clear attached files whose MIME isn't supported when the user switches models.
+        public let supportedFileTypes: [String]
 
-        public init(id: String, name: String, shortName: String, isEnabled: Bool, supportsImageUpload: Bool, supportedTools: [String] = [], supportedReasoningEffort: [String] = []) {
+        public init(id: String, name: String, shortName: String, isEnabled: Bool, supportsImageUpload: Bool, supportedTools: [String] = [], supportedReasoningEffort: [String] = [], supportedFileTypes: [String] = []) {
             self.id = id
             self.name = name
             self.shortName = shortName
@@ -46,6 +50,7 @@ public extension NewTabPageDataModel {
             self.supportsImageUpload = supportsImageUpload
             self.supportedTools = supportedTools
             self.supportedReasoningEffort = supportedReasoningEffort
+            self.supportedFileTypes = supportedFileTypes
         }
     }
 
@@ -73,11 +78,23 @@ public extension NewTabPageDataModel {
         /// `aiChatOmnibarVoiceChatAccess` feature flag and reactive over `omnibar_onConfigUpdate`
         /// so the affordance appears/disappears without a page reload when the flag flips.
         let enableVoiceChatAccess: Bool?
+        /// When false, the omnibar must not render the inline "Ask Duck.ai: <query>" entry in
+        /// the suggestions dropdown. Native sets this to the value of the user's "Autocomplete
+        /// suggestions" preference so the dropdown matches the address bar (which hides the
+        /// equivalent `.askAIChat` entry when the preference is off). Reactive over
+        /// `omnibar_onConfigUpdate`. `nil` means "treat as true" for back-compat with web
+        /// clients that don't know about this field yet.
+        let enableAskAiSuggestion: Bool?
         let selectedModelId: String?
         let aiModelSections: [AIModelSection]?
         /// The user's persisted reasoning effort (e.g. `"none"`, `"low"`, `"medium"`). `nil` when
         /// nothing is selected or when the reasoning-effort feature is disabled natively.
         let selectedReasoningEffort: String?
+        /// When true, the omnibar shows the paperclip entry point and accepts `@` mentions for
+        /// attaching open tabs (and files) as context to a Duck.ai submission. Driven by the
+        /// `aiChatNtpAttachMoreTabs` feature flag and reactive over `omnibar_onConfigUpdate`.
+        /// `nil`/false means the affordances stay hidden and existing flows are unchanged.
+        let enableAttachTabs: Bool?
     }
 
     // MARK: - omnibar_getSuggestions
@@ -247,6 +264,97 @@ public extension NewTabPageDataModel {
         /// Reasoning effort to attach to this submission. Ignored natively when the reasoning-effort
         /// feature is disabled or when the value isn't supported by the submission's model.
         let reasoningEffort: String?
+        /// Page contexts attached from open tabs via the attach-tabs picker. Each entry is the
+        /// same shape returned by `omnibar_getTabContent` and carries a `tabId`. Omitted when no
+        /// tabs are attached so existing handlers continue to work unchanged.
+        let pageContext: [OmnibarPageContext]?
+        /// Files (PDFs in v1) attached via the paperclip menu. Omitted when none are attached.
+        let files: [OmnibarPromptFile]?
+    }
+
+    // MARK: - omnibar_getOpenTabs / omnibar_getTabContent (attach tabs)
+
+    /// Favicon for an attached tab. Matches the NewTab `favicon.json` shape. Native populates
+    /// `src` with a base64 PNG data URL so the favicon survives the round-trip back on submit
+    /// and renders without CSP issues when forwarded to the Duck.ai tab.
+    struct OmnibarTabFavicon: Codable, Equatable {
+        public let src: String
+        public let maxAvailableSize: Int?
+
+        public init(src: String, maxAvailableSize: Int? = nil) {
+            self.src = src
+            self.maxAvailableSize = maxAvailableSize
+        }
+    }
+
+    /// Metadata for an open tab, returned by `omnibar_getOpenTabs`.
+    struct OmnibarTabMetadata: Codable, Equatable {
+        public let tabId: String
+        public let title: String
+        public let url: String
+        public let favicon: OmnibarTabFavicon?
+
+        public init(tabId: String, title: String, url: String, favicon: OmnibarTabFavicon?) {
+            self.tabId = tabId
+            self.title = title
+            self.url = url
+            self.favicon = favicon
+        }
+    }
+
+    /// Extracted page content for a specific tab, returned by `omnibar_getTabContent` and echoed
+    /// back on `omnibar_submitChat`.
+    struct OmnibarPageContext: Codable, Equatable {
+        public let tabId: String?
+        public let title: String
+        public let url: String
+        public let favicon: OmnibarTabFavicon?
+        public let content: String?
+        public let truncated: Bool?
+        public let fullContentLength: Int?
+
+        public init(tabId: String?, title: String, url: String, favicon: OmnibarTabFavicon?, content: String?, truncated: Bool?, fullContentLength: Int?) {
+            self.tabId = tabId
+            self.title = title
+            self.url = url
+            self.favicon = favicon
+            self.content = content
+            self.truncated = truncated
+            self.fullContentLength = fullContentLength
+        }
+    }
+
+    /// A file attached to a Duck.ai prompt (PDFs in v1). Shape mirrors Duck.ai's `NativePromptFile`.
+    struct OmnibarPromptFile: Codable, Equatable {
+        public let data: String
+        public let fileName: String
+        public let mimeType: String
+
+        public init(data: String, fileName: String, mimeType: String) {
+            self.data = data
+            self.fileName = fileName
+            self.mimeType = mimeType
+        }
+    }
+
+    struct OmnibarGetOpenTabsResponse: Codable, Equatable {
+        let tabs: [OmnibarTabMetadata]
+
+        public init(tabs: [OmnibarTabMetadata]) {
+            self.tabs = tabs
+        }
+    }
+
+    struct OmnibarGetTabContentRequest: Codable, Equatable {
+        let tabId: String
+    }
+
+    struct OmnibarGetTabContentResponse: Codable, Equatable {
+        let pageContext: OmnibarPageContext?
+
+        public init(pageContext: OmnibarPageContext?) {
+            self.pageContext = pageContext
+        }
     }
 
     // MARK: - omnibar_openAiChat
@@ -281,13 +389,15 @@ public extension NewTabPageDataModel {
         let pinned: Bool?
         let lastEdit: String?
         let firstUserMessageContent: String?
+        let model: String?
 
-        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil, firstUserMessageContent: String? = nil) {
+        public init(chatId: String, title: String, pinned: Bool? = nil, lastEdit: String? = nil, firstUserMessageContent: String? = nil, model: String? = nil) {
             self.chatId = chatId
             self.title = title
             self.pinned = pinned
             self.lastEdit = lastEdit
             self.firstUserMessageContent = firstUserMessageContent
+            self.model = model
         }
     }
 

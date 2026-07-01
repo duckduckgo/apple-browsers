@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+import FeatureFlags
 import Onboarding
 import Persistence
 import PersistenceTestingUtils
@@ -40,7 +42,6 @@ class OnboardingManagerTests: XCTestCase {
     var dataClearingPreferences: DataClearingPreferences!
     var startupPersistor: StartupPreferencesUserDefaultsPersistor!
     var importProvider: CapturingDataImportProvider!
-    var applicationBuildType: MockApplicationBuildType!
     private var onboardingSharedPixelHandler: MockOnboardingSharedPixelHandler!
 
     @MainActor override func setUp() {
@@ -64,7 +65,6 @@ class OnboardingManagerTests: XCTestCase {
         )
         startupPreferences = StartupPreferences(pinningManager: MockPinningManager(), persistor: startupPersistor, appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()
-        applicationBuildType = MockApplicationBuildType()
         onboardingSharedPixelHandler = MockOnboardingSharedPixelHandler()
         manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
@@ -74,7 +74,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: MockFeatureFlagger(),
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
     }
@@ -90,7 +89,6 @@ class OnboardingManagerTests: XCTestCase {
         dataClearingPreferences = nil
         fireButtonPreferencesPersistor = nil
         importProvider = nil
-        applicationBuildType = nil
         onboardingSharedPixelHandler = nil
     }
 
@@ -100,7 +98,7 @@ class OnboardingManagerTests: XCTestCase {
         let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -111,9 +109,9 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(manager.configuration, expectedConfig)
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenAppStoreBuild_DoesNotShowDockRow() {
+    func testReturnsExpectedOnboardingConfig_WhenDockCustomization_DoesNotSupportAddingToDock() {
         // Given
-        applicationBuildType.isAppStoreBuild = true
+        dockCustomization.supportsAddingToDock = false
         let appStoreManager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -122,13 +120,12 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: MockFeatureFlagger(),
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
-        let stepDefinitions = StepDefinitions(systemSettings: SystemSettings(rows: ["import"]))
+        let stepDefinitions = StepDefinitions(systemSettings: SystemSettings(rows: ["dock-instructions", "import"]))
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -151,7 +148,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
@@ -159,7 +155,7 @@ class OnboardingManagerTests: XCTestCase {
         let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -182,7 +178,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
@@ -190,7 +185,7 @@ class OnboardingManagerTests: XCTestCase {
         let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -213,7 +208,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
@@ -221,7 +215,7 @@ class OnboardingManagerTests: XCTestCase {
         let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -547,7 +541,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
@@ -574,7 +567,6 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler
         )
 
@@ -586,16 +578,66 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.searchExperience(.clicked(.searchOnly))])
     }
 
-}
+    // MARK: setDuckAiInAddressBar — NTP + homepage (aiChatOnboardingToggleAffectsNtpAndDdg)
 
-private class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
-    var eventsReceived: [OnboardingSharedPixelEvent] = []
+    @MainActor
+    func testSetDuckAiInAddressBar_WhenFlagOnAndSearchOnly_HidesNtpToggleAndArmsHomepageSeedOff() {
+        let storage = MockAIChatPreferencesStorage()
+        let seedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
+        let manager = makeManager(enabledFlags: [.aiChatOnboardingToggleAffectsNtpAndDdg], aiChatPreferencesStorage: storage, homepageSearchModeSeedPersistor: seedPersistor)
 
-    func fire(_ event: OnboardingSharedPixelEvent) {
-        eventsReceived.append(event)
+        manager.setDuckAiInAddressBar(enabled: false)
+
+        XCTAssertFalse(storage.showSearchAndDuckAIToggle)
+        XCTAssertFalse(storage.showShortcutOnNewTabPage)
+        XCTAssertEqual(seedPersistor.pendingShowSearchModeToggle, false)
     }
 
-    func reset() {
-        eventsReceived = []
+    @MainActor
+    func testSetDuckAiInAddressBar_WhenFlagOnAndSearchAndDuckAi_ShowsNtpToggleAndArmsHomepageSeedOn() {
+        let storage = MockAIChatPreferencesStorage()
+        let seedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
+        let manager = makeManager(enabledFlags: [.aiChatOnboardingToggleAffectsNtpAndDdg], aiChatPreferencesStorage: storage, homepageSearchModeSeedPersistor: seedPersistor)
+
+        manager.setDuckAiInAddressBar(enabled: true)
+
+        XCTAssertTrue(storage.showSearchAndDuckAIToggle)
+        XCTAssertTrue(storage.showShortcutOnNewTabPage)
+        XCTAssertEqual(seedPersistor.pendingShowSearchModeToggle, true)
     }
+
+    @MainActor
+    func testSetDuckAiInAddressBar_WhenFlagOff_OnlySetsAddressBarToggle() {
+        let storage = MockAIChatPreferencesStorage()
+        storage.showShortcutOnNewTabPage = true
+        let seedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
+        let manager = makeManager(enabledFlags: [], aiChatPreferencesStorage: storage, homepageSearchModeSeedPersistor: seedPersistor)
+
+        manager.setDuckAiInAddressBar(enabled: false)
+
+        XCTAssertFalse(storage.showSearchAndDuckAIToggle)
+        XCTAssertTrue(storage.showShortcutOnNewTabPage)
+        XCTAssertNil(seedPersistor.pendingShowSearchModeToggle)
+    }
+
+    @MainActor
+    private func makeManager(enabledFlags: [FeatureFlag],
+                             aiChatPreferencesStorage: AIChatPreferencesStorage,
+                             homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor) -> OnboardingActionsManager {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = enabledFlags
+        return OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            aiChatPreferencesStorage: aiChatPreferencesStorage,
+            homepageSearchModeSeedPersistor: homepageSearchModeSeedPersistor,
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler
+        )
+    }
+
 }

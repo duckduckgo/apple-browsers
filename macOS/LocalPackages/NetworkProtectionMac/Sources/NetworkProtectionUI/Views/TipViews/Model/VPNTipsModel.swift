@@ -18,7 +18,9 @@
 
 import AppKit
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import VPN
 import NetworkProtectionProxy
 import os.log

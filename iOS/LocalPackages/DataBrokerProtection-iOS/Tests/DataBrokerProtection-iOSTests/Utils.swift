@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Persistence
 import SwiftUI
 @testable import DataBrokerProtection_iOS

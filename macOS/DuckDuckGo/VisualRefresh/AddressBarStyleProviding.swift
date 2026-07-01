@@ -341,7 +341,7 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarActiveOuterBorderViewRadius: CGFloat = 0      // Deprecated
     let addressBarActiveOuterBorderSize: CGFloat = 0            // Deprecated
     let addressBarButtonSize: CGFloat = 28
-    let addressBarButtonsCornerRadius: CGFloat = 16             // VERIFY
+    let addressBarButtonsCornerRadius: CGFloat = 14
     let addressBarInactiveBackgroundViewRadius: CGFloat = 17
     let addressBarInactiveBackgroundViewLeadingPadding: CGFloat = 6
     let addressBarInactiveBackgroundViewTrailingPadding: CGFloat = 6

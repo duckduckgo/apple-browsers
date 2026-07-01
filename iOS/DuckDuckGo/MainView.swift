@@ -549,7 +549,7 @@ extension MainViewFactory {
 
         let toolbar = coordinator.toolbar!
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
-        coordinator.constraints.toolbarHeight = toolbar.constrainAttribute(.height, to: BrowserToolbarView.totalHeight(withOmnibarHeight: 0))
+        coordinator.constraints.toolbarHeight = toolbar.constrainAttribute(.height, to: BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled))
         NSLayoutConstraint.activate([
             toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),
             toolbar.constrainView(superview, by: .centerX),

@@ -137,7 +137,7 @@ class MainViewCoordinator {
         applyContentContainerTopAnchorForCurrentState()
         guard isFloatingUIEnabled else {
             toolbar.setOmnibarView(nil, height: 0)
-            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
             navigationBarContainer.isHidden = false
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
@@ -153,7 +153,7 @@ class MainViewCoordinator {
         switch position {
         case .top:
             toolbar.setOmnibarView(nil, height: 0)
-            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
             omniBar.barView.makeGlass()
             navigationBarContainer.isHidden = false
             navigationBarContainer.alpha = 1
@@ -166,7 +166,7 @@ class MainViewCoordinator {
                 isUnifiedToggleInputVisible: isUnifiedToggleInputVisible
             ) else {
                 toolbar.setOmnibarView(nil, height: 0)
-                constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+                constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
                 navigationBarContainer.isHidden = false
                 navigationBarContainer.alpha = 1
                 navigationBarContainer.isUserInteractionEnabled = true
@@ -174,7 +174,7 @@ class MainViewCoordinator {
                 return
             }
             toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
-            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight)
+            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight, isFloating: isFloatingUIEnabled)
             omniBar.barView.makeOpaque()
             omniBar.barView.alpha = 1
             omniBar.barView.isUserInteractionEnabled = true
@@ -196,7 +196,7 @@ class MainViewCoordinator {
         guard !toolbar.isHostingOmnibarView(omniBar.barView) else { return }
 
         toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
-        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight)
+        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight, isFloating: isFloatingUIEnabled)
         omniBar.barView.alpha = 1
         omniBar.barView.isUserInteractionEnabled = true
         navigationBarContainer.isHidden = true
@@ -311,7 +311,7 @@ class MainViewCoordinator {
     func ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded() {
         guard isFloatingUIEnabled, addressBarPosition.isBottom, isOmnibarInToolbar else { return }
         toolbar.setOmnibarView(nil, height: 0)
-        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
         navigationBarContainer.isHidden = false
         navigationBarContainer.alpha = 1
         navigationBarContainer.isUserInteractionEnabled = true

@@ -24,6 +24,8 @@ final class BrowserToolbarView: UIView {
 
     static let extendedHitWidth: CGFloat = 45
     static let buttonsHeight: CGFloat = 56
+    static let floatingButtonsHeight: CGFloat = 62
+
     static let omnibarHorizontalInset: CGFloat = -8
     private static let horizontalEdgePadding: CGFloat = 8
     /// Extra horizontal inset for the button row in the non-floating (legacy) style so the outer
@@ -135,11 +137,13 @@ final class BrowserToolbarView: UIView {
         expandedContentHeightConstraint.constant > 0
     }
 
-    static func totalHeight(withOmnibarHeight omnibarHeight: CGFloat) -> CGFloat {
+    static func totalHeight(withOmnibarHeight omnibarHeight: CGFloat, isFloating: Bool) -> CGFloat {
+        let targetHeight = isFloating ? floatingButtonsHeight : buttonsHeight
+
         guard omnibarHeight > 0 else {
-            return buttonsHeight
+            return targetHeight
         }
-        return (verticalContentPadding * 2) + buttonsHeight + omnibarHeight + omnibarToButtonsSpacing
+        return (verticalContentPadding * 2) + targetHeight + omnibarHeight + omnibarToButtonsSpacing
     }
 
     override init(frame: CGRect) {
@@ -166,6 +170,10 @@ final class BrowserToolbarView: UIView {
         materialBackgroundLeadingConstraint = materialBackgroundView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.legacyBarOuterInsets.left)
         materialBackgroundTrailingConstraint = materialBackgroundView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.legacyBarOuterInsets.right)
         materialBackgroundBottomConstraint = materialBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Self.legacyBarOuterInsets.bottom)
+
+        if isFloatingStyleEnabled {
+            buttonsHeightConstraint.constant = Self.floatingButtonsHeight
+        }
 
         NSLayoutConstraint.activate([
             materialBackgroundLeadingConstraint,
@@ -229,7 +237,7 @@ final class BrowserToolbarView: UIView {
         }
         
         omnibarHeightConstraint.constant = height
-        buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height)
+        buttonsHeightConstraint.constant = Self.totalHeight(withOmnibarHeight: height, isFloating: isFloatingStyleEnabled)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.isUserInteractionEnabled = true
         (view as? DefaultOmniBarView)?.safeAreaManagedByContainer = false

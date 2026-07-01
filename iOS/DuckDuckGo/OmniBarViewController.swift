@@ -35,8 +35,9 @@ class OmniBarViewController: UIViewController, OmniBar {
     /// Access to iPad-specific expandable search area features.
     var expandableBarView: ExpandableOmniBarView? { barView as? ExpandableOmniBarView }
 
-    /// Overridden by `DefaultOmniBarViewController` when the iPad model picker is active. `nil` here.
-    var iPadDuckAISelectedModelId: String? { nil }
+    /// Overridden by `DefaultOmniBarViewController` when the iPad Duck.ai controls are active.
+    /// Empty here (all values `nil`).
+    var iPadDuckAIControlValues: IPadDuckAIControlValues { IPadDuckAIControlValuesSnapshot() }
 
     var isBackButtonEnabled: Bool {
         get { barView.backButton.isEnabled }

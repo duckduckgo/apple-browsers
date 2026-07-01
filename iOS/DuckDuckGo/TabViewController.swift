@@ -437,17 +437,17 @@ class TabViewController: UIViewController {
     private var canDisplayJavaScriptAlert: Bool {
         return presentedViewController == nil
             && delegate?.tabCheckIfItsBeingCurrentlyPresented(self) ?? false
-            && !(jsAlertController?.isShown ?? false)
+            && !(jsAlertView?.isShown ?? false)
     }
 
     func present(_ alert: WebJSAlert) {
-        setupJSAlertControllerIfNeeded()
-        jsAlertController.present(alert)
+        setupJSAlertViewIfNeeded()
+        jsAlertView.present(alert)
     }
 
     private func dismissJSAlertIfNeeded() {
-        if jsAlertController?.isShown == true {
-            jsAlertController?.dismiss(animated: false)
+        if jsAlertView?.isShown == true {
+            jsAlertView?.dismiss(animated: false)
         }
     }
 
@@ -752,10 +752,10 @@ class TabViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Note: JSAlertController is intentionally NOT set up here. Instantiating its
-        // storyboard eagerly triggers a first-time UIVisualEffectView/CoreMaterial bundle
+        // Note: JSAlertView is intentionally NOT set up here. Instantiating its
+        // UIVisualEffectView eagerly triggers a first-time CoreMaterial bundle
         // scan on the cold-launch critical path, which can trip the scene-create watchdog
-        // (0x8BADF00D). It is now lazily created on first use via setupJSAlertControllerIfNeeded().
+        // (0x8BADF00D). It is now lazily created on first use via setupJSAlertViewIfNeeded().
 
         fireproofingWorker = FireproofingWorking(controller: self, fireproofing: fireproofing, favicons: favicons)
         initAttributionLogic()
@@ -1519,7 +1519,7 @@ class TabViewController: UIViewController {
         return url.isDuckDuckGo
     }
 
-    var jsAlertController: JSAlertController!
+    var jsAlertView: JSAlertView!
 
     private func addTextZoomObserver() {
         NotificationCenter.default.addObserver(self,
@@ -2149,8 +2149,8 @@ extension TabViewController: WKNavigationDelegate {
             let image = renderer.image { context in
                 context.cgContext.translateBy(x: 0, y: -webView.scrollView.contentInset.top)
                 webView.drawHierarchy(in: webView.bounds, afterScreenUpdates: true)
-                if let jsAlertController = self?.jsAlertController {
-                    jsAlertController.view.drawHierarchy(in: jsAlertController.view.bounds, afterScreenUpdates: false)
+                if let jsAlertView = self?.jsAlertView {
+                    jsAlertView.drawHierarchy(in: jsAlertView.bounds, afterScreenUpdates: false)
                 }
             }
 

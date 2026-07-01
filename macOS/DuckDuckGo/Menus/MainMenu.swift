@@ -1148,6 +1148,20 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "⚠️ App restart required.", action: nil, target: nil)
             }
 
+            NSMenuItem(title: "Chrome Extension")
+                .submenu(ChromeExtensionDebugMenu(
+                    featureFlagger: featureFlagger,
+                    installer: ChromeExtensionInstaller(
+                        featureFlagger: featureFlagger,
+                        buildType: StandardApplicationBuildType(),
+                        isChromeInstalled: { ThirdPartyBrowser.chrome.isInstalled },
+                        applicationSupportURL: .nonSandboxApplicationSupportDirectoryURL,
+                        fileManager: .default,
+                        pixelFiring: PixelKit.shared
+                    )
+                ))
+                .withAccessibilityIdentifier("MainMenu.chromeExtensionDebugMenu")
+
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())

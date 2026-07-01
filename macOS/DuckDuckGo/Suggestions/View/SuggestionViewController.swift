@@ -98,13 +98,11 @@ final class SuggestionViewController: NSViewController {
         subscribeToThemeChanges()
         applyThemeStyle()
 
-        if Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            topSeparatorView?.isHidden = true
-        }
+        topSeparatorView?.isHidden = true
     }
 
     private func updateAIChatToggleFlag() {
-        let isToggleFeatureEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatPreferencesStorage.isAIFeaturesEnabled
+        let isToggleFeatureEnabled = aiChatPreferencesStorage.isAIFeaturesEnabled
         isAIChatToggleBeingDisplayed = isToggleFeatureEnabled && aiChatPreferencesStorage.showSearchAndDuckAIToggle
     }
 

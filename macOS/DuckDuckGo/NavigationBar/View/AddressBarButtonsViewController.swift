@@ -83,7 +83,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
     /// Struct to keep track of some Toggle conditions to avoid expensive operations like checking user defaults
     private struct AIChatOmnibarToggleConditions {
-        let isFeatureOn: Bool
         let hasUserInteractedWithToggle: Bool
     }
 
@@ -297,8 +296,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private let aiChatCoordinator: AIChatCoordinating
     private let aiChatSettings: AIChatPreferencesStorage
     private lazy var aiChatToggleConditions: AIChatOmnibarToggleConditions = {
-        AIChatOmnibarToggleConditions(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
-                                      hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
+        AIChatOmnibarToggleConditions(hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
     }()
     private var isChromeSidebarFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
@@ -1330,7 +1328,7 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        if isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+        if isTextFieldEditorFirstResponder {
             bookmarkButton.isShown = false
             updateAIChatDividerVisibility()
             return
@@ -1425,7 +1423,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
-        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && aiChatSettings.isAIFeaturesEnabled
 
         if isTextFieldEditorFirstResponder {
             if isToggleFeatureEnabled {
@@ -1900,7 +1898,7 @@ final class AddressBarButtonsViewController: NSViewController {
     /// Per the new design the toggle is visible in all selection states (focused and unfocused) so the user can
     /// always see / change the tab's current mode — previously it was gated on the address bar being first responder.
     private var isSearchModeToggleFeatureActive: Bool {
-        featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        aiChatSettings.isAIFeaturesEnabled
     }
 
     /// True when the toggle should be shown (feature active + user setting enabled).
@@ -2262,8 +2260,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatToggleConditions() {
-        aiChatToggleConditions = AIChatOmnibarToggleConditions(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
-                                                                hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
+        aiChatToggleConditions = AIChatOmnibarToggleConditions(hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
     }
 
     @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {

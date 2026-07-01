@@ -73,10 +73,10 @@ struct AddressBarStyleProvidingFactory {
 
     static func buildStyleProvider(featureFlagger: FeatureFlagger) -> AddressBarStyleProviding {
         if featureFlagger.isFeatureOn(.appRebranding) {
-            return CurrentAddressBarStyleProvider(featureFlagger: featureFlagger)
+            return CurrentAddressBarStyleProvider()
         }
 
-        return LegacyAddressBarStyleProvider(featureFlagger: featureFlagger)
+        return LegacyAddressBarStyleProvider()
     }
 }
 
@@ -114,16 +114,6 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarTrailingStackViewOmnibarPadding: CGFloat = 4
     private let addressBarTrailingStackViewFocusedPadding: CGFloat = 4
     private let addressBarTrailingStackViewDefaultPadding: CGFloat = 3
-
-    private let featureFlagger: FeatureFlagger
-
-    private var isAIChatOmnibarEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-    }
-
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
 
     let defaultAddressBarFontSize: CGFloat = 13
     let newTabOrHomePageAddressBarFontSize: CGFloat = 13
@@ -167,12 +157,12 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
         switch type {
         case .default:
             if focused {
-                return isAIChatOmnibarEnabled ? addressBarTopPaddingForDefaultFocusedWithAIChat : addressBarTopPaddingForDefault - 1
+                return addressBarTopPaddingForDefaultFocusedWithAIChat
             }
             return addressBarTopPaddingForDefault
         case .homePage:
             if focused {
-                return isAIChatOmnibarEnabled ? addressBarTopPaddingForHomePageFocusedWithAIChat : addressBarTopPaddingForHomePage - 1
+                return addressBarTopPaddingForHomePageFocusedWithAIChat
             }
             return addressBarTopPaddingForHomePage
         case .popUpWindow:
@@ -184,12 +174,12 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
         switch type {
         case .default:
             if focused {
-                return isAIChatOmnibarEnabled ? addressBarBottomPaddingForDefaultFocusedWithAIChat : addressBarBottomPaddingForDefault - 1
+                return addressBarBottomPaddingForDefaultFocusedWithAIChat
             }
             return addressBarBottomPaddingForDefault
         case .homePage:
             if focused {
-                return isAIChatOmnibarEnabled ? addressBarBottomPaddingForHomePageFocusedWithAIChat : addressBarBottomPaddingForHomePage - 1
+                return addressBarBottomPaddingForHomePageFocusedWithAIChat
             }
             return addressBarBottomPaddingForHomePage
         case .popUpWindow:
@@ -206,11 +196,7 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     }
 
     func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat {
-        if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            return addressBarTrailingStackViewOmnibarPadding
-        }
-
-        return focused ? addressBarTrailingStackViewFocusedPadding : addressBarTrailingStackViewDefaultPadding
+        return addressBarTrailingStackViewOmnibarPadding
     }
 
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
@@ -289,15 +275,6 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
         return 0
     }()
 
-    // MARK: - Feature Flag Helpers
-    private let featureFlagger: FeatureFlagger
-
-    /// Designated Initializer
-    ///
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
-
     // MARK: - Public API(s)
 
     func navigationBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
@@ -338,11 +315,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     }
 
     func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat {
-        if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            return showsToggle ? addressBarTrailingStackViewOmnibarPadding : addressBarTrailingStackViewDefaultPadding
-        }
-
-        return focused ? addressBarTrailingStackViewFocusedPadding : addressBarTrailingStackViewDefaultPadding
+        return showsToggle ? addressBarTrailingStackViewOmnibarPadding : addressBarTrailingStackViewDefaultPadding
     }
 
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {

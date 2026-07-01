@@ -1651,7 +1651,7 @@ extension MainViewController {
         let persistor = NewTabPageNextStepsCardsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         let debugPersistor = NewTabPageNextStepsCardsDebugPersistor()
         guard let card = debugPersistor.debugVisibleCards.first else { return }
-        persistor.setTimesShown(10, for: card)
+        persistor.setTimesShown(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown, for: card)
         NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: nil)
     }
 

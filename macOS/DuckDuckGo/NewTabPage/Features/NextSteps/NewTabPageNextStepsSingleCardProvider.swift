@@ -75,7 +75,7 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         static let maxTimesCardDismissed = 1
 
         /// Maximum times a card can be shown before it is moved to the back of the card list.
-        static let maxTimesCardShown = 10
+        static let maxTimesCardShown = 5
 
         /// How many days to prioritize Level 1 cards before highlighting Level 2 cards.
         static let cardLevel1PriorityDays = 2

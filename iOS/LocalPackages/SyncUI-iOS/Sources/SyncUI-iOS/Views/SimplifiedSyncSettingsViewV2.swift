@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
@@ -594,47 +593,6 @@ private extension SyncSettingsViewModel.Device {
     static let thisDevice = SyncSettingsViewModel.Device(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
     static let desktop = SyncSettingsViewModel.Device(id: "2", name: "MacBook Pro", type: "desktop", isThisDevice: false)
     static let otherMobile = SyncSettingsViewModel.Device(id: "3", name: "Pixel 8", type: "phone", isThisDevice: false)
-}
-
-/// `AppRebrand.isAppRebranded` defaults to `{ false }` and is only flipped to a live feature-flag
-/// lookup by the host app at launch — which previews never run. So without an override, previews
-/// always show the legacy artwork/palette. This wrapper toggles the rebrand flag *and* the palette
-/// (button/tint fills resolve through `DesignSystemPalette.current`), restoring both on deinit so one
-/// preview doesn't leak its brand state into the others. Mirrors DuckUI's internal `RebrandPreviewOverride`.
-private final class RebrandPreviewOverride: ObservableObject {
-    private let previousIsRebranded: () -> Bool
-    private let previousPalette: ColorPalette
-
-    init(isRebranded: Bool) {
-        previousIsRebranded = AppRebrand.isAppRebranded
-        previousPalette = DesignSystemPalette.current
-        AppRebrand.isAppRebranded = { isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
-    }
-
-    deinit {
-        AppRebrand.isAppRebranded = previousIsRebranded
-        DesignSystemPalette.current = previousPalette
-    }
-}
-
-private struct RebrandedPreview<Content: View>: View {
-    private let isRebranded: Bool
-    @StateObject private var override: RebrandPreviewOverride
-    private let content: Content
-
-    init(isRebranded: Bool, @ViewBuilder content: () -> Content) {
-        self.isRebranded = isRebranded
-        _override = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
-        self.content = content()
-    }
-
-    var body: some View {
-        // Re-assert at body time so the flag is set before child views resolve their images.
-        AppRebrand.isAppRebranded = { isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
-        return content
-    }
 }
 
 #Preview("Sync Off") {

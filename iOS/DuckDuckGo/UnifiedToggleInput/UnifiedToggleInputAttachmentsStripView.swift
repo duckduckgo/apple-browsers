@@ -33,6 +33,10 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
     var onAttachmentsChanged: (() -> Void)?
 
+    /// The page-context chip, pinned as the leading item of the row when present. Owned by the
+    /// caller; the strip only positions it. Hidden chips collapse automatically in the stack.
+    private weak var contextChipView: UIView?
+
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -59,6 +63,16 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    /// Pins the given page-context chip as the leading item of the row. Idempotent. Toggle the
+    /// chip's `isHidden` to show/hide it — a hidden arranged subview collapses in the stack.
+    func setContextChip(_ chip: UIView) {
+        guard contextChipView !== chip else { return }
+        contextChipView?.removeFromSuperview()
+        chip.translatesAutoresizingMaskIntoConstraints = false
+        contextChipView = chip
+        stackView.insertArrangedSubview(chip, at: 0)
     }
 
     func addAttachment(_ attachment: UnifiedToggleInputAttachment) {
@@ -98,10 +112,12 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
 
     func removeAllAttachments() {
         attachments.removeAll()
-        stackView.arrangedSubviews.forEach {
-            stackView.removeArrangedSubview($0)
-            $0.removeFromSuperview()
-        }
+        stackView.arrangedSubviews
+            .filter { $0 is UnifiedToggleInputAttachmentThumbnailView }
+            .forEach {
+                stackView.removeArrangedSubview($0)
+                $0.removeFromSuperview()
+            }
         onAttachmentsChanged?()
     }
 
@@ -153,6 +169,18 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
             self?.superview?.layoutIfNeeded()
             self?.layoutIfNeeded()
             self?.scrollToTrailingEdge()
+        }
+    }
+
+    /// Reveals the leading item (the page-context chip lives there). Called when the chip becomes
+    /// visible while the strip is scrolled to the trailing edge, so its remove/confirm control
+    /// isn't left off-screen. Mirrors `scheduleScrollToTrailingEdge`.
+    func scheduleScrollToLeadingEdge() {
+        setNeedsLayout()
+        DispatchQueue.main.async { [weak self] in
+            self?.superview?.layoutIfNeeded()
+            self?.layoutIfNeeded()
+            self?.scrollView.setContentOffset(.zero, animated: true)
         }
     }
 }

@@ -108,6 +108,18 @@ final class AIChatContextualUTIHost {
             self?.handleChipRemoveRequest()
         }
 
+        // Page context is attached via the "Ask About Page" attach-menu item (no placeholder chip).
+        coordinator.canAttachPageContext = { [weak self] in
+            self?.chipViewModel.canAttachPageContext ?? false
+        }
+        coordinator.onAttachPageContextRequested = { [weak self] in
+            self?.chipViewModel.tapToAttach()
+        }
+        chipViewModel.$canAttachPageContext
+            .removeDuplicates()
+            .sink { [weak self] _ in self?.coordinator.refreshAttachmentMenu() }
+            .store(in: &cancellables)
+
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
 
         coordinator.intentPublisher

@@ -41,15 +41,20 @@ enum PageContextAttachmentDeliveryState {
 ///   - attached + URL doesn't match + auto ON → `.attached` only if pending; if delivered,
 ///     stay hidden until the new page's context lands (otherwise a silent old chip briefly
 ///     reappears during nav transition).
-///   - no attachment → placeholder. The half-sheet is the user's attach/skip gate; once
-///     they're in the chat, an empty state always offers a tap target.
+///   - no attachment → hidden. The chip never renders the placeholder state in the UTI;
+///     attaching is offered through the "Ask About Page" attach-menu item (`canAttachPageContext`).
 @MainActor
 final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
     @Published private(set) var state: AIChatContextChipView.State = .placeholder
     @Published private(set) var isVisible: Bool = false
 
-    /// Invoked when the user taps the placeholder chip and an originating URL is available.
+    /// Whether the "Ask About Page" attach-menu item should be offered. True whenever there's a
+    /// page URL to attach — the action stays available even while context is already attached, in
+    /// which case tapping it re-collects and replaces the attachment with the latest page content.
+    @Published private(set) var canAttachPageContext: Bool = false
+
+    /// Invoked when the "Ask About Page" attach-menu item is tapped and an originating URL is available.
     var onAttachActionRequested: ((URL) -> Void)?
 
     /// Invoked when the user taps the X on the attached chip.
@@ -104,7 +109,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
             Logger.contextualUTI.debug("PageContextChip tapped but no originating URL — ignoring")
             return
         }
-        Logger.contextualUTI.info("PageContextChip placeholder tapped — attaching \(url.shortDescription, privacy: .private)")
+        Logger.contextualUTI.info("PageContextChip attach requested — attaching \(url.shortDescription, privacy: .private)")
         onAttachActionRequested?(url)
     }
 
@@ -156,6 +161,11 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     }
 
     private func recompute() {
+        // The chip never shows a placeholder in the UTI — attaching is offered through the
+        // "Ask About Page" attach-menu item, which stays available whenever there's a page to
+        // attach (even while already attached: tapping re-collects and replaces with the latest).
+        canAttachPageContext = originatingURL != nil
+
         let isMatching = attachedURL != nil && attachedURL == originatingURL
         let branch: String
 
@@ -170,8 +180,11 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
             isVisible = attachmentDeliveryState == .pendingSubmit
             branch = "autoTransition(deliveryState=\(attachmentDeliveryState))"
         } else {
+            // No attachment: keep the logical empty (.placeholder) state but hide the chip —
+            // attaching is offered via the "Ask About Page" attach-menu item, not a tappable
+            // placeholder chip.
             state = .placeholder
-            isVisible = true
+            isVisible = false
             branch = "noAttachment"
         }
 

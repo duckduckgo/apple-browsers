@@ -48,10 +48,10 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         presenterProvider: @escaping () -> UIViewController?,
         photoSelectionLimit: Int,
         canAttachFile: Bool,
-        allowedFileTypes: [UTType]
+        allowedFileTypes: [UTType],
+        additionalActions: [UIAction] = []
     ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
-        guard canAttachPhoto || canAttachFile else { return nil }
 
         var actions = [UIAction]()
 
@@ -91,6 +91,12 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             )
         }
 
+        // Appended last so they sit at the bottom of the menu, below the photo/file options.
+        // The attach button sets `preferredMenuElementOrder = .fixed`, so this array order is
+        // preserved top-to-bottom regardless of whether the menu opens up or down.
+        actions.append(contentsOf: additionalActions)
+
+        guard !actions.isEmpty else { return nil }
         return UIMenu(children: actions)
     }
 }

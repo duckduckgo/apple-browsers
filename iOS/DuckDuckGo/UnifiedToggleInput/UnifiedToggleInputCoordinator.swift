@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Combine
 import Core
 import DDGSync
+import DesignResourcesKitIcons
 import os.log
 import Subscription
 import UIKit
@@ -247,6 +248,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private(set) var host: UnifiedToggleInputHost
     private(set) var isToggleEnabled: Bool
+
+    /// Contextual-host hooks for the "Ask About Page" attach-menu item. Set by `AIChatContextualUTIHost`.
+    /// `canAttachPageContext` decides whether the item is offered; `onAttachPageContextRequested`
+    /// triggers the attach. Both nil on the omnibar host (no page context there).
+    var canAttachPageContext: (() -> Bool)?
+    var onAttachPageContextRequested: (() -> Void)?
     /// Snapshot of `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab` at init.
     private let hidesToggleOnDuckAITab: Bool
     private(set) var isOnboardingLocked: Bool = false
@@ -2078,6 +2085,12 @@ extension UnifiedToggleInputCoordinator {
         updateModelChipVisibility()
     }
 
+    /// Rebuilds the attach button/menu so the contextual "Ask About Page" item appears or
+    /// disappears as the page-context attach state changes. Called by `AIChatContextualUTIHost`.
+    func refreshAttachmentMenu() {
+        updateAttachButtonPresentation()
+    }
+
 }
 
 private extension UnifiedToggleInputCoordinator {
@@ -2298,16 +2311,36 @@ private extension UnifiedToggleInputCoordinator {
             },
             photoSelectionLimit: attachmentPolicy.canAttachImages ? remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,
-            allowedFileTypes: allowedFileUTTypes
+            allowedFileTypes: allowedFileUTTypes,
+            additionalActions: [makePageContextMenuAction()].compactMap { $0 }
         )
+    }
+
+    /// "Ask About Page" — the contextual-host way to attach page content (replaces the old
+    /// dotted placeholder chip). Offered only when the host can attach context right now.
+    private func makePageContextMenuAction() -> UIAction? {
+        guard host == .contextualChat,
+              !viewController.isGenerating,
+              canAttachPageContext?() == true else { return nil }
+        return UIAction(
+            title: UserText.aiChatQuickActionAskAboutPage,
+            image: DesignSystemImages.Glyphs.Size24.pageContentAttach
+        ) { [weak self] _ in
+            self?.onAttachPageContextRequested?()
+        }
+    }
+
+    private var canAskAboutPage: Bool {
+        host == .contextualChat && !viewController.isGenerating && canAttachPageContext?() == true
     }
 
     func updateAttachButtonPresentation() {
         let supportsAttachments = selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty
-        let canAttachMore = (attachmentPolicy.canAttachImages || canPresentFilePicker) && !viewController.isGenerating
-        viewController.isImageButtonHidden = !supportsAttachments
+        let canAttachMore = ((attachmentPolicy.canAttachImages || canPresentFilePicker) && !viewController.isGenerating) || canAskAboutPage
+        let showButton = supportsAttachments || canAskAboutPage
+        viewController.isImageButtonHidden = !showButton
         viewController.isImageButtonEnabled = canAttachMore
-        viewController.attachmentMenu = supportsAttachments && canAttachMore ? makeAttachmentMenu() : nil
+        viewController.attachmentMenu = showButton && canAttachMore ? makeAttachmentMenu() : nil
     }
 
     func presentAttachmentValidationError(_ message: String) {

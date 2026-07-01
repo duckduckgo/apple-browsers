@@ -202,11 +202,20 @@ final class UnifiedToggleInputToolbarView: UIView {
         action: nil
     )
 
-    private(set) lazy var imageButton: UIButton = makeToolButton(
-        image: DesignSystemImages.Glyphs.Size24.attach,
-        accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
-        action: nil
-    )
+    private(set) lazy var imageButton: UIButton = {
+        let button = makeToolButton(
+            image: DesignSystemImages.Glyphs.Size24.attach,
+            accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
+            action: nil
+        )
+        // Keep the attach menu in its declared order (Take Photo / Add Image / Add File / Ask
+        // About Page) instead of letting iOS reverse it when the menu opens upward — matches the
+        // reasoning and model-chip buttons.
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
 
     private lazy var reasoningButton: UIButton = {
         let button = makeToolButton(

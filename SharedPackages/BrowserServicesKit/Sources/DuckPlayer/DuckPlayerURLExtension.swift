@@ -74,7 +74,7 @@ extension URL {
     /// Returns true if the URL is a YouTube watch page that includes both a video ID and a hashtag.
     /// This is useful for identifying YouTube URLs that navigate to specific sections of a video.
     public var isYoutubeWatchWithHashtag: Bool {
-        guard isYoutubeWatch, hasFragment else {
+        guard isYoutubeWatch, let fragment = fragment, !fragment.isEmpty else {
             return false
         }
 
@@ -88,7 +88,7 @@ extension URL {
     }
 
     public var isYoutubeWatchMainPage: Bool {
-        return isYoutubeWatch && !hasFragment
+        return isYoutubeWatch && fragment == nil
     }
 
     private var isYoutubeNoCookie: Bool {

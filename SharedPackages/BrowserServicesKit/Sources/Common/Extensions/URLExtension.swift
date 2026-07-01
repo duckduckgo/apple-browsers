@@ -390,7 +390,7 @@ extension URL {
     public var hasFragment: Bool {
         guard let components = URLComponents(webKitUrl: self),
               let fragment = components.fragment else { return false }
-        return !fragment.isEmpty
+        return true
     }
 
     /// `true` when the URL is opaque (scheme without authority), e.g. `about:`, `data:`, `javascript:`.

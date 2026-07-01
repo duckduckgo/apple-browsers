@@ -3901,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Položaj adresne trake";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Sakrij traku s karticama tijekom pomicanja";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Dostupno na većini web-mjesta. Duck.ai, karte i igre mogu zadržati traku s karticama vidljivom.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otvori veze u povezanim aplikacijama";
 

@@ -3901,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Position de la barre d'adresse";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Masquer la barre d'onglets pendant le défilement";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Disponible sur la plupart des sites web. Duck.ai, les cartes et les jeux peuvent garder la barre d'onglets visible.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ouvrir les liens dans les applications associées";
 

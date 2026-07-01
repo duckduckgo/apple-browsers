@@ -3901,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Poziția barei de adrese";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Ascunde bara de file la derulare";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Disponibil pe majoritatea site-urilor. Duck.ai, hărțile și jocurile pot menține bara de file vizibilă.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Deschide linkuri în aplicațiile asociate";
 

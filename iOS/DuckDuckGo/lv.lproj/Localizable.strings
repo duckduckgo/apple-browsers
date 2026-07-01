@@ -3901,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreses joslas pozīcija";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Slēpt cilņu joslu ritināšanas laikā";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Pieejams lielākajā daļā tīmekļa vietņu. Duck.ai, kartes un spēles var paturēt cilņu joslu redzamu.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atvērt saites saistītajās lietotnēs";
 

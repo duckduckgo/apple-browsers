@@ -3901,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Position der Adressleiste";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Tab-Leiste beim Scrollen ausblenden";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Auf den meisten Websites verfügbar. Duck.ai, Karten und Spiele können die Tab-Leiste sichtbar halten.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Links in den dazugehörigen Apps öffnen";
 

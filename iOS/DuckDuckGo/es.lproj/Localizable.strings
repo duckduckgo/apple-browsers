@@ -3901,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Posición de la barra de direcciones";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Ocultar barra de pestañas durante el desplazamiento";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Disponible en la mayoría de los sitios web. Duck.ai, los mapas y los juegos pueden mantener la barra de pestañas visible.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Abrir enlaces en aplicaciones asociadas";
 

@@ -3901,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Θέση γραμμής διευθύνσεων";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Απόκρυψη γραμμής καρτελών κατά την κύλιση";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Διαθέσιμο στους περισσότερους ιστότοπους. Το Duck.ai, οι χάρτες και τα παιχνίδια ενδέχεται να διατηρούν ορατή τη γραμμή καρτελών.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ανοίξτε τους συνδέσμους στις σχετικές εφαρμογές";
 

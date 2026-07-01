@@ -3901,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreso juostos padėtis";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Slėpti kortelių juostą slenkant";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Prieinama daugumoje interneto svetainių. „Duck.ai“, žemėlapiai ir žaidimai gali palikti kortelių juostą matomą.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atidaryti nuorodas susijusiose programose";
 

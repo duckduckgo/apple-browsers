@@ -3901,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Aadressiriba asukoht";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Peida kerimise ajal vahekaartide riba";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Saadaval enamikul veebisaitidel. Duck.ai, kaardid ja mängud võivad vahekaartide riba nähtavana hoida.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ava lingid seotud rakendustes";
 

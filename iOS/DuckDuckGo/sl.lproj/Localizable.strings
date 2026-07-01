@@ -3901,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Položaj naslovne vrstice";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Skrij vrstico z zavihki med pomikanjem";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Na voljo na večini spletnih strani. Duck.ai, zemljevidi in igre lahko ohranijo vrstico z zavihki vidno.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Odpri povezave v povezanih aplikacijah";
 

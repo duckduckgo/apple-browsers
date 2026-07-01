@@ -3901,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Placering af adresselinje";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Skjul fanebjælken, mens du scroller";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Tilgængelig på de fleste websteder. Duck.ai, kort og spil kan muligvis holde fanebjælken synlig.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Åbn links i tilknyttede apps";
 

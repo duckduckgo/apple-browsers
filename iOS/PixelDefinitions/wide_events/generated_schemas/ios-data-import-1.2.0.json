@@ -3,7 +3,7 @@
     "description": "Sent at the end of a data import flow, capturing the import source plus per-type (bookmarks, passwords, credit cards) status, timing, and errors. The journey resolves to SUCCESS when all selected types import cleanly, FAILURE when every type fails, or UNKNOWN when the user cancels the document picker or the flow is orphaned and resolved on a later launch (partial data or timeout).",
     "$comment": "{\"owners\":[\"hanyutang-sandra\"]}",
     "type": "object",
-    "required": ["meta", "global", "feature", "app"],
+    "required": ["meta", "global", "feature", "app", "context"],
     "additionalProperties": false,
     "properties": {
         "meta": {
@@ -339,6 +339,26 @@
                             }
                         }
                     }
+                }
+            }
+        },
+        "context": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Context name for the event",
+                    "enum": [
+                        "funnel_bookmarks_ios",
+                        "funnel_passwords_ios",
+                        "funnel_settings_ios",
+                        "funnel_complete_setup_ios",
+                        "funnel_promo_ios",
+                        "funnel_in_browser_promo_ios",
+                        "funnel_whats_new_ios"
+                    ]
                 }
             }
         }

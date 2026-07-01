@@ -3,7 +3,7 @@
     "description": "Sent at the end of a data import flow, capturing the import source plus per-type (bookmarks, passwords, credit cards) status, timing, and errors. The journey resolves to SUCCESS when all selected types import cleanly, FAILURE when every type fails, or UNKNOWN when the flow is orphaned and resolved on a later launch (partial data or timeout).",
     "$comment": "{\"owners\":[\"hanyutang-sandra\"]}",
     "type": "object",
-    "required": ["meta", "global", "feature", "app"],
+    "required": ["meta", "global", "feature", "app", "context"],
     "additionalProperties": false,
     "properties": {
         "meta": {
@@ -19,7 +19,7 @@
             "properties": {
                 "name": {
                     "type": "string",
-                    "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
+                    "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, PIR agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
                     "enum": [
                         "DuckDuckGo",
                         "DuckDuckGo Alpha",
@@ -29,6 +29,8 @@
                         "DuckDuckGo VPN Alpha",
                         "DuckDuckGo VPN Review",
                         "DuckDuckGo VPN App Store",
+                        "DuckDuckGo Personal Information Removal",
+                        "DuckDuckGo Personal Information Removal App Store",
                         "NetworkProtectionAppExtension",
                         "com.duckduckgo.macos.vpn.network-extension",
                         "com.duckduckgo.macos.vpn.network-extension.debug",
@@ -321,6 +323,12 @@
                     }
                 }
             }
+        },
+        "context": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": { "name": { "type": "string", "description": "Context name for the event", "enum": ["funnel_default_macos"] } }
         }
     }
 }

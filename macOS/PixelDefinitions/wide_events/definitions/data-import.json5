@@ -93,6 +93,7 @@
                     "creditCards_error": "dataImportTypeError"
                 }
             }
-        }
+        },
+        "context": ["funnel_default_macos"]
     }
 }

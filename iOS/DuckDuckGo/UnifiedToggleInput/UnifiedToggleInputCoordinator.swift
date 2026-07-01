@@ -751,7 +751,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.send(.showCollapsed(from: previousDisplayState))
     }
 
-    func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
+    func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat, activatesInput: Bool = true) {
         guard !isOnboardingLocked else { return }
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
@@ -780,12 +780,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         DispatchQueue.main.async { [weak self] in
             guard let self, case .aiTab(.expanded) = self.displayState else { return }
             guard !self.isOnboardingLocked else { return }
-            self.viewController.activateInput()
-            if !self.viewController.isInputFirstResponder {
-                DispatchQueue.main.async { [weak self] in
-                    guard let self, case .aiTab(.expanded) = self.displayState else { return }
-                    guard !self.isOnboardingLocked else { return }
-                    self.viewController.activateInput()
+            // Immediate-UTI mounts expanded but keyboard-down (parity with the native box): the caller
+            // passes activatesInput: false, so we skip raising the keyboard until the user taps in.
+            if activatesInput {
+                self.viewController.activateInput()
+                if !self.viewController.isInputFirstResponder {
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self, case .aiTab(.expanded) = self.displayState else { return }
+                        guard !self.isOnboardingLocked else { return }
+                        self.viewController.activateInput()
+                    }
                 }
             }
             if self.textState == .prefilledSelected {

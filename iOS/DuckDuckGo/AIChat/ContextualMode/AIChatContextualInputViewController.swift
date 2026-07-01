@@ -51,6 +51,9 @@ final class AIChatContextualInputViewController: UIViewController {
     weak var delegate: AIChatContextualInputViewControllerDelegate?
 
     private let isContextualSheetImprovementsEnabled: Bool
+    /// When false (immediate-UTI sheet), the native input box is omitted — the sheet-level UTI is the
+    /// input — and only the hero + quick actions are shown.
+    private let showsNativeInput: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private lazy var nativeInputViewController = AIChatNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
 
@@ -82,8 +85,9 @@ final class AIChatContextualInputViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol, isContextualSheetImprovementsEnabled: Bool = false) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, isContextualSheetImprovementsEnabled: Bool = false, showsNativeInput: Bool = true) {
         self.isContextualSheetImprovementsEnabled = isContextualSheetImprovementsEnabled
+        self.showsNativeInput = showsNativeInput
         self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
     }
@@ -101,9 +105,11 @@ final class AIChatContextualInputViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        configureNativeInput()
+        if showsNativeInput {
+            configureNativeInput()
+            setupKeyboardObservers()
+        }
         configureQuickActions()
-        setupKeyboardObservers()
     }
 
     override func viewDidLayoutSubviews() {
@@ -127,39 +133,48 @@ final class AIChatContextualInputViewController: UIViewController {
 
     @discardableResult
     override func becomeFirstResponder() -> Bool {
+        guard showsNativeInput else { return false }
         return nativeInputViewController.becomeFirstResponder()
     }
 
     @discardableResult
     override func resignFirstResponder() -> Bool {
+        guard showsNativeInput else { return false }
         return nativeInputViewController.resignFirstResponder()
     }
 
     var isContextChipVisible: Bool {
-        nativeInputViewController.isContextChipVisible
+        guard showsNativeInput else { return false }
+        return nativeInputViewController.isContextChipVisible
     }
 
     func setText(_ text: String) {
+        guard showsNativeInput else { return }
         nativeInputViewController.setText(text)
     }
 
     func appendText(_ text: String) {
+        guard showsNativeInput else { return }
         nativeInputViewController.appendText(text)
     }
 
     func showContextChip(_ chipView: UIView) {
+        guard showsNativeInput else { return }
         nativeInputViewController.showContextChip(chipView)
     }
 
     func hideContextChip() {
+        guard showsNativeInput else { return }
         nativeInputViewController.hideContextChip()
     }
 
     func updateContextChipState(_ state: AIChatContextChipView.State) {
+        guard showsNativeInput else { return }
         nativeInputViewController.updateContextChipState(state)
     }
 
     func setChipTapCallback(_ callback: @escaping () -> Void) {
+        guard showsNativeInput else { return }
         nativeInputViewController.setChipTapCallback(callback)
     }
 
@@ -175,7 +190,9 @@ private extension AIChatContextualInputViewController {
     func setupUI() {
         view.backgroundColor = .clear
 
-        if isContextualSheetImprovementsEnabled {
+        if !showsNativeInput {
+            setupImmediateUTIUI()
+        } else if isContextualSheetImprovementsEnabled {
             setupImprovedUI()
         } else {
             setupOriginalUI()
@@ -247,6 +264,37 @@ private extension AIChatContextualInputViewController {
         ])
     }
 
+    /// Immediate-UTI layout: hero + quick-actions only. The input itself is the sheet-level UTI, so
+    /// there is no native box here; quick actions pin to the bottom of the content area above the UTI.
+    func setupImmediateUTIUI() {
+        view.addSubview(quickActionsScrollView)
+        quickActionsScrollView.addSubview(quickActionsView)
+        view.addSubview(welcomeLabel)
+
+        configureWelcomeLabel()
+
+        let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
+        welcomeCenterYConstraint = centerY
+
+        NSLayoutConstraint.activate([
+            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            quickActionsScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Constants.quickActionsBottomSpacing),
+
+            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
+            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
+            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
+            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
+            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
+            quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor),
+
+            centerY,
+            welcomeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            welcomeLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            welcomeLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+        ])
+    }
+
     func embedNativeInputViewController() {
         addChild(nativeInputViewController)
         nativeInputViewController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -298,7 +346,7 @@ private extension AIChatContextualInputViewController {
     }
 
     func updateWelcomeLabelCentering() {
-        guard isContextualSheetImprovementsEnabled else { return }
+        guard isContextualSheetImprovementsEnabled || !showsNativeInput else { return }
         let scrollViewTop = quickActionsScrollView.frame.minY
         guard scrollViewTop > 0 else { return }
         welcomeCenterYConstraint?.constant = scrollViewTop / 2

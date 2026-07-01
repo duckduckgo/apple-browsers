@@ -122,18 +122,26 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
     private let suggestionsReader: AIChatSuggestionsReading?
+    /// Immediate-UTI: a persistent UTI owned at the sheet level, mounted once and spanning the
+    /// presubmission→postsubmission swap. Nil on the legacy path (the web VC mounts its own UTI).
+    private let persistentUTIHost: AIChatContextualUTIHost?
     private var recentChatsPopup: AIChatRecentChatsPopupViewController?
     private var popupWindow: UIWindow?
     private var isFetchingRecentChats = false
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
-        isContextualSheetImprovementsEnabled: featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements)
+        isContextualSheetImprovementsEnabled: featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements),
+        showsNativeInput: persistentUTIHost == nil
     )
     private var cancellables = Set<AnyCancellable>()
 
     /// The single web view controller for this sheet, created once and reused
     private var webViewController: AIChatContextualWebViewController?
+
+    /// Content area bottom. Pinned to the sheet bottom on the legacy path; re-anchored to the
+    /// persistent UTI's top on the immediate-UTI path so the content sits above the stationary input.
+    private var contentContainerBottomConstraint: NSLayoutConstraint?
 
     /// Whether the web view is currently visible (vs native input being visible)
     private var isWebViewVisible = false
@@ -274,7 +282,8 @@ final class AIChatContextualSheetViewController: UIViewController {
          pixelHandler: AIChatContextualModePixelFiring,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         suggestionsReader: AIChatSuggestionsReading? = nil) {
+         suggestionsReader: AIChatSuggestionsReading? = nil,
+         persistentUTIHost: AIChatContextualUTIHost? = nil) {
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
@@ -283,6 +292,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
         self.suggestionsReader = suggestionsReader
+        self.persistentUTIHost = persistentUTIHost
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -305,8 +315,20 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        mountPersistentUTIHostIfNeeded()
         createAndConfigureWebViewController(restoreURL: sessionState.contextualChatURL)
         bindViewModel()
+    }
+
+    /// Immediate-UTI: mount the persistent UTI once at the sheet level and re-anchor the content
+    /// area above it, so the input stays put across the presubmission→postsubmission content swap.
+    private func mountPersistentUTIHostIfNeeded() {
+        guard let persistentUTIHost else { return }
+        let utiView = persistentUTIHost.mountAtSheetLevel(in: self)
+        contentContainerBottomConstraint?.isActive = false
+        let newBottom = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
+        contentContainerBottomConstraint = newBottom
+        newBottom.isActive = true
     }
 
     /// Creates a web VC and starts loading the appropriate URL.
@@ -457,6 +479,10 @@ private extension AIChatContextualSheetViewController {
 
     func removeCurrentChildViewController() {
         children.forEach { child in
+            // Only the swappable content (input / web VC) lives in `contentContainerView`. The
+            // immediate-UTI bar is mounted directly on the sheet and must survive the swap —
+            // removing it would also drop the content's `bottom == UTI.top` anchor and collapse it.
+            guard child.view.superview === contentContainerView else { return }
             child.willMove(toParent: nil)
             child.view.removeFromSuperview()
             child.removeFromParent()
@@ -989,6 +1015,8 @@ private extension AIChatContextualSheetViewController {
     }
 
     func setupConstraints() {
+        let contentBottom = contentContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        contentContainerBottomConstraint = contentBottom
         NSLayoutConstraint.activate([
 
             topSeparator.topAnchor.constraint(equalTo: view.topAnchor),
@@ -1029,7 +1057,7 @@ private extension AIChatContextualSheetViewController {
             contentContainerView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: Constants.contentTopPadding),
             contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            contentContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            contentBottom,
         ])
     }
     

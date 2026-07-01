@@ -233,6 +233,37 @@ final class AIChatContextualUTIHost {
         Logger.contextualUTI.info("Installed at bottom of contextual chat")
     }
 
+    /// Immediate-UTI path: mounts the persistent UTI at the sheet level so it outlives the
+    /// presubmission→postsubmission content swap. Returns the UTI view so the sheet can anchor its
+    /// content above it. Mounted expanded but keyboard-down (parity); the chat web view is set later
+    /// via `setContextualChatViewController`, and binding is deferred until the first submit.
+    @discardableResult
+    func mountAtSheetLevel(in sheetViewController: UIViewController) -> UIView {
+        coordinator.attachmentPresentingViewController = sheetViewController
+        UIView.performWithoutAnimation {
+            sheetViewController.addChild(coordinator.viewController)
+            sheetViewController.view.addSubview(coordinator.viewController.view)
+            coordinator.viewController.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                coordinator.viewController.view.leadingAnchor.constraint(equalTo: sheetViewController.view.leadingAnchor),
+                coordinator.viewController.view.trailingAnchor.constraint(equalTo: sheetViewController.view.trailingAnchor),
+                coordinator.viewController.view.bottomAnchor.constraint(equalTo: sheetViewController.view.keyboardLayoutGuide.topAnchor),
+            ])
+            coordinator.viewController.didMove(toParent: sheetViewController)
+            coordinator.showExpanded(activatesInput: false)
+            applyCurrentRenderState()
+            sheetViewController.view.layoutIfNeeded()
+        }
+        Logger.contextualUTI.info("Mounted UTI at sheet level (immediate-UTI)")
+        return coordinator.viewController.view
+    }
+
+    /// Sets the chat web view the host pushes page context into / binds to, without mounting the UTI
+    /// inside it (sheet-level mount path).
+    func setContextualChatViewController(_ webViewController: AIChatContextualWebViewController) {
+        self.contextualChatViewController = webViewController
+    }
+
     private func applyCurrentRenderState() {
         coordinator.viewController.apply(coordinator.computeRenderState().viewConfig, animated: false)
         contextualChatViewController?.view.layoutIfNeeded()

@@ -97,6 +97,10 @@ final class AIChatContextualSheetCoordinator {
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
 
+    /// Immediate-UTI: the persistent UTI host mounted once at the sheet level (nil on the legacy path).
+    /// Retained here so both the sheet VC (mount) and the web VC installer (reuse) share one host.
+    private var persistentUTIHost: AIChatContextualUTIHost?
+
     /// Session timer for auto-resetting the chat after inactivity
     private var sessionTimer: AIChatSessionTimer?
 
@@ -113,6 +117,14 @@ final class AIChatContextualSheetCoordinator {
     /// Publishes the URL of the page that originated the contextual chat session, with replay of the last value.
     var originatingURLPublisher: AnyPublisher<URL?, Never> {
         tabURLPublishers.originating
+    }
+
+    /// Immediate-UTI availability: the base UTI must be available AND the contextual feature flag on.
+    private var isImmediateUTIEnabled: Bool {
+        ContextualUnifiedToggleInputFeature(
+            featureFlagger: featureFlagger,
+            unifiedToggleInputFeature: unifiedToggleInputFeature
+        ).isAvailable
     }
 
     // MARK: - Initialization
@@ -252,6 +264,7 @@ private extension AIChatContextualSheetCoordinator {
         }
 
         let suggestionsReader = makeSuggestionsReaderIfEnabled()
+        persistentUTIHost = makePersistentUTIHostIfEnabled()
 
         let sheetVC = AIChatContextualSheetViewController(
             sessionState: sessionState,
@@ -263,7 +276,8 @@ private extension AIChatContextualSheetCoordinator {
             },
             pixelHandler: pixelHandler,
             featureFlagger: featureFlagger,
-            suggestionsReader: suggestionsReader
+            suggestionsReader: suggestionsReader,
+            persistentUTIHost: persistentUTIHost
         )
         sheetVC.delegate = self
         sheetViewController = sheetVC
@@ -333,24 +347,44 @@ private extension AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler,
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
-                let initialUTIAttachment = self.initialUTIAttachment
-                let host = AIChatContextualUTIHost(
-                    originatingURLPublisher: self.originatingURLPublisher,
-                    didFinishURLPublisher: self.tabURLPublishers.didFinish,
-                    initialAttachedContext: initialUTIAttachment.context,
-                    initialAttachmentDeliveryState: initialUTIAttachment.deliveryState,
-                    hasActiveChat: { [weak self] in self?.sessionState.hasActiveChat ?? false },
-                    isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
-                    pageContextHandler: self.pageContextHandler,
-                    isFireTab: self.isFireTab,
-                    lastUsedModelProvider: self.duckAiLastUsedModelProvider
-                )
+                // Immediate-UTI: the sheet already mounts one persistent UTI. Point it at the web view
+                // (for context push / later bind) but do NOT install a second UTI in the web VC, and do
+                // NOT return it for binding — the host stays unbound until the first submit.
+                if let persistentUTIHost = self.persistentUTIHost {
+                    persistentUTIHost.setContextualChatViewController(contextualChatViewController)
+                    return nil
+                }
+                let host = self.makeContextualUTIHost(startsPreSubmit: false)
                 host.install(in: contextualChatViewController)
                 return host
             }
         )
 
         return webVC
+    }
+
+    /// Builds a contextual UTI host with the shared configuration. `startsPreSubmit` gates the
+    /// coordinator's pre-submit boot (true only for the immediate-UTI sheet on a fresh chat).
+    private func makeContextualUTIHost(startsPreSubmit: Bool) -> AIChatContextualUTIHost {
+        let initialUTIAttachment = self.initialUTIAttachment
+        return AIChatContextualUTIHost(
+            originatingURLPublisher: originatingURLPublisher,
+            didFinishURLPublisher: tabURLPublishers.didFinish,
+            initialAttachedContext: initialUTIAttachment.context,
+            initialAttachmentDeliveryState: initialUTIAttachment.deliveryState,
+            hasActiveChat: { [weak self] in self?.sessionState.hasActiveChat ?? false },
+            isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
+            pageContextHandler: pageContextHandler,
+            isFireTab: isFireTab,
+            contextualStartsPreSubmit: startsPreSubmit,
+            lastUsedModelProvider: duckAiLastUsedModelProvider
+        )
+    }
+
+    /// Immediate-UTI: builds the persistent sheet-level host (pre-submit unless restoring an active chat).
+    private func makePersistentUTIHostIfEnabled() -> AIChatContextualUTIHost? {
+        guard isImmediateUTIEnabled else { return nil }
+        return makeContextualUTIHost(startsPreSubmit: !sessionState.hasActiveChat)
     }
 
     var initialUTIAttachment: (context: AIChatPageContext?, deliveryState: PageContextAttachmentDeliveryState) {

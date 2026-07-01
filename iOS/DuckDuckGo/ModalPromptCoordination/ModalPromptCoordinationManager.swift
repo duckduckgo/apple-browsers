@@ -21,8 +21,6 @@ import UIKit
 
 @MainActor
 protocol ModalPromptCoordinationManaging {
-    /// Whether a coordinated modal prompt has been presented during the current app session.
-    /// In-memory only (not persisted), so it resets on each cold launch.
     var didPresentModalPromptThisSession: Bool { get }
 
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
@@ -42,9 +40,6 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private let cooldownManager: PromptCooldownManaging
     private let scheduler: ModalPromptScheduling
 
-    /// Set to `true` the first time any coordinated modal is presented this session. Lower-priority
-    /// in-context promos (e.g. the Duck.ai sync banner) read this to avoid appearing back-to-back
-    /// with a launch modal in the same session. See Asana 1216108902675922.
     private(set) var didPresentModalPromptThisSession = false
 
     /// Creates a new modal prompts coordination manager.
@@ -83,10 +78,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         for provider in providers {
             guard let modalPromptConfiguration = provider.provideModalPrompt() else { continue }
 
-            // Mark the session as having shown a modal the moment we commit to presenting — before
-            // the scheduling delay and present animation — so a lower-priority in-context promo (the
-            // Duck.ai sync banner) can't slip in during that window. The cooldown timestamp and
-            // `didPresentModal()` stay in the completion since they should reflect actual presentation.
+            // Set at commit time (not in the present completion) so the sync banner can't slip in
+            // during the schedule + present-animation window; the completion reflects actual presentation.
             didPresentModalPromptThisSession = true
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: provider))")
             presentModalPrompt(modalPromptConfiguration: modalPromptConfiguration, from: presenter) { [weak self] in

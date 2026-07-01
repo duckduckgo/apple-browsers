@@ -327,8 +327,6 @@ class MainViewController: UIViewController {
 
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
-    /// Reports whether a coordinated launch modal was presented this session, so the Duck.ai sync
-    /// promo can yield to it. Injected by MainCoordinator from the modal prompt coordination service.
     let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>

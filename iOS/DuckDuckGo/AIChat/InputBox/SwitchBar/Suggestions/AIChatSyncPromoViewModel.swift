@@ -19,9 +19,8 @@
 
 import Core
 
-/// Reports whether a coordinated launch modal (subscription reinstaller promo, default-browser
-/// prompt, What's New, etc.) was presented earlier in the current session. The Duck.ai sync promo
-/// uses this to yield so the two don't appear back-to-back in the same session. See Asana 1216108902675922.
+/// Whether a coordinated launch modal was already shown earlier in this session, so the Duck.ai
+/// sync promo can yield to it. See Asana 1216108902675922.
 @MainActor
 protocol RecentModalPromptStatusProviding {
     var wasModalPromptRecentlyPresented: Bool { get }
@@ -49,8 +48,6 @@ final class AIChatSyncPromoViewModel {
 
     func shouldShowPromo(isQueryActive: Bool, chatCount: Int) -> Bool {
         guard !isQueryActive else { return false }
-        // Yield to a launch modal shown within the coordination cooldown window so we don't stack
-        // two promos back-to-back in the same session (e.g. the subscription reinstaller sheet).
         guard recentModalPromptStatusProvider?.wasModalPromptRecentlyPresented != true else { return false }
         return syncPromoManager.shouldPresentPromoFor(.aiChat, count: chatCount)
     }

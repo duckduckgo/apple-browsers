@@ -346,7 +346,7 @@ final class ModalPromptCoordinationManagerTests {
         // WHEN
         sut.presentModalPromptIfNeeded(from: presenterMock)
 
-        // THEN - set synchronously at commit time, before the scheduled present block runs
+        // THEN
         #expect(sut.didPresentModalPromptThisSession)
     }
 

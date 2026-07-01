@@ -1425,7 +1425,3 @@ extension MainViewController: UnifiedToggleInputFloatingReturnKeyDelegate {
     }
 
 }
-
-extension ModalPromptCoordinationService: RecentModalPromptStatusProviding {
-    var wasModalPromptRecentlyPresented: Bool { wasModalPromptPresentedThisSession }
-}

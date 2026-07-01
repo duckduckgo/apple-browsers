@@ -95,10 +95,6 @@ final class ModalPromptCoordinationService {
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
     }
 
-    var wasModalPromptPresentedThisSession: Bool {
-        modalPromptCoordinationManager.didPresentModalPromptThisSession
-    }
-
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
         guard launchSourceManager.source == .standard else {
             Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Launched from non-standard source.")
@@ -131,4 +127,8 @@ final class ModalPromptCoordinationService {
         modalPromptCoordinationManager.presentModalPromptIfNeeded(from: viewController)
     }
 
+}
+
+extension ModalPromptCoordinationService: RecentModalPromptStatusProviding {
+    var wasModalPromptRecentlyPresented: Bool { modalPromptCoordinationManager.didPresentModalPromptThisSession }
 }

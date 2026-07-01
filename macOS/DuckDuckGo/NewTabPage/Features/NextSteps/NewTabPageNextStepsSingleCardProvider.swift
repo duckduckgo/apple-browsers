@@ -79,14 +79,17 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
 
         /// How many days to prioritize Level 1 cards before highlighting Level 2 cards.
         static let cardLevel1PriorityDays = 2
+
+        /// How many New Tab Page impressions to wait before showing onboarding-related cards.
+        static let onboardingCardNTPImpressionDelay = 3
     }
 
     /// Whether to use standard or advanced ordering for the card list.
     private var shouldUseAdvancedCardOrdering: Bool
 
-    /// Whether the day-0 delay for onboarding-related cards is active.
-    private var isOnboardingCardDelayEnabled: Bool {
-        shouldUseAdvancedCardOrdering
+    /// Whether onboarding-related cards are currently being delayed (delay is enabled and active).
+    private var isOnboardingCardDelayActive: Bool {
+        shouldUseAdvancedCardOrdering && persistor.ntpImpressionCount < Constants.onboardingCardNTPImpressionDelay
     }
 
     /// Which card level to show first in the list of cards.
@@ -358,8 +361,8 @@ private extension NewTabPageNextStepsSingleCardProvider {
         guard isCardEligible(card) else {
             return false
         }
-        if isOnboardingCardDelayEnabled && Self.onboardingCardIDs.contains(card) {
-            return appearancePreferences.isOnboardingNextStepsCardsDelayMet
+        if isOnboardingCardDelayActive && Self.onboardingCardIDs.contains(card) {
+            return false
         }
         return true
     }
@@ -388,10 +391,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
     }
 
     func hasPendingOnboardingCards() -> Bool {
-        guard isOnboardingCardDelayEnabled else {
-            return false
-        }
-        guard !appearancePreferences.isOnboardingNextStepsCardsDelayMet else {
+        guard isOnboardingCardDelayActive else {
             return false
         }
         return Self.onboardingCardIDs.contains { card in

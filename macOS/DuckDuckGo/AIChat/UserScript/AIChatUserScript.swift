@@ -234,6 +234,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.voiceSessionEnded
         case .voiceChatStartFailed:
             return handler.voiceChatStartFailed
+        case .dictationStartFailed:
+            return handler.dictationStartFailed
         default:
             return nil
         }

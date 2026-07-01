@@ -135,6 +135,23 @@ public final class AIChatPageContextHandler: AIChatConsumableDataHandling {
     }
 }
 
+/// Lightweight page-type signals read from page markup, used by the duck.ai web app to pick
+/// page-tailored suggested prompts ("shortcuts"). All fields are best-effort and may be empty.
+public struct AIChatPageTypeSignals: Codable, Equatable {
+    /// `@type` values from every <script type="application/ld+json"> block (incl. `@graph`), deduped. [] if none.
+    public let jsonLdType: [String]
+    /// Content of the first <meta property="og:type">, or nil if absent.
+    public let ogType: String?
+    /// The page's declared language (e.g. <html lang>); "" if none.
+    public let lang: String
+
+    public init(jsonLdType: [String], ogType: String?, lang: String) {
+        self.jsonLdType = jsonLdType
+        self.ogType = ogType
+        self.lang = lang
+    }
+}
+
 public struct AIChatPageContextData: Codable, Equatable {
     public let title: String
     public let favicon: [PageContextFavicon]
@@ -143,13 +160,20 @@ public struct AIChatPageContextData: Codable, Equatable {
     public let truncated: Bool
     public let fullContentLength: Int
     public let attachable: Bool?
+    /// Page-type signals for the duck.ai web app's page shortcuts. Sent in both the full-content
+    /// (auto-attach on) and signals-only (auto-attach off) payloads. Omitted (nil) when unavailable.
+    public let pageTypeSignals: AIChatPageTypeSignals?
+    /// Whether the page CONTENT is attached in this payload. Distinct from `attachable` (whether
+    /// content *can ever* be attached). Absent → treated as `true` (backward compatible). `false`
+    /// marks a signals-only payload: metadata + `pageTypeSignals`, no content.
+    public let attached: Bool?
     /// Discriminator for the duck.ai web app: presence marks a tab-picker context (e.g.
     /// picked via the sidebar `@` picker or the omnibar's "Add Page Content" menu); absence
     /// marks the current sidebar page. The omnibar strips this for the entry that matches
     /// the active tab so the discriminator's semantics hold end-to-end.
     public let tabId: String?
 
-    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil, tabId: String? = nil) {
+    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil, tabId: String? = nil, pageTypeSignals: AIChatPageTypeSignals? = nil, attached: Bool? = nil) {
         self.title = title
         self.favicon = favicon
         self.url = url
@@ -158,6 +182,8 @@ public struct AIChatPageContextData: Codable, Equatable {
         self.fullContentLength = fullContentLength
         self.attachable = attachable
         self.tabId = tabId
+        self.pageTypeSignals = pageTypeSignals
+        self.attached = attached
     }
 
     /// Returns a copy of this page context with the `tabId` field set to the given value.
@@ -172,7 +198,9 @@ public struct AIChatPageContextData: Codable, Equatable {
             truncated: truncated,
             fullContentLength: fullContentLength,
             attachable: attachable,
-            tabId: tabId
+            tabId: tabId,
+            pageTypeSignals: pageTypeSignals,
+            attached: attached
         )
     }
 

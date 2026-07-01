@@ -129,6 +129,76 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.frontendState, .restoredChat)
     }
 
+    // MARK: - beginChatForUTISubmission (immediate-UTI flip-only path)
+
+    func testBeginChatForUTISubmissionFlipsWithoutEmittingSubmitEffect() {
+        // Given - the immediate-UTI host delivers its own rich payload, so the flip must NOT
+        // emit `.submitPrompt` (that would double-send).
+        var receivedEffects: [SheetEffect] = []
+        sessionState.effects
+            .sink { receivedEffects.append($0) }
+            .store(in: &cancellables)
+
+        // When
+        sessionState.beginChatForUTISubmission()
+
+        // Then - frontend flipped to an active chat, but no submit effect was emitted.
+        XCTAssertEqual(sessionState.frontendState, .chatWithoutInitialContext)
+        XCTAssertFalse(sessionState.isShowingNativeInput)
+        XCTAssertTrue(mockPixelHandler.promptSubmittedWithoutContextFired)
+        XCTAssertFalse(receivedEffects.contains { if case .submitPrompt = $0 { return true } else { return false } })
+    }
+
+    func testBeginChatForUTISubmissionReturnsAttachedContextAndFlipsWithContext() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext())
+
+        // When
+        let frozenContext = sessionState.beginChatForUTISubmission()
+
+        // Then - returns the attached context (frozen for delivery) and flips with-context.
+        XCTAssertEqual(sessionState.frontendState, .chatWithInitialContext)
+        XCTAssertEqual(frozenContext?.title, "Test Page")
+        XCTAssertTrue(mockPixelHandler.promptSubmittedWithContextFired)
+    }
+
+    func testBeginChatForUTISubmissionReturnsNilForPlaceholder() {
+        // When
+        let frozenContext = sessionState.beginChatForUTISubmission()
+
+        // Then
+        XCTAssertNil(frozenContext)
+        XCTAssertEqual(sessionState.frontendState, .chatWithoutInitialContext)
+    }
+
+    func testBeginChatForUTISubmissionIgnoredInRestoredState() {
+        // Given
+        sessionState.restoreChat(with: URL(string: "https://duck.ai/chat/123")!)
+
+        // When
+        let frozenContext = sessionState.beginChatForUTISubmission()
+
+        // Then - restored chats are preserved (no re-flip, no context).
+        XCTAssertNil(frozenContext)
+        XCTAssertEqual(sessionState.frontendState, .restoredChat)
+    }
+
+    func testHandlePromptSubmissionStillEmitsSubmitEffectAfterSplit() {
+        // Regression: the native-input path must keep emitting `.submitPrompt` even though the flip
+        // was extracted into `beginChatForUTISubmission`.
+        var receivedEffects: [SheetEffect] = []
+        sessionState.effects
+            .sink { receivedEffects.append($0) }
+            .store(in: &cancellables)
+
+        // When
+        sessionState.handlePromptSubmission("Hello world")
+
+        // Then
+        XCTAssertTrue(receivedEffects.contains { if case .submitPrompt(let prompt, _) = $0 { return prompt == "Hello world" } else { return false } })
+    }
+
     // MARK: - Reset Tests
 
     func testResetToNoChat() {

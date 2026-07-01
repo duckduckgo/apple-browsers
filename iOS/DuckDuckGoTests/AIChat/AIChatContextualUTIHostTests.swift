@@ -51,7 +51,8 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
     private func makeSUT(
         initialAttachedContext: AIChatPageContext? = nil,
-        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered
+        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
+        contextualStartsPreSubmit: Bool = false
     ) {
         sut = AIChatContextualUTIHost(
             originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
@@ -61,7 +62,8 @@ final class AIChatContextualUTIHostTests: XCTestCase {
             hasActiveChat: { [weak self] in self?.hasActiveChat ?? false },
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
             pageContextHandler: pageContextHandler,
-            isFireTab: false
+            isFireTab: false,
+            contextualStartsPreSubmit: contextualStartsPreSubmit
         )
     }
 
@@ -361,6 +363,74 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         sut.markPromptSubmitted()
 
         XCTAssertNil(userScript.attachedPageContextProvider?() ?? nil)
+    }
+
+    // MARK: - Immediate-UTI first-submit (flip + rich deliver + deferred bind)
+
+    func test_preSubmitHost_bindToUserScript_defersBind() {
+        // Pre-submit immediate UTI: binding is deferred so the first prompt takes the unbound path.
+        makeSUT(contextualStartsPreSubmit: true)
+        let userScript = makeTestUserScript()
+
+        sut.bindToUserScript(userScript)
+
+        // `bindToTab` (which wires `inputBoxHandler`) is deferred; provider is still wired up-front.
+        XCTAssertNil(userScript.inputBoxHandler)
+    }
+
+    func test_restoredOrLegacyHost_bindToUserScript_bindsImmediately() {
+        // Non-pre-submit hosts (restored chat / legacy post-submit UTI) bind straight away.
+        makeSUT(contextualStartsPreSubmit: false)
+        let userScript = makeTestUserScript()
+
+        sut.bindToUserScript(userScript)
+
+        XCTAssertNotNil(userScript.inputBoxHandler)
+    }
+
+    func test_firstUTISubmit_firesFlipOnce_andCommitsDeferredBind() {
+        makeSUT(contextualStartsPreSubmit: true)
+        let userScript = makeTestUserScript()
+        sut.bindToUserScript(userScript)
+        XCTAssertNil(userScript.inputBoxHandler)
+
+        var flipCount = 0
+        sut.onFirstPromptSubmitted = { [weak self] in
+            flipCount += 1
+            self?.hasActiveChat = true
+            return nil
+        }
+
+        sut.unifiedToggleInputDidSubmitPrompt("Hello", modelId: "m", tools: nil, reasoningEffort: nil, images: nil, files: nil)
+
+        XCTAssertEqual(flipCount, 1)
+        // The deferred bind is committed right after the flip, so subsequent prompts go direct.
+        XCTAssertNotNil(userScript.inputBoxHandler)
+    }
+
+    func test_rapidSecondUTISubmit_beforeDelivery_isGated() {
+        makeSUT(contextualStartsPreSubmit: true)
+        var flipCount = 0
+        sut.onFirstPromptSubmitted = { flipCount += 1; return nil }
+
+        sut.unifiedToggleInputDidSubmitPrompt("First", modelId: nil, tools: nil, reasoningEffort: nil, images: nil, files: nil)
+        sut.unifiedToggleInputDidSubmitPrompt("Second", modelId: nil, tools: nil, reasoningEffort: nil, images: nil, files: nil)
+
+        // Only the first prompt flips/delivers; the rapid second is dropped (the queue holds one).
+        XCTAssertEqual(flipCount, 1)
+    }
+
+    func test_bindAfterFirstSubmit_bindsImmediately() {
+        // If the web view installs its user script AFTER the first submit, the bind is no longer
+        // deferred — it commits immediately.
+        makeSUT(contextualStartsPreSubmit: true)
+        sut.onFirstPromptSubmitted = { [weak self] in self?.hasActiveChat = true; return nil }
+        sut.unifiedToggleInputDidSubmitPrompt("Hello", modelId: nil, tools: nil, reasoningEffort: nil, images: nil, files: nil)
+
+        let userScript = makeTestUserScript()
+        sut.bindToUserScript(userScript)
+
+        XCTAssertNotNil(userScript.inputBoxHandler)
     }
 
     // MARK: - Helpers

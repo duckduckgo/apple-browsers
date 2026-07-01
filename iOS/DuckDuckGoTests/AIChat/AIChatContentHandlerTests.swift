@@ -583,7 +583,52 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Hello")
         XCTAssertNil(mockUserScript.lastSubmittedPageContext)
     }
-    
+
+    func testRichSubmitPromptPassesFullPayloadToUserScript() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .contextual)
+
+        let pageContext = AIChatPageContextData(
+            title: "Frozen Page",
+            favicon: [],
+            url: "https://example.com",
+            content: "Frozen content",
+            truncated: false,
+            fullContentLength: 14
+        )
+
+        // When
+        handler.submitPrompt("Ask about this",
+                             images: nil,
+                             files: nil,
+                             modelId: "gpt-5.4-mini",
+                             tools: [.webSearch],
+                             pageContext: pageContext,
+                             reasoningEffort: nil)
+
+        // Then — routes through the rich overload carrying the frozen context + model/tools.
+        XCTAssertEqual(mockUserScript.richSubmitPromptCallCount, 1)
+        XCTAssertEqual(mockUserScript.submitPromptCallCount, 0)
+        XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Ask about this")
+        XCTAssertEqual(mockUserScript.lastRichSubmittedModelId, "gpt-5.4-mini")
+        XCTAssertEqual(mockUserScript.lastRichSubmittedTools, [.webSearch])
+        XCTAssertEqual(mockUserScript.lastRichSubmittedPageContext?.title, "Frozen Page")
+    }
+
+    func testNativeSubmitPromptDoesNotUseRichOverload() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .contextual)
+
+        // When
+        handler.submitPrompt("Hello", pageContext: nil)
+
+        // Then — legacy native-input path stays on the text+context overload, unchanged.
+        XCTAssertEqual(mockUserScript.submitPromptCallCount, 1)
+        XCTAssertEqual(mockUserScript.richSubmitPromptCallCount, 0)
+    }
+
     // MARK: - Delegate Notifications
 
     func testDidReceiveMessageGetAIChatPageContextNotifiesDelegate() throws {
@@ -752,6 +797,11 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitPromptCallCount = 0
     var lastSubmittedPrompt: String?
     var lastSubmittedPageContext: AIChatPageContextData?
+    var richSubmitPromptCallCount = 0
+    var lastRichSubmittedModelId: String?
+    var lastRichSubmittedTools: [AIChatRAGTool]?
+    var lastRichSubmittedReasoningEffort: AIChatReasoningEffort?
+    var lastRichSubmittedPageContext: AIChatPageContextData?
     var submitStartChatActionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
@@ -784,6 +834,15 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
         lastSubmittedPageContext = pageContext
+    }
+
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, modelId: String?, tools: [AIChatRAGTool]?, pageContext: AIChatPageContextData?, reasoningEffort: AIChatReasoningEffort?) {
+        richSubmitPromptCallCount += 1
+        lastSubmittedPrompt = prompt
+        lastRichSubmittedModelId = modelId
+        lastRichSubmittedTools = tools
+        lastRichSubmittedReasoningEffort = reasoningEffort
+        lastRichSubmittedPageContext = pageContext
     }
 
     func submitStartChatAction() {

@@ -1933,11 +1933,15 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             )
 
             let configuration = promptSubmissionConfiguration
+            // The contextual sheet's unbound first prompt is delivered into the web view's queue
+            // (via the host), not a URL autosubmit — record that path so the wide event is accurate.
+            let unboundDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath =
+                host == .contextualChat ? .contextualNativeInput : .urlAutoSubmit
             recordDuckAISubmissionStarted(
                 modelId: configuration.modelId,
                 reasoningEffort: configuration.reasoningEffort,
                 inputMode: .keyboard,
-                frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
+                frontendDeliveryPath: userScript != nil ? .userScript : unboundDeliveryPath,
                 hasPageContext: userScript?.attachedPageContextProvider?() != nil,
                 toolsSelected: !(tools?.isEmpty ?? true),
                 attachmentsSelected: !viewController.currentAttachments.isEmpty
@@ -1970,7 +1974,12 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
             } else {
                 delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
-                recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
+                // The contextual host delivers via the web view's queue, which records the real
+                // delivery (queued/bridge) itself — firing here too would double-count. Omnibar's
+                // URL-autosubmit handoff has no such signal, so it still records delivery here.
+                if host != .contextualChat {
+                    recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
+                }
             }
         }
     }

@@ -38,6 +38,17 @@ final class AIChatContextualUTIHost {
     private var pendingChipAttachCancellable: AnyCancellable?
     private var suppressExternalContextUntilNextAttach = false
     private var isBoundToUserScript = false
+    /// True for the immediate-UTI fresh-chat host: the coordinator stays unbound until the first
+    /// submit so that prompt takes the unbound → web-VC-queue path (a bound first submit would skip
+    /// the frontend-state flip → invisible chat). Restored/legacy hosts bind immediately.
+    private let startsPreSubmit: Bool
+    /// Set once the first UTI prompt is delivered; gates rapid re-submit and flips a deferred bind to immediate.
+    private var hasDeliveredFirstPrompt = false
+    /// User script stashed at `bindToUserScript` while pre-submit; bound after the first submit.
+    private weak var pendingUserScriptToBind: AIChatUserScript?
+    /// Flips the session into an active chat (native→web swap + expand) on the first UTI submit and
+    /// returns the page context frozen at flip time. Wired by the sheet coordinator, which owns session state.
+    var onFirstPromptSubmitted: (() -> AIChatPageContextData?)?
     private var cancellables = Set<AnyCancellable>()
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
@@ -57,6 +68,7 @@ final class AIChatContextualUTIHost {
         self.pageContextHandler = pageContextHandler
         self.isAutoAttachEnabled = isAutoAttachEnabled
         self.hasActiveChat = hasActiveChat
+        self.startsPreSubmit = contextualStartsPreSubmit
         self.hostAdapter = ContextualChatHostAdapter(hasActiveChat: hasActiveChat)
         let wideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent
@@ -138,6 +150,11 @@ final class AIChatContextualUTIHost {
                 self.handleChipAttachRequest(originatingURL: url)
             }
             .store(in: &cancellables)
+
+        // The host receives the first (unbound) UTI submit through the coordinator delegate; once
+        // bound, subsequent prompts go direct. Legacy/restored hosts bind immediately, so the
+        // delegate submit path never fires for them.
+        coordinator.delegate = self
     }
 
     private func handleChipAttachRequest(originatingURL: URL) {
@@ -180,6 +197,27 @@ final class AIChatContextualUTIHost {
     /// Also wires the user script's page-context provider so every prompt payload carries whatever
     /// the chip says is currently attached — no duplicate state, single source of truth.
     func bindToUserScript(_ userScript: AIChatUserScript) {
+        // Wire the page-context provider + submission callback right away — safe pre-submit, and
+        // subsequent (bound) prompts pull their context from the provider.
+        userScript.attachedPageContextProvider = { [weak self] in
+            self?.chipViewModel.pendingAttachedContextData
+        }
+        userScript.onPromptSubmitted = { [weak self] in
+            self?.chipViewModel.markPromptSubmitted()
+        }
+
+        // Immediate-UTI fresh chat: defer the coordinator bind until the first submit so that first
+        // prompt takes the unbound → web-VC-queue path (a bound first submit would skip the
+        // frontend-state flip → invisible chat). Legacy/restored hosts bind immediately.
+        guard startsPreSubmit, !hasDeliveredFirstPrompt else {
+            commitBind(to: userScript)
+            return
+        }
+        Logger.contextualUTI.info("Deferring coordinator bind until first submit (pre-submit immediate UTI)")
+        pendingUserScriptToBind = userScript
+    }
+
+    private func commitBind(to userScript: AIChatUserScript) {
         Logger.contextualUTI.info("Binding coordinator to AIChatUserScript")
         isBoundToUserScript = true
         let chatID = userScript.webView?.url?.duckAIChatID
@@ -187,12 +225,15 @@ final class AIChatContextualUTIHost {
         if let chatID {
             coordinator.restoreLastUsedModel(forChatID: chatID)
         }
-        userScript.attachedPageContextProvider = { [weak self] in
-            self?.chipViewModel.pendingAttachedContextData
-        }
-        userScript.onPromptSubmitted = { [weak self] in
-            self?.chipViewModel.markPromptSubmitted()
-        }
+    }
+
+    /// Binds the user script stashed during the pre-submit window (called right after the first submit).
+    /// No-op if the web view hasn't installed its user script yet — a later `bindToUserScript` will
+    /// bind immediately because `hasDeliveredFirstPrompt` is now set.
+    private func commitDeferredBindIfNeeded() {
+        guard let userScript = pendingUserScriptToBind else { return }
+        pendingUserScriptToBind = nil
+        commitBind(to: userScript)
     }
 
     func observeChatUpdates(_ publisher: AnyPublisher<String, Never>) {
@@ -301,6 +342,62 @@ extension AIChatContextualUTIHost {
             hasPageContext: hasPageContext
         )
     }
+}
+
+// MARK: - UnifiedToggleInputDelegate
+
+extension AIChatContextualUTIHost: UnifiedToggleInputDelegate {
+
+    /// The first (unbound) UTI prompt lands here; subsequent prompts go direct via the bound user
+    /// script. Flips the session into an active chat, freezes the attached page context, delivers
+    /// the rich payload into the web view's readiness queue, then binds so later prompts skip this.
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String,
+                                           modelId: String?,
+                                           tools: [AIChatRAGTool]?,
+                                           reasoningEffort: AIChatReasoningEffort?,
+                                           images: [AIChatNativePrompt.NativePromptImage]?,
+                                           files: [AIChatNativePrompt.NativePromptFile]?) {
+        // Gate a rapid re-submit during the loading/bind window — the web view queue holds one
+        // prompt, so a second would overwrite the first. Once bound, prompts skip this path entirely.
+        guard !hasDeliveredFirstPrompt else {
+            Logger.contextualUTI.info("Ignoring UTI re-submit before first prompt delivered")
+            return
+        }
+        hasDeliveredFirstPrompt = true
+
+        // Flip session state (native→web swap + expand) and freeze the page context attached at
+        // flip time — the chip can change during the async swap.
+        let frozenContext = onFirstPromptSubmitted?() ?? nil
+        Logger.contextualUTI.info("Delivering first UTI prompt — hasContext=\(frozenContext != nil, privacy: .public) model=\(modelId ?? "nil", privacy: .public)")
+
+        contextualChatViewController?.submitPrompt(
+            prompt,
+            images: images,
+            files: files,
+            modelId: modelId,
+            tools: tools,
+            reasoningEffort: reasoningEffort,
+            pageContext: frozenContext
+        )
+
+        commitDeferredBindIfNeeded()
+    }
+
+    func unifiedToggleInputDidChangeHeight() {
+        // The sheet-level mount is bottom-anchored to the keyboard guide and the content above
+        // re-anchors to the UTI's top, so height changes are resolved by constraints — no explicit
+        // container-height recompute (that's an omnibar concern). Kept a no-op to leave the legacy
+        // embedded host byte-for-byte unchanged.
+    }
+
+    // Remaining actions are omnibar-only surfaces; the contextual sheet never presents them.
+    func unifiedToggleInputDidSubmitQuery(_ query: String) {}
+    func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestAIVoiceChat() {}
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}
+    func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
+    func unifiedToggleInputDidRequestFire() {}
+    func unifiedToggleInputDidRequestAppMenu() {}
 }
 
 /// Live view of the contextual chat's submission phase for the coordinator's model-chip logic.

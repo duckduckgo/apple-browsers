@@ -177,22 +177,36 @@ final class AIChatContextualChatSessionState {
 
     // MARK: - Frontend Chat State Transitions
 
-    /// Call when user submits a prompt from native input
+    /// Call when user submits a prompt from native input.
     func handlePromptSubmission(_ prompt: String, url: URL? = nil) {
         guard frontendState != .restoredChat else {
             Logger.aiChat.debug("[SessionState] Chat start request ignored - preserving .restoredChat state")
             return
         }
+        let contextData = beginChatForUTISubmission(url: url)
+        emit(.submitPrompt(prompt: prompt, context: contextData))
+    }
 
-        let contextData: AIChatPageContextData?
+    /// Flips the frontend into an active chat for a UTI-driven first submit **without** emitting
+    /// `.submitPrompt`. The immediate-UTI host delivers its own rich payload straight into the web
+    /// view's readiness queue, so emitting here would double-send. This is the flip half of
+    /// `handlePromptSubmission` (native→web swap, submission pixel, chip-hide via `hasActiveChat`);
+    /// it returns the page context that was attached at flip time so the caller can freeze it into
+    /// the delivered prompt. No-op (returns nil) while a chat is already restored/active.
+    @discardableResult
+    func beginChatForUTISubmission(url: URL? = nil) -> AIChatPageContextData? {
+        guard frontendState != .restoredChat else {
+            Logger.aiChat.debug("[SessionState] UTI chat start ignored - preserving .restoredChat state")
+            return nil
+        }
+
+        let contextData = intendedAttachedContext?.contextData
         switch chipState {
-        case .attached(let context):
-            contextData = context.contextData
+        case .attached:
             frontendState = .chatWithInitialContext
             pixelHandler.firePromptSubmittedWithContext()
             Logger.aiChat.debug("[SessionState] Chat started WITH initial context (chip was attached)")
         case .placeholder:
-            contextData = nil
             frontendState = .chatWithoutInitialContext
             pixelHandler.firePromptSubmittedWithoutContext()
             Logger.aiChat.debug("[SessionState] Chat started WITHOUT initial context (chip was placeholder)")
@@ -203,7 +217,7 @@ final class AIChatContextualChatSessionState {
         }
 
         rebuildViewState()
-        emit(.submitPrompt(prompt: prompt, context: contextData))
+        return contextData
     }
 
     /// Call when starting a new chat (resetting frontend)

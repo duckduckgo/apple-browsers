@@ -348,11 +348,13 @@ private extension AIChatContextualSheetCoordinator {
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
                 // Immediate-UTI: the sheet already mounts one persistent UTI. Point it at the web view
-                // (for context push / later bind) but do NOT install a second UTI in the web VC, and do
-                // NOT return it for binding — the host stays unbound until the first submit.
+                // (for context push, delivery telemetry, and the deferred bind) without installing a
+                // second UTI inside the web VC. The host itself keeps the coordinator UNBOUND until
+                // the first submit (`bindToUserScript` defers) — so the first prompt still takes the
+                // unbound → queue path — and binds right after.
                 if let persistentUTIHost = self.persistentUTIHost {
                     persistentUTIHost.setContextualChatViewController(contextualChatViewController)
-                    return nil
+                    return persistentUTIHost
                 }
                 let host = self.makeContextualUTIHost(startsPreSubmit: false)
                 host.install(in: contextualChatViewController)
@@ -384,7 +386,17 @@ private extension AIChatContextualSheetCoordinator {
     /// Immediate-UTI: builds the persistent sheet-level host (pre-submit unless restoring an active chat).
     private func makePersistentUTIHostIfEnabled() -> AIChatContextualUTIHost? {
         guard isImmediateUTIEnabled else { return nil }
-        return makeContextualUTIHost(startsPreSubmit: !sessionState.hasActiveChat)
+        let host = makeContextualUTIHost(startsPreSubmit: !sessionState.hasActiveChat)
+        // The host delivers the first UTI prompt itself; this closure performs the lifecycle flip
+        // (native→web swap + expand) that the native `.submitPrompt` effect would otherwise drive,
+        // and hands back the page context frozen at flip time for the host to deliver.
+        host.onFirstPromptSubmitted = { [weak self] in
+            guard let self else { return nil }
+            let frozenContext = self.sessionState.beginChatForUTISubmission()
+            self.sheetViewController?.expandForUTISubmission()
+            return frozenContext
+        }
+        return host
     }
 
     var initialUTIAttachment: (context: AIChatPageContext?, deliveryState: PageContextAttachmentDeliveryState) {

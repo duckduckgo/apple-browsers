@@ -1151,4 +1151,11 @@ extension AIChatContextualSheetViewController {
     func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
         webViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
     }
+
+    /// Immediate-UTI: expand the sheet to the large detent on the first UTI submit. Mirrors the
+    /// `expandToLargeDetent()` that the native `.submitPrompt` effect drives via `showWebViewWithPrompt`,
+    /// which the UTI path bypasses (the host delivers the prompt directly).
+    func expandForUTISubmission() {
+        expandToLargeDetent()
+    }
 }

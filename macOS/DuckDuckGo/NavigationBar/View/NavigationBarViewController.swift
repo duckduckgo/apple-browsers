@@ -627,42 +627,40 @@ final class NavigationBarViewController: NSViewController {
 
     private func resizeAddressBarWidth(isAddressBarFocused: Bool) {
         let styleProvider = theme.addressBarStyleProvider
-        guard styleProvider.shouldUseLegacyAddressBarSpacingMechanism else {
+        if !styleProvider.shouldUseLegacyAddressBarSpacingMechanism {
             addressBarViewController?.refreshAddressBarWidth()
             return
         }
 
-        guard styleProvider.shouldShowNewSearchIcon else {
-            return
-        }
-
-        if !isAddressBarFocused {
-            if leftFocusSpacer == nil {
-                leftFocusSpacer = NSView()
-                leftFocusSpacer?.wantsLayer = true
-                leftFocusSpacer?.translatesAutoresizingMaskIntoConstraints = false
-                leftFocusSpacer?.widthAnchor.constraint(equalToConstant: 1).isActive = true
-            }
-            if rightFocusSpacer == nil {
-                rightFocusSpacer = NSView()
-                rightFocusSpacer?.wantsLayer = true
-                rightFocusSpacer?.translatesAutoresizingMaskIntoConstraints = false
-                rightFocusSpacer?.widthAnchor.constraint(equalToConstant: 1).isActive = true
-            }
-            if let left = leftFocusSpacer, !addressBarStack.arrangedSubviews.contains(left) {
-                addressBarStack.insertArrangedSubview(left, at: 0)
-            }
-            if let right = rightFocusSpacer, !addressBarStack.arrangedSubviews.contains(right) {
-                addressBarStack.insertArrangedSubview(right, at: addressBarStack.arrangedSubviews.count)
-            }
-        } else {
-            if let left = leftFocusSpacer, addressBarStack.arrangedSubviews.contains(left) {
-                addressBarStack.removeArrangedSubview(left)
-                left.removeFromSuperview()
-            }
-            if let right = rightFocusSpacer, addressBarStack.arrangedSubviews.contains(right) {
-                addressBarStack.removeArrangedSubview(right)
-                right.removeFromSuperview()
+        if styleProvider.shouldShowNewSearchIcon {
+            if !isAddressBarFocused {
+                if leftFocusSpacer == nil {
+                    leftFocusSpacer = NSView()
+                    leftFocusSpacer?.wantsLayer = true
+                    leftFocusSpacer?.translatesAutoresizingMaskIntoConstraints = false
+                    leftFocusSpacer?.widthAnchor.constraint(equalToConstant: 1).isActive = true
+                }
+                if rightFocusSpacer == nil {
+                    rightFocusSpacer = NSView()
+                    rightFocusSpacer?.wantsLayer = true
+                    rightFocusSpacer?.translatesAutoresizingMaskIntoConstraints = false
+                    rightFocusSpacer?.widthAnchor.constraint(equalToConstant: 1).isActive = true
+                }
+                if let left = leftFocusSpacer, !addressBarStack.arrangedSubviews.contains(left) {
+                    addressBarStack.insertArrangedSubview(left, at: 0)
+                }
+                if let right = rightFocusSpacer, !addressBarStack.arrangedSubviews.contains(right) {
+                    addressBarStack.insertArrangedSubview(right, at: addressBarStack.arrangedSubviews.count)
+                }
+            } else {
+                if let left = leftFocusSpacer, addressBarStack.arrangedSubviews.contains(left) {
+                    addressBarStack.removeArrangedSubview(left)
+                    left.removeFromSuperview()
+                }
+                if let right = rightFocusSpacer, addressBarStack.arrangedSubviews.contains(right) {
+                    addressBarStack.removeArrangedSubview(right)
+                    right.removeFromSuperview()
+                }
             }
         }
     }

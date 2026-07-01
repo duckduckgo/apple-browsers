@@ -733,13 +733,20 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .syncCancelledFromOtherDevice)
             sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.syncConfirmationDenied)
         case .failedToFetchPublicKey,
-                .failedToTransmitExchangeRecoveryKey,
                 .failedToFetchConnectRecoveryKey,
                 .failedToLogIn,
                 .failedToTransmitExchangeKey,
                 .failedToFetchExchangeRecoveryKey,
-                .failedToTransmitConnectRecoveryKey,
-                .accountUpgradeFailed,
+                .failedToTransmitConnectRecoveryKey:
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: underlyingError?.localizedDescription)
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: underlyingError ?? error)))
+        case .failedToTransmitExchangeRecoveryKey:
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: underlyingError?.localizedDescription)
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: underlyingError ?? error)))
+        case .accountUpgradeFailed,
+                .transportFailure,
                 .protocolError,
                 .unexpectedSecondHello,
                 .unexpectedEvent,
@@ -747,7 +754,13 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
                 .relayChannelUnavailable,
                 .recoveryCodePreparationFailed,
                 .peerRecoveryCodeUnavailable,
-                .unexpectedFailure:
+                .unexpectedFailure,
+                .missingThirdPartyCredential,
+                .undecryptableThirdPartyCredential,
+                .accountExtendFailed,
+                .missingThirdPartyKey,
+                .localStorageFailed,
+                .invalidCredentials:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: underlyingError?.localizedDescription)
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: underlyingError ?? error)))
@@ -755,7 +768,14 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: underlyingError?.localizedDescription)
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             PixelKit.fire(DebugEvent(GeneralPixel.syncSignupError(error: underlyingError ?? error)))
+        case .accountCreationFailed:
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: underlyingError?.localizedDescription)
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            PixelKit.fire(DebugEvent(GeneralPixel.syncSignupError(error: underlyingError ?? error)))
         case .pollingForRecoveryKeyTimedOut:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
+        case .pairingV2SessionTimedOut:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
         }

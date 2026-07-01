@@ -1040,7 +1040,7 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    func test_syncCodeEntered_withV2UrlAndRelayUnavailableOnSend_notifiesFetchError() async throws {
+    func test_syncCodeEntered_withV2UrlAndRelayUnavailableOnSend_notifiesRelayChannelUnavailable() async throws {
         let messageExchanger = PairingV2MessageExchangingMock()
         messageExchanger.sendError = PairingV2Error.relayChannelUnavailable
         dependencies.createPairingV2MessageExchangerStub = messageExchanger
@@ -1051,7 +1051,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .failedToFetchExchangeRecoveryKey)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .relayChannelUnavailable)
         XCTAssertNil(delegate.didErrorErrors?.underlyingError)
     }
 
@@ -1067,7 +1067,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .failedToFetchExchangeRecoveryKey)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .relayChannelUnavailable)
         XCTAssertNil(delegate.didErrorErrors?.underlyingError)
     }
 
@@ -1193,7 +1193,7 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    func test_syncCodeEntered_withV2RecoveryCodePreparationFailure_notifiesTransmitError() async throws {
+    func test_syncCodeEntered_withV2RecoveryCodePreparationFailure_notifiesPreparationError() async throws {
         try dependencies.secureStore.persistAccount(SyncAccount.mock)
         let scopedAccess = try XCTUnwrap(dependencies.scopedAccess as? ScopedAccessCredentialManagingMock)
         scopedAccess.ensureThirdPartyScopedPasswordError = SyncError.failedToEncryptValue("")
@@ -1220,12 +1220,12 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .failedToTransmitExchangeRecoveryKey)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .recoveryCodePreparationFailed)
         XCTAssertNil(delegate.didErrorErrors?.underlyingError)
     }
 
     @MainActor
-    func test_syncCodeEntered_withV2RecoveryCodeSendFailure_notifiesTransmitError() async throws {
+    func test_syncCodeEntered_withV2RecoveryCodeSendFailure_notifiesUnexpectedFailure() async throws {
         try dependencies.secureStore.persistAccount(SyncAccount.mock)
         let messageExchanger = PairingV2MessageExchangingMock()
         messageExchanger.sendHandler = { _, _ in
@@ -1255,7 +1255,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .failedToTransmitExchangeRecoveryKey)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .unexpectedFailure)
         XCTAssertNil(delegate.didErrorErrors?.underlyingError)
     }
 

@@ -764,13 +764,20 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
             await handleError(.syncCancelledFromOtherDevice, error: nil, event: nil)
         case .failedToFetchPublicKey,
-                .failedToTransmitExchangeRecoveryKey,
                 .failedToFetchConnectRecoveryKey,
                 .failedToLogIn,
                 .failedToTransmitExchangeKey,
                 .failedToFetchExchangeRecoveryKey,
-                .failedToTransmitConnectRecoveryKey,
-                .accountUpgradeFailed,
+                .failedToTransmitConnectRecoveryKey:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
+        case .failedToTransmitExchangeRecoveryKey:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
+        case .accountUpgradeFailed,
+                .transportFailure,
                 .protocolError,
                 .unexpectedSecondHello,
                 .unexpectedEvent,
@@ -778,17 +785,31 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 .relayChannelUnavailable,
                 .recoveryCodePreparationFailed,
                 .peerRecoveryCodeUnavailable,
-                .unexpectedFailure:
+                .unexpectedFailure,
+                .missingThirdPartyCredential,
+                .undecryptableThirdPartyCredential,
+                .accountExtendFailed,
+                .missingThirdPartyKey,
+                .localStorageFailed,
+                .invalidCredentials:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
+        case .accountCreationFailed:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
         case .pollingForRecoveryKeyTimedOut:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             await dismissPresentedViewController()
             handleRecoveryKeyPollingTimeout(setupRole: setupRole)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: nil)
+        case .pairingV2SessionTimedOut:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            await dismissPresentedViewController()
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: nil)
         }
 
@@ -1009,6 +1030,7 @@ private enum SyncSetupPixelValue {
     static let recovery = "recovery"
     static let pairing = "pairing"
     static let linking = "linking"
+    static let v1Failure = "v1_failure"
     static let sessionTimeout = "session_timeout"
     static let needsUpgrade = "needs_upgrade"
     static let incompatibleCode = "incompatible_code"
@@ -1020,6 +1042,8 @@ private enum SyncSetupPixelValue {
     static let alreadyPaired = "already_paired"
     static let accountCreationFailed = "account_creation_failed"
     static let accountUpgradeFailed = "account_upgrade_failed"
+    static let protocolError = "protocol_error"
+    static let transportFailure = "transport_failure"
     static let unexpectedSecondHello = "unexpected_second_hello"
     static let unexpectedEvent = "unexpected_event"
     static let pairingSessionNotReady = "pairing_session_not_ready"
@@ -1027,12 +1051,11 @@ private enum SyncSetupPixelValue {
     static let recoveryCodePreparationFailed = "recovery_code_preparation_failed"
     static let peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
     static let unexpectedFailure = "unexpected_failure"
-    static let fetchPublicKeyFailed = "fetch_public_key_failed"
-    static let transmitExchangeKeyFailed = "transmit_exchange_key_failed"
-    static let fetchExchangeRecoveryKeyFailed = "fetch_exchange_recovery_key_failed"
-    static let transmitExchangeRecoveryKeyFailed = "transmit_exchange_recovery_key_failed"
-    static let fetchConnectRecoveryKeyFailed = "fetch_connect_recovery_key_failed"
-    static let transmitConnectRecoveryKeyFailed = "transmit_connect_recovery_key_failed"
+    static let missingThirdPartyCredential = "missing_3party_credential"
+    static let undecryptableThirdPartyCredential = "undecryptable_3party_credential"
+    static let accountExtendFailed = "account_extend_failed"
+    static let missingThirdPartyKey = "missing_3party_key"
+    static let localStorageFailed = "local_storage_failed"
     static let host = "host"
     static let joiner = "joiner"
 }
@@ -1095,21 +1118,20 @@ private extension SyncConnectionError {
 
     var syncSetupFailureReason: String? {
         switch self {
-        case .failedToLogIn:
+        // These cases are emitted by the legacy V1 exchange/connect flow and are intentionally bucketed together.
+        case .failedToLogIn,
+                .failedToFetchPublicKey,
+                .failedToTransmitExchangeRecoveryKey,
+                .failedToFetchConnectRecoveryKey,
+                .failedToTransmitExchangeKey,
+                .failedToFetchExchangeRecoveryKey,
+                .failedToTransmitConnectRecoveryKey,
+                .pollingForRecoveryKeyTimedOut,
+                .failedToCreateAccount:
+            return SyncSetupPixelValue.v1Failure
+        case .invalidCredentials:
             return SyncSetupPixelValue.invalidCredentials
-        case .failedToFetchPublicKey:
-            return SyncSetupPixelValue.fetchPublicKeyFailed
-        case .failedToTransmitExchangeRecoveryKey:
-            return SyncSetupPixelValue.transmitExchangeRecoveryKeyFailed
-        case .failedToFetchConnectRecoveryKey:
-            return SyncSetupPixelValue.fetchConnectRecoveryKeyFailed
-        case .failedToTransmitExchangeKey:
-            return SyncSetupPixelValue.transmitExchangeKeyFailed
-        case .failedToFetchExchangeRecoveryKey:
-            return SyncSetupPixelValue.fetchExchangeRecoveryKeyFailed
-        case .failedToTransmitConnectRecoveryKey:
-            return SyncSetupPixelValue.transmitConnectRecoveryKeyFailed
-        case .pollingForRecoveryKeyTimedOut:
+        case .pairingV2SessionTimedOut:
             return SyncSetupPixelValue.sessionTimeout
         case .updateRequired:
             return SyncSetupPixelValue.needsUpgrade
@@ -1119,12 +1141,14 @@ private extension SyncConnectionError {
             return SyncSetupPixelValue.alreadyUpgraded
         case .unableToRecognizeCode:
             return SyncSetupPixelValue.unrecognizedCode
-        case .failedToCreateAccount:
+        case .accountCreationFailed:
             return SyncSetupPixelValue.accountCreationFailed
         case .accountUpgradeFailed:
             return SyncSetupPixelValue.accountUpgradeFailed
+        case .transportFailure:
+            return SyncSetupPixelValue.transportFailure
         case .protocolError:
-            return SyncSetupPixelValue.unexpectedFailure
+            return SyncSetupPixelValue.protocolError
         case .syncCancelledFromOtherDevice:
             return nil
         case .unexpectedSecondHello:
@@ -1141,6 +1165,16 @@ private extension SyncConnectionError {
             return SyncSetupPixelValue.peerRecoveryCodeUnavailable
         case .unexpectedFailure:
             return SyncSetupPixelValue.unexpectedFailure
+        case .missingThirdPartyCredential:
+            return SyncSetupPixelValue.missingThirdPartyCredential
+        case .undecryptableThirdPartyCredential:
+            return SyncSetupPixelValue.undecryptableThirdPartyCredential
+        case .accountExtendFailed:
+            return SyncSetupPixelValue.accountExtendFailed
+        case .missingThirdPartyKey:
+            return SyncSetupPixelValue.missingThirdPartyKey
+        case .localStorageFailed:
+            return SyncSetupPixelValue.localStorageFailed
         }
     }
 }

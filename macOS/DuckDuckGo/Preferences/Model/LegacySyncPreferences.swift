@@ -1103,13 +1103,18 @@ extension LegacySyncPreferences: SyncConnectionControllerDelegate {
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .syncCancelledFromOtherDevice)
             sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.syncConfirmationDenied)
         case .failedToFetchPublicKey,
-                .failedToTransmitExchangeRecoveryKey,
                 .failedToFetchConnectRecoveryKey,
                 .failedToLogIn,
                 .failedToTransmitExchangeKey,
                 .failedToFetchExchangeRecoveryKey,
-                .failedToTransmitConnectRecoveryKey,
-                .accountUpgradeFailed,
+                .failedToTransmitConnectRecoveryKey:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncLoginError(error: underlyingError ?? error))
+        case .failedToTransmitExchangeRecoveryKey:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncLoginError(error: underlyingError ?? error))
+        case .accountUpgradeFailed,
+                .transportFailure,
                 .protocolError,
                 .unexpectedSecondHello,
                 .unexpectedEvent,
@@ -1117,13 +1122,25 @@ extension LegacySyncPreferences: SyncConnectionControllerDelegate {
                 .relayChannelUnavailable,
                 .recoveryCodePreparationFailed,
                 .peerRecoveryCodeUnavailable,
-                .unexpectedFailure:
+                .unexpectedFailure,
+                .missingThirdPartyCredential,
+                .undecryptableThirdPartyCredential,
+                .accountExtendFailed,
+                .missingThirdPartyKey,
+                .localStorageFailed,
+                .invalidCredentials:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncLoginError(error: underlyingError ?? error))
         case .failedToCreateAccount:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: underlyingError ?? error))
+        case .accountCreationFailed:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: underlyingError ?? error))
         case .pollingForRecoveryKeyTimedOut:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
+        case .pairingV2SessionTimedOut:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
         }

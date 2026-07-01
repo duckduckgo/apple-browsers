@@ -109,10 +109,13 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         static let linking = "linking"
         static let v1 = "v1"
         static let v2 = "v2"
+        static let v1Failure = "v1_failure"
         static let alreadyPaired = "already_paired"
         static let accountCreationFailed = "account_creation_failed"
         static let accountUpgradeFailed = "account_upgrade_failed"
         static let invalidCredentials = "invalid_credentials"
+        static let protocolError = "protocol_error"
+        static let transportFailure = "transport_failure"
         static let sessionTimeout = "session_timeout"
         static let needsUpgrade = "needs_upgrade"
         static let incompatibleCode = "incompatible_code"
@@ -127,12 +130,11 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         static let recoveryCodePreparationFailed = "recovery_code_preparation_failed"
         static let peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
         static let unexpectedFailure = "unexpected_failure"
-        static let fetchPublicKeyFailed = "fetch_public_key_failed"
-        static let transmitExchangeKeyFailed = "transmit_exchange_key_failed"
-        static let fetchExchangeRecoveryKeyFailed = "fetch_exchange_recovery_key_failed"
-        static let transmitExchangeRecoveryKeyFailed = "transmit_exchange_recovery_key_failed"
-        static let fetchConnectRecoveryKeyFailed = "fetch_connect_recovery_key_failed"
-        static let transmitConnectRecoveryKeyFailed = "transmit_connect_recovery_key_failed"
+        static let missingThirdPartyCredential = "missing_3party_credential"
+        static let undecryptableThirdPartyCredential = "undecryptable_3party_credential"
+        static let accountExtendFailed = "account_extend_failed"
+        static let missingThirdPartyKey = "missing_3party_key"
+        static let localStorageFailed = "local_storage_failed"
         static let host = "host"
         static let joiner = "joiner"
     }
@@ -331,21 +333,20 @@ extension SyncConnectionError {
 
     var syncSetupFailureReason: String? {
         switch self {
-        case .failedToLogIn:
+        // These cases are emitted by the legacy V1 exchange/connect flow and are intentionally bucketed together.
+        case .failedToLogIn,
+                .failedToFetchPublicKey,
+                .failedToTransmitExchangeRecoveryKey,
+                .failedToFetchConnectRecoveryKey,
+                .failedToTransmitExchangeKey,
+                .failedToFetchExchangeRecoveryKey,
+                .failedToTransmitConnectRecoveryKey,
+                .pollingForRecoveryKeyTimedOut,
+                .failedToCreateAccount:
+            return SyncSetupPixelKitEvent.ParameterValue.v1Failure
+        case .invalidCredentials:
             return SyncSetupPixelKitEvent.ParameterValue.invalidCredentials
-        case .failedToFetchPublicKey:
-            return SyncSetupPixelKitEvent.ParameterValue.fetchPublicKeyFailed
-        case .failedToTransmitExchangeRecoveryKey:
-            return SyncSetupPixelKitEvent.ParameterValue.transmitExchangeRecoveryKeyFailed
-        case .failedToFetchConnectRecoveryKey:
-            return SyncSetupPixelKitEvent.ParameterValue.fetchConnectRecoveryKeyFailed
-        case .failedToTransmitExchangeKey:
-            return SyncSetupPixelKitEvent.ParameterValue.transmitExchangeKeyFailed
-        case .failedToFetchExchangeRecoveryKey:
-            return SyncSetupPixelKitEvent.ParameterValue.fetchExchangeRecoveryKeyFailed
-        case .failedToTransmitConnectRecoveryKey:
-            return SyncSetupPixelKitEvent.ParameterValue.transmitConnectRecoveryKeyFailed
-        case .pollingForRecoveryKeyTimedOut:
+        case .pairingV2SessionTimedOut:
             return SyncSetupPixelKitEvent.ParameterValue.sessionTimeout
         case .updateRequired:
             return SyncSetupPixelKitEvent.ParameterValue.needsUpgrade
@@ -355,12 +356,14 @@ extension SyncConnectionError {
             return SyncSetupPixelKitEvent.ParameterValue.alreadyUpgraded
         case .unableToRecognizeCode:
             return SyncSetupPixelKitEvent.ParameterValue.unrecognizedCode
-        case .failedToCreateAccount:
+        case .accountCreationFailed:
             return SyncSetupPixelKitEvent.ParameterValue.accountCreationFailed
         case .accountUpgradeFailed:
             return SyncSetupPixelKitEvent.ParameterValue.accountUpgradeFailed
+        case .transportFailure:
+            return SyncSetupPixelKitEvent.ParameterValue.transportFailure
         case .protocolError:
-            return SyncSetupPixelKitEvent.ParameterValue.unexpectedFailure
+            return SyncSetupPixelKitEvent.ParameterValue.protocolError
         case .syncCancelledFromOtherDevice:
             return nil
         case .unexpectedSecondHello:
@@ -377,6 +380,16 @@ extension SyncConnectionError {
             return SyncSetupPixelKitEvent.ParameterValue.peerRecoveryCodeUnavailable
         case .unexpectedFailure:
             return SyncSetupPixelKitEvent.ParameterValue.unexpectedFailure
+        case .missingThirdPartyCredential:
+            return SyncSetupPixelKitEvent.ParameterValue.missingThirdPartyCredential
+        case .undecryptableThirdPartyCredential:
+            return SyncSetupPixelKitEvent.ParameterValue.undecryptableThirdPartyCredential
+        case .accountExtendFailed:
+            return SyncSetupPixelKitEvent.ParameterValue.accountExtendFailed
+        case .missingThirdPartyKey:
+            return SyncSetupPixelKitEvent.ParameterValue.missingThirdPartyKey
+        case .localStorageFailed:
+            return SyncSetupPixelKitEvent.ParameterValue.localStorageFailed
         }
     }
 }

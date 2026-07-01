@@ -63,10 +63,12 @@ public enum SyncConnectionError: Error {
     case failedToCreateAccount
     case failedToTransmitConnectRecoveryKey
 
+    case accountCreationFailed
     case accountUpgradeFailed
     case protocolError
 
     case pollingForRecoveryKeyTimedOut
+    case pairingV2SessionTimedOut
 
     case unexpectedSecondHello
     case unexpectedEvent
@@ -74,7 +76,14 @@ public enum SyncConnectionError: Error {
     case relayChannelUnavailable
     case recoveryCodePreparationFailed
     case peerRecoveryCodeUnavailable
+    case transportFailure
     case unexpectedFailure
+    case missingThirdPartyCredential
+    case undecryptableThirdPartyCredential
+    case accountExtendFailed
+    case missingThirdPartyKey
+    case localStorageFailed
+    case invalidCredentials
 }
 
 public protocol SyncConnectionControlling {
@@ -484,11 +493,11 @@ public class SyncConnectionController: SyncConnectionControlling {
     private func handlePairingV2SyncError(_ error: SyncError, coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
         switch error {
         case .pollingDidTimeOut:
-            await delegate?.controllerDidError(.pollingForRecoveryKeyTimedOut, underlyingError: nil, setupRole: setupRole)
+            await delegate?.controllerDidError(.pairingV2SessionTimedOut, underlyingError: nil, setupRole: setupRole)
         case .accountAlreadyExists:
             await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
         default:
-            await delegate?.controllerDidError(.unexpectedFailure, underlyingError: error, setupRole: setupRole)
+            await delegate?.controllerDidError(.transportFailure, underlyingError: error, setupRole: setupRole)
         }
     }
 
@@ -612,7 +621,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             do {
                 try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false, setupRole: .sharer)
             } catch {
-                await delegate?.controllerDidError(.failedToLogIn, underlyingError: error, setupRole: .sharer)
+                await delegate?.controllerDidError(loginConnectionError(for: error), underlyingError: error, setupRole: .sharer)
             }
         }
     }
@@ -719,7 +728,7 @@ public class SyncConnectionController: SyncConnectionControlling {
                 setupRole: setupRole,
                 shouldPromptBeforeSwitchingAccounts: true)
         } else {
-            await delegate?.controllerDidError(.failedToLogIn, underlyingError: error, setupRole: setupRole)
+            await delegate?.controllerDidError(loginConnectionError(for: error), underlyingError: error, setupRole: setupRole)
         }
     }
 
@@ -743,10 +752,24 @@ public class SyncConnectionController: SyncConnectionControlling {
         switch error {
         case .recoveryCodePreparationFailed:
             return .recoveryCodePreparationFailed
+        case .missingThirdPartyCredential:
+            return .missingThirdPartyCredential
+        case .undecryptableThirdPartyCredential:
+            return .undecryptableThirdPartyCredential
+        case .accountCreationFailed:
+            return .accountCreationFailed
+        case .accountExtendFailed:
+            return .accountExtendFailed
         case .recoveryCodeSendFailed:
-            return .failedToTransmitExchangeRecoveryKey
+            return .transportFailure
+        case .missingThirdPartyKey:
+            return .missingThirdPartyKey
+        case .localStorageFailed:
+            return .localStorageFailed
+        case .invalidCredentials:
+            return .invalidCredentials
         case .loginFailed:
-            return .failedToLogIn
+            return .transportFailure
         case .upgradeFailed:
             return .accountUpgradeFailed
         case .nativeCredentialAlreadyPresent:
@@ -770,6 +793,20 @@ public class SyncConnectionController: SyncConnectionControlling {
         case .cancelled:
             return .syncCancelledFromOtherDevice
         }
+    }
+
+    private func loginConnectionError(for error: Error) -> SyncConnectionError {
+        if let error = error as? SyncError {
+            switch error {
+            case .unexpectedStatusCode(let statusCode) where statusCode == 401:
+                return .invalidCredentials
+            case .failedToWriteSecureStore:
+                return .localStorageFailed
+            default:
+                break
+            }
+        }
+        return .failedToLogIn
     }
 
     private func syncCodeDecodingConnectionError(for error: Error) -> SyncConnectionError {

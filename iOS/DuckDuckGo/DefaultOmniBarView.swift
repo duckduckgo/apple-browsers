@@ -549,12 +549,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let omniBarProgressView = OmniBarProgressView()
     var progressView: ProgressView? { omniBarProgressView.progressView }
 
-    private(set) var leadingButtonsContainer = UIStackView()
+    final class LeadingButtonsContainer: UIStackView { }
+    private(set) var leadingButtonsContainer = LeadingButtonsContainer()
+
+    final class TrailingButtonsContainer: UIStackView { }
     private(set) var trailingButtonsContainer = UIStackView()
 
     private let searchAreaView = DefaultOmniBarSearchView()
     private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
-    private let floatingGlassContentHostView = UIView()
+
+    final class FloatingGlassContentHostView: UIView { }
+    private let floatingGlassContentHostView = FloatingGlassContentHostView()
+
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
     private let isFloatingUIEnabled: Bool
@@ -562,13 +568,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     fileprivate var savedBarViewBackgroundColor: UIColor?
 
     /// Spans to available width of the omni bar and allows the input field to center horizontally
-    private let searchAreaAlignmentView = UIView()
-    private let searchAreaStackView = UIStackView()
+    final class SearchAreaAlignmentView: UIView { }
+    private let searchAreaAlignmentView = SearchAreaAlignmentView()
 
-    /// Currently unused - should be removed if unlikely to return
-    private let activeOutlineView = UIView()
+    final class SearchAreaStackView: UIStackView { }
+    private let searchAreaStackView = SearchAreaStackView()
 
-    private let stackView = UIStackView()
+    final class ActiveOutlineView: UIView { }
+    private let activeOutlineView = ActiveOutlineView()
+
+    final class TopLevelStackView: UIStackView { }
+    private let stackView = TopLevelStackView()
 
     private let glassEffect: UIVisualEffectView = {
         let view: UIVisualEffectView
@@ -725,8 +735,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         readableSearchAreaWidth.priority = .init(999)
         readableSearchAreaWidth.isActive = false
 
-        let textAreaTopPaddingConstraint = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.textAreaVerticalPaddingRegularSpacing)
-        let textAreaBottomPaddingConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.textAreaVerticalPaddingRegularSpacing)
+        let stackViewTop = isFloatingUIEnabled ? Metrics.textAreaVerticalPaddingRegularSpacing : Metrics.floatingTextAreaVerticalPaddingRegularSpacing
+        let textAreaTopPaddingConstraint = stackView.topAnchor.constraint(equalTo: topAnchor, constant: stackViewTop)
+
+        let stackViewBottom = isFloatingUIEnabled ? Metrics.textAreaVerticalPaddingRegularSpacing : Metrics.floatingTextAreaVerticalPaddingRegularSpacing
+        let textAreaBottomPaddingConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -stackViewBottom)
 
         readableSearchAreaWidthConstraint = readableSearchAreaWidth
         self.textAreaTopPaddingConstraint = textAreaTopPaddingConstraint
@@ -1276,6 +1289,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         static let textAreaBottomPaddingAdjustedSpacing: CGFloat = 6
 
         static let textAreaVerticalPaddingRegularSpacing: CGFloat = 8
+        static let floatingTextAreaVerticalPaddingRegularSpacing: CGFloat = 4
 
         static let expandedSearchAreaHeight: CGFloat = 120.0
         static let duckAITextViewBottomPadding: CGFloat = 8.0

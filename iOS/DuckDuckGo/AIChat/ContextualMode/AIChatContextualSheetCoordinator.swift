@@ -396,6 +396,10 @@ private extension AIChatContextualSheetCoordinator {
             self.sheetViewController?.expandForUTISubmission()
             return frozenContext
         }
+        // Recover to a clean pre-submit sheet if the queued first prompt can't be delivered.
+        host.onFirstPromptFailed = { [weak self] in
+            self?.resetToNativeInputState()
+        }
         return host
     }
 
@@ -452,6 +456,11 @@ private extension AIChatContextualSheetCoordinator {
         Logger.aiChat.debug("[Contextual] Resetting to native input")
 
         sessionState.resetToNoChat()
+
+        // Immediate-UTI: the persistent host + web view are reused across a New-Chat/timeout reset,
+        // so return the host to a clean pre-submit state (unbind + re-arm) — otherwise the next
+        // first prompt would take the bound branch and never flip to the web view.
+        persistentUTIHost?.prepareForNewChat()
 
         Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
         pageContextHandler.triggerContextCollection()

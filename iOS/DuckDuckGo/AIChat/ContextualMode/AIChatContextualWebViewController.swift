@@ -509,6 +509,13 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
         let nsError = error as NSError
         guard nsError.code != NSURLErrorCancelled || nsError.domain != NSURLErrorDomain else { return }
 
+        // The readiness queue is the sole first-prompt buffer; a failed load means it will never
+        // flush, so drain the stuck prompt and let the host recover to a clean pre-submit for retry.
+        if pendingPrompt != nil {
+            pendingPrompt = nil
+            utiHost?.firstPromptDeliveryFailed()
+        }
+
         utiHost?.pageLoadFailed(error: error)
     }
 }

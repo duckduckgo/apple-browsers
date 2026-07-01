@@ -46,9 +46,15 @@ final class AIChatContextualUTIHost {
     private var hasDeliveredFirstPrompt = false
     /// User script stashed at `bindToUserScript` while pre-submit; bound after the first submit.
     private weak var pendingUserScriptToBind: AIChatUserScript?
+    /// The web view's user script, remembered across binds so a New-Chat reset can re-arm the
+    /// deferred bind against the same (still-alive) script without waiting for a fresh install.
+    private weak var lastKnownUserScript: AIChatUserScript?
     /// Flips the session into an active chat (native→web swap + expand) on the first UTI submit and
     /// returns the page context frozen at flip time. Wired by the sheet coordinator, which owns session state.
     var onFirstPromptSubmitted: (() -> AIChatPageContextData?)?
+    /// Fired when the queued first prompt can no longer be delivered (page load failed) so the sheet
+    /// can recover to a clean pre-submit state for retry. Wired by the sheet coordinator.
+    var onFirstPromptFailed: (() -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
@@ -201,6 +207,7 @@ final class AIChatContextualUTIHost {
     /// Also wires the user script's page-context provider so every prompt payload carries whatever
     /// the chip says is currently attached — no duplicate state, single source of truth.
     func bindToUserScript(_ userScript: AIChatUserScript) {
+        lastKnownUserScript = userScript
         // Wire the page-context provider + submission callback right away — safe pre-submit, and
         // subsequent (bound) prompts pull their context from the provider.
         userScript.attachedPageContextProvider = { [weak self] in
@@ -238,6 +245,29 @@ final class AIChatContextualUTIHost {
         guard let userScript = pendingUserScriptToBind else { return }
         pendingUserScriptToBind = nil
         commitBind(to: userScript)
+    }
+
+    /// Returns the persistent host to a clean pre-submit state for a new chat (New-Chat / session
+    /// timeout), reusing the same sheet + web view. Unbinds the coordinator so the next first prompt
+    /// takes the unbound → flip path (a bound first submit would skip the frontend-state flip and the
+    /// chat would never become visible), re-arms the deferred bind against the still-alive user
+    /// script, resets the chip, and restores the expanded pre-submit bar (keyboard down).
+    func prepareForNewChat() {
+        coordinator.unbind()
+        isBoundToUserScript = false
+        hasDeliveredFirstPrompt = false
+        pendingUserScriptToBind = lastKnownUserScript
+        chipViewModel.clearAttached()
+        coordinator.showExpanded(activatesInput: false)
+        Logger.contextualUTI.info("Host reset for new chat — unbound, re-armed deferred bind")
+    }
+
+    /// Called when the web view fails to load while a first prompt is queued for delivery. The web
+    /// VC queue is the sole first-prompt buffer, so a failed load would strand it — recover to a
+    /// clean pre-submit state (via the sheet) so the user can retry.
+    func firstPromptDeliveryFailed() {
+        Logger.contextualUTI.error("First prompt delivery failed (page load) — recovering to pre-submit")
+        onFirstPromptFailed?()
     }
 
     func observeChatUpdates(_ publisher: AnyPublisher<String, Never>) {

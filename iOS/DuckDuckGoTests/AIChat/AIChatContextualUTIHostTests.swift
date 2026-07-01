@@ -433,6 +433,48 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertNotNil(userScript.inputBoxHandler)
     }
 
+    // MARK: - New-chat reset (slice 6)
+
+    func test_prepareForNewChat_unbindsAndReArms_soNextFirstPromptStillFlips() {
+        makeSUT(contextualStartsPreSubmit: true)
+        let userScript = makeTestUserScript()
+        sut.bindToUserScript(userScript)
+
+        var flipCount = 0
+        sut.onFirstPromptSubmitted = { [weak self] in
+            flipCount += 1
+            self?.hasActiveChat = true
+            return nil
+        }
+
+        // First chat: submit flips + binds.
+        sut.unifiedToggleInputDidSubmitPrompt("First", modelId: nil, tools: nil, reasoningEffort: nil, images: nil, files: nil)
+        XCTAssertEqual(flipCount, 1)
+        XCTAssertNotNil(userScript.inputBoxHandler)
+
+        // New-chat reset: must unbind so the next first prompt doesn't take the bound branch.
+        hasActiveChat = false
+        sut.prepareForNewChat()
+        XCTAssertNil(userScript.inputBoxHandler)
+
+        // Second chat's first prompt must flip again (the post-reset invisible-chat regression) and re-bind.
+        sut.unifiedToggleInputDidSubmitPrompt("Second", modelId: nil, tools: nil, reasoningEffort: nil, images: nil, files: nil)
+        XCTAssertEqual(flipCount, 2)
+        XCTAssertNotNil(userScript.inputBoxHandler)
+    }
+
+    // MARK: - First-prompt failure recovery (slice 7)
+
+    func test_firstPromptDeliveryFailed_firesRecoveryCallback() {
+        makeSUT(contextualStartsPreSubmit: true)
+        var recovered = false
+        sut.onFirstPromptFailed = { recovered = true }
+
+        sut.firstPromptDeliveryFailed()
+
+        XCTAssertTrue(recovered)
+    }
+
     // MARK: - Pre-submit chip visibility (slice 5)
 
     func test_preSubmit_sheetOpenAutoAttach_showsChipAsPendingNotSilentlyDelivered() {

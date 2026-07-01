@@ -776,7 +776,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
         case .pairingV2SessionTimedOut:
-            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason, timeoutStage: error.syncSetupTimeoutStage)
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
         }
     }
@@ -812,21 +812,23 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredFailed(setupSource, flowVersion: syncSetupFlowVersion, reason: reason), doNotEnforcePrefix: true)
     }
 
-    private func sendSetupEndedFailedPixel(setupRole: SyncSetupRole, reason: String?) {
+    private func sendSetupEndedFailedPixel(setupRole: SyncSetupRole, reason: String?, timeoutStage: String? = nil) {
         switch setupRole {
         case .receiver(let setupSource, _):
             PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedFailed(setupSource,
                                                                       flowVersion: syncSetupFlowVersion,
                                                                       peerKind: pairingV2PeerKind?.syncSetupPeerKind,
                                                                       myRole: setupSource.syncSetupMyRole,
-                                                                      reason: reason),
+                                                                      reason: reason,
+                                                                      timeoutStage: timeoutStage),
                           doNotEnforcePrefix: true)
         case .sharer:
             PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedFailed(.exchange,
                                                                       flowVersion: syncSetupFlowVersion,
                                                                       peerKind: pairingV2PeerKind?.syncSetupPeerKind,
                                                                       myRole: SyncSetupPixelKitEvent.ParameterValue.host,
-                                                                      reason: reason),
+                                                                      reason: reason,
+                                                                      timeoutStage: timeoutStage),
                           doNotEnforcePrefix: true)
         }
         pairingV2PeerKind = nil

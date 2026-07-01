@@ -98,6 +98,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         static let codeVersion = "code_version"
         static let path = "path"
         static let reason = "reason"
+        static let timeoutStage = "timeout_stage"
         static let peerKind = "peer_kind"
         static let myRole = "my_role"
     }
@@ -145,7 +146,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
     case syncSetupManualCodeEnteredSuccess(SyncSetupSource, flowVersion: String?, codeVersion: String?)
     case syncSetupManualCodeEnteredFailed(SyncSetupSource?, flowVersion: String?, reason: String?)
     case syncSetupEndedAbandoned(SyncSetupSource, flowVersion: String?, reason: String? = nil)
-    case syncSetupEndedFailed(SyncSetupSource?, flowVersion: String?, peerKind: String?, myRole: String?, reason: String?)
+    case syncSetupEndedFailed(SyncSetupSource?, flowVersion: String?, peerKind: String?, myRole: String?, reason: String?, timeoutStage: String?)
     case syncSetupEndedSuccessful(SyncSetupSource, flowVersion: String?, peerKind: String?, myRole: String?)
 
     var name: String {
@@ -169,6 +170,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         parameters[ParameterKey.codeVersion] = codeVersion
         parameters[ParameterKey.path] = path
         parameters[ParameterKey.reason] = reason
+        parameters[ParameterKey.timeoutStage] = timeoutStage
         parameters[ParameterKey.peerKind] = peerKind
         parameters[ParameterKey.myRole] = myRole
         return parameters
@@ -185,7 +187,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
             return source
         case
             .syncSetupManualCodeEnteredFailed(let source, _, _),
-            .syncSetupEndedFailed(let source, _, _, _, _):
+            .syncSetupEndedFailed(let source, _, _, _, _, _):
             return source
         case
             .syncSetupManualCodeEntryScreenShown:
@@ -201,7 +203,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
                 .syncSetupManualCodeEnteredSuccess(_, let flowVersion, _),
                 .syncSetupManualCodeEnteredFailed(_, let flowVersion, _),
                 .syncSetupEndedAbandoned(_, let flowVersion, _),
-                .syncSetupEndedFailed(_, let flowVersion, _, _, _),
+                .syncSetupEndedFailed(_, let flowVersion, _, _, _, _),
                 .syncSetupEndedSuccessful(_, let flowVersion, _, _):
             return flowVersion
         }
@@ -229,7 +231,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         switch self {
         case .syncSetupEndedSuccessful(let source, _, _, _):
             return source.syncSetupPath
-        case .syncSetupEndedFailed(let source, _, _, _, _):
+        case .syncSetupEndedFailed(let source, _, _, _, _, _):
             return source?.syncSetupPath
         default:
             return nil
@@ -240,7 +242,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         switch self {
         case .syncSetupManualCodeEnteredFailed(_, _, let reason),
                 .syncSetupEndedAbandoned(_, _, let reason),
-                .syncSetupEndedFailed(_, _, _, _, let reason):
+                .syncSetupEndedFailed(_, _, _, _, let reason, _):
             return reason
         default:
             return nil
@@ -250,7 +252,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
     private var peerKind: String? {
         switch self {
         case .syncSetupEndedSuccessful(_, _, let peerKind, _),
-                .syncSetupEndedFailed(_, _, let peerKind, _, _):
+                .syncSetupEndedFailed(_, _, let peerKind, _, _, _):
             return peerKind
         default:
             return nil
@@ -260,8 +262,17 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
     private var myRole: String? {
         switch self {
         case .syncSetupEndedSuccessful(_, _, _, let myRole),
-                .syncSetupEndedFailed(_, _, _, let myRole, _):
+                .syncSetupEndedFailed(_, _, _, let myRole, _, _):
             return myRole
+        default:
+            return nil
+        }
+    }
+
+    private var timeoutStage: String? {
+        switch self {
+        case .syncSetupEndedFailed(_, _, _, _, _, let timeoutStage):
+            return timeoutStage
         default:
             return nil
         }
@@ -390,6 +401,15 @@ extension SyncConnectionError {
             return SyncSetupPixelKitEvent.ParameterValue.missingThirdPartyKey
         case .localStorageFailed:
             return SyncSetupPixelKitEvent.ParameterValue.localStorageFailed
+        }
+    }
+
+    var syncSetupTimeoutStage: String? {
+        switch self {
+        case .pairingV2SessionTimedOut(let timeoutStage):
+            return timeoutStage?.rawValue
+        default:
+            return nil
         }
     }
 }

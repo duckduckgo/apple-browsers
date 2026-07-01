@@ -68,7 +68,7 @@ public enum SyncConnectionError: Error {
     case protocolError
 
     case pollingForRecoveryKeyTimedOut
-    case pairingV2SessionTimedOut
+    case pairingV2SessionTimedOut(timeoutStage: SyncSetupTimeoutStage?)
 
     case unexpectedSecondHello
     case unexpectedEvent
@@ -84,6 +84,14 @@ public enum SyncConnectionError: Error {
     case missingThirdPartyKey
     case localStorageFailed
     case invalidCredentials
+}
+
+public enum SyncSetupTimeoutStage: String {
+    case waitingForPeerHello = "waiting_for_peer_hello"
+    case waitingForPeerStatus = "waiting_for_peer_status"
+    case waitingForConfirmation = "waiting_for_confirmation"
+    case waitingForRecoveryCode = "waiting_for_recovery_code"
+    case loggingIn = "logging_in"
 }
 
 public protocol SyncConnectionControlling {
@@ -493,11 +501,33 @@ public class SyncConnectionController: SyncConnectionControlling {
     private func handlePairingV2SyncError(_ error: SyncError, coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
         switch error {
         case .pollingDidTimeOut:
-            await delegate?.controllerDidError(.pairingV2SessionTimedOut, underlyingError: nil, setupRole: setupRole)
+            await delegate?.controllerDidError(.pairingV2SessionTimedOut(timeoutStage: timeoutStage(for: coordinator.state)), underlyingError: nil, setupRole: setupRole)
         case .accountAlreadyExists:
             await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
         default:
             await delegate?.controllerDidError(.transportFailure, underlyingError: error, setupRole: setupRole)
+        }
+    }
+
+    private func timeoutStage(for state: PairingV2State) -> SyncSetupTimeoutStage? {
+        switch state {
+        case .waitingForPeerHello:
+            return .waitingForPeerHello
+        case .waitingForPeerStatus:
+            return .waitingForPeerStatus
+        case .hostWaitingForConfirmation,
+                .joinerWaitingForConfirmation:
+            return .waitingForConfirmation
+        case .hostPreparingRecoveryCode,
+                .hostSendingRecoveryCode,
+                .joinerWaitingForRecoveryCode:
+            return .waitingForRecoveryCode
+        case .joinerLoggingIn:
+            return .loggingIn
+        case .idle,
+                .completed,
+                .failed:
+            return nil
         }
     }
 

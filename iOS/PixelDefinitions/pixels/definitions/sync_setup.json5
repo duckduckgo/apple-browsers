@@ -319,6 +319,18 @@
                     "missing_3party_key",
                     "local_storage_failed"
                 ]
+            },
+            {
+                "key": "timeout_stage",
+                "type": "string",
+                "description": "The last Pairing V2 stage before a session_timeout failure, when known.",
+                "enum": [
+                    "waiting_for_peer_hello",
+                    "waiting_for_peer_status",
+                    "waiting_for_confirmation",
+                    "waiting_for_recovery_code",
+                    "logging_in"
+                ]
             }
         ]
     },

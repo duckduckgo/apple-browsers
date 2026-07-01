@@ -808,7 +808,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             handleRecoveryKeyPollingTimeout(setupRole: setupRole)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: nil)
         case .pairingV2SessionTimedOut:
-            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason, timeoutStage: error.syncSetupTimeoutStage)
             await dismissPresentedViewController()
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: nil)
         }
@@ -877,9 +877,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         }
     }
 
-    private func sendSetupEndedFailedPixel(setupRole: SyncSetupRole, reason: String?) {
+    private func sendSetupEndedFailedPixel(setupRole: SyncSetupRole, reason: String?, timeoutStage: String? = nil) {
         Pixel.fire(pixel: .syncSetupEndedFailed,
-                   withAdditionalParameters: syncSetupPixelParameters(setupRole: setupRole, reason: reason),
+                   withAdditionalParameters: syncSetupPixelParameters(setupRole: setupRole, reason: reason, timeoutStage: timeoutStage),
                    includedParameters: [.appVersion])
         pairingV2PeerKind = nil
     }
@@ -911,18 +911,20 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         syncSetupExperimentPixels.fireDeepLinkFlowAbandoned()
     }
 
-    private func syncSetupPixelParameters(setupRole: SyncSetupRole, reason: String?) -> [String: String] {
+    private func syncSetupPixelParameters(setupRole: SyncSetupRole, reason: String?, timeoutStage: String? = nil) -> [String: String] {
         switch setupRole {
         case .receiver(let setupSource, _):
             return syncSetupPixelParameters(setupSource: setupSource,
                                             path: setupSource.syncSetupPath,
                                             reason: reason,
+                                            timeoutStage: timeoutStage,
                                             peerKind: pairingV2PeerKind?.syncSetupPeerKind,
                                             myRole: setupSource.syncSetupMyRole)
         case .sharer:
             return syncSetupPixelParameters(setupSource: .exchange,
                                             path: SyncSetupPixelValue.pairing,
                                             reason: reason,
+                                            timeoutStage: timeoutStage,
                                             peerKind: pairingV2PeerKind?.syncSetupPeerKind,
                                             myRole: SyncSetupPixelValue.host)
         }
@@ -934,6 +936,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                                           path: String? = nil,
                                           flowVersion: String? = nil,
                                           reason: String? = nil,
+                                          timeoutStage: String? = nil,
                                           peerKind: String? = nil,
                                           myRole: String? = nil) -> [String: String] {
         var parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
@@ -943,6 +946,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         parameters[SyncSetupPixelParameter.path] = path
         parameters[SyncSetupPixelParameter.flowVersion] = flowVersion ?? syncSetupPixelFlowVersion
         parameters[SyncSetupPixelParameter.reason] = reason
+        parameters[SyncSetupPixelParameter.timeoutStage] = timeoutStage
         parameters[SyncSetupPixelParameter.peerKind] = peerKind
         parameters[SyncSetupPixelParameter.myRole] = myRole
         return parameters
@@ -1021,6 +1025,7 @@ private enum SyncSetupPixelParameter {
     static let codeVersion = "code_version"
     static let path = "path"
     static let reason = "reason"
+    static let timeoutStage = "timeout_stage"
     static let peerKind = "peer_kind"
     static let myRole = "my_role"
 }
@@ -1175,6 +1180,15 @@ private extension SyncConnectionError {
             return SyncSetupPixelValue.missingThirdPartyKey
         case .localStorageFailed:
             return SyncSetupPixelValue.localStorageFailed
+        }
+    }
+
+    var syncSetupTimeoutStage: String? {
+        switch self {
+        case .pairingV2SessionTimedOut(let timeoutStage):
+            return timeoutStage?.rawValue
+        default:
+            return nil
         }
     }
 }

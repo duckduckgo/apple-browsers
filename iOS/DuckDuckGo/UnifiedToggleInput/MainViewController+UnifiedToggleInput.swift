@@ -83,6 +83,7 @@ extension MainViewController {
             stateStore: stateStore,
             syncService: syncService,
             aiChatSyncCleaner: aiChatSyncCleaner,
+            recentModalPromptStatusProvider: recentModalPromptStatusProvider,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation
         )
         coordinator.delegate = self
@@ -1423,4 +1424,14 @@ extension MainViewController: UnifiedToggleInputFloatingReturnKeyDelegate {
         coordinator.insertNewlineFromFloatingReturnKey()
     }
 
+}
+
+// MARK: - Modal prompt coordination
+
+/// Bridges the modal prompt coordinator's per-session presentation flag to the Duck.ai sync promo,
+/// so the banner yields to any launch modal shown earlier in the same session (subscription
+/// reinstaller sheet, Win-back, address-bar picker, default browser, What's New). In-memory, so it
+/// resets on the next cold launch. See Asana 1216108902675922.
+extension ModalPromptCoordinationService: RecentModalPromptStatusProviding {
+    var wasModalPromptRecentlyPresented: Bool { wasModalPromptPresentedThisSession }
 }

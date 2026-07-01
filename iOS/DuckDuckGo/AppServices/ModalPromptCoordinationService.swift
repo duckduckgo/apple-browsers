@@ -95,6 +95,12 @@ final class ModalPromptCoordinationService {
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
     }
 
+    /// Whether a coordinated launch modal was presented during the current app session. Resets on
+    /// each cold launch (in-memory), letting lower-priority in-context promos yield to it same-session.
+    var wasModalPromptPresentedThisSession: Bool {
+        modalPromptCoordinationManager.didPresentModalPromptThisSession
+    }
+
     func presentModalPromptIfNeeded(from viewController: ModalPromptPresenter) {
         guard launchSourceManager.source == .standard else {
             Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Launched from non-standard source.")

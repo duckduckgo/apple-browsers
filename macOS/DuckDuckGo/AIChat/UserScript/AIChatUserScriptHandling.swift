@@ -104,7 +104,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable?
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
-    func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
+    @MainActor func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatSelectionContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
     var selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never> { get }
@@ -151,6 +151,10 @@ protocol AIChatUserScriptHandling: AnyObject {
     /// the carried `reason` (the JS error name, e.g. `"NotAllowedError"`) to decide whether
     /// to surface a system-permission remediation prompt.
     @MainActor func voiceChatStartFailed(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    /// Posted by Duck.ai when `getUserMedia()` rejects while starting dictation. Mirrors
+    /// `voiceChatStartFailed` but surfaces dictation-specific remediation copy.
+    @MainActor func dictationStartFailed(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -277,18 +281,65 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         messageHandling.getDataForMessageType(.nativePrompt)
     }
 
-    func getAIChatPageContext(params: Any, message: any UserScriptMessage) -> Encodable? {
+    @MainActor
+    func getAIChatPageContext(params: Any, message: any UserScriptMessage) async -> Encodable? {
         guard let payload: GetPageContext = DecodableHelper.decode(from: params) else {
             return nil
         }
 
         let pageContext = messageHandling.getDataForMessageType(.pageContext) as? AIChatPageContextData
 
-        if pageContext == nil, payload.reason == "userAction" {
-            pageContextRequestedSubject.send()
+        // On an explicit user action (Ask-About-Page chip or tapping a suggestion), the user wants
+        // the page CONTENT attached. If we only have a signals-only payload (auto-attach off) or no
+        // context, trigger a fresh collection and await it so the content is returned directly in
+        // this response instead of arriving later via the submit push.
+        if payload.reason == "userAction" {
+            let hasAttachedContent = pageContext != nil
+                && pageContext?.attached != false
+                && !(pageContext?.content.isEmpty ?? true)
+            if !hasAttachedContent {
+                let collected = await requestPageContextAndWait()
+                return PageContextResponse(pageContext: collected)
+            }
         }
 
         return PageContextResponse(pageContext: pageContext)
+    }
+
+    /// Triggers a fresh page-context collection and awaits the collected result, so
+    /// `getAIChatPageContext` can return the content directly via request/response instead of
+    /// returning `nil` and relying on the later `submitAIChatPageContext` push. The pushed context
+    /// arrives back through `pageContextSubject`; we subscribe before firing the request so a fast
+    /// collection can't slip through, and race the result against `timeout`. The submit push still
+    /// fires (it serves auto-collect/navigation flows), so the FE may also receive it that way.
+    /// Mirrors `PageContextUserScript.collectAndWait`.
+    @MainActor
+    private func requestPageContextAndWait(timeout: TimeInterval = 5) async -> AIChatPageContextData? {
+        let collectedContext = AsyncStream<AIChatPageContextData?> { continuation in
+            var cancellable: AnyCancellable?
+            cancellable = pageContextSubject
+                .first()
+                .sink { result in
+                    continuation.yield(result)
+                    continuation.finish()
+                }
+            continuation.onTermination = { _ in cancellable?.cancel() }
+            pageContextRequestedSubject.send()
+        }
+
+        return await withTaskGroup(of: AIChatPageContextData?.self) { group in
+            group.addTask {
+                for await result in collectedContext { return result }
+                return nil
+            }
+            group.addTask {
+                try? await Task.sleep(interval: timeout)
+                return nil
+            }
+            let result = await group.next() ?? nil
+            group.cancelAll()
+            return result
+        }
     }
 
     func getAIChatSelectionContext(params: Any, message: any UserScriptMessage) -> Encodable? {
@@ -822,14 +873,24 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         // (it sees `supportsNativeVoicePermissionHandler: false` and keeps its tooltip),
         // but stale clients or local-override misuse could fire it. Fail closed.
         guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow) else { return nil }
-        let reason: String = {
-            if let dict = params as? [String: Any], let value = dict["reason"] as? String {
-                return value
-            }
-            return ""
-        }()
-        voiceChatFailureHandler.handleVoiceChatStartFailed(reason: reason, sourceWebView: message.messageWebView)
+        voiceChatFailureHandler.handleVoiceChatStartFailed(reason: Self.failureReason(from: params), sourceWebView: message.messageWebView)
         return nil
+    }
+
+    @MainActor
+    func dictationStartFailed(params: Any, message: UserScriptMessage) async -> Encodable? {
+        // Unlike voice chat, the dictation flow ships without a feature flag, so it's always
+        // handled. The carried `reason` drives the same OS-mic-denied check as voice chat;
+        // only the remediation copy differs.
+        voiceChatFailureHandler.handleDictationStartFailed(reason: Self.failureReason(from: params), sourceWebView: message.messageWebView)
+        return nil
+    }
+
+    private static func failureReason(from params: Any) -> String {
+        guard let dict = params as? [String: Any], let value = dict["reason"] as? String else {
+            return ""
+        }
+        return value
     }
 
     private func makeSyncHandler() -> AIChatSyncHandler? {
@@ -914,6 +975,15 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             }
         case .userDidAcceptTermsAndConditions:
             handleTermsAccepted()
+            completion?()
+        case .userDidSelectSuggestion:
+            pixelFiring?.fire(
+                AIChatPixel.aiChatSuggestionSelected(
+                    suggestionId: metric.suggestionId ?? "",
+                    pageType: metric.pageType ?? "none"
+                ),
+                frequency: .dailyAndStandard
+            )
             completion?()
         default:
             completion?()

@@ -1690,6 +1690,7 @@ class MainViewController: UIViewController {
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
         let controller = NewTabPageViewController(isFocussedState: false,
+                                                  openedAfterIdle: hatch != nil,
                                                   dismissKeyboardOnScroll: true,
                                                   tab: tabModel,
                                                   interactionModel: favoritesViewModel,
@@ -3934,8 +3935,10 @@ extension MainViewController: OmniBarDelegate {
         // toggle, which a refresh-on-submit can reset to the stored last-used before we read it.
         commitToggleMode(.aiChat)
         
-        let modelId = viewCoordinator.omniBar.iPadDuckAISelectedModelId
-        openAIChat(query, autoSend: true, tools: tools, modelId: modelId)
+        let controlValues = viewCoordinator.omniBar.iPadDuckAIControlValues
+        openAIChat(query, autoSend: true, tools: tools ?? controlValues.selectedTools,
+                   modelId: controlValues.selectedModelId,
+                   reasoningEffort: controlValues.selectedReasoningEffort)
     }
 
     func onChatHistorySelected(url: URL) {

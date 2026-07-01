@@ -761,15 +761,26 @@ class AddressBarTests: XCTestCase {
         _=try await tab.webViewDidFinishNavigationPublisher.timeout(10).first().promise().value
         XCTAssertEqual(window.firstResponder, tab.webView)
 
+        let requestReceived = expectation(description: "reload request received")
+        var resumeNavigation: (() -> Void)?
+        schemeHandler.middleware = [{ request in
+            guard request.url == .duckDuckGo else { return .ok(.html(Self.testHtml)) }
+            return WKURLSchemeTaskHandler { task in
+                resumeNavigation = { WKURLSchemeTaskHandler.ok(.html(Self.testHtml))(task) }
+                requestReceived.fulfill()
+            }
+        }]
+
         // activate address bar, trigger reload by sending Return key and re-activate the address bar - it should be kept active
         let didFinishNavigation = tab.webViewDidFinishNavigationPublisher.timeout(10).first().promise()
         _=window.makeFirstResponder(addressBarTextField)
         type("\r")
-        try await Task.sleep(interval: 0.1)
+
+        await fulfillment(of: [requestReceived], timeout: 5)
         _=window.makeFirstResponder(addressBarTextField)
         type("some-text")
 
-        try await Task.sleep(interval: 1.0)
+        resumeNavigation?()
         try await didFinishNavigation.value
         XCTAssertTrue(isAddressBarFirstResponder)
         XCTAssertEqual(addressBarValue, "some-text")
@@ -877,14 +888,25 @@ class AddressBarTests: XCTestCase {
 
         _=try await tab.webViewDidFinishNavigationPublisher.timeout(10).first().promise().value
 
+        let requestReceived = expectation(description: "navigation request received")
+        var resumeNavigation: (() -> Void)?
+        schemeHandler.middleware = [{ request in
+            guard request.url == .duckDuckGo else { return .ok(.html(Self.testHtml)) }
+            return WKURLSchemeTaskHandler { task in
+                resumeNavigation = { WKURLSchemeTaskHandler.ok(.html(Self.testHtml))(task) }
+                requestReceived.fulfill()
+            }
+        }]
+
         let didFinishNavigation = tab.webViewDidFinishNavigationPublisher.timeout(10).first().promise()
         type(URL.duckDuckGo.absoluteString + "\r")
 
-        try await Task.sleep(interval: 0.1)
+        await fulfillment(of: [requestReceived], timeout: 5)
         _=window.makeFirstResponder(addressBarTextField)
         type("some-text")
 
-        try await Task.sleep(interval: 0.01)
+        // let the held navigation complete now that the user is editing the address bar
+        resumeNavigation?()
         try await didFinishNavigation.value
         XCTAssertTrue(isAddressBarFirstResponder)
         XCTAssertEqual(addressBarValue, "some-text")

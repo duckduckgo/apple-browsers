@@ -634,6 +634,7 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 
+        /// Will be removed when `.appRebranding` ships
         if styleProvider.shouldShowNewSearchIcon {
             if !isAddressBarFocused {
                 if leftFocusSpacer == nil {

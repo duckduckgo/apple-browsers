@@ -1928,6 +1928,7 @@ final class AddressBarButtonsViewController: NSViewController {
         searchModeToggleControl?.isHidden = !shouldShowToggle
         updateToggleExpansionState(shouldShowToggle: shouldShowToggle)
 
+        /// When `SearchModeToggle` is visible, we'll fine tune the `trailingStackViewTrailingViewConstraint` Layout Constraint
         if toggleVisibilityChanged {
             setupButtonPaddings(isFocused: isTextFieldEditorFirstResponder)
         }

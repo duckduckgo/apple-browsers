@@ -903,7 +903,7 @@ final class AddressBarViewController: NSViewController {
         inactiveAddressBarShadowView.isHidden = isSuggestionsWindowVisible
 
         if themeManager.isAppRebranded {
-            /// When Suggestions appears we'll update the Bar Height and Corner Radiuses
+            /// When Search Suggestions (OR) Omnibar are rendered, we'll switch to the Extended Height mode, with different rounded corners
             resizeAddressBarIfNeeded()
             refreshAddressBarCornerRadius()
         }

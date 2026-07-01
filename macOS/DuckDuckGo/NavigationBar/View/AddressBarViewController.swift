@@ -998,13 +998,12 @@ final class AddressBarViewController: NSViewController {
 
     func refreshAddressBarWidth() {
         let styleProvider = theme.addressBarStyleProvider
-        guard let idlePadding = styleProvider.addressBarHorizontalPaddingIDLE, let extendedPadding = styleProvider.addressBarHorizontalPaddingExtended else {
+        guard let padding = styleProvider.addressBarHorizontalPadding(focused: shouldUseTallAddressBarLayout) else {
             return
         }
 
-        let horizontalPadding = shouldUseTallAddressBarLayout ? extendedPadding : idlePadding
-        activeBackgroundViewLeadingConstraint.constant = horizontalPadding
-        activeBackgroundViewTrailingConstraint.constant = horizontalPadding
+        activeBackgroundViewLeadingConstraint.constant = padding
+        activeBackgroundViewTrailingConstraint.constant = padding
     }
 
     private func refreshSuggestionsAppearance() {

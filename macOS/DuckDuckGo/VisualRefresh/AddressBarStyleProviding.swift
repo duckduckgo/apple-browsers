@@ -27,6 +27,7 @@ protocol AddressBarStyleProviding {
     func navigationBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
+    func addressBarHorizontalPadding(focused: Bool) -> CGFloat?
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
     func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
@@ -51,8 +52,6 @@ protocol AddressBarStyleProviding {
     var addressBarActiveOuterBorderSize: CGFloat { get }
     var addressBarButtonSize: CGFloat { get }
     var addressBarButtonsCornerRadius: CGFloat { get }
-    var addressBarHorizontalPaddingExtended: CGFloat? { get }
-    var addressBarHorizontalPaddingIDLE: CGFloat? { get }
     var addressBarInactiveBackgroundViewLeadingPadding: CGFloat { get }
     var addressBarInactiveBackgroundViewTrailingPadding: CGFloat { get }
     var addressBarButtonsContainerViewLeadingPadding: CGFloat { get }
@@ -222,8 +221,6 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarTextFieldLeadingPadding: CGFloat = 20
     let addressBarActiveOuterBorderViewRadius: CGFloat = 17
     let addressBarActiveOuterBorderSize: CGFloat = -2
-    let addressBarHorizontalPaddingExtended: CGFloat? = nil
-    let addressBarHorizontalPaddingIDLE: CGFloat? = nil
     let addressBarInactiveBackgroundViewLeadingPadding: CGFloat = 2
     let addressBarInactiveBackgroundViewTrailingPadding: CGFloat = 2
     let addressBarButtonsContainerViewLeadingPadding: CGFloat = 2
@@ -279,6 +276,10 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
         }
     }
 
+    func addressBarHorizontalPadding(focused: Bool) -> CGFloat? {
+        nil
+    }
+
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat {
         return 0
     }
@@ -316,6 +317,8 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarBottomPaddingForDefault: CGFloat = 7
     private let addressBarBottomPaddingForDefaultFocused: CGFloat = 3
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
+    private let addressBarHorizontalPaddingExtended: CGFloat = 1
+    private let addressBarHorizontalPaddingIDLE: CGFloat = 4
     private let addressBarTrailingStackViewOmnibarPadding: CGFloat = 0
     private let addressBarTrailingStackViewFocusedPadding: CGFloat = 3
     private let addressBarTrailingStackViewDefaultPadding: CGFloat = 3
@@ -340,8 +343,6 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarButtonSize: CGFloat = 28
     let addressBarButtonsCornerRadius: CGFloat = 16             // VERIFY
     let addressBarInactiveBackgroundViewRadius: CGFloat = 17
-    let addressBarHorizontalPaddingExtended: CGFloat? = 1
-    let addressBarHorizontalPaddingIDLE: CGFloat? = 4
     let addressBarInactiveBackgroundViewLeadingPadding: CGFloat = 6
     let addressBarInactiveBackgroundViewTrailingPadding: CGFloat = 6
     let addressBarButtonsContainerViewLeadingPadding: CGFloat = 7
@@ -352,7 +353,7 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = CurrentPrivacyShieldAddressBarStyleProvider()
     let suggestionHighlightCornerRadius: CGFloat = 12
     let suggestionIconViewLeadingPadding: CGFloat = 8
-    let suggestionShadowRadius: CGFloat = 3.0                   // Not Needed
+    let suggestionShadowRadius: CGFloat = 3.0
     let suggestionTextFieldLeadingPadding: CGFloat = 8
     let tabBarButtonSize: CGFloat = 28
     let topSpaceForSuggestionWindow: CGFloat = 16
@@ -405,6 +406,10 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
         case .popUpWindow:
             return addressBarBottomPaddingForPopUpWindow
         }
+    }
+
+    func addressBarHorizontalPadding(focused: Bool) -> CGFloat? {
+        return focused ? addressBarHorizontalPaddingExtended : addressBarHorizontalPaddingIDLE
     }
 
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat {

@@ -810,6 +810,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         case .pairingV2SessionTimedOut:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason, timeoutStage: error.syncSetupTimeoutStage)
             await dismissPresentedViewController()
+            handleRecoveryKeyPollingTimeout(setupRole: setupRole)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: nil)
         }
 

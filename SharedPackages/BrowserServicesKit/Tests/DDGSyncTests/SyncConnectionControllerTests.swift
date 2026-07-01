@@ -1225,7 +1225,7 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    func test_syncCodeEntered_withV2RecoveryCodeSendFailure_notifiesUnexpectedFailure() async throws {
+    func test_syncCodeEntered_withV2RecoveryCodeSendFailure_notifiesTransportFailure() async throws {
         try dependencies.secureStore.persistAccount(SyncAccount.mock)
         let messageExchanger = PairingV2MessageExchangingMock()
         messageExchanger.sendHandler = { _, _ in
@@ -1255,7 +1255,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .unexpectedFailure)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .transportFailure)
         XCTAssertNil(delegate.didErrorErrors?.underlyingError)
     }
 

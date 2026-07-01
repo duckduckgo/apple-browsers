@@ -45,7 +45,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerDidError(_ error: SyncConnectionError, underlyingError: Error?, setupRole: SyncSetupRole) async
 }
 
-public enum SyncConnectionError: Error {
+public enum SyncConnectionError: Error, Equatable {
     case unableToRecognizeCode
     case updateRequired
     case unsupportedThirdPartyRecoveryCode
@@ -86,7 +86,7 @@ public enum SyncConnectionError: Error {
     case invalidCredentials
 }
 
-public enum SyncSetupTimeoutStage: String {
+public enum SyncSetupTimeoutStage: String, Equatable {
     case waitingForPeerHello = "waiting_for_peer_hello"
     case waitingForPeerStatus = "waiting_for_peer_status"
     case waitingForConfirmation = "waiting_for_confirmation"

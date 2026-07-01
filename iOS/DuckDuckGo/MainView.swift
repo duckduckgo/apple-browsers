@@ -296,23 +296,16 @@ extension MainViewFactory {
 
         private func applyFloatingStyle(animated: Bool) {
             let updates = {
+                self.floatingMaterialConstraints[0].constant = 0
+                self.floatingMaterialConstraints[1].constant = 0
+                self.floatingMaterialConstraints[2].constant = 0
+                self.floatingMaterialConstraints[3].constant = 0
+                self.floatingMaterialView.layer.cornerRadius = 0
+                self.floatingMaterialView.effect = nil
+
                 if self.isFloatingStyleEnabled {
-                    // Floating UI should not add an extra bar-height effect layer here.
-                    // The omnibar itself is responsible for its own appearance.
-                    self.floatingMaterialConstraints[0].constant = 0
-                    self.floatingMaterialConstraints[1].constant = 0
-                    self.floatingMaterialConstraints[2].constant = 0
-                    self.floatingMaterialConstraints[3].constant = 0
-                    self.floatingMaterialView.layer.cornerRadius = 0
-                    self.floatingMaterialView.effect = nil
                     self.floatingMaterialView.isHidden = true
                 } else {
-                    self.floatingMaterialConstraints[0].constant = 0
-                    self.floatingMaterialConstraints[1].constant = 0
-                    self.floatingMaterialConstraints[2].constant = 0
-                    self.floatingMaterialConstraints[3].constant = 0
-                    self.floatingMaterialView.layer.cornerRadius = 0
-                    self.floatingMaterialView.effect = nil
                     self.floatingMaterialView.isHidden = false
                 }
                 self.layoutIfNeeded()
@@ -339,15 +332,13 @@ extension MainViewFactory {
 
     final class StatusBackgroundView: UIVisualEffectView { }
     private func createStatusBackground() {
+        let view = StatusBackgroundView(effect: nil)
         if floatingUIManager.isFloatingUIEnabled {
-            let view = StatusBackgroundView(effect: nil)
             view.backgroundColor = .clear
-            coordinator.statusBackground = view
         } else {
-            let view = StatusBackgroundView(effect: nil)
             view.backgroundColor = UIColor(designSystemColor: .background)
-            coordinator.statusBackground = view
         }
+        coordinator.statusBackground = view
         superview.addSubview(coordinator.statusBackground)
     }
 

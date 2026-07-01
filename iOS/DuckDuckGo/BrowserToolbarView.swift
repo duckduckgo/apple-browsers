@@ -30,9 +30,20 @@ final class BrowserToolbarView: UIView {
     /// buttons sit where the production `UIToolbar` placed them. Tuned to match production's
     /// end-button centres; the floating style keeps the tighter `horizontalEdgePadding`.
     private static let legacyButtonRowHorizontalPadding: CGFloat = 20
-    private static let cornerRadius: CGFloat = 32
-    private static let floatingBarOuterInsets = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
+    /// Inset for the floating button row so the outer buttons' centres line up with the embedded
+    /// omnibar's leading/trailing icons (loupe/shield ↔ back, AI chat ↔ menu). Separate from
+    /// `horizontalEdgePadding` so tuning it doesn't shift the omnibar field.
+    private static let floatingButtonRowHorizontalPadding: CGFloat = 16
+
+    // This is only used in floating UI
+    private static let floatingUICornerRadius: CGFloat = 40
+
+    private static let floatingBarOuterInsets = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
     private static let legacyBarOuterInsets = UIEdgeInsets.zero
+    /// In the floating style the toolbar is laid out against the safe-area bottom (so the chrome
+    /// hide/show math stays valid), but the capsule should float this close to the physical device
+    /// bottom. The glass is shifted down into the home-indicator region by the difference.
+    private static let floatingBottomMargin: CGFloat = 16
     private static let verticalContentPadding: CGFloat = 2
     private static let omnibarToButtonsSpacing: CGFloat = 2
     private static let expandedContentToOmnibarSpacing: CGFloat = 8
@@ -105,6 +116,10 @@ final class BrowserToolbarView: UIView {
     private weak var hostedOmnibarView: UIView?
     private weak var hostedExpandedContentView: UIView?
     private var isFloatingStyleEnabled = false
+    /// How far the glass capsule is shifted down from its safe-area-anchored layout position so it
+    /// floats near the device bottom (see `floatingBottomMargin`). Kept in sync with the host's
+    /// safe-area inset in `layoutSubviews`; also widens the hit-test region.
+    private var floatingBottomOffset: CGFloat = 0
     /// The tab switcher reuses this bar purely for button-position parity with the browser, but
     /// paints its own backdrop — so in the non-floating style its own background must stay clear.
     private var isLegacyBackgroundTransparent = false
@@ -308,7 +323,19 @@ final class BrowserToolbarView: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
+        updateFloatingBottomOffset()
         updateCornerStyle()
+    }
+
+    /// Shifts the glass capsule down from its safe-area-anchored position toward the device bottom,
+    /// leaving `floatingBottomMargin`. Done as a transform (not a constraint change) so it doesn't
+    /// disturb the toolbar's layout slot or the runtime chrome hide/show constant logic.
+    private func updateFloatingBottomOffset() {
+        let hostBottomInset = superview?.safeAreaInsets.bottom ?? 0
+        let target = isFloatingStyleEnabled ? max(0, hostBottomInset - Self.floatingBottomMargin) : 0
+        guard target != floatingBottomOffset else { return }
+        floatingBottomOffset = target
+        materialBackgroundView.transform = CGAffineTransform(translationX: 0, y: target)
     }
 
     private func updateCornerStyle() {
@@ -319,13 +346,13 @@ final class BrowserToolbarView: UIView {
 
         if #available(iOS 26, *) {
             materialBackgroundView.cornerConfiguration = hasEmbeddedOmnibar || hasExpandedContent
-                ? .corners(radius: UICornerRadius.containerConcentric(minimum: Self.cornerRadius))
+                ? .corners(radius: UICornerRadius.containerConcentric(minimum: Self.floatingUICornerRadius))
                 : .capsule()
             return
         }
 
         materialBackgroundView.contentView.layer.cornerRadius = hasEmbeddedOmnibar || hasExpandedContent
-            ? Self.cornerRadius
+            ? Self.floatingUICornerRadius
             : materialBackgroundView.contentView.bounds.height / 2
     }
 
@@ -341,7 +368,7 @@ final class BrowserToolbarView: UIView {
             self.materialBackgroundView.effect = self.isFloatingStyleEnabled ? self.materialEffect() : nil
             self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
-            let buttonRowPadding = self.isFloatingStyleEnabled ? Self.horizontalEdgePadding : Self.legacyButtonRowHorizontalPadding
+            let buttonRowPadding = self.isFloatingStyleEnabled ? Self.floatingButtonRowHorizontalPadding : Self.legacyButtonRowHorizontalPadding
             self.buttonStack.layoutMargins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
             self.updateCornerStyle()
             self.layoutIfNeeded()
@@ -364,13 +391,18 @@ final class BrowserToolbarView: UIView {
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         guard !isHidden, alpha >= 0.01, isUserInteractionEnabled else { return false }
-        if super.point(inside: point, with: event) {
+
+        // The glass is shifted down by `floatingBottomOffset`, so the interactive region is the
+        // bounds offset by the same amount (this also lets the now-empty strip above the capsule
+        // pass touches through to the content behind it).
+        let interactiveRect = bounds.offsetBy(dx: 0, dy: floatingBottomOffset)
+        if interactiveRect.contains(point) {
             return true
         }
 
         guard hasExpandedContent else { return false }
-        let expandedBounds = bounds.insetBy(dx: 0, dy: -expandedContentHeightConstraint.constant)
-        return expandedBounds.contains(point)
+        let expandedRect = interactiveRect.insetBy(dx: 0, dy: -expandedContentHeightConstraint.constant)
+        return expandedRect.contains(point)
     }
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {

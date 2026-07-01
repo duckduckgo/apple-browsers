@@ -27,6 +27,10 @@ public enum SingleUseColor {
     /// Color used for separator line between text input and content
     case inputContentSeparator
 
+    /// Resting background fill for the floating address bar field (composites over the toolbar's
+    /// Liquid Glass capsule): 1% black in light, 3% white in dark.
+    case floatingAddressBarBackground
+
     /// Color used for what's New background
     case whatsNewBackground
 

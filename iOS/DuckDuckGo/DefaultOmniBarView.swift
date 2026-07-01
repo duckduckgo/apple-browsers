@@ -657,7 +657,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 //        opaqueEffect.frame = searchAreaContainerView.bounds
 //        searchAreaContainerView.insertSubview(opaqueEffect, at: 0)
         searchAreaContainerView.backgroundColor = isFloatingUIEnabled
-            ? UIColor(designSystemColor: .backgroundTertiary)
+            ? restingFieldBackgroundColor
             : UIColor(designSystemColor: .urlBar)
     }
 
@@ -974,7 +974,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeCardBackground)
                 activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
             } else {
-                searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+                searchAreaContainerView.backgroundColor = restingFieldBackgroundColor
                 activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accentPrimary).cgColor
             }
         }
@@ -1083,6 +1083,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private func updateVerticalSpacing() {
         textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
         textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
+        // The bottom floating field's resting fill differs from the top; refresh when the position
+        // (small-top-spacing) flips, unless fire mode owns the appearance.
+        if isFloatingUIEnabled, !fireMode {
+            searchAreaContainerView.backgroundColor = restingFieldBackgroundColor
+        }
     }
 
     func refreshLongPressMenuAvailability() {
@@ -1330,6 +1335,20 @@ private extension DefaultOmniBarView {
     /// Bottom omnibar uses small top spacing. Top position keeps regular spacing.
     var shouldUseFloatingTopGlass: Bool {
         isFloatingUIEnabled && !isUsingSmallTopSpacing
+    }
+
+    /// The floating omnibar field when hosted at the bottom (embedded in the toolbar's glass
+    /// capsule). Unlike the top position it isn't a glass surface itself, so it takes an explicit
+    /// resting fill rather than `.backgroundTertiary`.
+    var isBottomFloatingField: Bool {
+        isFloatingUIEnabled && isUsingSmallTopSpacing
+    }
+
+    /// Resting field fill: T-Input/Resting for the bottom floating field, otherwise the default.
+    var restingFieldBackgroundColor: UIColor {
+        isBottomFloatingField
+            ? UIColor(singleUseColor: .floatingAddressBarBackground)
+            : UIColor(designSystemColor: .backgroundTertiary)
     }
 }
 

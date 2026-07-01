@@ -170,7 +170,6 @@ final class TabBarItemCellView: NSView {
     var themeUpdateCancellable: AnyCancellable?
 
     private let featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
-    private let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
 
     private lazy var backgroundView = TabBackgroundView()
     fileprivate lazy var faviconView = TabFaviconView()
@@ -224,70 +223,9 @@ final class TabBarItemCellView: NSView {
         }
     }
 
-    fileprivate let mouseOverView = {
-        let mouseOverView = MouseOverView()
-        return mouseOverView
-    }()
-
-    /// Deprecated: Replaced by `TabBackgroundView`
-    fileprivate let roundedBackgroundColorView = {
-        let view = ColorView(frame: .zero)
-        view.alphaValue = 0.8
-        return view
-    }()
+    fileprivate let mouseOverView = MouseOverView()
 
     fileprivate let rightSeparatorView = ColorView(frame: .zero)
-
-    /// Deprecated: Replaced by `TabBackgroundView`
-    fileprivate lazy var rightRampView: RampView = {
-        let view = RampView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-
-    /// Deprecated: Replaced by `TabBackgroundView`
-    fileprivate lazy var leftRampView: RampView = {
-        let view = RampView()
-        view.isFlippedHorizontally = true
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-
-    fileprivate lazy var borderLayer: CALayer = {
-        let layer = CALayer()
-        layer.borderWidth = TabShadowConfig.dividerSize
-        layer.opacity = TabShadowConfig.alpha
-        layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
-        layer.cornerRadius = 8
-        layer.mask = layerMask
-        return layer
-    }()
-
-    private lazy var layerMask: CALayer = {
-        let layer = CALayer()
-        layer.addSublayer(leftPixelMask)
-        layer.addSublayer(rightPixelMask)
-        layer.addSublayer(topContentLineMask)
-        return layer
-    }()
-
-    private let leftPixelMask: CALayer = {
-        let layer = CALayer()
-        layer.backgroundColor = NSColor.white.cgColor
-        return layer
-    }()
-
-    private let rightPixelMask: CALayer = {
-        let layer = CALayer()
-        layer.backgroundColor = NSColor.white.cgColor
-        return layer
-    }()
-
-    private let topContentLineMask: CALayer = {
-        let layer = CALayer()
-        layer.backgroundColor = NSColor.white.cgColor
-        return layer
-    }()
 
     private var mustLayoutCloseButton: Bool {
         closeButton.isShown || !widthStage.isCloseButtonHidden || NSApp.isCommandPressed
@@ -308,20 +246,8 @@ final class TabBarItemCellView: NSView {
             .layerMaxXMaxYCorner
         ]
 
-        if displaysTabsAnimations {
-            addSubview(backgroundView)
-        } else if theme.tabStyleProvider.shouldShowSShapedTab {
-            addSubview(leftRampView)
-            addSubview(rightRampView)
-        } else {
-            mouseOverView.layer?.addSublayer(borderLayer)
-        }
-
+        addSubview(backgroundView)
         addSubview(mouseOverView)
-        if !displaysTabsAnimations, theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
-            roundedBackgroundColorView.cornerRadius = 6
-            addSubview(roundedBackgroundColorView)
-        }
 
         faviconView.setAccessibilityIdentifier("TabBarViewItem.favicon")
         titleView.setAccessibilityIdentifier("TabBarViewItem.title")
@@ -330,7 +256,7 @@ final class TabBarItemCellView: NSView {
         closeButton.setAccessibilityLabel(UserText.closeTab)
         closeButton.setAccessibilityIdentifier("TabBarViewItem.closeButton")
         closeButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
-        closeButton.mustAnimateOnMouseOver = displaysTabsAnimations
+        closeButton.mustAnimateOnMouseOver = true
 
         audioButton.setAccessibilityIdentifier("TabBarViewItem.muteButton")
         // Accessibility Title and toolTip are updated in `updateAudioPlayState`
@@ -370,41 +296,10 @@ final class TabBarItemCellView: NSView {
 
     private func layout(widthStage: WidthStage) {
         mouseOverView.frame = bounds
-        if theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
-            let padding: CGFloat = 4
-            let height = bounds.height - (padding * 2)
-            let y = bounds.midY - (height / 2)
-            roundedBackgroundColorView.frame = NSRect(x: bounds.origin.x + padding,
-                                                      y: y,
-                                                      width: bounds.width - (padding * 2),
-                                                      height: height)
-        }
 
-        if displaysTabsAnimations, backgroundView.frame != bounds {
+        if backgroundView.frame != bounds {
             withoutAnimation {
                 backgroundView.frame = bounds
-            }
-
-            withoutAnimation {
-                leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                rightPixelMask.frame = CGRect(x: bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: bounds.width, height: bounds.height - TabShadowConfig.dividerSize)
-            }
-
-        } else if theme.tabStyleProvider.shouldShowSShapedTab {
-            withoutAnimation {
-                rightRampView.frame = CGRect(x: bounds.width, y: 0, width: RampView.Consts.rampWidth, height: RampView.Consts.rampHeight)
-                leftRampView.frame = CGRect(x: -RampView.Consts.rampWidth, y: 0, width: RampView.Consts.rampWidth, height: RampView.Consts.rampHeight)
-                leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                rightPixelMask.frame = CGRect(x: bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: bounds.width, height: bounds.height - TabShadowConfig.dividerSize)
-            }
-        } else {
-            withoutAnimation {
-                borderLayer.frame = bounds
-                leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                rightPixelMask.frame = CGRect(x: borderLayer.bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: borderLayer.bounds.width, height: borderLayer.bounds.height - TabShadowConfig.dividerSize)
             }
         }
 
@@ -526,14 +421,6 @@ final class TabBarItemCellView: NSView {
         }
     }
 
-    override func updateLayer() {
-        NSAppearance.withAppAppearance {
-            if !theme.tabStyleProvider.shouldShowSShapedTab {
-                borderLayer.borderColor = NSColor.tabShadowLine.cgColor
-            }
-        }
-    }
-
     func clear() {
         faviconView.reset()
         titleView.reset()
@@ -556,10 +443,6 @@ final class TabBarItemCellView: NSView {
     }
 
     func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool) {
-        guard displaysTabsAnimations else {
-            return
-        }
-
         // Don't animate when switching Tabs via Keyboard Shortcuts
         let animated = NSApp.currentEvent?.isMouse ?? true
         backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver, animated: animated)
@@ -572,16 +455,9 @@ extension TabBarItemCellView: ThemeUpdateListening {
         let tabStyleProvider = theme.tabStyleProvider
         let colorsProvider = theme.colorsProvider
 
-        if displaysTabsAnimations {
-            backgroundView.backgroundColor = colorsProvider.navigationBackgroundColor
-            backgroundView.overlayColor = tabStyleProvider.hoverTabColor
-            rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
-        } else {
-            leftRampView.rampColor = colorsProvider.navigationBackgroundColor
-            rightRampView.rampColor = colorsProvider.navigationBackgroundColor
-            mouseOverView.mouseOverColor = tabStyleProvider.hoverTabColor
-            rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
-        }
+        backgroundView.backgroundColor = colorsProvider.navigationBackgroundColor
+        backgroundView.overlayColor = tabStyleProvider.hoverTabColor
+        rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
     }
 }
 // MARK: NSAccessibilityRadioButton
@@ -737,8 +613,6 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var activePermissionIconTimer: Timer?
     private var activePermissionTypes: [PermissionType] = []
     private var currentActivePermissionIndex = 0
-
-    private let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
 
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
@@ -1056,36 +930,9 @@ final class TabBarViewItem: NSCollectionViewItem {
             cell.faviconView.alphaValue = alpha
             cell.titleView.alphaValue = alpha
 
-            if displaysTabsAnimations {
-                cell.mouseOverView.backgroundColor = nil
-                cell.mouseOverView.mouseOverColor = nil
-                cell.closeButton.cornerRadius = isSelected ? tabStyleProvider.tabButtonActionsSelectedCornerRadius : tabStyleProvider.tabButtonActionsHighlightedCornerRadius
-
-            } else if isSelected || isDragged {
-                cell.mouseOverView.mouseOverColor = nil
-                cell.mouseOverView.backgroundColor = theme.colorsProvider.navigationBackgroundColor
-                cell.roundedBackgroundColorView.isHidden = true
-            } else {
-                if theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
-                    cell.mouseOverView.mouseOverColor = nil
-                    cell.mouseOverView.backgroundColor = theme.colorsProvider.baseBackgroundColor
-                    cell.roundedBackgroundColorView.backgroundColor = theme.tabStyleProvider.hoverTabColor
-                    cell.roundedBackgroundColorView.isHidden = !isMouseOver || isSelected
-                } else {
-                    cell.mouseOverView.mouseOverColor = .tabMouseOver
-                    cell.mouseOverView.backgroundColor = nil
-                }
-
-            }
-
-            if !displaysTabsAnimations {
-                if theme.tabStyleProvider.shouldShowSShapedTab {
-                    cell.rightRampView.isHidden = !(isSelected || isDragged)
-                    cell.leftRampView.isHidden = !(isSelected || isDragged)
-                } else {
-                    cell.borderLayer.isHidden = !isSelected
-                }
-            }
+            cell.mouseOverView.backgroundColor = nil
+            cell.mouseOverView.mouseOverColor = nil
+            cell.closeButton.cornerRadius = isSelected ? tabStyleProvider.tabButtonActionsSelectedCornerRadius : tabStyleProvider.tabButtonActionsHighlightedCornerRadius
         }
 
         if isPinned {

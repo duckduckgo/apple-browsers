@@ -77,6 +77,41 @@ final class AIChatNativeConfigValuesTests: XCTestCase {
         XCTAssertNotNil(json["installAge"])
     }
 
+    func testConfigValuesEncodeSupportsSuggestions() throws {
+        let json = try jsonObject(makeConfig(supportsSuggestions: true))
+        XCTAssertEqual(json["supportsSuggestions"] as? Bool, true)
+    }
+
+    func testSupportsSuggestionsDefaultsToFalse() throws {
+        // defaultValues does not pass supportsSuggestions, so it must encode as false.
+        let json = try jsonObject(AIChatNativeConfigValues.defaultValues)
+        XCTAssertEqual(json["supportsSuggestions"] as? Bool, false)
+    }
+
+    private func jsonObject(_ config: AIChatNativeConfigValues) throws -> [String: Any] {
+        let data = try JSONEncoder().encode(config)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    }
+
+    private func makeConfig(supportsSuggestions: Bool) -> AIChatNativeConfigValues {
+        AIChatNativeConfigValues(
+            isAIChatHandoffEnabled: false,
+            supportsClosingAIChat: true,
+            supportsOpeningSettings: true,
+            supportsNativePrompt: true,
+            supportsStandaloneMigration: false,
+            supportsNativeChatInput: false,
+            supportsURLChatIDRestoration: false,
+            supportsFullChatRestoration: false,
+            supportsPageContext: true,
+            supportsAIChatFullMode: false,
+            supportsAIChatContextualMode: false,
+            appVersion: "1.0.0",
+            supportsAIChatSync: false,
+            supportsSuggestions: supportsSuggestions
+        )
+    }
+
     private func encodedRawValue(_ type: AIChatInstallType) throws -> String {
         let data = try JSONEncoder().encode(type)
         return try XCTUnwrap(String(data: data, encoding: .utf8)).trimmingCharacters(in: CharacterSet(charactersIn: "\""))

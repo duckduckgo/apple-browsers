@@ -2543,7 +2543,6 @@
 		F1E092C11E92A72E00732CCC /* UIColorExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E092C01E92A72E00732CCC /* UIColorExtensionTests.swift */; };
 		F1E4A4451EE89460006F2EAE /* Bookmarks.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F1E4A4431EE89460006F2EAE /* Bookmarks.storyboard */; };
 		F1ED309D1EDC2EA400651986 /* TabSwitcher.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F1ED309B1EDC2EA400651986 /* TabSwitcher.storyboard */; };
-		F1EFB0062C5B8B8E009AB44B /* StatusIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EFB0052C5B8B8E009AB44B /* StatusIndicatorView.swift */; };
 		F1F5337C1F26A9EF00D80D4F /* UserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F5337B1F26A9EF00D80D4F /* UserText.swift */; };
 		F1F533841F26ABAC00D80D4F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F1F533861F26ABAC00D80D4F /* Localizable.strings */; };
 		F1F9AB3C2EBA4815003FC1E0 /* AttributedMetricsDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F9AB3B2EBA4815003FC1E0 /* AttributedMetricsDebugViewController.swift */; };
@@ -5348,7 +5347,6 @@
 		F1E092C01E92A72E00732CCC /* UIColorExtensionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIColorExtensionTests.swift; sourceTree = "<group>"; };
 		F1E4A4441EE89460006F2EAE /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Bookmarks.storyboard; sourceTree = "<group>"; };
 		F1ED309C1EDC2EA400651986 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/TabSwitcher.storyboard; sourceTree = "<group>"; };
-		F1EFB0052C5B8B8E009AB44B /* StatusIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusIndicatorView.swift; sourceTree = "<group>"; };
 		F1F5337B1F26A9EF00D80D4F /* UserText.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserText.swift; sourceTree = "<group>"; };
 		F1F9AB3B2EBA4815003FC1E0 /* AttributedMetricsDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedMetricsDebugViewController.swift; sourceTree = "<group>"; };
 		F1FDC92F2BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SubscriptionEnvironment+Default.swift"; sourceTree = "<group>"; };
@@ -10498,7 +10496,6 @@
 				D6E83C472B20C812006C8AFB /* SettingsHostingController.swift */,
 				1DDF401F2BA049FA006850D9 /* SettingsRootView.swift */,
 				1DEAADF12BA4716C00E25A97 /* StatusIndicator.swift */,
-				F1EFB0052C5B8B8E009AB44B /* StatusIndicatorView.swift */,
 				85CD91C32EBCE944006A0F7C /* ListBasedPickerWithHeaderImage.swift */,
 				5BF65FE12F5F224000BCC9F4 /* ListBasedPicker.swift */,
 				1DDF40272BA04CF3006850D9 /* Sections */,
@@ -13274,7 +13271,6 @@
 				98150FEE2DDB339C0003EE54 /* TabsModelPersistence.swift in Sources */,
 				859DB8142CE6263C001F7210 /* TextZoomController.swift in Sources */,
 				5BF65FE22F5F224000BCC9F4 /* ListBasedPicker.swift in Sources */,
-				F1EFB0062C5B8B8E009AB44B /* StatusIndicatorView.swift in Sources */,
 				EE5929622C5A8AF40029380B /* AutofillUsageMonitor.swift in Sources */,
 				37CF91642BB4A82A00BADCAE /* CrashCollectionOnboardingViewModel.swift in Sources */,
 				C13830FC2DCD3F1400A29B3C /* WebView.swift in Sources */,

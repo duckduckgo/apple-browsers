@@ -241,6 +241,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var floatingReturnKeyViewController: UnifiedToggleInputFloatingReturnKeyViewController
     weak var delegate: UnifiedToggleInputDelegate?
 
+    /// Live view of the contextual host's submission phase, used to keep the model chip correct across
+    /// a user-script rebind (which resets `hasSubmittedPrompt` but not the phase). Held weak; the host owns it.
+    weak var hostAdapter: UnifiedToggleInputHostAdapter?
+
     private(set) var host: UnifiedToggleInputHost
     private(set) var isToggleEnabled: Bool
     /// Snapshot of `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab` at init.
@@ -375,6 +379,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         host: UnifiedToggleInputHost,
         isToggleEnabled: Bool,
         isFireTab: Bool = false,
+        contextualStartsPreSubmit: Bool = false,
         hidesToggleOnDuckAITab: Bool = false,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
         duckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring = DuckAiNativeStoragePixelAdapter(),
@@ -474,11 +479,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         // Contextual chat boots in expanded form; no collapsed/inactive states are reachable.
-        // The chat is already post-submit by the time the contextual UTI installs, so
-        // `hasSubmittedPrompt` should reflect that — drives follow-up placeholder + model chip hide.
+        // Legacy/restored contextual installs post-submit and forces `hasSubmittedPrompt`; the
+        // pre-submit immediate-UTI sheet leaves it false so the normal first-submit flow flips it
+        // (drives follow-up placeholder + model chip). The boot decision is a static caller arg.
         if host == .contextualChat {
             displayState = .aiTab(.expanded)
-            hasSubmittedPrompt = true
+            if !contextualStartsPreSubmit {
+                hasSubmittedPrompt = true
+            }
             syncHasSubmittedPromptToHandler()
             updateModelChipVisibility()
         }
@@ -2051,6 +2059,12 @@ extension UnifiedToggleInputCoordinator {
         viewController.insertNewlineAtCursor()
     }
 
+    /// Re-derive model-chip visibility after a host-driven phase change (first submit / rebind).
+    /// Reads `hostAdapter` for the live phase, so the chip is correct even after a user-script rebind.
+    func refreshModelChipVisibility() {
+        updateModelChipVisibility()
+    }
+
 }
 
 private extension UnifiedToggleInputCoordinator {
@@ -2350,12 +2364,15 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func updateModelChipVisibility() {
-        // Contextual chat picks the model upstream (in the half-sheet); the model chip is permanently hidden here.
-        // Image generation has no model picker either — when active, the chip is hidden until the tool is deselected.
+        // Legacy contextual chat picks the model upstream (in the half-sheet) so its chip stays hidden;
+        // the pre-submit immediate-UTI sheet picks the model in the bar, so the chip shows until the
+        // first prompt. `hostAdapter` is the live phase source and survives a user-script rebind that
+        // resets `hasSubmittedPrompt`; before it is wired (during init) we fall back to `!hasSubmittedPrompt`.
+        // Image generation has no model picker either — when active, the chip is hidden until deselected.
         let isImageGenActive = toolsController.selectedTool == .imageGeneration
-        // `isModelPickerForcedVisible` only relaxes the `hasSubmittedPrompt` hide reason — contextual
-        // chat and image generation stay hidden regardless.
-        let shouldHideModelChip = host == .contextualChat || isImageGenActive || (hasSubmittedPrompt && !isModelPickerForcedVisible)
+        let contextualIsPreSubmit = hostAdapter?.isPreSubmitPhase ?? !hasSubmittedPrompt
+        let contextualHidesModelChip = host == .contextualChat && !contextualIsPreSubmit
+        let shouldHideModelChip = contextualHidesModelChip || isImageGenActive || (hasSubmittedPrompt && !isModelPickerForcedVisible)
         viewController.isModelChipHidden = shouldHideModelChip
         updateReasoningPicker()
     }

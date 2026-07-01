@@ -71,6 +71,55 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.hasActiveChat)
     }
 
+    // MARK: - Contextual model-chip phase (immediate UTI)
+
+    func test_contextualChat_preSubmit_bootsUnsubmitted_andShowsModelChip() {
+        let coordinator = makeContextualCoordinator(preSubmit: true)
+        XCTAssertFalse(coordinator.hasSubmittedPrompt)
+        XCTAssertFalse(coordinator.viewController.isModelChipHidden)
+    }
+
+    func test_contextualChat_legacyActive_bootsPostSubmit_andHidesModelChip() {
+        let coordinator = makeContextualCoordinator(preSubmit: false)
+        XCTAssertTrue(coordinator.hasSubmittedPrompt)
+        XCTAssertTrue(coordinator.viewController.isModelChipHidden)
+    }
+
+    func test_contextualChat_modelChipStaysHidden_whenAdapterReportsActive_evenIfPromptFlagReset() {
+        // Regression lock: a user-script rebind resets `hasSubmittedPrompt` to false while the chat is
+        // still active. The live host adapter must keep the model chip hidden despite the stale flag.
+        let coordinator = makeContextualCoordinator(preSubmit: true)
+        XCTAssertFalse(coordinator.viewController.isModelChipHidden, "pre-submit shows the model chip")
+
+        let adapter = StubHostAdapter(isPreSubmitPhase: false) // simulates active chat after a rebind
+        coordinator.hostAdapter = adapter
+        coordinator.refreshModelChipVisibility()
+
+        XCTAssertTrue(coordinator.viewController.isModelChipHidden, "adapter overrides the stale prompt flag")
+    }
+
+    func test_omnibarHost_modelChipUnaffectedByContextualLogic() {
+        // The omnibar host has no adapter and is not contextual; the contextual hide must not touch it.
+        sut.refreshModelChipVisibility()
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    private func makeContextualCoordinator(preSubmit: Bool) -> UnifiedToggleInputCoordinator {
+        UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            contextualStartsPreSubmit: preSubmit,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            switchBarSubmissionMetrics: mockSubmissionMetrics
+        )
+    }
+
+    private final class StubHostAdapter: UnifiedToggleInputHostAdapter {
+        let isPreSubmitPhase: Bool
+        init(isPreSubmitPhase: Bool) { self.isPreSubmitPhase = isPreSubmitPhase }
+    }
+
     // MARK: - Display State: showCollapsed
 
     func test_showCollapsed_setsDisplayState() {

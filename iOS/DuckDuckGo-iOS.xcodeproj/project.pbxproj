@@ -2189,7 +2189,9 @@
 		CB6D17A22FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17A12FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift */; };
 		CB6D17A42FA3983100ECD5AE /* UnifiedToggleInputPageContextChipViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17A32FA3983100ECD5AE /* UnifiedToggleInputPageContextChipViewModel.swift */; };
 		CB6D17A82FA39FC900ECD5AE /* AIChatContextualUTIHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17A72FA39FC900ECD5AE /* AIChatContextualUTIHost.swift */; };
+		DEC0DE0000000000000000A2 /* ContextualUnifiedToggleInputFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC0DE0000000000000000A1 /* ContextualUnifiedToggleInputFeature.swift */; };
 		CB6D17AA2FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17A92FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift */; };
+		DEC0DE0000000000000000B2 /* ContextualUnifiedToggleInputFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC0DE0000000000000000B1 /* ContextualUnifiedToggleInputFeatureTests.swift */; };
 		CB6D17B02FA2138200ECD5AE /* AIChatSyncPromoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */; };
 		CB6D17B22FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B32FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift */; };
 		CB6D17B42FB000000ECD5AE /* AIChatSyncPromoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6D17B52FB000000ECD5AE /* AIChatSyncPromoViewModel.swift */; };
@@ -4937,7 +4939,9 @@
 		CB6D17A12FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputPageContextChipViewModelTests.swift; sourceTree = "<group>"; };
 		CB6D17A32FA3983100ECD5AE /* UnifiedToggleInputPageContextChipViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputPageContextChipViewModel.swift; sourceTree = "<group>"; };
 		CB6D17A72FA39FC900ECD5AE /* AIChatContextualUTIHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualUTIHost.swift; sourceTree = "<group>"; };
+		DEC0DE0000000000000000A1 /* ContextualUnifiedToggleInputFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualUnifiedToggleInputFeature.swift; sourceTree = "<group>"; };
 		CB6D17A92FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualUTIHostTests.swift; sourceTree = "<group>"; };
+		DEC0DE0000000000000000B1 /* ContextualUnifiedToggleInputFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualUnifiedToggleInputFeatureTests.swift; sourceTree = "<group>"; };
 		CB6D17B12FA2138200ECD5AE /* AIChatSyncPromoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoView.swift; sourceTree = "<group>"; };
 		CB6D17B32FA2138200ECD5AE /* AIChatSyncIntroSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncIntroSheetView.swift; sourceTree = "<group>"; };
 		CB6D17B52FB000000ECD5AE /* AIChatSyncPromoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSyncPromoViewModel.swift; sourceTree = "<group>"; };
@@ -6022,6 +6026,7 @@
 				97D99E632F7420A900EE34E7 /* AIVoiceChatIntentTests.swift */,
 				97B908642F75457100372B50 /* DuckAIVoiceControlWidgetTests.swift */,
 				CB6D17A92FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift */,
+				DEC0DE0000000000000000B1 /* ContextualUnifiedToggleInputFeatureTests.swift */,
 				B4E5D6C7A8F9012345678901 /* AIChatTabChatHeaderViewTests.swift */,
 				5AB12C3D4E5F60718293A4C0 /* MockChatHistoryReader.swift */,
 				80E2BDAF2FDB693A00441FDF /* DuckAIGridItemTests.swift */,
@@ -9429,6 +9434,7 @@
 				C1AIREPO2F2E000000E35AD5 /* AIChatPageContextHandler.swift */,
 				CB6D179C2FA38CAF00ECD5AE /* Logger+ContextualUTI.swift */,
 				CB6D17A72FA39FC900ECD5AE /* AIChatContextualUTIHost.swift */,
+				DEC0DE0000000000000000A1 /* ContextualUnifiedToggleInputFeature.swift */,
 			);
 			path = ContextualMode;
 			sourceTree = "<group>";
@@ -13680,6 +13686,7 @@
 				C1A1AEDC2EBCF97400D49A2F /* AutofillExtensionPromptViewController.swift in Sources */,
 				C1A1AEDD2EBCF97400D49A2F /* AutofillExtensionPromptViewModel.swift in Sources */,
 				CB6D17A82FA39FC900ECD5AE /* AIChatContextualUTIHost.swift in Sources */,
+				DEC0DE0000000000000000A2 /* ContextualUnifiedToggleInputFeature.swift in Sources */,
 				C11F41132F2CCBD800C126C3 /* AIChatContextualChatSessionState.swift in Sources */,
 				C1A1AEDE2EBCF97400D49A2F /* AutofillExtensionPromptView.swift in Sources */,
 				C1E28C2E2F50F2D3007B8230 /* OnboardingView+RestorePromptDialogContent.swift in Sources */,
@@ -14469,6 +14476,7 @@
 				6AC98419288055C1005FA9CA /* BarsAnimatorTests.swift in Sources */,
 				8536A1CA209AF6490050739E /* HomeRowReminderTests.swift in Sources */,
 				CB6D17AA2FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift in Sources */,
+				DEC0DE0000000000000000B2 /* ContextualUnifiedToggleInputFeatureTests.swift in Sources */,
 				9FA0AF1E2EB4894A00713387 /* RemoteMessagingPixelReporterTests.swift in Sources */,
 				5650E36F2D3E8E5900D41ECF /* PageRefreshMonitorExtensionTests.swift in Sources */,
 				9FE59CDD2E31AD9D00C4B65D /* DefaultBrowserPiPTutorialURLProviderTests.swift in Sources */,

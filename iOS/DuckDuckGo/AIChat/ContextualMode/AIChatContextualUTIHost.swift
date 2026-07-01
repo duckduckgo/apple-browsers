@@ -32,6 +32,8 @@ final class AIChatContextualUTIHost {
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
     private let isAutoAttachEnabled: () -> Bool
     private let hasActiveChat: () -> Bool
+    /// Live phase source handed to the coordinator (weak there) so the model chip survives a rebind.
+    private let hostAdapter: ContextualChatHostAdapter
     private weak var contextualChatViewController: AIChatContextualWebViewController?
     private var pendingChipAttachCancellable: AnyCancellable?
     private var suppressExternalContextUntilNextAttach = false
@@ -49,11 +51,13 @@ final class AIChatContextualUTIHost {
         isAutoAttachEnabled: @escaping () -> Bool,
         pageContextHandler: AIChatPageContextHandling,
         isFireTab: Bool,
+        contextualStartsPreSubmit: Bool = false,
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil
     ) {
         self.pageContextHandler = pageContextHandler
         self.isAutoAttachEnabled = isAutoAttachEnabled
         self.hasActiveChat = hasActiveChat
+        self.hostAdapter = ContextualChatHostAdapter(hasActiveChat: hasActiveChat)
         let wideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent
         )
@@ -62,6 +66,7 @@ final class AIChatContextualUTIHost {
             host: .contextualChat,
             isToggleEnabled: false,
             isFireTab: isFireTab,
+            contextualStartsPreSubmit: contextualStartsPreSubmit,
             lastUsedModelProvider: lastUsedModelProvider,
             duckAIWideEventInstrumentation: wideEventInstrumentation,
             duckAIWideEventFlowScope: duckAIWideEventFlowScope
@@ -73,6 +78,7 @@ final class AIChatContextualUTIHost {
             isAutoAttachEnabled: isAutoAttachEnabled
         )
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
+        coordinator.hostAdapter = hostAdapter
         chipViewModel.onAttachActionRequested = { [weak self] url in
             self?.handleChipAttachRequest(originatingURL: url)
         }
@@ -264,4 +270,17 @@ extension AIChatContextualUTIHost {
             hasPageContext: hasPageContext
         )
     }
+}
+
+/// Live view of the contextual chat's submission phase for the coordinator's model-chip logic.
+/// Reads `hasActiveChat` on each access so it reflects the current phase even after a user-script
+/// rebind (which resets `hasSubmittedPrompt` but not the chat's active state).
+private final class ContextualChatHostAdapter: UnifiedToggleInputHostAdapter {
+    private let hasActiveChat: () -> Bool
+
+    init(hasActiveChat: @escaping () -> Bool) {
+        self.hasActiveChat = hasActiveChat
+    }
+
+    var isPreSubmitPhase: Bool { !hasActiveChat() }
 }

@@ -528,6 +528,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables improved contextual sheet UX (welcome message, ask about page, etc.)
     case contextualSheetImprovements
 
+    /// Shows the unified toggle input on the presubmission contextual sheet in place of the basic native input
+    case contextualUnifiedToggleInput
+
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
 

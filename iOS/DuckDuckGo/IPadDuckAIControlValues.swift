@@ -28,6 +28,10 @@ protocol IPadDuckAIControlValues {
 
     /// The Duck.ai reasoning effort selected in the iPad address-bar reasoning picker, or `nil`.
     var selectedReasoningEffort: AIChatReasoningEffort? { get }
+
+    /// The Duck.ai tools selected in the iPad address-bar tool picker, or `nil` when no tool is
+    /// selected or the picker is inactive.
+    var selectedTools: [AIChatRAGTool]? { get }
 }
 
 /// A concrete snapshot of `IPadDuckAIControlValues`. Every value defaults to `nil`, so callers
@@ -35,4 +39,5 @@ protocol IPadDuckAIControlValues {
 struct IPadDuckAIControlValuesSnapshot: IPadDuckAIControlValues {
     var selectedModelId: String?
     var selectedReasoningEffort: AIChatReasoningEffort?
+    var selectedTools: [AIChatRAGTool]?
 }

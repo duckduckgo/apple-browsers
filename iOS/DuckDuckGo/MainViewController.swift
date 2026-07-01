@@ -1745,6 +1745,7 @@ class MainViewController: UIViewController {
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
         let controller = NewTabPageViewController(isFocussedState: false,
+                                                  openedAfterIdle: hatch != nil,
                                                   dismissKeyboardOnScroll: true,
                                                   tab: tabModel,
                                                   interactionModel: favoritesViewModel,
@@ -4011,7 +4012,7 @@ extension MainViewController: OmniBarDelegate {
         commitToggleMode(.aiChat)
         
         let controlValues = viewCoordinator.omniBar.iPadDuckAIControlValues
-        openAIChat(query, autoSend: true, tools: tools,
+        openAIChat(query, autoSend: true, tools: tools ?? controlValues.selectedTools,
                    modelId: controlValues.selectedModelId,
                    reasoningEffort: controlValues.selectedReasoningEffort)
     }

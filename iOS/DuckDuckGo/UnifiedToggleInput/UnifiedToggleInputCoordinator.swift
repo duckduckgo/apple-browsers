@@ -1187,7 +1187,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard let userScript = boundUserScript else { return }
         let configuration = voicePromptSubmissionConfiguration
         recordDuckAISubmissionStarted(
-            modelId: configuration.modelId,
             reasoningEffort: configuration.reasoningEffort,
             inputMode: .voice,
             frontendDeliveryPath: .userScript,
@@ -1829,7 +1828,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
             let configuration = promptSubmissionConfiguration
             recordDuckAISubmissionStarted(
-                modelId: configuration.modelId,
                 reasoningEffort: configuration.reasoningEffort,
                 inputMode: .keyboard,
                 frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
@@ -2541,8 +2539,7 @@ extension UnifiedToggleInputCoordinator {
 
     /// Records a submission for the user's primary input path (voice or keyboard) - opens the
     /// wide-event flow with the snapshot of state at submit time.
-    func recordDuckAISubmissionStarted(modelId: String?,
-                                       reasoningEffort: AIChatReasoningEffort?,
+    func recordDuckAISubmissionStarted(reasoningEffort: AIChatReasoningEffort?,
                                        inputMode: DuckAIPromptWideEventData.InputMode,
                                        frontendDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath,
                                        hasPageContext: Bool,
@@ -2551,7 +2548,7 @@ extension UnifiedToggleInputCoordinator {
         guard let scope = currentDuckAIWideEventFlowScope else { return }
         duckAIWideEventInstrumentation?.submissionStarted(
             scope: scope,
-            modelId: modelId,
+            modelId: persistedModelId,
             userTier: subscriptionState.userTier,
             reasoningEffort: reasoningEffort,
             entryPoint: duckAIEntryPoint,

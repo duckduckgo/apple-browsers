@@ -777,7 +777,7 @@ final class AddressBarViewController: NSViewController {
         activeBackgroundViewWithSuggestions.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
         activeOuterBorderView.cornerRadius = styleProvider.addressBarActiveOuterBorderViewRadius
         inactiveBackgroundView.cornerRadius = styleProvider.addressBarInactiveBackgroundViewRadius
-        innerBorderView.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadius(isSuggestionsWindowVisible: isSearchOrChatSuggestionsWindowVisible)
+        innerBorderView.cornerRadius = styleProvider.addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: isSearchOrChatSuggestionsWindowVisible)
     }
 
     private func setupInactiveShadowView() {

@@ -32,7 +32,7 @@ protocol AddressBarStyleProviding {
     func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat
-    func addressBarActiveBackgroundViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat
+    func addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat
 
     // MARK: - Configuration
     var shouldShowNewSearchIcon: Bool { get }
@@ -300,7 +300,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
         return 32
     }
 
-    func addressBarActiveBackgroundViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat {
+    func addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat {
         addressBarInnerBorderViewRadius
     }
 }
@@ -432,7 +432,7 @@ final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
         return 32
     }
 
-    func addressBarActiveBackgroundViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat {
+    func addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat {
         isSuggestionsWindowVisible ? addressBarActiveBackgroundViewRadiusWithSuggestions : addressBarActiveBackgroundViewRadius
     }
 }

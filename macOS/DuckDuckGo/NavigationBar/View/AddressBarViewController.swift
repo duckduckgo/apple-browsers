@@ -894,7 +894,7 @@ final class AddressBarViewController: NSViewController {
         shadowView.shadowSides = isSuggestionsWindowVisible ? [.left, .top, .right] : []
         shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
         shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
-        shadowView.cornerRadius = theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius
+        shadowView.cornerRadius = theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
         activeOuterBorderView.isHidden = isSuggestionsWindowVisible || view.window?.isKeyWindow != true || isToggleFocused

@@ -1233,6 +1233,14 @@ class MainViewController: UIViewController {
                                                selector: #selector(refreshViewsBasedOnDuckPlayerPresentation),
                                                name: DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated,
                                                object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onKeepAddressBarVisibleOnIPadChanged),
+                                               name: AppUserDefaults.Notifications.keepAddressBarVisibleOnIPadChanged,
+                                               object: nil)
+    }
+
+    @objc private func onKeepAddressBarVisibleOnIPadChanged() {
+        revealChromeIfPinned()
     }
 
     private func registerForAppBackgroundNotification() {
@@ -1690,6 +1698,7 @@ class MainViewController: UIViewController {
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
         let controller = NewTabPageViewController(isFocussedState: false,
+                                                  openedAfterIdle: hatch != nil,
                                                   dismissKeyboardOnScroll: true,
                                                   tab: tabModel,
                                                   interactionModel: favoritesViewModel,
@@ -3756,7 +3765,19 @@ extension MainViewController: BrowserChromeDelegate {
     var canHideBars: Bool {
         // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
         if currentTab?.isError == true { return false }
-        return !daxDialogsManager.shouldShowFireButtonPulse
+        return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
+    }
+
+    /// When `true`, the omni bar and toolbar are never hidden on scroll.
+    /// iPad-only (the setting is hidden on iPhone); applies in all widths, including narrow Split View / Slide Over.
+    private var shouldPinChrome: Bool {
+        isPad && appSettings.keepAddressBarVisibleOnIPad
+    }
+
+    /// Reveals the chrome immediately if it should now be pinned but is currently hidden.
+    private func revealChromeIfPinned() {
+        guard shouldPinChrome else { return }
+        chromeManager?.reset(animated: true)
     }
 
     var isToolbarHidden: Bool {
@@ -3934,8 +3955,10 @@ extension MainViewController: OmniBarDelegate {
         // toggle, which a refresh-on-submit can reset to the stored last-used before we read it.
         commitToggleMode(.aiChat)
         
-        let modelId = viewCoordinator.omniBar.iPadDuckAISelectedModelId
-        openAIChat(query, autoSend: true, tools: tools, modelId: modelId)
+        let controlValues = viewCoordinator.omniBar.iPadDuckAIControlValues
+        openAIChat(query, autoSend: true, tools: tools ?? controlValues.selectedTools,
+                   modelId: controlValues.selectedModelId,
+                   reasoningEffort: controlValues.selectedReasoningEffort)
     }
 
     func onChatHistorySelected(url: URL) {
@@ -6426,6 +6449,8 @@ extension MainViewController {
             updateStatusBarBackgroundColor()
         }
         updateFindInPage()
+
+        revealChromeIfPinned()
     }
 
     func refreshStatusBarBackgroundAfterAIChrome() {

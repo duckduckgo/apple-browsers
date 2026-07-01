@@ -168,7 +168,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private enum Constants {
         static let topOmnibarKeyboardPresentationTimeout: TimeInterval = 0.35
-        static let subscriptionFeaturePage = "duckai"
     }
 
     private var attachmentPolicy: UTIAttachmentPolicy {
@@ -194,10 +193,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var isVoiceSessionActivePublisher: Published<Bool>.Publisher { $isVoiceSessionActive }
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }
     var persistedReasoningEffort: AIChatReasoningEffort? {
-        guard let selectedModel else { return nil }
-        guard persistedReasoningMode != nil || selectedModel.supportsReasoningPicker else { return nil }
-
-        return selectedModel.resolvedReasoningEffort(from: persistedReasoningMode)
+        modelStore.submissionReasoningEffort
     }
     private var promptSubmissionModelId: String? {
         hasSubmittedPrompt ? nil : persistedModelId
@@ -344,6 +340,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let toolsController = UTIToolsController()
     private let toolsMenuFactory = UTIToolsMenuFactory()
     private let modelMenuFactory = UnifiedToggleInputModelMenuFactory()
+    private let reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory()
+    private let reasoningAccessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver()
+    private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()
     private let attachmentPresenter = UnifiedToggleInputAttachmentPresenter()
 
     private let intentSubject = PassthroughSubject<UnifiedToggleInputIntent, Never>()
@@ -1184,7 +1183,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard let userScript = boundUserScript else { return }
         let configuration = voicePromptSubmissionConfiguration
         recordDuckAISubmissionStarted(
-            modelId: configuration.modelId,
             reasoningEffort: configuration.reasoningEffort,
             inputMode: .voice,
             frontendDeliveryPath: .userScript,
@@ -1467,72 +1465,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return false
         }
 
-        let userTier = subscriptionState.userTier
-
-        if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .modelPicker,
-                currentTier: userTier,
-                requiredTier: requiredPublicTier,
-                flowType: .purchase
-            )
-            presentPurchaseFlow(source: .modelPicker)
-            return true
-        }
-
-        if userTier == .plus, requiredPublicTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .modelPicker,
-                currentTier: userTier,
-                requiredTier: requiredPublicTier,
-                flowType: .upgrade
-            )
-            presentUpgradeFlow(source: .modelPicker)
-            return true
-        }
-
-        Logger.unifiedInputState.debug("No native subscription flow for gated model")
-        return false
-    }
-
-    private func presentPurchaseFlow(source: SubscriptionFlowSource) {
-        NotificationCenter.default.post(
-            name: .settingsDeepLinkNotification,
-            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(
-                redirectURLComponents: makeSubscriptionRedirectURLComponents(source: source)
-            )
+        return subscriptionUpsellPresenter.routeGatedSelection(
+            requiredTier: requiredPublicTier,
+            userTier: subscriptionState.userTier,
+            source: .modelPicker,
+            isAITabState: isAITabState
         )
-    }
-
-    private func presentUpgradeFlow(source: SubscriptionFlowSource) {
-        NotificationCenter.default.post(
-            name: .settingsDeepLinkNotification,
-            object: SettingsViewModel.SettingsDeepLinkSection.subscriptionPlanChangeFlow(
-                redirectURLComponents: makeSubscriptionRedirectURLComponents(source: source)
-            )
-        )
-    }
-
-    private func makeSubscriptionRedirectURLComponents(source: SubscriptionFlowSource) -> URLComponents {
-        var components = URLComponents()
-        components.queryItems = [
-            URLQueryItem(name: "featurePage", value: Constants.subscriptionFeaturePage),
-            URLQueryItem(name: AttributionParameter.origin, value: subscriptionOrigin(for: source).rawValue)
-        ]
-        return components
-    }
-
-    private func subscriptionOrigin(for source: SubscriptionFlowSource) -> SubscriptionFunnelOrigin {
-        switch (isAITabState, source) {
-        case (true, .modelPicker):
-            return .duckAIModelPicker
-        case (true, .reasoningPicker):
-            return .duckAIReasoningPicker
-        case (false, .modelPicker):
-            return .addressBarModelPicker
-        case (false, .reasoningPicker):
-            return .addressBarReasoningPicker
-        }
     }
 
     private func refreshModelPickerMenuAfterRejectedSelection() {
@@ -1616,50 +1554,21 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     
     private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
-        guard !model.accessibleReasoningModes.contains(mode) else { return nil }
-        guard let effort = model.reasoningEffort(for: mode) else { return nil }
-        return model.lowestPublicAccessTier(for: effort)
+        reasoningAccessResolver.requiredPublicTier(for: mode, model: model)
     }
 
     private func canSelectReasoningModeRequiringTier(_ requiredTier: AIChatModelPublicAccessTier) -> Bool {
-        switch requiredTier {
-        case .free:
-            return true
-        case .plus:
-            return subscriptionState.userTier != .free
-        case .pro:
-            return subscriptionState.userTier == .pro || subscriptionState.userTier == .internal
-        }
+        reasoningAccessResolver.canSelect(modeRequiring: requiredTier, userTier: subscriptionState.userTier)
     }
 
     @discardableResult
     private func routeGatedReasoningModeSelection(requiredPublicTier: AIChatModelPublicAccessTier) -> Bool {
-        let userTier = subscriptionState.userTier
-
-        if userTier == .free, requiredPublicTier == .plus || requiredPublicTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .reasoningPicker,
-                currentTier: userTier,
-                requiredTier: requiredPublicTier,
-                flowType: .purchase
-            )
-            presentPurchaseFlow(source: .reasoningPicker)
-            return true
-        }
-
-        if userTier == .plus, requiredPublicTier == .pro {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubscriptionUpsellTriggeredPixel(
-                source: .reasoningPicker,
-                currentTier: userTier,
-                requiredTier: requiredPublicTier,
-                flowType: .upgrade
-            )
-            presentUpgradeFlow(source: .reasoningPicker)
-            return true
-        }
-
-        Logger.unifiedInputState.debug("No native subscription flow for gated reasoning mode")
-        return false
+        return subscriptionUpsellPresenter.routeGatedSelection(
+            requiredTier: requiredPublicTier,
+            userTier: subscriptionState.userTier,
+            source: .reasoningPicker,
+            isAITabState: isAITabState
+        )
     }
 
     func selectTool(_ tool: AIChatRAGTool) {
@@ -1690,21 +1599,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func buildReasoningPickerMenu() -> UIMenu? {
-        guard let selectedModel, selectedModel.supportsReasoningPicker else { return nil }
+        guard let selectedModel else { return nil }
 
-        let selectedMode = resolvedSelectedReasoningMode
-        let actions = selectedModel.availableReasoningModes.map { mode in
-            UIAction(
-                title: mode.unifiedToggleInputTitle,
-                subtitle: mode.unifiedToggleInputSubtitle,
-                image: mode.unifiedToggleInputMenuImage,
-                state: mode == selectedMode ? .on : .off
-            ) { [weak self] _ in
-                self?.handleReasoningModeSelection(mode)
-            }
+        return reasoningMenuFactory.makeMenu(
+            model: selectedModel,
+            selectedMode: resolvedSelectedReasoningMode
+        ) { [weak self] mode in
+            self?.handleReasoningModeSelection(mode)
         }
-
-        return UIMenu(options: .singleSelection, children: actions)
     }
 
     private func updateReasoningPicker() {
@@ -1922,7 +1824,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
             let configuration = promptSubmissionConfiguration
             recordDuckAISubmissionStarted(
-                modelId: configuration.modelId,
                 reasoningEffort: configuration.reasoningEffort,
                 inputMode: .keyboard,
                 frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
@@ -2634,8 +2535,7 @@ extension UnifiedToggleInputCoordinator {
 
     /// Records a submission for the user's primary input path (voice or keyboard) - opens the
     /// wide-event flow with the snapshot of state at submit time.
-    func recordDuckAISubmissionStarted(modelId: String?,
-                                       reasoningEffort: AIChatReasoningEffort?,
+    func recordDuckAISubmissionStarted(reasoningEffort: AIChatReasoningEffort?,
                                        inputMode: DuckAIPromptWideEventData.InputMode,
                                        frontendDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath,
                                        hasPageContext: Bool,
@@ -2644,7 +2544,7 @@ extension UnifiedToggleInputCoordinator {
         guard let scope = currentDuckAIWideEventFlowScope else { return }
         duckAIWideEventInstrumentation?.submissionStarted(
             scope: scope,
-            modelId: modelId,
+            modelId: persistedModelId,
             userTier: subscriptionState.userTier,
             reasoningEffort: reasoningEffort,
             entryPoint: duckAIEntryPoint,

@@ -1433,6 +1433,8 @@ extension Pixel {
         case settingsMoreSearchSettings
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
+        case settingsHideTabBarWhileScrollingOn
+        case settingsHideTabBarWhileScrollingOff
         case settingsWhatsNewOpen
         case settingsAutoplayOpen
         case settingsAutoplayChanged
@@ -2170,6 +2172,8 @@ extension Pixel.Event {
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
+        case .settingsHideTabBarWhileScrollingOn: return "settings_hide_tab_bar_while_scrolling_on"
+        case .settingsHideTabBarWhileScrollingOff: return "settings_hide_tab_bar_while_scrolling_off"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
         case .settingsAutoplayOpen: return "m_settings_autoplay_open"
         case .settingsAutoplayChanged: return "m_settings_autoplay_changed"

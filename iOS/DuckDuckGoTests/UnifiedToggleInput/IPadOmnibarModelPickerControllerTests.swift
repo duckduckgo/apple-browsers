@@ -30,16 +30,19 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
     private var preferences: StubPreferences!
     private var modelsService: StubModelsService!
     private var subscriptionManager: SubscriptionManagerMock!
+    private var upsellPresenter: MockUpsellPresenter!
 
     override func setUp() {
         super.setUp()
         preferences = StubPreferences()
         modelsService = StubModelsService()
         subscriptionManager = SubscriptionManagerMock()
+        upsellPresenter = MockUpsellPresenter()
         sut = IPadOmnibarModelPickerController(
             modelsService: modelsService,
             preferences: preferences,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            upsellPresenter: upsellPresenter
         )
     }
 
@@ -48,6 +51,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         preferences = nil
         modelsService = nil
         subscriptionManager = nil
+        upsellPresenter = nil
         super.tearDown()
     }
 
@@ -56,10 +60,14 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         XCTAssertFalse(sut.hasModels)
     }
 
-    func testWhenSelectModelThenSelectionPersistedToPreferences() {
-        sut.selectModel("gpt-5")
+    func testWhenSelectAccessibleModelThenSelectionPersistedToPreferences() {
+        sut.modelStore.models = [makeModel(id: "gpt-5", shortName: "GPT-5")]
+
+        sut.handleModelSelection("gpt-5")
 
         XCTAssertEqual(preferences.selectedModelId, "gpt-5")
+        XCTAssertTrue(upsellPresenter.presentedPurchaseFlows.isEmpty)
+        XCTAssertTrue(upsellPresenter.presentedUpgradeFlows.isEmpty)
     }
 
     func testWhenNoModelsLoadedThenCurrentModelLabelFallsBackToCachedPreference() {
@@ -98,7 +106,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         sut.activate()
         await fulfillment(of: [updated], timeout: 1)
 
-        sut.selectModel("gpt-5")
+        sut.handleModelSelection("gpt-5")
 
         XCTAssertEqual(preferences.selectedModelId, "gpt-5")
         XCTAssertEqual(preferences.selectedModelShortName, "GPT-5")
@@ -115,7 +123,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         sut.activate()
         await fulfillment(of: [updated], timeout: 1)
 
-        sut.selectModel("mistral")
+        sut.handleModelSelection("mistral")
 
         XCTAssertEqual(sut.currentModelId, "mistral")
     }
@@ -130,7 +138,108 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         XCTAssertEqual(sut.currentModelId, "gpt-5")
     }
 
+    // MARK: - Selection (gated → upsell)
+
+    func testWhenFreeUserSelectsGatedPlusModelThenRoutesPurchaseWithoutChangingSelection() {
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .free, hasActiveSubscription: false)
+        sut.modelStore.models = [
+            makeModel(id: "gpt-5", shortName: "GPT-5"),
+            makeModel(id: "claude", shortName: "Claude", entityHasAccess: false, accessTier: ["plus", "pro", "internal"])
+        ]
+        sut.handleModelSelection("gpt-5")
+
+        sut.handleModelSelection("claude")
+
+        XCTAssertEqual(upsellPresenter.presentedPurchaseFlows.count, 1)
+        XCTAssertEqual(upsellPresenter.presentedPurchaseFlows.first?.source, .modelPicker)
+        XCTAssertTrue(upsellPresenter.presentedUpgradeFlows.isEmpty)
+        XCTAssertEqual(preferences.selectedModelId, "gpt-5", "A gated selection must not change the persisted model")
+    }
+
+    func testWhenPlusUserSelectsGatedProModelThenRoutesUpgradeWithoutChangingSelection() {
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .plus, hasActiveSubscription: true)
+        sut.modelStore.models = [
+            makeModel(id: "gpt-5", shortName: "GPT-5"),
+            makeModel(id: "claude", shortName: "Claude", entityHasAccess: false, accessTier: ["pro", "internal"])
+        ]
+        sut.handleModelSelection("gpt-5")
+
+        sut.handleModelSelection("claude")
+
+        XCTAssertEqual(upsellPresenter.presentedUpgradeFlows.count, 1)
+        XCTAssertEqual(upsellPresenter.presentedUpgradeFlows.first?.source, .modelPicker)
+        XCTAssertTrue(upsellPresenter.presentedPurchaseFlows.isEmpty)
+        XCTAssertEqual(preferences.selectedModelId, "gpt-5")
+    }
+
+    func testWhenUserHasAccessToGatedTierModelThenSelectsWithoutUpsell() {
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .pro, hasActiveSubscription: true)
+        // entityHasAccess reflects the user's tier — a pro user has access to a pro-tier model.
+        sut.modelStore.models = [makeModel(id: "claude", shortName: "Claude", entityHasAccess: true, accessTier: ["pro", "internal"])]
+
+        sut.handleModelSelection("claude")
+
+        XCTAssertEqual(preferences.selectedModelId, "claude")
+        XCTAssertTrue(upsellPresenter.presentedPurchaseFlows.isEmpty)
+        XCTAssertTrue(upsellPresenter.presentedUpgradeFlows.isEmpty)
+    }
+
+    // MARK: - Pending gated selection re-apply
+
+    func testWhenGatedModelBecomesAccessibleAfterRefreshThenPendingModelIsApplied() {
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .free, hasActiveSubscription: false)
+        sut.modelStore.models = [
+            makeModel(id: "gpt-5", shortName: "GPT-5"),
+            makeModel(id: "claude", shortName: "Claude", entityHasAccess: false, accessTier: ["plus", "pro", "internal"])
+        ]
+        sut.handleModelSelection("gpt-5")
+        sut.handleModelSelection("claude")
+        XCTAssertEqual(preferences.selectedModelId, "gpt-5")
+
+        // Subscription purchased: /models re-fetched with the gated model now accessible.
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .plus, hasActiveSubscription: true)
+        sut.modelStore.models = [
+            makeModel(id: "gpt-5", shortName: "GPT-5"),
+            makeModel(id: "claude", shortName: "Claude", entityHasAccess: true, accessTier: ["plus", "pro", "internal"])
+        ]
+        sut.handleModelsUpdated()
+
+        XCTAssertEqual(preferences.selectedModelId, "claude")
+    }
+
+    func testWhenGatedModelStaysInaccessibleAfterRefreshThenPendingModelNotApplied() {
+        sut.modelStore.subscriptionState = SubscriptionState(userTier: .free, hasActiveSubscription: false)
+        sut.modelStore.models = [
+            makeModel(id: "gpt-5", shortName: "GPT-5"),
+            makeModel(id: "claude", shortName: "Claude", entityHasAccess: false, accessTier: ["plus", "pro", "internal"])
+        ]
+        sut.handleModelSelection("gpt-5")
+        sut.handleModelSelection("claude")
+
+        // A refresh that does not grant access (e.g. user dismissed the purchase flow).
+        sut.handleModelsUpdated()
+
+        XCTAssertEqual(preferences.selectedModelId, "gpt-5")
+    }
+
     // MARK: - Helpers
+
+    private func makeModel(
+        id: String,
+        shortName: String,
+        entityHasAccess: Bool = true,
+        accessTier: [String] = []
+    ) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: id,
+            shortName: shortName,
+            provider: .openAI,
+            supportsImageUpload: false,
+            entityHasAccess: entityHasAccess,
+            accessTier: accessTier
+        )
+    }
 
     private func makeRemoteModel(id: String, shortName: String) -> AIChatRemoteModel {
         AIChatRemoteModel(
@@ -143,6 +252,19 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
             supportedTools: [],
             accessTier: []
         )
+    }
+}
+
+private final class MockUpsellPresenter: DuckAISubscriptionUpselling {
+    var presentedPurchaseFlows: [(source: SubscriptionFlowSource, isAITabState: Bool)] = []
+    var presentedUpgradeFlows: [(source: SubscriptionFlowSource, isAITabState: Bool)] = []
+
+    func presentPurchaseFlow(source: SubscriptionFlowSource, isAITabState: Bool) {
+        presentedPurchaseFlows.append((source, isAITabState))
+    }
+
+    func presentUpgradeFlow(source: SubscriptionFlowSource, isAITabState: Bool) {
+        presentedUpgradeFlows.append((source, isAITabState))
     }
 }
 

@@ -247,6 +247,24 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Fonctionnalités de l'IA";
 
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Discussion";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transcript";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Chat vocal";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Nouvelle discussion";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "À l'écoute…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "À l'écoute…";
+
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Discussions";
 
@@ -3901,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Position de la barre d'adresse";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Masquer la barre d'onglets pendant le défilement";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Disponible sur la plupart des sites web. Duck.ai, les cartes et les jeux peuvent garder la barre d'onglets visible.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ouvrir les liens dans les applications associées";
 
@@ -4795,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Désactiver Sync & Backup ?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Supprimer";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Cet appareil ne pourra plus accéder à vos données synchronisées.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Désactiver la synchronisation ?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Déverrouiller l'appareil pour configurer Sync & Backup";
 
@@ -5338,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Aucun résultat pour \"%@\"";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Code copié";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

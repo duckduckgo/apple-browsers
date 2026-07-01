@@ -215,6 +215,7 @@ extension SimplifiedSyncSettingsView {
                 ))
                 .labelsHidden()
                 .tint(Color(designSystemColor: .accentPrimary))
+                .accessibility(identifier: "SyncToggle")
             }
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
             .disabled(model.isBusy || (!model.isSyncEnabled && !model.isAccountCreationAvailable))
@@ -470,7 +471,7 @@ extension SimplifiedSyncSettingsView {
     @ViewBuilder
     var bookmarksSection: some View {
         Section {
-            Toggle(isOn: $model.isUnifiedFavoritesEnabled) {
+            HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(UserText.unifiedFavoritesTitle)
                         .daxBodyRegular()
@@ -479,9 +480,13 @@ extension SimplifiedSyncSettingsView {
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
                 .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Toggle("", isOn: $model.isUnifiedFavoritesEnabled)
+                    .labelsHidden()
+                    .tint(Color(designSystemColor: .accentPrimary))
+                    .accessibilityLabel(UserText.unifiedFavoritesTitle)
+                    .accessibility(identifier: "UnifiedFavoritesToggle")
             }
-            .tint(Color(designSystemColor: .accentPrimary))
-            .accessibility(identifier: "UnifiedFavoritesToggle")
 
             Toggle(isOn: $model.isFaviconsFetchingEnabled) {
                 VStack(alignment: .leading, spacing: 4) {

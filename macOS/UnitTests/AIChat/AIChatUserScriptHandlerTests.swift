@@ -1115,10 +1115,16 @@ final class MockDuckAiVoiceChatFailureHandling: DuckAiVoiceChatFailureHandling {
         let sourceWebView: WKWebView?
     }
     private(set) var handleCalls: [HandleCall] = []
+    private(set) var dictationHandleCalls: [HandleCall] = []
 
     @MainActor
     func handleVoiceChatStartFailed(reason: String, sourceWebView: WKWebView?) {
         handleCalls.append(HandleCall(reason: reason, sourceWebView: sourceWebView))
+    }
+
+    @MainActor
+    func handleDictationStartFailed(reason: String, sourceWebView: WKWebView?) {
+        dictationHandleCalls.append(HandleCall(reason: reason, sourceWebView: sourceWebView))
     }
 }
 

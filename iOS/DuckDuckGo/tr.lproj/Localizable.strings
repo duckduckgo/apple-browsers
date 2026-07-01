@@ -247,6 +247,24 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI Özellikleri";
 
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Sohbet";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Deşifre";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Sesli Sohbet";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Yeni Sohbet";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Dinliyor…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Dinliyor…";
+
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Sohbetler";
 
@@ -3901,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adres Çubuğu Konumu";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Kaydırırken Sekme Çubuğunu Gizle";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Çoğu web sitesinde kullanılabilir. Duck.ai, haritalar ve oyunlar sekme çubuğunun görünür durumda kalmasına neden olabilir.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Bağlantıları İlişkili Uygulamalarda Aç";
 
@@ -4795,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Sync & Backup kapatılsın mı?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Kaldır";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Bu Cihaz artık senkronize edilen verilerinize erişemeyecektir.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Senkronizasyon kapatılsın mı?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Sync & Backup kurulumu için cihazın kilidini açın";
 
@@ -5338,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "\"%@\" için eşleşme bulunamadı";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kod kopyalandı";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

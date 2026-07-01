@@ -1457,7 +1457,6 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         }
 
         resizeAddressBarIfNeeded()
-        refreshAddressBarCornerRadius()
     }
 
     /// Transitions from focused duck.ai mode (`.activeWithAIChat`) to unfocused duck.ai mode (`.inactiveWithAIChat`):

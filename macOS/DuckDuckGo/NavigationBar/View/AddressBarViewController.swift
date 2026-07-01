@@ -1000,7 +1000,7 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    func refreshAddressBarWidth() {
+    func refreshAddressBarBackgroundWidth() {
         let styleProvider = theme.addressBarStyleProvider
         guard let padding = styleProvider.addressBarHorizontalPadding(focused: shouldUseTallAddressBarLayout) else {
             return

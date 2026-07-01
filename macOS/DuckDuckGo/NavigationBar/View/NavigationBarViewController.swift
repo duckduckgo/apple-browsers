@@ -630,7 +630,7 @@ final class NavigationBarViewController: NSViewController {
     private func resizeAddressBarWidth(isAddressBarFocused: Bool) {
         let styleProvider = theme.addressBarStyleProvider
         if !styleProvider.shouldUseLegacyAddressBarSpacingMechanism {
-            addressBarViewController?.refreshAddressBarWidth()
+            addressBarViewController?.refreshAddressBarBackgroundWidth()
             return
         }
 

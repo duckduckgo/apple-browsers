@@ -433,6 +433,50 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertNotNil(userScript.inputBoxHandler)
     }
 
+    // MARK: - Pre-submit chip visibility (slice 5)
+
+    func test_preSubmit_sheetOpenAutoAttach_showsChipAsPendingNotSilentlyDelivered() {
+        // On sheet open the initial context arrives via the external publisher (the didFinish path
+        // is dropped for the opening URL). Pre-submit it must show as pending (visible) — it rides
+        // the first prompt — matching the legacy native chip, not silently delivered/hidden.
+        autoAttachEnabled = true
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT(contextualStartsPreSubmit: true)
+
+        pageContextHandler.sendContext(makeContext(title: "Page A", url: url.absoluteString))
+
+        XCTAssertTrue(sut.chipViewModel.isVisible)
+        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
+        XCTAssertNotNil(sut.chipViewModel.pendingAttachedContextData)
+    }
+
+    func test_preSubmit_carriedOverAttachment_seedsChipVisible() {
+        // A carried-over attachment (seeded at construction as .delivered on the legacy path) must
+        // show pre-submit on the immediate UTI, since it hasn't been delivered in this chat yet.
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString),
+                initialAttachmentDeliveryState: .delivered,
+                contextualStartsPreSubmit: true)
+
+        XCTAssertTrue(sut.chipViewModel.isVisible)
+        XCTAssertNotNil(sut.chipViewModel.pendingAttachedContextData)
+    }
+
+    func test_activeChat_sheetOpenContext_staysDelivered_notForcedPending() {
+        // Regression: the pre-submit override must NOT leak into restored/active hosts — their
+        // carried-over context stays silent (delivered) as before.
+        hasActiveChat = true
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString),
+                initialAttachmentDeliveryState: .delivered,
+                contextualStartsPreSubmit: false)
+
+        XCTAssertFalse(sut.chipViewModel.isVisible)
+    }
+
     // MARK: - Helpers
 
     private func makeContext(title: String, url: String) -> AIChatPageContext {

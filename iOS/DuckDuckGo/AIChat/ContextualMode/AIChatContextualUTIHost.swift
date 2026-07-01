@@ -83,10 +83,14 @@ final class AIChatContextualUTIHost {
             duckAIWideEventInstrumentation: wideEventInstrumentation,
             duckAIWideEventFlowScope: duckAIWideEventFlowScope
         )
+        // Immediate pre-submit: a carried-over attachment hasn't been delivered yet (it rides the
+        // first prompt), so seed the chip as pending → visible, matching the legacy native chip.
+        let seedDeliveryState: PageContextAttachmentDeliveryState =
+            (contextualStartsPreSubmit && initialAttachedContext != nil) ? .pendingSubmit : initialAttachmentDeliveryState
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
             initialAttachedContext: initialAttachedContext,
-            initialAttachmentDeliveryState: initialAttachmentDeliveryState,
+            initialAttachmentDeliveryState: seedDeliveryState,
             isAutoAttachEnabled: isAutoAttachEnabled
         )
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
@@ -245,9 +249,16 @@ final class AIChatContextualUTIHost {
     }
 
     private var externalContextDeliveryState: PageContextAttachmentDeliveryState {
+        // Immediate pre-submit: context collected on sheet open (via the external publisher) rides
+        // the first prompt, so show the chip as pending — parity with the legacy native chip and the
+        // manual-attach / post-nav paths, which are already pending. Without this, the sheet-open
+        // auto-attach would arrive `.delivered` and the chip would be silently hidden pre-submit.
+        if startsPreSubmit && !hasDeliveredFirstPrompt {
+            return .pendingSubmit
+        }
         // These states can differ during preload/restore: the user script may be bound before
         // `sessionState` records an active chat, while restored chats may be active before bind.
-        isBoundToUserScript || hasActiveChat() ? .pendingSubmit : .delivered
+        return isBoundToUserScript || hasActiveChat() ? .pendingSubmit : .delivered
     }
 
     func install(in contextualChatViewController: AIChatContextualWebViewController) {

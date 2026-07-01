@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
@@ -125,13 +126,13 @@ extension SimplifiedSyncSettingsViewV2 {
         Section {
             VStack(spacing: 20) {
                 ZStack {
-                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-128" : "Sync-New-128-legacy")
+                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-128" : "Sync-New-128-legacy", bundle: .module)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
                         .opacity(model.isSyncEnabled ? 0 : 1)
 
-                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-Pair-128" : "Sync-Pair-96-legacy")
+                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-Pair-128" : "Sync-Pair-96-legacy", bundle: .module)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
@@ -564,3 +565,121 @@ extension SimplifiedSyncSettingsViewV2 {
         .listRowBackground(Color(designSystemColor: .surface))
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+
+private extension SyncSettingsViewModel {
+
+    /// Builds a `SyncSettingsViewModel` configured for previews. No delegate is set, so
+    /// delegate-driven side effects (device refresh, pixels, sheets) are inert.
+    static func preview(isSyncEnabled: Bool = false,
+                        devices: [Device] = [],
+                        isAIChatSyncEnabled: Bool = true) -> SyncSettingsViewModel {
+        let model = SyncSettingsViewModel(
+            isOnDevEnvironment: { false },
+            switchToProdEnvironment: {},
+            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+        )
+        model.isAIChatSyncEnabled = isAIChatSyncEnabled
+        // Set `isSyncEnabled` before `devices`: its didSet clears devices when false.
+        model.isSyncEnabled = isSyncEnabled
+        model.devices = devices
+        return model
+    }
+}
+
+private extension SyncSettingsViewModel.Device {
+    static let thisDevice = SyncSettingsViewModel.Device(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
+    static let desktop = SyncSettingsViewModel.Device(id: "2", name: "MacBook Pro", type: "desktop", isThisDevice: false)
+    static let otherMobile = SyncSettingsViewModel.Device(id: "3", name: "Pixel 8", type: "phone", isThisDevice: false)
+}
+
+/// `AppRebrand.isAppRebranded` defaults to `{ false }` and is only flipped to a live feature-flag
+/// lookup by the host app at launch — which previews never run. So without an override, previews
+/// always show the legacy artwork/palette. This wrapper toggles the rebrand flag *and* the palette
+/// (button/tint fills resolve through `DesignSystemPalette.current`), restoring both on deinit so one
+/// preview doesn't leak its brand state into the others. Mirrors DuckUI's internal `RebrandPreviewOverride`.
+private final class RebrandPreviewOverride: ObservableObject {
+    private let previousIsRebranded: () -> Bool
+    private let previousPalette: ColorPalette
+
+    init(isRebranded: Bool) {
+        previousIsRebranded = AppRebrand.isAppRebranded
+        previousPalette = DesignSystemPalette.current
+        AppRebrand.isAppRebranded = { isRebranded }
+        DesignSystemPalette.current = isRebranded ? .rebranded : .default
+    }
+
+    deinit {
+        AppRebrand.isAppRebranded = previousIsRebranded
+        DesignSystemPalette.current = previousPalette
+    }
+}
+
+private struct RebrandedPreview<Content: View>: View {
+    private let isRebranded: Bool
+    @StateObject private var override: RebrandPreviewOverride
+    private let content: Content
+
+    init(isRebranded: Bool, @ViewBuilder content: () -> Content) {
+        self.isRebranded = isRebranded
+        _override = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
+        self.content = content()
+    }
+
+    var body: some View {
+        // Re-assert at body time so the flag is set before child views resolve their images.
+        AppRebrand.isAppRebranded = { isRebranded }
+        DesignSystemPalette.current = isRebranded ? .rebranded : .default
+        return content
+    }
+}
+
+#Preview("Sync Off") {
+    RebrandedPreview(isRebranded: true) {
+        NavigationView {
+            SimplifiedSyncSettingsViewV2(model: .preview(isSyncEnabled: false))
+                .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+#Preview("Sync On – This Device Only") {
+    RebrandedPreview(isRebranded: true) {
+        NavigationView {
+            SimplifiedSyncSettingsViewV2(model: .preview(isSyncEnabled: true, devices: [.thisDevice]))
+                .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+#Preview("Sync On – Multiple Devices") {
+    RebrandedPreview(isRebranded: true) {
+        NavigationView {
+            SimplifiedSyncSettingsViewV2(model: .preview(isSyncEnabled: true, devices: [.thisDevice, .desktop, .otherMobile]))
+                .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+#Preview("Sync On – Loading Devices") {
+    RebrandedPreview(isRebranded: true) {
+        NavigationView {
+            SimplifiedSyncSettingsViewV2(model: .preview(isSyncEnabled: true, devices: []))
+                .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+#Preview("Sync Off (Legacy brand)") {
+    RebrandedPreview(isRebranded: false) {
+        NavigationView {
+            SimplifiedSyncSettingsViewV2(model: .preview(isSyncEnabled: false))
+                .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+#endif

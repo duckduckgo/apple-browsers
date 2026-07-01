@@ -34,6 +34,8 @@ final class SuggestionViewController: NSViewController {
 
     weak var delegate: SuggestionViewControllerDelegate?
 
+    @IBOutlet weak var shadowView: ShadowView!
+
     @IBOutlet weak var backgroundView: ColorView!
     @IBOutlet weak var innerBorderView: ColorView!
     @IBOutlet weak var innerBorderViewTopConstraint: NSLayoutConstraint!
@@ -351,6 +353,7 @@ extension SuggestionViewController: ThemeUpdateListening {
         backgroundViewTopConstraint.constant = barStyleProvider.topSpaceForSuggestionWindow
         backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
         innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
+        shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
         backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
 
         tableView.reloadData()

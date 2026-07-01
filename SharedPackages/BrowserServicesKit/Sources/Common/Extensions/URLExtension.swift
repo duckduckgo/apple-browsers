@@ -387,7 +387,7 @@ extension URL {
 
     // MARK: - Component-based URL equality
 
-    /// Returns `true` if the URL has a fragment (including empty fragments like http://example.com/#fragment)
+    /// Returns `true` if the URL has a fragment (including empty fragments: `about:blank#`)
     public var hasFragment: Bool {
         guard let components = URLComponents(webKitUrl: self) else { return false }
         return components.fragment != nil

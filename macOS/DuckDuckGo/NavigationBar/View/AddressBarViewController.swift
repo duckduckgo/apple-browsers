@@ -167,7 +167,7 @@ final class AddressBarViewController: NSViewController {
             /// re-evaluates the height. Trigger a resize on the editing-ness flip so the compact
             /// layout applies immediately on session restore / "Open in New Window".
             if oldValue.isEditing != mode.isEditing {
-                delegate?.resizeAddressBarForHomePage(self)
+                requestAddressBarResize()
             }
         }
     }
@@ -548,7 +548,7 @@ final class AddressBarViewController: NSViewController {
             selectionState = .inactiveWithAIChat
             updateMode()
             view.window?.makeFirstResponder(nil)
-            delegate?.resizeAddressBarForHomePage(self)
+            requestAddressBarResize()
             delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
         case (true, false):
             /// Incoming tab is in search mode — fully dismiss the duck.ai panel (in case it was up) and reset the toggle.
@@ -1083,7 +1083,7 @@ final class AddressBarViewController: NSViewController {
             updateView()
             refreshAddressBarAppearance(nil)
 
-            delegate?.resizeAddressBarForHomePage(self)
+            requestAddressBarResize()
             addressBarButtonsViewController?.setupButtonPaddings(isFocused: false)
         }
 
@@ -1337,15 +1337,16 @@ extension AddressBarViewController: ThemeUpdateListening {
 private extension AddressBarViewController {
 
     func resizeAddressBarIfNeeded() {
-        guard isViewLoaded else { return }
-
-        let usesTallLayout = shouldUseTallAddressBarLayout
-        guard usesTallLayout != displaysTallLayout else {
+        guard isViewLoaded, shouldUseTallAddressBarLayout != displaysTallLayout else {
             return
         }
 
-        displaysTallLayout = usesTallLayout
-        delegate?.resizeAddressBarForHomePage(self, allowsAsync: false)
+        requestAddressBarResize(allowsAsync: false)
+    }
+
+    func requestAddressBarResize(allowsAsync: Bool = true) {
+        displaysTallLayout = shouldUseTallAddressBarLayout
+        delegate?.resizeAddressBarForHomePage(self, allowsAsync: allowsAsync)
     }
 }
 
@@ -1479,7 +1480,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         selectionState = .inactiveWithAIChat
         updateMode()
         view.window?.makeFirstResponder(nil)
-        delegate?.resizeAddressBarForHomePage(self)
+        requestAddressBarResize()
         delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
     }
 
@@ -1509,8 +1510,8 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         selectionState = .activeWithAIChat
         mode = .editing(.aiChat)
 
-        // Important: Resizing hte Address Bar must be synchronous. Otherwise we'll observe the Omnibar jumping onscreen
-        delegate?.resizeAddressBarForHomePage(self, allowsAsync: false)
+        // Important: Resizing the Address Bar must be synchronous. Otherwise we'll observe the Omnibar jumping onscreen
+        requestAddressBarResize(allowsAsync: false)
         delegate?.addressBarViewControllerDidRefocusInAIChatMode(self)
     }
 }
@@ -1632,12 +1633,12 @@ extension AddressBarViewController: NSDraggingDestination {
 
 extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField) {
-        delegate?.resizeAddressBarForHomePage(self)
+        requestAddressBarResize()
         addressBarButtonsViewController?.setupButtonPaddings(isFocused: true)
     }
 
     func addressBarDidLoseFocus(_ addressBarTextField: AddressBarTextField) {
-        delegate?.resizeAddressBarForHomePage(self)
+        requestAddressBarResize()
         addressBarButtonsViewController?.setupButtonPaddings(isFocused: false)
 
         // Restore internal text field labels when address bar loses focus

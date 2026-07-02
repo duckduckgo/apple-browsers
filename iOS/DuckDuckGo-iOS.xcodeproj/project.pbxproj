@@ -698,7 +698,6 @@
 		80879D552F7B5B9A000C2267 /* TabViewGridCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80879D542F7B5B9A000C2267 /* TabViewGridCell.swift */; };
 		80879D572F7B5BA9000C2267 /* TabViewListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80879D562F7B5BA9000C2267 /* TabViewListCell.swift */; };
 		808DA5012F230245001D5F76 /* TabViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808DA5002F230245001D5F76 /* TabViewModelTests.swift */; };
-		808FC1262FF5FDE50067531C /* WebScrollObserverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808FC1252FF5FDE50067531C /* WebScrollObserverTests.swift */; };
 		809F9D152EE12CF600943E8A /* GranularFireConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D122EE12CF600943E8A /* GranularFireConfirmationView.swift */; };
 		809F9D162EE12CF600943E8A /* FireConfirmationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D112EE12CF600943E8A /* FireConfirmationPresenter.swift */; };
 		809F9D172EE12CF600943E8A /* GranularFireConfirmationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D132EE12CF600943E8A /* GranularFireConfirmationViewModel.swift */; };
@@ -3351,7 +3350,6 @@
 		80879D542F7B5B9A000C2267 /* TabViewGridCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewGridCell.swift; sourceTree = "<group>"; };
 		80879D562F7B5BA9000C2267 /* TabViewListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewListCell.swift; sourceTree = "<group>"; };
 		808DA5002F230245001D5F76 /* TabViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewModelTests.swift; sourceTree = "<group>"; };
-		808FC1252FF5FDE50067531C /* WebScrollObserverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebScrollObserverTests.swift; sourceTree = "<group>"; };
 		809F9D112EE12CF600943E8A /* FireConfirmationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationPresenter.swift; sourceTree = "<group>"; };
 		809F9D122EE12CF600943E8A /* GranularFireConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GranularFireConfirmationView.swift; sourceTree = "<group>"; };
 		809F9D132EE12CF600943E8A /* GranularFireConfirmationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GranularFireConfirmationViewModel.swift; sourceTree = "<group>"; };
@@ -8298,7 +8296,6 @@
 		98EA2C3F218BB5140023E1DC /* Settings */ = {
 			isa = PBXGroup;
 			children = (
-				808FC1252FF5FDE50067531C /* WebScrollObserverTests.swift */,
 				85C298552E9699B800C35DD0 /* SERPSettingsViewPageTests.swift */,
 				8598F6792405EB8600FBC70C /* KeyboardSettingsTests.swift */,
 				56D2D65B2D5F748200C59354 /* NetworkProtectionDNSSettingsViewModelTests.swift */,
@@ -14270,7 +14267,6 @@
 				9F387DFD2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
 				C19888EC2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift in Sources */,
 				98E563FF2DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
-				808FC1262FF5FDE50067531C /* WebScrollObserverTests.swift in Sources */,
 				98E564002DE8B32D00E6E75F /* MockTimer.swift in Sources */,
 				CB6D17A22FA397FC00ECD5AE /* UnifiedToggleInputPageContextChipViewModelTests.swift in Sources */,
 				80C947FE2F53E819002EDB79 /* Tab+ConvenienceInitializer.swift in Sources */,

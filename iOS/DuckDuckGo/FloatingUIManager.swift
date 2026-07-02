@@ -55,4 +55,3 @@ final class FloatingUIManager: FloatingUIManaging {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
 }
-

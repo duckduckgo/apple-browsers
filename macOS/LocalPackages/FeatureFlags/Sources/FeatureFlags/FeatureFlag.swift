@@ -193,6 +193,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Hide manual update option — always use automatic updates
     case automaticUpdatesOnly
 
+    /// Skip the automatic update check triggered when the release notes page loads
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1213741383383740
+    case skipReleaseNotesUpdateCheck
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
 
@@ -583,6 +587,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.level3AllowCreateAccount))
         case .automaticUpdatesOnly:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.automaticUpdatesOnly), category: .updates)
+        case .skipReleaseNotesUpdateCheck:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.skipReleaseNotesUpdateCheck), category: .updates)
         case .unifiedURLPredictor:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .addressBarPerformanceInstrumentation:

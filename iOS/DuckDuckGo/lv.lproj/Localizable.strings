@@ -3919,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreses joslas pozīcija";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Slēpt cilņu joslu ritināšanas laikā";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Pieejams lielākajā daļā tīmekļa vietņu. Duck.ai, kartes un spēles var paturēt cilņu joslu redzamu.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atvērt saites saistītajās lietotnēs";
 
@@ -4813,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Izslēgt Sync & Backup?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Noņemt";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Šī ierīce vairs nevarēs piekļūt taviem sinhronizētajiem datiem.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Izslēgt sinhronizāciju?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Atbloķē ierīci, lai iestatītu funkciju Sync & Backup";
 
@@ -5356,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Nav atbilstību vaicājumam \"%@\"";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kods nokopēts";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

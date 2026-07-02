@@ -3919,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "アドレスバーの位置";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "スクロール中はタブバーを非表示";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "ほとんどのウェブサイトで有効ですが、Duck.ai、マップ、ゲームではタブバーが表示されたままの場合があります。";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "関連付けられたアプリでリンクを開く";
 
@@ -4813,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Sync & Backupをオフにしますか？";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "削除";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "このデバイスは、同期されたデータにアクセスできなくなります。";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "同期を無効にしますか？";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "デバイスのロックを解除してSync & Backupを設定します";
 
@@ -5356,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "「%@」に一致するものはありません";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "コードがコピーされました";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

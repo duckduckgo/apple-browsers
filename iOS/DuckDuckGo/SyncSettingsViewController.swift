@@ -715,11 +715,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 .failedToFetchExchangeRecoveryKey,
                 .failedToTransmitConnectRecoveryKey:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
-            fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToTransmitExchangeRecoveryKey:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
-            fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .accountUpgradeFailed,
                 .transportFailure,
@@ -744,7 +742,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
         case .accountCreationFailed:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
-            fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
         case .pollingForRecoveryKeyTimedOut:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)

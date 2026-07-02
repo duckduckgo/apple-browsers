@@ -20,6 +20,7 @@ import Foundation
 import Combine
 import AppKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import PrivacyConfig
 import FeatureFlags
 
@@ -62,6 +63,7 @@ final class ThemeManager: ObservableObject, ThemeManaging {
         self.appearance = appearancePreferences.themeAppearance
         self.designColorPalette = appearancePreferences.themeName.designColorPalette
 
+        setupDuckRebrandedUX()
         switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
         subscribeToSystemAppearance()
@@ -102,5 +104,15 @@ private extension ThemeManager {
     func switchDesignSystemPalette(to palette: DesignResourcesKit.ColorPalette) {
         DesignSystemPalette.current = palette
         designColorPalette = palette
+    }
+
+    func setupDuckRebrandedUX() {
+        AppRebrand.isAppRebranded = { [featureFlagger] in
+            featureFlagger.isFeatureOn(.appRebranding)
+        }
+
+        DesignSystemRebrand.isAppRebranded = { [featureFlagger] in
+            featureFlagger.isFeatureOn(.appRebranding)
+        }
     }
 }

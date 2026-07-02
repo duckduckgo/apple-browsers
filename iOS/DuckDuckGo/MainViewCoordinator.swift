@@ -137,7 +137,8 @@ class MainViewCoordinator {
         applyContentContainerTopAnchorForCurrentState()
         guard isFloatingUIEnabled else {
             toolbar.setOmnibarView(nil, height: 0)
-            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+            // Flag-off keeps the original toolbar height so existing chrome is unchanged.
+            constraints.toolbarHeight.constant = BrowserToolbarView.legacyButtonsHeight
             navigationBarContainer.isHidden = false
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true

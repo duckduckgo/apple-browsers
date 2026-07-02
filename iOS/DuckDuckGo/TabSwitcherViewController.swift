@@ -605,8 +605,13 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func showFireButtonPulseIfNeeded() {
-        guard daxDialogsManager.isShowingFireDialog, let window = view.window else { return }
-        ViewHighlighter.showIn(window, focussedOnButton: barsHandler.fireButton)
+        // The fire button is now a custom view inside `BrowserToolbarView` rather than a
+        // `UIToolbar` item, so `focussedOnButton` (which reads the bar item's private "view")
+        // can't locate it — highlight the button's custom view directly.
+        guard daxDialogsManager.isShowingFireDialog,
+              let window = view.window,
+              let fireButtonView = barsHandler.fireButton.customView else { return }
+        ViewHighlighter.showIn(window, focussedOnView: fireButtonView)
     }
 
     func refreshDisplayModeButton() {

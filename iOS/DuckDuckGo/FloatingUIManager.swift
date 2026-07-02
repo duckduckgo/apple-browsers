@@ -41,17 +41,9 @@ final class FloatingUIManager: FloatingUIManaging {
     }
 
     var isFloatingUIEnabled: Bool {
-        let isFloatingFlagEnabled = featureFlagger.isFeatureOn(.floatingUI)
-        if !Self.isRunningUnitTests {
-            assert(
-                !isFloatingFlagEnabled || unifiedToggleInputFeature.isAvailable,
-                "Floating UI requires Unified Toggle Input availability."
-            )
-        }
-        return isFloatingFlagEnabled && unifiedToggleInputFeature.isAvailable && !isPad()
-    }
-
-    private static var isRunningUnitTests: Bool {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        // Floating UI is iPhone-only and depends on Unified Toggle Input; if either isn't
+        // available it stays off. These are remote-config driven, so no assert here.
+        guard featureFlagger.isFeatureOn(.floatingUI), !isPad() else { return false }
+        return unifiedToggleInputFeature.isAvailable
     }
 }

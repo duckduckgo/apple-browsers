@@ -49,6 +49,10 @@ enum OnboardingRow: String, Decodable {
     case dataImport = "import"
 }
 
+enum OnboardingOption: String {
+    case chromeExtensionInstall = "chrome-extension-install"
+}
+
 protocol OnboardingActionsManaging {
     /// Provides the configuration needed to set up the FE onboarding
     var configuration: OnboardingConfiguration { get }
@@ -83,6 +87,9 @@ protocol OnboardingActionsManaging {
     /// At user input set the Duck.ai toggle visibility in the address bar
     func setDuckAiInAddressBar(enabled: Bool)
 
+    /// At user input installs the Chrome browser extension
+    func installChromeExtension()
+
     /// It is called every time the user ends an onboarding step
     func stepCompleted(step _: OnboardingSteps)
 
@@ -115,6 +122,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
+    private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     private var cancellables = Set<AnyCancellable>()
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
@@ -135,7 +143,14 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
                 OnboardingRow.dataImport.rawValue
             ])
         }
-        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        var getStartedOptions: [String] = []
+        if shouldShowChromeInstallOption {
+            getStartedOptions.append(OnboardingOption.chromeExtensionInstall.rawValue)
+        }
+        let stepDefinitions = StepDefinitions(
+            systemSettings: systemSettings,
+            getStarted: GetStarted(options: getStartedOptions)
+        )
         let preferredLocale = Bundle.main.preferredLocalizations.first ?? "en"
         var env: String
         let buildType = StandardApplicationBuildType()
@@ -170,6 +185,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     private var didRequestDefaultBrowser: Bool = false
 
+    private var shouldShowChromeInstallOption: Bool {
+        featureFlagger.isFeatureOn(.onboardingChromeExtension) && chromeExtensionInstaller.canInstallDDGExtension
+    }
+
     convenience init(
         navigationDelegate: OnboardingNavigating,
         dockCustomization: DockCustomization,
@@ -182,6 +201,14 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         reinstallUserDetection: ReinstallingUserDetecting,
         installDateProvider: @escaping () -> Date
     ) {
+        let chromeExtensionInstaller = ChromeExtensionInstaller(
+            featureFlagger: featureFlagger,
+            buildType: StandardApplicationBuildType(),
+            isChromeInstalled: { ThirdPartyBrowser.chrome.isInstalled },
+            applicationSupportURL: .nonSandboxApplicationSupportDirectoryURL,
+            fileManager: .default,
+            pixelFiring: PixelKit.shared
+        )
         self.init(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -197,7 +224,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
                     reinstallUserDetection.isReinstallingUser ? .reinstall : .newInstall
                 },
                 installDateProvider: installDateProvider
-             )
+             ),
+            chromeExtensionInstaller: chromeExtensionInstaller
         )
     }
 
@@ -211,7 +239,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
         homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
-        onboardingSharedPixelHandler: OnboardingSharedPixelHandling
+        onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
+        chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     ) {
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
@@ -223,6 +252,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
+        self.chromeExtensionInstaller = chromeExtensionInstaller
     }
 
     func onboardingStarted() {
@@ -299,6 +329,11 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         guard featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg) else { return }
         aiChatPreferencesStorage.showShortcutOnNewTabPage = enabled
         homepageSearchModeSeedPersistor.pendingShowSearchModeToggle = enabled
+    }
+
+    func installChromeExtension() {
+        chromeExtensionInstaller.installDDGExtension()
+        onboardingSharedPixelHandler.fire(.chromeExtensionInstall(.clicked(.engage)))
     }
 
     private func onMainThreadIfNeeded(_ function: @escaping () -> Void) {
@@ -383,7 +418,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             pixel = .welcome(.shown)
         case .getStarted:
             // This step is measured as part of the welcome step, since it is shown automatically
-            pixel = nil
+            // We only need to measure if the Chrome extension option is shown
+            pixel = shouldShowChromeInstallOption ? .chromeExtensionInstall(.shown) : nil
         case .makeDefaultSingle:
             pixel = .setDefault(.shown)
         case .systemSettings:

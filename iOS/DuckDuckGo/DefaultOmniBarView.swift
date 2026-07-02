@@ -664,8 +664,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         glassEffect.removeFromSuperview()
         opaqueEffect.removeFromSuperview()
-//        opaqueEffect.frame = searchAreaContainerView.bounds
-//        searchAreaContainerView.insertSubview(opaqueEffect, at: 0)
         searchAreaContainerView.backgroundColor = isFloatingUIEnabled
             ? restingFieldBackgroundColor
             : UIColor(designSystemColor: .urlBar)

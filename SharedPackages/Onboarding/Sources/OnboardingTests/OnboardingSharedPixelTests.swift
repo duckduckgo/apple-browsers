@@ -103,6 +103,18 @@ final class OnboardingSharedPixelTests: XCTestCase {
         XCTAssertEqual(event.pixel.parameters?["value"], "engage")
     }
 
+    func testWhenChromeExtensionInstallClickedEngageThenUsesExpectedNameAndParameters() throws {
+        let pixelFiring = PixelKitMock()
+        let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+        pixelHandler.fire(.chromeExtensionInstall(.clicked(.engage)))
+
+        let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(event.pixel.name, "onboarding_chrome-extension-install")
+        XCTAssertEqual(event.pixel.parameters?["e"], "clicked")
+        XCTAssertEqual(event.pixel.parameters?["value"], "engage")
+    }
+
     func testWhenSearchExperienceEventClickedThenUsesSearchExperienceValue() throws {
         let pixelFiring = PixelKitMock()
         let pixelHandler = makeHandler(pixelFiring: pixelFiring)

@@ -90,6 +90,9 @@ final class AIChatContextualSheetCoordinator {
     private let tabURLPublishers: AIChatTabURLPublishers
     private var contextUpdateCancellable: AnyCancellable?
 
+    private var latestDidFinishURL: URL?
+    private var didFinishURLCancellable: AnyCancellable?
+
     /// Handles all pixel firing for contextual mode.
     let pixelHandler: AIChatContextualModePixelFiring
 
@@ -152,6 +155,9 @@ final class AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler,
             featureFlagger: featureFlagger
         )
+        didFinishURLCancellable = tabURLPublishers.didFinish
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] url in self?.latestDidFinishURL = url }
     }
 
     // MARK: - Public Methods
@@ -324,16 +330,21 @@ private extension AIChatContextualSheetCoordinator {
     }
 
     func collectFreshContextAndWait(timeout: TimeInterval) async -> AIChatPageContextData? {
+        let expectedURL = latestDidFinishURL
         let firstResult = AsyncStream<AIChatPageContextData?> { continuation in
-            var cancellable: AnyCancellable?
-            cancellable = pageContextHandler.contextPublisher
+            let cancellable = pageContextHandler.contextPublisher
                 .dropFirst()
-                .first()
+                .first(where: { context in
+                    guard let expectedURL,
+                          let context,
+                          let emittedURL = URL(string: context.contextData.url) else { return true }
+                    return emittedURL == expectedURL
+                })
                 .sink { context in
                     continuation.yield(context?.contextData)
                     continuation.finish()
                 }
-            continuation.onTermination = { _ in cancellable?.cancel() }
+            continuation.onTermination = { _ in cancellable.cancel() }
 
             if !pageContextHandler.triggerContextCollection() {
                 sessionState.cancelManualAttach()

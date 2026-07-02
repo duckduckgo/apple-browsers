@@ -30,7 +30,8 @@ final class AIChatViewAllChatsRowView: NSView {
     private enum Constants {
         static let rowHeight: CGFloat = 34
         static let legacyRowHeight: CGFloat = 32
-        static let horizontalPadding: CGFloat = 12
+        static let horizontalPadding: CGFloat = 14
+        static let legacyHorizontalPadding: CGFloat = 12
         static let iconSize: CGFloat = 16
         static let iconTitleSpacing: CGFloat = 6
         static let trailingSpacing: CGFloat = 6
@@ -143,10 +144,11 @@ final class AIChatViewAllChatsRowView: NSView {
         addSubview(arrowImageView)
 
         let rowHeight = themeManager.isAppRebranded ? Constants.rowHeight : Constants.legacyRowHeight
+        let horizontalPadding = themeManager.isAppRebranded ? Constants.horizontalPadding : Constants.legacyHorizontalPadding
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: rowHeight),
 
-            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: horizontalPadding),
             iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
@@ -155,7 +157,7 @@ final class AIChatViewAllChatsRowView: NSView {
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: keyboardShortcutView.leadingAnchor, constant: -Constants.trailingSpacing),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            arrowImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
+            arrowImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -horizontalPadding),
             arrowImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             arrowImageView.widthAnchor.constraint(equalToConstant: 9),
             arrowImageView.heightAnchor.constraint(equalToConstant: 9),

@@ -81,8 +81,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let suggestionsBottomPadding: CGFloat = 4
         static let containerTopPadding: CGFloat = 5
         static let legacyContainerTopPadding: CGFloat = 0
-        static let containerLeadingInset: CGFloat = 2
-        static let legacyContainerLeadingInset: CGFloat = 0
+        static let contentLeadingInset: CGFloat = 2
+        static let legacyContentLeadingInset: CGFloat = 0
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -781,7 +781,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         applyPanelAttachmentsFromSharedState(omnibarController.activePanelAttachments)
 
         let isAppRebranded = themeManager.isAppRebranded
-        let containerLeadingInset = isAppRebranded ? Constants.containerLeadingInset : Constants.legacyContainerLeadingInset
+        let contentLeadingInset = isAppRebranded ? Constants.contentLeadingInset : Constants.legacyContentLeadingInset
         let submitButtonTrailingInset = isAppRebranded ? Constants.submitButtonTrailingInset : Constants.legacySubmitButtonTrailingInset
 
         NSLayoutConstraint.activate([
@@ -796,7 +796,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             innerBorderView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -1),
 
             containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
-            containerView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: containerLeadingInset),
+            containerView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
@@ -811,7 +811,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             reasoningPickerButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
             reasoningPickerButton.trailingAnchor.constraint(equalTo: modelPickerButton.leadingAnchor, constant: -Constants.toolButtonSpacing),
 
-            imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset),
+            imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset + contentLeadingInset),
             imageUploadButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
             imageUploadButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
 
@@ -829,7 +829,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // The unified attachments carousel sits directly above the tools row. It contains the
             // image attachments view (leading) and the tab cards (trailing) — both flow into one
             // horizontally-scrollable strip.
-            attachmentsCarouselView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset),
+            attachmentsCarouselView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset + contentLeadingInset),
             attachmentsCarouselView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.attachmentsLeadingInset),
             // The carousel's bottom shadow-margin band already accounts for part of the visual
             // gap to the tools row; the constraint adds the remainder so the visible card-to-tools
@@ -880,9 +880,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             modelPickerButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset)
         ])
 
-        // Tools button chains after image upload button, or aligns to container when upload is hidden
+        // Tools button chains after image upload button, or aligns to container when upload is hidden.
+        // The container is edge to edge, so re-apply the leading inset here to match imageUploadButton.
+        let contentLeadingInset = themeManager.isAppRebranded ? Constants.contentLeadingInset : Constants.legacyContentLeadingInset
         toolsLeadingToUploadButton = toolsButton.leadingAnchor.constraint(equalTo: imageUploadButton.trailingAnchor, constant: Constants.toolButtonSpacing)
-        toolsLeadingToContainer = toolsButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset)
+        toolsLeadingToContainer = toolsButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset + contentLeadingInset)
         toolsLeadingToUploadButton?.isActive = true
         toolsLeadingToContainer?.isActive = false
 

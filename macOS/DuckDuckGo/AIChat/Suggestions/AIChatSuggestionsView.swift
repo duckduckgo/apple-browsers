@@ -31,7 +31,7 @@ final class AIChatSuggestionsView: NSView {
         static let separatorHeight: CGFloat = 1
         static let separatorTopPadding: CGFloat = 0
         static let separatorBottomPadding: CGFloat = 8
-        static let separatorHorizontalInset: CGFloat = 2
+        static let separatorHorizontalInset: CGFloat = 1
         static let legacySeparatorHorizontalInset: CGFloat = 12
         static let rowsHorizontalPadding: CGFloat = 6
         static let legacyRowsHorizontalPadding: CGFloat = 4

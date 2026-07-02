@@ -82,10 +82,6 @@ extension DebugScreensViewModel {
 
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
-            .action(title: "Reset Fire Mode Promotion", { _ in
-                FireModePromotionsCoordinator.resetState()
-                ActionMessageView.present(message: "Fire Mode Promotion state reset")
-            }),
             .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
 
             // MARK: SwiftUI Views

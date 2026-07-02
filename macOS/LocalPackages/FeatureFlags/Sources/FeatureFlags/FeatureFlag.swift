@@ -35,6 +35,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Onboarding rebranding feature flag
     case onboardingRebranding
 
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1216081727196784
+    case appRebranding
+
     /// Option to install Chrome extension during onboarding (DMG only)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216010708822357
     case onboardingChromeExtension
@@ -486,6 +489,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(ContextualOnboardingSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .onboardingRebranding:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingRebranding))
+        case .appRebranding:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension))
         case .unknownUsernameCategorization:

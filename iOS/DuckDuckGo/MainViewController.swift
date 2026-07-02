@@ -389,7 +389,6 @@ class MainViewController: UIViewController {
     }
 
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
-    private(set) var fireModePromotionEligibility: FireModePromotionCoordinating?
 
     let onboardingManager: OnboardingManaging
 
@@ -461,7 +460,6 @@ class MainViewController: UIViewController {
         darkReaderFeatureSettings: DarkReaderFeatureSettings,
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-        fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil,
         onboardingManager: OnboardingManaging
     ) {
@@ -546,7 +544,6 @@ class MainViewController: UIViewController {
         self.voiceShortcutFeature = voiceShortcutFeature
         self.toggleModeStorage = toggleModeStorage
         self.fireModeCapability = FireModeCapability.create()
-        self.fireModePromotionEligibility = fireModePromotionEligibility
         self.onboardingManager = onboardingManager
 
         super.init(nibName: nil, bundle: nil)
@@ -616,7 +613,6 @@ class MainViewController: UIViewController {
             remoteMessagingActionHandler: remoteMessagingActionHandler,
             remoteMessagingImageLoader: remoteMessagingImageLoader,
             remoteMessagingPixelReporter: remoteMessagingPixelReporter,
-            fireModePromotionEligibility: fireModePromotionEligibility,
             appSettings: appSettings,
             subscriptionManager: subscriptionManager,
             internalUserCommands: internalUserCommands)
@@ -1762,7 +1758,6 @@ class MainViewController: UIViewController {
                                                   remoteMessagingActionHandler: remoteMessagingActionHandler,
                                                   remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                   remoteMessagingPixelReporter: remoteMessagingPixelReporter,
-                                                  fireModePromotionEligibility: fireModePromotionEligibility,
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
                                                   subscriptionManager: subscriptionManager,
@@ -3685,10 +3680,6 @@ class MainViewController: UIViewController {
         action()
     }
     
-    func navigateToFireMode(source: FireModeSwitchSource) {
-        tabManager.setBrowsingMode(.fire, source: source)
-        showTabSwitcher()
-    }
 }
 
 extension MainViewController: FindInPageDelegate {
@@ -4183,8 +4174,6 @@ extension MainViewController: OmniBarDelegate {
         guard let tab = currentTab ?? tabManager.current(createIfNeeded: true) else {
             return
         }
-
-        tab.fireModePromotionCoordinator = fireModePromotionEligibility
 
         // Determine context for menu building
         let context: BrowsingMenuContext
@@ -4942,10 +4931,6 @@ extension MainViewController: OmniBarDelegate {
     func commitToggleMode(_ mode: TextEntryMode) {
         toggleModeStorage.save(mode)
     }
-    
-    func onTryFireModeRequested() {
-        showTabSwitcher(forceFireTabsTip: true)
-    }
 
     func isCurrentTabFireTab() -> Bool {
         tabManager.currentTabsModel.currentTab?.fireTab ?? false
@@ -5259,10 +5244,6 @@ extension MainViewController: NewTabPageControllerDelegate {
         markSearchContextualOnboardingAsSeen()
     }
 
-    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
-        showTabSwitcher(forceFireTabsTip: true)
-    }
-
 }
 
 extension MainViewController: TabDelegate {
@@ -5273,10 +5254,6 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {
         newEmailAddress()
-    }
-
-    func tabDidRequestFireMode(tab: TabViewController) {
-        navigateToFireMode(source: .menuPromotion)
     }
 
     func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController) {
@@ -6000,7 +5977,6 @@ extension MainViewController: TabSwitcherDelegate {
             let request: FireRequest
             switch tabSwitcher.selectedBrowsingMode {
             case .fire:
-                fireModePromotionEligibility?.markBurnPerformed()
                 request = FireRequest(options: .all, trigger: .manualFire, scope: .fireMode, source: .tabSwitcher)
             case .normal:
                 request = FireRequest(options: .tabs, trigger: .manualFire, scope: .normalMode, source: .tabSwitcher)
@@ -6088,7 +6064,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         showTabSwitcher()
     }
 
-    func showTabSwitcher(forceFireTabsTip: Bool = false) {
+    func showTabSwitcher() {
         if !tabManager.currentTabsModel.allowsEmpty
             && tabManager.current(createIfNeeded: true) == nil {
             fatalError("Unable to get current tab")
@@ -6103,7 +6079,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()
             Task { @MainActor in
-                await self.segueToTabSwitcher(forceFireTabsTip: forceFireTabsTip)
+                await self.segueToTabSwitcher()
             }
         }
     }
@@ -6158,12 +6134,6 @@ extension MainViewController {
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
-
-        // This needs to be done before the fire burning process starts or the race condition
-        //  results in the promo not showing at the expected time.
-        if request.trigger == .manualFire {
-            fireModePromotionEligibility?.markBurnPerformed()
-        }
 
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()

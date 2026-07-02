@@ -3919,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Pozice adresního řádku";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Skrýt panel karet při posouvání";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "K dispozici na většině webů. Duck.ai, mapy a hry mohou ponechat panel karet viditelný.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otevřít odkazy v přidružených aplikacích";
 
@@ -4813,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Vypnout Sync & Backup?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Odstranit";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Tohle zařízení už nebude mít přístup ke tvým synchronizovaným datům.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Vypnout synchronizaci?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Pokud chceš nastavit funkci Sync & Backup, odemkni zařízení";
 
@@ -5356,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Žádné shody pro \"%@\"";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kód je zkopírovaný";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

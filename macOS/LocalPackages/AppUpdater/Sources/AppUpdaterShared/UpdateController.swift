@@ -222,6 +222,9 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
     /// **Usage**: Drives UI state to show "Restart to Update" button in Settings.
     var isAtRestartCheckpoint: Bool { get }
 
+    /// Whether the release notes page should automatically trigger an update check on load.
+    var shouldAutoCheckOnReleaseNotesLoad: Bool { get }
+
     /// Publisher that emits when the app is about to relaunch for an update.
     ///
     /// **Sparkle Behavior**: Emits just before Sparkle performs automatic relaunch.

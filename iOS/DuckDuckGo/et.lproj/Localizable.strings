@@ -3919,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Aadressiriba asukoht";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Peida kerimise ajal vahekaartide riba";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Saadaval enamikul veebisaitidel. Duck.ai, kaardid ja mängud võivad vahekaartide riba nähtavana hoida.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ava lingid seotud rakendustes";
 
@@ -4813,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Kas lülitada Sync & Backup välja?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Eemaldage";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "See seade ei pääse enam sinu sünkroonitud andmetele ligi.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Kas lülitada sünkroonimine välja?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Ava seade, et seadistada Sync & Backup";
 
@@ -5356,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "„%@“ kohta ei leitud vasteid";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kood kopeeritud";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

@@ -422,9 +422,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213617478454569?focus=true
-    case simplifiedSyncSetupExperiment
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
 
@@ -519,11 +516,6 @@ public enum FeatureFlag: String {
 extension FeatureFlag: FeatureFlagDescribing {
     /// Test-only cohort for verifying UI test experiment override mechanism.
     public enum UITestExperimentCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
-    public enum SimplifiedSyncSetupExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -803,8 +795,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireMode))
         case .fireButtonRefinements:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
-        case .simplifiedSyncSetupExperiment:
-            Config(source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupExperiment), cohortType: SimplifiedSyncSetupExperimentCohort.self)
         case .aiChatOmnibarDefaultPosition:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
         case .duckAIVoiceShortcut:

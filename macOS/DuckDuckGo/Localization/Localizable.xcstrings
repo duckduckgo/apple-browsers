@@ -90255,55 +90255,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle Fenster der letzten Sitzung wieder öffnen"
+            "value" : "Alle Fenster und Tabs der letzten Sitzung wieder öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Reopen all windows from last session"
+            "value" : "Reopen all windows and tabs from last session"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Volver a abrir todas las ventanas de la última sesión"
+            "value" : "Volver a abrir todas las ventanas y pestañas de la última sesión"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rouvrir toutes les fenêtres de la dernière session"
+            "value" : "Rouvrir toutes les fenêtres et tous les onglets de la dernière session"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Riapri tutte le finestre dell'ultima sessione"
+            "value" : "Riapri tutte le finestre e le schede dell'ultima sessione"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle vensters van vorige sessie opnieuw openen"
+            "value" : "Open alle vensters en tabbladen van de vorige sessie opnieuw"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ponownie otwórz wszystkie okna z ostatniej sesji"
+            "value" : "Otwórz ponownie wszystkie okna i karty z ostatniej sesji"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reabrir todas as janelas da última sessão"
+            "value" : "Reabrir todas as janelas e separadores da última sessão"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Заново открыть все окна из последнего сеанса"
+            "value" : "Восстанавливать все окна и вкладки из последнего сеанса"
           }
         }
       }
@@ -97854,55 +97854,55 @@
         }
       }
     },
-    "Reopen All Windows From Last Session" : {
+    "Reopen All Windows and Tabs From Last Session" : {
       "comment" : "Main Menu History item",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle Fenster der letzten Sitzung wieder öffnen"
+            "value" : "Alle Fenster und Tabs der letzten Sitzung wieder öffnen"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Volver a abrir todas las ventanas de la última sesión"
+            "value" : "Volver a abrir todas las ventanas y pestañas de la última sesión"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rouvrir toutes les fenêtres de la dernière session"
+            "value" : "Rouvrir toutes les fenêtres et tous les onglets de la dernière session"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Riapri tutte le finestre dell'ultima sessione"
+            "value" : "Riapri tutte le finestre e le schede dell'ultima sessione"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle vensters van de laatste sessie opnieuw openen"
+            "value" : "Alle vensters en tabbladen van de laatste sessie opnieuw openen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otwórz ponownie wszystkie okna z ostatniej sesji"
+            "value" : "Otwórz ponownie wszystkie okna i karty z ostatniej sesji"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reabrir todas as janelas da última sessão"
+            "value" : "Reabrir todas as janelas e separadores da última sessão"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Заново открыть все окна из последнего сеанса"
+            "value" : "Восстановить все окна и вкладки из последнего сеанса"
           }
         }
       }

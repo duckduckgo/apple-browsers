@@ -1233,6 +1233,14 @@ class MainViewController: UIViewController {
                                                selector: #selector(refreshViewsBasedOnDuckPlayerPresentation),
                                                name: DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated,
                                                object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onKeepAddressBarVisibleOnIPadChanged),
+                                               name: AppUserDefaults.Notifications.keepAddressBarVisibleOnIPadChanged,
+                                               object: nil)
+    }
+
+    @objc private func onKeepAddressBarVisibleOnIPadChanged() {
+        revealChromeIfPinned()
     }
 
     private func registerForAppBackgroundNotification() {
@@ -3757,7 +3765,19 @@ extension MainViewController: BrowserChromeDelegate {
     var canHideBars: Bool {
         // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
         if currentTab?.isError == true { return false }
-        return !daxDialogsManager.shouldShowFireButtonPulse
+        return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
+    }
+
+    /// When `true`, the omni bar and toolbar are never hidden on scroll.
+    /// iPad-only (the setting is hidden on iPhone); applies in all widths, including narrow Split View / Slide Over.
+    private var shouldPinChrome: Bool {
+        isPad && appSettings.keepAddressBarVisibleOnIPad
+    }
+
+    /// Reveals the chrome immediately if it should now be pinned but is currently hidden.
+    private func revealChromeIfPinned() {
+        guard shouldPinChrome else { return }
+        chromeManager?.reset(animated: true)
     }
 
     var isToolbarHidden: Bool {
@@ -6429,6 +6449,8 @@ extension MainViewController {
             updateStatusBarBackgroundColor()
         }
         updateFindInPage()
+
+        revealChromeIfPinned()
     }
 
     func refreshStatusBarBackgroundAfterAIChrome() {

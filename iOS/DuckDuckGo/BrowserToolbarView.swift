@@ -46,10 +46,13 @@ final class BrowserToolbarView: UIView {
 
     private static let floatingBarOuterInsets = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
     private static let legacyBarOuterInsets = UIEdgeInsets.zero
+
     /// In the floating style the toolbar is laid out against the safe-area bottom (so the chrome
     /// hide/show math stays valid), but the capsule should float this close to the physical device
     /// bottom. The glass is shifted down into the home-indicator region by the difference.
-    private static let floatingBottomMargin: CGFloat = 16
+    private static let floatingBottomMarginWithEmbedded: CGFloat = 16
+    private static let floatingBottomMarginStandalone: CGFloat = 21
+
     private static let verticalContentPadding: CGFloat = 2
     private static let omnibarToButtonsSpacing: CGFloat = 2
     private static let expandedContentToOmnibarSpacing: CGFloat = 8
@@ -344,12 +347,16 @@ final class BrowserToolbarView: UIView {
         updateCornerStyle()
     }
 
+    var floatingBottomMargin: CGFloat {
+        hasEmbeddedOmnibar ? Self.floatingBottomMarginWithEmbedded : Self.floatingBottomMarginStandalone
+    }
+
     /// Shifts the glass capsule down from its safe-area-anchored position toward the device bottom,
     /// leaving `floatingBottomMargin`. Done as a transform (not a constraint change) so it doesn't
     /// disturb the toolbar's layout slot or the runtime chrome hide/show constant logic.
     private func updateFloatingBottomOffset() {
         let hostBottomInset = superview?.safeAreaInsets.bottom ?? 0
-        let target = isFloatingStyleEnabled ? max(0, hostBottomInset - Self.floatingBottomMargin) : 0
+        let target = isFloatingStyleEnabled ? max(0, hostBottomInset - floatingBottomMargin) : 0
         guard target != floatingBottomOffset else { return }
         floatingBottomOffset = target
         materialBackgroundView.transform = CGAffineTransform(translationX: 0, y: target)

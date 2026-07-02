@@ -146,7 +146,6 @@ class TabViewController: UIViewController {
     }
     
     weak var delegate: TabDelegate?
-    var fireModePromotionCoordinator: FireModePromotionCoordinating?
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
         get {
             aiChatContentHandler.delegate

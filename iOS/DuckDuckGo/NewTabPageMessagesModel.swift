@@ -35,7 +35,6 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let messageActionHandler: RemoteMessagingActionHandling
     private let imageLoader: RemoteMessagingImageLoading
     private let pixelReporter: RemoteMessagingPixelReporting?
-    private let fireModePromotionEligibility: FireModePromotionCoordinating?
     private let isOpenedAfterIdle: () -> Bool
 
     var onTryFireModeRequested: (() -> Void)?
@@ -47,7 +46,6 @@ final class NewTabPageMessagesModel: ObservableObject {
          messageActionHandler: RemoteMessagingActionHandling,
          imageLoader: RemoteMessagingImageLoading,
          pixelReporter: RemoteMessagingPixelReporting? = nil,
-         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
          isOpenedAfterIdle: @escaping () -> Bool = { false }) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
@@ -56,7 +54,6 @@ final class NewTabPageMessagesModel: ObservableObject {
         self.messageActionHandler = messageActionHandler
         self.imageLoader = imageLoader
         self.pixelReporter = pixelReporter
-        self.fireModePromotionEligibility = fireModePromotionEligibility
         self.isOpenedAfterIdle = isOpenedAfterIdle
     }
 
@@ -90,33 +87,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     private func updateHomeMessageViewModel() {
         let messages = homePageMessagesConfiguration.homeMessages
-        isFirePromotionVisible = messages.contains(.firePromotion)
         homeMessageViewModels = messages.compactMap(homeMessageViewModel(for:))
-    }
-
-    // MARK: - Fire Mode Promotion Actions
-
-    func firePromotionDidAppear() {
-        fireModePromotionEligibility?.markNTPPromotionShown()
-    }
-
-    @MainActor
-    func firePromotionTryFireTabsTapped() async {
-        fireModePromotionEligibility?.markNTPPromotionEngaged()
-        await dismissHomeMessage(.firePromotion)
-        onTryFireModeRequested?()
-    }
-
-    @MainActor
-    func firePromotionDismissed() async {
-        fireModePromotionEligibility?.markNTPPromotionDismissed()
-        await dismissHomeMessage(.firePromotion)
-    }
-
-    @MainActor
-    func firePromotionClosed() async {
-        fireModePromotionEligibility?.markNTPPromotionDismissed()
-        await dismissHomeMessage(.firePromotion)
     }
 
     // MARK: - HomeMessageViewModel Mapping
@@ -135,8 +106,6 @@ final class NewTabPageMessagesModel: ObservableObject {
             } onAttachAdditionalParameters: { _, params in
                 params
             }
-        case .firePromotion:
-            return nil
 
         case .remoteMessage(let remoteMessage):
 

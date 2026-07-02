@@ -229,25 +229,6 @@ private extension NewTabPageView {
 
     @ViewBuilder
     private var messagesSectionView: some View {
-        if messagesModel.isFirePromotionVisible {
-            FireModePromotionCardView(
-                onTryFireTabs: {
-                    Task { await messagesModel.firePromotionTryFireTabsTapped() }
-                },
-                onDismiss: {
-                    Task { await messagesModel.firePromotionDismissed() }
-                },
-                onClose: {
-                    Task { await messagesModel.firePromotionClosed() }
-                },
-                onDidAppear: {
-                    messagesModel.firePromotionDidAppear()
-                }
-            )
-            .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
-            .transition(.scale.combined(with: .opacity))
-        }
-
         ForEach(messagesModel.homeMessageViewModels, id: \.messageId) { messageModel in
             HomeMessageView(viewModel: messageModel)
                 .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)

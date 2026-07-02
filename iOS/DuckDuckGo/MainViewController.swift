@@ -382,7 +382,6 @@ class MainViewController: UIViewController {
     }
 
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
-    private(set) var fireModePromotionEligibility: FireModePromotionCoordinating?
 
     let onboardingManager: OnboardingManaging
 
@@ -454,7 +453,6 @@ class MainViewController: UIViewController {
         darkReaderFeatureSettings: DarkReaderFeatureSettings,
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-        fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil,
         onboardingManager: OnboardingManaging
     ) {
@@ -539,7 +537,6 @@ class MainViewController: UIViewController {
         self.voiceShortcutFeature = voiceShortcutFeature
         self.toggleModeStorage = toggleModeStorage
         self.fireModeCapability = FireModeCapability.create()
-        self.fireModePromotionEligibility = fireModePromotionEligibility
         self.onboardingManager = onboardingManager
 
         super.init(nibName: nil, bundle: nil)
@@ -613,7 +610,6 @@ class MainViewController: UIViewController {
             remoteMessagingActionHandler: remoteMessagingActionHandler,
             remoteMessagingImageLoader: remoteMessagingImageLoader,
             remoteMessagingPixelReporter: remoteMessagingPixelReporter,
-            fireModePromotionEligibility: fireModePromotionEligibility,
             appSettings: appSettings,
             subscriptionManager: subscriptionManager,
             internalUserCommands: internalUserCommands)
@@ -1711,7 +1707,6 @@ class MainViewController: UIViewController {
                                                   remoteMessagingActionHandler: remoteMessagingActionHandler,
                                                   remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                   remoteMessagingPixelReporter: remoteMessagingPixelReporter,
-                                                  fireModePromotionEligibility: fireModePromotionEligibility,
                                                   appSettings: appSettings,
                                                   faviconsCache: favicons,
                                                   subscriptionManager: subscriptionManager,
@@ -4114,8 +4109,6 @@ extension MainViewController: OmniBarDelegate {
             return
         }
 
-        tab.fireModePromotionCoordinator = fireModePromotionEligibility
-
         // Determine context for menu building
         let context: BrowsingMenuContext
         if newTabPageViewController != nil {
@@ -5933,7 +5926,6 @@ extension MainViewController: TabSwitcherDelegate {
             let request: FireRequest
             switch tabSwitcher.selectedBrowsingMode {
             case .fire:
-                fireModePromotionEligibility?.markBurnPerformed()
                 request = FireRequest(options: .all, trigger: .manualFire, scope: .fireMode, source: .tabSwitcher)
             case .normal:
                 request = FireRequest(options: .tabs, trigger: .manualFire, scope: .normalMode, source: .tabSwitcher)
@@ -6091,12 +6083,6 @@ extension MainViewController {
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
-
-        // This needs to be done before the fire burning process starts or the race condition
-        //  results in the promo not showing at the expected time.
-        if request.trigger == .manualFire {
-            fireModePromotionEligibility?.markBurnPerformed()
-        }
 
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()

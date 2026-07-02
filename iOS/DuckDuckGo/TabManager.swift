@@ -161,7 +161,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let launchSourceManager: LaunchSourceManaging
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private let toggleModeStorage: ToggleModeStoring
-    private let fireModePromotionEligibility: FireModePromotionCoordinating?
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
@@ -221,7 +220,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
-         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
          adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
@@ -261,7 +259,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.launchSourceManager = launchSourceManager
         self.toggleModeStorage = toggleModeStorage
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
-        self.fireModePromotionEligibility = fireModePromotionEligibility
         self.adBlockingAvailability = adBlockingAvailability
         registerForNotifications()
     }
@@ -282,9 +279,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         _currentBrowsingMode = mode
         fireModeDelegate?.tabManagerDidChangeBrowsingMode(mode)
-        if mode == .fire {
-            fireModePromotionEligibility?.markFireModeVisited()
-        }
         Pixel.fire(pixel: .browsingModeSwitched, withAdditionalParameters: [
             PixelParameters.browsingMode: mode.pixelParamValue,
             PixelParameters.source: source.rawValue

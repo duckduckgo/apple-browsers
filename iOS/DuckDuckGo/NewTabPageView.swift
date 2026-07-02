@@ -227,7 +227,6 @@ private extension NewTabPageView {
         }
     }
 
-    @ViewBuilder
     private var messagesSectionView: some View {
         ForEach(messagesModel.homeMessageViewModels, id: \.messageId) { messageModel in
             HomeMessageView(viewModel: messageModel)

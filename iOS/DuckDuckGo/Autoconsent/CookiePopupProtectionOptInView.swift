@@ -64,7 +64,7 @@ enum CookiePopupProtectionOptInOption: Hashable {
 }
 
 /// Cookie Pop-up Protection opt-in dialog (iOS counterpart of the macOS dialog).
-/// ponytail: `Confirm` reports the selected option via `onConfirm`; the presenter applies the setting.
+/// `Confirm` reports the selected option via `onConfirm`; the presenter applies the setting.
 struct CookiePopupProtectionOptInView: View {
 
     private let variant: CookiePopupProtectionOptInVariant

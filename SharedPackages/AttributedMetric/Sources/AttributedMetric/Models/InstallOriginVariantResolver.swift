@@ -30,19 +30,10 @@ public enum InstallOriginVariantResolver {
     /// 3. Origin campaign matches the requested campaign.
     ///
     /// Origin format: `funnel_entry_source_campaign_content` (see `InstallOriginParser`).
-    public static func variant(
-        origin: String?,
-        requestedCampaign: String?,
-        installDate: Date?,
-        referenceDate: Date
-    ) -> String? {
-        guard let origin,
-              let requestedCampaign,
-              !requestedCampaign.isEmpty,
-              let installDate else {
-            return nil
-        }
-
+    public static func variant(origin: String,
+                               requestedCampaign: String,
+                               installDate: Date,
+                               referenceDate: Date) -> String? {
         let daysSinceInstall = QuantisedTimePast.daysBetween(from: installDate, to: referenceDate)
         guard daysSinceInstall <= maxDaysSinceInstall,
               let components = InstallOriginParser.parse(origin),

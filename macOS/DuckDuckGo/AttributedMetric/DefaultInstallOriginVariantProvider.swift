@@ -37,10 +37,17 @@ final class DefaultInstallOriginVariantProvider: InstallOriginVariantProviding {
     }
 
     func installOriginVariant(forCampaign campaign: String?) -> String? {
-        InstallOriginVariantResolver.variant(
-            origin: originProvider.origin,
+        guard let origin = originProvider.origin,
+              let installDate = installDateProvider.installDate,
+              let campaign,
+              !campaign.isEmpty else {
+            return nil
+        }
+
+        return InstallOriginVariantResolver.variant(
+            origin: origin,
             requestedCampaign: campaign,
-            installDate: installDateProvider.installDate,
+            installDate: installDate,
             referenceDate: dateProvider.now()
         )
     }

@@ -31,16 +31,23 @@ final class DefaultInstallOriginVariantProviderTests: XCTestCase {
         XCTAssertNil(sut.installOriginVariant(forCampaign: "foo"))
     }
 
-    func testWhenOriginAndCampaignMatchThenReturnsVariant() {
-        let sut = makeSUT(origin: "funnel_home__foo_bar", installDate: Self.now.addingTimeInterval(.day * -10))
-
-        XCTAssertEqual(sut.installOriginVariant(forCampaign: "foo"), "bar")
-    }
-
-    func testWhenDaysSinceInstallIs29ThenReturnsNil() {
-        let sut = makeSUT(origin: "funnel_home__foo_bar", installDate: Self.now.addingTimeInterval(.day * -29))
+    func testWhenOriginIsMissingThenReturnsNil() {
+        let sut = makeSUT(origin: nil, installDate: Self.now)
 
         XCTAssertNil(sut.installOriginVariant(forCampaign: "foo"))
+    }
+
+    func testWhenCampaignIsMissingOrEmptyThenReturnsNil() {
+        let sut = makeSUT(origin: "funnel_home__foo_bar", installDate: Self.now)
+
+        XCTAssertNil(sut.installOriginVariant(forCampaign: nil))
+        XCTAssertNil(sut.installOriginVariant(forCampaign: ""))
+    }
+
+    func testWhenInstallDateAndOriginAndCampaignAreProvidedThenReturnsVariant() {
+        let sut = makeSUT(origin: "funnel_home__foo_bar", installDate: Self.now)
+
+        XCTAssertEqual(sut.installOriginVariant(forCampaign: "foo"), "bar")
     }
 
     private func makeSUT(

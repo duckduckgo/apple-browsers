@@ -27,9 +27,9 @@ final class InstallOriginVariantResolverTests: XCTestCase {
     }
 
     private func variant(
-        origin: String? = "funnel_home__foo_bar",
-        requestedCampaign: String? = "foo",
-        installDate: Date?? = nil
+        origin: String = "funnel_home__foo_bar",
+        requestedCampaign: String = "foo",
+        installDate: Date? = nil
     ) -> String? {
         return InstallOriginVariantResolver.variant(
             origin: origin,
@@ -63,14 +63,9 @@ final class InstallOriginVariantResolverTests: XCTestCase {
         XCTAssertNil(variant(origin: "funnel_home_a_b_c_d", requestedCampaign: "b"))
     }
 
-    func testWhenOriginIsMissingOrEmptyThenReturnsNil() {
-        XCTAssertNil(variant(origin: nil))
+    func testWhenOriginIsEmptyThenReturnsNil() {
         XCTAssertNil(variant(origin: ""))
         XCTAssertNil(variant(origin: "   "))
-    }
-
-    func testWhenInstallDateIsNilThenReturnsNil() {
-        XCTAssertNil(variant(installDate: .some(nil)))
     }
 
     func testWhenDaysSinceInstallIs28ThenReturnsVariant() {
@@ -85,8 +80,7 @@ final class InstallOriginVariantResolverTests: XCTestCase {
         XCTAssertEqual(variant(installDate: referenceDate), "bar")
     }
 
-    func testWhenRequestedCampaignIsNilOrEmptyThenReturnsNil() {
-        XCTAssertNil(variant(requestedCampaign: nil))
+    func testWhenRequestedCampaignIsEmptyThenReturnsNil() {
         XCTAssertNil(variant(requestedCampaign: ""))
     }
 

@@ -60,6 +60,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             hasActiveChat: { [weak self] in self?.hasActiveChat ?? false },
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
+            featureFlagger: MockFeatureFlagger(),
             pageContextHandler: pageContextHandler,
             isFireTab: false
         )

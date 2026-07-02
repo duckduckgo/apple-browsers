@@ -1357,7 +1357,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
             eDidFinish.fulfill()
         }
 
-        let url = Bundle.module.url(forResource: "Resources/test", withExtension: "html")!
+        let url = Bundle.module.url(forResource: "Res/test", withExtension: "html")!
         withWebView { webView in
             _=webView.navigator(distributedNavigationDelegate: navigationDelegate)
                 .loadFileURL(url, allowingReadAccessTo: url, withExpectedNavigationType: .custom(.init(rawValue: "custom")))
@@ -1385,7 +1385,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
             eDidFinish.fulfill()
         }
 
-        let url = Bundle.module.url(forResource: "Resources/test", withExtension: "html")!
+        let url = Bundle.module.url(forResource: "Res/test", withExtension: "html")!
         withWebView { webView in
             _=webView.navigator(distributedNavigationDelegate: navigationDelegate)
                 .loadFileRequest(URLRequest(url: url), allowingReadAccessTo: url, withExpectedNavigationType: .custom(.init(rawValue: "custom")))

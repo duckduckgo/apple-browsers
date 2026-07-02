@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if os(macOS)
-
 import Combine
 import Common
 import os.log
@@ -64,7 +62,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
         server?.stop()
         server = SafeHttpServer()
-        navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        navigationDelegateProxy = DistributedNavigationDelegateTestsBase.makeNavigationDelegateProxy()
         self.navigationDelegate.responders.forEach { responder in
             (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
                 XCTFail("[\(testName)] unexpected event received: \($0)")
@@ -546,5 +544,3 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
 }
-
-#endif

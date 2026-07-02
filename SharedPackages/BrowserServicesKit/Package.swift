@@ -704,7 +704,11 @@ let package = Package(
                 "WKAbstractions",
             ],
             resources: [
-                .copy("Resources")
+                // Xcode CodeSign build step fails for iOS target with "bundle format unrecognized, invalid, or unsuitable"
+                // when the folder is named "Resources"
+                //
+                // https://stackoverflow.com/questions/29271548/code-sign-error-bundle-format-unrecognized-invalid-or-unsuitable
+                .copy("Res")
             ]
         ),
         .testTarget(
@@ -764,7 +768,11 @@ let package = Package(
                 .product(name: "Swifter", package: "swifter"),
             ],
             resources: [
-                .copy("Resources")
+                // Xcode CodeSign build step fails for iOS target with "bundle format unrecognized, invalid, or unsuitable"
+                // when the folder is named "Resources"
+                //
+                // https://stackoverflow.com/questions/29271548/code-sign-error-bundle-format-unrecognized-invalid-or-unsuitable
+                .copy("Res")
             ],
             swiftSettings: [
                 .define("_IS_USER_INITIATED_ENABLED", .when(platforms: [.macOS])),

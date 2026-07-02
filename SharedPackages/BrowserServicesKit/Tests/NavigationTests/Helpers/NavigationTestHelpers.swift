@@ -1135,6 +1135,7 @@ final class CustomCallbacksHandler: NSObject, NavigationResponder {
     }
 
     var didSameDocumentNavigation: (@MainActor (Navigation, WKSameDocumentNavigationType) -> Void)?
+    @MainActor
     func navigation(_ navigation: Navigation, didSameDocumentNavigationOf navigationType: WKSameDocumentNavigationType) {
         self.didSameDocumentNavigation?(navigation, navigationType)
     }

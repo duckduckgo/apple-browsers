@@ -235,6 +235,7 @@ final class AIChatContextualChatSessionState {
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
         isProcessingNavigation = false
+        pendingSignalsOnlyCollection = false
         pixelHandler.endManualAttach()
         rebuildViewState()
         emit(.clearPrompt)

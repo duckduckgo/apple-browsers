@@ -355,10 +355,16 @@ private extension AIChatContextualSheetCoordinator {
 
         // Await with `timeout` so this FE bridge call never hangs if the JS collection never responds
         // (web view torn down, navigation mid-request, JS error). On timeout the push still delivers.
-        return try? await withTimeout(timeout) {
-            for await result in firstResult {
-                return result
+        do {
+            return try await withTimeout(timeout) {
+                for await result in firstResult {
+                    return result
+                }
+                return nil
             }
+        } catch {
+            // Timed out (or cancelled) before JS published
+            sessionState.cancelManualAttach()
             return nil
         }
     }

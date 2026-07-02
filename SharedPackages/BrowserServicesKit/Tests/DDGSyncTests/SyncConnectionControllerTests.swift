@@ -1292,6 +1292,40 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
+    func test_syncCodeEntered_withV2NativeLoginSecureStoreFailure_notifiesLocalStorageFailed() async throws {
+        let mockAccountManager = AccountManagingMock()
+        mockAccountManager.loginError = SyncError.failedToWriteSecureStore(status: -1)
+        dependencies.account = mockAccountManager
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let peerKeyPair = try makePeerKeyPair()
+        messageExchanger.fetchMessagesHandler = { _, _ in
+            try self.encryptedPeerMessages(
+                [
+                    .recoveryCodeAvailable(
+                        .init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAvailable,
+                              name: "Peer",
+                              kind: .ddg,
+                              userId: "other-user")
+                    ),
+                    .recoveryCodeResponse(.init(recoveryCode: Self.validRecoveryCode))
+                ],
+                messageExchanger: messageExchanger,
+                peerKeyPair: peerKeyPair
+            )
+        }
+        let payload = PairingV2QRCodePayload(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        let url = try payload.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
+
+        let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
+
+        XCTAssertFalse(result)
+        XCTAssertTrue(mockAccountManager.loginCalled)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .localStorageFailed)
+        XCTAssertNil(delegate.didErrorErrors?.underlyingError)
+    }
+
+    @MainActor
     func test_syncCodeEntered_withValidExchangeCode_notifiesDelegate() async {
         let expectation = self.expectation(description: "Exchanger poll completes")
         delegate.didRecognizeScannedCodeCalled = {

@@ -32,7 +32,7 @@ protocol PairingV2ConfirmationDelegate: AnyObject {
 /// Default timing for the polling loop in `pollUntilFinished`.
 enum PairingV2PollingDefaults {
     /// Give up on the pairing session after this many seconds (5 minutes).
-    static let sessionTimeout: TimeInterval = 300
+    static let sessionTimeout: TimeInterval = 10
     /// Wait this long between relay polls (1 second, in nanoseconds).
     static let pollIntervalNanoseconds: UInt64 = 1_000_000_000
 }
@@ -338,6 +338,9 @@ final class PairingV2Coordinator {
             } catch SyncError.unexpectedStatusCode(let statusCode) where statusCode == 401 {
                 try await execute(stateMachine.handle(.failed(.invalidCredentials)))
                 throw PairingV2Error.invalidCredentials
+            } catch SyncError.failedToWriteSecureStore {
+                try await execute(stateMachine.handle(.failed(.localStorageFailed)))
+                throw PairingV2Error.localStorageFailed
             } catch {
                 try await execute(stateMachine.handle(.failed(.loginFailed)))
                 throw PairingV2Error.loginFailed

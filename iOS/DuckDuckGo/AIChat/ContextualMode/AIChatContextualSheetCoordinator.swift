@@ -464,7 +464,12 @@ private extension AIChatContextualSheetCoordinator {
 
         sessionState.resetToNoChat()
 
-        Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
+        if shouldCollectSignalsOnly {
+            Logger.aiChat.debug("[PageContext] New chat - collecting signals-only")
+            sessionState.markPendingSignalsOnlyCollection()
+        } else {
+            Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
+        }
         pageContextHandler.triggerContextCollection()
 
         delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)

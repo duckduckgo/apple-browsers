@@ -4117,8 +4117,6 @@
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Lue lisää";
 
-/* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "Anna DuckDuckGon hallinnoida evästeiden hallinnan ponnahdusikkunoita";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Salasanat ja automaattinen täyttö";

@@ -51,31 +51,20 @@ struct CookiePopUpProtectionViewSettings: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
-    var body: some View {
-        if viewModel.featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting) {
-            Section(footer: Text(LocalizedStringKey(UserText.cookiePopupPreferenceExplanation))) {
-                SettingsPickerCellView(label: UserText.cookiePopupPreferenceTitle,
-                                       options: CookiePopupPreference.allCases,
-                                       selectedOption: viewModel.cookiePopupPreferenceBinding)
-            }
-        } else {
-            Section {
-                SettingsCellView(label: UserText.letDuckDuckGoManageCookieConsentPopups,
-                                 accessory: .toggle(isOn: viewModel.autoconsentBinding))
-            }
-        }
+    private var isAutoManageEnabled: Bool {
+        viewModel.autoManageCookiePopupsBinding.wrappedValue
     }
-}
 
-extension CookiePopupPreference: CustomStringConvertible {
-    public var description: String {
-        switch self {
-        case .max:
-            return UserText.cookiePopupPreferenceBlockAll
-        case .default:
-            return UserText.cookiePopupPreferenceBlockStandard
-        case .off:
-            return UserText.cookiePopupPreferenceDoNotBlock
+    var body: some View {
+        Section(footer: Text(UserText.autoManageCookiePopupsExplanation)) {
+            SettingsCellView(label: UserText.autoManageCookiePopupsTitle,
+                             accessory: .toggle(isOn: viewModel.autoManageCookiePopupsBinding))
         }
+
+        Section(footer: Text(UserText.popUpsWithoutOptOutsExplanation)) {
+            SettingsCellView(label: UserText.popUpsWithoutOptOutsTitle,
+                             accessory: .toggle(isOn: viewModel.popUpsWithoutOptOutsBinding))
+        }
+        .disabled(!isAutoManageEnabled)
     }
 }

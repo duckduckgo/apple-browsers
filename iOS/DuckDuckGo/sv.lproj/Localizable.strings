@@ -4117,8 +4117,6 @@
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Läs mer";
 
-/* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "Låt DuckDuckGo hantera popup-fönster för godkännande av cookies";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Lösenord och automatisk ifyllning";

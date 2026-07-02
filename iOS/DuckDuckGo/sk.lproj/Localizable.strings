@@ -4117,8 +4117,6 @@
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Zistite viac";
 
-/* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "Nech DuckDuckGo spravuje kontextové okná týkajúce sa súhlasu so súbormi cookie";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Heslá a automatické dopĺňanie";

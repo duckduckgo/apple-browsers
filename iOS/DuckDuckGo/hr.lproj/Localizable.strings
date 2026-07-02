@@ -4117,8 +4117,6 @@
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Saznajte više";
 
-/* Switch button label. */
-"settings.let.duckduckgo.manage.cookie.consent.popups" = "Neka DuckDuckGo upravlja skočnim prozorima za pristanak na kolačiće";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Lozinke i automatsko popunjavanje";

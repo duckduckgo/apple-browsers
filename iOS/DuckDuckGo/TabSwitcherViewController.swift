@@ -300,15 +300,20 @@ class TabSwitcherViewController: UIViewController {
         fireTabsTipTask = Task { @MainActor [weak self] in
             for await shouldDisplay in tip.shouldDisplayUpdates {
                 guard let self else { return }
-                if shouldDisplay {
-                    self.fireModePromotionsCoordinator?.markTabSwitcherTipShown()
-                    let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
-                    popoverController.popoverPresentationController?.permittedArrowDirections = [.up, .down]
-                    self.present(popoverController, animated: true)
-                } else if let tipVC = self.presentedViewController as? TipUIPopoverViewController {
-                    tipVC.dismiss(animated: true)
-                }
+                self.handleFireTabsTipDisplay(shouldDisplay, tip: tip, sourceView: sourceView)
             }
+        }
+    }
+
+    @available(iOS 17.0, *)
+    private func handleFireTabsTipDisplay(_ shouldDisplay: Bool, tip: FireTabsTip, sourceView: UIView) {
+        if shouldDisplay {
+            fireModePromotionsCoordinator?.markTabSwitcherTipShown()
+            let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
+            popoverController.popoverPresentationController?.permittedArrowDirections = [.up, .down]
+            present(popoverController, animated: true)
+        } else if let tipVC = presentedViewController as? TipUIPopoverViewController {
+            tipVC.dismiss(animated: true)
         }
     }
 

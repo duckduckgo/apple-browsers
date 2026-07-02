@@ -1127,6 +1127,10 @@ class TabViewController: UIViewController {
 #endif
 
         borderView.insertSelf(into: webView)
+        updateBorderViewForFloatingUIIfNeeded()
+    }
+
+    private func updateBorderViewForFloatingUIIfNeeded() {
         if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
             borderView.isHidden = true
             borderView.isTopVisible = false

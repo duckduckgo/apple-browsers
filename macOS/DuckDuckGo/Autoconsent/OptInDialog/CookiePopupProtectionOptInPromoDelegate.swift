@@ -93,16 +93,21 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
             return .noChange
         }
 
-        // Skip counting for force-shows (promo debug menu).
-        if !force {
-            store.shownCount += 1
-        }
-
         return await withCheckedContinuation { continuation in
             showContinuation = continuation
-            browserTabViewController.showCookiePopupProtectionOptInDialog(onConfirm: { [weak self] _ in
+            let presented = browserTabViewController.showCookiePopupProtectionOptInDialog(onConfirm: { [weak self] _ in
                 self?.resume(with: .actioned)
             })
+            // The dialog couldn't be presented (no window, or one is already up): finish the session
+            // immediately instead of leaving the promo hanging on an unresolved continuation.
+            guard presented else {
+                resume(with: .noChange)
+                return
+            }
+            // Skip counting for force-shows (promo debug menu).
+            if !force {
+                store.shownCount += 1
+            }
         }
     }
 

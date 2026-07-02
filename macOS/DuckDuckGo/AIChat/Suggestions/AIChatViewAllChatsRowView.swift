@@ -28,7 +28,8 @@ import DesignResourcesKitIcons
 final class AIChatViewAllChatsRowView: NSView {
 
     private enum Constants {
-        static let rowHeight: CGFloat = 32
+        static let rowHeight: CGFloat = 34
+        static let legacyRowHeight: CGFloat = 32
         static let horizontalPadding: CGFloat = 12
         static let iconSize: CGFloat = 16
         static let iconTitleSpacing: CGFloat = 6
@@ -39,6 +40,8 @@ final class AIChatViewAllChatsRowView: NSView {
     }
 
     // MARK: - UI Components
+
+    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
 
     private let iconImageView: NSImageView = {
         let imageView = NSImageView()
@@ -139,8 +142,9 @@ final class AIChatViewAllChatsRowView: NSView {
         addSubview(openDuckAILabel)
         addSubview(arrowImageView)
 
+        let rowHeight = themeManager.isAppRebranded ? Constants.rowHeight : Constants.legacyRowHeight
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: Constants.rowHeight),
+            heightAnchor.constraint(equalToConstant: rowHeight),
 
             iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),

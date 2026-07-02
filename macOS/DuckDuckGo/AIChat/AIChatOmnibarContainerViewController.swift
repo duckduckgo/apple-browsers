@@ -54,7 +54,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let shadowOverlapHeight: CGFloat = 11
         static let submitButtonSize: CGFloat = 28
         static let submitButtonCornerRadius: CGFloat = 14
-        static let submitButtonTrailingInset: CGFloat = 13
+        static let submitButtonTrailingInset: CGFloat = 8
+        static let legacySubmitButtonTrailingInset: CGFloat = 13
         static let submitButtonBottomInset: CGFloat = 8
         static let toolButtonSize: CGFloat = 28
         static let toolButtonLeadingInset: CGFloat = 11
@@ -78,6 +79,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         /// Total panel height the carousel + below-spacing reserves when populated.
         static let attachmentsCarouselTotalPanelReservation: CGFloat = AIChatAttachmentsCarouselView.expandedHeight + (attachmentsCarouselBottomSpacing - AIChatAttachmentsCarouselView.shadowMargin)
         static let suggestionsBottomPadding: CGFloat = 4
+        static let containerTopPadding: CGFloat = 5
+        static let legacyContainerTopPadding: CGFloat = 0
+        static let containerLeadingInset: CGFloat = 2
+        static let legacyContainerLeadingInset: CGFloat = 0
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -260,7 +265,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Extra height needed beyond text and suggestions for dynamic content like attachments.
     /// This must be added to the container height calculation by the parent.
     var additionalContentHeight: CGFloat {
-        attachmentRowReservation
+        let containerTopPadding = themeManager.isAppRebranded ? Constants.containerTopPadding : Constants.legacyContainerTopPadding
+        return attachmentRowReservation + containerTopPadding
     }
 
     /// Calculates the total height that should be passthrough for the text container view.
@@ -678,7 +684,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         toolsButton.target = self
         toolsButton.action = #selector(toolsButtonClicked)
         toolsButton.image = DesignSystemImages.Glyphs.Size16.options
-        toolsButton.keepIconLeadingAligned = true
+        toolsButton.keepIconLeadingAligned = !themeManager.isAppRebranded
         toolsButton.label = UserText.aiChatToolsButtonLabel
         toolsButton.toolTip = UserText.aiChatToolsButtonLabel
         toolsButton.setAccessibilityLabel(UserText.aiChatToolsButtonLabel)
@@ -774,6 +780,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // this point, so seed manually from whatever the active tab already has.
         applyPanelAttachmentsFromSharedState(omnibarController.activePanelAttachments)
 
+        let isAppRebranded = themeManager.isAppRebranded
+        let containerLeadingInset = isAppRebranded ? Constants.containerLeadingInset : Constants.legacyContainerLeadingInset
+        let submitButtonTrailingInset = isAppRebranded ? Constants.submitButtonTrailingInset : Constants.legacySubmitButtonTrailingInset
+
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -786,11 +796,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             innerBorderView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -1),
 
             containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
-            containerView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
+            containerView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: containerLeadingInset),
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
-            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.submitButtonTrailingInset),
+            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -submitButtonTrailingInset),
             // Bottom constraint is set in setupSuggestionsView() to be above suggestions
             submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize),
             submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),

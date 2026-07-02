@@ -95,7 +95,14 @@ class TabSwitcherViewController: UIViewController {
     lazy var borderView = StyledTopBottomBorderView()
 
     let titleBarView = TabSwitcherTitleBarView()
+    /// Storyboard `UIToolbar`, retained only so the storyboard outlet stays valid. The visible
+    /// bottom bar is now `bottomToolbar` (a `BrowserToolbarView`) so the buttons line up with the
+    /// browser/NTP toolbar during the tab-switcher transition. The storyboard toolbar is removed
+    /// from the hierarchy in `setupBarsLayout` and otherwise unused.
     @IBOutlet weak var toolbar: UIToolbar!
+
+    /// Reuses the browser's bottom-bar view so button positions match exactly (flag off).
+    let bottomToolbar = BrowserToolbarView()
 
     private(set) var pagingScrollView: UIScrollView!
     private var firePageContainer: UIView!
@@ -271,6 +278,10 @@ class TabSwitcherViewController: UIViewController {
     // MARK: - Fire Tabs Tip
 
     func showFireTabsTipIfNeeded() {
+        guard let fireModePromotionsCoordinator,
+              fireModePromotionsCoordinator.isTabSwitcherTipEligible == true else {
+            return
+        }
         guard #available(iOS 17.0, *) else { return }
         guard !LaunchOptionsHandler().isAutomationSession else { return }
         guard fireModeCapability.isFireModeEnabled, selectedBrowsingMode != .fire else { return }
@@ -288,7 +299,7 @@ class TabSwitcherViewController: UIViewController {
             return
         }
 
-        if fireModePromotionsCoordinator?.isTabSwitcherTipExpired == true {
+        if fireModePromotionsCoordinator.isTabSwitcherTipExpired {
             tip.invalidate(reason: .displayCountExceeded)
             return
         }
@@ -296,15 +307,20 @@ class TabSwitcherViewController: UIViewController {
         fireTabsTipTask = Task { @MainActor [weak self] in
             for await shouldDisplay in tip.shouldDisplayUpdates {
                 guard let self else { return }
-                if shouldDisplay {
-                    self.fireModePromotionsCoordinator?.markTabSwitcherTipShown()
-                    let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
-                    popoverController.popoverPresentationController?.permittedArrowDirections = [.up, .down]
-                    self.present(popoverController, animated: true)
-                } else if let tipVC = self.presentedViewController as? TipUIPopoverViewController {
-                    tipVC.dismiss(animated: true)
-                }
+                self.handleFireTabsTipDisplay(shouldDisplay, tip: tip, sourceView: sourceView)
             }
+        }
+    }
+
+    @available(iOS 17.0, *)
+    private func handleFireTabsTipDisplay(_ shouldDisplay: Bool, tip: FireTabsTip, sourceView: UIView) {
+        if shouldDisplay {
+            fireModePromotionsCoordinator?.markTabSwitcherTipShown()
+            let popoverController = TipUIPopoverViewController(tip, sourceItem: sourceView)
+            popoverController.popoverPresentationController?.permittedArrowDirections = [.up, .down]
+            present(popoverController, animated: true)
+        } else if let tipVC = presentedViewController as? TipUIPopoverViewController {
+            tipVC.dismiss(animated: true)
         }
     }
 
@@ -360,7 +376,7 @@ class TabSwitcherViewController: UIViewController {
         NSLayoutConstraint.activate([
             titleBarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             titleBarView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor) : nil,
+            isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor) : nil,
             !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: topGuide.topAnchor) : nil,
 
             pagingScrollView.topAnchor.constraint(equalTo: isBottomBar ? topGuide.topAnchor : titleBarView.bottomAnchor),
@@ -368,7 +384,7 @@ class TabSwitcherViewController: UIViewController {
             pagingScrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 
             interfaceMode.isLarge ? pagingScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
-                pagingScrollView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
+                pagingScrollView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : bottomToolbar.topAnchor),
 
             borderView.topAnchor.constraint(equalTo: isBottomBar ? topGuide.topAnchor : titleBarView.bottomAnchor),
             borderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -376,12 +392,12 @@ class TabSwitcherViewController: UIViewController {
 
             // On iPad large mode constrain to the bottom as the toolbar is hidden
             interfaceMode.isLarge ? borderView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
-                borderView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
+                borderView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : bottomToolbar.topAnchor),
 
             // Always at the bottom
-            toolbar.constrainView(view, by: .width, constant: toolbarWidthMod),
-            toolbar.constrainView(view, by: .centerX),
-            toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            bottomToolbar.constrainView(view, by: .width, constant: toolbarWidthMod),
+            bottomToolbar.constrainView(view, by: .centerX),
+            bottomToolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ].compactMap { $0 })
     }
 
@@ -389,24 +405,26 @@ class TabSwitcherViewController: UIViewController {
         // Remove existing constraints to avoid conflicts
         borderView.translatesAutoresizingMaskIntoConstraints = false
         titleBarView.translatesAutoresizingMaskIntoConstraints = false
-        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        bottomToolbar.translatesAutoresizingMaskIntoConstraints = false
         pagingScrollView.translatesAutoresizingMaskIntoConstraints = false
 
-        let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, toolbar, pagingScrollView, borderView]
+        // Drop the storyboard UIToolbar from the hierarchy; `bottomToolbar` replaces it.
+        toolbar?.removeFromSuperview()
+
+        let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, bottomToolbar, pagingScrollView, borderView]
         viewsToRemoveConstraintsFor.forEach { targetView in
             targetView.removeFromSuperview()
         }
 
         view.addSubview(titleBarView)
-        view.addSubview(toolbar)
+        view.addSubview(bottomToolbar)
         view.addSubview(pagingScrollView)
         view.addSubview(borderView)
 
-        let toolbarAppearance = UIToolbarAppearance()
-        toolbarAppearance.configureWithTransparentBackground()
-        toolbarAppearance.shadowColor = .clear
-        toolbar.standardAppearance = toolbarAppearance
-        toolbar.compactAppearance = toolbarAppearance
+        // Keep the bar transparent (the tab switcher provides its own backdrop) and matched to
+        // the browser's button layout.
+        bottomToolbar.setFloatingStyleEnabled(false)
+        bottomToolbar.setLegacyBackgroundTransparent(true)
         borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         titleBarView.updateForAddressBarPosition(isBottom: appSettings.currentAddressBarPosition.isBottom)
         // On large ipad view don't show the bottom divider
@@ -596,8 +614,13 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func showFireButtonPulseIfNeeded() {
-        guard daxDialogsManager.isShowingFireDialog, let window = view.window else { return }
-        ViewHighlighter.showIn(window, focussedOnButton: barsHandler.fireButton)
+        // The fire button is now a custom view inside `BrowserToolbarView` rather than a
+        // `UIToolbar` item, so `focussedOnButton` (which reads the bar item's private "view")
+        // can't locate it — highlight the button's custom view directly.
+        guard daxDialogsManager.isShowingFireDialog,
+              let window = view.window,
+              let fireButtonView = barsHandler.fireButton.customView else { return }
+        ViewHighlighter.showIn(window, focussedOnView: fireButtonView)
     }
 
     func refreshDisplayModeButton() {
@@ -829,8 +852,8 @@ extension TabSwitcherViewController {
         
         titleBarView.tintColor = theme.barTintColor
 
-        toolbar.barTintColor = theme.barBackgroundColor
-        toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
+        bottomToolbar.setLegacyBackgroundTransparent(true)
+        bottomToolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
 
         // This may move when the feature is further developed
         applyFloatingUIIfNeeded()

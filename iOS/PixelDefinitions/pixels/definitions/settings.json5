@@ -33,6 +33,20 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "settings_hide_tab_bar_while_scrolling_on": {
+        "description": "Fires when the user enables the \"Hide Tab Bar While Scrolling\" iPad setting",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "settings_hide_tab_bar_while_scrolling_off": {
+        "description": "Fires when the user disables the \"Hide Tab Bar While Scrolling\" iPad setting",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_settings_whats-new_open": {
         "description": "Fires when the user opens What's New prompt from settings",
         "owners": ["alessandroboron"],

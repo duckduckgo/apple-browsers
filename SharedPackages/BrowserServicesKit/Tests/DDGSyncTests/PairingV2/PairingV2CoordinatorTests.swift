@@ -432,13 +432,13 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         do {
             try await coordinator.pollOnce()
-            XCTFail("Expected PairingV2Error.recoveryCodePreparationFailed")
-        } catch PairingV2Error.recoveryCodePreparationFailed {
+            XCTFail("Expected PairingV2Error.accountCreationFailed")
+        } catch PairingV2Error.accountCreationFailed {
         } catch {
-            XCTFail("Expected PairingV2Error.recoveryCodePreparationFailed, got \(error)")
+            XCTFail("Expected PairingV2Error.accountCreationFailed, got \(error)")
         }
 
-        XCTAssertEqual(coordinator.state, .failed(.recoveryCodePreparationFailed))
+        XCTAssertEqual(coordinator.state, .failed(.accountCreationFailed))
         XCTAssertEqual(accountManager.createAccountCalls.map(\.deviceName), ["Mac"])
         XCTAssertNil(syncService.account)
         XCTAssertTrue(confirmationDelegate.didCreateSyncAccountCalls.isEmpty)
@@ -762,19 +762,19 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(setup.coordinator.state, .failed(.nativeCredentialAlreadyPresent))
     }
 
-    func testWhenThirdPartyUpgradeReportsGenericUpgradeErrorThenPairingFailsWithUpgradeFailed() async throws {
+    func testWhenThirdPartyUpgradeHasNoUsableProtectedKeysThenPairingFailsWithMissingThirdPartyKey() async throws {
         let setup = try await makeNativeJoinerReadyForThirdPartyUpgrade(upgradeError: ThirdPartyAccountUpgradeError.noUsableThirdPartyProtectedKeys)
 
         do {
             try await setup.coordinator.pollOnce()
-            XCTFail("Expected upgrade failure to abort pairing")
-        } catch PairingV2Error.upgradeFailed {
+            XCTFail("Expected missing third-party key to abort pairing")
+        } catch PairingV2Error.missingThirdPartyKey {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
 
         XCTAssertEqual(setup.upgradeCoordinator.upgradeThirdPartyAccountCalls.map(\.recoveryCode), ["third-party-recovery-code"])
-        XCTAssertEqual(setup.coordinator.state, .failed(.upgradeFailed))
+        XCTAssertEqual(setup.coordinator.state, .failed(.missingThirdPartyKey))
     }
 
     func testWhenNativeJoinerConfirmationIsDeniedThenDoesNotLoginIfRecoveryCodeArrives() async throws {

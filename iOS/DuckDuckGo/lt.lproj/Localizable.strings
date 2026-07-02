@@ -3919,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreso juostos padėtis";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Slėpti kortelių juostą slenkant";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Prieinama daugumoje interneto svetainių. „Duck.ai“, žemėlapiai ir žaidimai gali palikti kortelių juostą matomą.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atidaryti nuorodas susijusiose programose";
 
@@ -4813,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Išjungti sinchronizavimą ir atsarginį kopijavimą?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Pašalinti";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Šis įrenginys nebegalės pasiekti jūsų sinchronizuotų duomenų.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Išjungti sinchronizavimą?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Atrakinkite įrenginį, kad galėtumėte nustatyti funkciją „Sinchronizuoti ir kurti atsarginę kopiją“.";
 
@@ -5356,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Nėra atitikmenų pagal užklausą „%@“";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kodas nukopijuotas";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

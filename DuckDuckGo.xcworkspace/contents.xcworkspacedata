@@ -36,6 +36,9 @@
          location = "group:ScreenTimeDataCleaner">
       </FileRef>
       <FileRef
+         location = "group:SERPInstallOrigin">
+      </FileRef>
+      <FileRef
          location = "group:SERPSettings">
       </FileRef>
       <FileRef

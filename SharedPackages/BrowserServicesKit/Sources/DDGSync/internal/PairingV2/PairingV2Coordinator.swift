@@ -300,13 +300,21 @@ final class PairingV2Coordinator {
             let recoveryCode: String
             do {
                 recoveryCode = try await prepareRecoveryCode(credentialKind: credentialKind, purpose: purpose)
-            } catch {
+            } catch let error as PairingV2Error {
                 do {
-                    try await execute(stateMachine.handle(.failed(.recoveryCodePreparationFailed)))
+                    try await execute(stateMachine.handle(.failed(error)))
                 } catch {
                     await closeLocalChannel()
                 }
-                throw PairingV2Error.recoveryCodePreparationFailed
+                throw error
+            } catch {
+                let pairingError = pairingV2RecoveryCodePreparationError(for: error)
+                do {
+                    try await execute(stateMachine.handle(.failed(pairingError)))
+                } catch {
+                    await closeLocalChannel()
+                }
+                throw pairingError
             }
             try await execute(stateMachine.handle(.recoveryCodePrepared(recoveryCode)))
 
@@ -327,6 +335,12 @@ final class PairingV2Coordinator {
                 try await login(with: recoveryCode)
             } catch SyncError.accountAlreadyExists {
                 throw SyncError.accountAlreadyExists
+            } catch SyncError.unexpectedStatusCode(let statusCode) where statusCode == 401 {
+                try await execute(stateMachine.handle(.failed(.invalidCredentials)))
+                throw PairingV2Error.invalidCredentials
+            } catch SyncError.failedToWriteSecureStore {
+                try await execute(stateMachine.handle(.failed(.localStorageFailed)))
+                throw PairingV2Error.localStorageFailed
             } catch {
                 try await execute(stateMachine.handle(.failed(.loginFailed)))
                 throw PairingV2Error.loginFailed
@@ -337,13 +351,7 @@ final class PairingV2Coordinator {
             do {
                 try await upgradeThirdPartyAccount(with: recoveryCode)
             } catch let error as ThirdPartyAccountUpgradeError {
-                let pairingError: PairingV2Error
-                switch error {
-                case .nativeCredentialAlreadyPresent:
-                    pairingError = .nativeCredentialAlreadyPresent
-                default:
-                    pairingError = .upgradeFailed
-                }
+                let pairingError = pairingV2AccountUpgradeError(for: error)
                 try await execute(stateMachine.handle(.failed(pairingError)))
                 throw pairingError
             } catch let error as PairingV2Error {
@@ -408,7 +416,11 @@ final class PairingV2Coordinator {
             return
         }
 
-        try await syncService.createAccount(deviceName: deviceName, deviceType: deviceType)
+        do {
+            try await syncService.createAccount(deviceName: deviceName, deviceType: deviceType)
+        } catch {
+            throw PairingV2Error.accountCreationFailed
+        }
         await confirmationDelegate?.pairingV2CoordinatorDidCreateSyncAccount(credentialKind: credentialKind)
     }
 
@@ -437,6 +449,39 @@ final class PairingV2Coordinator {
         } catch {
             Logger.sync.error("Pairing V2 3party account upgrade failed: \(String(reflecting: error))")
             throw error
+        }
+    }
+
+    private func pairingV2RecoveryCodePreparationError(for error: Error) -> PairingV2Error {
+        guard let error = error as? ScopedAccessCredentialError else {
+            return .recoveryCodePreparationFailed
+        }
+
+        switch error {
+        case .missingThirdPartyCredential:
+            return .missingThirdPartyCredential
+        case .undecryptableThirdPartyCredential:
+            return .undecryptableThirdPartyCredential
+        case .accountExtendFailed:
+            return .accountExtendFailed
+        }
+    }
+
+    private func pairingV2AccountUpgradeError(for error: ThirdPartyAccountUpgradeError) -> PairingV2Error {
+        switch error {
+        case .nativeCredentialAlreadyPresent:
+            return .nativeCredentialAlreadyPresent
+        case .noUsableThirdPartyProtectedKeys:
+            return .missingThirdPartyKey
+        case .localStorageFailed:
+            return .localStorageFailed
+        case .invalidCredentials:
+            return .invalidCredentials
+        case .finalNativeLoginFailed,
+                .invalidFinalNativeLoginResponse:
+            return .loginFailed
+        default:
+            return .upgradeFailed
         }
     }
 

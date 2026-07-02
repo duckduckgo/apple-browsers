@@ -319,7 +319,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .unifiedToggleInputStopButtonBackground:
             return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
         case .floatingAddressBarBackground:
-            return DynamicColor(lightColor: .shade(0.01), darkColor: .tint(0.03))
+            return DynamicColor(lightColor: .shade(0.05), darkColor: .tint(0.08))
         case .unifiedToggleInputAttachmentErrorBannerBackground:
             return DynamicColor(lightColor: xF6CDD1, darkColor: x5A2A2A)
         case .unifiedToggleInputAttachmentErrorText:

@@ -34,10 +34,12 @@ extension URL {
         absoluteString.truncated(to: 1024)
     }
 
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
     public var originalWebKitString: String? {
         guard NSURL.instancesRespond(to: NSSelectorFromString(URL.Selector.originalDataAsString)) else { return nil }
         return (self as NSURL).value(forKey: Selector.originalDataAsString) as? String
     }
+#endif
 
     /// URL without the scheme and the '/' suffix of the path.
     /// Useful for finding duplicate URLs
@@ -724,9 +726,11 @@ extension URL {
         return components.url
     }
 
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
     enum Selector {
         static let originalDataAsString = "_web_originalDataAsString"
     }
+#endif
 
 }
 

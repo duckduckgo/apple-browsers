@@ -267,6 +267,7 @@ class WKNavigationActionExtensionTests: XCTestCase {
 
     // MARK: - about: URLs
 
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
     // Foundation's URL parser will wrongly percent-encode '#' to '%23' in opaque about: URLs
     // (e.g. when constructed via URL(trimmedAddressBarString:)). URL.hasFragment and
     // URL.equals(_:by:) handle this via effective fragment (commit e880d888b3).
@@ -279,6 +280,7 @@ class WKNavigationActionExtensionTests: XCTestCase {
         XCTAssertEqual(action.request.url?.absoluteString, "about:blank%23section")
         XCTAssertTrue(action.isSameDocumentNavigation)
     }
+#endif
 
     func testWhenAboutURLWithRealHashAndSameDocumentThenIsSameDocument() {
         let action = makeAction(

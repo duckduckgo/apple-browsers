@@ -787,12 +787,14 @@ final class URLEqualityComponentsTests {
 
     // MARK: - originalWebKitString
 
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
     @available(iOS 16, macOS 13, *)
     @Test("originalWebKitString — returns the URL's absolute string", .timeLimit(.minutes(1)))
     func originalWebKitString_returnsAbsoluteString() {
         let url = URL(string: "about:blank#section")!
         #expect(url.originalWebKitString == "about:blank#section")
     }
+#endif
 
     // MARK: - equals — individual component masks (hierarchical URLs)
 
@@ -929,6 +931,13 @@ final class URLEqualityComponentsTests {
     @Test("equals(.sameDocument) — fragment-blind equality, native URL(string:)",
           .timeLimit(.minutes(1)), arguments: sameDocument_args)
     func equalsSameDocument(url1: String, url2: String, expected: Bool, line: UInt) {
+#if !_ORIGINAL_DATA_AS_STRING_ENABLED
+        guard ![url1, url2].contains(where: { $0.contains("about:blank#") }) else {
+            Logger.general.warning("Skipping \(url1) / \(url2) because _ORIGINAL_DATA_AS_STRING_ENABLED is not enabled")
+            return
+        }
+#endif
+
         let loc = Testing.SourceLocation(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1)
         guard let a = URL(string: url1), let b = URL(string: url2) else {
             Issue.record("Could not construct URLs: \(url1) / \(url2)", sourceLocation: loc); return
@@ -940,6 +949,13 @@ final class URLEqualityComponentsTests {
     @Test("equals(.sameDocument) — same result when URLs are created via NSURL",
           .timeLimit(.minutes(1)), arguments: sameDocument_args)
     func equalsSameDocument_NSURL(url1: String, url2: String, expected: Bool, line: UInt) {
+#if !_ORIGINAL_DATA_AS_STRING_ENABLED
+        guard ![url1, url2].contains(where: { $0.contains("about:blank#") }) else {
+            Logger.general.warning("Skipping \(url1) / \(url2) because _ORIGINAL_DATA_AS_STRING_ENABLED is not enabled")
+            return
+        }
+#endif
+
         guard let a = NSURL(string: url1) as URL?, let b = NSURL(string: url2) as URL? else { return }
         let loc = Testing.SourceLocation(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1)
         #expect(a.equals(b, by: .sameDocument) == expected, sourceLocation: loc)
@@ -1087,6 +1103,7 @@ final class URLEqualityComponentsTests {
         }
     }
 
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
     @available(iOS 16, macOS 13, *)
     @Test("NSURL with literal # fragment: sameDocument true, fuzzyIdentity detects fragment",
           .timeLimit(.minutes(1)))
@@ -1103,6 +1120,7 @@ final class URLEqualityComponentsTests {
         let other = URL(string: "about:blank#section")!
         #expect(hashed.equals(other, by: .fuzzyIdentity))
     }
+#endif
 
     @available(iOS 16, macOS 13, *)
     @Test("equals — about: literal # fragments: sameDocument equal, fuzzyIdentity distinct",
@@ -1119,6 +1137,7 @@ final class URLEqualityComponentsTests {
 
     // MARK: - Performance
 
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
     @available(iOS 16, macOS 13, *)
     @Test("equals(.sameDocument) completes in reasonable time for a 20 MB data: URI", .timeLimit(.minutes(1)))
     func equalsSameDocumentCompletesForLargeDataURL() {
@@ -1146,6 +1165,7 @@ final class URLEqualityComponentsTests {
         #expect(!url1.equals(url2, by: .fuzzyIdentity),
                 "url1 has no fragment, url2 has one — must differ under fuzzyIdentity")
     }
+#endif
 
 }
 // swiftlint:enable comma

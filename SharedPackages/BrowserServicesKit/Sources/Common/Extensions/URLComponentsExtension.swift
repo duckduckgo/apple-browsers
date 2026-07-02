@@ -41,6 +41,7 @@ extension URLComponents {
         _=type(of: WKWebView.self)
 #endif
 
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
         guard webKitUrl.isOpaque,
               let originalString = webKitUrl.originalWebKitString,
               let swiftNativeURLComponents = URLComponents(string: originalString) else {
@@ -48,6 +49,9 @@ extension URLComponents {
             return
         }
         self = swiftNativeURLComponents
+#else
+        self.init(url: webKitUrl, resolvingAgainstBaseURL: false)
+#endif
     }
 
     public func eTLDplus1(tld: TLD) -> String? {

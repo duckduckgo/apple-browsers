@@ -306,7 +306,8 @@ let package = Package(
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
+                .define("DEBUG", .when(configuration: .debug)),
+                .define("_ORIGINAL_DATA_AS_STRING_ENABLED", .when(platforms: [.macOS, .iOS])),
             ]
         ),
         .target(
@@ -750,6 +751,9 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+            ],
+            swiftSettings: [
+                .define("_ORIGINAL_DATA_AS_STRING_ENABLED", .when(platforms: [.macOS, .iOS])),
             ]
         ),
         .testTarget(
@@ -786,6 +790,7 @@ let package = Package(
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
                 .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED", .when(platforms: [.macOS])),
+                .define("_ORIGINAL_DATA_AS_STRING_ENABLED", .when(platforms: [.macOS, .iOS])),
             ]
         ),
         .testTarget(

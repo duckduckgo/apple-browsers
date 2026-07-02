@@ -123,21 +123,9 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
         // Feature state when shown — unchanged until the user confirms, so reuse it for the confirmation pixel too.
         let autoconsentEnabled = browserTabViewController.cookiePopupProtectionPreferences.isAutoconsentEnabled
 
-        // Skip telemetry + counting for force-shows (promo debug menu).
-        if !force {
-            let isFirstShow = store.shownCount == 0
-            if isFirstShow {
-                store.firstShownDate = Date()
-            }
-            store.shownCount += 1
-            PixelKit.fire(isFirstShow ? CookiePopupProtectionOptInPixel.shownFirst(autoconsentEnabled: autoconsentEnabled)
-                                      : .shownRepeat(autoconsentEnabled: autoconsentEnabled),
-                          frequency: .standard)
-        }
-
         return await withCheckedContinuation { continuation in
             showContinuation = continuation
-            browserTabViewController.showCookiePopupProtectionOptInDialog(onConfirm: { [weak self] preference in
+            let presented = browserTabViewController.showCookiePopupProtectionOptInDialog(onConfirm: { [weak self] preference in
                 if !force {
                     PixelKit.fire(CookiePopupProtectionOptInPixel.optionConfirmed(preference: preference,
                                                                                   autoconsentEnabled: autoconsentEnabled,
@@ -146,6 +134,23 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
                 }
                 self?.resume(with: .actioned)
             })
+            // The dialog couldn't be presented (no window, or one is already up): finish the session
+            // immediately instead of leaving the promo hanging on an unresolved continuation.
+            guard presented else {
+                resume(with: .noChange)
+                return
+            }
+            // Skip telemetry + counting for force-shows (promo debug menu).
+            if !force {
+                let isFirstShow = store.shownCount == 0
+                if isFirstShow {
+                    store.firstShownDate = Date()
+                }
+                store.shownCount += 1
+                PixelKit.fire(isFirstShow ? CookiePopupProtectionOptInPixel.shownFirst(autoconsentEnabled: autoconsentEnabled)
+                                          : .shownRepeat(autoconsentEnabled: autoconsentEnabled),
+                              frequency: .standard)
+            }
         }
     }
 

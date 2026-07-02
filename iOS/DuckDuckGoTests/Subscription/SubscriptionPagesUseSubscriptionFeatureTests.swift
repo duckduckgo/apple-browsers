@@ -532,6 +532,51 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     @MainActor
+    func testAppStorePendingAuthentication_UpdatesWideEventWithoutCompletingFailure() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_onboarding_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.transactionPendingAuthentication)
+        let pendingTransactionHandler = MockPendingTransactionHandler()
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: pendingTransactionHandler
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: SubscriptionFunnelOrigin.onboarding.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: pendingTransactionHandler,
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator
+        )
+
+        _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
+
+        XCTAssertTrue(pendingTransactionHandler.markPurchasePendingCalled)
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        XCTAssertEqual(mockWideEvent.completions.count, 0)
+
+        let updated = try XCTUnwrap(mockWideEvent.updates.last as? SubscriptionPurchaseWideEventData)
+        XCTAssertNotNil(updated.pendingAuthenticationStartedAt)
+        XCTAssertNil(updated.failingStep)
+        XCTAssertNil(updated.errorData)
+    }
+
+    @MainActor
     func testOriginPrecedence_UsesAttributionOriginOverURL() async throws {
         let urlOrigin = URL(string: "https://duckduckgo.com/subscriptions")!
         let webView = MockURLWebView(url: urlOrigin)

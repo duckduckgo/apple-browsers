@@ -516,8 +516,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
                 setTransactionError(.purchasePendingTransaction)
                 
                 if let purchaseWideEventData {
-                    purchaseWideEventData.markAsFailed(at: .accountPayment, error: error)
-                    wideEvent.completeFlow(purchaseWideEventData, status: .failure, onComplete: { _, _ in })
+                    purchaseWideEventData.markPurchasePendingAuthentication()
+                    wideEvent.updateFlow(purchaseWideEventData)
                 }
             default:
                 setTransactionError(.purchaseFailed)

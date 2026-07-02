@@ -104,9 +104,6 @@ extension DebugScreensViewModel {
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()
             }),
-            .view(title: "Interaction Diagnostics", { _ in
-                InteractionDiagnosticsDebugScreen()
-            }),
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
             }),

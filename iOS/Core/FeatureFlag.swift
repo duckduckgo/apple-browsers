@@ -330,18 +330,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
     case unifiedToggleInputIncludeNewUsers
 
-    /// Production kill switch (on by default) for web-scroll-freeze observability: the passive scroll-failure
-    /// observer (bystander recognizer) + the symptom/mechanism pixels. Ship a privacy-config entry to roll back.
-    case webScrollFreezeObservability
-
-    /// Internal-only gate for the heavier on-device freeze capture (snapshot + ring buffer). Kept separate from
-    /// `webScrollFreezeObservability` so the production observer ships without the capture.
-    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1215895676655232
-    case webScrollFreezeCapture
-
-    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1214241865640178
-    case webScrollFreezeAutoRecovery
-
     /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by
     /// default; ship a privacy-config entry to roll back. See
     /// `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab`.
@@ -424,9 +412,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213617478454569?focus=true
-    case simplifiedSyncSetupExperiment
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
@@ -522,11 +507,6 @@ public enum FeatureFlag: String {
 extension FeatureFlag: FeatureFlagDescribing {
     /// Test-only cohort for verifying UI test experiment override mechanism.
     public enum UITestExperimentCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
-    public enum SimplifiedSyncSetupExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -754,12 +734,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled,
                    source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputIncludeNewUsers),
                    supportsLocalOverriding: false)
-        case .webScrollFreezeObservability:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeObservability))
-        case .webScrollFreezeCapture:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeCapture))
-        case .webScrollFreezeAutoRecovery:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.webScrollFreezeAutoRecovery))
         case .aiChatTabHideToggle:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .freeTrialConversionWideEvent:
@@ -808,8 +782,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireMode))
         case .fireButtonRefinements:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
-        case .simplifiedSyncSetupExperiment:
-            Config(source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupExperiment), cohortType: SimplifiedSyncSetupExperimentCohort.self)
         case .aiChatOmnibarDefaultPosition:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
         case .duckAIVoiceShortcut:

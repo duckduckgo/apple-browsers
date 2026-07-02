@@ -580,10 +580,6 @@ class MainViewController: UIViewController {
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
 
-    /// Watchdog for container pan gestures that arbitrate with web scrolling. Owned here (not a singleton)
-    /// and fed gesture state from `handleUnifiedInputSwipeTabsPan`.
-    let interactionIntegrityMonitor = InteractionIntegrityMonitor()
-
     /// Overlay used to render tab-swipe transitions. Hosts per-tab full-screen snapshots so
     /// the swipe moves chrome+content as a single visual unit instead of as N separately
     /// translated layers. Hidden when not swiping; populated and made visible by
@@ -1233,6 +1229,14 @@ class MainViewController: UIViewController {
                                                selector: #selector(refreshViewsBasedOnDuckPlayerPresentation),
                                                name: DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated,
                                                object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onKeepAddressBarVisibleOnIPadChanged),
+                                               name: AppUserDefaults.Notifications.keepAddressBarVisibleOnIPadChanged,
+                                               object: nil)
+    }
+
+    @objc private func onKeepAddressBarVisibleOnIPadChanged() {
+        revealChromeIfPinned()
     }
 
     private func registerForAppBackgroundNotification() {
@@ -2182,7 +2186,6 @@ class MainViewController: UIViewController {
 
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
         guard let tab else { return }
-        WebScrollFreezeDebugTransitionLog.note("mainVC.tabTransition")
         previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
         previousTab?.tabModel.openedAfterIdle = false
         previousTab?.dismiss()
@@ -2251,7 +2254,6 @@ class MainViewController: UIViewController {
     private func addToContentContainer(controller: UIViewController) {
         viewCoordinator.contentContainer.isHidden = false
         addChild(controller)
-        WebScrollFreezeDebugTransitionLog.note("mainVC.contentContainer.swap")
         viewCoordinator.contentContainer.subviews.forEach { $0.removeFromSuperview() }
         viewCoordinator.contentContainer.addSubview(controller.view)
 
@@ -3757,7 +3759,19 @@ extension MainViewController: BrowserChromeDelegate {
     var canHideBars: Bool {
         // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
         if currentTab?.isError == true { return false }
-        return !daxDialogsManager.shouldShowFireButtonPulse
+        return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
+    }
+
+    /// When `true`, the omni bar and toolbar are never hidden on scroll.
+    /// iPad-only (the setting is hidden on iPhone); applies in all widths, including narrow Split View / Slide Over.
+    private var shouldPinChrome: Bool {
+        isPad && appSettings.keepAddressBarVisibleOnIPad
+    }
+
+    /// Reveals the chrome immediately if it should now be pinned but is currently hidden.
+    private func revealChromeIfPinned() {
+        guard shouldPinChrome else { return }
+        chromeManager?.reset(animated: true)
     }
 
     var isToolbarHidden: Bool {
@@ -6429,6 +6443,8 @@ extension MainViewController {
             updateStatusBarBackgroundColor()
         }
         updateFindInPage()
+
+        revealChromeIfPinned()
     }
 
     func refreshStatusBarBackgroundAfterAIChrome() {

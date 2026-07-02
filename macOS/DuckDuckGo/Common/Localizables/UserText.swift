@@ -252,7 +252,7 @@ struct UserText {
     static let mainMenuHistoryDeleteAllHistory = NSLocalizedString("Delete All History…", comment: "Main Menu History item")
     static let mainMenuHistoryManageBookmarks = NSLocalizedString("Manage Bookmarks", comment: "Main Menu History item")
     static let mainMenuHistoryFavoriteThisPage = NSLocalizedString("Favorite This Page…", comment: "Main Menu History item")
-    static let mainMenuHistoryReopenAllWindowsFromLastSession = NSLocalizedString("Reopen All Windows From Last Session", comment: "Main Menu History item")
+    static let mainMenuHistoryReopenAllWindowsFromLastSession = NSLocalizedString("Reopen All Windows and Tabs From Last Session", comment: "Main Menu History item")
 
     // MARK: - Main Menu -> Bookmarks -> Bookmarks Bar
     static let mainMenuBookmarksShowBookmarksBarAlways = NSLocalizedString("Always Show", comment: "Preference for always showing the bookmarks bar")
@@ -1382,7 +1382,7 @@ struct UserText {
     static let addToDockShowMeHow = NSLocalizedString("preferences.add-to-dock.show-me-how", value: "Show Me How", comment: "Opens a short video demonstrating how to add the app to the Dock")
 
     static let onStartup = NSLocalizedString("preferences.on-startup", value: "On Startup", comment: "Name of the preferences section related to app startup")
-    static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows from last session", comment: "Option to control session restoration")
+    static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows and tabs from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
     static let openANew = NSLocalizedString("preferences.startup.open-a-new", value: "Open a new", comment: "Label for startup window type selection")
     static let window = NSLocalizedString("preferences.startup.window", value: "Window", comment: "Option for regular window type")

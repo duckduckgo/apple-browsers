@@ -150,6 +150,38 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         plusItem.accessibilityLabel = UserText.keyCommandNewTab
         duckChatItem.accessibilityLabel = UserText.duckAiFeatureName
         tabsStyleItem.accessibilityLabel = UserText.tabSwitcherGridViewMenuTitle
+
+        attachTopScrollViewInteraction()
+        attachBottomScrollViewInteraction()
+    }
+
+    var scrollViewTopInteraction: UIInteraction?
+    var scrollViewBottomInteraction: UIInteraction?
+
+    @available(iOS 26, *)
+    func attachScrollViewInteractionToView(_ view: UIView,
+                                           onEdge edge: UIRectEdge,
+                                           removingExistingInteraction existingInteraction: UIInteraction?) -> UIInteraction? {
+        if let existingInteraction {
+            view.removeInteraction(existingInteraction)
+        }
+
+        let interaction = UIScrollEdgeElementContainerInteraction()
+        interaction.scrollView = contentView as? UIScrollView
+        assert(interaction.scrollView != nil)
+        interaction.edge = edge
+        view.addInteraction(interaction)
+        return interaction
+    }
+
+    func attachTopScrollViewInteraction() {
+        guard #available(iOS 26, *) else { return }
+        scrollViewTopInteraction = attachScrollViewInteractionToView(navigationBar, onEdge: .top, removingExistingInteraction: scrollViewTopInteraction)
+    }
+
+    func attachBottomScrollViewInteraction() {
+        guard #available(iOS 26, *) else { return }
+        scrollViewBottomInteraction = attachScrollViewInteractionToView(toolbar, onEdge: .bottom, removingExistingInteraction: scrollViewBottomInteraction)
     }
 
     func setCenterView(_ view: UIView?) {

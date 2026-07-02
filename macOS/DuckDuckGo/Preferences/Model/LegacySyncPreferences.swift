@@ -1102,14 +1102,46 @@ extension LegacySyncPreferences: SyncConnectionControllerDelegate {
         case .syncCancelledFromOtherDevice:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .syncCancelledFromOtherDevice)
             sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.syncConfirmationDenied)
-        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey, .accountUpgradeFailed, .protocolError:
+        case .failedToFetchPublicKey,
+                .failedToFetchConnectRecoveryKey,
+                .failedToLogIn,
+                .failedToTransmitExchangeKey,
+                .failedToFetchExchangeRecoveryKey,
+                .failedToTransmitConnectRecoveryKey:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncLoginError(error: underlyingError ?? error))
+        case .failedToTransmitExchangeRecoveryKey:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncLoginError(error: underlyingError ?? error))
+        case .accountUpgradeFailed,
+                .transportFailure,
+                .protocolError,
+                .unexpectedSecondHello,
+                .unexpectedEvent,
+                .pairingSessionNotReady,
+                .relayChannelUnavailable,
+                .recoveryCodePreparationFailed,
+                .peerRecoveryCodeUnavailable,
+                .unexpectedFailure,
+                .missingThirdPartyCredential,
+                .undecryptableThirdPartyCredential,
+                .accountExtendFailed,
+                .missingThirdPartyKey,
+                .localStorageFailed,
+                .invalidCredentials:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncLoginError(error: underlyingError ?? error))
         case .failedToCreateAccount:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: underlyingError ?? error))
+        case .accountCreationFailed:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: underlyingError ?? error))
         case .pollingForRecoveryKeyTimedOut:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
+        case .pairingV2SessionTimedOut:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason, timeoutStage: error.syncSetupTimeoutStage)
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
         }
     }
@@ -1133,21 +1165,23 @@ extension LegacySyncPreferences: SyncConnectionControllerDelegate {
         PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredFailed(setupSource, flowVersion: syncSetupFlowVersion, reason: reason), doNotEnforcePrefix: true)
     }
 
-    private func sendSetupEndedFailedPixel(setupRole: SyncSetupRole, reason: String?) {
+    private func sendSetupEndedFailedPixel(setupRole: SyncSetupRole, reason: String?, timeoutStage: String? = nil) {
         switch setupRole {
         case .receiver(let setupSource, _):
             PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedFailed(setupSource,
                                                                       flowVersion: syncSetupFlowVersion,
                                                                       peerKind: pairingV2PeerKind?.syncSetupPeerKind,
                                                                       myRole: setupSource.syncSetupMyRole,
-                                                                      reason: reason),
+                                                                      reason: reason,
+                                                                      timeoutStage: timeoutStage),
                           doNotEnforcePrefix: true)
         case .sharer:
             PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedFailed(.exchange,
                                                                       flowVersion: syncSetupFlowVersion,
                                                                       peerKind: pairingV2PeerKind?.syncSetupPeerKind,
                                                                       myRole: SyncSetupPixelKitEvent.ParameterValue.host,
-                                                                      reason: reason),
+                                                                      reason: reason,
+                                                                      timeoutStage: timeoutStage),
                           doNotEnforcePrefix: true)
         }
         pairingV2PeerKind = nil

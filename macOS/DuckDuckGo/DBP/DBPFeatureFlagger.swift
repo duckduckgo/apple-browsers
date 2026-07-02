@@ -30,10 +30,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
     }
 
-    var isEmailConfirmationDecouplingFeatureOn: Bool {
-        featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
-    }
-
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         // Not relevant to macOS
         return false

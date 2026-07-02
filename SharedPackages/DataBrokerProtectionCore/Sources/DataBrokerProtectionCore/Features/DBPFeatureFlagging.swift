@@ -19,7 +19,6 @@
 import Foundation
 
 public typealias DBPFeatureFlagging = RemoteBrokerDeliveryFeatureFlagging
-    & EmailConfirmationDecouplingFeatureFlagging
     & ForegroundRunningFeatureFlagging
     & ContinuedProcessingFeatureFlagging
     & WebViewUserAgentFeatureFlagging
@@ -27,10 +26,6 @@ public typealias DBPFeatureFlagging = RemoteBrokerDeliveryFeatureFlagging
 
 public protocol RemoteBrokerDeliveryFeatureFlagging {
     var isRemoteBrokerDeliveryFeatureOn: Bool { get }
-}
-
-public protocol EmailConfirmationDecouplingFeatureFlagging {
-    var isEmailConfirmationDecouplingFeatureOn: Bool { get }
 }
 
 public protocol ForegroundRunningFeatureFlagging {

@@ -708,14 +708,51 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         case .syncCancelledFromOtherDevice:
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
             await handleError(.syncCancelledFromOtherDevice, error: nil, event: nil)
-        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey, .accountUpgradeFailed, .protocolError:
+        case .failedToFetchPublicKey,
+                .failedToFetchConnectRecoveryKey,
+                .failedToLogIn,
+                .failedToTransmitExchangeKey,
+                .failedToFetchExchangeRecoveryKey,
+                .failedToTransmitConnectRecoveryKey:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
+        case .failedToTransmitExchangeRecoveryKey:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
+        case .accountUpgradeFailed,
+                .transportFailure,
+                .protocolError,
+                .unexpectedSecondHello,
+                .unexpectedEvent,
+                .pairingSessionNotReady,
+                .relayChannelUnavailable,
+                .recoveryCodePreparationFailed,
+                .peerRecoveryCodeUnavailable,
+                .unexpectedFailure,
+                .missingThirdPartyCredential,
+                .undecryptableThirdPartyCredential,
+                .accountExtendFailed,
+                .missingThirdPartyKey,
+                .localStorageFailed,
+                .invalidCredentials:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
+        case .accountCreationFailed:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            fireCodeHandlingFailedExperimentPixel(setupRole: setupRole)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
         case .pollingForRecoveryKeyTimedOut:
             sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
+            await dismissPresentedViewController()
+            handleRecoveryKeyPollingTimeout(setupRole: setupRole)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: nil)
+        case .pairingV2SessionTimedOut:
+            sendSetupEndedFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason, timeoutStage: error.syncSetupTimeoutStage)
             await dismissPresentedViewController()
             handleRecoveryKeyPollingTimeout(setupRole: setupRole)
             await handleError(.unableToSyncWithDevice, error: underlyingError, event: nil)
@@ -767,9 +804,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         }
     }
 
-    private func sendSetupEndedFailedPixel(setupRole: SyncSetupRole, reason: String?) {
+    private func sendSetupEndedFailedPixel(setupRole: SyncSetupRole, reason: String?, timeoutStage: String? = nil) {
         Pixel.fire(pixel: .syncSetupEndedFailed,
-                   withAdditionalParameters: syncSetupPixelParameters(setupRole: setupRole, reason: reason),
+                   withAdditionalParameters: syncSetupPixelParameters(setupRole: setupRole, reason: reason, timeoutStage: timeoutStage),
                    includedParameters: [.appVersion])
         pairingV2PeerKind = nil
     }
@@ -800,18 +837,20 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned, includedParameters: [.appVersion])
     }
 
-    private func syncSetupPixelParameters(setupRole: SyncSetupRole, reason: String?) -> [String: String] {
+    private func syncSetupPixelParameters(setupRole: SyncSetupRole, reason: String?, timeoutStage: String? = nil) -> [String: String] {
         switch setupRole {
         case .receiver(let setupSource, _):
             return syncSetupPixelParameters(setupSource: setupSource,
                                             path: setupSource.syncSetupPath,
                                             reason: reason,
+                                            timeoutStage: timeoutStage,
                                             peerKind: pairingV2PeerKind?.syncSetupPeerKind,
                                             myRole: setupSource.syncSetupMyRole)
         case .sharer:
             return syncSetupPixelParameters(setupSource: .exchange,
                                             path: SyncSetupPixelValue.pairing,
                                             reason: reason,
+                                            timeoutStage: timeoutStage,
                                             peerKind: pairingV2PeerKind?.syncSetupPeerKind,
                                             myRole: SyncSetupPixelValue.host)
         }
@@ -823,6 +862,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                                           path: String? = nil,
                                           flowVersion: String? = nil,
                                           reason: String? = nil,
+                                          timeoutStage: String? = nil,
                                           peerKind: String? = nil,
                                           myRole: String? = nil) -> [String: String] {
         var parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
@@ -832,6 +872,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         parameters[SyncSetupPixelParameter.path] = path
         parameters[SyncSetupPixelParameter.flowVersion] = flowVersion ?? syncSetupPixelFlowVersion
         parameters[SyncSetupPixelParameter.reason] = reason
+        parameters[SyncSetupPixelParameter.timeoutStage] = timeoutStage
         parameters[SyncSetupPixelParameter.peerKind] = peerKind
         parameters[SyncSetupPixelParameter.myRole] = myRole
         return parameters
@@ -890,6 +931,7 @@ private enum SyncSetupPixelParameter {
     static let codeVersion = "code_version"
     static let path = "path"
     static let reason = "reason"
+    static let timeoutStage = "timeout_stage"
     static let peerKind = "peer_kind"
     static let myRole = "my_role"
 }
@@ -899,19 +941,9 @@ private enum SyncSetupPixelValue {
     static let recovery = "recovery"
     static let pairing = "pairing"
     static let linking = "linking"
-    static let sessionTimeout = "session_timeout"
-    static let transportFailure = "transport_failure"
-    static let needsUpgrade = "needs_upgrade"
-    static let incompatibleCode = "incompatible_code"
-    static let unrecognizedCode = "unrecognized_code"
     static let scanningCancelled = "scanning_cancelled"
     static let syncConfirmationDenied = "sync_confirmation_denied"
-    static let invalidCredentials = "invalid_credentials"
-    static let alreadyUpgraded = "already_upgraded"
     static let alreadyPaired = "already_paired"
-    static let accountCreationFailed = "account_creation_failed"
-    static let accountUpgradeFailed = "account_upgrade_failed"
-    static let protocolError = "protocol_error"
     static let host = "host"
     static let joiner = "joiner"
 }
@@ -967,40 +999,5 @@ private extension PairingV2DeviceKind {
 
     var syncSetupPeerKind: String {
         rawValue
-    }
-}
-
-private extension SyncConnectionError {
-
-    var syncSetupFailureReason: String? {
-        switch self {
-        case .failedToLogIn:
-            return SyncSetupPixelValue.invalidCredentials
-        case .failedToFetchPublicKey,
-                .failedToTransmitExchangeRecoveryKey,
-                .failedToFetchConnectRecoveryKey,
-                .failedToTransmitExchangeKey,
-                .failedToFetchExchangeRecoveryKey,
-                .failedToTransmitConnectRecoveryKey:
-            return SyncSetupPixelValue.transportFailure
-        case .pollingForRecoveryKeyTimedOut:
-            return SyncSetupPixelValue.sessionTimeout
-        case .updateRequired:
-            return SyncSetupPixelValue.needsUpgrade
-        case .unsupportedThirdPartyRecoveryCode:
-            return SyncSetupPixelValue.incompatibleCode
-        case .thirdPartyAccountAlreadyUpgraded:
-            return SyncSetupPixelValue.alreadyUpgraded
-        case .unableToRecognizeCode:
-            return SyncSetupPixelValue.unrecognizedCode
-        case .failedToCreateAccount:
-            return SyncSetupPixelValue.accountCreationFailed
-        case .accountUpgradeFailed:
-            return SyncSetupPixelValue.accountUpgradeFailed
-        case .protocolError:
-            return SyncSetupPixelValue.protocolError
-        case .syncCancelledFromOtherDevice:
-            return nil
-        }
     }
 }

@@ -366,7 +366,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlistBetaActive
     case freemium
     case remoteBrokerDelivery
-    case emailConfirmationDecoupling
     case foregroundRunningOnAppActive
     case continuedProcessing
     case pirRollout

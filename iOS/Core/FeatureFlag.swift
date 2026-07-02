@@ -107,9 +107,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866610480266
     case dbpRemoteBrokerDelivery
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710074694
-    case dbpEmailConfirmationDecoupling
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430653
     case dbpForegroundRunningOnAppActive
 
@@ -585,8 +582,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AdAttributionReportingSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .dbpRemoteBrokerDelivery:
             Config(source: .remoteReleasable(DBPSubfeature.remoteBrokerDelivery))
-        case .dbpEmailConfirmationDecoupling:
-            Config(source: .remoteReleasable(DBPSubfeature.emailConfirmationDecoupling))
         case .dbpForegroundRunningOnAppActive:
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.foregroundRunningOnAppActive))
         case .dbpContinuedProcessing:

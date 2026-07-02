@@ -284,6 +284,14 @@ extension SimplifiedSyncSettingsViewV2 {
                 })
             }
             .disabled(!model.isAccountRecoveryAvailable)
+        } header: {
+            // Top-only gap above this section per the design. A clear header adds space above the
+            // card without touching the gap below it — unlike `listSectionSpacing`, which pads both
+            // sides of a section. Height is tuned against the canvas.
+            Color.clear
+                .frame(height: 44)
+                .listRowInsets(EdgeInsets())
+                .accessibilityHidden(true)
         }
         .listRowBackground(Color(designSystemColor: .surface))
     }

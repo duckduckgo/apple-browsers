@@ -180,8 +180,6 @@ class TabSwitcherViewController: UIViewController {
     private(set) var selectedBrowsingMode: BrowsingMode
     private(set) var segmentedPickerHostingController: UIHostingController<ImageSegmentedPickerView>?
     private var pickerSelectionCancellable: AnyCancellable?
-    private var fireTabsTipTask: Task<Void, Never>?
-    var shouldForceShowFireTabsTip = false
     var fireModeCapability: FireModeCapable {
         FireModeCapability.create()
     }
@@ -748,8 +746,6 @@ class TabSwitcherViewController: UIViewController {
             return
         }
 
-        fireTabsTipTask?.cancel()
-        fireTabsTipTask = nil
         canUpdateCollection = false
         if let firePC = firePageController {
             tabManager.tabsModel(for: .fire).tabs.forEach { $0.removeObserver(firePC) }

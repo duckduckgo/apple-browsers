@@ -4868,10 +4868,6 @@ extension MainViewController: OmniBarDelegate {
     func commitToggleMode(_ mode: TextEntryMode) {
         toggleModeStorage.save(mode)
     }
-    
-    func onTryFireModeRequested() {
-        showTabSwitcher(forceFireTabsTip: true)
-    }
 
     func isCurrentTabFireTab() -> Bool {
         tabManager.currentTabsModel.currentTab?.fireTab ?? false
@@ -5183,10 +5179,6 @@ extension MainViewController: NewTabPageControllerDelegate {
 
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: NewTabPageViewController) {
         markSearchContextualOnboardingAsSeen()
-    }
-
-    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
-        showTabSwitcher(forceFireTabsTip: true)
     }
 
 }
@@ -6013,7 +6005,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         showTabSwitcher()
     }
 
-    func showTabSwitcher(forceFireTabsTip: Bool = false) {
+    func showTabSwitcher() {
         if !tabManager.currentTabsModel.allowsEmpty
             && tabManager.current(createIfNeeded: true) == nil {
             fatalError("Unable to get current tab")
@@ -6028,7 +6020,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         updatePreviewForCurrentTab {
             ViewHighlighter.hideAll()
             Task { @MainActor in
-                await self.segueToTabSwitcher(forceFireTabsTip: forceFireTabsTip)
+                await self.segueToTabSwitcher()
             }
         }
     }

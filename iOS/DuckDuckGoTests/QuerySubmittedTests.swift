@@ -230,6 +230,4 @@ final class MockOmniBarDelegate: OmniBarDelegate {
     
     func isCurrentTabFireTab() -> Bool { false }
 
-    func onTryFireModeRequested() { }
-
 }

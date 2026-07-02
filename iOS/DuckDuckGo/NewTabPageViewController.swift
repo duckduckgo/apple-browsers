@@ -139,10 +139,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoritesViewModel: self.favoritesModel))
 
         assignFavoriteModelActions()
-        messagesModel.onTryFireModeRequested = { [weak self] in
-            guard let self else { return }
-            self.delegate?.newTabPageDidRequestTryFireMode(self)
-        }
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {

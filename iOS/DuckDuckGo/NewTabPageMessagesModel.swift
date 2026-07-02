@@ -24,7 +24,6 @@ import RemoteMessaging
 final class NewTabPageMessagesModel: ObservableObject {
 
     @Published private(set) var homeMessageViewModels: [HomeMessageViewModel] = []
-    @Published private(set) var isFirePromotionVisible = false
 
     private var observable: NSObjectProtocol?
 
@@ -36,8 +35,6 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let imageLoader: RemoteMessagingImageLoading
     private let pixelReporter: RemoteMessagingPixelReporting?
     private let isOpenedAfterIdle: () -> Bool
-
-    var onTryFireModeRequested: (() -> Void)?
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,

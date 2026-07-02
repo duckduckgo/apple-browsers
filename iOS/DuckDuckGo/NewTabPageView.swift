@@ -199,7 +199,7 @@ private extension NewTabPageView {
 
     private var shouldShowLogoInEmptyState: Bool {
         guard !viewModel.isLogoHidden else { return false }
-        guard messagesModel.homeMessageViewModels.isEmpty && !messagesModel.isFirePromotionVisible else { return false }
+        guard messagesModel.homeMessageViewModels.isEmpty else { return false }
         if viewModel.escapeHatch != nil && isLandscapeOrientation { return false }
         if viewModel.escapeHatch != nil && isFocussedState { return false }
         return true

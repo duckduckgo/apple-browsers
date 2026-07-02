@@ -337,8 +337,10 @@ function attachScreenshotToForm() {
     }
     var file = new File([array], 'screenshot.png', { type: 'image/png' });
 
-    // Use the data attribute set by showAndRelabelAttachmentRow() — avoids
-    // depending on Asana's internal CSS class names.
+    // Use the data attribute set by showAndRelabelAttachmentRow(). If it was not
+    // set during initialisation (e.g. the Asana row wasn't in the DOM yet), try
+    // once now before giving up — avoids a silent no-op on submit.
+    if (!document.querySelector('[data-ddg-attach-row]')) { showAndRelabelAttachmentRow(); }
     var attachRow = document.querySelector('[data-ddg-attach-row]');
     if (!attachRow) return;
     var fileInput = attachRow.querySelector('input[type="file"]');

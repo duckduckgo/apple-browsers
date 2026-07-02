@@ -178,7 +178,7 @@ final class DefaultSubscriptionExpirationReminderScheduler: SubscriptionExpirati
     private static func subscriptionWarrantsReminder(_ subscription: DuckDuckGoSubscription) -> Bool {
         switch subscription.status {
         case .autoRenewable, .notAutoRenewable, .gracePeriod:
-            return subscription.hasActiveTrialOffer
+            return true
         case .inactive, .expired, .unknown:
             return false
         }

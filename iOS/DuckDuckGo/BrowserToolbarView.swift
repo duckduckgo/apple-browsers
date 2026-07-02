@@ -24,6 +24,9 @@ final class BrowserToolbarView: UIView {
 
     static let extendedHitWidth: CGFloat = 45
     static let buttonsHeight: CGFloat = 56
+    /// Non-floating (legacy) buttons-only bar height, matching the original `UIToolbar` on `main`.
+    /// The floating style uses the taller `buttonsHeight`.
+    static let legacyButtonsHeight: CGFloat = 49
     static let omnibarHorizontalInset: CGFloat = -8
     private static let horizontalEdgePadding: CGFloat = 8
     /// Extra horizontal inset for the button row in the non-floating (legacy) style so the outer
@@ -120,6 +123,12 @@ final class BrowserToolbarView: UIView {
         expandedContentHeightConstraint.constant > 0
     }
 
+    /// Buttons-only bar height for the current style. Floating uses the taller `buttonsHeight`; the
+    /// non-floating style matches the original `UIToolbar` height so flag-off chrome is unchanged.
+    private var buttonsOnlyHeight: CGFloat {
+        isFloatingStyleEnabled ? Self.buttonsHeight : Self.legacyButtonsHeight
+    }
+
     static func totalHeight(withOmnibarHeight omnibarHeight: CGFloat) -> CGFloat {
         guard omnibarHeight > 0 else {
             return buttonsHeight
@@ -208,7 +217,7 @@ final class BrowserToolbarView: UIView {
         
         guard let view else {
             omnibarHeightConstraint.constant = 0
-            buttonsHeightConstraint.constant = Self.buttonsHeight
+            buttonsHeightConstraint.constant = buttonsOnlyHeight
             updateCornerStyle()
             return
         }
@@ -343,6 +352,11 @@ final class BrowserToolbarView: UIView {
             self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             let buttonRowPadding = self.isFloatingStyleEnabled ? Self.horizontalEdgePadding : Self.legacyButtonRowHorizontalPadding
             self.buttonStack.layoutMargins = UIEdgeInsets(top: 0, left: buttonRowPadding, bottom: 0, right: buttonRowPadding)
+            // Keep the buttons-only height in sync with the style (49 legacy / 56 floating). The
+            // embedded-omnibar height is floating-only and owned by `setOmnibarView`, so leave it.
+            if !self.hasEmbeddedOmnibar {
+                self.buttonsHeightConstraint.constant = self.buttonsOnlyHeight
+            }
             self.updateCornerStyle()
             self.layoutIfNeeded()
         }

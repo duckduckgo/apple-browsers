@@ -114,6 +114,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Hang reporting feature flag
     case hangReporting
 
+    /// App rebranding feature flag
+    case appRebranding
+
     /// Remote kill switch for native unsupported-OS messaging (launch alert, About/Feedback info box).
     /// Enabled by default; set to `disabled` in privacy config to suppress the messaging.
     case osSupportWarning
@@ -366,7 +369,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlistBetaActive
     case freemium
     case remoteBrokerDelivery
-    case emailConfirmationDecoupling
     case foregroundRunningOnAppActive
     case continuedProcessing
     case pirRollout

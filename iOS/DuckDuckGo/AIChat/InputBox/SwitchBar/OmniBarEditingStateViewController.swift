@@ -43,7 +43,6 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onDismissRequested()
     func onSwitchToTab(_ tab: Tab)
     func onTabSwitcherRequested()
-    func onTryFireModeRequested()
     func onToggleModeSwitched(to mode: TextEntryMode)
     func onVoiceModeRequested()
 }
@@ -843,10 +842,6 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
 
     func suggestionTrayManagerDidRequestTabSwitcher(_ manager: SuggestionTrayManager) {
         delegate?.onTabSwitcherRequested()
-    }
-
-    func suggestionTrayManagerDidRequestTryFireMode(_ manager: SuggestionTrayManager) {
-        delegate?.onTryFireModeRequested()
     }
 
     func suggestionTrayManagerDidUpdateVisibility(_ manager: SuggestionTrayManager) {

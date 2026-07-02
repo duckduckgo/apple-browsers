@@ -41,7 +41,9 @@ final class FloatingUIManager: FloatingUIManaging {
     }
 
     var isFloatingUIEnabled: Bool {
-        let isFloatingFlagEnabled = featureFlagger.isFeatureOn(.floatingUI)
-        return isFloatingFlagEnabled && unifiedToggleInputFeature.isAvailable && !isPad()
+        // Floating UI is iPhone-only and depends on Unified Toggle Input; if either isn't
+        // available it stays off. These are remote-config driven, so no assert here.
+        guard featureFlagger.isFeatureOn(.floatingUI), !isPad() else { return false }
+        return unifiedToggleInputFeature.isAvailable
     }
 }

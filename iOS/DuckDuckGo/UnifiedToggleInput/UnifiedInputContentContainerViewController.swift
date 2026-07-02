@@ -42,7 +42,6 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSelectViewAllChats()
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab)
     func unifiedInputEditingStateDidRequestTabSwitcher()
-    func unifiedInputEditingStateDidRequestTryFireMode()
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
     func unifiedInputEditingStateDidRequestSyncSetup()
 }
@@ -721,7 +720,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             remoteMessagingActionHandler: ntpDeps.remoteMessagingActionHandler,
             remoteMessagingImageLoader: ntpDeps.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: ntpDeps.remoteMessagingPixelReporter,
-            fireModePromotionEligibility: ntpDeps.fireModePromotionEligibility,
             appSettings: ntpDeps.appSettings,
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,
@@ -1046,10 +1044,6 @@ extension UnifiedInputContentContainerViewController: NewTabPageControllerDelega
 
     func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
         delegate?.unifiedInputEditingStateDidRequestTabSwitcher()
-    }
-
-    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
-        delegate?.unifiedInputEditingStateDidRequestTryFireMode()
     }
 
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {}

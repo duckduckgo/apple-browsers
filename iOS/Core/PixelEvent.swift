@@ -2015,11 +2015,6 @@ extension Pixel {
         case webExtensionAdBlockingDetectedBufferingDaily
 
         // MARK: - Fire Mode
-        case fireModeNTPPromotionShown
-        case fireModeNTPPromotionDismissed
-        case fireModeNTPPromotionEngaged
-        case fireModeMenuPromotionShown
-        case fireModeMenuPromotionEngaged
         case browsingModeSwitched
         case tabSwitcherModeToggled
         case fireModeBurnExecuted
@@ -3970,11 +3965,6 @@ extension Pixel.Event {
         case .webExtensionAdBlockingDetectedBufferingDaily: return "m_web_extension_adblocking_detected_buffering_daily"
 
         // MARK: - Fire Mode
-        case .fireModeNTPPromotionShown: return "m_fire-mode_ntp-promotion_shown"
-        case .fireModeNTPPromotionDismissed: return "m_fire-mode_ntp-promotion_dismissed"
-        case .fireModeNTPPromotionEngaged: return "m_fire-mode_ntp-promotion_engaged"
-        case .fireModeMenuPromotionShown: return "m_fire-mode_menu-promotion_shown"
-        case .fireModeMenuPromotionEngaged: return "m_fire-mode_menu-promotion_engaged"
         case .browsingModeSwitched: return "m_browsing-mode_switched"
         case .tabSwitcherModeToggled: return "m_tab-switcher_mode-toggled"
         case .fireModeBurnExecuted: return "m_fire-mode_burn_executed"

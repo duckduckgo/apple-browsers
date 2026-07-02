@@ -61,6 +61,7 @@ protocol AddressBarStyleProviding {
     var addressBarToggleIndicatorGap: CGFloat { get }
     var addressBarToggleIndicatorHorizontalInset: CGFloat { get }
     var addTabButtonPadding: CGFloat { get }
+    var aiChatOmnibarTextContainerTopPadding: CGFloat { get }
     var aiChatOmnibarTextContainerLeadingPadding: CGFloat { get }
     var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
     var suggestionHighlightCornerRadius: CGFloat { get }
@@ -152,6 +153,7 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarButtonsContainerViewLeadingPadding: CGFloat = 2
     let addressBarButtonsContainerViewTrailingPadding: CGFloat = 2
     let aiChatOmnibarTextContainerLeadingPadding: CGFloat = 10
+    let aiChatOmnibarTextContainerTopPadding: CGFloat = 5
     let suggestionIconViewLeadingPadding: CGFloat = 8
     let suggestionTextFieldLeadingPadding: CGFloat = 8
     let topSpaceForSuggestionWindow: CGFloat = 16
@@ -279,6 +281,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let addressBarToggleIndicatorHorizontalInset: CGFloat = 1
     let addTabButtonPadding: CGFloat = 32                       // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
     let aiChatOmnibarTextContainerLeadingPadding: CGFloat = 13
+    let aiChatOmnibarTextContainerTopPadding: CGFloat = 6
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = CurrentPrivacyShieldAddressBarStyleProvider()
     let suggestionHighlightCornerRadius: CGFloat = 12
     let suggestionHighlightHorizontalPadding: CGFloat = 5

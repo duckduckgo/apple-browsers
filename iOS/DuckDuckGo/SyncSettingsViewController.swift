@@ -1036,32 +1036,9 @@ private enum SyncSetupPixelValue {
     static let recovery = "recovery"
     static let pairing = "pairing"
     static let linking = "linking"
-    static let v1Failure = "v1_failure"
-    static let sessionTimeout = "session_timeout"
-    static let needsUpgrade = "needs_upgrade"
-    static let incompatibleCode = "incompatible_code"
-    static let unrecognizedCode = "unrecognized_code"
     static let scanningCancelled = "scanning_cancelled"
     static let syncConfirmationDenied = "sync_confirmation_denied"
-    static let invalidCredentials = "invalid_credentials"
-    static let alreadyUpgraded = "already_upgraded"
     static let alreadyPaired = "already_paired"
-    static let accountCreationFailed = "account_creation_failed"
-    static let accountUpgradeFailed = "account_upgrade_failed"
-    static let protocolError = "protocol_error"
-    static let transportFailure = "transport_failure"
-    static let unexpectedSecondHello = "unexpected_second_hello"
-    static let unexpectedEvent = "unexpected_event"
-    static let pairingSessionNotReady = "pairing_session_not_ready"
-    static let relayChannelUnavailable = "relay_channel_unavailable"
-    static let recoveryCodePreparationFailed = "recovery_code_preparation_failed"
-    static let peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
-    static let unexpectedFailure = "unexpected_failure"
-    static let missingThirdPartyCredential = "missing_3party_credential"
-    static let undecryptableThirdPartyCredential = "undecryptable_3party_credential"
-    static let accountExtendFailed = "account_extend_failed"
-    static let missingThirdPartyKey = "missing_3party_key"
-    static let localStorageFailed = "local_storage_failed"
     static let host = "host"
     static let joiner = "joiner"
 }
@@ -1117,79 +1094,5 @@ private extension PairingV2DeviceKind {
 
     var syncSetupPeerKind: String {
         rawValue
-    }
-}
-
-private extension SyncConnectionError {
-
-    var syncSetupFailureReason: String? {
-        switch self {
-        // These cases are emitted by the legacy V1 exchange/connect flow and are intentionally bucketed together.
-        case .failedToLogIn,
-                .failedToFetchPublicKey,
-                .failedToTransmitExchangeRecoveryKey,
-                .failedToFetchConnectRecoveryKey,
-                .failedToTransmitExchangeKey,
-                .failedToFetchExchangeRecoveryKey,
-                .failedToTransmitConnectRecoveryKey,
-                .pollingForRecoveryKeyTimedOut,
-                .failedToCreateAccount:
-            return SyncSetupPixelValue.v1Failure
-        case .invalidCredentials:
-            return SyncSetupPixelValue.invalidCredentials
-        case .pairingV2SessionTimedOut:
-            return SyncSetupPixelValue.sessionTimeout
-        case .updateRequired:
-            return SyncSetupPixelValue.needsUpgrade
-        case .unsupportedThirdPartyRecoveryCode:
-            return SyncSetupPixelValue.incompatibleCode
-        case .thirdPartyAccountAlreadyUpgraded:
-            return SyncSetupPixelValue.alreadyUpgraded
-        case .unableToRecognizeCode:
-            return SyncSetupPixelValue.unrecognizedCode
-        case .accountCreationFailed:
-            return SyncSetupPixelValue.accountCreationFailed
-        case .accountUpgradeFailed:
-            return SyncSetupPixelValue.accountUpgradeFailed
-        case .transportFailure:
-            return SyncSetupPixelValue.transportFailure
-        case .protocolError:
-            return SyncSetupPixelValue.protocolError
-        case .syncCancelledFromOtherDevice:
-            return nil
-        case .unexpectedSecondHello:
-            return SyncSetupPixelValue.unexpectedSecondHello
-        case .unexpectedEvent:
-            return SyncSetupPixelValue.unexpectedEvent
-        case .pairingSessionNotReady:
-            return SyncSetupPixelValue.pairingSessionNotReady
-        case .relayChannelUnavailable:
-            return SyncSetupPixelValue.relayChannelUnavailable
-        case .recoveryCodePreparationFailed:
-            return SyncSetupPixelValue.recoveryCodePreparationFailed
-        case .peerRecoveryCodeUnavailable:
-            return SyncSetupPixelValue.peerRecoveryCodeUnavailable
-        case .unexpectedFailure:
-            return SyncSetupPixelValue.unexpectedFailure
-        case .missingThirdPartyCredential:
-            return SyncSetupPixelValue.missingThirdPartyCredential
-        case .undecryptableThirdPartyCredential:
-            return SyncSetupPixelValue.undecryptableThirdPartyCredential
-        case .accountExtendFailed:
-            return SyncSetupPixelValue.accountExtendFailed
-        case .missingThirdPartyKey:
-            return SyncSetupPixelValue.missingThirdPartyKey
-        case .localStorageFailed:
-            return SyncSetupPixelValue.localStorageFailed
-        }
-    }
-
-    var syncSetupTimeoutStage: String? {
-        switch self {
-        case .pairingV2SessionTimedOut(let timeoutStage):
-            return timeoutStage?.rawValue
-        default:
-            return nil
-        }
     }
 }

@@ -94,6 +94,106 @@ public enum SyncSetupTimeoutStage: String, Equatable {
     case loggingIn = "logging_in"
 }
 
+enum SyncSetupFailureReason {
+    static let v1Failure = "v1_failure"
+    static let sessionTimeout = "session_timeout"
+    static let needsUpgrade = "needs_upgrade"
+    static let incompatibleCode = "incompatible_code"
+    static let alreadyUpgraded = "already_upgraded"
+    static let unrecognizedCode = "unrecognized_code"
+    static let accountCreationFailed = "account_creation_failed"
+    static let accountUpgradeFailed = "account_upgrade_failed"
+    static let invalidCredentials = "invalid_credentials"
+    static let protocolError = "protocol_error"
+    static let transportFailure = "transport_failure"
+    static let unexpectedSecondHello = "unexpected_second_hello"
+    static let unexpectedEvent = "unexpected_event"
+    static let pairingSessionNotReady = "pairing_session_not_ready"
+    static let relayChannelUnavailable = "relay_channel_unavailable"
+    static let recoveryCodePreparationFailed = "recovery_code_preparation_failed"
+    static let peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
+    static let unexpectedFailure = "unexpected_failure"
+    static let missingThirdPartyCredential = "missing_3party_credential"
+    static let undecryptableThirdPartyCredential = "undecryptable_3party_credential"
+    static let accountExtendFailed = "account_extend_failed"
+    static let missingThirdPartyKey = "missing_3party_key"
+    static let localStorageFailed = "local_storage_failed"
+}
+
+public extension SyncConnectionError {
+
+    var syncSetupFailureReason: String? {
+        switch self {
+        // These cases are emitted by the legacy V1 exchange/connect flow and are intentionally bucketed together.
+        case .failedToLogIn,
+                .failedToFetchPublicKey,
+                .failedToTransmitExchangeRecoveryKey,
+                .failedToFetchConnectRecoveryKey,
+                .failedToTransmitExchangeKey,
+                .failedToFetchExchangeRecoveryKey,
+                .failedToTransmitConnectRecoveryKey,
+                .pollingForRecoveryKeyTimedOut,
+                .failedToCreateAccount:
+            return SyncSetupFailureReason.v1Failure
+        case .invalidCredentials:
+            return SyncSetupFailureReason.invalidCredentials
+        case .pairingV2SessionTimedOut:
+            return SyncSetupFailureReason.sessionTimeout
+        case .updateRequired:
+            return SyncSetupFailureReason.needsUpgrade
+        case .unsupportedThirdPartyRecoveryCode:
+            return SyncSetupFailureReason.incompatibleCode
+        case .thirdPartyAccountAlreadyUpgraded:
+            return SyncSetupFailureReason.alreadyUpgraded
+        case .unableToRecognizeCode:
+            return SyncSetupFailureReason.unrecognizedCode
+        case .accountCreationFailed:
+            return SyncSetupFailureReason.accountCreationFailed
+        case .accountUpgradeFailed:
+            return SyncSetupFailureReason.accountUpgradeFailed
+        case .transportFailure:
+            return SyncSetupFailureReason.transportFailure
+        case .protocolError:
+            return SyncSetupFailureReason.protocolError
+        case .syncCancelledFromOtherDevice:
+            return nil
+        case .unexpectedSecondHello:
+            return SyncSetupFailureReason.unexpectedSecondHello
+        case .unexpectedEvent:
+            return SyncSetupFailureReason.unexpectedEvent
+        case .pairingSessionNotReady:
+            return SyncSetupFailureReason.pairingSessionNotReady
+        case .relayChannelUnavailable:
+            return SyncSetupFailureReason.relayChannelUnavailable
+        case .recoveryCodePreparationFailed:
+            return SyncSetupFailureReason.recoveryCodePreparationFailed
+        case .peerRecoveryCodeUnavailable:
+            return SyncSetupFailureReason.peerRecoveryCodeUnavailable
+        case .unexpectedFailure:
+            return SyncSetupFailureReason.unexpectedFailure
+        case .missingThirdPartyCredential:
+            return SyncSetupFailureReason.missingThirdPartyCredential
+        case .undecryptableThirdPartyCredential:
+            return SyncSetupFailureReason.undecryptableThirdPartyCredential
+        case .accountExtendFailed:
+            return SyncSetupFailureReason.accountExtendFailed
+        case .missingThirdPartyKey:
+            return SyncSetupFailureReason.missingThirdPartyKey
+        case .localStorageFailed:
+            return SyncSetupFailureReason.localStorageFailed
+        }
+    }
+
+    var syncSetupTimeoutStage: String? {
+        switch self {
+        case .pairingV2SessionTimedOut(let timeoutStage):
+            return timeoutStage?.rawValue
+        default:
+            return nil
+        }
+    }
+}
+
 public protocol SyncConnectionControlling {
     /**
      Returns a device ID, public key and secret key ready for display and allows callers attempt to fetch the transmitted public key

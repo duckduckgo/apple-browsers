@@ -63,7 +63,7 @@ enum CookiePopupProtectionOptInOption: CaseIterable, Identifiable {
 }
 
 /// Centered opt-in card matching the Cookie Pop-up Protection design.
-/// ponytail: `Confirm` reports the selected option via `onConfirm`; the presenter applies the setting.
+/// `Confirm` reports the selected option via `onConfirm`; the presenter applies the setting.
 struct CookiePopupProtectionOptInView: View {
 
     let variant: CookiePopupProtectionOptInVariant
@@ -218,7 +218,7 @@ struct CookiePopupProtectionOptInView: View {
 }
 
 /// Dimming scrim + centered card. This is what gets hosted over the tab.
-/// ponytail: scrim is non-dismissing on purpose — it's an opt-in; only `Confirm` closes it.
+/// scrim is non-dismissing on purpose — it's an opt-in; only `Confirm` closes it.
 struct CookiePopupProtectionOptInOverlayView: View {
 
     let variant: CookiePopupProtectionOptInVariant
@@ -229,7 +229,7 @@ struct CookiePopupProtectionOptInOverlayView: View {
             Color.black.opacity(0.18)
                 .ignoresSafeArea()
                 .contentShape(Rectangle())
-                // ponytail: absorb clicks on the backdrop so nothing behind reacts; non-dismissing on purpose.
+                // absorb clicks on the backdrop so nothing behind reacts; non-dismissing on purpose.
                 .onTapGesture {}
             CookiePopupProtectionOptInView(variant: variant, onConfirm: onConfirm)
         }

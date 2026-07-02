@@ -676,7 +676,7 @@ final class BrowserTabViewController: NSViewController {
 
     /// Presents the Cookie Pop-up Protection opt-in dialog centered over the window.
     /// `onConfirm` fires when the user taps Confirm, reporting the resulting Cookie Pop-up Protection preference.
-    /// ponytail: the dim/backdrop is a WindowDimmingBlockingView mounted on the window frame view
+    /// the dim/backdrop is a WindowDimmingBlockingView mounted on the window frame view
     /// (contentView.superview) so it covers the WHOLE window — titlebar / tab bar included — and its local
     /// event monitor blocks mouse/scroll from reaching anything behind it. The card is a sibling above the
     /// backdrop so it receives events normally (no manual forwarding).

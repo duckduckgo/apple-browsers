@@ -3919,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Θέση γραμμής διευθύνσεων";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Απόκρυψη γραμμής καρτελών κατά την κύλιση";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Διαθέσιμο στους περισσότερους ιστότοπους. Το Duck.ai, οι χάρτες και τα παιχνίδια ενδέχεται να διατηρούν ορατή τη γραμμή καρτελών.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ανοίξτε τους συνδέσμους στις σχετικές εφαρμογές";
 
@@ -4813,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Απενεργοποίηση Sync & Backup;";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Αφαίρεση";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Αυτή η Συσκευή δεν θα μπορεί πλέον να έχει πρόσβαση στα συγχρονισμένα δεδομένα σας.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Απενεργοποίηση συγχρονισμού;";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Ξεκλειδώστε τη συσκευή για να ρυθμίσετε τη λειτουργία Sync & Backup";
 
@@ -5356,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Δεν υπάρχουν αντιστοιχίες για το «%@»";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Ο κώδικας αντιγράφηκε";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

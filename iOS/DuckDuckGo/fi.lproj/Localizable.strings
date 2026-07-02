@@ -3919,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Osoitepalkin sijainti";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Piilota välilehtipalkki vierittämisen aikana";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Saatavilla useimmilla verkkosivustoilla. Duck.ai, kartat ja pelit saattavat pitää välilehtipalkin näkyvissä.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Avaa linkit liittyvissä sovelluksissa";
 
@@ -4813,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Poistetaanko synkronointi ja varmuuskopiointi käytöstä?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Poista";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Tämä laite ei enää pääse käsiksi synkronoituihin tietoihisi.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Poistetaanko synkronointi käytöstä?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Avaa laitteen lukitus ja määritä Sync & Backup";
 
@@ -5356,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Ei osumia haulle \"%@\"";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Koodi kopioitu";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

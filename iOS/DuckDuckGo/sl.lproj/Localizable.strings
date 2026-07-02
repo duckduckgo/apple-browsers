@@ -3919,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Položaj naslovne vrstice";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Skrij vrstico z zavihki med pomikanjem";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Na voljo na večini spletnih strani. Duck.ai, zemljevidi in igre lahko ohranijo vrstico z zavihki vidno.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Odpri povezave v povezanih aplikacijah";
 
@@ -4813,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Želite izklopiti funkcijo Sync & Backup?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Odstrani";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Ta naprava ne bo več mogla dostopati do vaših sinhroniziranih podatkov.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Želite izklopiti sinhronizacijo?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Odklenite napravo, da nastavite funkcijo Sync & Backup (Sinhronizacija in varnostno kopiranje)";
 
@@ -5356,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Ni zadetkov za »% @«";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Koda je kopirana";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

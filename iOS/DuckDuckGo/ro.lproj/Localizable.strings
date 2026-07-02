@@ -3919,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Poziția barei de adrese";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Ascunde bara de file la derulare";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Disponibil pe majoritatea site-urilor. Duck.ai, hărțile și jocurile pot menține bara de file vizibilă.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Deschide linkuri în aplicațiile asociate";
 
@@ -4813,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Oprești Sync & Backup?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Elimină";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Acest dispozitiv nu va mai putea accesa datele tale sincronizate.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Oprești sincronizarea?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Deblochează dispozitivul pentru a configura Sync & Backup";
 
@@ -5356,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Nu există potriviri pentru „%@”";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Cod copiat";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

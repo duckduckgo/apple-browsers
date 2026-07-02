@@ -800,7 +800,6 @@ class TabViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        webScrollObserver?.reset()
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
         unregisterFromResignActive()
@@ -941,8 +940,6 @@ class TabViewController: UIViewController {
             .assign(to: \.netPConnectionStatus, onWeaklyHeld: self)
     }
 
-    private(set) var webScrollObserver: WebScrollObserver?
-
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         // The email manager is pulled from the main view controller, so reconnect it now, otherwise, it's nil
@@ -958,7 +955,6 @@ class TabViewController: UIViewController {
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
 
         checkWebViewVisibilityConsistency()
-        webScrollObserver?.checkForWedgedRecognizer()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -1069,8 +1065,6 @@ class TabViewController: UIViewController {
             self?.handlePullToRefresh()
         })
 
-        attachScrollFreezeDiagnosticsIfNeeded()
-
         if isAITab {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(false)
             webView.scrollView.alwaysBounceVertical = false
@@ -1127,6 +1121,10 @@ class TabViewController: UIViewController {
 #endif
 
         borderView.insertSelf(into: webView)
+        updateBorderViewForFloatingUIIfNeeded()
+    }
+
+    private func updateBorderViewForFloatingUIIfNeeded() {
         if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
             borderView.isHidden = true
             borderView.isTopVisible = false
@@ -1135,31 +1133,6 @@ class TabViewController: UIViewController {
         } else {
             borderView.isHidden = false
             borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
-        }
-    }
-
-    // Symptom detection + pixels ship to production behind the `webScrollFreezeObservability` kill switch
-    // (on by default). The heavy on-device freeze capture is injected only when `webScrollFreezeCapture`
-    // (internal-only) is on — in production `captureFreeze` is a no-op.
-    private func attachScrollFreezeDiagnosticsIfNeeded() {
-        guard webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) else { return }
-        let captureEnabled = featureFlagger.isFeatureOn(.webScrollFreezeCapture)
-        webScrollObserver = WebScrollObserver(container: webViewContainer,
-                                              scrollView: { [weak self] in self?.webView?.scrollView },
-                                              currentURL: { [weak self] in self?.webView?.url },
-                                              captureFreeze: captureEnabled
-                                                ? { WebScrollFreezeDebugCaptureStore.save(WebScrollFreezeDebugProbe.captureNow()) }
-                                                : {},
-                                              autoRecover: featureFlagger.isFeatureOn(.webScrollFreezeAutoRecovery)
-                                                ? { [weak self] in
-                                                    let ran = WebScrollFreezeRecovery.autoRecover(scrollView: self?.webView?.scrollView)
-                                                    if ran { DailyPixel.fireDailyAndCount(pixel: .debugInteractionRecoveryAttempted, withAdditionalParameters: [:]) }
-                                                    return ran
-                                                }
-                                                : { false })
-        webScrollObserver?.install()
-        if captureEnabled, let window = WebScrollFreezeDebugProbe.keyWindow() {
-            WebScrollFreezeDebugActiveTouchProbe.installIfNeeded(on: window)
         }
     }
 
@@ -1958,7 +1931,6 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        webScrollObserver?.reset()
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)

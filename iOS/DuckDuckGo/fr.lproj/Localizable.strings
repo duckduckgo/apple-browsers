@@ -3919,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Position de la barre d'adresse";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Masquer la barre d'onglets pendant le défilement";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Disponible sur la plupart des sites web. Duck.ai, les cartes et les jeux peuvent garder la barre d'onglets visible.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ouvrir les liens dans les applications associées";
 
@@ -4813,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Désactiver Sync & Backup ?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Supprimer";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Cet appareil ne pourra plus accéder à vos données synchronisées.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Désactiver la synchronisation ?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Déverrouiller l'appareil pour configurer Sync & Backup";
 
@@ -5356,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Aucun résultat pour \"%@\"";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Code copié";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

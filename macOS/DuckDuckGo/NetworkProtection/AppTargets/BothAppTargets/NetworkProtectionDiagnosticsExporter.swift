@@ -156,7 +156,7 @@ final class NetworkProtectionDiagnosticsExporter {
         async let networkState = collectNetworkState()
         async let systemCommandOutput = collectSystemCommandOutput()
 
-        let appState = collectAppState()
+        let appState = await collectAppState()
 
         let files = await [
             DiagnosticsFile(name: "README.txt", contents: readme()),
@@ -208,9 +208,15 @@ final class NetworkProtectionDiagnosticsExporter {
 
     // MARK: - App State
 
-    private func collectAppState() -> String {
+    private func collectAppState() async -> String {
         let vpnMenuAgentBundleID = infoPlistValue(for: InfoPlistKey.vpnMenuAgentBundleID)
         let loginItem = vpnMenuAgentBundleID.map { LoginItem(bundleId: $0, defaults: .netP, logger: Logger.networkProtection) }
+        let loginItemStatusString: String
+        if let loginItem {
+            loginItemStatusString = "\(await loginItem.status())"
+        } else {
+            loginItemStatusString = "unknown"
+        }
         let runningVPNMenuApplications = vpnMenuAgentBundleID.map {
             NSRunningApplication.runningApplications(withBundleIdentifier: $0)
         } ?? []
@@ -252,7 +258,7 @@ final class NetworkProtectionDiagnosticsExporter {
 
         \(section("Login item"))
         Bundle identifier: \(vpnMenuAgentBundleID ?? missingInfoPlistValue(for: InfoPlistKey.vpnMenuAgentBundleID))
-        Status: \(loginItem.map { "\($0.status)" } ?? "unknown")
+        Status: \(loginItemStatusString)
         Is running: \(loginItem.map { "\($0.isRunning)" } ?? "unknown")
         Running process identifiers:
         \(runningVPNMenuApplications.map(\.processIdentifier).map(String.init).indentedList())

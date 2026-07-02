@@ -30,10 +30,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func showRecoveringDataAutoRestore()
     func showRecoveryCodeEntry()
     func showSyncWithAnotherDevice()
-    func showRecoveryPDF()
     func shareRecoveryPDF()
-    func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
-    func confirmAndDisableSync() async -> Bool
     func confirmAndDeleteAllData() async -> Bool
     func confirmRemoveDevice(_ device: SyncSettingsViewModel.Device) async -> Bool
     func removeDevice(_ device: SyncSettingsViewModel.Device)
@@ -140,7 +137,6 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public enum SyncSetupEntryPoint: Equatable {
-        case backup
         case pairing
         case simplifiedToggle
     }
@@ -179,7 +175,6 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAccountRecoveryAvailable: Bool = true
     @Published public var isAIChatSyncEnabled: Bool = false
     @Published public var isAppVersionNotSupported: Bool = false
-    @Published public var isSyncWithSetUpSheetVisible: Bool = false
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
     @Published public var isSyncWithAnotherDevicePromptVisible: Bool = false
 
@@ -198,7 +193,6 @@ public class SyncSettingsViewModel: ObservableObject {
     private(set) var switchToProdEnvironment: () -> Void = {}
     private var cancellables = Set<AnyCancellable>()
     private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
-    private var shouldFireSignupAbandonedOnSheetDismissal = false
     private var shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
@@ -278,16 +272,6 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.fireAutoRestorePixel(event: .manualRecoveryShown)
     }
 
-    func disableSync() {
-        isBusy = true
-        Task { @MainActor in
-            if await delegate!.confirmAndDisableSync() {
-                isSyncEnabled = false
-            }
-            isBusy = false
-        }
-    }
-
     func deleteAllData() {
         isBusy = true
         Task { @MainActor in
@@ -315,13 +299,6 @@ public class SyncSettingsViewModel: ObservableObject {
         guard isSyncEnabled || isAccountCreationAvailable else { return }
         Task { @MainActor in
             await beginFlow(for: .setup(.pairing))
-        }
-    }
-
-    public func beginBackupFlow() {
-        Task { @MainActor in
-            guard isAccountCreationAvailable else { return }
-            await beginFlow(for: .setup(.backup))
         }
     }
 
@@ -354,8 +331,6 @@ public class SyncSettingsViewModel: ObservableObject {
         switch continuation {
         case .setup(let entryPoint):
             switch entryPoint {
-            case .backup:
-                showSyncWithSetUpSheet()
             case .pairing:
                 delegate?.showSyncWithAnotherDevice()
             case .simplifiedToggle:
@@ -382,28 +357,6 @@ public class SyncSettingsViewModel: ObservableObject {
         isBusy = false
         isSyncEnabled = true
         self.recoveryCode = recoveryCode
-    }
-
-    public func showSyncWithSetUpSheet() {
-        shouldFireSignupAbandonedOnSheetDismissal = true
-        isSyncWithSetUpSheetVisible = true
-    }
-
-    public func dismissSyncWithSetUpSheet() {
-        isSyncWithSetUpSheetVisible = false
-    }
-
-    public func syncWithSetUpSheetDidDismiss() {
-        guard shouldFireSignupAbandonedOnSheetDismissal else { return }
-
-        shouldFireSignupAbandonedOnSheetDismissal = false
-        delegate?.fireSyncSetupPixel(event: .signupAbandoned)
-    }
-
-    public func startSyncPressed() {
-        shouldFireSignupAbandonedOnSheetDismissal = false
-        isBusy = true
-        delegate?.createAccountAndStartSyncing(optionsViewModel: self)
     }
 
     public func enableSyncToggleTapped() {

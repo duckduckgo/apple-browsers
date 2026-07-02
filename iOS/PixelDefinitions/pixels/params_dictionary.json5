@@ -17,9 +17,8 @@
     },
     "autoconsent_enabled": {
         "key": "autoconsent_enabled",
-        "type": "string",
-        "description": "Whether Cookie Pop-up Protection (autoconsent) was enabled at the moment the pixel fired",
-        "enum": ["true", "false"]
+        "type": "boolean",
+        "description": "Whether Cookie Pop-up Protection (autoconsent) was enabled at the moment the pixel fired"
     },
     "time_since_shown": {
         "key": "time_since_shown",

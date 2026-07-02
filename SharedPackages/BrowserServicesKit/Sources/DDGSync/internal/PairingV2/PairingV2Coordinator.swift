@@ -32,7 +32,7 @@ protocol PairingV2ConfirmationDelegate: AnyObject {
 /// Default timing for the polling loop in `pollUntilFinished`.
 enum PairingV2PollingDefaults {
     /// Give up on the pairing session after this many seconds (5 minutes).
-    static let sessionTimeout: TimeInterval = 10
+    static let sessionTimeout: TimeInterval = 300
     /// Wait this long between relay polls (1 second, in nanoseconds).
     static let pollIntervalNanoseconds: UInt64 = 1_000_000_000
 }

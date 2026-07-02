@@ -196,12 +196,6 @@
 /* Sync settings 'Download Recovery Code' button */
 "sync.simplified.download.recovery.code.button" = "Download Recovery Code";
 
-/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
-"sync.simplified.enabled.header.message" = "Your bookmarks, autofill data, and Duck.ai chats, are being synced with end-to-end encryption.";
-
-/* Description shown when Sync & Backup is enabled */
-"sync.simplified.enabled.header.message.basic" = "Your bookmarks and autofill data are being synced with end-to-end encryption.";
-
 /* Button subtitle to get the DuckDuckGo desktop browser */
 "sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo for Mac and Windows";
 
@@ -213,9 +207,6 @@
 
 /* Description of the Sync & Backup feature */
 "sync.simplified.header.message.basic" = "Save your bookmarks and autofill data, and sync them between your devices with end-to-end encryption.";
-
-/* My Devices section header shown when Sync & Backup is enabled */
-"sync.simplified.my.devices.section.header" = "My Devices";
 
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Use this code to restore your data if you lose access to this device. Sync & Backup data can’t be recovered after 18 months of inactivity. [Learn More](%@)";

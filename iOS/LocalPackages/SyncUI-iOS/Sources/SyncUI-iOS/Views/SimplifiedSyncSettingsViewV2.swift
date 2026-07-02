@@ -216,12 +216,6 @@ extension SimplifiedSyncSettingsViewV2 {
                 Text(UserText.simplifiedSyncToggleTitleThisDevice)
                     .daxBodyRegular()
                 Spacer()
-                if model.isBusy && !model.isSyncEnabled {
-                    Text(UserText.simplifiedSyncConnecting)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .transition(.opacity)
-                }
                 Toggle("", isOn: Binding(
                     get: { model.isSyncEnabled },
                     set: { newValue in

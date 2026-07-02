@@ -169,8 +169,15 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
         Task { @MainActor in
             defer { optionsViewModel.isBusy = false }
+            // In V2 the connecting progress is shown on a full-screen sheet instead of inline in the row.
+            if useSimplifiedLayoutV2 {
+                await showConnectingSheetV2()
+            }
             do {
                 guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
+                    if useSimplifiedLayoutV2 {
+                        await self.dismissPresentedViewController()
+                    }
                     return
                 }
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
@@ -184,6 +191,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
 
+                // Dismiss the connecting sheet before showing any follow-up sheet/toast.
+                if useSimplifiedLayoutV2 {
+                    await self.dismissPresentedViewController()
+                }
+
                 let didShowPrompt = optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
                 if didShowPrompt {
                     optionsViewModel.scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
@@ -191,6 +203,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     self.showSimplifiedSyncEnabledToast()
                 }
             } catch {
+                if useSimplifiedLayoutV2 {
+                    await self.dismissPresentedViewController()
+                }
                 self.firePixelIfNeededFor(event: .syncSignupError, error: error)
                 ActionMessageView.present(message: UserText.simplifiedSyncSetupFailedToast)
             }
@@ -450,6 +465,28 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
 
         let controller = UIHostingController(rootView: SimplifiedConnectingSheetView(context: context))
+        controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
+        controller.sheetPresentationController?.detents = [.large()]
+        navigationController.present(controller, animated: true, completion: completion)
+    }
+
+    @MainActor
+    func showConnectingSheetV2() async {
+        await withCheckedContinuation { continuation in
+            showConnectingSheetV2 {
+                continuation.resume()
+            }
+        }
+    }
+
+    func showConnectingSheetV2(_ completion: (() -> Void)?) {
+        guard let navigationController, navigationController.view.window != nil else {
+            Logger.sync.error("Unable to present connecting UI because Sync settings navigation controller is not in the window hierarchy")
+            completion?()
+            return
+        }
+
+        let controller = UIHostingController(rootView: SimplifiedConnectingSheetViewV2())
         controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
         controller.sheetPresentationController?.detents = [.large()]
         navigationController.present(controller, animated: true, completion: completion)

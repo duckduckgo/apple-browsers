@@ -45,6 +45,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
         case setDuckAiInAddressBar
         case requestAddToDock
         case requestImport
+        case requestChromeExtensionInstall
         case requestSetAsDefault
         case reportInitException
         case reportPageException
@@ -65,6 +66,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
             .dismissToSettings: dismissToSettings,
             .requestDockOptIn: requestDockOptIn,
             .requestImport: requestImport,
+            .requestChromeExtensionInstall: requestChromeExtensionInstall,
             .requestSetAsDefault: requestSetAsDefault,
             .setBookmarksBar: setBookmarksBar,
             .setSessionRestore: setSessionRestore,
@@ -118,6 +120,12 @@ extension OnboardingUserScript {
     private func requestImport(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let isDataImported = await onboardingActionsManager.importData()
         return OnboardingImportResponse(enabled: isDataImported)
+    }
+
+    @MainActor
+    private func requestChromeExtensionInstall(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        onboardingActionsManager.installChromeExtension()
+        return nil
     }
 
     private func requestSetAsDefault(params: Any, original: WKScriptMessage) async throws -> Encodable? {

@@ -11236,6 +11236,7 @@
 				22CB1ED7203DDD2C00D2C724 /* AppDeepLinksTests.swift */,
 				F17D72381E8B35C6003E8B0E /* AppURLsTests.swift */,
 				CBDD5DDE29A6736A00832877 /* APIHeadersTests.swift */,
+				AC7100D1A6105DEBEEF00009 /* WebScrollObserverTests.swift */,
 				F189AEE31F18FDAF001EBAE1 /* LinkTests.swift */,
 			);
 			name = Domain;
@@ -14106,6 +14107,7 @@
 				98D094832E6AFA6B00D94984 /* InternalUserCommandsTests.swift in Sources */,
 				850259682EC353EC004607A9 /* MobileCustomizationTests.swift in Sources */,
 				CBDD5DDF29A6736A00832877 /* APIHeadersTests.swift in Sources */,
+				AC7100D1A6105DEBEEF0000A /* WebScrollObserverTests.swift in Sources */,
 				9FD1BDEC2D8C183C002F4EFE /* OnboardingManagerTests.swift in Sources */,
 				986B45D0299E30A50089D2D7 /* BookmarkEntityTests.swift in Sources */,
 				BBFA34402F19286D0003CB58 /* SubscriptionPagesUseSubscriptionFeatureTests.swift in Sources */,

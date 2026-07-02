@@ -151,6 +151,10 @@ protocol AIChatUserScriptHandling: AnyObject {
     /// the carried `reason` (the JS error name, e.g. `"NotAllowedError"`) to decide whether
     /// to surface a system-permission remediation prompt.
     @MainActor func voiceChatStartFailed(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    /// Posted by Duck.ai when `getUserMedia()` rejects while starting dictation. Mirrors
+    /// `voiceChatStartFailed` but surfaces dictation-specific remediation copy.
+    @MainActor func dictationStartFailed(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -869,14 +873,24 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         // (it sees `supportsNativeVoicePermissionHandler: false` and keeps its tooltip),
         // but stale clients or local-override misuse could fire it. Fail closed.
         guard featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow) else { return nil }
-        let reason: String = {
-            if let dict = params as? [String: Any], let value = dict["reason"] as? String {
-                return value
-            }
-            return ""
-        }()
-        voiceChatFailureHandler.handleVoiceChatStartFailed(reason: reason, sourceWebView: message.messageWebView)
+        voiceChatFailureHandler.handleVoiceChatStartFailed(reason: Self.failureReason(from: params), sourceWebView: message.messageWebView)
         return nil
+    }
+
+    @MainActor
+    func dictationStartFailed(params: Any, message: UserScriptMessage) async -> Encodable? {
+        // Unlike voice chat, the dictation flow ships without a feature flag, so it's always
+        // handled. The carried `reason` drives the same OS-mic-denied check as voice chat;
+        // only the remediation copy differs.
+        voiceChatFailureHandler.handleDictationStartFailed(reason: Self.failureReason(from: params), sourceWebView: message.messageWebView)
+        return nil
+    }
+
+    private static func failureReason(from params: Any) -> String {
+        guard let dict = params as? [String: Any], let value = dict["reason"] as? String else {
+            return ""
+        }
+        return value
     }
 
     private func makeSyncHandler() -> AIChatSyncHandler? {

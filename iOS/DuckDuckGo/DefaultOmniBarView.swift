@@ -470,6 +470,49 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         isReasoningPickerEnabled && aiChatReasoningIcon != nil
     }
 
+    let toolPickerButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityIdentifier = "AIChat.Omnibar.iPad.ToolPicker"
+        button.accessibilityLabel = UserText.aiChatToolbarToolsButtonAccessibilityLabel
+        button.setImage(DesignSystemImages.Glyphs.Size24.options, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        button.isHidden = true
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
+
+    /// Enables the tool picker chip (driven by the `iPadDuckAIBarControls` flag).
+    var isToolPickerEnabled: Bool = false {
+        didSet { refreshToolPickerVisibility() }
+    }
+
+    /// The pull-down menu listing selectable tools. Setting it enables the chip's primary action;
+    /// setting it nil hides the chip — i.e. when the selected model offers no tools.
+    var aiChatToolPickerMenu: UIMenu? {
+        get { toolPickerButton.menu }
+        set {
+            toolPickerButton.menu = newValue
+            toolPickerButton.showsMenuAsPrimaryAction = (newValue != nil)
+            refreshToolPickerVisibility()
+        }
+    }
+
+    /// Whether a tool is currently selected — tints the chip to signal the active state.
+    var isToolSelected: Bool = false {
+        didSet {
+            toolPickerButton.tintColor = UIColor(designSystemColor: isToolSelected ? .accentPrimary : .iconsSecondary)
+        }
+    }
+
+    private var canShowToolPicker: Bool {
+        isToolPickerEnabled && toolPickerButton.menu != nil
+    }
+
     let aiChatTextView: UITextView = {
         let textView = UITextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
@@ -578,6 +621,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaContainerView.addSubview(aiChatSendButton)
         searchAreaContainerView.addSubview(modelPickerButton)
         searchAreaContainerView.addSubview(reasoningPickerButton)
+        searchAreaContainerView.addSubview(toolPickerButton)
         searchAreaContainerView.addSubview(aiChatLeftButton)
 
         addSubview(activeOutlineView)
@@ -968,7 +1012,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func overflowTarget(at point: CGPoint, with event: UIEvent?) -> UIView? {
         guard isSearchAreaExpanded else { return nil }
-        let candidates: [UIView] = [aiChatSendButton, modelPickerButton, reasoningPickerButton, aiChatTextView]
+        let candidates: [UIView] = [aiChatSendButton, modelPickerButton, reasoningPickerButton, toolPickerButton, aiChatTextView]
         return candidates.first { candidate in
             guard !candidate.isHidden else { return false }
             let localPoint = candidate.convert(point, from: self)
@@ -1130,6 +1174,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         // Duck.ai reasoning picker chip (iPad), icon-only, sits to the left of the model chip.
         static let reasoningPickerChipSize: CGFloat = 40.0
         static let reasoningToModelPickerSpacing: CGFloat = 4.0
+        static let toolPickerChipSize: CGFloat = 40.0
 
         static let expandedPadSizeSpacing: CGFloat = 24.0
         static let expandedPadSizeMargins = NSDirectionalEdgeInsets(
@@ -1393,6 +1438,11 @@ extension DefaultOmniBarView {
             reasoningPickerButton.widthAnchor.constraint(equalToConstant: Metrics.reasoningPickerChipSize),
             reasoningPickerButton.heightAnchor.constraint(equalToConstant: Metrics.reasoningPickerChipSize),
             reasoningPickerButton.leadingAnchor.constraint(greaterThanOrEqualTo: aiChatTextView.leadingAnchor),
+
+            toolPickerButton.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: Metrics.duckAITextViewBottomPadding),
+            toolPickerButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
+            toolPickerButton.widthAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),
+            toolPickerButton.heightAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),
         ])
 
         let bottomEqual = searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
@@ -1435,10 +1485,12 @@ extension DefaultOmniBarView {
             aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
             modelPickerButton.alpha = (isSearchAreaExpanded && canShowModelPicker) ? 1 : 0
             reasoningPickerButton.alpha = (isSearchAreaExpanded && canShowReasoningPicker) ? 1 : 0
+            toolPickerButton.alpha = (isSearchAreaExpanded && canShowToolPicker) ? 1 : 0
             if !isSearchAreaExpanded {
                 aiChatSendButton.isHidden = true
                 modelPickerButton.isHidden = true
                 reasoningPickerButton.isHidden = true
+                toolPickerButton.isHidden = true
             }
             applyExpansionConstraints()
             applyExpansionClipping()
@@ -1473,11 +1525,13 @@ extension DefaultOmniBarView {
                 self.aiChatSendButton.alpha = 1
                 self.modelPickerButton.alpha = self.canShowModelPicker ? 1 : 0
                 self.reasoningPickerButton.alpha = self.canShowReasoningPicker ? 1 : 0
+                self.toolPickerButton.alpha = self.canShowToolPicker ? 1 : 0
             } else {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
                 self.aiChatSendButton.alpha = 0
                 self.modelPickerButton.alpha = 0
                 self.reasoningPickerButton.alpha = 0
+                self.toolPickerButton.alpha = 0
             }
             self.layoutIfNeeded()
         } completion: { _ in
@@ -1487,6 +1541,7 @@ extension DefaultOmniBarView {
                 self.aiChatSendButton.isHidden = true
                 self.modelPickerButton.isHidden = true
                 self.reasoningPickerButton.isHidden = true
+                self.toolPickerButton.isHidden = true
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
             } else {
@@ -1522,6 +1577,12 @@ extension DefaultOmniBarView {
                 reasoningPickerButton.isHidden = false
                 reasoningPickerButton.alpha = 0
                 searchAreaContainerView.bringSubviewToFront(reasoningPickerButton)
+            }
+
+            if canShowToolPicker {
+                toolPickerButton.isHidden = false
+                toolPickerButton.alpha = 0
+                searchAreaContainerView.bringSubviewToFront(toolPickerButton)
             }
         } else {
             let currentText = aiChatTextView.text ?? ""
@@ -1562,6 +1623,20 @@ extension DefaultOmniBarView {
         searchAreaContainerView.bringSubviewToFront(reasoningPickerButton)
         UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
             self.reasoningPickerButton.alpha = 1
+        }
+    }
+
+    private func refreshToolPickerVisibility() {
+        guard isSearchAreaExpanded, canShowToolPicker else {
+            toolPickerButton.isHidden = true
+            return
+        }
+        guard toolPickerButton.isHidden else { return }
+        toolPickerButton.isHidden = false
+        toolPickerButton.alpha = 0
+        searchAreaContainerView.bringSubviewToFront(toolPickerButton)
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
+            self.toolPickerButton.alpha = 1
         }
     }
 

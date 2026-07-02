@@ -247,6 +247,24 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "DI funkcijos";
 
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Pokalbis";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Išklotinė";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Balso pokalbis";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Naujas pokalbis";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Klausomasi...";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Klausomasi...";
+
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Pokalbiai";
 
@@ -3901,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreso juostos padėtis";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Slėpti kortelių juostą slenkant";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Prieinama daugumoje interneto svetainių. „Duck.ai“, žemėlapiai ir žaidimai gali palikti kortelių juostą matomą.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atidaryti nuorodas susijusiose programose";
 
@@ -4795,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Išjungti sinchronizavimą ir atsarginį kopijavimą?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Pašalinti";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Šis įrenginys nebegalės pasiekti jūsų sinchronizuotų duomenų.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Išjungti sinchronizavimą?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Atrakinkite įrenginį, kad galėtumėte nustatyti funkciją „Sinchronizuoti ir kurti atsarginę kopiją“.";
 
@@ -5338,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Nėra atitikmenų pagal užklausą „%@“";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kodas nukopijuotas";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

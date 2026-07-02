@@ -271,6 +271,10 @@ class TabSwitcherViewController: UIViewController {
     // MARK: - Fire Tabs Tip
 
     func showFireTabsTipIfNeeded() {
+        guard let fireModePromotionsCoordinator,
+              fireModePromotionsCoordinator.isTabSwitcherTipEligible == true else {
+            return
+        }
         guard #available(iOS 17.0, *) else { return }
         guard !LaunchOptionsHandler().isAutomationSession else { return }
         guard fireModeCapability.isFireModeEnabled, selectedBrowsingMode != .fire else { return }
@@ -288,7 +292,7 @@ class TabSwitcherViewController: UIViewController {
             return
         }
 
-        if fireModePromotionsCoordinator?.isTabSwitcherTipExpired == true {
+        if fireModePromotionsCoordinator.isTabSwitcherTipExpired {
             tip.invalidate(reason: .displayCountExceeded)
             return
         }

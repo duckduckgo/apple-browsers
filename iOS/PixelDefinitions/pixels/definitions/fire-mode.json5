@@ -13,7 +13,7 @@
                 "key": "source",
                 "description": "The entry point that triggered the mode switch",
                 "type": "string",
-                "enum": ["tab_selection", "long_press_tabs_icon",  "long_press_link", "tab_switcher_long_press", "key_command"]
+                "enum": ["tab_selection", "long_press_tabs_icon", "long_press_link", "tab_switcher_long_press", "key_command"]
             }
         ]
     },

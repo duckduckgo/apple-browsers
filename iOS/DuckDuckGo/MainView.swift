@@ -517,7 +517,6 @@ extension MainViewFactory {
             statusBackground.constrainView(superview, by: .width),
             statusBackground.constrainView(superview, by: .centerX),
             statusBackground.constrainView(superview, by: .top),
-            // statusBackground.bottomAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor)
             coordinator.constraints.statusBackgroundToNavigationBarContainerBottom,
         ])
     }

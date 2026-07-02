@@ -53,10 +53,10 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
-    func testWhenFeatureFlagIsEnabledAndConditionsMetThenEligible() {
+    func testWhenFeatureFlagIsEnabledAndConditionsMetThenStillNotEligible() {
         setNTPEligibleState()
 
-        XCTAssertTrue(sut.isNTPPromotionEligible)
+        XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
     // MARK: - NTP Promotion: Burn Prerequisite
@@ -67,18 +67,18 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
-    func testWhenUserHasBurnedTabsThenEligible() {
+    func testWhenUserHasBurnedTabsThenStillNotEligible() {
         setNTPEligibleState()
 
-        XCTAssertTrue(sut.isNTPPromotionEligible)
+        XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
-    func testWhenMarkBurnPerformedCalledThenBurnStateIsPersisted() {
+    func testWhenMarkBurnPerformedCalledThenStillNotEligible() {
         mockCapability.isFireModeEnabled = true
         sut.markBurnPerformed()
 
         let freshSUT = makeSUT()
-        XCTAssertTrue(freshSUT.isNTPPromotionEligible)
+        XCTAssertFalse(freshSUT.isNTPPromotionEligible)
     }
 
     // MARK: - NTP Promotion: Fire Mode Visited

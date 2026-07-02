@@ -106,7 +106,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         
         if scrollView.fullyZoomedOut {
             animator.revealBars(animated: true)
-        } else if abs(scrollView.zoomScale - startZoomScale) > Constants.zoomThreshold {
+        } else if abs(scrollView.zoomScale - startZoomScale) > Constants.zoomThreshold, delegate?.canHideBars ?? true {
             animator.hideBars(animated: true)
         }
     }

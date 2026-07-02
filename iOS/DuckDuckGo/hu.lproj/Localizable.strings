@@ -3919,6 +3919,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Címsor elhelyezkedése";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Lapsáv elrejtése görgetés közben";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "A legtöbb webhelyen elérhető. A Duck.ai, a térképek és a játékok látható állapotban tarthatják a lapsávot.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Hivatkozások megnyitása társított alkalmazásokban";
 
@@ -4813,15 +4819,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Kikapcsolod a Sync & Backup funkciót?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Eltávolítás";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Az eszköz többé nem férhet hozzá a szinkronizált adatokhoz.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Szinkronizálás kikapcsolása?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Oldd fel az eszközt a Szinkronizálás és biztonsági mentés funkció beállításához";
 
@@ -5356,9 +5353,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Nincs találat a következőre: „%@”";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kód másolva";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

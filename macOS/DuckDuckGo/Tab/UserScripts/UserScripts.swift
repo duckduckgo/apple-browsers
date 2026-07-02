@@ -57,7 +57,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
-    let serpUserScript: SERPUserScript
+    let serpUserScript: SERPInstallOriginUserScript
     let trackerProtectionSubfeature = TrackerProtectionSubfeature()
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
@@ -106,7 +106,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
         let installOriginEnabled = StandardApplicationBuildType().isSparkleBuild
-        serpUserScript = SERPUserScript(
+        serpUserScript = SERPInstallOriginUserScript(
             platform: .macos,
             serpBaseURL: URL.duckDuckGo,
             installOriginEnabled: installOriginEnabled,

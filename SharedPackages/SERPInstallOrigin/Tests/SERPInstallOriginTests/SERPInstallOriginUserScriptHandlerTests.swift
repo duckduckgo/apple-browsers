@@ -22,11 +22,11 @@ import UserScript
 import WebKit
 import XCTest
 
-final class SERPUserScriptHandlerTests: XCTestCase {
+final class SERPInstallOriginUserScriptHandlerTests: XCTestCase {
 
     func testWhenInstallOriginEnabledAndProviderPresentThenHandshakeReturnsMacosAndInstallOriginTrue() async throws {
         let provider = MockInstallOriginVariantProvider()
-        let handler = SERPUserScriptHandler(
+        let handler = SERPInstallOriginUserScriptHandler(
             platform: .macos,
             installOriginEnabled: true,
             installOriginVariantProvider: provider
@@ -37,7 +37,7 @@ final class SERPUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenInstallOriginDisabledThenHandshakeReturnsMacosAndInstallOriginFalse() async throws {
-        let handler = SERPUserScriptHandler(
+        let handler = SERPInstallOriginUserScriptHandler(
             platform: .macos,
             installOriginEnabled: false,
             installOriginVariantProvider: nil
@@ -50,7 +50,7 @@ final class SERPUserScriptHandlerTests: XCTestCase {
     func testWhenProviderReturnsVariantThenHandlerReturnsIt() async throws {
         let provider = MockInstallOriginVariantProvider()
         provider.result = "bar"
-        let handler = SERPUserScriptHandler(
+        let handler = SERPInstallOriginUserScriptHandler(
             platform: .macos,
             installOriginEnabled: true,
             installOriginVariantProvider: provider
@@ -64,7 +64,7 @@ final class SERPUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenInstallOriginDisabledThenReturnsNullVariant() async throws {
-        let handler = SERPUserScriptHandler(
+        let handler = SERPInstallOriginUserScriptHandler(
             platform: .macos,
             installOriginEnabled: false,
             installOriginVariantProvider: nil
@@ -79,7 +79,7 @@ final class SERPUserScriptHandlerTests: XCTestCase {
     func testWhenInstallOriginDisabledThenReturnsNullVariantEvenWithProvider() async throws {
         let provider = MockInstallOriginVariantProvider()
         provider.result = "bar"
-        let handler = SERPUserScriptHandler(
+        let handler = SERPInstallOriginUserScriptHandler(
             platform: .macos,
             installOriginEnabled: false,
             installOriginVariantProvider: provider
@@ -94,7 +94,7 @@ final class SERPUserScriptHandlerTests: XCTestCase {
 
     func testWhenCampaignParamMissingThenProviderReceivesNilCampaign() async throws {
         let provider = MockInstallOriginVariantProvider()
-        let handler = SERPUserScriptHandler(
+        let handler = SERPInstallOriginUserScriptHandler(
             platform: .macos,
             installOriginEnabled: true,
             installOriginVariantProvider: provider
@@ -104,7 +104,7 @@ final class SERPUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenSerpBaseURLHasHostnameThenMessageOriginPolicyAllowsThatHostname() {
-        let script = SERPUserScript(
+        let script = SERPInstallOriginUserScript(
             platform: .macos,
             serpBaseURL: URL(string: "https://use-devtesting18.duckduckgo.com")!,
             installOriginEnabled: true,
@@ -116,7 +116,7 @@ final class SERPUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenSerpBaseURLHasNonStandardPortThenMessageOriginPolicyIncludesPort() {
-        let script = SERPUserScript(
+        let script = SERPInstallOriginUserScript(
             platform: .macos,
             serpBaseURL: URL(string: "http://localhost:8080")!,
             installOriginEnabled: true,
@@ -128,7 +128,7 @@ final class SERPUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenSerpBaseURLHasNoHostThenMessageOriginPolicyFallsBackToDuckDuckGo() {
-        let script = SERPUserScript(
+        let script = SERPInstallOriginUserScript(
             platform: .macos,
             serpBaseURL: URL(string: "file:///serp")!,
             installOriginEnabled: true,
@@ -139,7 +139,7 @@ final class SERPUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenUnknownMethodRequestedThenHandlerThrowsMessageNotImplemented() async throws {
-        let script = SERPUserScript(
+        let script = SERPInstallOriginUserScript(
             platform: .macos,
             serpBaseURL: URL(string: "https://duckduckgo.com")!,
             installOriginEnabled: true,
@@ -156,19 +156,19 @@ final class SERPUserScriptHandlerTests: XCTestCase {
 
     func testWhenGetInstallOriginVariantMessageReceivedThenHandlerIsCalled() async throws {
         let provider = MockInstallOriginVariantProvider()
-        let script = SERPUserScript(
+        let script = SERPInstallOriginUserScript(
             platform: .macos,
             serpBaseURL: URL(string: "https://duckduckgo.com")!,
             installOriginEnabled: true,
             installOriginVariantProvider: provider
         )
-        let handler = try XCTUnwrap(script.handler(forMethodNamed: SERPUserScript.MessageName.getInstallOriginVariant.rawValue))
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: SERPInstallOriginUserScript.MessageName.getInstallOriginVariant.rawValue))
         _ = try await handler(["campaign": "foo"], WKScriptMessage.mock())
         XCTAssertEqual(provider.lastCampaign, "foo")
     }
 
     func testWhenUnknownMethodRequestedThenBrokerReturnsErrorEnvelope() async throws {
-        let script = SERPUserScript(
+        let script = SERPInstallOriginUserScript(
             platform: .macos,
             serpBaseURL: URL(string: "https://duckduckgo.com")!,
             installOriginEnabled: true,

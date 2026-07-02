@@ -1,5 +1,5 @@
 //
-//  SERPUserScript.swift
+//  SERPInstallOriginUserScript.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import Foundation
 import UserScript
 import WebKit
 
-public final class SERPUserScript: NSObject, Subfeature {
+public final class SERPInstallOriginUserScript: NSObject, Subfeature {
 
     public enum MessageName: String, CaseIterable {
         case handshake
@@ -49,14 +49,14 @@ public final class SERPUserScript: NSObject, Subfeature {
 
     public weak var broker: UserScriptMessageBroker?
 
-    private let handler: SERPUserScriptHandling
+    private let handler: SERPInstallOriginUserScriptHandling
 
     public init(platform: DataModel.Platform,
                 serpBaseURL: URL,
                 installOriginEnabled: Bool,
                 installOriginVariantProvider: InstallOriginVariantProviding?) {
         self.messageOriginPolicy = Self.makeMessageOriginPolicy(for: serpBaseURL)
-        self.handler = SERPUserScriptHandler(
+        self.handler = SERPInstallOriginUserScriptHandler(
             platform: platform,
             installOriginEnabled: installOriginEnabled,
             installOriginVariantProvider: installOriginVariantProvider
@@ -64,7 +64,7 @@ public final class SERPUserScript: NSObject, Subfeature {
         super.init()
     }
 
-    init(handler: SERPUserScriptHandling, serpBaseURL: URL = URL(string: "https://duckduckgo.com")!) {
+    init(handler: SERPInstallOriginUserScriptHandling, serpBaseURL: URL = URL(string: "https://duckduckgo.com")!) {
         self.messageOriginPolicy = Self.makeMessageOriginPolicy(for: serpBaseURL)
         self.handler = handler
         super.init()

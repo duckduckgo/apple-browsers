@@ -1,5 +1,5 @@
 //
-//  SERPUserScriptHandler.swift
+//  SERPInstallOriginUserScriptHandler.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,18 +19,18 @@
 import Foundation
 import UserScript
 
-protocol SERPUserScriptHandling {
-    func handshake(params: Any, message: UserScriptMessage) async throws -> SERPUserScript.DataModel.HandshakeResponse
+protocol SERPInstallOriginUserScriptHandling {
+    func handshake(params: Any, message: UserScriptMessage) async throws -> SERPInstallOriginUserScript.DataModel.HandshakeResponse
     func getInstallOriginVariant(params: Any, message: UserScriptMessage) async throws -> GetInstallOriginVariantResponse
 }
 
-final class SERPUserScriptHandler: SERPUserScriptHandling {
+final class SERPInstallOriginUserScriptHandler: SERPInstallOriginUserScriptHandling {
 
-    private let platform: SERPUserScript.DataModel.Platform
+    private let platform: SERPInstallOriginUserScript.DataModel.Platform
     private let installOriginEnabled: Bool
     private let installOriginVariantProvider: InstallOriginVariantProviding?
 
-    init(platform: SERPUserScript.DataModel.Platform,
+    init(platform: SERPInstallOriginUserScript.DataModel.Platform,
          installOriginEnabled: Bool,
          installOriginVariantProvider: InstallOriginVariantProviding?) {
         self.platform = platform
@@ -38,8 +38,8 @@ final class SERPUserScriptHandler: SERPUserScriptHandling {
         self.installOriginVariantProvider = installOriginVariantProvider
     }
 
-    func handshake(params: Any, message: UserScriptMessage) async throws -> SERPUserScript.DataModel.HandshakeResponse {
-        SERPUserScript.DataModel.HandshakeResponse(
+    func handshake(params: Any, message: UserScriptMessage) async throws -> SERPInstallOriginUserScript.DataModel.HandshakeResponse {
+        SERPInstallOriginUserScript.DataModel.HandshakeResponse(
             platform: platform,
             installOrigin: installOriginEnabled
         )

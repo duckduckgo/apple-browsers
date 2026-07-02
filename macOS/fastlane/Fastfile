@@ -14,6 +14,7 @@ PROJECT_ROOT_FOLDER = File.dirname(File.expand_path(__dir__))
 INFO_PLIST = File.join(PROJECT_ROOT_FOLDER, 'DuckDuckGo/Info.plist')
 VERSION_CONFIG_PATH = File.join(PROJECT_ROOT_FOLDER, 'Configuration/Version.xcconfig')
 BUILD_NUMBER_CONFIG_PATH = File.join(PROJECT_ROOT_FOLDER, 'Configuration/BuildNumber.xcconfig')
+METADATA_FOLDER = File.join(PROJECT_ROOT_FOLDER, 'fastlane', 'metadata')
 VERSION_CONFIG_DEFINITION = 'MARKETING_VERSION'
 BUILD_NUMBER_CONFIG_DEFINITION = 'CURRENT_PROJECT_VERSION'
 
@@ -394,6 +395,8 @@ platform :mac do
   #
   desc 'Updates App Store metadata'
   private_lane :upload_metadata do |options|
+    sync_release_notes_to_all_locales
+
     deliver(common_deliver_arguments(options).merge({
       skip_binary_upload: true,
       skip_metadata: false,
@@ -548,5 +551,29 @@ platform :mac do
       args[:username] = get_username(options)
     end
     args
+  end
+
+  # Mirrors the default release notes into every locale folder.
+  #
+  # App Store Connect requires "What's New in This Version" text for every
+  # localization configured on the app. We keep a single source of truth in
+  # `metadata/default/release_notes.txt` and copy it into each locale folder
+  # so `deliver` uploads release notes for all languages, not just the ones
+  # that happen to have their own folder. Without this, locales lacking a
+  # folder are left blank and block submission for review.
+  #
+  def sync_release_notes_to_all_locales
+    source = File.join(METADATA_FOLDER, 'default', 'release_notes.txt')
+    unless File.exist?(source)
+      UI.important("No default release notes at #{source}; skipping release notes sync")
+      return
+    end
+
+    Dir.glob(File.join(METADATA_FOLDER, '*', '')).each do |locale_folder|
+      next if File.basename(locale_folder) == 'default'
+
+      FileUtils.cp(source, File.join(locale_folder, 'release_notes.txt'))
+    end
+    UI.message('Synced default release notes into all locale folders')
   end
 end

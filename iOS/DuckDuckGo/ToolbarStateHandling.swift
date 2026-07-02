@@ -154,7 +154,6 @@ final class ToolbarHandler: ToolbarStateHandling {
             forwardButton,
             fireButton,
             tabSwitcherView,
-            // UIButton(primaryAction: UIAction(title: "", image: DesignSystemImages.Glyphs.Size24.tabsMobile) { _ in }),
             browserMenuButton,
         ]
     }
@@ -165,7 +164,6 @@ final class ToolbarHandler: ToolbarStateHandling {
             passwordsButton,
             fireButton,
             tabSwitcherView,
-            // UIButton(primaryAction: UIAction(title: "", image: DesignSystemImages.Glyphs.Size24.tabsMobile) { _ in }),
             browserMenuButton,
         ]
     }

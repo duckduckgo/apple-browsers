@@ -61,6 +61,12 @@ final class SuggestionViewController: NSViewController {
         return themeManager.isAppRebranded ? rebrandedHeight : legacyHeight
     }()
 
+    private lazy var scrollViewBottomInset: CGFloat = {
+        let rebrandedInset: CGFloat = 3
+        let legacyInset: CGFloat = 5
+        return themeManager.isAppRebranded ? rebrandedInset : legacyInset
+    }()
+
     required init?(coder: NSCoder) {
         fatalError("SuggestionViewController: Bad initializer")
     }
@@ -143,6 +149,7 @@ final class SuggestionViewController: NSViewController {
 
     private func setupTableView() {
         tableView.style = .plain
+        tableView.enclosingScrollView?.contentInsets.bottom = scrollViewBottomInset
         tableView.setAccessibilityIdentifier("SuggestionViewController.tableView")
     }
 

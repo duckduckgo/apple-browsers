@@ -16,8 +16,6 @@
                 "enum": [
                     "tab_selection",
                     "long_press_tabs_icon",
-                    "menu_promotion",
-                    "ntp_promotion",
                     "long_press_link",
                     "tab_switcher_long_press",
                     "key_command"

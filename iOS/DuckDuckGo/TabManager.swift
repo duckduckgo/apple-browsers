@@ -56,8 +56,6 @@ protocol TabManaging {
 enum FireModeSwitchSource: String {
     case tabSelection = "tab_selection"
     case longPressTabsIcon = "long_press_tabs_icon"
-    case menuPromotion = "menu_promotion"
-    case ntpPromotion = "ntp_promotion"
     case longPressLink = "long_press_link"
     case tabSwitcherLongPress = "tab_switcher_long_press"
     case keyCommand = "key_command"

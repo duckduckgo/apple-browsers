@@ -3624,10 +3624,6 @@ class MainViewController: UIViewController {
         action()
     }
     
-    func navigateToFireMode(source: FireModeSwitchSource) {
-        tabManager.setBrowsingMode(.fire, source: source)
-        showTabSwitcher()
-    }
 }
 
 extension MainViewController: FindInPageDelegate {
@@ -5191,10 +5187,6 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {
         newEmailAddress()
-    }
-
-    func tabDidRequestFireMode(tab: TabViewController) {
-        navigateToFireMode(source: .menuPromotion)
     }
 
     func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: TabViewController) {

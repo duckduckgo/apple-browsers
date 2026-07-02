@@ -1,6 +1,5 @@
 //
 //  StatusIndicatorView.swift
-//  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -29,7 +28,6 @@ public enum StatusIndicator: Equatable {
     case on
     case off
 }
-
 
 /// A small on/off status pill: a coloured dot plus a caller-supplied label. Green when on
 /// (or always-on), muted when off. Callers pass `text` so the copy stays in their own module.

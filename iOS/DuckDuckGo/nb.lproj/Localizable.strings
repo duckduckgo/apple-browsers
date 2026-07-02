@@ -2524,27 +2524,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "Fire-faner";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "Ny";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Nyhet! Surf uten å lagre lokal historikk eller logg inn på nettsteder med en annen konto.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Ikke nå";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Prøv Fire-faner";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Prøv Fire-faner";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Prøv Fire-faner for å surfe uten å lagre lokal historikk.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "Nyhet: Fire-faner";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-fane";
 
@@ -3919,6 +3898,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Plassering av adressefelt";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Skjul fanene mens du ruller";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Tilgjengelig på de fleste nettsteder. Fanene på Duck.ai, kart og spill kan forbli synlige.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Åpne lenker i tilknyttede apper";
 
@@ -4813,15 +4798,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Vil du slå av Sync & Backup?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Fjern";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Denne enheten får ikke lenger tilgang til de synkroniserte dataene dine.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Vil du slå av synkronisering?\n";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Lås opp enheten for å konfigurere Sync & Backup";
 
@@ -5356,9 +5332,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Ingen treff for «%@»";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Koden er kopiert";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

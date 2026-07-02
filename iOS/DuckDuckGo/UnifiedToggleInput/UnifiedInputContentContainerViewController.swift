@@ -42,7 +42,6 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSelectViewAllChats()
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab)
     func unifiedInputEditingStateDidRequestTabSwitcher()
-    func unifiedInputEditingStateDidRequestTryFireMode()
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
     func unifiedInputEditingStateDidRequestSyncSetup()
 }
@@ -465,12 +464,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func setUpContentContainer() {
         view.addSubview(contentContainerView)
         contentContainerView.translatesAutoresizingMaskIntoConstraints = false
+        let topAnchor: NSLayoutYAxisAnchor = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+            ? view.topAnchor
+            : view.safeAreaLayoutGuide.topAnchor
 
         contentContainerViewLeadingConstraint = contentContainerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor)
         contentContainerViewLeadingConstraint?.isActive = true
         contentContainerViewTrailingConstraint = contentContainerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
         contentContainerViewTrailingConstraint?.isActive = true
-        contentContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
+        contentContainerView.topAnchor.constraint(equalTo: topAnchor).isActive = true
 
         NSLayoutConstraint.activate([
             contentContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
@@ -718,7 +720,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             remoteMessagingActionHandler: ntpDeps.remoteMessagingActionHandler,
             remoteMessagingImageLoader: ntpDeps.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: ntpDeps.remoteMessagingPixelReporter,
-            fireModePromotionEligibility: ntpDeps.fireModePromotionEligibility,
             appSettings: ntpDeps.appSettings,
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,
@@ -1043,10 +1044,6 @@ extension UnifiedInputContentContainerViewController: NewTabPageControllerDelega
 
     func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
         delegate?.unifiedInputEditingStateDidRequestTabSwitcher()
-    }
-
-    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
-        delegate?.unifiedInputEditingStateDidRequestTryFireMode()
     }
 
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {}

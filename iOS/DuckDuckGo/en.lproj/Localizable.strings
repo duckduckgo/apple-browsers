@@ -2464,27 +2464,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "Fire Tabs";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "New";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "New! Browse without saving local history or sign in to sites with a different account.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Not Now";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Try Fire Tabs";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Try Fire Tabs";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Try Fire Tabs to browse without saving local history.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "New: Fire Tabs";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire Tab";
 
@@ -3739,6 +3718,12 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Address Bar Position";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Hide Tab Bar While Scrolling";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Available on most websites. Duck.ai, maps, and games may keep the tab bar visible.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Open Links in Associated Apps";
 
@@ -4611,15 +4596,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Turn Off Sync & Backup?";
-
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Remove";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "This Device will no longer be able to access your synced data.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Turn Off Sync?";
 
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Unlock device to set up Sync & Backup";

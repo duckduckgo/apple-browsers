@@ -262,6 +262,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var committedInputMode: TextEntryMode = .search
     private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
     private(set) var isInputVisibleForKeyboard: Bool = true
+    /// Window-space X of the resting omnibar placeholder text, captured at focus time (before the
+    /// bottom floating omnibar is detached from the toolbar). Reused on dismiss to slide the UTI
+    /// text back onto the omnibar's text leading edge — the omnibar can't be measured live then.
+    var cachedOmnibarPlaceholderWindowX: CGFloat?
     private var isAwaitingTopOmnibarKeyboardPresentation = false
     private var topOmnibarKeyboardPresentationFallback: DispatchWorkItem?
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]

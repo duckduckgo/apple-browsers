@@ -71,7 +71,8 @@ extension TabViewController {
     }
 
     func configureRootView() {
-        let rootView = UIView()
+        class RootView: UIView { }
+        let rootView = RootView()
         rootView.backgroundColor = UIColor(designSystemColor: .background)
         view = rootView
 
@@ -79,11 +80,13 @@ extension TabViewController {
         containerStackView.axis = .vertical
         containerStackView.translatesAutoresizingMaskIntoConstraints = false
 
-        outerContainer = UIView()
+        final class OuterContainer: UIView { }
+        outerContainer = OuterContainer()
         outerContainer.clipsToBounds = true
         outerContainer.translatesAutoresizingMaskIntoConstraints = false
 
-        webViewContainer = UIView()
+        final class WebViewContainerView: UIView { }
+        webViewContainer = WebViewContainerView()
         webViewContainer.translatesAutoresizingMaskIntoConstraints = false
 
         outerContainer.addSubview(webViewContainer)
@@ -105,8 +108,9 @@ extension TabViewController {
             containerStackView.bottomAnchor.constraint(equalTo: rootView.bottomAnchor)
         ])
 
-        privacyDashboardAnchor = UIView()
-        privacyDashboardAnchor.backgroundColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
+        final class PrivacyDashboardAnchorView: UIView { }
+        privacyDashboardAnchor = PrivacyDashboardAnchorView()
+        privacyDashboardAnchor.backgroundColor = .clear
         privacyDashboardAnchor.translatesAutoresizingMaskIntoConstraints = false
         rootView.addSubview(privacyDashboardAnchor)
         NSLayoutConstraint.activate([
@@ -118,7 +122,8 @@ extension TabViewController {
 
         setupErrorView(in: rootView)
 
-        jsAlertContainerView = UIView()
+        final class JSAlertContainerView: UIView { }
+        jsAlertContainerView = JSAlertContainerView()
         jsAlertContainerView.translatesAutoresizingMaskIntoConstraints = false
         // Hidden until a JS alert is presented. This fills rootView and sits above the web view,
         // so leaving it visible would swallow all touches/scrolls. The JSAlertView toggles this

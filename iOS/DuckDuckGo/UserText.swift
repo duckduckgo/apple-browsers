@@ -86,22 +86,6 @@ public struct UserText {
     public static let fireModeEmptyStateDescription = NSLocalizedString("fire.mode.empty.state.description", value: "Fire Tabs are isolated from other browser data. Their data is burned when you close them all. They give you the same tracking protection as other tabs.", comment: "Description explaining how Fire Tabs work on the empty state screen")
     public static let fireModeEmptyStateNewFireTab = NSLocalizedString("fire.mode.empty.state.new.fire.tab", value: "New Fire Tab", comment: "Button label to create a new Fire Tab on the empty state screen")
 
-    // MARK: Fire Mode NTP Promotion
-
-    public static let fireModePromotionTitle = NSLocalizedString("fire.mode.promotion.title", value: "Try Fire Tabs", comment: "Title for promotion element for pushing users to try fire mode.")
-    public static let fireModeNTPPromotionDescription = NSLocalizedString("fire.mode.ntp.promotion.description", value: "New! Browse without saving local history or sign in to sites with a different account.", comment: "Description for the Fire Mode promotion card shown on the new tab page")
-    public static let fireModeNTPPromotionPrimaryAction = NSLocalizedString("fire.mode.ntp.promotion.primary.action", value: "Try Fire Tabs", comment: "Primary action button on the Fire Mode promotion card that opens Fire Mode")
-    public static let fireModeNTPPromotionDismiss = NSLocalizedString("fire.mode.ntp.promotion.dismiss", value: "Not Now", comment: "Dismiss button on the Fire Mode promotion card on the new tab page")
-
-    // MARK: Fire Mode Tab Switcher Tip
-
-    public static let fireModeTabSwitcherTipTitle = NSLocalizedString("fire.mode.tab.switcher.tip.title", value: "New: Fire Tabs", comment: "Title for the Fire Tabs popover tip shown on the tab switcher picker")
-    public static let fireModeTabSwitcherTipDescription = NSLocalizedString("fire.mode.tab.switcher.tip.description", value: "Try Fire Tabs to browse without saving local history.", comment: "Description for the Fire Tabs popover tip shown on the tab switcher picker")
-
-    // MARK: Fire Mode Menu Promotion
-
-    public static let fireModeMenuPromotionBadge = NSLocalizedString("fire.mode.menu.promotion.badge", value: "New", comment: "Badge label on the Fire Mode promotion entry in the browsing menu")
-
     // MARK: - Tab Switcher Fire Mode
     public static let openNewTab = NSLocalizedString("tab.open.new", value: "Open new tab", comment: "Accessibility label on tab cell")
     public static let openNewFireTab = NSLocalizedString("tab.open.newFireTab", value: "Open fire tab", comment: "Accessibility label on tab cell")
@@ -1287,9 +1271,6 @@ public struct UserText {
     // MARK: Sync
 
     public static let syncUserUserAuthenticationReason = NSLocalizedString("sync.user.auth.reason", value: "Unlock device to set up Sync & Backup", comment: "Reason for auth when setting up Sync")
-    public static let syncTurnOffConfirmTitle = NSLocalizedString("sync.turn.off.confirm.title", value: "Turn Off Sync?", comment: "Title of the dialog to confirm turning off Sync")
-    public static let syncTurnOffConfirmMessage = NSLocalizedString("sync.turn.off.confirm.message", value: "This Device will no longer be able to access your synced data.", comment: "Message for the dialog to confirm turning off Sync")
-    public static let syncTurnOffConfirmAction = NSLocalizedString("sync.turn.off.confirm.action", value: "Remove", comment: "Caption for a button to remove current device from Sync")
     public static let syncDeleteAllConfirmTitle = NSLocalizedString("sync.delete.all.confirm.title", value: "Delete server data?", comment: "Title of the dialog to confirm deleting Sync server data")
     public static let syncDeleteAllConfirmMessage = NSLocalizedString("sync.delete.all.confirm.message", value: "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.", comment: "Message for the dialog to confirm deleting Sync server data")
     public static let syncDeleteAllConfirmAction = NSLocalizedString("sync.delete.all.confirm.action", value: "Delete Server Data", comment: "Caption for a button to delete Sync server data")
@@ -1608,6 +1589,8 @@ public struct UserText {
     public static let settingsCustomizableButtonDeleteTabsAndData = NSLocalizedString("settings.customizable.button.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Label for customizable toolbar button that deletes tabs and data")
     public static let settingsText = NSLocalizedString("settings.text.size", value: "Default Text Zoom", comment: "Settings screen cell text for text size")
     public static let settingsAddressBarPosition = NSLocalizedString("settings.appearance.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
+    public static let settingsHideTabBarWhileScrolling = NSLocalizedString("settings.appearance.hide.tab.bar.while.scrolling", value: "Hide Tab Bar While Scrolling", comment: "Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling")
+    public static let settingsHideTabBarWhileScrollingFooter = NSLocalizedString("settings.appearance.hide.tab.bar.while.scrolling.footer", value: "Available on most websites. Duck.ai, maps, and games may keep the tab bar visible.", comment: "Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
     public static let tabSwitcherShowTrackerCount = NSLocalizedString("settings.tab.switcher.show.tracker.count", value: "Show in Tabs Manager", comment: "Settings screen cell title for toggling tracker blocking animation in tabs manager")
     public static let settingsTrackersBlockedAnimation = NSLocalizedString("settings.address.trackers.animation", value: "Show in Address Bar", comment: "Settings screen cell title for toggling tracker blocking animation in address bar")

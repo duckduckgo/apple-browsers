@@ -94,8 +94,14 @@ struct SettingsAppearanceView: View {
 
                 showReloadButtonSetting()
 
+                hideTabBarWhileScrollingSetting()
+
             } header: {
                 Text(UserText.addressBar)
+            } footer: {
+                if viewModel.isPad {
+                    Text(UserText.settingsHideTabBarWhileScrollingFooter)
+                }
             }
 
             // Customizable buttons specific settings.
@@ -210,6 +216,15 @@ struct SettingsAppearanceView: View {
             SettingsPickerCellView(label: UserText.settingsAddressBarPosition,
                                    options: AddressBarPosition.allCases,
                                    selectedOption: viewModel.addressBarPositionBinding)
+        }
+    }
+
+    @ViewBuilder
+    func hideTabBarWhileScrollingSetting() -> some View {
+        // iPad-only: when on, the tab bar and address bar hide while scrolling.
+        if viewModel.isPad {
+            SettingsCellView(label: UserText.settingsHideTabBarWhileScrolling,
+                             accessory: .toggle(isOn: viewModel.hideTabBarWhileScrollingOnIPadBinding))
         }
     }
 

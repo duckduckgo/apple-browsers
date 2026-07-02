@@ -473,7 +473,6 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             database: nil,
             emailServiceV0: emailService,
             emailServiceV1: emailServiceV1,
-            featureFlagger: featureFlagger,
             pixelHandler: fakePixelHandler
         )
         

@@ -152,14 +152,14 @@ struct AddressBarStyleProvidingFactory {
 
     static func buildStyleProvider(featureFlagger: FeatureFlagger) -> AddressBarStyleProviding {
         if featureFlagger.isFeatureOn(.appRebranding) {
-            return RefreshAddressBarStyleProvider(featureFlagger: featureFlagger)
+            return CurrentAddressBarStyleProvider(featureFlagger: featureFlagger)
         }
 
-        return CurrentAddressBarStyleProvider(featureFlagger: featureFlagger)
+        return LegacyAddressBarStyleProvider(featureFlagger: featureFlagger)
     }
 }
 
-final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
+final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
 
     /// The TabBar component requires an extra top padding whenever all of the following are met:
     ///     1. We're building on `Xcode 26`
@@ -305,7 +305,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     }
 }
 
-final class RefreshAddressBarStyleProvider: AddressBarStyleProviding {
+final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
 
     // MARK: - Private Properties
     private let navigationBarHeightForDefault: CGFloat = 52

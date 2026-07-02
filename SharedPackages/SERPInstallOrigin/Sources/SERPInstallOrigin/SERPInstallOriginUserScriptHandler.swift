@@ -30,10 +30,18 @@ final class SERPInstallOriginUserScriptHandler: SERPInstallOriginUserScriptHandl
     private let installOriginEnabled: Bool
     private let installOriginVariantProvider: InstallOriginVariantProviding?
 
-    init(platform: SERPInstallOriginUserScript.DataModel.Platform,
+    init(platform: SERPInstallOriginUserScript.DataModel.Platform? = nil,
          installOriginEnabled: Bool,
          installOriginVariantProvider: InstallOriginVariantProviding?) {
-        self.platform = platform
+        if let platform {
+            self.platform = platform
+        } else {
+#if os(macOS)
+            self.platform = .macos
+#else
+            self.platform = .ios
+#endif
+        }
         self.installOriginEnabled = installOriginEnabled
         self.installOriginVariantProvider = installOriginVariantProvider
     }

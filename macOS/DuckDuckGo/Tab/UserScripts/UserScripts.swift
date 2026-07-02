@@ -107,7 +107,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         )
         let installOriginEnabled = StandardApplicationBuildType().isSparkleBuild
         serpUserScript = SERPInstallOriginUserScript(
-            platform: .macos,
             serpBaseURL: URL.duckDuckGo,
             installOriginEnabled: installOriginEnabled,
             installOriginVariantProvider: installOriginEnabled ? DefaultInstallOriginVariantProvider() : nil

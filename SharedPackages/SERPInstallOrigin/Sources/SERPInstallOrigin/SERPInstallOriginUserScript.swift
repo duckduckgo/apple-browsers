@@ -51,13 +51,11 @@ public final class SERPInstallOriginUserScript: NSObject, Subfeature {
 
     private let handler: SERPInstallOriginUserScriptHandling
 
-    public init(platform: DataModel.Platform,
-                serpBaseURL: URL,
+    public init(serpBaseURL: URL,
                 installOriginEnabled: Bool,
                 installOriginVariantProvider: InstallOriginVariantProviding?) {
         self.messageOriginPolicy = Self.makeMessageOriginPolicy(for: serpBaseURL)
         self.handler = SERPInstallOriginUserScriptHandler(
-            platform: platform,
             installOriginEnabled: installOriginEnabled,
             installOriginVariantProvider: installOriginVariantProvider
         )

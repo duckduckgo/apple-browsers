@@ -26,7 +26,6 @@ import WebExtensions
 import PrivacyConfig
 
 /// Persisted state for the Cookie Pop-up Protection opt-in dialog.
-/// ponytail: the modal prompt queue tracks no per-prompt history, so we keep our own counters + first-shown date.
 struct CookiePopupProtectionOptInPromptStore {
     private static let shownCountKey = "com.duckduckgo.cookiePopupProtection.optIn.shownCount"
     private static let firstShownDateKey = "com.duckduckgo.cookiePopupProtection.optIn.firstShownDate"

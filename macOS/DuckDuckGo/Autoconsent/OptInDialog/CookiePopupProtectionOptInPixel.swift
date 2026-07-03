@@ -39,7 +39,7 @@ enum CookiePopupProtectionOptInPixel: PixelKitEvent {
         }
     }
 
-    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 
     var parameters: [String: String]? {
         switch self {

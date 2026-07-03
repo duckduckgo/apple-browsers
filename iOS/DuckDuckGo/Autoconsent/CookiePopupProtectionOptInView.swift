@@ -64,7 +64,7 @@ enum CookiePopupProtectionOptInOption: Hashable {
 }
 
 /// Cookie Pop-up Protection opt-in dialog (iOS counterpart of the macOS dialog).
-/// ponytail: `Confirm` reports the selected option via `onConfirm`; the presenter applies the setting.
+/// `Confirm` reports the selected option via `onConfirm`; the presenter applies the setting.
 struct CookiePopupProtectionOptInView: View {
 
     private let variant: CookiePopupProtectionOptInVariant
@@ -95,9 +95,11 @@ struct CookiePopupProtectionOptInView: View {
         ))
     }
 
-    /// Footer with the "Settings > Cookie Pop-Up Protection" span rendered bold (via markdown in the string).
+    /// Footer with "Settings" and "Cookie Pop-Up Protection" rendered bold, and the "\n" in the string
+    /// preserved as an explicit line break (default markdown parsing would collapse it into a space).
     private var footerText: AttributedString {
-        (try? AttributedString(markdown: UserText.cookiePopupProtectionOptInFooter))
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        return (try? AttributedString(markdown: UserText.cookiePopupProtectionOptInFooter, options: options))
             ?? AttributedString(UserText.cookiePopupProtectionOptInFooter)
     }
 

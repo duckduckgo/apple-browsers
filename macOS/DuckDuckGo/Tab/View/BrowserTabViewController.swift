@@ -676,13 +676,14 @@ final class BrowserTabViewController: NSViewController {
 
     /// Presents the Cookie Pop-up Protection opt-in dialog centered over the window.
     /// `onConfirm` fires when the user taps Confirm, reporting the resulting Cookie Pop-up Protection preference.
-    /// ponytail: the dim/backdrop is a WindowDimmingBlockingView mounted on the window frame view
+    /// the dim/backdrop is a WindowDimmingBlockingView mounted on the window frame view
     /// (contentView.superview) so it covers the WHOLE window — titlebar / tab bar included — and its local
     /// event monitor blocks mouse/scroll from reaching anything behind it. The card is a sibling above the
     /// backdrop so it receives events normally (no manual forwarding).
-    func showCookiePopupProtectionOptInDialog(onConfirm: ((CookiePopupPreference) -> Void)? = nil) {
-        guard cookiePopupOptInHostingController == nil else { return }
-        guard let frameView = view.window?.contentView?.superview else { return }
+    @discardableResult
+    func showCookiePopupProtectionOptInDialog(onConfirm: ((CookiePopupPreference) -> Void)? = nil) -> Bool {
+        guard cookiePopupOptInHostingController == nil else { return false }
+        guard let frameView = view.window?.contentView?.superview else { return false }
 
         // Autoresizing (not Auto Layout): the frame view is the private NSThemeFrame, which doesn't run the
         // Auto Layout engine for views we add, so constraints against it never resolve. ColorView's init also
@@ -736,6 +737,8 @@ final class BrowserTabViewController: NSViewController {
 
         // Clear keyboard focus from whatever field was active (e.g. the address bar / search box).
         view.window?.makeFirstResponder(nil)
+
+        return true
     }
 
     func dismissCookiePopupProtectionOptInDialog() {

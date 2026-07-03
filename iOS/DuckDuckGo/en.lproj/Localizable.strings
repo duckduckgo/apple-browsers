@@ -1373,7 +1373,7 @@
 "cookie-popup-protection.opt-in.confirm" = "Confirm";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "We'll aim to only select the most-private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you.";
+"cookie-popup-protection.opt-in.disabled.body" = "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.primary-option" = "Manage or accept cookies for me";
@@ -1397,7 +1397,7 @@
 "cookie-popup-protection.opt-in.enabled.title" = "Tired of cookie pop-ups that don't let you opt out?";
 
 /* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
-"cookie-popup-protection.opt-in.footer" = "You can always adjust later in **Settings > Cookie Pop-up Protection**.";
+"cookie-popup-protection.opt-in.footer" = "You can always adjust later in\n**Settings** > **Cookie Pop-Up Protection**.";
 
 /* Header of the Cookie Pop-up Protection opt-in dialog */
 "cookie-popup-protection.opt-in.header" = "Cookie Pop-up Protection";

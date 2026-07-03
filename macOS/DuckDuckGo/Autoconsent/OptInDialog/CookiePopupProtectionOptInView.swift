@@ -63,125 +63,138 @@ enum CookiePopupProtectionOptInOption: CaseIterable, Identifiable {
 }
 
 /// Centered opt-in card matching the Cookie Pop-up Protection design.
-/// ponytail: `Confirm` reports the selected option via `onConfirm`; the presenter applies the setting.
+/// `Confirm` reports the selected option via `onConfirm`; the presenter applies the setting.
 struct CookiePopupProtectionOptInView: View {
 
     let variant: CookiePopupProtectionOptInVariant
     let onConfirm: (CookiePopupProtectionOptInOption) -> Void
     @State private var selectedOption: CookiePopupProtectionOptInOption = .optIn
 
-    /// Footer with the "Settings > Cookie Pop-Up Protection" span rendered bold (via markdown in the string).
+    /// Footer with "Settings" and "Cookie Pop-Up Protection" rendered bold, and the "\n" in the string
+    /// preserved as an explicit line break (default markdown parsing would collapse it into a space).
     private var footerText: AttributedString {
-        (try? AttributedString(markdown: UserText.cookiePopupProtectionOptInFooter))
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        return (try? AttributedString(markdown: UserText.cookiePopupProtectionOptInFooter, options: options))
             ?? AttributedString(UserText.cookiePopupProtectionOptInFooter)
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            Image("OnboardingDax")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 32, height: 32)
-                .padding(.top, 28)
-                .padding(.bottom, 16)
+            titlebar
 
-            HStack(spacing: 8) {
-                Text(UserText.cookiePopupProtectionOptInBadge.uppercased())
-                    .font(.system(size: 11, weight: .bold))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(Color(designSystemColor: .alertYellow))
-                    .foregroundColor(.black)
-                    .cornerRadius(6)
-                Text(UserText.cookiePopupProtectionOptInHeader.uppercased())
-                    .font(.system(size: 13, weight: .semibold))
-                    .tracking(0.6)
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
+            VStack(spacing: 24) {
+                headerSection
+                optionsBox
+                    .padding(.horizontal, 8)
+                footerRow
             }
-            .padding(.bottom, 20)
-
-            innerCard
-                .padding(.horizontal, 20)
-
-            HStack {
-                Spacer()
-                Button(UserText.cookiePopupProtectionOptInConfirm) {
-                    onConfirm(selectedOption)
-                }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
-            }
+            .padding(.horizontal, 24)
             .padding(.top, 16)
-            .padding(.trailing, 20)
-            .padding(.bottom, 16)
+            .padding(.bottom, 24)
         }
-        .frame(width: 460)
+        .frame(width: 403)
         .background(Color(designSystemColor: .surfaceSecondary))
-        .cornerRadius(16)
+        .cornerRadius(32)
         .shadow(color: .black.opacity(0.18), radius: 18, y: 6)
     }
 
-    private var innerCard: some View {
+    /// macOS-style titlebar: logo pinned left, NEW badge + header centered, hairline separator below.
+    private var titlebar: some View {
         VStack(spacing: 0) {
+            ZStack {
+                HStack {
+                    Image("OnboardingDax")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 28, height: 28)
+                    Spacer()
+                }
+
+                HStack(spacing: 8) {
+                    Text(UserText.cookiePopupProtectionOptInBadge.uppercased())
+                        .font(.system(size: 11, weight: .bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color(designSystemColor: .alertYellow))
+                        .foregroundColor(.black)
+                        .cornerRadius(8)
+                    Text(UserText.cookiePopupProtectionOptInHeader.uppercased())
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.5)
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                }
+            }
+            .frame(height: 52)
+            .padding(.horizontal, 16)
+
+            Rectangle()
+                .fill(Color(.blackWhite10))
+                .frame(height: 1)
+        }
+    }
+
+    private var headerSection: some View {
+        VStack(spacing: 8) {
             Image(nsImage: DesignSystemImages.Color.Size96.cookieCheckFeature)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 72, height: 72)
-                .padding(.top, 20)
-                .padding(.bottom, 8)
+                .frame(width: 96, height: 72)
 
             Text(variant.title)
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: 17, weight: .bold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity)
-                .padding(.bottom, 8)
+                .padding(.horizontal, 16)
 
             Text(variant.message)
                 .font(.system(size: 13))
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 20)
-
-            preferenceBox
-
-            Text(footerText)
-                .font(.system(size: 12))
-                .multilineTextAlignment(.leading)
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 16)
-                .padding(.bottom, 20)
+                .padding(.horizontal, 16)
         }
-        .padding(.horizontal, 20)
-        .background(Color(designSystemColor: .surfaceCanvas))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(.blackWhite10), lineWidth: 1)
-        )
     }
 
-    private var preferenceBox: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(UserText.cookiePopupProtectionOptInPreferenceCaption)
-                .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-
+    private var optionsBox: some View {
+        VStack(alignment: .leading, spacing: 12) {
             radioRow(.optIn, title: variant.primaryOptionTitle)
             radioRow(.keepCurrent, title: variant.secondaryOptionTitle)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(Color(designSystemColor: .surfaceSecondary))
-        .cornerRadius(10)
+        .background(Color(designSystemColor: .surfacePrimary))
+        .cornerRadius(20)
         .overlay(
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: 20)
                 .stroke(Color(.blackWhite10), lineWidth: 1)
         )
+    }
+
+    /// Footer copy on the left, Confirm button hugging the right — a single row.
+    private var footerRow: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Text(footerText)
+                .font(.system(size: 11))
+                .multilineTextAlignment(.leading)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button {
+                onConfirm(selectedOption)
+            } label: {
+                Text(UserText.cookiePopupProtectionOptInConfirm)
+                    .font(.system(size: 13))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .frame(height: 32)
+                    .background(Color(designSystemColor: .accentPrimary), in: Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.top, 8)
     }
 
     // Custom radio rows: the native radioGroup Picker gives no control over inter-option spacing.
@@ -218,7 +231,7 @@ struct CookiePopupProtectionOptInView: View {
 }
 
 /// Dimming scrim + centered card. This is what gets hosted over the tab.
-/// ponytail: scrim is non-dismissing on purpose — it's an opt-in; only `Confirm` closes it.
+/// scrim is non-dismissing on purpose — it's an opt-in; only `Confirm` closes it.
 struct CookiePopupProtectionOptInOverlayView: View {
 
     let variant: CookiePopupProtectionOptInVariant
@@ -229,7 +242,7 @@ struct CookiePopupProtectionOptInOverlayView: View {
             Color.black.opacity(0.18)
                 .ignoresSafeArea()
                 .contentShape(Rectangle())
-                // ponytail: absorb clicks on the backdrop so nothing behind reacts; non-dismissing on purpose.
+                // absorb clicks on the backdrop so nothing behind reacts; non-dismissing on purpose.
                 .onTapGesture {}
             CookiePopupProtectionOptInView(variant: variant, onConfirm: onConfirm)
         }

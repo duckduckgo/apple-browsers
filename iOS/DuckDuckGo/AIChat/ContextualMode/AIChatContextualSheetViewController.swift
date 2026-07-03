@@ -920,6 +920,7 @@ private extension AIChatContextualSheetViewController {
     func apply(_ viewState: SheetViewState) {
         expandButton.isEnabled = viewState.isExpandButtonEnabled
         contextualInputViewController.updateQuickActions(with: viewState.quickActions)
+        contextualInputViewController.updateSuggestionsLoading(viewState.suggestionsLoadState == .loading)
 
         switch viewState.content {
         case .nativeInput:

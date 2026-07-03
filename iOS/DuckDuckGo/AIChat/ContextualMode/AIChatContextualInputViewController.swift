@@ -178,6 +178,10 @@ final class AIChatContextualInputViewController: UIViewController {
         quickActionsView.configure(with: actions)
     }
 
+    func updateSuggestionsLoading(_ isLoading: Bool) {
+        quickActionsView.setLoading(isLoading)
+    }
+
     func embedSuggestionsContent(_ childViewController: UIViewController) {
         addChild(childViewController)
         childViewController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -209,17 +213,26 @@ private extension AIChatContextualInputViewController {
     }
 
     func setupSuggestionsUI() {
-        view.addSubview(suggestionsContentView)
+        view.addSubview(quickActionsScrollView)
+        quickActionsScrollView.addSubview(quickActionsView)
         embedNativeInputViewController()
 
         bottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
 
         NSLayoutConstraint.activate([
-            suggestionsContentView.topAnchor.constraint(equalTo: view.topAnchor),
-            suggestionsContentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            suggestionsContentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            suggestionsContentView.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor),
+            quickActionsScrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            quickActionsScrollView.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
 
+            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
+            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
+            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
+            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
+            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
+            quickActionsView.heightAnchor.constraint(greaterThanOrEqualTo: quickActionsScrollView.frameLayoutGuide.heightAnchor),
+
+            nativeInputViewController.view.topAnchor.constraint(greaterThanOrEqualTo: quickActionsView.bottomAnchor, constant: Constants.quickActionsBottomSpacing),
             nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
             nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
             bottomConstraint!,

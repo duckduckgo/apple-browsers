@@ -58,12 +58,18 @@ enum ChipState: CustomStringConvertible, Equatable {
     }
 }
 
+enum SuggestionsLoadState: Equatable {
+    case loading
+    case loaded
+}
+
 struct SheetViewState {
     let content: ContentMode
     let isExpandButtonEnabled: Bool
     let shouldShowNewChatButton: Bool
     let chipState: ChipState
     let quickActions: [AIChatContextualQuickAction]
+    let suggestionsLoadState: SuggestionsLoadState
 
     enum ContentMode {
         case nativeInput
@@ -89,6 +95,7 @@ final class AIChatContextualChatSessionState {
     private let aiChatSettings: AIChatSettingsProvider
     private let pixelHandler: AIChatContextualModePixelFiring
     private let featureFlagger: FeatureFlagger
+    private let suggestedPromptsProvider: ContextualSuggestedPromptsProviding
 
     // MARK: - Core State (private(set) - mutations happen via methods)
 
@@ -102,7 +109,8 @@ final class AIChatContextualChatSessionState {
         isExpandButtonEnabled: true,
         shouldShowNewChatButton: false,
         chipState: .placeholder,
-        quickActions: [.summarize]
+        quickActions: [.summarize],
+        suggestionsLoadState: .loaded
     )
 
     let effects = PassthroughSubject<SheetEffect, Never>()
@@ -122,14 +130,19 @@ final class AIChatContextualChatSessionState {
 
     private var pendingSignalsOnlyCollection = false
 
+    private(set) var suggestionsLoadState: SuggestionsLoadState = .loaded
+    private var suggestionsResolveTask: Task<Void, Never>?
+
     // MARK: - Initialization
 
     init(aiChatSettings: AIChatSettingsProvider,
          pixelHandler: AIChatContextualModePixelFiring,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         suggestedPromptsProvider: ContextualSuggestedPromptsProviding = StubContextualSuggestedPromptsProvider()) {
         self.aiChatSettings = aiChatSettings
         self.pixelHandler = pixelHandler
         self.featureFlagger = featureFlagger
+        self.suggestedPromptsProvider = suggestedPromptsProvider
         self.wasAutoAttachEnabled = aiChatSettings.isAutomaticContextAttachmentEnabled
         rebuildViewState()
     }
@@ -236,6 +249,8 @@ final class AIChatContextualChatSessionState {
         isManualAttachFromFrontend = false
         isProcessingNavigation = false
         pendingSignalsOnlyCollection = false
+        suggestionsResolveTask?.cancel()
+        suggestionsLoadState = .loaded
         pixelHandler.endManualAttach()
         rebuildViewState()
         emit(.clearPrompt)
@@ -330,6 +345,7 @@ final class AIChatContextualChatSessionState {
 
     func markPendingSignalsOnlyCollection() {
         pendingSignalsOnlyCollection = true
+        beginLoadingSuggestions()
     }
 
     /// Updates the latest page context and determines attach behavior based on internal state.
@@ -506,6 +522,21 @@ private extension AIChatContextualChatSessionState {
         }
     }
 
+    private func beginLoadingSuggestions() {
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
+
+        suggestionsResolveTask?.cancel()
+        suggestionsLoadState = .loading
+        rebuildViewState()
+
+        suggestionsResolveTask = Task { [weak self] in
+            await self?.suggestedPromptsProvider.resolveSuggestions()
+            guard let self, !Task.isCancelled else { return }
+            self.suggestionsLoadState = .loaded
+            self.rebuildViewState()
+        }
+    }
+
     func rebuildViewState() {
         let content: SheetViewState.ContentMode
         switch frontendState {
@@ -520,7 +551,8 @@ private extension AIChatContextualChatSessionState {
             isExpandButtonEnabled: frontendState == .noChat || contextualChatURL != nil,
             shouldShowNewChatButton: frontendState != .noChat,
             chipState: chipState,
-            quickActions: resolveQuickActions()
+            quickActions: resolveQuickActions(),
+            suggestionsLoadState: suggestionsLoadState
         )
     }
 

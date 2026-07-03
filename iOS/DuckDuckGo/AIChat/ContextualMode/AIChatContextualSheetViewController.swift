@@ -129,7 +129,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
-        showsNativeInput: persistentUTIHost == nil
+        showsBasicNativeInput: persistentUTIHost == nil
     )
     private var cancellables = Set<AnyCancellable>()
     private var contentContainerBottomConstraint: NSLayoutConstraint?

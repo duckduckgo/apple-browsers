@@ -239,11 +239,6 @@ final class BrowsingMenuViewController: UIViewController {
         tableView.register(BrowsingMenuSeparatorViewCell.self, forCellReuseIdentifier: Contants.separatorCellReuseIdentifier)
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        productSurfaceTelemetry.menuUsed()
-    }
-
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         if isBeingDismissed {

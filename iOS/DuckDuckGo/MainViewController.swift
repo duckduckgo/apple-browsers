@@ -4210,6 +4210,7 @@ extension MainViewController: OmniBarDelegate {
                 Pixel.fire(pixel: .browsingMenuOpenedError)
             }
         }
+        productSurfaceTelemetry.menuUsed()
     }
 
     private func launchDefaultBrowsingMenu(in context: BrowsingMenuContext, tabController tab: TabViewController) {

@@ -157,7 +157,7 @@ final class CurrentColorsProviding: ColorsProviding {
     // MARK: - Suggestions
     var suggestionsBackgroundColor: NSColor { palette.inputActive }
     var suggestionsHighlightBackroundColor: NSColor { palette.controlsFillPrimary }
-    var suggestionsHighlightTextColor: NSColor { palette.accentTextPrimary }
+    var suggestionsHighlightTextColor: NSColor { palette.textPrimary }
 
     // MARK: - Semantic
     var accentPrimaryColor: NSColor { palette.accentPrimary }

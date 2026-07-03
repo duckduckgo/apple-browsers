@@ -257,7 +257,19 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             // Re-resolve now (synchronously, before the host is shown) so the prior session's stale
             // content isn't flashed. Runs after `prepareForActivation` clears the dismiss freeze.
             activationResolveTrigger.send(())
+            syncDuckAISurfaceWithSettings()
             duckAISurface?.refreshRecents()
+        }
+    }
+
+    /// Re-checks the Chat Suggestions gate on every focus: this VC is built once per browser session
+    /// (`viewWillAppear` only fires once), so without this, toggling the setting wouldn't take effect
+    /// until the app restarts.
+    private func syncDuckAISurfaceWithSettings() {
+        if featureFlagger.isFeatureOn(.aiChatSuggestions) && aiChatSettings.isChatSuggestionsEnabled {
+            attachDuckAISurfaceIfNeeded()
+        } else {
+            detachDuckAISurfaceFromSingleHost()
         }
     }
 

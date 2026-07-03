@@ -35,7 +35,7 @@ final class AIChatSuggestionsView: NSView {
         static let legacySeparatorHorizontalInset: CGFloat = 12
         static let rowsHorizontalPadding: CGFloat = 6
         static let legacyRowsHorizontalPadding: CGFloat = 4
-        static let bottomPadding: CGFloat = 1
+        static let bottomPadding: CGFloat = 2
         static let legacyBottomPadding: CGFloat = 4
         static let viewAllChatsSeparatorBottomPadding: CGFloat = 0
         static let legacyViewAllChatsSeparatorBottomPadding: CGFloat = 8
@@ -159,7 +159,9 @@ final class AIChatSuggestionsView: NSView {
         let bottomPadding = isAppRebranded ? Constants.bottomPadding : Constants.legacyBottomPadding
         let separatorTotalHeight = Constants.separatorHeight + Constants.separatorTopPadding + Constants.separatorBottomPadding
         let rowsHeight = CGFloat(count) * rowHeight
-        let viewAllChatsHeight = showViewAllChats ? Constants.separatorHeight + viewAllChatsSeparatorBottomPadding + rowHeight : 0
+        let viewAllChatsSeparatorHeight = showViewAllChats && isAppRebranded ? 0 : Constants.separatorHeight
+        let viewAllChatsHeight = showViewAllChats ? viewAllChatsSeparatorHeight + viewAllChatsSeparatorBottomPadding + rowHeight : 0
+
         return separatorTotalHeight + rowsHeight + viewAllChatsHeight + bottomPadding
     }
 

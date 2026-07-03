@@ -59,7 +59,8 @@ final class AIChatSuggestionRowView: NSView {
         static let horizontalPadding: CGFloat = 14
         static let legacyHorizontalPadding: CGFloat = 12
         static let iconSize: CGFloat = 16
-        static let iconTitleSpacing: CGFloat = 6
+        static let iconTitleSpacing: CGFloat = 8
+        static let legacyIconTitleSpacing: CGFloat = 6
 
         // Colors matching SuggestionTableCellView
         static let iconColor: NSColor = .suggestionIcon
@@ -163,20 +164,22 @@ final class AIChatSuggestionRowView: NSView {
         addSubview(deleteButton)
 
         let rowHeight = themeManager.isAppRebranded ? Constants.rowHeight : Constants.legacyRowHeight
-        let horizontalPadding = themeManager.isAppRebranded ? Constants.horizontalPadding : Constants.legacyHorizontalPadding
+        let iconPadding = themeManager.isAppRebranded ? Constants.horizontalPadding : Constants.legacyHorizontalPadding
+        let titlePadding = themeManager.isAppRebranded ? Constants.iconTitleSpacing : Constants.legacyIconTitleSpacing
+
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: rowHeight),
 
-            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: horizontalPadding),
+            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: iconPadding),
             iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
-            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
-            titleLabel.trailingAnchor.constraint(equalTo: deleteButton.leadingAnchor, constant: -Constants.iconTitleSpacing),
+            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: titlePadding),
+            titleLabel.trailingAnchor.constraint(equalTo: deleteButton.leadingAnchor, constant: -titlePadding),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            deleteButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -horizontalPadding),
+            deleteButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -iconPadding),
             deleteButton.centerYAnchor.constraint(equalTo: centerYAnchor),
             deleteButton.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             deleteButton.heightAnchor.constraint(equalToConstant: Constants.iconSize),

@@ -474,6 +474,7 @@ extension SuggestionViewController: NSTableViewDelegate {
         }
 
         suggestionTableRowView.theme = themeManager.theme
+        suggestionTableRowView.isAppRebranded = themeManager.isAppRebranded
         return suggestionTableRowView
     }
 

@@ -43,7 +43,7 @@ final class AIChatViewAllChatsRowView: NSView {
 
     // MARK: - UI Components
 
-    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    private let themeManager: ThemeManaging
 
     private let iconImageView: NSImageView = {
         let imageView = NSImageView()
@@ -118,8 +118,12 @@ final class AIChatViewAllChatsRowView: NSView {
 
     // MARK: - Initialization
 
-    init(themeProvider: SuggestionRowThemeProviding = DefaultSuggestionRowThemeProvider()) {
-        self.themeProvider = themeProvider
+    init(
+        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+        themeProvider: SuggestionRowThemeProviding? = nil)
+    {
+        self.themeManager = themeManager
+        self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager)
         super.init(frame: .zero)
         setupView()
     }

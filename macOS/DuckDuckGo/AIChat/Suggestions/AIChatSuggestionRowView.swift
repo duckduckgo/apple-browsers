@@ -33,16 +33,18 @@ protocol SuggestionRowThemeProviding {
 
 /// Default implementation that uses the app's theme manager.
 struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
+    let themeManager: ThemeManaging
+
     var accentPrimaryColor: NSColor {
-        NSApp.delegateTyped.themeManager.theme.palette.accentPrimary
+        themeManager.theme.colorsProvider.suggestionsBackgroundColor
     }
 
     var selectedTintColor: NSColor {
-        NSApp.delegateTyped.themeManager.theme.palette.accentContentPrimary
+        themeManager.theme.colorsProvider.suggestionsHighlightTextColor
     }
 
     var suggestionHighlightCornerRadius: CGFloat {
-        NSApp.delegateTyped.themeManager.theme.addressBarStyleProvider.suggestionHighlightCornerRadius
+        themeManager.theme.addressBarStyleProvider.suggestionHighlightCornerRadius
     }
 }
 
@@ -69,7 +71,7 @@ final class AIChatSuggestionRowView: NSView {
 
     // MARK: - UI Components
 
-    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    private let themeManager: ThemeManaging
 
     private let iconImageView: NSImageView = {
         let imageView = NSImageView()
@@ -134,9 +136,10 @@ final class AIChatSuggestionRowView: NSView {
 
     // MARK: - Initialization
 
-    init(suggestion: AIChatSuggestion, themeProvider: SuggestionRowThemeProviding = DefaultSuggestionRowThemeProvider()) {
+    init(suggestion: AIChatSuggestion, themeManager: ThemeManaging = NSApp.delegateTyped.themeManager, themeProvider: SuggestionRowThemeProviding? = nil) {
         self.suggestion = suggestion
-        self.themeProvider = themeProvider
+        self.themeManager = themeManager
+        self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager)
         super.init(frame: .zero)
         setupView()
         configure(with: suggestion)

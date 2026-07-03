@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-
 import Combine
 import Foundation
 import WebKit
@@ -306,4 +305,3 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
 #endif
 
 }
-

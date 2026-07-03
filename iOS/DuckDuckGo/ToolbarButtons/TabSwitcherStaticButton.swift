@@ -58,6 +58,7 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
         configureLongPressBehavior()
         setUpSubviews()
         self.isPointerInteractionEnabled = true
+        self.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
     }
 
     @available(*, unavailable)

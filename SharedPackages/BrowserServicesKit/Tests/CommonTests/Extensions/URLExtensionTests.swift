@@ -1120,6 +1120,62 @@ final class URLEqualityComponentsTests {
         let other = URL(string: "about:blank#section")!
         #expect(hashed.equals(other, by: .fuzzyIdentity))
     }
+#else
+    // Without _web_originalDataAsString, NSURL percent-encodes '#' to '%23', folding the
+    // fragment token into the path string. Components that don't touch the path (scheme,
+    // host, port, query, fragment) are unaffected and still compare correctly; any mask
+    // that includes .path returns false because "blank" ≠ "blank%23section".
+    static let nsURL_percentEncodedHash_args: [(String, String, URL.EqualityComponents, Bool, UInt)] = [
+        // No fragments — NSURL produces no %23 encoding; all components compare correctly
+        ("about:blank",          "about:blank",                 .sameDocument,  true,  #line),
+        ("about:blank",          "about:blank",                 .fuzzyIdentity, true,  #line),
+        ("about:blank",          "about:blank",                 [.scheme],      true,  #line),
+        ("about:blank",          "about:blank",                 [.path],        true,  #line),
+        ("data:text/html,hello", "data:text/html,hello",        .sameDocument,  true,  #line),
+        ("data:text/html,hello", "data:text/html,world",        [.scheme],      true,  #line),   // "data" == "data"
+        ("data:text/html,hello", "data:text/html,world",        [.path],        false, #line),   // "text/html,hello" ≠ "text/html,world"
+        ("data:text/html,hello", "data:text/html,world",        .sameDocument,  false, #line),
+
+        // about:blank vs about:blank#section — NSURL stores second as "about:blank%23section"
+        ("about:blank",          "about:blank#section",         [.scheme],      true,  #line),  // "about" == "about"
+        ("about:blank",          "about:blank#section",         [.host],        false, #line),  // both nil → skipped → no match
+        ("about:blank",          "about:blank#section",         [.port],        false, #line),  // both nil → skipped → no match
+        ("about:blank",          "about:blank#section",         [.query],       false, #line),  // both nil → skipped → no match
+        ("about:blank",          "about:blank#section",         [.fragment],    false, #line),  // both nil (%23 absorbed into path) → skipped → no match
+        ("about:blank",          "about:blank#section",         [.path],        false, #line),  // "blank" ≠ "blank%23section"
+        ("about:blank",          "about:blank#section",         .sameDocument,  false, #line),
+        ("about:blank",          "about:blank#section",         .fuzzyIdentity, false, #line),
+        // about:blank#a vs about:blank#b — "blank%23a" ≠ "blank%23b"
+        ("about:blank#a",        "about:blank#b",               [.scheme],      true,  #line),
+        ("about:blank#a",        "about:blank#b",               [.host],        false, #line),  // both nil → skipped → no match
+        ("about:blank#a",        "about:blank#b",               [.port],        false, #line),  // both nil → skipped → no match
+        ("about:blank#a",        "about:blank#b",               [.query],       false, #line),  // both nil → skipped → no match
+        ("about:blank#a",        "about:blank#b",               [.fragment],    false, #line),  // both nil (%23 absorbed into path) → skipped → no match
+        ("about:blank#a",        "about:blank#b",               [.path],        false, #line),  // "blank%23a" ≠ "blank%23b"
+        ("about:blank#a",        "about:blank#b",               .sameDocument,  false, #line),
+        ("about:blank#a",        "about:blank#b",               .fuzzyIdentity, false, #line),
+        // data: URLs with fragment — "text/html,hello" ≠ "text/html,hello%23anchor"
+        ("data:text/html,hello", "data:text/html,hello#anchor", [.scheme],      true,  #line),
+        ("data:text/html,hello", "data:text/html,hello#anchor", [.host],        false, #line),  // both nil → skipped → no match
+        ("data:text/html,hello", "data:text/html,hello#anchor", [.port],        false, #line),  // both nil → skipped → no match
+        ("data:text/html,hello", "data:text/html,hello#anchor", [.query],       false, #line),  // both nil → skipped → no match
+        ("data:text/html,hello", "data:text/html,hello#anchor", [.fragment],    false, #line),  // both nil (%23 absorbed into path) → skipped → no match
+        ("data:text/html,hello", "data:text/html,hello#anchor", [.path],        false, #line),
+        ("data:text/html,hello", "data:text/html,hello#anchor", .sameDocument,  false, #line),
+        ("data:text/html,hello", "data:text/html,hello#anchor", .fuzzyIdentity, false, #line),
+    ]
+
+    @available(iOS 16, macOS 13, *)
+    @Test("NSURL opaque URL with percent-encoded hash: equals false without _ORIGINAL_DATA_AS_STRING_ENABLED",
+          .timeLimit(.minutes(1)), arguments: nsURL_percentEncodedHash_args)
+    func nsURL_percentEncodedHash_equalsWithoutFlag(
+        url1: String, url2: String, components: URL.EqualityComponents, expected: Bool, line: UInt
+    ) {
+        guard let a = NSURL(string: url1) as URL?,
+              let b = NSURL(string: url2) as URL? else { return }
+        let loc = Testing.SourceLocation(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1)
+        #expect(a.equals(b, by: components) == expected, sourceLocation: loc)
+    }
 #endif
 
     @available(iOS 16, macOS 13, *)

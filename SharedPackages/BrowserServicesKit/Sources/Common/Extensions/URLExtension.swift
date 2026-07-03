@@ -18,6 +18,7 @@
 
 import Foundation
 import FoundationExtensions
+import OSLog
 import Network
 import URLPredictor
 
@@ -408,7 +409,7 @@ extension URL {
     /// - `.fuzzyIdentity` — includes fragment, normalizes trailing '/' in path
     ///
     /// Or build a custom mask: `[.scheme, .host, .query]`
-    public struct EqualityComponents: OptionSet {
+    public struct EqualityComponents: OptionSet, CustomStringConvertible {
         public init(rawValue: UInt8) { self.rawValue = rawValue }
         public let rawValue: UInt8
         public static let scheme   = Self(rawValue: 1 << 0)
@@ -424,41 +425,68 @@ extension URL {
         public static let fuzzyIdentity: Self = [.scheme, .host, .port, .path, .query, .fragment]
 
         static let allComponents: [Self] = [.scheme, .host, .port, .path, .query, .fragment]
+
+        public var description: String {
+            switch self {
+            case .scheme: return "scheme"
+            case .host: return "host"
+            case .port: return "port"
+            case .path: return "path"
+            case .query: return "query"
+            case .fragment: return "fragment"
+            default: return "unknown"
+            }
+        }
     }
 
     /// Returns true when `self` and `other` are equal for every component in `components`.
     ///
-    /// For hierarchical URLs (`http://`, `https://`, `file://`, …) components are extracted
-    /// via `URLComponents` which gives correct percent-decoding for all fields.
+    /// Components are extracted via `URLComponents(webKitUrl:)`, which uses the WebKit-internal
+    /// original string representation for opaque URLs (`about:`, `data:`, `javascript:`, …),
+    /// correctly surfacing fragments and other components that plain `URLComponents(url:)` would miss.
     ///
-    /// For opaque URLs (`about:`, `data:`, `javascript:`, …) `URLComponents` does not surface
-    /// fragments, so the fragment is found by scanning `absoluteString` for `#` or `%23`.
-    /// Path comparison always strips a trailing '/' (except for bare root '/').
+    /// Path comparison strips a trailing `'/'` for hierarchical URLs.
     public func equals(_ other: URL, by components: EqualityComponents) -> Bool {
-        guard let selfParsed  = URLComponents(webKitUrl: self),
+        guard self.isOpaque == other.isOpaque,
+              let selfParsed  = URLComponents(webKitUrl: self),
               let otherParsed = URLComponents(webKitUrl: other) else { return false }
 
-        return EqualityComponents.allComponents.filter(components.contains).allSatisfy { component in
+        // Returns true only when at least one component yielded a non-nil match.
+        // Components absent (nil) in both URLs are skipped; a mismatch or one-sided
+        // nil returns false immediately.
+        enum UrlComponentValue: Equatable {
+            case string(String)
+            case int(Int)
+        }
+        func urlComponents(_ urlComponents: URLComponents, valueFor component: EqualityComponents) -> UrlComponentValue? {
             switch component {
-            case .scheme:
-               return scheme == other.scheme
-            case .host:
-                return selfParsed.host == otherParsed.host
-            case .port:
-                return selfParsed.port == otherParsed.port
-            case .path where !self.isOpaque && !other.isOpaque:
-                return selfParsed.path.dropping(suffix: "/") == otherParsed.path.dropping(suffix: "/")
-            case .path:
-                return selfParsed.path == otherParsed.path
-            case .query:
-                return selfParsed.query == otherParsed.query
-            case .fragment:
-                return selfParsed.fragment == otherParsed.fragment
-            default:
-                assertionFailure("Unknown component: \(component)")
-                return true
+            case .scheme: urlComponents.scheme.map(UrlComponentValue.string)
+            case .host: urlComponents.host.map(UrlComponentValue.string)
+            case .port: urlComponents.port.map(UrlComponentValue.int)
+            case .path: .string(urlComponents.path)
+            case .query: urlComponents.query.map(UrlComponentValue.string)
+            case .fragment: urlComponents.fragment.map(UrlComponentValue.string)
+            default: fatalError("Unknown component: \(self)")
             }
         }
+        return EqualityComponents.allComponents.filter(components.contains).reduce(nil as Bool?) { previousResult, component in
+            // Return early if any component already returned false
+            guard previousResult != false else { return false }
+
+            // Special case for path: strip trailing '/' for hierarchical URLs
+            if component == .path && !isOpaque {
+                return selfParsed.path.dropping(suffix: "/") == otherParsed.path.dropping(suffix: "/")
+            }
+
+            let selfComponent = urlComponents(selfParsed, valueFor: component)
+            let otherComponent = urlComponents(otherParsed, valueFor: component)
+
+            // Both components are absent → skip
+            if selfComponent == nil && otherComponent == nil { return previousResult }
+
+            return selfComponent == otherComponent
+
+        } ?? false // Default to false if no components matched
     }
 
     /// Drops text fragment from a URL.

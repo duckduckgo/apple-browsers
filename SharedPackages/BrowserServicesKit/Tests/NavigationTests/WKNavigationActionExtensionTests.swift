@@ -270,7 +270,8 @@ class WKNavigationActionExtensionTests: XCTestCase {
 #if _ORIGINAL_DATA_AS_STRING_ENABLED
     // Foundation's URL parser will wrongly percent-encode '#' to '%23' in opaque about: URLs
     // (e.g. when constructed via URL(trimmedAddressBarString:)). URL.hasFragment and
-    // URL.equals(_:by:) handle this via effective fragment (commit e880d888b3).
+    // URL.equals(_:by:) recover the literal '#' via URLComponents(webKitUrl:), which reads
+    // the WebKit-internal _web_originalDataAsString to parse the URL as WebKit intended.
     func testWhenAboutURLWithPercentEncodedHashAndSameDocumentThenIsSameDocument() {
         let action = makeAction(
             currentURL: NSURL(string: "about:blank")! as URL,

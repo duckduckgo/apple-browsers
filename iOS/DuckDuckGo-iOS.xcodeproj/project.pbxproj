@@ -12604,7 +12604,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"$SOURCE_ROOT/scripts/loc_update.sh\"\n";
+			shellScript = "if [ -n \"${SKIP_STRINGS:-}\" ]; then\n    echo \"Skipping Localizable.strings update because SKIP_STRINGS is set\"\n    exit 0\nfi\n\n\"$SOURCE_ROOT/scripts/loc_update.sh\"\n";
 		};
 		B6409DC62BC7D9BF00D66F9E /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;

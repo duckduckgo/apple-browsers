@@ -4236,8 +4236,7 @@ extension MainViewController: OmniBarDelegate {
         let browsingMenu: BrowsingMenuViewController =
         BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
                                                menuEntries: menuEntries,
-                                               daxDialogsManager: daxDialogsManager,
-                                               productSurfaceTelemetry: productSurfaceTelemetry)
+                                               daxDialogsManager: daxDialogsManager)
         browsingMenu.isUsingSingleBar = isUsingSingleBar
         browsingMenu.onDismiss = { wasActionSelected in
             self.showMenuHighlighterIfNeeded()

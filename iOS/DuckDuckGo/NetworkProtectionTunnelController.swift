@@ -50,7 +50,17 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     private let settings: VPNSettings
     private lazy var startupMonitor = VPNStartupMonitor()
     private var cancellables = Set<AnyCancellable>()
-    
+
+    /// Carries user-facing messages for controller-side (pre-session) start failures.
+    ///
+    /// The status view surfaces connection errors through the tunnel session, but failures that abort
+    /// before the session is created (e.g. a missing auth token) never reach that observer. This subject
+    /// gives those pre-session failures a channel to the UI; `nil` means "no error to show".
+    private let controllerErrorSubject = CurrentValueSubject<String?, Never>(nil)
+    var controllerErrorPublisher: AnyPublisher<String?, Never> {
+        controllerErrorSubject.eraseToAnyPublisher()
+    }
+
     // Wide Event
     private let wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
@@ -179,6 +189,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     func start() async {
         setupAndStartConnectionWideEvent()
+        controllerErrorSubject.send(nil)
         persistentPixel.fire(
             pixel: .networkProtectionControllerStartAttempt,
             error: nil,
@@ -198,6 +209,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 onComplete: { _ in })
         } catch {
             // Top level catch-all
+            controllerErrorSubject.send(userFacingControllerErrorMessage(for: error))
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             if case StartError.configSystemPermissionsDenied = error {
                 return
@@ -214,6 +226,29 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             errorStore.lastErrorMessage = error.localizedDescription
             #endif
         }
+    }
+
+    /// Maps a start failure to the user-facing message the status view should show, reusing the existing
+    /// `VPNConnectionError` copy. Returns `nil` for failures the user should not see a banner for:
+    /// `configSystemPermissionsDenied` (the user deliberately declined the system prompt) and
+    /// `startVPNFailed` (which happens after the tunnel session exists, so the session-based error
+    /// observer already surfaces it).
+    private func userFacingControllerErrorMessage(for error: Error) -> String? {
+        guard let startError = error as? StartError else {
+            return nil
+        }
+
+        let connectionError: VPNConnectionError
+        switch startError {
+        case .noAuthToken, .failedToFetchAuthToken:
+            connectionError = .authenticationFailed
+        case .loadFromPreferencesFailed, .saveToPreferencesFailed, .simulateControllerFailureError:
+            connectionError = .connectionFailed
+        case .configSystemPermissionsDenied, .startVPNFailed:
+            return nil
+        }
+
+        return connectionError.localizedMessage
     }
 
     func stop() async {
@@ -340,8 +375,13 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         
         do {
             self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
+            #if DEBUG
+            // TEMP: reproduce SubscriptionManagerError 12000 (noTokenAvailable) at the oauth step. Revert before merge.
+            throw SubscriptionManagerError.noTokenAvailable
+            #else
             try await tokenHandler.getToken()
             self.connectionWideEventData?.oauthDuration?.complete()
+            #endif
         } catch {
             switch error {
             case SubscriptionManagerError.noTokenAvailable:

@@ -97,6 +97,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     private let statusObserver: ConnectionStatusObserver
     private let serverInfoObserver: ConnectionServerInfoObserver
     private let errorObserver: ConnectionErrorObserver
+    private let controllerErrorPublisher: AnyPublisher<String?, Never>
     private var cancellables: Set<AnyCancellable> = []
 
     /// Whether the "Add Widget" education sheet should be presented to the user.
@@ -177,6 +178,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 statusObserver: ConnectionStatusObserver,
                 serverInfoObserver: ConnectionServerInfoObserver,
                 errorObserver: ConnectionErrorObserver = ConnectionErrorObserverThroughSession(),
+                controllerErrorPublisher: AnyPublisher<String?, Never> = Empty(completeImmediately: false).eraseToAnyPublisher(),
                 timeLapsedFormatter: VPNTimeFormatting = VPNTimeFormatter(),
                 locationListRepository: NetworkProtectionLocationListRepository,
                 enablesUnifiedFeedbackForm: Bool,
@@ -186,6 +188,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
         self.errorObserver = errorObserver
+        self.controllerErrorPublisher = controllerErrorPublisher
         self.timeLapsedFormatter = timeLapsedFormatter
         self.enablesUnifiedFeedbackForm = enablesUnifiedFeedbackForm
         self.featureDiscovery = featureDiscovery
@@ -224,6 +227,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         setUpDNSSettingsPublisher()
         setUpThroughputRefreshTimer()
         setUpErrorPublishers()
+        setUpControllerErrorPublisher()
 
         // Prefetching this now for snappy load times on the locations screens
         Task {
@@ -402,6 +406,27 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                         self.error = errorItem
                     }
                 }
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Surfaces controller-side (pre-session) start failures in the same banner as session errors.
+    ///
+    /// These failures abort before a tunnel session exists, so `errorObserver` (which reads errors
+    /// through the session) never sees them. The controller maps them to the existing VPN error copy;
+    /// here we only wrap the message in an `ErrorItem`, or clear it when the controller reports `nil`.
+    private func setUpControllerErrorPublisher() {
+        controllerErrorPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] message in
+                guard let self else { return }
+
+                guard let message else {
+                    self.error = nil
+                    return
+                }
+
+                self.error = ErrorItem(title: UserText.netPStatusViewErrorConnectionFailedTitle, message: message)
             }
             .store(in: &cancellables)
     }

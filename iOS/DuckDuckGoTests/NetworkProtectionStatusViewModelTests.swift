@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import Combine
 import VPN
 import NetworkExtension
 import VPNTestUtils
@@ -194,7 +195,42 @@ import Subscription
         }
     }
 
+    // MARK: - Controller (pre-session) errors
+
+    func testControllerError_message_setsErrorBannerWithExistingCopy() async {
+        let subject = CurrentValueSubject<String?, Never>(nil)
+        let viewModel = makeViewModel(controllerErrorPublisher: subject.eraseToAnyPublisher())
+
+        subject.send(UserText.vpnErrorAuthenticationFailed)
+
+        await waitFor(condition: viewModel.error != nil)
+        XCTAssertEqual(viewModel.error?.title, UserText.netPStatusViewErrorConnectionFailedTitle)
+        XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
+    }
+
+    func testControllerError_nil_clearsErrorBanner() async {
+        let subject = CurrentValueSubject<String?, Never>(nil)
+        let viewModel = makeViewModel(controllerErrorPublisher: subject.eraseToAnyPublisher())
+
+        subject.send(UserText.vpnErrorAuthenticationFailed)
+        await waitFor(condition: viewModel.error != nil)
+
+        subject.send(nil)
+        await waitFor(condition: viewModel.error == nil)
+        XCTAssertNil(viewModel.error)
+    }
+
     // MARK: - Helpers
+
+    private func makeViewModel(controllerErrorPublisher: AnyPublisher<String?, Never>) -> NetworkProtectionStatusViewModel {
+        NetworkProtectionStatusViewModel(tunnelController: tunnelController,
+                                         settings: VPNSettings(defaults: .networkProtectionGroupDefaults),
+                                         statusObserver: statusObserver,
+                                         serverInfoObserver: serverInfoObserver,
+                                         controllerErrorPublisher: controllerErrorPublisher,
+                                         locationListRepository: MockNetworkProtectionLocationListRepository(),
+                                         enablesUnifiedFeedbackForm: false)
+    }
 
     private func whenStatusUpdate_connected() async {
         statusObserver.subject.send(.connected(connectedDate: Date()))

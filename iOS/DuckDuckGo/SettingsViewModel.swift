@@ -531,6 +531,21 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var isCookiePopupPreferenceSettingEnabled: Bool {
+        featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting)
+    }
+
+    var autoconsentBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.cookiePopupPreference.isBlockingEnabled },
+            set: { isEnabled in
+                self.appSettings.autoconsentEnabled = isEnabled
+                self.state.cookiePopupPreference = self.appSettings.cookiePopupPreference
+                Pixel.fire(pixel: isEnabled ? .settingsAutoconsentOn : .settingsAutoconsentOff)
+            }
+        )
+    }
+
     var autoManageCookiePopupsBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.cookiePopupPreference.isAutoManageCookiePopupsEnabled },
@@ -540,7 +555,7 @@ final class SettingsViewModel: ObservableObject {
                     autoManageEnabled: isEnabled,
                     popUpsWithoutOptOutsEnabled: popUpsWithoutOptOuts
                 ))
-                Pixel.fire(pixel: isEnabled ? .settingsAutoconsentOn : .settingsAutoconsentOff)
+                Pixel.fire(pixel: isEnabled ? .autoconsentSettingsOn : .autoconsentSettingsOff)
             }
         )
     }
@@ -553,7 +568,7 @@ final class SettingsViewModel: ObservableObject {
                     autoManageEnabled: true,
                     popUpsWithoutOptOutsEnabled: isEnabled
                 ))
-                Pixel.fire(pixel: isEnabled ? .settingsAutoconsentMax : .settingsAutoconsentDefault)
+                Pixel.fire(pixel: isEnabled ? .autoconsentSettingsMax : .autoconsentSettingsDefault)
             }
         )
     }

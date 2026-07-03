@@ -1562,6 +1562,7 @@ public struct UserText {
     public static let learnMore = NSLocalizedString("settings.learn.more", value: "Learn More", comment: "Link text for learning more about a feature")
 
     public static let cookiePopUpProtection = NSLocalizedString("settings.cookie.pop-up-protection.protection", value: "Cookie Pop-Up Protection", comment: "The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups")
+    public static let letDuckDuckGoManageCookieConsentPopups = NSLocalizedString("settings.let.duckduckgo.manage.cookie.consent.popups", value: "Let DuckDuckGo manage cookie consent pop-ups", comment: "Switch button label.")
     public static let autoManageCookiePopupsTitle = NSLocalizedString("settings.cookie.auto-manage.title", value: "Auto-Manage Cookie Pop-Ups", comment: "Title for the auto-manage cookie pop-ups toggle in settings")
     public static let autoManageCookiePopupsExplanation = NSLocalizedString("settings.cookie.auto-manage.explanation", value: "We'll aim to only select the most private cookie options available for you, then close these pop-ups.", comment: "Explanation below the auto-manage cookie pop-ups toggle in settings")
     public static let popUpsWithoutOptOutsTitle = NSLocalizedString("settings.cookie.popups-without-opt-outs.title", value: "Pop-Ups Without Opt-Outs", comment: "Title for the pop-ups without opt-outs toggle in settings")

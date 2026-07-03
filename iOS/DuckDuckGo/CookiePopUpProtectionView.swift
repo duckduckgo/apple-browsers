@@ -42,7 +42,11 @@ struct CookiePopUpProtectionView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onForwardNavigationAppear {
-            Pixel.fire(pixel: .settingsAutoconsentShown)
+            if viewModel.isCookiePopupPreferenceSettingEnabled {
+                Pixel.fire(pixel: .autoconsentSettingsShown)
+            } else {
+                Pixel.fire(pixel: .settingsAutoconsentShown)
+            }
         }
     }
 }
@@ -56,15 +60,22 @@ struct CookiePopUpProtectionViewSettings: View {
     }
 
     var body: some View {
-        Section(footer: Text(UserText.autoManageCookiePopupsExplanation)) {
-            SettingsCellView(label: UserText.autoManageCookiePopupsTitle,
-                             accessory: .toggle(isOn: viewModel.autoManageCookiePopupsBinding))
-        }
+        if viewModel.isCookiePopupPreferenceSettingEnabled {
+            Section(footer: Text(UserText.autoManageCookiePopupsExplanation)) {
+                SettingsCellView(label: UserText.autoManageCookiePopupsTitle,
+                                 accessory: .toggle(isOn: viewModel.autoManageCookiePopupsBinding))
+            }
 
-        Section(footer: Text(UserText.popUpsWithoutOptOutsExplanation)) {
-            SettingsCellView(label: UserText.popUpsWithoutOptOutsTitle,
-                             accessory: .toggle(isOn: viewModel.popUpsWithoutOptOutsBinding))
+            Section(footer: Text(UserText.popUpsWithoutOptOutsExplanation)) {
+                SettingsCellView(label: UserText.popUpsWithoutOptOutsTitle,
+                                 accessory: .toggle(isOn: viewModel.popUpsWithoutOptOutsBinding))
+            }
+            .disabled(!isAutoManageEnabled)
+        } else {
+            Section {
+                SettingsCellView(label: UserText.letDuckDuckGoManageCookieConsentPopups,
+                                 accessory: .toggle(isOn: viewModel.autoconsentBinding))
+            }
         }
-        .disabled(!isAutoManageEnabled)
     }
 }

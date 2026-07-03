@@ -150,6 +150,8 @@ extension Pixel {
         case settingsAutoconsentShown
         case settingsAutoconsentOn
         case settingsAutoconsentOff
+        case settingsAutoconsentDefault
+        case settingsAutoconsentMax
 
         case cookiePopupOptInShownFirst
         case cookiePopupOptInShownRepeat
@@ -2143,6 +2145,8 @@ extension Pixel.Event {
         case .settingsAutoconsentShown: return "m_settings_autoconsent_shown"
         case .settingsAutoconsentOn: return "m_settings_autoconsent_on"
         case .settingsAutoconsentOff: return "m_settings_autoconsent_off"
+        case .settingsAutoconsentDefault: return "m_settings_autoconsent_default"
+        case .settingsAutoconsentMax: return "m_settings_autoconsent_max"
 
         case .cookiePopupOptInShownFirst: return "cookie_popup_opt_in_shown_first"
         case .cookiePopupOptInShownRepeat: return "cookie_popup_opt_in_shown_repeat"

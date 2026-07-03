@@ -540,6 +540,7 @@ final class SettingsViewModel: ObservableObject {
                     autoManageEnabled: isEnabled,
                     popUpsWithoutOptOutsEnabled: popUpsWithoutOptOuts
                 ))
+                Pixel.fire(pixel: isEnabled ? .settingsAutoconsentOn : .settingsAutoconsentOff)
             }
         )
     }
@@ -552,6 +553,7 @@ final class SettingsViewModel: ObservableObject {
                     autoManageEnabled: true,
                     popUpsWithoutOptOutsEnabled: isEnabled
                 ))
+                Pixel.fire(pixel: isEnabled ? .settingsAutoconsentMax : .settingsAutoconsentDefault)
             }
         )
     }
@@ -559,11 +561,6 @@ final class SettingsViewModel: ObservableObject {
     private func setCookiePopupPreference(_ preference: CookiePopupPreference) {
         appSettings.cookiePopupPreference = preference
         state.cookiePopupPreference = preference
-        if preference.isBlockingEnabled {
-            Pixel.fire(pixel: .settingsAutoconsentOn)
-        } else {
-            Pixel.fire(pixel: .settingsAutoconsentOff)
-        }
     }
 
     var voiceSearchEnabledBinding: Binding<Bool> {

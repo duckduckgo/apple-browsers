@@ -151,7 +151,7 @@ final class CurrentColorsProviding: ColorsProviding {
     var settingsBackgroundColor: NSColor { palette.surfaceCanvas }
 
     // MARK: - Suggestions
-    var suggestionsBackgroundColor: NSColor { palette.surfaceTertiary }
+    var suggestionsBackgroundColor: NSColor { palette.inputActive }
 
     // MARK: - Semantic
     var accentPrimaryColor: NSColor { palette.accentPrimary }

@@ -95,3 +95,4 @@ buildServer.json
 content-scope-scripts/
 privacy-configuration/
 .xcodebuildmcp/config.yaml
+.claude/worktrees

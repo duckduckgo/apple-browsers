@@ -696,6 +696,8 @@
                     </view>
                     <connections>
                         <outlet property="activeBackgroundView" destination="e0p-7S-Gan" id="2FB-uy-8tO"/>
+                        <outlet property="activeBackgroundViewLeadingConstraint" destination="E5D-iA-uu3" id="Pre-0L-gHd"/>
+                        <outlet property="activeBackgroundViewTrailingConstraint" destination="V8Z-LH-nT9" id="q7O-8M-oCC"/>
                         <outlet property="activeBackgroundViewWithSuggestions" destination="Ij9-fc-CLI" id="JWC-g2-hrM"/>
                         <outlet property="activeOuterBorderBottomConstraint" destination="ic3-He-fz0" id="pRh-g4-1mm"/>
                         <outlet property="activeOuterBorderLeadingConstraint" destination="0fn-nq-VWh" id="UMH-7o-CeB"/>
@@ -706,7 +708,11 @@
                         <outlet property="addressBarTextField" destination="zaX-wZ-E3D" id="pfO-d4-i46"/>
                         <outlet property="addressBarTextTrailingConstraint" destination="3qw-n4-evE" id="Hgt-4m-g06"/>
                         <outlet property="buttonsContainerView" destination="bOl-8Z-hTh" id="UHc-27-JaK"/>
+                        <outlet property="buttonsContainerViewLeadingConstraint" destination="OSv-yy-Yz5" id="bC1-ld-Ng1"/>
+                        <outlet property="buttonsContainerViewTrailingConstraint" destination="VD0-WJ-LdG" id="bC2-tr-Ng2"/>
                         <outlet property="inactiveBackgroundView" destination="ENV-0H-Fcc" id="OV5-2s-Ggq"/>
+                        <outlet property="inactiveBackgroundViewLeadingConstraint" destination="WGn-g2-wT7" id="iB1-ld-Ng3"/>
+                        <outlet property="inactiveBackgroundViewTrailingConstraint" destination="Cig-ek-031" id="iB2-tr-Ng4"/>
                         <outlet property="innerBorderView" destination="INL-zs-eEh" id="7aF-qt-wCX"/>
                         <outlet property="passiveTextField" destination="le0-Hn-ZAC" id="npL-R1-gmH"/>
                         <outlet property="passiveTextFieldMinXConstraint" destination="eJI-rp-ptx" id="HNu-7v-JQy"/>

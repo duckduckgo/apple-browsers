@@ -21,6 +21,7 @@ import Core
 import Subscription
 import DataBrokerProtection_iOS
 import SwiftUI
+import UIComponents
 import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons

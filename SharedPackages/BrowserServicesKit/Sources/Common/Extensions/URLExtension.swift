@@ -29,17 +29,17 @@ extension URL {
         absoluteString.isEmpty
     }
 
-    public func matches(_ other: URL) -> Bool {
-        let string1 = self.absoluteString
-        let string2 = other.absoluteString
-        return string1.droppingHashedSuffix().dropping(suffix: "/").appending(string1.hashedSuffix ?? "")
-            == string2.droppingHashedSuffix().dropping(suffix: "/").appending(string2.hashedSuffix ?? "")
-    }
-
     /// Returns `absoluteString` truncated to at most 1024 characters, with the middle replaced by `"…"` for longer strings.
     public var shortDescription: String {
         absoluteString.truncated(to: 1024)
     }
+
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
+    public var originalWebKitString: String? {
+        guard NSURL.instancesRespond(to: NSSelectorFromString(URL.Selector.originalDataAsString)) else { return nil }
+        return (self as NSURL).value(forKey: Selector.originalDataAsString) as? String
+    }
+#endif
 
     /// URL without the scheme and the '/' suffix of the path.
     /// Useful for finding duplicate URLs
@@ -387,9 +387,93 @@ extension URL {
         }
     }
 
-    /// returns true if URLs are equal except the #fragment part
-    public func isSameDocument(_ other: URL) -> Bool {
-        self.absoluteString.droppingHashedSuffix() == other.absoluteString.droppingHashedSuffix()
+    // MARK: - Component-based URL equality
+
+    /// Returns `true` if the URL has a fragment (including empty fragments: `about:blank#`)
+    public var hasFragment: Bool {
+        guard let components = URLComponents(webKitUrl: self) else { return false }
+        return components.fragment != nil
+    }
+
+    /// `true` when the URL is opaque (scheme without authority), e.g. `about:`, `data:`, `javascript:`.
+    public var isOpaque: Bool {
+        guard let scheme else { return false }
+        return !absoluteString.dropFirst(scheme.count + 1).hasPrefix("//")
+    }
+
+    /// Composable component mask for `equals(_:by:)`.
+    ///
+    /// Use the named presets for common cases:
+    /// - `.sameDocument`  — ignores fragment (scheme+host+port+path+query)
+    /// - `.fuzzyIdentity` — includes fragment, normalizes trailing '/' in path
+    ///
+    /// Or build a custom mask: `[.scheme, .host, .query]`
+    public struct EqualityComponents: OptionSet {
+        public init(rawValue: UInt8) { self.rawValue = rawValue }
+        public let rawValue: UInt8
+        public static let scheme   = Self(rawValue: 1 << 0)
+        public static let host     = Self(rawValue: 1 << 1)
+        public static let port     = Self(rawValue: 1 << 2)
+        public static let path     = Self(rawValue: 1 << 3)
+        public static let query    = Self(rawValue: 1 << 4)
+        public static let fragment = Self(rawValue: 1 << 5)
+
+        /// Ignores fragment: scheme + host + port + path + query
+        public static let sameDocument: Self = [.scheme, .host, .port, .path, .query]
+        /// Includes fragment, normalizes trailing '/' in path
+        public static let fuzzyIdentity: Self = [.scheme, .host, .port, .path, .query, .fragment]
+
+        static let allComponents: [Self] = [.scheme, .host, .port, .path, .query, .fragment]
+    }
+
+    /// Returns true when `self` and `other` are equal for every component in `components`.
+    ///
+    /// Components are extracted via `URLComponents(webKitUrl:)`, which uses the WebKit-internal
+    /// original string representation for opaque URLs (`about:`, `data:`, `javascript:`, …),
+    /// correctly surfacing fragments and other components that plain `URLComponents(url:)` would miss.
+    ///
+    /// Path comparison strips a trailing `'/'` for hierarchical URLs.
+    public func equals(_ other: URL, by components: EqualityComponents) -> Bool {
+        guard self.isOpaque == other.isOpaque,
+              let selfParsed  = URLComponents(webKitUrl: self),
+              let otherParsed = URLComponents(webKitUrl: other) else { return false }
+
+        // Returns true only when at least one component yielded a non-nil match.
+        // Components absent (nil) in both URLs are skipped; a mismatch or one-sided
+        // nil returns false immediately.
+        enum UrlComponentValue: Equatable {
+            case string(String)
+            case int(Int)
+        }
+        func urlComponents(_ urlComponents: URLComponents, valueFor component: EqualityComponents) -> UrlComponentValue? {
+            switch component {
+            case .scheme: urlComponents.scheme.map(UrlComponentValue.string)
+            case .host: urlComponents.host.map(UrlComponentValue.string)
+            case .port: urlComponents.port.map(UrlComponentValue.int)
+            case .path: .string(urlComponents.path)
+            case .query: urlComponents.query.map(UrlComponentValue.string)
+            case .fragment: urlComponents.fragment.map(UrlComponentValue.string)
+            default: fatalError("Unknown component: \(self)")
+            }
+        }
+        return EqualityComponents.allComponents.filter(components.contains).reduce(nil as Bool?) { previousResult, component in
+            // Return early if any component already returned false
+            guard previousResult != false else { return false }
+
+            // Special case for path: strip trailing '/' for hierarchical URLs
+            if component == .path && !isOpaque {
+                return selfParsed.path.dropping(suffix: "/") == otherParsed.path.dropping(suffix: "/")
+            }
+
+            let selfComponent = urlComponents(selfParsed, valueFor: component)
+            let otherComponent = urlComponents(otherParsed, valueFor: component)
+
+            // Both components are absent → skip
+            if selfComponent == nil && otherComponent == nil { return previousResult }
+
+            return selfComponent == otherComponent
+
+        } ?? false // Default to false if no components matched
     }
 
     /// Drops text fragment from a URL.
@@ -402,7 +486,7 @@ extension URL {
     /// text fragment, but manual testing shows that it's what WebKit already considers
     /// a text fragment and decides to drop on some occasions.
     public func removingTextFragment() -> URL? {
-        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false),
+        guard var components = URLComponents(webKitUrl: self),
               components.fragment?.hasPrefix(":~:") == true
         else {
             return self
@@ -413,28 +497,19 @@ extension URL {
 
     // MARK: - HTTP/HTTPS
 
-    public enum URLProtocol: String {
-        case http
-        case https
-
-        public var scheme: String {
-            return "\(rawValue)://"
-        }
-    }
-
     public func toHttps() -> URL? {
-        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
-        guard components.scheme == URLProtocol.http.rawValue else { return self }
-        components.scheme = URLProtocol.https.rawValue
+        guard navigationalScheme == .http,
+              var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
+        components.scheme = NavigationalScheme.https.rawValue
         return components.url
     }
 
     public var isHttp: Bool {
-        scheme == "http"
+        navigationalScheme == .http
     }
 
     public var isHttps: Bool {
-        scheme == "https"
+        navigationalScheme == .https
     }
 
     // MARK: - Parameters
@@ -665,6 +740,12 @@ extension URL {
         components.host = host.droppingWwwPrefix()
         return components.url
     }
+
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
+    enum Selector {
+        static let originalDataAsString = "_web_originalDataAsString"
+    }
+#endif
 
 }
 

@@ -62,28 +62,6 @@ public extension String {
         self.dropping(prefix: "www.")
     }
 
-    var hashedSuffixRange: PartialRangeFrom<String.Index>? {
-        if let idx = self.firstIndex(of: "#") {
-            return idx...
-        } else if self.hasPrefix("about:"),
-                  let range = self.range(of: "%23") {
-            return range.lowerBound...
-        }
-        return nil
-    }
-
-    var hashedSuffix: String? {
-        hashedSuffixRange.map { range in String(self[range]) }
-    }
-
-    func droppingHashedSuffix() -> String {
-        if let range = self.hashedSuffixRange {
-            guard range.lowerBound > self.startIndex else { return "" }
-            return String(self[..<range.lowerBound])
-        }
-        return self
-    }
-
     // MARK: Truncation
 
     /// Where to insert the ellipsis when a string is truncated.

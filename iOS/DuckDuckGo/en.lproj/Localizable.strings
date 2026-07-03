@@ -4654,12 +4654,6 @@ Take back control of your personal information with the browser designed for dat
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Bookmark All Tabs";
 
-/* Menu item that switches the tab switcher to a grid layout */
-"tab.switcher.grid.view.menu.title" = "Grid";
-
-/* Menu item that switches the tab switcher to a list layout */
-"tab.switcher.list.view.menu.title" = "List";
-
 /* Action button to hide tracker count banner */
 "tab.switcher.tracker.count.hide.action" = "Hide";
 

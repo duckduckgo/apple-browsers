@@ -544,6 +544,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Odkleni DuckDuckGo.";
 
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Dotaknite se kjer koli, da odklenete";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Prijavite se";
 

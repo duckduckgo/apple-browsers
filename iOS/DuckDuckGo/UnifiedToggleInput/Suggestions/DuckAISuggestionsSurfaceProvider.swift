@@ -140,7 +140,8 @@ final class DuckAISuggestionsSurfaceProvider {
             // The "View all chats" row opens the native history page — an iPhone-only experience gated on the same flag.
             viewAllChatsEnabled: { [featureFlagger] in
                 featureFlagger.isFeatureOn(.aiChatNativeChatHistory) && UIDevice.current.userInterfaceIdiom != .pad
-            }
+            },
+            searchSuggestionsEnabled: { [weak self] in self?.dependencies.appSettings.autocomplete ?? true }
         )
         chatManager.onFetchCompleted = { [weak self] query, hasSuggestions in
             // Only an unfiltered (empty-query) fetch defines "has any recent chats". Filtered fetches
@@ -188,7 +189,8 @@ final class DuckAISuggestionsSurfaceProvider {
             chatManager?.refreshSuggestions(query: self?.switchBarHandler.currentText ?? "")
         }
         refreshURLSuggestionsAction = { [weak self] in
-            source.fetchURLSuggestions(query: self?.switchBarHandler.currentText ?? "")
+            guard let self, self.dependencies.appSettings.autocomplete else { return }
+            source.fetchURLSuggestions(query: self.switchBarHandler.currentText)
         }
         refreshCachesAction = { [weak dataSource] in dataSource?.refreshCaches() }
         recentsCountReader = { [weak chatViewModel] in chatViewModel?.filteredSuggestions.count ?? 0 }

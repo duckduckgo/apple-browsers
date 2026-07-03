@@ -29,6 +29,9 @@ public struct UserText {
     public static let addressBarPositionBottom = NSLocalizedString("address.bar.bottom", value: "Bottom", comment: "Settings label for bottom position for the address bar")
 
     public static let appUnlock = NSLocalizedString("app.authentication.unlock", value: "Unlock DuckDuckGo.", comment: "Shown on authentication screen")
+    public static let appUnlockInstructions = NSLocalizedString("app.authentication.unlock.instructions",
+                                                                value: "Tap anywhere to unlock",
+                                                                comment: "Instruction shown on authentication screen after authentication fails")
     public static let searchDuckDuckGo = NSLocalizedString("search.hint.duckduckgo", value: "Search or enter address", comment: "")
     public static let webSaveBookmarkDone = NSLocalizedString("web.url.save.bookmark.done", value: "Bookmark added", comment: "Confirmation message")
     public static let webBookmarkAlreadySaved = NSLocalizedString("web.url.save.bookmark.exists", value: "Bookmark already saved", comment: "Floating Info message")
@@ -362,9 +365,11 @@ public struct UserText {
 
     public static let deselectAllTabs = NSLocalizedString("tab.select.none", value: "Deselect All", comment: "Deselect all tabs")
 
-    public static let tabSwitcherGridViewMenuTitle = NSLocalizedString("tab.switcher.grid.view.menu.title", value: "Grid", comment: "Menu item that switches the tab switcher to a grid layout")
+    // Needs to be localised later.
+    public static let tabSwitcherGridViewMenuTitle = NotLocalizedString("tab.switcher.grid.view.menu.title", value: "Grid", comment: "Menu item that switches the tab switcher to a grid layout")
 
-    public static let tabSwitcherListViewMenuTitle = NSLocalizedString("tab.switcher.list.view.menu.title", value: "List", comment: "Menu item that switches the tab switcher to a list layout")
+    // Needs to be localised later.
+    public static let tabSwitcherListViewMenuTitle = NotLocalizedString("tab.switcher.list.view.menu.title", value: "List", comment: "Menu item that switches the tab switcher to a list layout")
 
     public static func alertTitleBookmarkSelectedTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleBookmarkSelectedTabs.withCount", value: nil, table: nil)

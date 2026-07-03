@@ -1064,13 +1064,13 @@ final class MainViewController: NSViewController {
         /// the panel (unfocused + prompt preserved). Skip the panel tear-down and the address-bar focus grab
         /// below — otherwise we'd reset the tab's shared duck.ai flag and exit back to search.
         let isIncomingTabInDuckAIMode = selectedTabViewModel.addressBarSharedTextState.isInDuckAIMode
-        if isIncomingTabInDuckAIMode, featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+        if isIncomingTabInDuckAIMode {
             return
         }
 
         /// Close AI Chat omnibar if visible before adjusting first responder
         /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1212252449969913?focus=true
-        if mainView.isAIChatOmnibarContainerShown && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+        if mainView.isAIChatOmnibarContainerShown {
             updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
             aiChatOmnibarContainerViewController.cleanup()
         }
@@ -1168,7 +1168,6 @@ extension MainViewController {
         }
 
         if flags.contains(.option) || flags.contains(.shift),
-           featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
            let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
             let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
             buttonsViewController.toggleSearchMode()
@@ -1177,8 +1176,7 @@ extension MainViewController {
                 self.aiChatOmnibarTextContainerViewController.insertNewlineIfHasContent(addressBarText: currentText)
             }
             return true
-        } else if flags.contains(.control),
-                  featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+        } else if flags.contains(.control) {
             addressBarTextField.openAIChatWithPrompt()
             return true
         } else if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {

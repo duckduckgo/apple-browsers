@@ -173,10 +173,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private func buildExcludedSteps() -> [String] {
         var excludedSteps: [String] = [OnboardingExcludedStep.duckPlayerSingle.rawValue]
 
-        let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
         let isAIChatOmnibarOnboardingEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
 
-        if !(isAIChatOmnibarToggleEnabled && isAIChatOmnibarOnboardingEnabled) {
+        if !isAIChatOmnibarOnboardingEnabled {
             excludedSteps.append(OnboardingExcludedStep.addressBarMode.rawValue)
         }
 
@@ -497,11 +496,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     /// Returns true if the toggle onboarding step was shown to the user.
-    /// The step is only shown when both aiChatOmnibarToggle AND aiChatOmnibarOnboarding flags are enabled.
+    /// The step is only shown when the aiChatOmnibarOnboarding flag is enabled.
     private func wasToggleOnboardingStepShown() -> Bool {
-        let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        let isAIChatOmnibarOnboardingEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
-        return isAIChatOmnibarToggleEnabled && isAIChatOmnibarOnboardingEnabled
+        return featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
     }
 
     private func fireOnboardingFinishedPixels(userSawToggleOnboarding: Bool) {

@@ -23,7 +23,7 @@ import Foundation
 @Suite("RemoteMessageModelType - allImageUrls")
 struct RemoteMessageModelTypeImageUrlsTests {
 
-    @Test("Returns header URL and per-item URLs in document order for cardsList", .timeLimit(.minutes(1)))
+    @Test("Returns header URL and per-item URLs in document order for cardsList")
     func cardsListReturnsHeaderAndItemUrls() {
         let headerUrl = URL(string: "https://example.com/header.png")!
         let item1Url = URL(string: "https://example.com/item1.png")!
@@ -44,7 +44,7 @@ struct RemoteMessageModelTypeImageUrlsTests {
         #expect(content.allImageUrls == [headerUrl, item1Url, item2Url])
     }
 
-    @Test("Skips items without an imageUrl", .timeLimit(.minutes(1)))
+    @Test("Skips items without an imageUrl")
     func cardsListSkipsItemsWithoutImageUrl() {
         let headerUrl = URL(string: "https://example.com/header.png")!
         let itemUrl = URL(string: "https://example.com/item.png")!
@@ -65,7 +65,7 @@ struct RemoteMessageModelTypeImageUrlsTests {
         #expect(content.allImageUrls == [headerUrl, itemUrl])
     }
 
-    @Test("Returns empty when cardsList has no URLs at all", .timeLimit(.minutes(1)))
+    @Test("Returns empty when cardsList has no URLs at all")
     func cardsListEmptyWhenNoUrls() {
         let content: RemoteMessageModelType = .cardsList(
             titleText: "Title",
@@ -81,7 +81,7 @@ struct RemoteMessageModelTypeImageUrlsTests {
         #expect(content.allImageUrls.isEmpty)
     }
 
-    @Test("Returns just the header URL for non-cardsList types", .timeLimit(.minutes(1)))
+    @Test("Returns just the header URL for non-cardsList types")
     func nonCardsListReturnsJustHeaderUrl() {
         let url = URL(string: "https://example.com/header.png")!
         let medium: RemoteMessageModelType = .medium(titleText: "t", descriptionText: "d", placeholder: .announce, imageUrl: url)
@@ -89,7 +89,7 @@ struct RemoteMessageModelTypeImageUrlsTests {
         #expect(medium.allImageUrls == [url])
     }
 
-    @Test("Returns empty for non-cardsList types without a header URL", .timeLimit(.minutes(1)))
+    @Test("Returns empty for non-cardsList types without a header URL")
     func nonCardsListEmptyWhenHeaderNil() {
         let small: RemoteMessageModelType = .small(titleText: "t", descriptionText: "d")
 

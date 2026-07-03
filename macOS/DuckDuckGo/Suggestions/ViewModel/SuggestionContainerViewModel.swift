@@ -148,7 +148,6 @@ final class SuggestionContainerViewModel {
     }
 
     private var shouldShowAIChatCellBase: Bool {
-        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
         guard aiChatPreferencesStorage.isAIFeaturesEnabled else { return false }
         guard let userStringValue, !userStringValue.isEmpty else { return false }
         return true

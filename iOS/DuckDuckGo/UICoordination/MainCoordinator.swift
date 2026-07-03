@@ -308,7 +308,8 @@ final class MainCoordinator {
                                         whatsNewRepository: whatsNewRepository,
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
-                                        onboardingManager: onboardingManager)
+                                        onboardingManager: onboardingManager,
+                                        recentModalPromptStatusProvider: modalPromptCoordinationService)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 

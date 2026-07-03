@@ -197,10 +197,10 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(appStoreManager.configuration, expectedConfig)
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenOnlyOmnibarToggleIsOn_ExcludesAddressBarMode() {
+    func testReturnsExpectedOnboardingConfig_WhenOmnibarOnboardingIsOff_ExcludesAddressBarMode() {
         // Given
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle]
+        featureFlagger.enabledFeatureFlags = []
         let managerWithFlagOn = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -231,44 +231,10 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(managerWithFlagOn.configuration, expectedConfig)
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenOnlyOmnibarOnboardingIsOn_ExcludesAddressBarMode() {
+    func testReturnsExpectedOnboardingConfig_WhenOmnibarOnboardingIsOn_DoesNotExcludeAddressBarMode() {
         // Given
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.aiChatOmnibarOnboarding]
-        let managerWithFlagOn = OnboardingActionsManager(
-            navigationDelegate: navigationDelegate,
-            dockCustomization: dockCustomization,
-            defaultBrowserProvider: defaultBrowserProvider,
-            appearancePreferences: appearancePreferences,
-            startupPreferences: startupPreferences,
-            dataImportProvider: importProvider,
-            featureFlagger: featureFlagger,
-            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
-            chromeExtensionInstaller: chromeExtensionInstaller
-        )
-
-        let systemSettings = SystemSettings(rows: ["dock", "import"])
-        let stepDefinitions = StepDefinitions(
-            systemSettings: systemSettings,
-            getStarted: GetStarted(options: [])
-        )
-        let expectedConfig = OnboardingConfiguration(
-            stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
-            order: "v3",
-            env: "development",
-            locale: "en",
-            platform: .init(name: "macos")
-        )
-
-        // Then
-        XCTAssertEqual(managerWithFlagOn.configuration, expectedConfig)
-    }
-
-    func testReturnsExpectedOnboardingConfig_WhenBothFlagsAreOn_DoesNotExcludeAddressBarMode() {
-        // Given
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarOnboarding]
         let managerWithFlagsOn = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -665,7 +631,7 @@ class OnboardingManagerTests: XCTestCase {
     func testSearchExperienceClickedPixelFired_WithAddressBarSetting_WhenAddressBarModeIsFinalStep() {
         // Given
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarOnboarding]
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarOnboarding]
         let manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,

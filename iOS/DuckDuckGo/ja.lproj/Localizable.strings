@@ -544,6 +544,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "DuckDuckGoのロックを解除します。";
 
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "任意の場所をタップしてロックを解除";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "サインイン";
 

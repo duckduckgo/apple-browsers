@@ -30,9 +30,9 @@ final class AppHTTPSUpgradeStoreTests: XCTestCase {
     var database: CoreDataDatabase!
 
     private enum Resource {
-        static let allowList = Bundle.module.url(forResource: "Resources/privacy-reference-tests/https-upgrades/https_allowlist_reference", withExtension: "json")!
-        static let bloomFilterSpec = Bundle.module.url(forResource: "Resources/privacy-reference-tests/https-upgrades/https_bloomfilter_spec_reference", withExtension: "json")!
-        static let bloomFilter = Bundle.module.url(forResource: "Resources/privacy-reference-tests/https-upgrades/https_bloomfilter_reference", withExtension: "bin")!
+        static let allowList = Bundle.module.url(forResource: "Res/privacy-reference-tests/https-upgrades/https_allowlist_reference", withExtension: "json")!
+        static let bloomFilterSpec = Bundle.module.url(forResource: "Res/privacy-reference-tests/https-upgrades/https_bloomfilter_spec_reference", withExtension: "json")!
+        static let bloomFilter = Bundle.module.url(forResource: "Res/privacy-reference-tests/https-upgrades/https_bloomfilter_reference", withExtension: "bin")!
     }
 
     override func setUp() {

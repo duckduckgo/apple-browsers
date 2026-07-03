@@ -544,6 +544,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "DuckDuckGo ontgrendelen.";
 
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Tik om te ontgrendelen";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Aanmelden";
 

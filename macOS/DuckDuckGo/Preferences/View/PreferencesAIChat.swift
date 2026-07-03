@@ -161,26 +161,9 @@ extension Preferences {
                     }
                     .visibility(model.shouldShowNewTabPageToggle ? .visible : .gone)
 
-                    if model.shouldShowSearchAndDuckAIToggleOption {
-                        ToggleMenuItem(UserText.aiChatShowSearchAndDuckAIToggleLabel,
-                                       isOn: $model.showSearchAndDuckAIToggle)
-                        .accessibilityIdentifier("Preferences.AIChat.showSearchAndDuckAIToggleToggle")
-                    } else {
-                        ToggleMenuItem(UserText.aiChatShowInAddressBarWhenTypingLabel,
-                                       isOn: $model.showShortcutInAddressBarWhenTyping)
-                        .accessibilityIdentifier("Preferences.AIChat.showInAddressBarWhenTypingToggle")
-                        .onChange(of: model.showShortcutInAddressBarWhenTyping) { newValue in
-                            if newValue {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOn,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            } else {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOff,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            }
-                        }
-                    }
+                    ToggleMenuItem(UserText.aiChatShowSearchAndDuckAIToggleLabel,
+                                   isOn: $model.showSearchAndDuckAIToggle)
+                    .accessibilityIdentifier("Preferences.AIChat.showSearchAndDuckAIToggleToggle")
 
                     if model.shouldShowTabBarButtonVisibilityOptions {
                         ToggleMenuItem(UserText.aiChatShowDuckAIButtonInTabBarLabel,

@@ -464,7 +464,7 @@ extension PopupHandlingTabExtension: NavigationResponder {
             self.onNewWindow = { [isBurner] newWindowNavigationAction -> NewWindowPolicyDecision? in
                 // Only allow the new window/tab if the URL matches the original navigation action URL.
                 // Fallback to default createWebViewWithConfiguration handling otherwise.
-                guard newWindowNavigationAction.request.url?.matches(url) ?? false else {
+                guard newWindowNavigationAction.request.url?.equals(url, by: .fuzzyIdentity) ?? false else {
                     Logger.navigation.debug("PopupHandlingTabExtension.onNewWindow: ignoring `\(newWindowNavigationAction.request.url?.shortDescription ??? "<nil>")`")
                     return nil
                 }

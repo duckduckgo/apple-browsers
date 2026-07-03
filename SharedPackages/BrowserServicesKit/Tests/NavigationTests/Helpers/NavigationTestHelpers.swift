@@ -292,7 +292,7 @@ extension TestsNavigationEvent.EitherResponseOrNavigation: TestComparable {
 extension URLResponse: TestComparable {
 
     static func difference(between lhs: URLResponse, and rhs: URLResponse) -> String? {
-        compare("url", lhs.url ?? .empty, rhs.url ?? .empty) { $0.matches($1) }
+        compare("url", lhs.url ?? .empty, rhs.url ?? .empty) { $0.equals($1, by: .fuzzyIdentity) }
         ?? compare("mimeType", lhs.mimeType, rhs.mimeType)
         ?? compare("expectedContentLength", lhs.expectedContentLength, rhs.expectedContentLength)
         ?? compare("textEncodingName", lhs.textEncodingName, rhs.textEncodingName)
@@ -359,7 +359,7 @@ extension WKError {
 
 private func urlConst(for url: URL, in urls: Any) -> String? {
     let m = Mirror(reflecting: urls)
-    for child in m.children where (child.value as? URL)?.matches(url) == true {
+    for child in m.children where (child.value as? URL)?.equals(url, by: .fuzzyIdentity) == true {
         return "urls." + child.label!
     }
     if url.isEmpty {
@@ -552,7 +552,7 @@ extension URLRequest: TestComparable {
     static func difference(between lhs: URLRequest, and rhs: URLRequest) -> String? {
         let skipCachePolicyComparison = lhs.allHTTPHeaderFields?.allowsAnyCachePolicy == true
             || rhs.allHTTPHeaderFields?.allowsAnyCachePolicy == true
-        return compare("url", lhs.url ?? .empty, rhs.url ?? .empty) { $0.matches($1) }
+        return compare("url", lhs.url ?? .empty, rhs.url ?? .empty) { $0.equals($1, by: .fuzzyIdentity) }
         ?? compare("httpMethod", lhs.httpMethod, rhs.httpMethod)
         ?? compare("allHTTPHeaderFields", Headers(lhs.allHTTPHeaderFields), Headers(rhs.allHTTPHeaderFields))
         ?? (skipCachePolicyComparison ? nil : compare("cachePolicy", lhs.cachePolicy, rhs.cachePolicy))
@@ -596,7 +596,7 @@ extension FrameInfo: TestComparable {
     static func difference(between lhs: FrameInfo, and rhs: FrameInfo) -> String? {
         compare("webView", lhs.webView, rhs.webView)
         ?? compare("handle", lhs.handle, rhs.handle)
-        ?? compare("url", lhs.url, rhs.url) { $0.matches($1) }
+        ?? compare("url", lhs.url, rhs.url) { $0.equals($1, by: .fuzzyIdentity) }
         ?? compare("securityOrigin", lhs.securityOrigin, rhs.securityOrigin)
     }
 }
@@ -1135,6 +1135,7 @@ final class CustomCallbacksHandler: NSObject, NavigationResponder {
     }
 
     var didSameDocumentNavigation: (@MainActor (Navigation, WKSameDocumentNavigationType) -> Void)?
+    @MainActor
     func navigation(_ navigation: Navigation, didSameDocumentNavigationOf navigationType: WKSameDocumentNavigationType) {
         self.didSameDocumentNavigation?(navigation, navigationType)
     }

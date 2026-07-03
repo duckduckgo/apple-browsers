@@ -544,6 +544,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Déverrouiller DuckDuckGo.";
 
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Appuyez n'importe où pour déverrouiller";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Se connecter";
 

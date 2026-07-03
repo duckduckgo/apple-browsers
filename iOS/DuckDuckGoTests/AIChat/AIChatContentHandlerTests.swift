@@ -776,6 +776,16 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         lastSubmittedPageContext = pageContext
     }
 
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      reasoningEffort: AIChatReasoningEffort?) {
+        submitPromptCallCount += 1
+        lastSubmittedPrompt = prompt
+    }
+
     func submitStartChatAction() {
         submitStartChatActionCallCount += 1
     }

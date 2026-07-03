@@ -567,7 +567,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         }
     }
 
-    func testEffectsPublisherEmitsPushContextToFrontend() {
+    func testEffectsPublisherEmitsDeliverPageContext() {
         // Given
         sessionState.handlePromptSubmission("Hello") // Start chat without context
         sessionState.beginManualAttach(fromFrontend: true)
@@ -577,7 +577,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         sessionState.effects
             .sink { effect in
-                if case .pushContextToFrontend = effect {
+                if case .deliverPageContext = effect {
                     receivedEffect = effect
                     expectation.fulfill()
                 }
@@ -590,10 +590,10 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .pushContextToFrontend(let contextData) = receivedEffect {
+        if case .deliverPageContext(let contextData) = receivedEffect {
             XCTAssertEqual(contextData?.title, "Test Page")
         } else {
-            XCTFail("Expected pushContextToFrontend effect")
+            XCTFail("Expected deliverPageContext effect")
         }
     }
 
@@ -648,6 +648,63 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         }
     }
 
+    func testPreSubmitUTIOptOutSurvivesSamePageNavigationReplayAndLateContextResult() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        let pageURL = URL(string: "https://example.com")!
+        sessionState.updateContext(makeTestContext(url: pageURL.absoluteString))
+
+        if case .attached = sessionState.chipState {
+            // Expected
+        } else {
+            XCTFail("Expected initial auto-attached chip state")
+        }
+
+        // When - user opts out before first submit
+        let shouldShowPlaceholder = sessionState.handleChipRemoval()
+        XCTAssertTrue(shouldShowPlaceholder)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
+
+        var deliveredContexts: [AIChatPageContextData?] = []
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(let data) = effect {
+                    deliveredContexts.append(data)
+                }
+            }
+            .store(in: &cancellables)
+
+        // Then - replayed didFinish should not clear opt-out or trigger collection
+        sessionState.notifyPageChanged(pageURL: pageURL)
+        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
+        XCTAssertFalse(sessionState.shouldTriggerAutoCollect(for: pageURL))
+
+        // And a late collection result should not reattach or deliver to the UTI chip
+        sessionState.updateContext(makeTestContext(title: "Late Page", url: pageURL.absoluteString))
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertTrue(deliveredContexts.isEmpty)
+    }
+
+    func testPreSubmitUTIOptOutClearsOnDifferentPageNavigation() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        let pageURL = URL(string: "https://example.com")!
+        let newPageURL = URL(string: "https://example.com/new")!
+        sessionState.updateContext(makeTestContext(url: pageURL.absoluteString))
+        XCTAssertTrue(sessionState.handleChipRemoval())
+        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
+
+        // When - didFinish reports a real page change
+        sessionState.notifyPageChanged(pageURL: newPageURL)
+
+        // Then - immediate UTI matches legacy's fresh opt-in chance on a new page
+        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
+        XCTAssertTrue(sessionState.shouldTriggerAutoCollect(for: newPageURL))
+    }
+
     func testNewChatFlowWithAutoAttachOn() {
         // Given
         mockSettings.isAutomaticContextAttachmentEnabled = true
@@ -675,7 +732,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         var pushedToFrontend = false
         sessionState.effects
             .sink { effect in
-                if case .pushContextToFrontend = effect {
+                if case .deliverPageContext = effect {
                     pushedToFrontend = true
                 }
             }
@@ -706,7 +763,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         var pushedContexts: [AIChatPageContextData?] = []
         sessionState.effects
             .sink { effect in
-                if case .pushContextToFrontend(let data) = effect {
+                if case .deliverPageContext(let data) = effect {
                     pushedContexts.append(data)
                 }
             }
@@ -731,7 +788,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         var pushedToFrontend = false
         sessionState.effects
             .sink { effect in
-                if case .pushContextToFrontend = effect {
+                if case .deliverPageContext = effect {
                     pushedToFrontend = true
                 }
             }
@@ -743,6 +800,67 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then - no push (backward compatible)
         XCTAssertFalse(pushedToFrontend)
+    }
+
+    func testAutoAttachDeliversContextForUTIChipWhenMultipleContextsFlagDisabled() {
+        // Given - start chat WITH initial context, flag OFF (default), UTI active
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+        sessionState.handlePromptSubmission("Hello")
+        mockPixelHandler.pageContextAutoAttachedFired = false
+
+        var deliveredContexts: [AIChatPageContextData?] = []
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(let data) = effect {
+                    deliveredContexts.append(data)
+                }
+            }
+            .store(in: &cancellables)
+
+        // When - navigate and update context
+        sessionState.notifyPageChanged()
+        sessionState.updateContext(makeTestContext(title: "Page B"))
+
+        // Then - gate A emits for the UTI chip even though gate B remains closed
+        XCTAssertEqual(deliveredContexts.count, 1)
+        XCTAssertEqual(deliveredContexts.first??.title, "Page B")
+        XCTAssertTrue(sessionState.shouldDeliverToUTIChip(deliveredContexts.first!))
+        XCTAssertFalse(sessionState.shouldDeliverToFrontendBridge(deliveredContexts.first!))
+        XCTAssertFalse(mockPixelHandler.pageContextAutoAttachedFired)
+    }
+
+    func testUTINonNilContextDoesNotDeliverToFrontendForChatWithoutInitialContext() {
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.handlePromptSubmission("Hello")
+
+        let context = makeTestContext().contextData
+
+        XCTAssertTrue(sessionState.shouldDeliverToUTIChip(context))
+        XCTAssertFalse(sessionState.shouldDeliverToFrontendBridge(context))
+    }
+
+    func testUTINonNilContextDoesNotDeliverToFrontendForRestoredChat() {
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.restoreChat(with: URL(string: "https://duck.ai/chat/abc")!)
+
+        let context = makeTestContext().contextData
+
+        XCTAssertTrue(sessionState.shouldDeliverToUTIChip(context))
+        XCTAssertFalse(sessionState.shouldDeliverToFrontendBridge(context))
+    }
+
+    func testDeliveredPageContextTrackingResetsOnNewChat() {
+        let pageURL = URL(string: "https://example.com")!
+        let context = makeTestContext(url: pageURL.absoluteString).contextData
+
+        sessionState.markPageContextDeliveredInPrompt(pageURL)
+        XCTAssertTrue(sessionState.hasDeliveredPageContext(context))
+
+        sessionState.resetToNoChat()
+
+        XCTAssertFalse(sessionState.hasDeliveredPageContext(context))
     }
 
     func testNotifyFrontendOfNavigationEmitsNullContextWhenFlagEnabled() {
@@ -759,7 +877,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         sessionState.effects
             .sink { effect in
-                if case .pushContextToFrontend = effect {
+                if case .deliverPageContext = effect {
                     receivedEffect = effect
                     expectation.fulfill()
                 }
@@ -772,10 +890,10 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .pushContextToFrontend(let contextData) = receivedEffect {
+        if case .deliverPageContext(let contextData) = receivedEffect {
             XCTAssertNil(contextData)
         } else {
-            XCTFail("Expected pushContextToFrontend effect with nil")
+            XCTFail("Expected deliverPageContext effect with nil")
         }
     }
 
@@ -788,7 +906,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         var pushedToFrontend = false
         sessionState.effects
             .sink { effect in
-                if case .pushContextToFrontend = effect {
+                if case .deliverPageContext = effect {
                     pushedToFrontend = true
                 }
             }
@@ -808,7 +926,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         var pushedToFrontend = false
         sessionState.effects
             .sink { effect in
-                if case .pushContextToFrontend = effect {
+                if case .deliverPageContext = effect {
                     pushedToFrontend = true
                 }
             }
@@ -817,39 +935,19 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         // When
         sessionState.notifyFrontendOfMultiContextNavigation()
 
-        // Then - nothing emitted (no chat = canPushToFrontend false)
+        // Then - nothing emitted (no chat = frontend bridge delivery false)
         XCTAssertFalse(pushedToFrontend)
     }
 
     // MARK: - Quick Actions Tests
 
-    func testQuickActionsDefaultsToSummarizeWhenFFOff() {
-        // Feature flag is off by default in MockFeatureFlagger
-        XCTAssertEqual(sessionState.viewState.quickActions, [.summarize])
-    }
-
-    func testQuickActionsIsAskAboutPageWhenFFOnAndPlaceholder() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger
-        )
-
-        // Then
+    func testQuickActionsDefaultsToAskAboutPageWhenPlaceholder() {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
-    func testQuickActionsIsSummarizePageWhenFFOnAndAttached() {
+    func testQuickActionsIsSummarizePageWhenAttached() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
         mockSettings.isAutomaticContextAttachmentEnabled = true
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger
-        )
 
         // When
         sessionState.updateContext(makeTestContext())
@@ -860,13 +958,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     func testQuickActionsTransitionsOnAttach() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
         mockSettings.isAutomaticContextAttachmentEnabled = true
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger
-        )
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
 
         // When
@@ -878,13 +970,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     func testQuickActionsTransitionsOnChipRemoval() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
         mockSettings.isAutomaticContextAttachmentEnabled = true
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger
-        )
         sessionState.updateContext(makeTestContext())
         XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
 
@@ -897,11 +983,11 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeTestContext(title: String = "Test Page") -> AIChatPageContext {
+    private func makeTestContext(title: String = "Test Page", url: String = "https://example.com") -> AIChatPageContext {
         let contextData = AIChatPageContextData(
             title: title,
             favicon: [],
-            url: "https://example.com",
+            url: url,
             content: "Test content",
             truncated: false,
             fullContentLength: 12

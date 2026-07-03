@@ -525,6 +525,16 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
+    @MainActor
+    func testBaseUTIAvailableWithoutContextualFlagStillEnablesUTIChipDelivery() async {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertTrue(sut.sessionState.shouldDeliverToUTIChip(makeTestContext().contextData))
+    }
+
     // MARK: - Double Present Guard Tests
 
     @MainActor

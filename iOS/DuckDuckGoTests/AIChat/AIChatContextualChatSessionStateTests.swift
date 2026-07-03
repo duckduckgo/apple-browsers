@@ -667,9 +667,25 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         }
     }
 
+    func testBaseWebUTIWithoutImmediateContextualModeUsesLegacyDowngradeNavigation() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true, isImmediateContextual: false)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        let pageURL = URL(string: "https://example.com")!
+        sessionState.updateContext(makeTestContext(url: pageURL.absoluteString))
+        XCTAssertTrue(sessionState.handleChipRemoval())
+        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
+
+        // When - base web UTI is active, but the immediate pre-submit replay guard is not
+        sessionState.notifyPageChanged(pageURL: pageURL)
+
+        // Then - legacy navigation semantics still clear the opt-out
+        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
+    }
+
     func testPreSubmitUTIOptOutSurvivesSamePageNavigationReplayAndLateContextResult() {
         // Given
-        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.updateUnifiedToggleInputActive(true, isImmediateContextual: true)
         mockSettings.isAutomaticContextAttachmentEnabled = true
         let pageURL = URL(string: "https://example.com")!
         sessionState.updateContext(makeTestContext(url: pageURL.absoluteString))
@@ -708,7 +724,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     func testPreSubmitUTIOptOutClearsOnDifferentPageNavigation() {
         // Given
-        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.updateUnifiedToggleInputActive(true, isImmediateContextual: true)
         mockSettings.isAutomaticContextAttachmentEnabled = true
         let pageURL = URL(string: "https://example.com")!
         let newPageURL = URL(string: "https://example.com/new")!

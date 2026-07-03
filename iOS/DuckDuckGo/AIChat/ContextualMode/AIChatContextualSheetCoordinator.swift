@@ -166,7 +166,7 @@ final class AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler,
             featureFlagger: featureFlagger
         )
-        self.sessionState.updateUnifiedToggleInputActive(isImmediateContextualUTIEnabled)
+        self.sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         self.sessionEffectCancellable = self.sessionState.effects
             .sink { [weak self] effect in
                 guard case .deliverPageContext(let context) = effect else { return }
@@ -180,7 +180,7 @@ final class AIChatContextualSheetCoordinator {
     func presentSheet(from presentingViewController: UIViewController,
                       restoreURL: URL? = nil) async {
         sessionState.refreshAutoAttachSetting()
-        sessionState.updateUnifiedToggleInputActive(isImmediateContextualUTIEnabled)
+        sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
 
         startObservingContextUpdates()
 

@@ -111,6 +111,7 @@ final class AIChatContextualChatSessionState {
     private(set) var userDowngradedToPlaceholder = false
     private var wasAutoAttachEnabled: Bool
     private var isUnifiedToggleInputActive = false
+    private var isImmediateContextualUnifiedToggleInputActive = false
     private var lastDeliveredContextURL: URL?
 
     // MARK: - Internal Flags
@@ -178,7 +179,7 @@ final class AIChatContextualChatSessionState {
     }
 
     private var hasUserOptedOutOfPreChatUTIContext: Bool {
-        isUnifiedToggleInputActive && frontendState == .noChat && userDowngradedToPlaceholder
+        isImmediateContextualUnifiedToggleInputActive && frontendState == .noChat && userDowngradedToPlaceholder
     }
 
     private func isNavigationToDifferentPage(_ pageURL: URL?) -> Bool {
@@ -333,8 +334,9 @@ final class AIChatContextualChatSessionState {
         isProcessingNavigation = true
     }
 
-    func updateUnifiedToggleInputActive(_ isActive: Bool) {
+    func updateUnifiedToggleInputActive(_ isActive: Bool, isImmediateContextual: Bool = false) {
         isUnifiedToggleInputActive = isActive
+        isImmediateContextualUnifiedToggleInputActive = isImmediateContextual
         rebuildViewState()
     }
 

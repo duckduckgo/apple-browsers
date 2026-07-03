@@ -141,11 +141,7 @@ public final class AttributedMetricManager: @unchecked Sendable {
         guard let installDate = installDate else {
             return 0
         }
-        return Calendar.eastern.dateComponents(
-            [.day],
-            from: Calendar.eastern.startOfDay(for: installDate),
-            to: Calendar.eastern.startOfDay(for: dateProvider.now())
-        ).day ?? 0
+        return QuantisedTimePast.daysBetween(from: installDate, to: dateProvider.now())
     }
 
     /// The quantised time period elapsed since the app was installed.

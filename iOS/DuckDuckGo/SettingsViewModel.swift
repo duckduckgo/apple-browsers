@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Persistence
 import PrivacyConfig
 import SwiftUI
+import UIComponents
 import Common
 import FoundationExtensions
 import Combine

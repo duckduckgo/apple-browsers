@@ -128,3 +128,7 @@ final class ModalPromptCoordinationService {
     }
 
 }
+
+extension ModalPromptCoordinationService: RecentModalPromptStatusProviding {
+    var wasModalPromptRecentlyPresented: Bool { modalPromptCoordinationManager.didPresentModalPromptThisSession }
+}

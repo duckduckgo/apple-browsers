@@ -323,7 +323,7 @@ public class DDGSync: DDGSyncing {
                 try updateAccount(result.account)
             } catch {
                 Logger.sync.error("3party account upgrade failed to persist the native account: \(String(reflecting: error), privacy: .public)")
-                throw error
+                throw ThirdPartyAccountUpgradeError.localStorageFailed
             }
             cacheScopedPasswordInBackground(result.scopedPassword)
             updateProtectedKeysCache(with: result.protectedKeys)

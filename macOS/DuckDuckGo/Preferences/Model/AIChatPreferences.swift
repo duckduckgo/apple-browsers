@@ -136,10 +136,6 @@ final class AIChatPreferences: ObservableObject {
         featureFlagger.isFeatureOn(.aiChatSettingsLinkInAiFeatures)
     }
 
-    var shouldShowSearchAndDuckAIToggleOption: Bool {
-        featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-    }
-
     var shouldShowTabBarButtonVisibilityOptions: Bool {
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
     }

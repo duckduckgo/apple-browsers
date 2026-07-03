@@ -19,7 +19,6 @@
 
 import UIKit
 import BrowserServicesKit
-import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
@@ -41,66 +40,75 @@ enum ToolbarContentState: Equatable {
 
 protocol ToolbarStateHandling {
 
-    var backButton: UIBarButtonItem { get }
-    var fireBarButtonItem: UIBarButtonItem { get }
-    var forwardButton: UIBarButtonItem { get }
-    var tabSwitcherButton: UIBarButtonItem { get }
-    var bookmarkButton: UIBarButtonItem { get }
+    var backButton: BrowserChromeButton { get }
+    var fireButton: BrowserChromeButton { get }
+    var forwardButton: BrowserChromeButton { get }
+    var bookmarkButton: BrowserChromeButton { get }
+    var passwordsButton: BrowserChromeButton { get }
+    var browserMenuButton: BrowserChromeButton { get }
 
-    var passwordsButton: UIBarButtonItem { get }
-    var browserMenuButton: UIBarButtonItem { get }
+    /// Current tab-switcher control in the toolbar (default chrome button or a replaced view such as `TabSwitcherStaticButton`).
+    var tabSwitcherView: UIView { get }
 
+    func setTabSwitcherView(_ view: UIView)
     func updateToolbarWithState(_ state: ToolbarContentState)
-
 }
 
 final class ToolbarHandler: ToolbarStateHandling {
-    weak var toolbar: UIToolbar?
-
-    private let themeManager: ThemeManaging
+    weak var toolbar: BrowserToolbarView?
 
     lazy var backButton = {
-        return BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandBrowserBack, image: DesignSystemImages.Glyphs.Size24.arrowLeft)
+        BrowserChromeButton.createToolbarButton(title: UserText.keyCommandBrowserBack, image: DesignSystemImages.Glyphs.Size24.arrowLeft)
     }()
 
-    lazy var fireBarButtonItem = {
-        let buttonItem = BrowserChromeButton.createToolbarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fireSolid)
-        buttonItem.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
-        return buttonItem
+    lazy var fireButton = {
+        let button = BrowserChromeButton.createToolbarButton(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        button.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
+        return button
     }()
 
     lazy var forwardButton = {
-        return BrowserChromeButton.createToolbarButtonItem(title: UserText.keyCommandBrowserForward, image: DesignSystemImages.Glyphs.Size24.arrowRight)
+        BrowserChromeButton.createToolbarButton(title: UserText.keyCommandBrowserForward, image: DesignSystemImages.Glyphs.Size24.arrowRight)
     }()
 
-    lazy var tabSwitcherButton = {
-        return BrowserChromeButton.createToolbarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, image: DesignSystemImages.Glyphs.Size24.tabNew)
-    }()
+    private(set) var tabSwitcherView: UIView
 
     lazy var bookmarkButton = {
-        return BrowserChromeButton.createToolbarButtonItem(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarks)
+        BrowserChromeButton.createToolbarButton(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarks)
     }()
 
     lazy var passwordsButton = {
-        return BrowserChromeButton.createToolbarButtonItem(title: UserText.actionOpenPasswords, image: DesignSystemImages.Glyphs.Size24.key)
+        BrowserChromeButton.createToolbarButton(title: UserText.actionOpenPasswords, image: DesignSystemImages.Glyphs.Size24.key)
     }()
 
     lazy var browserMenuButton = {
-        return BrowserChromeButton.createToolbarButtonItem(title: UserText.menuButtonHint, image: DesignSystemImages.Glyphs.Size24.menuHamburger)
+        BrowserChromeButton.createToolbarButton(title: UserText.menuButtonHint, image: DesignSystemImages.Glyphs.Size24.menuHamburger)
     }()
 
     private var state: ToolbarContentState?
 
-    init(toolbar: UIToolbar,
-         themeManager: ThemeManaging = ThemeManager.shared) {
+    init(toolbar: BrowserToolbarView) {
         self.toolbar = toolbar
-        self.themeManager = themeManager
+        let tabSwitcher = BrowserChromeButton.createToolbarButton(
+            title: UserText.tabSwitcherAccessibilityLabel,
+            image: DesignSystemImages.Glyphs.Size24.tabNew
+        )
+        self.tabSwitcherView = tabSwitcher
     }
 
     // MARK: - Public Methods
 
+    func setTabSwitcherView(_ view: UIView) {
+        tabSwitcherView = view
+        if let state {
+            applyToolbarLayout(for: state)
+        } else {
+            updateToolbarWithState(.newTab)
+        }
+    }
+
     func updateToolbarWithState(_ state: ToolbarContentState) {
-        guard let toolbar = toolbar else { return }
+        guard toolbar != nil else { return }
 
         updateNavigationButtonsWithState(state)
 
@@ -108,17 +116,22 @@ final class ToolbarHandler: ToolbarStateHandling {
         guard self.state != state else { return }
         self.state = state
 
-        let buttons: [UIBarButtonItem] = {
+        applyToolbarLayout(for: state)
+    }
+
+    private func applyToolbarLayout(for state: ToolbarContentState) {
+        guard let toolbar = toolbar else { return }
+
+        let views: [UIView] = {
             switch state {
             case .pageLoaded:
-                return createPageLoadedButtons()
+                return createPageLoadedViews()
             case .newTab:
-                return createNewTabButtons()
+                return createNewTabViews()
             }
         }()
 
-        toolbar.setItems(buttons, animated: false)
-
+        toolbar.setToolbarButtons(views)
     }
 
     // MARK: - Private Methods
@@ -135,31 +148,23 @@ final class ToolbarHandler: ToolbarStateHandling {
         forwardButton.isEnabled = currentTab?.canGoForward ?? false
     }
 
-    private func createPageLoadedButtons() -> [UIBarButtonItem] {
-        return [
+    private func createPageLoadedViews() -> [UIView] {
+        [
             backButton,
-            .flexibleSpace(),
             forwardButton,
-            .flexibleSpace(),
-            fireBarButtonItem,
-            .flexibleSpace(),
-            tabSwitcherButton,
-            .flexibleSpace(),
+            fireButton,
+            tabSwitcherView,
             browserMenuButton,
-        ].compactMap { $0 }
+        ]
     }
 
-    private func createNewTabButtons() -> [UIBarButtonItem] {
-        return [
+    private func createNewTabViews() -> [UIView] {
+        [
             bookmarkButton,
-            .flexibleSpace(),
             passwordsButton,
-            .flexibleSpace(),
-            fireBarButtonItem,
-            .flexibleSpace(),
-            tabSwitcherButton,
-            .flexibleSpace(),
+            fireButton,
+            tabSwitcherView,
             browserMenuButton,
-        ].compactMap { $0 }
+        ]
     }
 }

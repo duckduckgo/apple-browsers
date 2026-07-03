@@ -20,6 +20,7 @@ import Foundation
 import Combine
 import AppKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import PrivacyConfig
 import FeatureFlags
 
@@ -29,6 +30,8 @@ protocol ThemeManaging {
 
     var theme: ThemeStyleProviding { get }
     var themePublisher: Published<any ThemeStyleProviding>.Publisher { get }
+
+    var isAppRebranded: Bool { get }
 }
 
 final class ThemeManager: ObservableObject, ThemeManaging {
@@ -54,14 +57,17 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 
     @Published private(set) var designColorPalette: DesignResourcesKit.ColorPalette
 
-    init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger) {
+    let isAppRebranded: Bool
+
+    init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) {
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
-
+        self.isAppRebranded = featureFlagger.isFeatureOn(.appRebranding)
         self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
         self.appearance = appearancePreferences.themeAppearance
         self.designColorPalette = appearancePreferences.themeName.designColorPalette
 
+        setupDuckRebrandedUX()
         switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
         subscribeToSystemAppearance()
@@ -102,5 +108,15 @@ private extension ThemeManager {
     func switchDesignSystemPalette(to palette: DesignResourcesKit.ColorPalette) {
         DesignSystemPalette.current = palette
         designColorPalette = palette
+    }
+
+    func setupDuckRebrandedUX() {
+        AppRebrand.isAppRebranded = { [isAppRebranded] in
+            isAppRebranded
+        }
+
+        DesignSystemRebrand.isAppRebranded = { [isAppRebranded] in
+            isAppRebranded
+        }
     }
 }

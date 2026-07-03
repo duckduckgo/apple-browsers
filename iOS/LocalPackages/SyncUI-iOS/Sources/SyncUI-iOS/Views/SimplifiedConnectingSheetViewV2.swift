@@ -21,10 +21,6 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-// V2 of the connecting sheet shown while Sync & Backup is being set up on this device,
-// presented when the toggle is switched on from the off state (behind the simplifiedSyncSetupV2
-// feature flag). Replaces the inline "Connecting..." indicator that the row used to show.
-// Design: https://www.figma.com/design/Ki2WSSwjD6cdeRAB8rtEhT/Encourage-Sync-cross-device-activations?node-id=1641-548960
 public struct SimplifiedConnectingSheetViewV2: View {
 
     public init() {}

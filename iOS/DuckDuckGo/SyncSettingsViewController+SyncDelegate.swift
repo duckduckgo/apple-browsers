@@ -169,15 +169,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
         Task { @MainActor in
             defer { optionsViewModel.isBusy = false }
-            // In V2 the connecting progress is shown on a full-screen sheet instead of inline in the row.
             if useSimplifiedLayoutV2 {
                 await showConnectingSheetV2()
             }
             do {
                 guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
-                    if useSimplifiedLayoutV2 {
-                        await self.dismissPresentedViewController()
-                    }
                     return
                 }
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
@@ -191,7 +187,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
 
-                // Dismiss the connecting sheet before showing any follow-up sheet/toast.
                 if useSimplifiedLayoutV2 {
                     await self.dismissPresentedViewController()
                 }

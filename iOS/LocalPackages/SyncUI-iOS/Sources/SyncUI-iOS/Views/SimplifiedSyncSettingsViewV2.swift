@@ -469,9 +469,6 @@ extension SimplifiedSyncSettingsViewV2 {
         }
     }
 
-    // Device rows open an edit/remove sheet rather than pushing, so they don't get a
-    // NavigationLink chevron for free. Mirror the native list disclosure indicator (and the
-    // NavigationLink chevrons elsewhere on this screen) to hint the row is tappable.
     var disclosureChevron: some View {
         Image(systemName: "chevron.forward")
             .font(Font.system(.footnote).weight(.bold))

@@ -308,7 +308,6 @@ final class MainCoordinator {
                                         whatsNewRepository: whatsNewRepository,
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
-                                        fireModePromotionEligibility: fireModePromotionsCoordinator,
                                         onboardingManager: onboardingManager,
                                         recentModalPromptStatusProvider: modalPromptCoordinationService)
 

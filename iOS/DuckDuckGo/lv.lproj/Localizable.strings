@@ -4117,6 +4117,8 @@
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Uzzināt vairāk";
 
+/* Switch button label. */
+"settings.let.duckduckgo.manage.cookie.consent.popups" = "Ļaut DuckDuckGo pārvaldīt sīkfailu piekrišanas uznirstošos logus";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Paroles un automātiskā aizpildīšana";

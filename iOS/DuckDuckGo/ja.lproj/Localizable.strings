@@ -4117,6 +4117,8 @@
 /* Link text for learning more about a feature */
 "settings.learn.more" = "詳細情報";
 
+/* Switch button label. */
+"settings.let.duckduckgo.manage.cookie.consent.popups" = "DuckDuckGoにCookieの同意ポップアップを管理させる";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "パスワードと自動入力";

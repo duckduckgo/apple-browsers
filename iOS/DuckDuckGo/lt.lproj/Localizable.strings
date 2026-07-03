@@ -4117,6 +4117,8 @@
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Sužinoti daugiau";
 
+/* Switch button label. */
+"settings.let.duckduckgo.manage.cookie.consent.popups" = "Leiskite „DuckDuckGo“ valdyti sutikimo su slapukais iššokančiuosius langus";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Slaptažodžiai ir automatinis užpildymas";

@@ -4117,6 +4117,8 @@
 /* Link text for learning more about a feature */
 "settings.learn.more" = "Μάθετε περισσότερα";
 
+/* Switch button label. */
+"settings.let.duckduckgo.manage.cookie.consent.popups" = "Επιτρέψτε στο DuckDuckGo να διαχειρίζεται τα αναδυόμενα παράθυρα συναίνεσης για cookies";
 
 /* Settings screen cell text for passwords */
 "settings.logins" = "Κωδικοί πρόσβασης και Αυτόματη συμπλήρωση";

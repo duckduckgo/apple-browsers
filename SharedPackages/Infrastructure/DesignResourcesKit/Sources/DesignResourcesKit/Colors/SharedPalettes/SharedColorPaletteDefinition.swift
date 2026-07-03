@@ -122,6 +122,7 @@ protocol SharedColorPaletteDefinition {
     static var controlsSubtleBorderPrimary: DynamicColor { get }
     static var controlsSubtleBorderSecondary: DynamicColor { get }
     static var controlsSubtleBorderTertiary: DynamicColor { get }
+    static var controlsSubtleFillSecondary: DynamicColor { get }
 
     // MARK: - Destructive Colors
     static var destructiveContentPrimary: DynamicColor { get }

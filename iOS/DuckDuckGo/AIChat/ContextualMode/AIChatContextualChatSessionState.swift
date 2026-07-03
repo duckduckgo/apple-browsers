@@ -177,7 +177,7 @@ final class AIChatContextualChatSessionState {
         featureFlagger.isFeatureOn(.multiplePageContexts)
     }
 
-    private var isPreSubmitUnifiedToggleInputOptOutActive: Bool {
+    private var hasUserOptedOutOfPreChatUTIContext: Bool {
         isUnifiedToggleInputActive && frontendState == .noChat && userDowngradedToPlaceholder
     }
 
@@ -327,7 +327,7 @@ final class AIChatContextualChatSessionState {
     /// Notify that page navigation occurred
     func notifyPageChanged(pageURL: URL? = nil) {
         Logger.aiChat.debug("[SessionState] Page navigation detected")
-        if !isPreSubmitUnifiedToggleInputOptOutActive || isNavigationToDifferentPage(pageURL) {
+        if !hasUserOptedOutOfPreChatUTIContext || isNavigationToDifferentPage(pageURL) {
             clearUserDowngradeOnNavigation()
         }
         isProcessingNavigation = true
@@ -339,7 +339,7 @@ final class AIChatContextualChatSessionState {
     }
 
     func shouldTriggerAutoCollect(for pageURL: URL) -> Bool {
-        guard !isPreSubmitUnifiedToggleInputOptOutActive else { return false }
+        guard !hasUserOptedOutOfPreChatUTIContext else { return false }
         guard shouldAutoCollectContext else { return false }
         guard let attachedContext = intendedAttachedContext,
               URL(string: attachedContext.contextData.url) == pageURL else {

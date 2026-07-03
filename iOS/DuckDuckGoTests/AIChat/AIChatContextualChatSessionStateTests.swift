@@ -722,7 +722,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(deliveredContexts.isEmpty)
     }
 
-    func testPreSubmitUTIOptOutClearsOnDifferentPageNavigation() {
+    func testPreSubmitUTIOptOutSurvivesDifferentPageNavigation() {
         // Given
         sessionState.updateUnifiedToggleInputActive(true, isImmediateContextual: true)
         mockSettings.isAutomaticContextAttachmentEnabled = true
@@ -735,9 +735,9 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         // When - didFinish reports a real page change
         sessionState.notifyPageChanged(pageURL: newPageURL)
 
-        // Then - immediate UTI matches legacy's fresh opt-in chance on a new page
-        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
-        XCTAssertTrue(sessionState.shouldTriggerAutoCollect(for: newPageURL))
+        // Then - production pre-submit behavior keeps the user's opt-out until manual attach/reset
+        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
+        XCTAssertFalse(sessionState.shouldTriggerAutoCollect(for: newPageURL))
     }
 
     func testNewChatFlowWithAutoAttachOn() {

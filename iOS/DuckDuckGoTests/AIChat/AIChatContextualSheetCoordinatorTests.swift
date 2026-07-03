@@ -511,6 +511,26 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testUTINavigationDoesNotAutoCollectDifferentPageAfterPreSubmitOptOut() async {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        let pageURL = URL(string: "https://example.com")!
+        let newPageURL = URL(string: "https://example.com/new")!
+
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
+        sut.sessionState.downgradeToPlaceholder()
+        mockPageContextHandler.clearCallCount = 0
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        didFinishTabURLSubject.send(newPageURL)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(mockPageContextHandler.clearCallCount, 0)
+    }
+
+    @MainActor
     func testBaseUTIAvailableWithoutContextualFlagUsesLegacyNavigationPath() async {
         mockUnifiedToggleInputFeature.isAvailable = true
         mockFeatureFlagger.enabledFeatureFlags = []

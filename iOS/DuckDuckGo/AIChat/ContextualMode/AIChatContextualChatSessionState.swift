@@ -182,14 +182,6 @@ final class AIChatContextualChatSessionState {
         isImmediateContextualUnifiedToggleInputActive && frontendState == .noChat && userDowngradedToPlaceholder
     }
 
-    private func isNavigationToDifferentPage(_ pageURL: URL?) -> Bool {
-        guard let pageURL,
-              let latestContextURL = latestContext.flatMap({ URL(string: $0.contextData.url) }) else {
-            return false
-        }
-        return latestContextURL != pageURL
-    }
-
     // MARK: - Frontend Chat State Transitions
 
     /// Call when user submits a prompt from native input
@@ -328,7 +320,7 @@ final class AIChatContextualChatSessionState {
     /// Notify that page navigation occurred
     func notifyPageChanged(pageURL: URL? = nil) {
         Logger.aiChat.debug("[SessionState] Page navigation detected")
-        if !hasUserOptedOutOfPreChatUTIContext || isNavigationToDifferentPage(pageURL) {
+        if !hasUserOptedOutOfPreChatUTIContext {
             clearUserDowngradeOnNavigation()
         }
         isProcessingNavigation = true

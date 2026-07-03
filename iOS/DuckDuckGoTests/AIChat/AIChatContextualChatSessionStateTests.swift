@@ -895,6 +895,118 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
+    // MARK: - Suggested Prompts Coexistence Tests
+
+    func testQuickActionsIsAskAboutPageWhenSuggestedPromptsOnAndPlaceholder() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements, .contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger
+        )
+
+        // Then - auto-attach off (placeholder) pins "Ask about page" below the suggestions
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
+    func testQuickActionsIsEmptyWhenSuggestedPromptsOnAndAttached() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements, .contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger
+        )
+
+        // When - context attached (auto-attach on)
+        sessionState.updateContext(makeTestContext())
+
+        // Then - only suggestions remain, no pinned quick action
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
+    }
+
+    // MARK: - Suggested Prompts Loading Tests
+
+    func testSuggestionsPopulateViewStateWhenLoadingCompletes() {
+        // Given
+        let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize this page", prompt: "Summarize this page.", icon: "summary")]
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: MockContextualSuggestedPromptsProvider(suggestions: expected)
+        )
+
+        let loaded = expectation(description: "suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        sessionState.markPendingSignalsOnlyCollection()
+
+        // Then
+        wait(for: [loaded], timeout: 1.0)
+    }
+
+    func testSuggestionsClearedOnReset() {
+        // Given
+        let expected = [ContextualSuggestedPrompt(id: "note-page", label: "Key takeaways", prompt: "Key takeaways?", icon: "note")]
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: MockContextualSuggestedPromptsProvider(suggestions: expected)
+        )
+
+        let loaded = expectation(description: "suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        sessionState.markPendingSignalsOnlyCollection()
+        wait(for: [loaded], timeout: 1.0)
+
+        // When
+        sessionState.resetToNoChat()
+
+        // Then
+        XCTAssertTrue(sessionState.suggestions.isEmpty)
+        XCTAssertEqual(sessionState.suggestionsLoadState, .loaded)
+    }
+
+    func testSuggestionsNotLoadedWhenSuggestedPromptsFlagOff() {
+        // Given - flag off (default); provider would return values if it were called
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: MockContextualSuggestedPromptsProvider(
+                suggestions: [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize this page", prompt: "Summarize this page.", icon: "summary")]
+            )
+        )
+
+        // When
+        sessionState.markPendingSignalsOnlyCollection()
+
+        // Then - loading never begins, so suggestions stay empty and state stays loaded
+        XCTAssertTrue(sessionState.suggestions.isEmpty)
+        XCTAssertEqual(sessionState.suggestionsLoadState, .loaded)
+    }
+
     // MARK: - Helpers
 
     private func makeTestContext(title: String = "Test Page") -> AIChatPageContext {
@@ -984,5 +1096,15 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
         manualAttachBegan = false
         manualAttachEnded = false
         isManualAttachInProgress = false
+    }
+}
+
+// MARK: - Mock Suggested Prompts Provider
+
+private struct MockContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
+    let suggestions: [ContextualSuggestedPrompt]
+
+    func resolveSuggestions() async -> [ContextualSuggestedPrompt] {
+        suggestions
     }
 }

@@ -776,6 +776,11 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         }
     }
 
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
+        // 🚩 Interim behaviour: The full tap → chat-start-with-context flow is a separate task.
+        contextualInputViewController.appendText(suggestion.prompt)
+    }
+
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
         let voiceSearchController = VoiceSearchViewController(preferredTarget: .AIChat, hideToggle: true)
         voiceSearchController.delegate = self
@@ -906,7 +911,7 @@ private extension AIChatContextualSheetViewController {
 
     func apply(_ viewState: SheetViewState) {
         expandButton.isEnabled = viewState.isExpandButtonEnabled
-        contextualInputViewController.updateQuickActions(with: viewState.quickActions)
+        contextualInputViewController.updateStartActions(suggestions: viewState.suggestions, quickActions: viewState.quickActions)
         contextualInputViewController.updateSuggestionsLoading(viewState.suggestionsLoadState == .loading)
 
         switch viewState.content {

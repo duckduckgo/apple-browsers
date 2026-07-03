@@ -69,6 +69,7 @@ struct SheetViewState {
     let shouldShowNewChatButton: Bool
     let chipState: ChipState
     let quickActions: [AIChatContextualQuickAction]
+    let suggestions: [ContextualSuggestedPrompt]
     let suggestionsLoadState: SuggestionsLoadState
 
     enum ContentMode {
@@ -110,6 +111,7 @@ final class AIChatContextualChatSessionState {
         shouldShowNewChatButton: false,
         chipState: .placeholder,
         quickActions: [.summarize],
+        suggestions: [],
         suggestionsLoadState: .loaded
     )
 
@@ -131,6 +133,7 @@ final class AIChatContextualChatSessionState {
     private var pendingSignalsOnlyCollection = false
 
     private(set) var suggestionsLoadState: SuggestionsLoadState = .loaded
+    private(set) var suggestions: [ContextualSuggestedPrompt] = []
     private var suggestionsResolveTask: Task<Void, Never>?
 
     // MARK: - Initialization
@@ -250,6 +253,7 @@ final class AIChatContextualChatSessionState {
         isProcessingNavigation = false
         pendingSignalsOnlyCollection = false
         suggestionsResolveTask?.cancel()
+        suggestions = []
         suggestionsLoadState = .loaded
         pixelHandler.endManualAttach()
         rebuildViewState()
@@ -516,6 +520,12 @@ private extension AIChatContextualChatSessionState {
         guard featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) else {
             return [.summarize]
         }
+        if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
+            switch chipState {
+            case .placeholder: return [.askAboutPage]
+            case .attached: return []
+            }
+        }
         switch chipState {
         case .placeholder: return [.askAboutPage]
         case .attached: return [.summarizePage]
@@ -526,12 +536,14 @@ private extension AIChatContextualChatSessionState {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
 
         suggestionsResolveTask?.cancel()
+        suggestions = []
         suggestionsLoadState = .loading
         rebuildViewState()
 
         suggestionsResolveTask = Task { [weak self] in
-            await self?.suggestedPromptsProvider.resolveSuggestions()
+            guard let resolved = await self?.suggestedPromptsProvider.resolveSuggestions() else { return }
             guard let self, !Task.isCancelled else { return }
+            self.suggestions = resolved
             self.suggestionsLoadState = .loaded
             self.rebuildViewState()
         }
@@ -552,6 +564,7 @@ private extension AIChatContextualChatSessionState {
             shouldShowNewChatButton: frontendState != .noChat,
             chipState: chipState,
             quickActions: resolveQuickActions(),
+            suggestions: suggestions,
             suggestionsLoadState: suggestionsLoadState
         )
     }

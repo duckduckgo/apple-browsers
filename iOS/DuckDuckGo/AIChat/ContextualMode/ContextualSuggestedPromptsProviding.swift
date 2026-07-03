@@ -20,7 +20,7 @@
 import Foundation
 
 protocol ContextualSuggestedPromptsProviding {
-    func resolveSuggestions() async
+    func resolveSuggestions() async -> [ContextualSuggestedPrompt]
 }
 
 struct StubContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
@@ -30,7 +30,14 @@ struct StubContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProvidi
         self.delay = delay
     }
 
-    func resolveSuggestions() async {
+    func resolveSuggestions() async -> [ContextualSuggestedPrompt] {
         try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        return Self.cannedSuggestions
     }
+
+    private static let cannedSuggestions: [ContextualSuggestedPrompt] = [
+        ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize this page", prompt: "Summarize this page.", icon: "summary"),
+        ContextualSuggestedPrompt(id: "translate-page", label: "Translate this page", prompt: "Translate this page.", icon: "translate"),
+        ContextualSuggestedPrompt(id: "key-takeaways", label: "Key takeaways", prompt: "What are the key takeaways from this page?", icon: "note"),
+    ]
 }

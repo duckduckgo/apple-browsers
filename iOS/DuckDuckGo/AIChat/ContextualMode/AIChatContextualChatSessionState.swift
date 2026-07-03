@@ -327,9 +327,10 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
-    func shouldTriggerAutoCollect(for pageURL: URL) -> Bool {
+    func shouldTriggerAutoCollect(for pageURL: URL? = nil) -> Bool {
         guard !hasUserOptedOutOfContext else { return false }
         guard shouldAutoCollectContext else { return false }
+        guard let pageURL else { return true }
         guard let attachedContext = intendedAttachedContext,
               URL(string: attachedContext.contextData.url) == pageURL else {
             return true

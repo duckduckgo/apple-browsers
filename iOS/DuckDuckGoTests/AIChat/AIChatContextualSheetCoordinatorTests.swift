@@ -35,6 +35,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var clearCallCount = 0
         var clearAttachedContextCallCount = 0
         var resubscribeCallCount = 0
+        var onTriggerContextCollection: (() -> Void)?
 
         private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
         var contextPublisher: AnyPublisher<AIChatPageContext?, Never> {
@@ -47,6 +48,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         func triggerContextCollection() -> Bool {
             triggerContextCollectionCallCount += 1
+            onTriggerContextCollection?()
             return triggerContextCollectionReturnValue
         }
 
@@ -499,7 +501,13 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         originatingTabURLSubject.send(URL(string: "https://example.com/did-commit"))
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
 
+        let collectionTriggered = expectation(description: "didFinish triggers context collection")
+        mockPageContextHandler.onTriggerContextCollection = {
+            collectionTriggered.fulfill()
+        }
+
         didFinishTabURLSubject.send(URL(string: "https://example.com/finished"))
+        await fulfillment(of: [collectionTriggered], timeout: 1)
 
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
     }

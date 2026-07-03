@@ -18,7 +18,6 @@
 
 import Foundation
 import FoundationExtensions
-import OSLog
 import Network
 import URLPredictor
 
@@ -409,7 +408,7 @@ extension URL {
     /// - `.fuzzyIdentity` — includes fragment, normalizes trailing '/' in path
     ///
     /// Or build a custom mask: `[.scheme, .host, .query]`
-    public struct EqualityComponents: OptionSet, CustomStringConvertible {
+    public struct EqualityComponents: OptionSet {
         public init(rawValue: UInt8) { self.rawValue = rawValue }
         public let rawValue: UInt8
         public static let scheme   = Self(rawValue: 1 << 0)
@@ -425,18 +424,6 @@ extension URL {
         public static let fuzzyIdentity: Self = [.scheme, .host, .port, .path, .query, .fragment]
 
         static let allComponents: [Self] = [.scheme, .host, .port, .path, .query, .fragment]
-
-        public var description: String {
-            switch self {
-            case .scheme: return "scheme"
-            case .host: return "host"
-            case .port: return "port"
-            case .path: return "path"
-            case .query: return "query"
-            case .fragment: return "fragment"
-            default: return "unknown"
-            }
-        }
     }
 
     /// Returns true when `self` and `other` are equal for every component in `components`.

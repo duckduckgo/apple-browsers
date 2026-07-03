@@ -196,7 +196,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                      database: nil,
                                      emailServiceV0: emailService,
                                      emailServiceV1: emailServiceV1,
-                                     featureFlagger: featureFlagger,
                                      pixelHandler: pixelHandler,
                                      debugEventHandler: { [weak self] message in
                                         self?.addHistoryDebugEvent(summary: "Email confirmation", details: message)
@@ -440,8 +439,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 try await runner.optOut(extractedProfile: scanResult.extractedProfile,
                                         showWebView: true) { true }
 
-                if self.featureFlagger.isEmailConfirmationDecouplingFeatureOn,
-                   scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
+                if scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
                     addOptOutAwaitingEmailConfirmationEvent(for: scanResult)
                     Task { @MainActor in
                         self.isProgressActive = false

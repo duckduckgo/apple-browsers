@@ -2524,27 +2524,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "Fire-Tabs";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "Neu";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Neu! Browse, ohne den lokalen Verlauf zu speichern, oder melde dich mit einem anderen Konto auf Websites an.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Jetzt nicht";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Fire-Tabs ausprobieren";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Fire-Tabs ausprobieren";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Fire-Tabs ausprobieren, um zu surfen, ohne den lokalen Verlauf zu speichern.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "Neu: Fire-Tabs";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire-Tab";
 

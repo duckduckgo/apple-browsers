@@ -37,106 +37,6 @@ final class BrokerProfileJobActionTests: XCTestCase {
         captchaService.reset()
     }
 
-    func testWhenEmailConfirmationActionSucceeds_thenExtractedLinkIsOpened() async {
-        let emailConfirmationAction = EmailConfirmationAction(id: "", actionType: .emailConfirmation, pollingTime: 1)
-        let step = Step(type: .optOut, actions: [emailConfirmationAction])
-        let extractedProfile = ExtractedProfile(email: "test@duck.com")
-        let sut = BrokerProfileOptOutSubJobWebRunner(
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            prefs: ContentScopeProperties.mock,
-            context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: emailConfirmationDataService,
-            captchaService: captchaService,
-            featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgentProvider: { nil },
-            operationAwaitTime: 0,
-            stageCalculator: stageCalculator,
-            pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(),
-            actionsHandlerMode: .optOut,
-            shouldRunNextStep: { true }
-        )
-
-        do {
-            _ = try await sut.run(inputValue: extractedProfile, webViewHandler: webViewHandler)
-            XCTAssertEqual(webViewHandler.wasLoadCalledWithURL?.absoluteString, "https://www.duckduckgo.com")
-            XCTAssertTrue(webViewHandler.wasFinishCalled)
-        } catch {
-            XCTFail("Should not throw")
-        }
-    }
-
-    func testWhenEmailConfirmationActionHasNoEmail_thenNoURLIsLoadedAndWebViewFinishes() async {
-        let emailConfirmationAction = EmailConfirmationAction(id: "", actionType: .emailConfirmation, pollingTime: 1)
-        let step = Step(type: .optOut, actions: [emailConfirmationAction])
-        let noEmailExtractedProfile = ExtractedProfile()
-        let sut = BrokerProfileOptOutSubJobWebRunner(
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            prefs: ContentScopeProperties.mock,
-            context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: emailConfirmationDataService,
-            captchaService: captchaService,
-            featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgentProvider: { nil },
-            operationAwaitTime: 0,
-            stageCalculator: stageCalculator,
-            pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(),
-            actionsHandlerMode: .optOut,
-            shouldRunNextStep: { true }
-        )
-
-        do {
-            _ = try await sut.run(inputValue: noEmailExtractedProfile, webViewHandler: webViewHandler)
-            XCTFail("Expected an error to be thrown")
-        } catch {
-            XCTAssertNil(webViewHandler.wasLoadCalledWithURL?.absoluteString)
-            XCTAssertTrue(webViewHandler.wasFinishCalled)
-
-            if let error = error as? DataBrokerProtectionError, case .emailError(.cantFindEmail) = error {
-                return
-            }
-
-            XCTFail("Unexpected error thrown: \(error).")
-        }
-    }
-
-    func testWhenOnEmailConfirmationActionEmailServiceThrows_thenOperationThrows() async {
-        let emailConfirmationAction = EmailConfirmationAction(id: "", actionType: .emailConfirmation, pollingTime: 1)
-        let step = Step(type: .optOut, actions: [emailConfirmationAction])
-        let extractedProfile = ExtractedProfile(email: "test@duck.com")
-        emailConfirmationDataService.shouldThrow = true
-        let sut = BrokerProfileOptOutSubJobWebRunner(
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            prefs: ContentScopeProperties.mock,
-            context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: emailConfirmationDataService,
-            captchaService: captchaService,
-            featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgentProvider: { nil },
-            operationAwaitTime: 0,
-            stageCalculator: stageCalculator,
-            pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(),
-            actionsHandlerMode: .optOut,
-            shouldRunNextStep: { true }
-        )
-
-        do {
-            _ = try await sut.run(inputValue: extractedProfile, webViewHandler: webViewHandler)
-            XCTFail("Expected an error to be thrown")
-        } catch {
-            XCTAssertNil(webViewHandler.wasLoadCalledWithURL?.absoluteString)
-            XCTAssertTrue(webViewHandler.wasFinishCalled)
-
-            if let error = error as? DataBrokerProtectionError, case .emailError(nil) = error {
-                return
-            }
-
-            XCTFail("Unexpected error thrown: \(error).")
-        }
-    }
-
     func testWhenActionNeedsEmail_thenExtractedProfileEmailIsSet() async {
         let fillFormAction = FillFormAction(id: "1", actionType: .fillForm, elements: [.init(type: "email")])
         let step = Step(type: .optOut, actions: [fillFormAction])
@@ -266,7 +166,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
         sut.actionsHandler?.captchaTransactionId = "transactionId"
 
         await sut.runNextAction(solveCaptchaAction)
@@ -292,7 +192,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             actionsHandlerMode: .testing,
             shouldRunNextStep: { true }
         )
-        let actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        let actionsHandler = ActionsHandler.forOptOut(step)
         actionsHandler.captchaTransactionId = "transactionId"
         captchaService.shouldThrow = true
 
@@ -327,7 +227,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         await sut.captchaInformation(captchaInfo: getCaptchaResponse)
 
@@ -356,7 +256,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         sut.resetRetriesCount()
         captchaService.shouldThrow = true
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         await sut.captchaInformation(captchaInfo: getCaptchaResponse)
 
@@ -581,7 +481,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // Simulate condition success
         await sut.conditionSuccess(actions: [])
@@ -610,7 +510,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // Execute the condition action to set it as current action
         _ = sut.actionsHandler?.nextAction()
@@ -669,7 +569,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // Execute the expectation action to set it as current action
         _ = sut.actionsHandler?.nextAction()
@@ -704,7 +604,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // Simulate condition success with follow-up actions
         await sut.conditionSuccess(actions: [followUpAction])
@@ -738,7 +638,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // First condition succeeds
         await sut.conditionSuccess(actions: [])
@@ -785,7 +685,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
                 shouldRunNextStep: { true }
             )
             sut.webViewHandler = webViewHandler
-            sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+            sut.actionsHandler = ActionsHandler.forOptOut(step)
             mockStageCalculator.clear()
 
             // Execute the condition action to set it as current action
@@ -819,7 +719,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // First call success
         await sut.conditionSuccess(actions: [])
@@ -855,7 +755,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // Execute multiple condition successes
         await sut.conditionSuccess(actions: [])

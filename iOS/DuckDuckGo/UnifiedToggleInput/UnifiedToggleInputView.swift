@@ -78,6 +78,10 @@ final class UnifiedToggleInputView: UIView {
         static var cardCornerRadiusCollapsed: CGFloat { OmniBarMetrics.cornerRadius }
         static let collapsedCardTopMargin: CGFloat = 10
         static let collapsedCardBottomMargin: CGFloat = 6
+        /// Priority the card's top constraint is dropped to while reproducing the measured omnibar
+        /// pill: below `cardPinnedHeightConstraint` (`.defaultHigh`) so the card keeps the pill's
+        /// 44pt height (bottom-anchored) regardless of the hosting container's height.
+        static let matchedPoseCardTopPriority: UILayoutPriority = .defaultLow
         // `.flanked` layout — 48pt capsule sized to match the fire/voice accessory height.
         static let flankedCardHeight: CGFloat = 48
         static let cardCornerRadiusFlanked: CGFloat = flankedCardHeight / 2
@@ -498,6 +502,31 @@ final class UnifiedToggleInputView: UIView {
         static let rim = "rim"
     }
 
+    /// Window-space frame of the resting omnibar pill (`searchContainer`), captured at focus time.
+    /// The bottom-position collapsed pose aligns to this so the UTI↔omnibar hand-off has no snap.
+    /// Unused at the top position, which matches via fixed omnibar margins.
+    var omnibarPillWindowFrame: CGRect?
+
+    /// Card constraint constants that reproduce the resting omnibar pill at the bottom position.
+    /// Cached at focus — when the container is laid out at its editing-start frame and the pill can
+    /// be measured — so the symmetric dismiss can land back on the pill without re-measuring (the
+    /// pill has been removed from the toolbar by then).
+    private var cachedOmnibarMatchedInsets: OmnibarMatchedInsets?
+
+    private struct OmnibarMatchedInsets {
+        let leading: CGFloat
+        let trailing: CGFloat
+        /// Gap from the card's bottom edge to the container's bottom (a stable screen-space offset);
+        /// combined with the pinned 44pt height this reproduces the pill at any container height.
+        let bottom: CGFloat
+    }
+
+    /// The collapsed pill's corner radius. The bottom floating omnibar renders as a capsule
+    /// (radius = height / 2); the top omnibar uses the standard omnibar radius.
+    private var collapsedCornerRadius: CGFloat {
+        cardPosition == .bottom ? Constants.collapsedCardHeight / 2 : Constants.cardCornerRadiusCollapsed
+    }
+
     private func cardBackgroundColor(isFireTab: Bool) -> UIColor {
         UIColor(singleUseColor: isFireTab ? .fireModeCardBackground : .unifiedToggleInputCardBackground)
     }
@@ -785,6 +814,10 @@ final class UnifiedToggleInputView: UIView {
         let expanded = layout.isExpanded
         isExpanded = expanded
         handler.isExpanded = expanded
+        // The matched omnibar pose (`applyOmnibarMatchedInsets`) drops the top constraint below the
+        // pinned height so the card stays the pill's height; restore it here so every other layout
+        // is driven by its real top/bottom margins again.
+        cardTopConstraint.priority = .required
         // Flanked: hide the in-pill voice icon (external accessories flank the pill, voice is in the Plus menu).
         // Snap synchronously so the focus animation drives the transition — animating here would snapshot at the old layout and drift.
         textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : .aiVoicePlain), animated: false)
@@ -865,7 +898,9 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.borderColor = showToolbar ? expandedBorderColor : UIColor.clear.cgColor
         let changes = {
             self.setCardFlanked(layout == .flanked)
-            self.cardView.layer.cornerRadius = dimensions.cornerRadius
+            // Bottom collapsed pose is a capsule to match the floating omnibar pill; everything
+            // else uses the layout's own radius.
+            self.cardView.layer.cornerRadius = (layout == .collapsed) ? self.collapsedCornerRadius : dimensions.cornerRadius
             self.cardTopConstraint.constant = topMargin
             self.cardLeadingConstraint.constant = hLeadingMargin
             self.cardTrailingConstraint.constant = -hTrailingMargin
@@ -974,26 +1009,75 @@ final class UnifiedToggleInputView: UIView {
         alignWithOmnibarChrome()
     }
 
-    /// Matches the UTI's chrome (top margin, corner radius, composite shadow) to the standard
-    /// omnibar so the UTI ↔ omnibar transition has no visible chrome snap at hand-off.
+    /// Matches the UTI's chrome (margins, corner radius, composite shadow) to the standard omnibar
+    /// so the UTI ↔ omnibar transition has no visible chrome snap at hand-off.
     private func alignWithOmnibarChrome() {
-        if cardPosition == .top {
+        switch cardPosition {
+        case .top:
             // Match the omnibar's symmetric 8pt nav-bar insets; otherwise the top override alone
             // would stretch the pinned 44pt height to 46pt (defaultHigh priority loses to bottom).
             cardTopConstraint.constant = Constants.cardVerticalMargin
             cardBottomConstraint.constant = -Constants.cardVerticalMargin
+            // Start width matches the omnibar so the expanded pose (set inside the animation block)
+            // can animate the card's width rather than snap it.
+            cardLeadingConstraint.constant = Constants.omnibarMatchingHorizontalMargin
+            cardTrailingConstraint.constant = -Constants.omnibarMatchingHorizontalMargin
+        case .bottom:
+            if let cached = cachedOmnibarMatchedInsets {
+                // Reproduce the measured pill pose (cached at focus) so the dismiss collapse lands
+                // back on the pill without re-measuring — it's no longer in the toolbar by then.
+                applyOmnibarMatchedInsets(cached)
+            } else {
+                // Pre-measurement fallback (and if the pill couldn't be measured): omnibar
+                // margins + collapsed vertical insets.
+                cardLeadingConstraint.constant = Constants.omnibarMatchingHorizontalMargin
+                cardTrailingConstraint.constant = -Constants.omnibarMatchingHorizontalMargin
+                cardTopConstraint.constant = Constants.collapsedCardTopMargin
+                cardBottomConstraint.constant = -Constants.collapsedCardBottomMargin
+            }
         }
-        // Start width matches the omnibar so the expanded pose (set inside the animation block) can
-        // animate the card's width rather than snap it.
-        cardLeadingConstraint.constant = Constants.omnibarMatchingHorizontalMargin
-        cardTrailingConstraint.constant = -Constants.omnibarMatchingHorizontalMargin
-        cardView.layer.cornerRadius = Constants.cardCornerRadiusCollapsed
+        cardView.layer.cornerRadius = collapsedCornerRadius
         expandedShadowView.updateShadows(omnibarMatchingShadows)
         expandedShadowView.isHidden = false
         cardView.layer.shadowOpacity = 0
         // The prior applyCardLayout committed the frame with the .collapsed margins; commit
-        // again so our cardVerticalMargin overrides propagate to the cardView's actual frame.
+        // again so our overrides propagate to the cardView's actual frame.
         layoutIfNeeded()
+    }
+
+    /// Measures the resting omnibar pill (set via `omnibarPillWindowFrame`) in this view's
+    /// coordinate space and pins the collapsed card to it, caching the result for the dismiss
+    /// collapse. Must be called once the hosting container is laid out at its editing-start frame
+    /// (bottom position only); a no-op otherwise.
+    func captureOmnibarMatchedInsets() {
+        guard cardPosition == .bottom,
+              let pill = omnibarPillWindowFrame,
+              window != nil,
+              bounds.width > 0 else { return }
+        let pillInSelf = convert(pill, from: nil)
+        let insets = OmnibarMatchedInsets(
+            leading: pillInSelf.minX,
+            trailing: -(bounds.width - pillInSelf.maxX),
+            bottom: -(bounds.height - pillInSelf.maxY))
+        cachedOmnibarMatchedInsets = insets
+        applyOmnibarMatchedInsets(insets)
+        cardView.layer.cornerRadius = collapsedCornerRadius
+        layoutIfNeeded()
+    }
+
+    private func applyOmnibarMatchedInsets(_ insets: OmnibarMatchedInsets) {
+        cardLeadingConstraint.constant = insets.leading
+        cardTrailingConstraint.constant = insets.trailing
+        // Anchor the collapsed pill by its bottom gap + pinned 44pt height rather than a fixed
+        // top+bottom pair. The hosting container is tall at focus (editing height) and short at
+        // dismiss (resting toolbar height); pinning both edges to capture-time constants would
+        // squeeze the card shorter than the pill on dismiss (a vertically squished "catseye").
+        // The bottom gap is a stable screen-space offset (container bottom → pill bottom), so a
+        // bottom-anchored, fixed-height card lands exactly on the pill at both ends.
+        cardBottomConstraint.constant = insets.bottom
+        cardTopConstraint.priority = Constants.matchedPoseCardTopPriority
+        cardPinnedHeightConstraint.constant = Constants.collapsedCardHeight
+        cardPinnedHeightConstraint.isActive = true
     }
 
     /// Snap the shadow to its collapsed-pose state. Bottom and top + toggle-off both defer the

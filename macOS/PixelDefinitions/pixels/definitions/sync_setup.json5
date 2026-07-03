@@ -1,5 +1,5 @@
 {
-    "sync_setup_barcode_screen_shown": {
+    "sync_setup_barcode_screen_shown_mac": {
         "description": "Fired when the Sync setup QR/code screen is shown.",
         "owners": ["amddg44"],
         "triggers": ["other"],
@@ -25,7 +25,7 @@
             }
         ]
     },
-    "sync_setup_barcode_code_copied": {
+    "sync_setup_barcode_code_copied_mac": {
         "description": "Fired when the user copies the Sync setup code.",
         "owners": ["amddg44"],
         "triggers": ["other"],
@@ -51,7 +51,7 @@
             }
         ]
     },
-    "sync_setup_manual_code_entry_screen_shown": {
+    "sync_setup_manual_code_entry_screen_shown_mac": {
         "description": "Fired when the Sync setup manual code-entry screen is shown.",
         "owners": ["amddg44"],
         "triggers": ["other"],
@@ -72,7 +72,7 @@
             }
         ]
     },
-    "sync_setup_manual_code_entered_success": {
+    "sync_setup_manual_code_entered_success_mac": {
         "description": "Fired when Sync setup recognizes a manually entered or pasted code.",
         "owners": ["amddg44"],
         "triggers": ["other"],
@@ -110,7 +110,7 @@
             }
         ]
     },
-    "sync_setup_manual_code_entered_failed": {
+    "sync_setup_manual_code_entered_failed_mac": {
         "description": "Fired when Sync setup rejects a manually entered or pasted code.",
         "owners": ["amddg44"],
         "triggers": ["other"],
@@ -142,7 +142,7 @@
             }
         ]
     },
-    "sync_setup_ended_abandoned": {
+    "sync_setup_ended_abandoned_mac": {
         "description": "Fired when the user abandons Sync setup before completion.",
         "owners": ["amddg44"],
         "triggers": ["other"],
@@ -174,7 +174,7 @@
             }
         ]
     },
-    "sync_setup_ended_failed": {
+    "sync_setup_ended_failed_mac": {
         "description": "Fired when Sync setup started from a recognized code but failed before completion.",
         "owners": ["amddg44"],
         "triggers": ["other"],
@@ -221,19 +221,44 @@
                 "type": "string",
                 "description": "The reason Sync setup failed, when it can be mapped safely.",
                 "enum": [
+                    "v1_failure",
                     "session_timeout",
-                    "transport_failure",
                     "invalid_credentials",
                     "already_upgraded",
                     "already_paired",
                     "account_creation_failed",
                     "account_upgrade_failed",
-                    "protocol_error"
+                    "protocol_error",
+                    "transport_failure",
+                    "unexpected_second_hello",
+                    "unexpected_event",
+                    "pairing_session_not_ready",
+                    "relay_channel_unavailable",
+                    "recovery_code_preparation_failed",
+                    "peer_recovery_code_unavailable",
+                    "unexpected_failure",
+                    "missing_3party_credential",
+                    "undecryptable_3party_credential",
+                    "account_extend_failed",
+                    "missing_3party_key",
+                    "local_storage_failed"
+                ]
+            },
+            {
+                "key": "timeout_stage",
+                "type": "string",
+                "description": "The last Pairing V2 stage before a session_timeout failure, when known.",
+                "enum": [
+                    "waiting_for_peer_hello",
+                    "waiting_for_peer_status",
+                    "waiting_for_confirmation",
+                    "waiting_for_recovery_code",
+                    "logging_in"
                 ]
             }
         ]
     },
-    "sync_setup_ended_successful": {
+    "sync_setup_ended_successful_mac": {
         "description": "Fired when Sync setup completes successfully.",
         "owners": ["amddg44"],
         "triggers": ["other"],

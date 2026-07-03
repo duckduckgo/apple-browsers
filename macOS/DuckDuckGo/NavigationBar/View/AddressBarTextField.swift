@@ -742,9 +742,29 @@ final class AddressBarTextField: NSTextField {
     }
 
     enum SuggestionWindowSizes {
-        static let padding = CGPoint(x: -20, y: 1)
-        /// Vertical offset to align suggestions panel with the AI Chat omnibar toggle
-        static let aiChatToggleVerticalOffset: CGFloat = 4
+
+        private enum ToggleAlignmentOffset {
+            static let rebrandedWithToggle: CGFloat = 2
+            static let rebrandedWithoutToggle: CGFloat = 1
+            static let legacyWithToggle: CGFloat = 4
+            static let legacyWithoutToggle: CGFloat = 0
+        }
+
+        private static let padding = CGPoint(x: -20, y: 1)
+
+        static func verticalOffset(isAppRebranded: Bool, aiChatOmnibarToggleEnabled: Bool) -> CGFloat {
+            if isAppRebranded {
+                return aiChatOmnibarToggleEnabled ? ToggleAlignmentOffset.rebrandedWithToggle : ToggleAlignmentOffset.rebrandedWithoutToggle
+            }
+
+            return aiChatOmnibarToggleEnabled ? ToggleAlignmentOffset.legacyWithToggle : ToggleAlignmentOffset.legacyWithoutToggle
+        }
+
+        static func padding(isAppRebranded: Bool, aiChatOmnibarToggleEnabled: Bool) -> CGPoint {
+            var output = padding
+            output.y += verticalOffset(isAppRebranded: isAppRebranded, aiChatOmnibarToggleEnabled: aiChatOmnibarToggleEnabled)
+            return output
+        }
     }
 
     @objc dynamic private var suggestionWindowController: NSWindowController?
@@ -839,10 +859,9 @@ final class AddressBarTextField: NSTextField {
             return
         }
 
-        let basePadding = SuggestionWindowSizes.padding
-        /// Move suggestions panel up to vertically align the toggle
-        let yOffset: CGFloat = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) ? SuggestionWindowSizes.aiChatToggleVerticalOffset : 0
-        let padding = CGPoint(x: basePadding.x, y: basePadding.y + yOffset)
+        /// Shift the panel so its top edge clears the AI Chat omnibar toggle / aligns with the focused bar.
+        let isOmnibarEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let padding = SuggestionWindowSizes.padding(isAppRebranded: themeManager.isAppRebranded, aiChatOmnibarToggleEnabled: isOmnibarEnabled)
 
         suggestionWindow.setFrame(NSRect(x: 0, y: 0, width: superview.frame.width - 2 * padding.x, height: 0), display: true)
 

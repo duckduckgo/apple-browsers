@@ -44,10 +44,13 @@ final class MockThemeManager: ThemeManaging {
         }
     }
 
-    init(featureFlagger: FeatureFlagger = MockFeatureFlagger(), appearance: ThemeAppearance = .dark, themeName: ThemeName = .default, ) {
+    let isAppRebranded: Bool
+
+    init(featureFlagger: FeatureFlagger = MockFeatureFlagger(), appearance: ThemeAppearance = .dark, themeName: ThemeName = .default, isAppRebranded: Bool = false) {
         self.featureFlagger = featureFlagger
         self.appearance = appearance
         self.theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger)
+        self.isAppRebranded = isAppRebranded
     }
 }
 #endif

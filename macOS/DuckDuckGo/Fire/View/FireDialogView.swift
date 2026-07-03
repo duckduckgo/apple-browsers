@@ -87,6 +87,7 @@ struct FireDialogView: ModalView {
 
     @ObservedObject var viewModel: FireDialogViewModel
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+    private let style = FireDialogStyle.current
     private let showIndividualSitesLink: Bool
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
@@ -228,6 +229,8 @@ struct FireDialogView: ModalView {
             ],
             containerBackground: Color(designSystemColor: .containerFillPrimary),
             containerBorder: Color(designSystemColor: .containerBorderPrimary),
+            containerCornerRadius: style.segmentedControlCornerRadius,
+            segmentCornerRadius: style.segmentedControlItemCornerRadius,
             selectedForeground: Color(designSystemColor: .accentPrimary),
             unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
             selectedIconBackground: Color(designSystemColor: .accentGlowSecondary),
@@ -253,7 +256,7 @@ struct FireDialogView: ModalView {
                     title: UserText.fireDialogTabsAndWindows,
                     subtitle: tabsSubtitle,
                     isOn: $viewModel.includeTabsAndWindows,
-                    cornerRadius: .top,
+                    roundedCorners: .top,
                     toggleId: "FireDialogView.tabsToggle"
                 )
                 .accessibilityHidden(isShowingSitesOverlay)
@@ -271,7 +274,7 @@ struct FireDialogView: ModalView {
                     viewModel.includeHistory = $0
                 },
                 isEnabled: isIncludeHistoryEnabled,
-                cornerRadius: viewModel.mode.shouldShowCloseTabsToggle ? .none : .top,
+                roundedCorners: viewModel.mode.shouldShowCloseTabsToggle ? .none : .top,
                 toggleId: "FireDialogView.historyToggle"
             )
             .accessibilityHidden(isShowingSitesOverlay)
@@ -288,7 +291,7 @@ struct FireDialogView: ModalView {
                 // grey-out the ℹ button when the toggle is Off
                 infoEnabled: viewModel.includeCookiesAndSiteData,
                 isEnabled: isIncludeCookiesAndSiteDataEnabled,
-                cornerRadius: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
+                roundedCorners: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
                 toggleId: "FireDialogView.cookiesToggle"
             )
             .disabled(!isIncludeCookiesAndSiteDataEnabled)
@@ -316,10 +319,10 @@ struct FireDialogView: ModalView {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 12.0, style: .continuous)
+            RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
                 .fill(Color(designSystemColor: .containerFillPrimary))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12.0, style: .continuous)
+                    RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
                         .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
                 )
         )
@@ -439,8 +442,8 @@ struct FireDialogView: ModalView {
         )
     }
 
-    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, cornerRadius: RowCornerRadius = .none, toggleId: String) -> some View {
-        RowWithPressEffect(cornerRadius: cornerRadius, isEnabled: isEnabled) {
+    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
+        RowWithPressEffect(roundedCorners: roundedCorners, rowCornerRadius: style.rowCornerRadius, isEnabled: isEnabled) {
             guard isEnabled else { return }
             isOn.wrappedValue.toggle()
         } content: {
@@ -483,7 +486,7 @@ struct FireDialogView: ModalView {
 
                 Group {
                     Toggle(isOn: isOn)
-                        .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accentPrimary), knobFill: Color(designSystemColor: .accentContentPrimary)))
+                        .toggleStyle(FireToggleStyle(onFill: style.knobFillColor, knobFill: Color(designSystemColor: .accentContentPrimary)))
                         .accessibilityLabel(title)
                         .accessibilityIdentifier(toggleId)
                 }
@@ -502,7 +505,7 @@ struct FireDialogView: ModalView {
     }
 
     private var fireproofSectionView: some View {
-        RowWithPressEffect(cornerRadius: .bottom, isEnabled: true) {
+        RowWithPressEffect(roundedCorners: .bottom, rowCornerRadius: style.rowCornerRadius, isEnabled: true) {
             presentManageFireproof()
         } content: {
             HStack(alignment: .center, spacing: 0) {
@@ -545,7 +548,7 @@ struct FireDialogView: ModalView {
     }
 
     private var individualSitesColor: NSColor {
-        NSColor(designSystemColor: .accentTextPrimary)
+        style.individualSitesColor
     }
 
     private var individualSitesLink: some View {
@@ -634,35 +637,54 @@ struct FireDialogView: ModalView {
     }
 }
 
+private struct FireDialogStyle {
+    let knobFillColor: Color
+    let individualSitesColor: NSColor
+    let rowCornerRadius: CGFloat
+    let segmentedControlCornerRadius: CGFloat
+    let segmentedControlItemCornerRadius: CGFloat
+
+    private static var `default`: FireDialogStyle {
+        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary), individualSitesColor: NSColor(designSystemColor: .accentTextPrimary), rowCornerRadius: 12, segmentedControlCornerRadius: 12, segmentedControlItemCornerRadius: 10)
+    }
+
+    private static var rebranded: FireDialogStyle {
+        FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent), individualSitesColor: NSColor(designSystemColor: .textPrimary), rowCornerRadius: 16, segmentedControlCornerRadius: 16, segmentedControlItemCornerRadius: 14)
+    }
+
+    static var current: FireDialogStyle {
+        DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
+    }
+}
+
 // Corner radius configuration for section rows
 private enum RowCornerRadius {
     case top
     case bottom
-    case both
     case none
 }
 
 // Modifier to apply corner clipping based on row position
 private struct RowCornerClipModifier: ViewModifier {
-    let cornerRadius: RowCornerRadius
+    let roundedCorners: RowCornerRadius
+    let roundedCornerRadius: CGFloat
 
     func body(content: Content) -> some View {
-        switch cornerRadius {
+        switch roundedCorners {
         case .none:
             content
         case .top:
-            content.clipShape(CustomRoundedCornersShape(tl: 8, tr: 8, bl: 0, br: 0))
+            content.clipShape(CustomRoundedCornersShape(tl: roundedCornerRadius, tr: roundedCornerRadius, bl: 0, br: 0))
         case .bottom:
-            content.clipShape(CustomRoundedCornersShape(tl: 0, tr: 0, bl: 8, br: 8))
-        case .both:
-            content.clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            content.clipShape(CustomRoundedCornersShape(tl: 0, tr: 0, bl: roundedCornerRadius, br: roundedCornerRadius))
         }
     }
 }
 
 // Row with press effect - visual feedback without blocking child interactions
 private struct RowWithPressEffect<Content: View>: View {
-    let cornerRadius: RowCornerRadius
+    let roundedCorners: RowCornerRadius
+    let rowCornerRadius: CGFloat
     let isEnabled: Bool
     let action: () -> Void
     @ViewBuilder let content: () -> Content
@@ -693,22 +715,19 @@ private struct RowWithPressEffect<Content: View>: View {
             }
         }
         .animation(.easeOut(duration: showFeedback ? 0.06 : 0.12), value: showFeedback)
-        .modifier(RowCornerClipModifier(cornerRadius: cornerRadius))
+        .modifier(RowCornerClipModifier(roundedCorners: roundedCorners, roundedCornerRadius: rowCornerRadius))
     }
 
     @ViewBuilder
     private var pressBackground: some View {
         let background = Color.buttonMouseDown
 
-        switch cornerRadius {
+        switch roundedCorners {
         case .top:
-            CustomRoundedCornersShape(tl: 12, tr: 12, bl: 0, br: 0)
+            CustomRoundedCornersShape(tl: rowCornerRadius, tr: rowCornerRadius, bl: 0, br: 0)
                 .fill(background)
         case .bottom:
-            CustomRoundedCornersShape(tl: 0, tr: 0, bl: 12, br: 12)
-                .fill(background)
-        case .both:
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            CustomRoundedCornersShape(tl: 0, tr: 0, bl: rowCornerRadius, br: rowCornerRadius)
                 .fill(background)
         case .none:
             Rectangle()

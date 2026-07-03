@@ -324,6 +324,15 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.finalizeOmnibarEditingDismiss()
     }
 
+    var omnibarPillWindowFrame: CGRect? {
+        get { inputBarView.omnibarPillWindowFrame }
+        set { inputBarView.omnibarPillWindowFrame = newValue }
+    }
+
+    func captureOmnibarMatchedInsets() {
+        inputBarView.captureOmnibarMatchedInsets()
+    }
+
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
         inputBarView.setInputMode(mode, animated: animated)
     }

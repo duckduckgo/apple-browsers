@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
+
 /// Semantic colors used for single use case.
 ///
 /// - Important: When used in multiple places, it should be proposed to promote the color to `DesignSystemColor`.
@@ -108,3 +110,5 @@ public extension SingleUseColor {
     }
 
 }
+
+#endif

@@ -63,30 +63,26 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let database: DataBrokerProtectionRepository?
     private let emailServiceV0: EmailServiceProtocol
     private let emailServiceV1: EmailServiceV1Protocol
-    private let featureFlagger: DBPFeatureFlagging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let debugEventHandler: ((String) -> Void)?
 
     /// - Parameters:
-    ///   - emailConfirmationStore: Persists confirmation state for email decoupling (DB in prod, in-memory in debug).
+    ///   - emailConfirmationStore: Persists confirmation state for email confirmation (DB in prod, in-memory in debug).
     ///   - database: Optional repository for DB side effects (pixels/history/scheduling). Not used in debug.
     ///   - emailServiceV0: Legacy API used for email generation and legacy confirmation lookups.
-    ///   - emailServiceV1: V1 API used for decoupled email confirmation polling and extraction.
-    ///   - featureFlagger: Controls decoupling and related flow switches.
+    ///   - emailServiceV1: V1 API used for email confirmation polling and extraction.
     ///   - pixelHandler: Optional pixel handler.
     ///   - debugEventHandler: Debug-only hook to surface email confirmation events in the UI.
     public init(emailConfirmationStore: EmailConfirmationSupporting,
                 database: DataBrokerProtectionRepository?,
                 emailServiceV0: EmailServiceProtocol,
                 emailServiceV1: EmailServiceV1Protocol,
-                featureFlagger: DBPFeatureFlagging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?,
                 debugEventHandler: ((String) -> Void)? = nil) {
         self.emailConfirmationStore = emailConfirmationStore
         self.database = database
         self.emailServiceV0 = emailServiceV0
         self.emailServiceV1 = emailServiceV1
-        self.featureFlagger = featureFlagger
         self.pixelHandler = pixelHandler
         self.debugEventHandler = debugEventHandler
     }
@@ -98,20 +94,18 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
                                                     attemptId: UUID) async throws -> EmailData {
         let emailData = try await getEmail(dataBrokerURL: dataBrokerURL, attemptId: attemptId)
 
-        if featureFlagger.isEmailConfirmationDecouplingFeatureOn {
-            guard let dataBrokerId = dataBrokerId,
-                  let profileQueryId = profileQueryId,
-                  let extractedProfileId = extractedProfileId else {
-                Logger.service.log("✉️ [EmailConfirmationDataService] Missing required IDs")
-                throw DataBrokerProtectionError.dataNotInDatabase
-            }
-
-            try emailConfirmationStore.saveOptOutEmailConfirmation(profileQueryId: profileQueryId,
-                                                                   brokerId: dataBrokerId,
-                                                                   extractedProfileId: extractedProfileId,
-                                                                   generatedEmail: emailData.emailAddress,
-                                                                   attemptID: attemptId.uuidString)
+        guard let dataBrokerId = dataBrokerId,
+              let profileQueryId = profileQueryId,
+              let extractedProfileId = extractedProfileId else {
+            Logger.service.log("✉️ [EmailConfirmationDataService] Missing required IDs")
+            throw DataBrokerProtectionError.dataNotInDatabase
         }
+
+        try emailConfirmationStore.saveOptOutEmailConfirmation(profileQueryId: profileQueryId,
+                                                               brokerId: dataBrokerId,
+                                                               extractedProfileId: extractedProfileId,
+                                                               generatedEmail: emailData.emailAddress,
+                                                               attemptID: attemptId.uuidString)
 
         return emailData
     }
@@ -181,8 +175,6 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
     }
 
     public func checkForEmailConfirmationData() async throws {
-        guard featureFlagger.isEmailConfirmationDecouplingFeatureOn else { return }
-
         Logger.service.log("✉️ [EmailConfirmationDataService] Checking for email confirmation data...")
         debugEventHandler?("Checking for email confirmation data...")
 

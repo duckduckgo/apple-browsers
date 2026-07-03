@@ -42,7 +42,6 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSelectViewAllChats()
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab)
     func unifiedInputEditingStateDidRequestTabSwitcher()
-    func unifiedInputEditingStateDidRequestTryFireMode()
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
     func unifiedInputEditingStateDidRequestSyncSetup()
 }
@@ -92,6 +91,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let syncService: DDGSyncing?
     private let syncPromoManager: SyncPromoManaging?
     private let aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting
+    private let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
 
     // MARK: - Manager Components
 
@@ -119,7 +119,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var searchDataSource: AutocompleteSuggestionsDataSource?
     /// Duck.ai sync-promo presenter; nil when there's no sync service.
     private lazy var aiChatSyncPromoViewModel: AIChatSyncPromoViewModel? =
-        syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
+        syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0,
+                                                        recentModalPromptStatusProvider: recentModalPromptStatusProvider) }
     /// Built once and rebound into the pinned chrome by `updatePinnedChrome`; its show/hide rides
     /// `isSyncPromoCardVisible`, so there's no need to reconstruct it each time.
     private lazy var syncPromoView = AnyView(AIChatSyncPromoView(
@@ -156,6 +157,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          syncService: DDGSyncing? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
+         recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
          aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
@@ -169,6 +171,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                                                                   featureFlagger: featureFlagger,
                                                                   privacyConfigurationManager: privacyConfigurationManager) }
         self.aiChatSyncIntroSheetPresenter = aiChatSyncIntroSheetPresenter
+        self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -465,12 +468,15 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func setUpContentContainer() {
         view.addSubview(contentContainerView)
         contentContainerView.translatesAutoresizingMaskIntoConstraints = false
+        let topAnchor: NSLayoutYAxisAnchor = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+            ? view.topAnchor
+            : view.safeAreaLayoutGuide.topAnchor
 
         contentContainerViewLeadingConstraint = contentContainerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor)
         contentContainerViewLeadingConstraint?.isActive = true
         contentContainerViewTrailingConstraint = contentContainerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
         contentContainerViewTrailingConstraint?.isActive = true
-        contentContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
+        contentContainerView.topAnchor.constraint(equalTo: topAnchor).isActive = true
 
         NSLayoutConstraint.activate([
             contentContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
@@ -718,7 +724,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             remoteMessagingActionHandler: ntpDeps.remoteMessagingActionHandler,
             remoteMessagingImageLoader: ntpDeps.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: ntpDeps.remoteMessagingPixelReporter,
-            fireModePromotionEligibility: ntpDeps.fireModePromotionEligibility,
             appSettings: ntpDeps.appSettings,
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,
@@ -1043,10 +1048,6 @@ extension UnifiedInputContentContainerViewController: NewTabPageControllerDelega
 
     func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
         delegate?.unifiedInputEditingStateDidRequestTabSwitcher()
-    }
-
-    func newTabPageDidRequestTryFireMode(_ controller: NewTabPageViewController) {
-        delegate?.unifiedInputEditingStateDidRequestTryFireMode()
     }
 
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {}

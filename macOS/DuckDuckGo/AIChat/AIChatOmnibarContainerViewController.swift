@@ -26,6 +26,7 @@ import AIChat
 import BrowserServicesKit
 import FeatureFlags
 import PixelKit
+import PrivacyConfig
 
 /// A container view that properly handles hit testing when used with MouseBlockingBackgroundView.
 /// Since this view is at origin (0,0) in its superview, point coordinates are equivalent in both systems.
@@ -1819,10 +1820,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func applyTheme(theme: ThemeStyleProviding) {
         let barStyleProvider = theme.addressBarStyleProvider
         let colorsProvider = theme.colorsProvider
+        let isAppRebranding = themeManager.isAppRebranded
 
         backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
-        backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
-        backgroundView.layer?.masksToBounds = false  // Don't clip subviews - important for hit testing
+        backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+
+        if isAppRebranding {
+            backgroundView.roundedCorners = [.bottomLeft, .bottomRight]
+        } else {
+            backgroundView.layer?.masksToBounds = false  // Don't clip subviews - important for hit testing
+        }
 
         if let borderColor = NSColor(named: "AddressBarBorderColor") {
             backgroundView.borderColor = borderColor
@@ -1864,13 +1871,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
 
-        innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")
         innerBorderView.backgroundColor = NSColor.clear
-        innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
+        innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+
+        if isAppRebranding {
+            innerBorderView.roundedCorners = [.bottomLeft, .bottomRight]
+        }
 
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
-        shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
+        shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         NSAppearance.withAppAppearance {
             imageUploadButton.hoverBackgroundColor = .buttonMouseOver

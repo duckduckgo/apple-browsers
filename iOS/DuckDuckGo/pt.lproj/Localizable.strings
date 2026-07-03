@@ -2524,27 +2524,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "Separadores Fire";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "Novo";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Novo! Navega sem guardar o histórico local ou inicia sessão em sites com uma conta diferente.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Agora não";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Experimenta o Fire Tabs";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Experimenta o Fire Tabs";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Experimenta os separadores Fire para navegar sem guardar o histórico local.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "Novo: Separadores Fire";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire Tab";
 

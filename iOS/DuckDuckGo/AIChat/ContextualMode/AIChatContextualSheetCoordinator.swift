@@ -326,7 +326,7 @@ private extension AIChatContextualSheetCoordinator {
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             startsPreSubmit: startsPreSubmit
         )
-        host.onAttachRequested = { [weak self] _ in
+        host.onAttachRequested = { [weak self] in
             guard let self else { return }
             self.sessionState.beginManualAttach()
             let didTrigger = self.pageContextHandler.triggerContextCollection()

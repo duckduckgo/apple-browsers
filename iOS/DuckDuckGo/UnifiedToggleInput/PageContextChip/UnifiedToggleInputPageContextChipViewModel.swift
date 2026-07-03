@@ -49,8 +49,8 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     @Published private(set) var state: AIChatContextChipView.State = .placeholder
     @Published private(set) var isVisible: Bool = false
 
-    /// Invoked when the user taps the placeholder chip and an originating URL is available.
-    var onAttachActionRequested: ((URL) -> Void)?
+    /// Invoked when the user taps the placeholder chip.
+    var onAttachActionRequested: (() -> Void)?
 
     /// Invoked when the user taps the X on the attached chip.
     var onRemoveActionRequested: (() -> Void)?
@@ -104,17 +104,17 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     }
 
     func tapToAttach() {
-        guard let url = originatingURL else {
-            Logger.contextualUTI.debug("PageContextChip tapped but no originating URL — ignoring")
-            return
+        if let url = originatingURL {
+            Logger.contextualUTI.info("PageContextChip placeholder tapped — attaching \(url.shortDescription, privacy: .private)")
+        } else {
+            Logger.contextualUTI.info("PageContextChip placeholder tapped — attaching without originating URL")
         }
-        Logger.contextualUTI.info("PageContextChip placeholder tapped — attaching \(url.shortDescription, privacy: .private)")
-        onAttachActionRequested?(url)
+        onAttachActionRequested?()
     }
 
     func tapToRemove() {
         Logger.contextualUTI.info("PageContextChip remove tapped — detaching")
-        onNavigationAwayDetachRequested?()
+        onRemoveActionRequested?()
     }
 
     var pendingAttachedContextData: AIChatPageContextData? {
@@ -140,7 +140,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         clearAttachmentState()
         // Propagate through the host so it also clears the page-context handler — otherwise
         // its cached context survives and the next prompt would carry stale context.
-        onRemoveActionRequested?()
+        onNavigationAwayDetachRequested?()
     }
 
     private func updateAttachment(_ context: AIChatPageContext?, deliveryState: PageContextAttachmentDeliveryState) {

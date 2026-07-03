@@ -57,38 +57,41 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         )
     }
 
-    func test_chipAttachAction_firesAttachCallbackWithOriginatingURL() {
+    func test_chipAttachAction_firesAttachCallback() {
         let url = URL(string: "https://example.com/a")!
-        var requestedURL: URL?
+        var attachCallCount = 0
         makeSUT()
-        sut.onAttachRequested = { requestedURL = $0 }
+        sut.onAttachRequested = { attachCallCount += 1 }
         originatingURL.send(url)
 
         sut.chipViewModel.tapToAttach()
 
-        XCTAssertEqual(requestedURL, url)
+        XCTAssertEqual(attachCallCount, 1)
     }
 
-    func test_chipAttachAction_withoutOriginatingURL_doesNotFireAttachCallback() {
-        var didRequestAttach = false
+    func test_chipAttachAction_withoutOriginatingURL_stillFiresAttachCallback() {
+        var attachCallCount = 0
         makeSUT()
-        sut.onAttachRequested = { _ in didRequestAttach = true }
+        sut.onAttachRequested = { attachCallCount += 1 }
 
         sut.chipViewModel.tapToAttach()
 
-        XCTAssertFalse(didRequestAttach)
+        XCTAssertEqual(attachCallCount, 1)
     }
 
     func test_chipRemoveAction_firesRemoveCallbackOnly() {
         let url = URL(string: "https://example.com/a")!
         var removeCallCount = 0
+        var navigationDetachCallCount = 0
         originatingURL.send(url)
         makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString))
         sut.onRemoveRequested = { removeCallCount += 1 }
+        sut.onNavigationAwayDetachRequested = { navigationDetachCallCount += 1 }
 
         sut.chipViewModel.tapToRemove()
 
         XCTAssertEqual(removeCallCount, 1)
+        XCTAssertEqual(navigationDetachCallCount, 0)
     }
 
     func test_setAttachedContext_updatesChipPresentation() {
@@ -128,7 +131,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         autoAttachEnabled = true
         var didRequestAttach = false
         makeSUT()
-        sut.onAttachRequested = { _ in didRequestAttach = true }
+        sut.onAttachRequested = { didRequestAttach = true }
 
         originatingURL.send(URL(string: "https://example.com/b"))
 

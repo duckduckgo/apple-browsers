@@ -39,7 +39,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
 
-    var onAttachRequested: ((URL) -> Void)?
+    var onAttachRequested: (() -> Void)?
     var onRemoveRequested: (() -> Void)?
     var onNavigationAwayDetachRequested: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
@@ -83,8 +83,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         )
         coordinator.delegate = self
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
-        chipViewModel.onAttachActionRequested = { [weak self] url in
-            self?.onAttachRequested?(url)
+        chipViewModel.onAttachActionRequested = { [weak self] in
+            self?.onAttachRequested?()
         }
         chipViewModel.onRemoveActionRequested = { [weak self] in
             self?.onRemoveRequested?()

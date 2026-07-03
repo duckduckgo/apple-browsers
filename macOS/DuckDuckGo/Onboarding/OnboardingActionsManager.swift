@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKit
 import Combine
 import Common
 import DuckPlayer
@@ -75,6 +76,10 @@ protocol OnboardingActionsManaging {
     /// At user imput shows the system prompt to change default browser
     func setAsDefault()
 
+    /// Emits once each time the user finishes (best-effort) the Set Default OS flow:
+    /// armed by `setAsDefault()`, fires when the app resigns active and then becomes active again.
+    var setAsDefaultCompletePublisher: AnyPublisher<Void, Never> { get }
+
     /// At user imput shows the bookmarks bar
     func setBookmarkBar(enabled: Bool)
 
@@ -123,7 +128,12 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let featureFlagger: FeatureFlagger
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
+    private let notificationCenter: NotificationCenter
     private var cancellables = Set<AnyCancellable>()
+
+    private let setAsDefaultCompleteSubject = PassthroughSubject<Void, Never>()
+    var setAsDefaultCompletePublisher: AnyPublisher<Void, Never> { setAsDefaultCompleteSubject.eraseToAnyPublisher() }
+    private var setAsDefaultReturnCancellable: AnyCancellable?
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
     static var isOnboardingFinished: Bool
@@ -149,7 +159,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
         let stepDefinitions = StepDefinitions(
             systemSettings: systemSettings,
-            getStarted: GetStarted(options: getStartedOptions)
+            getStarted: GetStarted(options: getStartedOptions),
+            makeDefaultSingle: MakeDefaultSingle(autoAdvance: true)
         )
         let preferredLocale = Bundle.main.preferredLocalizations.first ?? "en"
         var env: String
@@ -199,7 +210,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         pinningManager: PinningManager,
         featureFlagger: FeatureFlagger,
         reinstallUserDetection: ReinstallingUserDetecting,
-        installDateProvider: @escaping () -> Date
+        installDateProvider: @escaping () -> Date,
+        notificationCenter: NotificationCenter = .default
     ) {
         let chromeExtensionInstaller = ChromeExtensionInstaller(
             featureFlagger: featureFlagger,
@@ -225,7 +237,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
                 },
                 installDateProvider: installDateProvider
              ),
-            chromeExtensionInstaller: chromeExtensionInstaller
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            notificationCenter: notificationCenter
         )
     }
 
@@ -240,7 +253,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
-        chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
+        chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling,
+        notificationCenter: NotificationCenter = .default
     ) {
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
@@ -253,6 +267,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.featureFlagger = featureFlagger
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
         self.chromeExtensionInstaller = chromeExtensionInstaller
+        self.notificationCenter = notificationCenter
     }
 
     func onboardingStarted() {
@@ -307,6 +322,23 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         try? defaultBrowserProvider.presentDefaultBrowserPrompt()
         onboardingSharedPixelHandler.fire(.setDefault(.clicked(.engage)))
         didRequestDefaultBrowser = true
+        armSetAsDefaultReturnDetection()
+    }
+
+    /// The system default-browser prompt belongs to another process, so interacting with it
+    /// deactivates the app. Requiring resign-then-activate (rather than just the next
+    /// activation) avoids firing on unrelated focus churn right after the click.
+    private func armSetAsDefaultReturnDetection() {
+        setAsDefaultReturnCancellable = notificationCenter
+            .publisher(for: NSApplication.didResignActiveNotification)
+            .first()
+            .flatMap { [notificationCenter] _ in
+                notificationCenter.publisher(for: NSApplication.didBecomeActiveNotification).first()
+            }
+            .sink { [weak self] _ in
+                self?.setAsDefaultReturnCancellable = nil
+                self?.setAsDefaultCompleteSubject.send()
+            }
     }
 
     func setBookmarkBar(enabled: Bool) {

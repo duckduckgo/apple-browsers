@@ -17,6 +17,8 @@
 //
 
 import AIChat
+import AppKit
+import Combine
 import FeatureFlags
 import Onboarding
 import Persistence
@@ -101,7 +103,8 @@ class OnboardingManagerTests: XCTestCase {
         let systemSettings = SystemSettings(rows: ["dock", "import"])
         let stepDefinitions = StepDefinitions(
             systemSettings: systemSettings,
-            getStarted: GetStarted(options: [])
+            getStarted: GetStarted(options: []),
+            makeDefaultSingle: MakeDefaultSingle(autoAdvance: true)
         )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
@@ -182,7 +185,8 @@ class OnboardingManagerTests: XCTestCase {
         )
         let stepDefinitions = StepDefinitions(
             systemSettings: SystemSettings(rows: ["dock-instructions", "import"]),
-            getStarted: GetStarted(options: [])
+            getStarted: GetStarted(options: []),
+            makeDefaultSingle: MakeDefaultSingle(autoAdvance: true)
         )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
@@ -216,7 +220,8 @@ class OnboardingManagerTests: XCTestCase {
         let systemSettings = SystemSettings(rows: ["dock", "import"])
         let stepDefinitions = StepDefinitions(
             systemSettings: systemSettings,
-            getStarted: GetStarted(options: [])
+            getStarted: GetStarted(options: []),
+            makeDefaultSingle: MakeDefaultSingle(autoAdvance: true)
         )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
@@ -250,7 +255,8 @@ class OnboardingManagerTests: XCTestCase {
         let systemSettings = SystemSettings(rows: ["dock", "import"])
         let stepDefinitions = StepDefinitions(
             systemSettings: systemSettings,
-            getStarted: GetStarted(options: [])
+            getStarted: GetStarted(options: []),
+            makeDefaultSingle: MakeDefaultSingle(autoAdvance: true)
         )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
@@ -284,7 +290,8 @@ class OnboardingManagerTests: XCTestCase {
         let systemSettings = SystemSettings(rows: ["dock", "import"])
         let stepDefinitions = StepDefinitions(
             systemSettings: systemSettings,
-            getStarted: GetStarted(options: [])
+            getStarted: GetStarted(options: []),
+            makeDefaultSingle: MakeDefaultSingle(autoAdvance: true)
         )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
@@ -401,6 +408,105 @@ class OnboardingManagerTests: XCTestCase {
 
         // Then
         XCTAssertTrue(defaultBrowserProvider.presentDefaultBrowserPromptCalled)
+    }
+
+    // MARK: setAsDefaultCompletePublisher — foreground return detection
+
+    func testConfiguration_AdvertisesMakeDefaultSingleAutoAdvance() {
+        // Then
+        XCTAssertTrue(manager.configuration.stepDefinitions.makeDefaultSingle.autoAdvance)
+    }
+
+    func testSetAsDefaultCompletePublisher_EmitsOnce_WhenAppResignsThenBecomesActive() {
+        // Given
+        let notificationCenter = NotificationCenter()
+        let manager = makeManagerWithNotificationCenter(notificationCenter)
+        var emissionCount = 0
+        let cancellable = manager.setAsDefaultCompletePublisher.sink { emissionCount += 1 }
+
+        // When
+        manager.setAsDefault()
+        notificationCenter.post(name: NSApplication.didResignActiveNotification, object: nil)
+        notificationCenter.post(name: NSApplication.didBecomeActiveNotification, object: nil)
+
+        // Then
+        XCTAssertEqual(emissionCount, 1)
+        cancellable.cancel()
+    }
+
+    func testSetAsDefaultCompletePublisher_DoesNotEmit_WhenBecomeActiveWithoutPriorResign() {
+        // Given
+        let notificationCenter = NotificationCenter()
+        let manager = makeManagerWithNotificationCenter(notificationCenter)
+        var emissionCount = 0
+        let cancellable = manager.setAsDefaultCompletePublisher.sink { emissionCount += 1 }
+
+        // When
+        manager.setAsDefault()
+        notificationCenter.post(name: NSApplication.didBecomeActiveNotification, object: nil)
+
+        // Then
+        XCTAssertEqual(emissionCount, 0)
+        cancellable.cancel()
+    }
+
+    func testSetAsDefaultCompletePublisher_EmitsOnlyOnce_ForResignBecomeResignBecomeSingleArm() {
+        // Given
+        let notificationCenter = NotificationCenter()
+        let manager = makeManagerWithNotificationCenter(notificationCenter)
+        var emissionCount = 0
+        let cancellable = manager.setAsDefaultCompletePublisher.sink { emissionCount += 1 }
+
+        // When
+        manager.setAsDefault()
+        notificationCenter.post(name: NSApplication.didResignActiveNotification, object: nil)
+        notificationCenter.post(name: NSApplication.didBecomeActiveNotification, object: nil)
+        notificationCenter.post(name: NSApplication.didResignActiveNotification, object: nil)
+        notificationCenter.post(name: NSApplication.didBecomeActiveNotification, object: nil)
+
+        // Then
+        XCTAssertEqual(emissionCount, 1)
+        cancellable.cancel()
+    }
+
+    func testSetAsDefaultCompletePublisher_ReArmsAndEmitsAgain_OnSecondSetAsDefaultCall() {
+        // Given
+        let notificationCenter = NotificationCenter()
+        let manager = makeManagerWithNotificationCenter(notificationCenter)
+        var emissionCount = 0
+        let cancellable = manager.setAsDefaultCompletePublisher.sink { emissionCount += 1 }
+
+        // When: first click completes a full cycle
+        manager.setAsDefault()
+        notificationCenter.post(name: NSApplication.didResignActiveNotification, object: nil)
+        notificationCenter.post(name: NSApplication.didBecomeActiveNotification, object: nil)
+
+        // Then
+        XCTAssertEqual(emissionCount, 1)
+
+        // When: second click re-arms and completes another cycle
+        manager.setAsDefault()
+        notificationCenter.post(name: NSApplication.didResignActiveNotification, object: nil)
+        notificationCenter.post(name: NSApplication.didBecomeActiveNotification, object: nil)
+
+        // Then
+        XCTAssertEqual(emissionCount, 2)
+        cancellable.cancel()
+    }
+
+    private func makeManagerWithNotificationCenter(_ notificationCenter: NotificationCenter) -> OnboardingActionsManager {
+        OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: MockFeatureFlagger(),
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            notificationCenter: notificationCenter
+        )
     }
 
     func testOnSetBookmarksBar_andBarNotShown_ThenBarIsShown() {

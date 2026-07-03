@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKitTestsUtils
+import Combine
 import WebKit
 import XCTest
 
@@ -101,6 +102,39 @@ final class OnboardingUserScriptTests: XCTestCase {
         let result = try await handler([""], WKScriptMessage.mock())
         XCTAssertTrue(mockManager.setAsDefaultCalled)
         XCTAssertNotNil(result)
+    }
+
+    // MARK: - onSetAsDefaultComplete push
+
+    @MainActor
+    func testSetInit_CapturesWebView_ForLaterPush() async throws {
+        let webView = WKWebView()
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "init"))
+
+        _ = try await handler([""], WKScriptMessage.mock(webView: webView))
+
+        XCTAssertTrue(script.webView === webView)
+    }
+
+    @MainActor
+    func testPushSetAsDefaultComplete_DoesNothing_WhenInitHasNotCapturedAWebView() {
+        // Given: "init" has never been handled, so no webView has been captured.
+        XCTAssertNil(script.webView)
+
+        // Then: the guard on `webView` must prevent any push attempt (no crash, no-op).
+        script.pushSetAsDefaultComplete()
+    }
+
+    @MainActor
+    func testPushSetAsDefaultComplete_DoesNothing_WhenWebViewCapturedButNoBrokerAttached() async throws {
+        // Given: "init" captured a webView, but `with(broker:)` was never called.
+        let webView = WKWebView()
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "init"))
+        _ = try await handler([""], WKScriptMessage.mock(webView: webView))
+        XCTAssertNil(script.broker)
+
+        // Then: `broker?.push` is a safe no-op without a broker.
+        script.pushSetAsDefaultComplete()
     }
 
     @MainActor

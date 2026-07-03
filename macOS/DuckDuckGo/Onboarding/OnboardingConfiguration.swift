@@ -32,10 +32,20 @@ struct OnboardingConfiguration: Codable, Equatable {
 struct StepDefinitions: Codable, Equatable {
     var systemSettings: SystemSettings
     var getStarted: GetStarted
+    var makeDefaultSingle: MakeDefaultSingle
 }
 
 struct GetStarted: Codable, Equatable {
     var options: [String]
+}
+
+/// Advertises the "Set Default" step capabilities to the FE.
+///
+/// macOS never learns which option the user picked in the system prompt, so `autoAdvance`
+/// tells the FE it can rely on the best-effort `onSetAsDefaultComplete` push (fired on the
+/// first app resign-then-become-active cycle after the request) to move past the step.
+struct MakeDefaultSingle: Codable, Equatable {
+    var autoAdvance: Bool
 }
 
 struct SystemSettings: Codable, Equatable {

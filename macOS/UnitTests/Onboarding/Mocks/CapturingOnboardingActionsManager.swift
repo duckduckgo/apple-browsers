@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -24,7 +25,8 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var configuration: OnboardingConfiguration = OnboardingConfiguration(
         stepDefinitions: StepDefinitions(
             systemSettings: SystemSettings(rows: []),
-            getStarted: GetStarted(options: [])
+            getStarted: GetStarted(options: []),
+            makeDefaultSingle: MakeDefaultSingle(autoAdvance: true)
         ),
         exclude: [],
         order: "",
@@ -32,6 +34,9 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
         locale: "en",
         platform: .init(name: "")
     )
+
+    let setAsDefaultCompleteSubject = PassthroughSubject<Void, Never>()
+    var setAsDefaultCompletePublisher: AnyPublisher<Void, Never> { setAsDefaultCompleteSubject.eraseToAnyPublisher() }
 
     var goToAddressBarCalled = false
     var goToSettingsCalled = false

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Common
 import FoundationExtensions
 import Foundation
@@ -29,6 +30,9 @@ final class OnboardingUserScript: NSObject, Subfeature {
     var messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "onboarding")])
     let featureName: String = "onboarding"
     weak var broker: UserScriptMessageBroker?
+    weak var webView: WKWebView?
+
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - MessageNames
     enum MessageNames: String, CaseIterable {
@@ -52,8 +56,21 @@ final class OnboardingUserScript: NSObject, Subfeature {
         case telemetryEvent
     }
 
+    /// Subscription events pushed from native to the onboarding page.
+    enum SubscriptionMethodNames: String {
+        case onSetAsDefaultComplete
+    }
+
     init(onboardingActionsManager: OnboardingActionsManaging) {
         self.onboardingActionsManager = onboardingActionsManager
+        super.init()
+
+        onboardingActionsManager.setAsDefaultCompletePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.pushSetAsDefaultComplete()
+            }
+            .store(in: &cancellables)
     }
 
     public func with(broker: UserScriptMessageBroker) {
@@ -95,6 +112,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
 extension OnboardingUserScript {
     @MainActor
     private func setInit(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        webView = original.webView
         onboardingActionsManager.onboardingStarted()
         return onboardingActionsManager.configuration
     }
@@ -131,6 +149,13 @@ extension OnboardingUserScript {
     private func requestSetAsDefault(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         onboardingActionsManager.setAsDefault()
         return Result()
+    }
+
+    /// Pushed to the page at most once per `requestSetAsDefault`, on the first app
+    /// resign-active → become-active cycle afterwards (see `setAsDefaultCompletePublisher`).
+    func pushSetAsDefaultComplete() {
+        guard let webView else { return }
+        broker?.push(method: SubscriptionMethodNames.onSetAsDefaultComplete.rawValue, params: [String: String](), for: self, into: webView)
     }
 
     @MainActor

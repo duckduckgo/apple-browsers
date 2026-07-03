@@ -62,12 +62,6 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         NewTabPageNextStepsCardsDebugPersistor()
     }()
 
-    private static let onboardingCardIDs: Set<NewTabPageDataModel.CardID> = [
-        .defaultApp,
-        .addAppToDockMac,
-        .bringStuff
-    ]
-
     enum Constants {
         /// Maximum times a card can be dismissed before it is permanently hidden.
         ///
@@ -80,17 +74,12 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         /// How many days to prioritize Level 1 cards before highlighting Level 2 cards.
         static let cardLevel1PriorityDays = 2
 
-        /// How many New Tab Page impressions to wait before showing onboarding-related cards.
-        static let onboardingCardNTPImpressionDelay = 3
+        /// Maximum number of Next Steps cards shown in the visible stack at once (advanced ordering).
+        static let maxVisibleCards = 3
     }
 
     /// Whether to use standard or advanced ordering for the card list.
     private var shouldUseAdvancedCardOrdering: Bool
-
-    /// Whether onboarding-related cards are currently being delayed (delay is enabled and active).
-    private var isOnboardingCardDelayActive: Bool {
-        shouldUseAdvancedCardOrdering && persistor.ntpImpressionCount < Constants.onboardingCardNTPImpressionDelay
-    }
 
     /// Which card level to show first in the list of cards.
     /// This is used to swap the card order after `cardLevel1DemonstrationDays` have passed.
@@ -225,7 +214,9 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         }
 
         shuffleStandardCardsIfNeeded()
-        refreshCardList(recordNewCardImpression: false)
+        if !shouldUseAdvancedCardOrdering {
+            refreshCardList(recordNewCardImpression: false)
+        }
         observeCardVisibilityChanges()
         observeKeyWindowChanges()
         observeNewTabPageWebViewDidAppear()
@@ -267,11 +258,13 @@ private extension NewTabPageNextStepsSingleCardProvider {
     /// Refreshes the card list based on card visibility conditions and ordering logic.
     ///
     /// - Parameters:
-    ///   - updateOrder: Whether to update the card order. Set to false to check if cards are still eligible to be shown, for example after returning to the app or changing a setting that impacts card visibility, without affecting card order. Defaults to true.
+    ///   - updateOrder: When true, runs the full advanced-ordering pipeline (level swap, slice to 3, rotation).
+    ///     Only set from `newTabPageWebViewDidAppear`. Mid-session refreshes prune the current stack only.
     ///   - recordNewCardImpression: Whether to record an impression for the newly visible card if the first card in the list has changed after the refresh. Defaults to true.
-    func refreshCardList(updateOrder: Bool = true, recordNewCardImpression: Bool = true) {
+    func refreshCardList(updateOrder: Bool = false, recordNewCardImpression: Bool = true) {
         let cards = visibleCards(updateOrder: updateOrder)
-        if cards.isEmpty && !hasPendingOnboardingCards() {
+
+        if cards.isEmpty && !hasRemainingEligibleCards() {
             appearancePreferences.continueSetUpCardsClosed = true
         }
 
@@ -286,21 +279,85 @@ private extension NewTabPageNextStepsSingleCardProvider {
         guard shouldUseAdvancedCardOrdering else {
             return standardCards.filter(shouldShowCard)
         }
-
-        var ordered = persistor.orderedCardIDs ?? defaultAdvancedCards.map(\.cardID)
         if updateOrder {
-            ordered = applyAdvancedCardOrdering(to: ordered)
+            return buildVisibleStackWithAdvancedOrdering()
+        } else {
+            return cardList.filter(shouldShowCard)
         }
-        let orderedVisibleCards = ordered.filter(shouldShowCard)
+    }
 
+    /// Builds the visible stack of cards for the New Tab Page load, applying advanced ordering logic:
+    /// - Swapping card levels after a certain number of days have passed, to highlight higher impact/effort cards.
+    /// - Limiting the visible stack to a maximum number of cards, to avoid card overwhelm.
+    /// - Rotating the top card in the visible stack after a maximum number of impressions, to avoid card blindness.
+    func buildVisibleStackWithAdvancedOrdering() -> [NewTabPageDataModel.CardID] {
+        let baseOrder = persistor.orderedCardIDs ?? defaultAdvancedCards.map(\.cardID)
+        var resolvedOrder = applyLevelSwapIfNeeded(to: baseOrder)
+
+        var visibleStack = Array(
+            resolvedOrder
+                .filter(shouldShowCard)
+                .prefix(Constants.maxVisibleCards)
+        )
+
+        if let rotatedVisibleStack = applyVisibleStackRotationIfNeeded(to: visibleStack) {
+            visibleStack = rotatedVisibleStack
+            resolvedOrder = rebuildOrderedCardIDs(resolvedOrder, applyingVisibleOrder: visibleStack)
+        }
+
+        if persistor.orderedCardIDs != resolvedOrder {
+            persistor.orderedCardIDs = resolvedOrder
+        }
+
+        persistDebugVisibleCardsIfNeeded(visibleStack)
+
+        return visibleStack
+    }
+
+    func applyLevelSwapIfNeeded(to orderedCards: [NewTabPageDataModel.CardID]) -> [NewTabPageDataModel.CardID] {
+        guard firstCardLevel == .level1,
+              appearancePreferences.nextStepsCardsDemonstrationDays >= Constants.cardLevel1PriorityDays else {
+            return orderedCards
+        }
+
+        firstCardLevel = .level2
+        return orderedCards
+            .compactMap { cardID in defaultAdvancedCards.first(where: { $0.cardID == cardID }) }
+            .sorted { $0.level.rawValue > $1.level.rawValue }
+            .map(\.cardID)
+    }
+
+    func applyVisibleStackRotationIfNeeded(to visibleStack: [NewTabPageDataModel.CardID]) -> [NewTabPageDataModel.CardID]? {
+        guard let topCard = visibleStack.first else { return nil }
+
+        let impressions = persistor.timesShown(for: topCard)
+        guard impressions > 0, impressions % Constants.maxTimesCardShown == 0 else {
+            return nil
+        }
+
+        var rotatedStack = visibleStack
+        let card = rotatedStack.removeFirst()
+        rotatedStack.append(card)
+
+        return rotatedStack
+    }
+
+    func rebuildOrderedCardIDs(_ orderedCardIDs: [NewTabPageDataModel.CardID],
+                               applyingVisibleOrder visibleOrder: [NewTabPageDataModel.CardID]) -> [NewTabPageDataModel.CardID] {
+        let visibleSet = Set(visibleOrder)
+        var visibleIterator = visibleOrder.makeIterator()
+
+        return orderedCardIDs.map { cardID in
+            guard visibleSet.contains(cardID) else { return cardID }
+            return visibleIterator.next() ?? cardID
+        }
+    }
+
+    func persistDebugVisibleCardsIfNeeded(_ visibleCards: [NewTabPageDataModel.CardID]) {
         let buildType = StandardApplicationBuildType()
         if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
-            // Persist visible cards for debug menu actions
-            // Otherwise, we don't need to persist this because we want to check card visibility each time cards are shown
-            debugPersistor.debugVisibleCards = orderedVisibleCards
+            debugPersistor.debugVisibleCards = visibleCards
         }
-
-        return orderedVisibleCards
     }
 
     /// Records an impression for the provided card.
@@ -316,58 +373,13 @@ private extension NewTabPageNextStepsSingleCardProvider {
         standardCards = [.defaultApp] + shuffledCards
     }
 
-    /// Returns the card list sorted by card level and persisted card order.
-    func applyAdvancedCardOrdering(to cards: [NewTabPageDataModel.CardID]) -> [NewTabPageDataModel.CardID] {
-        var orderedCards = cards
-
-        // Check if the first visible card has been shown 10+ times, and move it to the end of the list
-        if let firstVisibleCard = orderedCards.first(where: shouldShowCard) {
-            let cardImpressions = persistor.timesShown(for: firstVisibleCard)
-            if cardImpressions > 0,
-               cardImpressions % Constants.maxTimesCardShown == 0,
-               let index = orderedCards.firstIndex(where: { $0 == firstVisibleCard }) {
-                let card = orderedCards.remove(at: index)
-                orderedCards.append(card)
-            }
-        }
-
-        // Swap the order of levels if needed.
-        // This refreshes the list to highlight level 2 cards after level 1 cards are done being prioritized.
-        if firstCardLevel == .level1 && appearancePreferences.nextStepsCardsDemonstrationDays >= Constants.cardLevel1PriorityDays {
-            firstCardLevel = .level2
-            orderedCards = orderedCards
-                .compactMap { cardID in defaultAdvancedCards.first(where: { $0.cardID == cardID }) }
-                .sorted { $0.level.rawValue > $1.level.rawValue }
-                .map { $0.cardID }
-        }
-
-        // Persist the full ordered list if needed.
-        if persistor.orderedCardIDs != orderedCards {
-            persistor.orderedCardIDs = orderedCards
-        }
-
-        return orderedCards
-    }
-
     /// Returns whether the card should be shown in the list of visible cards.
     /// This checks the following conditions:
     /// - Whether the card has been permanently dismissed
     /// - Whether the card's specific visibility conditions are met.
-    /// - For onboarding cards when `nextStepsListAdvancedCardOrdering` is enabled, whether the delay has passed to start showing them.
     func shouldShowCard(_ card: NewTabPageDataModel.CardID) -> Bool {
-        guard !isCardPermanentlyDismissed(card) else {
-            return false
-        }
-        guard isCardEligible(card) else {
-            return false
-        }
-        if isOnboardingCardDelayActive && Self.onboardingCardIDs.contains(card) {
-            return false
-        }
-        return true
-    }
+        guard !isCardPermanentlyDismissed(card) else { return false }
 
-    func isCardEligible(_ card: NewTabPageDataModel.CardID) -> Bool {
         switch card {
         case .defaultApp:
             return !defaultBrowserProvider.isDefault
@@ -390,13 +402,10 @@ private extension NewTabPageNextStepsSingleCardProvider {
         }
     }
 
-    func hasPendingOnboardingCards() -> Bool {
-        guard isOnboardingCardDelayActive else {
-            return false
-        }
-        return Self.onboardingCardIDs.contains { card in
-            isCardEligible(card) && !isCardPermanentlyDismissed(card)
-        }
+    func hasRemainingEligibleCards() -> Bool {
+        guard shouldUseAdvancedCardOrdering else { return false }
+        let ordered = persistor.orderedCardIDs ?? defaultAdvancedCards.map(\.cardID)
+        return ordered.contains(where: shouldShowCard)
     }
 
     func isCardPermanentlyDismissed(_ card: NewTabPageDataModel.CardID) -> Bool {
@@ -434,8 +443,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
             .combineLatest(appearancePreferences.$didChangeAnyNewTabPageCustomizationSetting.removeDuplicates())
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                // Only refresh the list based on card visibility changes.
-                self?.refreshCardList(updateOrder: false)
+                self?.refreshCardList()
             }
             .store(in: &cancellables)
     }
@@ -448,8 +456,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
             .sink { _ in
                 DispatchQueue.main.async { [weak self] in
-                    // Only refresh the list based on card visibility changes, e.g. if the default browser setting has changed.
-                    self?.refreshCardList(updateOrder: false)
+                    self?.refreshCardList()
                 }
             }
             .store(in: &cancellables)
@@ -473,7 +480,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
                 }
                 // We record an impression for the visible card unconditionally when the New Tab Page is opened,
                 // not only when a new card is visible due to the card list refresh.
-                refreshCardList(recordNewCardImpression: false)
+                refreshCardList(updateOrder: true, recordNewCardImpression: false)
                 if !isNextStepsCardsComplete {
                     recordImpression(for: cards.first)
                     persistor.ntpImpressionCount += 1

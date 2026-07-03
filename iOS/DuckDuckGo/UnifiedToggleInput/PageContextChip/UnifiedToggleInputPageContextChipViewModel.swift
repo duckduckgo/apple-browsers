@@ -55,6 +55,10 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     /// Invoked when the user taps the X on the attached chip.
     var onRemoveActionRequested: (() -> Void)?
 
+    /// Invoked when the attached chip is cleared because the tab navigated away while
+    /// auto-attach is off. This is not a user removal.
+    var onNavigationAwayDetachRequested: (() -> Void)?
+
     private let isAutoAttachEnabled: () -> Bool
     private(set) var attachedContext: AIChatPageContext?
     private var attachedURL: URL?
@@ -110,7 +114,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
     func tapToRemove() {
         Logger.contextualUTI.info("PageContextChip remove tapped — detaching")
-        onRemoveActionRequested?()
+        onNavigationAwayDetachRequested?()
     }
 
     var pendingAttachedContextData: AIChatPageContextData? {

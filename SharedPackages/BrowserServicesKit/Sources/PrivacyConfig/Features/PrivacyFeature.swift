@@ -464,6 +464,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// roll out the new Duck.ai-tab nav UI (no toggle on chat) independently of the master flag.
     case aiChatTabHideToggle
 
+    /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
+    case contextualUnifiedToggleInput
+
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 
@@ -518,9 +521,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables voice chat shortcut in the focused address bar
     case voiceShortcut
-
-    /// Enables improved contextual sheet UX (welcome message, ask about page, etc.)
-    case contextualSheetImprovements
 
     /// Enables removing individual AI chat suggestions
     case removeSuggestion

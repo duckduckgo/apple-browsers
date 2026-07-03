@@ -308,9 +308,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1213651297612976?focus=true
     case aiChatNativeChatHistory
 
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1213651262338059
-    case aiChatContextualSheetImprovements
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
     case showWhatsNewPromptOnDemand
 
@@ -329,6 +326,9 @@ public enum FeatureFlag: String {
     /// `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab`.
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1214995978971487?focus=true
     case aiChatTabHideToggle
+
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1212289671815991
+    case aiChatContextualUnifiedToggleInput
 
     /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
@@ -714,8 +714,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled))
         case .aiChatNativeChatHistory:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.nativeChatHistory))
-        case .aiChatContextualSheetImprovements:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualSheetImprovements))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .unifiedToggleInput:
@@ -726,6 +724,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                    supportsLocalOverriding: false)
         case .aiChatTabHideToggle:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
+        case .aiChatContextualUnifiedToggleInput:
+            Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .tabSwitcherTrackerCount:

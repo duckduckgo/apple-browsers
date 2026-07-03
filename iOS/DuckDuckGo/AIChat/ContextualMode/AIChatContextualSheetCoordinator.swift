@@ -169,8 +169,8 @@ final class AIChatContextualSheetCoordinator {
         self.sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         self.sessionEffectCancellable = self.sessionState.effects
             .sink { [weak self] effect in
-                guard case .deliverPageContext(let context) = effect else { return }
-                self?.deliverPageContext(context)
+                guard case .deliverPageContext(let context, let targets) = effect else { return }
+                self?.deliverPageContext(context, targets: targets)
             }
     }
 
@@ -403,12 +403,12 @@ private extension AIChatContextualSheetCoordinator {
             }
     }
 
-    func deliverPageContext(_ context: AIChatPageContextData?) {
-        if let host = persistentUTIHost, sessionState.shouldDeliverToUTIChip(context) {
+    func deliverPageContext(_ context: AIChatPageContextData?, targets: PageContextDeliveryTargets) {
+        if let host = persistentUTIHost, targets.contains(.utiChip) {
             deliverToUTIChip(context, host: host)
         }
 
-        if sessionState.shouldDeliverToFrontendBridge(context) {
+        if targets.contains(.frontendBridge) {
             sheetViewController?.pushPageContext(context)
         }
     }

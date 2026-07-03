@@ -74,8 +74,15 @@ struct SheetViewState {
 enum SheetEffect {
     case submitPrompt(prompt: String, context: AIChatPageContextData?)
     case reloadWebView
-    case deliverPageContext(AIChatPageContextData?)
+    case deliverPageContext(AIChatPageContextData?, targets: PageContextDeliveryTargets)
     case clearPrompt
+}
+
+struct PageContextDeliveryTargets: OptionSet {
+    let rawValue: Int
+
+    static let utiChip = PageContextDeliveryTargets(rawValue: 1 << 0)
+    static let frontendBridge = PageContextDeliveryTargets(rawValue: 1 << 1)
 }
 
 // MARK: - Session State
@@ -343,7 +350,7 @@ final class AIChatContextualChatSessionState {
     /// so the FE can show the "Add page content" button for the new page.
     func notifyFrontendOfMultiContextNavigation() {
         guard supportsMultipleContexts, shouldDeliverToFrontendBridge(nil) else { return }
-        emit(.deliverPageContext(nil))
+        emit(.deliverPageContext(nil, targets: .frontendBridge))
         Logger.aiChat.debug("[SessionState] Sent null context navigation signal to frontend")
     }
 
@@ -545,7 +552,14 @@ private extension AIChatContextualChatSessionState {
     }
 
     func emitDeliveryIfNeeded(_ context: AIChatPageContextData?) {
-        guard shouldDeliverToUTIChip(context) || shouldDeliverToFrontendBridge(context) else { return }
-        emit(.deliverPageContext(context))
+        var targets: PageContextDeliveryTargets = []
+        if shouldDeliverToUTIChip(context) {
+            targets.insert(.utiChip)
+        }
+        if shouldDeliverToFrontendBridge(context) {
+            targets.insert(.frontendBridge)
+        }
+        guard !targets.isEmpty else { return }
+        emit(.deliverPageContext(context, targets: targets))
     }
 }

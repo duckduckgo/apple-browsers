@@ -609,8 +609,9 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .deliverPageContext(let contextData) = receivedEffect {
+        if case .deliverPageContext(let contextData, let targets) = receivedEffect {
             XCTAssertEqual(contextData?.title, "Test Page")
+            XCTAssertEqual(targets, .frontendBridge)
         } else {
             XCTFail("Expected deliverPageContext effect")
         }
@@ -713,7 +714,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         var deliveredContexts: [AIChatPageContextData?] = []
         sessionState.effects
             .sink { effect in
-                if case .deliverPageContext(let data) = effect {
+                if case .deliverPageContext(let data, _) = effect {
                     deliveredContexts.append(data)
                 }
             }
@@ -806,7 +807,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         var pushedContexts: [AIChatPageContextData?] = []
         sessionState.effects
             .sink { effect in
-                if case .deliverPageContext(let data) = effect {
+                if case .deliverPageContext(let data, _) = effect {
                     pushedContexts.append(data)
                 }
             }
@@ -856,7 +857,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         var deliveredContexts: [AIChatPageContextData?] = []
         sessionState.effects
             .sink { effect in
-                if case .deliverPageContext(let data) = effect {
+                if case .deliverPageContext(let data, _) = effect {
                     deliveredContexts.append(data)
                 }
             }
@@ -906,7 +907,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertFalse(sessionState.hasDeliveredPageContext(context))
     }
 
-    func testNotifyFrontendOfNavigationEmitsNullContextWhenFlagEnabled() {
+    func testNotifyFrontendOfNavigationEmitsFrontendOnlyNullContextWhenFlagEnabled() {
         // Given - chat with initial context, flag ON
         // Note: auto-attach ON is only needed to reach .chatWithInitialContext state.
         // In production, notifyFrontendOfMultiContextNavigation() is called when auto-collect is OFF.
@@ -933,8 +934,10 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .deliverPageContext(let contextData) = receivedEffect {
+        if case .deliverPageContext(let contextData, let targets) = receivedEffect {
             XCTAssertNil(contextData)
+            XCTAssertEqual(targets, .frontendBridge)
+            XCTAssertFalse(targets.contains(.utiChip))
         } else {
             XCTFail("Expected deliverPageContext effect with nil")
         }

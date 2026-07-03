@@ -388,7 +388,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var receivedNullPush = false
         sut.sessionState.effects
             .sink { effect in
-                if case .deliverPageContext(let data) = effect, data == nil {
+                if case .deliverPageContext(let data, let targets) = effect, data == nil, targets == .frontendBridge {
                     receivedNullPush = true
                 }
             }

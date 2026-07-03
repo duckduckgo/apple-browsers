@@ -57,7 +57,6 @@ final class FileDownloadManagerTests: XCTestCase {
 
     override func tearDown() {
         FileManager.restoreUrlsForIn()
-        customAssertionFailure = nil
         self.chooseDestination = nil
         self.fileIconFlyAnimationOriginalRect = nil
         preferences.alwaysRequestDownloadLocation = false
@@ -300,9 +299,6 @@ final class FileDownloadManagerTests: XCTestCase {
         // Inject a write failure to simulate a persistent OS error (e.g. disk full).
         let writeError = CocoaError(.fileWriteOutOfSpace)
         dm.reservePlaceholderFile = { _ in throw writeError }
-        // pixelAssertionFailure → assertionFailure → customAssertionFailure: capture instead of crashing.
-        var assertionMessage: String?
-        customAssertionFailure = { message, _, _ in assertionMessage = message() }
 
         let download = WKDownloadMock(url: .duckDuckGo)
         let task = dm.add(download, fireWindowSession: nil, delegate: self, destination: .auto)
@@ -319,12 +315,9 @@ final class FileDownloadManagerTests: XCTestCase {
 
         waitForExpectations(timeout: 5)
 
-        // The pixel assertion must fire with the right message.
-        XCTAssertEqual(assertionMessage, "Failed to create file in the Downloads folder")
-
         // The task must be in .failed state with the real underlying error — not silently cancelled.
         if case .failed(_, _, _, let error) = task.state {
-            let nsError = (error.underlyingError as? NSError)
+            let nsError = error.underlyingError as NSError?
             XCTAssertEqual(nsError?.domain, NSCocoaErrorDomain)
             XCTAssertEqual(nsError?.code, NSFileWriteOutOfSpaceError)
         } else {

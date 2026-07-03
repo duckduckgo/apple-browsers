@@ -221,7 +221,7 @@ extension FileDownloadManager: WebKitDownloadTaskDelegate {
         // download to default Downloads destination
         guard let downloadLocation = preferences.effectiveDownloadLocation ?? DownloadsPreferences.defaultDownloadLocation(validate: false /* verify later */) else {
             pixelAssertionFailure("Failed to access Downloads folder")
-            return (nil, nil)
+            return await requestDestinationFromUser(for: task, suggestedFilename: suggestedFilename, suggestedFileType: fileType)
         }
 
         let fileName = suggestedFilename.isEmpty ? "download".appendingPathExtension(fileType?.preferredFilenameExtension) : suggestedFilename
@@ -254,16 +254,14 @@ extension FileDownloadManager: WebKitDownloadTaskDelegate {
                 NSFileWriteOutOfSpaceError,       // ENOSPC  — disk full
                 NSFileWriteVolumeReadOnlyError,   // EROFS   — read-only filesystem
                 NSFileWriteNoPermissionError,     // EACCES/EPERM — no write permission
-                NSFileWriteUnknownError,          // catch-all for unexpected write failures
                 NSFileNoSuchFileError,            // ENOENT  — parent dir removed / volume unmounted
+                NSFileWriteUnknownError,          // catch-all for unexpected write failures
             ]
-            if nsError.domain == NSCocoaErrorDomain && legitimateWriteErrorCodes.contains(nsError.code) {
-                pixelAssertionFailure("Failed to create file in the Downloads folder", error: error)
-                throw error
+            Logger.fileDownload.error("Failed to create file in the Downloads folder: \(error)")
+            if !(nsError.domain == NSCocoaErrorDomain && legitimateWriteErrorCodes.contains(nsError.code)) {
+                pixelAssertionFailure("Failed to create file in the Downloads folder with unexpected error", error: error)
             }
-            // Any other error (e.g. withNonExistentUrl exhausted its limit): fire pixel and cancel silently.
-            pixelAssertionFailure("Failed to create file in the Downloads folder", error: error)
-            return (nil, nil)
+            throw error
         }
 
         return (url, fileType)

@@ -3627,6 +3627,72 @@ extension TabViewController: WKUIDelegate {
     
 }
 
+// MARK: - GeolocationUserScriptDelegate (GEOLOCATION SPIKE — throwaway, do not merge)
+extension TabViewController: GeolocationUserScriptDelegate {
+
+    func geolocationUserScript(_ script: GeolocationUserScript,
+                               didRequestPositionFor request: WebGeolocationRequest,
+                               emit: @escaping (GeolocationEmission) -> Void) {
+        resolveGeolocationPermission(script: script, origin: request.origin) { allowed in
+            // Keep navigator.permissions.query({name:'geolocation'}) in sync.
+            script.notifyPermissionState(allowed ? "granted" : "denied", in: request.frameInfo)
+            guard allowed else {
+                emit(.error(code: 1, message: "User denied Geolocation"))
+                return
+            }
+            if request.isWatch {
+                script.provider.startWatch(id: request.id,
+                                           highAccuracy: request.enableHighAccuracy,
+                                           completion: emit)
+            } else {
+                script.provider.requestOneShot(id: request.id,
+                                               highAccuracy: request.enableHighAccuracy,
+                                               timeout: request.timeout,
+                                               maximumAge: request.maximumAge,
+                                               completion: emit)
+            }
+        }
+    }
+
+    func geolocationUserScript(_ script: GeolocationUserScript, didClearWatchWithID id: Int) {
+        script.provider.stopSubscription(id: id)
+    }
+
+    /// Per-tab in-memory decision cache; coalesces concurrent prompts for the same origin.
+    private func resolveGeolocationPermission(script: GeolocationUserScript,
+                                              origin: String,
+                                              completion: @escaping (Bool) -> Void) {
+        if script.grantedOrigins.contains(origin) { completion(true); return }
+        if script.deniedOrigins.contains(origin) { completion(false); return }
+        if script.pendingPrompts[origin] != nil {
+            script.pendingPrompts[origin]?.append(completion)
+            return
+        }
+        script.pendingPrompts[origin] = [completion]
+        presentGeolocationPrompt(origin: origin) { allowed in
+            if allowed { script.grantedOrigins.insert(origin) } else { script.deniedOrigins.insert(origin) }
+            let waiters = script.pendingPrompts.removeValue(forKey: origin) ?? []
+            waiters.forEach { $0(allowed) }
+        }
+    }
+
+    /// Trivial placeholder allow/deny prompt (no design — spike only).
+    private func presentGeolocationPrompt(origin: String, completion: @escaping (Bool) -> Void) {
+        let alert = UIAlertController(title: "Location access",
+                                      message: "\(origin) wants to use your location.",
+                                      preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Don't Allow", style: .cancel) { _ in completion(false) })
+        alert.addAction(UIAlertAction(title: "Allow", style: .default) { _ in completion(true) })
+
+        // Present from the top-most controller so we don't collide with any other modal.
+        var presenter: UIViewController = self
+        while let presented = presenter.presentedViewController, !(presented is UIAlertController) {
+            presenter = presented
+        }
+        presenter.present(alert, animated: true)
+    }
+}
+
 // MARK: - UIGestureRecognizerDelegate
 extension TabViewController: UIGestureRecognizerDelegate {
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -3752,6 +3818,9 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.faviconScript.delegate = faviconUpdater
         userScripts.printingSubfeature.delegate = self
         userScripts.loginFormDetectionScript?.delegate = self
+        // GEOLOCATION SPIKE
+        userScripts.geolocationUserScript.delegate = self
+        userScripts.geolocationUserScript.webView = webView
         userScripts.autoconsentUserScript.delegate = self
         userScripts.autoconsentUserScript.management = autoconsentManagement
         userScripts.contentScopeUserScript.delegate = self

@@ -27,15 +27,17 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
 
     private var originatingURL: CurrentValueSubject<URL?, Never>!
     private var sut: UnifiedToggleInputPageContextChipViewModel!
-    private var attachCalls: [URL] = []
+    private var attachCalls: Int = 0
     private var removeCalls: Int = 0
+    private var navigationAwayDetachCalls: Int = 0
     private var autoAttachEnabled = false
 
     override func setUp() async throws {
         try await super.setUp()
         originatingURL = .init(nil)
-        attachCalls = []
+        attachCalls = 0
         removeCalls = 0
+        navigationAwayDetachCalls = 0
         autoAttachEnabled = false
     }
 
@@ -49,8 +51,9 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false }
         )
-        sut.onAttachActionRequested = { [weak self] url in self?.attachCalls.append(url) }
+        sut.onAttachActionRequested = { [weak self] in self?.attachCalls += 1 }
         sut.onRemoveActionRequested = { [weak self] in self?.removeCalls += 1 }
+        sut.onNavigationAwayDetachRequested = { [weak self] in self?.navigationAwayDetachCalls += 1 }
     }
 
     // MARK: - State transitions
@@ -78,22 +81,24 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqualState(sut.state, .placeholder)
     }
 
-    func test_autoAttachOff_navigationAway_invokesRemoveCallback() {
-        // Regression: nav-away clearing must propagate through onRemoveActionRequested so the
-        // host clears the FE-side cached page context. Otherwise the next prompt would ship
-        // stale context even though the chip displays placeholder.
+    func test_autoAttachOff_navigationAway_invokesNavigationAwayDetachCallback() {
+        // Regression: nav-away clearing must propagate through the host so it clears the FE-side
+        // cached page context. Otherwise the next prompt would ship stale context even though the
+        // chip displays placeholder.
         let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: attachedUrl))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl))
         XCTAssertEqual(removeCalls, 0)
+        XCTAssertEqual(navigationAwayDetachCalls, 0)
 
         originatingURL.send(URL(string: "https://en.wikipedia.org/wiki/Dog"))
-        XCTAssertEqual(removeCalls, 1)
+        XCTAssertEqual(removeCalls, 0)
+        XCTAssertEqual(navigationAwayDetachCalls, 1)
     }
 
-    func test_autoAttachOn_navigationAway_doesNotInvokeRemoveCallback() {
+    func test_autoAttachOn_navigationAway_doesNotInvokeDetachCallback() {
         // With auto-attach ON, the attachment is preserved while the host re-collects, so
-        // the remove callback must NOT fire on nav-away.
+        // the detach callback must NOT fire on nav-away.
         autoAttachEnabled = true
         let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: attachedUrl))
@@ -143,13 +148,13 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
         sut.tapToAttach()
-        XCTAssertEqual(attachCalls, [url])
+        XCTAssertEqual(attachCalls, 1)
     }
 
-    func test_tapToAttach_noOriginatingURL_doesNotCallOnAttach() {
+    func test_tapToAttach_noOriginatingURL_callsOnAttach() {
         makeSUT()
         sut.tapToAttach()
-        XCTAssertTrue(attachCalls.isEmpty)
+        XCTAssertEqual(attachCalls, 1)
     }
 
     func test_tapToRemove_callsOnRemove() {

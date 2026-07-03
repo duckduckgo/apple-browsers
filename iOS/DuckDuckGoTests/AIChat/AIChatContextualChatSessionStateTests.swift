@@ -341,7 +341,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     // MARK: - Navigation Tests
 
-    func testNotifyPageChangedClearsUserDowngradeFlag() {
+    func testNotifyPageChangedPreservesUserDowngradeFlag() {
         // Given
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext())
@@ -352,7 +352,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.notifyPageChanged()
 
         // Then
-        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
+        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
     }
 
     func testUpdateContextAfterNavigationFiresPixel() {
@@ -643,7 +643,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     // MARK: - Complex Scenario Tests
 
-    func testCompleteUserDowngradeAndUpgradeCycle() {
+    func testUserDowngradeBlocksAutoAttachUntilManualAttach() {
         // Given
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext())
@@ -654,20 +654,27 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.chipState, .placeholder)
         XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
 
-        // Navigation clears downgrade flag
+        // Navigation preserves the opt-out
         sessionState.notifyPageChanged()
-        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
+        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
+        XCTAssertFalse(sessionState.shouldTriggerAutoCollect(for: URL(string: "https://example.com/new")!))
 
-        // New context auto-attaches again
+        // A late or manually triggered context result still does not auto-attach
         sessionState.updateContext(makeTestContext(title: "New Page"))
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+
+        // Manual attach clears the opt-out and attaches again
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Manual Page"))
+        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
         if case .attached = sessionState.chipState {
             // Expected
         } else {
-            XCTFail("Expected attached chip state after navigation")
+            XCTFail("Expected attached chip state after manual attach")
         }
     }
 
-    func testBaseWebUTIWithoutImmediateContextualModeUsesLegacyDowngradeNavigation() {
+    func testBaseWebUTIWithoutImmediateContextualModePreservesDowngradeOnNavigation() {
         // Given
         sessionState.updateUnifiedToggleInputActive(true, isImmediateContextual: false)
         mockSettings.isAutomaticContextAttachmentEnabled = true
@@ -676,11 +683,12 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(sessionState.handleChipRemoval())
         XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
 
-        // When - base web UTI is active, but the immediate pre-submit replay guard is not
+        // When - base web UTI is active and the page changes
         sessionState.notifyPageChanged(pageURL: pageURL)
 
-        // Then - legacy navigation semantics still clear the opt-out
-        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
+        // Then - user remove remains an opt-out until manual attach/reset
+        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
+        XCTAssertFalse(sessionState.shouldTriggerAutoCollect(for: pageURL))
     }
 
     func testPreSubmitUTIOptOutSurvivesSamePageNavigationReplayAndLateContextResult() {

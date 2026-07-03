@@ -342,6 +342,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.accessibilityLabel = UserText.aiChatToolbarSubmitButtonAccessibilityLabel
+        button.accessibilityIdentifier = "AIChat.Toolbar.Button.Submit"
         button.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),

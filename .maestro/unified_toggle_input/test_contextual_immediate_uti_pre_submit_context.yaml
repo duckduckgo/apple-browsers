@@ -1,0 +1,77 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - unified_toggle_input
+name: test_contextual_immediate_uti_pre_submit_context
+
+---
+
+# With the immediate contextual UTI flag on, the first sheet show uses UTI before
+# submit. Removing pre-submit context keeps the placeholder across navigation, and
+# tapping the placeholder manually attaches again.
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.unifiedToggleInput: "true"
+        ff.contextualDuckAIMode: "true"
+        ff.aiChatContextualUnifiedToggleInput: "true"
+        ff.aiChatAutoAttachContextByDefault: "true"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertVisible: ".*Privacy Test Pages.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible: "Summarize page"
+- assertNotVisible:
+    id: "AIChatNativeInputView.submitButton"
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+
+- tapOn:
+    id: "AIChat.ContextChip.RemoveButton"
+- assertVisible:
+    id: "AIChat.ContextChip.Placeholder"
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/security/address-bar-spoofing/index.html"
+- pressKey: Enter
+- assertVisible: ".*Address Bar Spoofing.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible:
+    id: "AIChat.ContextChip.Placeholder"
+- assertNotVisible:
+    id: "AIChat.ContextChip.AttachedTitle"
+
+- tapOn:
+    id: "AIChat.ContextChip.Placeholder"
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000

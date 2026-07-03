@@ -324,6 +324,19 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testNotifyPageChangedDoesNotTriggerCollectionAfterUserRemove() async {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext())
+        sut.aiChatContextualSheetViewControllerDidRequestRemoveChip(sut.sheetViewController!)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        await sut.notifyPageChanged()
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+    }
+
+    @MainActor
     func testNotifyPageChangedDoesNotTriggerCollectionWhenAutoAttachDisabled() async {
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)

@@ -111,7 +111,6 @@ final class AIChatContextualChatSessionState {
     private(set) var userDowngradedToPlaceholder = false
     private var wasAutoAttachEnabled: Bool
     private var isUnifiedToggleInputActive = false
-    private var isImmediateContextualUnifiedToggleInputActive = false
     private var lastDeliveredContextURL: URL?
 
     // MARK: - Internal Flags
@@ -178,8 +177,8 @@ final class AIChatContextualChatSessionState {
         featureFlagger.isFeatureOn(.multiplePageContexts)
     }
 
-    private var hasUserOptedOutOfPreChatUTIContext: Bool {
-        isImmediateContextualUnifiedToggleInputActive && frontendState == .noChat && userDowngradedToPlaceholder
+    private var hasUserOptedOutOfContext: Bool {
+        userDowngradedToPlaceholder
     }
 
     // MARK: - Frontend Chat State Transitions
@@ -320,20 +319,16 @@ final class AIChatContextualChatSessionState {
     /// Notify that page navigation occurred
     func notifyPageChanged(pageURL: URL? = nil) {
         Logger.aiChat.debug("[SessionState] Page navigation detected")
-        if !hasUserOptedOutOfPreChatUTIContext {
-            clearUserDowngradeOnNavigation()
-        }
         isProcessingNavigation = true
     }
 
-    func updateUnifiedToggleInputActive(_ isActive: Bool, isImmediateContextual: Bool = false) {
+    func updateUnifiedToggleInputActive(_ isActive: Bool, isImmediateContextual _: Bool = false) {
         isUnifiedToggleInputActive = isActive
-        isImmediateContextualUnifiedToggleInputActive = isImmediateContextual
         rebuildViewState()
     }
 
     func shouldTriggerAutoCollect(for pageURL: URL) -> Bool {
-        guard !hasUserOptedOutOfPreChatUTIContext else { return false }
+        guard !hasUserOptedOutOfContext else { return false }
         guard shouldAutoCollectContext else { return false }
         guard let attachedContext = intendedAttachedContext,
               URL(string: attachedContext.contextData.url) == pageURL else {
@@ -517,13 +512,6 @@ private extension AIChatContextualChatSessionState {
 
     func shouldAllowAutomaticUpgrade() -> Bool {
         return !userDowngradedToPlaceholder
-    }
-
-    func clearUserDowngradeOnNavigation() {
-        if userDowngradedToPlaceholder {
-            userDowngradedToPlaceholder = false
-            Logger.aiChat.debug("[SessionState] Cleared user downgrade flag on navigation")
-        }
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {

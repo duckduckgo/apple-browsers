@@ -36,8 +36,8 @@ extension URLComponents {
     /// Falls back to `URLComponents(url:resolvingAgainstBaseURL:)` when the property is absent
     /// (`URL(string:)`-created values, all hierarchical URLs).
     init?(webKitUrl: URL) {
-#if DEBUG
-        // Link WebKit for test targets
+#if DEBUG && _ORIGINAL_DATA_AS_STRING_ENABLED
+        // Ensure WebKit Framework is linked to test targets to make `_web_originalDataAsString` available.
         _=type(of: WKWebView.self)
 #endif
 

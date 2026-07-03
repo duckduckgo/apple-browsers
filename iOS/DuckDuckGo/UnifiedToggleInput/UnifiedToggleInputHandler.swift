@@ -18,6 +18,7 @@
 //
 
 import Combine
+import Core
 import Foundation
 
 /// Bridges `UnifiedToggleInput` state to `SwitchBarHandling` so `SwitchBarTextEntryView`
@@ -26,13 +27,16 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     // MARK: - SwitchBarHandling — Fixed Values
 
-    var isTopBarPosition: Bool = false
+    private(set) var isTopBarPosition: Bool = false
     let isUsingExpandedBottomBarHeight: Bool = false
+    let usesExpandedAIChatTextEntryLayout: Bool = true
+    /// The UTI uses the new layout metrics (insets / heights), never the legacy ones.
+    let usesLegacyLayoutMetrics: Bool = false
     /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
-    let isCurrentTextValidURL: Bool = false
-    let modeParameters: [String: String] = [:]
-    var isFireTab: Bool = false // TODO: - Handle injecting and updating this. And customizing the new tinput view for fire tabs.
+    let shouldDisableAutocorrectOnEmpty: Bool = true
+    var modeParameters: [String: String] { ["mode": currentToggleState.rawValue] }
+    var isFireTab: Bool
 
     // MARK: - SwitchBarHandling — Dynamic State
 
@@ -40,15 +44,29 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var currentToggleState: TextEntryMode = .aiChat
     @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
     @Published private(set) var hasUserInteractedWithText: Bool = false
+    @Published private(set) var isCurrentTextValidURL: Bool = false
     @Published var hasSubmittedPrompt: Bool = false
+    @Published var submitsAIChatOnKeyboardReturn: Bool = false
 
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
         $hasSubmittedPrompt.eraseToAnyPublisher()
     }
 
+    var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> {
+        $submitsAIChatOnKeyboardReturn.eraseToAnyPublisher()
+    }
+
     var isGenerating: Bool = false {
         didSet {
             guard isGenerating != oldValue else { return }
+            updateButtonState()
+        }
+    }
+
+    /// When true, the stop-generating button is suppressed regardless of generating state.
+    var isOnboardingLocked: Bool = false {
+        didSet {
+            guard isOnboardingLocked != oldValue else { return }
             updateButtonState()
         }
     }
@@ -88,6 +106,13 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
+    var isAIChatShortcutAvailable: Bool = false {
+        didSet {
+            guard isAIChatShortcutAvailable != oldValue else { return }
+            updateButtonState()
+        }
+    }
+
     // MARK: - SwitchBarHandling — Publishers
 
     var currentTextPublisher: AnyPublisher<String, Never> {
@@ -103,7 +128,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> {
-        Just(false).eraseToAnyPublisher()
+        $isCurrentTextValidURL.eraseToAnyPublisher()
     }
 
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> {
@@ -120,14 +145,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         microphoneButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    private let aiVoiceChatButtonTappedSubject = PassthroughSubject<Void, Never>()
+    var aiVoiceChatButtonTappedPublisher: AnyPublisher<Void, Never> {
+        aiVoiceChatButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> {
         clearButtonTappedSubject.eraseToAnyPublisher()
-    }
-
-    private let searchGoToButtonTappedSubject = PassthroughSubject<Void, Never>()
-    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> {
-        searchGoToButtonTappedSubject.eraseToAnyPublisher()
     }
 
     private let stopGeneratingButtonTappedSubject = PassthroughSubject<Void, Never>()
@@ -142,9 +167,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     // MARK: - Initialization
 
-    init(isVoiceSearchEnabled: Bool, isToggleEnabled: Bool = true) {
+    init(isVoiceSearchEnabled: Bool,
+         isToggleEnabled: Bool = true,
+         isAIChatShortcutAvailable: Bool = false,
+         isFireTab: Bool = false) {
         self.isVoiceSearchEnabled = isVoiceSearchEnabled
         self.isToggleEnabled = isToggleEnabled
+        self.isAIChatShortcutAvailable = isAIChatShortcutAvailable
+        self.isFireTab = isFireTab
         updateButtonState()
     }
 
@@ -153,6 +183,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     func updateCurrentText(_ text: String) {
         guard currentText != text else { return }
         currentText = text
+        isCurrentTextValidURL = URL.isValidAddressBarURLInput(text)
         updateButtonState()
     }
 
@@ -160,6 +191,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
+    }
+
+    func submitAIChatAttachmentOnlyPrompt() {
+        textSubmissionSubject.send((text: "", mode: .aiChat))
     }
 
     func setToggleState(_ state: TextEntryMode) {
@@ -176,17 +211,22 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         microphoneButtonTappedSubject.send()
     }
 
+    func aiVoiceChatButtonTapped() {
+        aiVoiceChatButtonTappedSubject.send()
+    }
+
     func markUserInteraction() {
         guard !hasUserInteractedWithText else { return }
         hasUserInteractedWithText = true
     }
 
-    func clearButtonTapped() {
-        clearButtonTappedSubject.send()
+    func resetInteractionState() {
+        guard hasUserInteractedWithText else { return }
+        hasUserInteractedWithText = false
     }
 
-    func searchGoToButtonTapped() {
-        searchGoToButtonTappedSubject.send()
+    func clearButtonTapped() {
+        clearButtonTappedSubject.send()
     }
 
     func stopGeneratingButtonTapped() {
@@ -197,22 +237,27 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         customizeResponsesButtonTappedSubject.send()
     }
 
-    func updateBarPosition(isTop: Bool) {}
+    func updateBarPosition(isTop: Bool) {
+        guard isTopBarPosition != isTop else { return }
+        isTopBarPosition = isTop
+        updateButtonState()
+    }
 
     // MARK: - Private
 
     private func updateButtonState() {
-        let voiceAvailable = !hidesVoiceButton && isVoiceSearchEnabled && !(isAIVoiceChatEnabled && currentToggleState == .aiChat)
+        let aiVoiceChatAvailable = !isExpanded && isAIVoiceChatEnabled && currentToggleState == .aiChat
+        let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 
-        if isGenerating && !isExpanded && currentToggleState == .aiChat && !isToggleEnabled {
-            nextButtonState = .stopGeneratingAndSearchGoTo
-        } else if isGenerating && !isExpanded && currentToggleState == .aiChat {
+        if isGenerating && !isExpanded && currentToggleState == .aiChat && !isOnboardingLocked {
             nextButtonState = .stopGeneratingOnly
+        } else if !currentText.isEmpty && !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
+            nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
             nextButtonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .aiChat && !isExpanded {
-            nextButtonState = voiceAvailable ? .voiceAndSearchGoTo : .searchGoToOnly
+        } else if !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
+            nextButtonState = voiceAvailable ? .voiceAndAIChatShortcut : .aiChatShortcutOnly
         } else if voiceAvailable {
             nextButtonState = .voiceOnly
         } else {

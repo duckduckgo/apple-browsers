@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import PersistenceTestingUtils
@@ -101,7 +102,9 @@ final class ScriptSourceProviderTests: XCTestCase {
             syncServiceProvider: { nil },
             syncErrorHandler: SyncErrorHandler(),
             webExtensionAvailability: nil,
-            dockCustomization: DockCustomizerMock()
+            dockCustomization: DockCustomizerMock(),
+            reinstallUserDetection: MockReinstallingUserDetecting(),
+            installDateProvider: { Date() }
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

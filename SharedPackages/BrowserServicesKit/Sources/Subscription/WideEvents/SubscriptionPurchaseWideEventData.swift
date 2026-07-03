@@ -25,7 +25,7 @@ public class SubscriptionPurchaseWideEventData: WideEventData {
         featureName: "subscription-purchase",
         mobileMetaType: "ios-subscription-purchase",
         desktopMetaType: "macos-subscription-purchase",
-        version: "1.0.1"
+        version: "1.1.0"
     )
 
     public static let activationTimeout: TimeInterval = .hours(4)

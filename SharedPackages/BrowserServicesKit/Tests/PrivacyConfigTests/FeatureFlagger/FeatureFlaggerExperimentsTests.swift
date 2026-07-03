@@ -36,11 +36,11 @@ extension TestExperimentFlags: FeatureFlagDescribing {
     var source: FeatureFlagSource {
         switch self {
         case .credentialsSaving:
-                .remoteReleasable(.subfeature(AutofillSubfeature.credentialsSaving))
+                .remoteReleasable(AutofillSubfeature.credentialsSaving)
         case .inlineIconCredentials:
-                .remoteReleasable(.subfeature(AutofillSubfeature.inlineIconCredentials))
+                .remoteReleasable(AutofillSubfeature.inlineIconCredentials)
         case .accessCredentialManagement:
-                .remoteReleasable(.subfeature(AutofillSubfeature.accessCredentialManagement))
+                .remoteReleasable(AutofillSubfeature.accessCredentialManagement)
         }
     }
 

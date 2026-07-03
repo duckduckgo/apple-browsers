@@ -19,6 +19,8 @@
 
 import UIKit
 import Lottie
+import PrivacyConfig
+import DesignResourcesKit
 
 class ViewHighlighter {
 
@@ -42,7 +44,12 @@ class ViewHighlighter {
         highlightView.frame = CGRect(x: 0, y: 0, width: size, height: size)
         highlightView.center = center
         highlightView.isUserInteractionEnabled = false
-        
+        // Override highlight animation color for onboarding rebranding
+        if let colorProvider = makeColorProvider() {
+            let colorKeypath = AnimationKeypath(keypath: "**.Layer.Color")
+            highlightView.setValueProvider(colorProvider, keypath: colorKeypath)
+        }
+
         let parentView = window.subviews.first { view.isDescendant(of: $0) }
         parentView?.addSubview(highlightView)
 
@@ -59,7 +66,20 @@ class ViewHighlighter {
         addedViews = []
         highlightedViews = []
     }
-    
+
+    /// Removes only the highlight(s) anchored to the given view. Use this instead of
+    /// `hideAll()` when other highlights (e.g. the fire-button pulse) should remain on screen.
+    static func hide(focussedOnView view: UIView) {
+        let indicesToRemove = highlightedViews.enumerated().compactMap { index, held -> Int? in
+            held.view == view ? index : nil
+        }
+        for index in indicesToRemove.reversed() {
+            addedViews[index].view?.removeFromSuperview()
+            addedViews.remove(at: index)
+            highlightedViews.remove(at: index)
+        }
+    }
+
     static func updatePositions() {
         for (index, highlight) in addedViews.enumerated() {
             if let highlightedView = highlightedViews[index].view,
@@ -70,6 +90,17 @@ class ViewHighlighter {
         }
     }
 
+}
+
+private extension ViewHighlighter {
+
+    private static func makeColorProvider(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) -> ColorValueProvider? {
+        // If Onboarding rebranding is disabled, no need to override the animation color
+        guard featureFlagger.isFeatureOn(.onboardingRebranding) else { return nil }
+        let lottieColor = UIColor(singleUseColor: .rebranding(.accentPrimary)).lottieColorValue
+        return ColorValueProvider(lottieColor)
+    }
+    
 }
 
 extension ViewHighlighter {

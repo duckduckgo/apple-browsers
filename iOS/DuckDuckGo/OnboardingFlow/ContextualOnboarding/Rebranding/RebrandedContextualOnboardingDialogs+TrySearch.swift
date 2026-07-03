@@ -35,6 +35,13 @@ extension OnboardingRebranding {
         let viewModel: OnboardingSearchSuggestionsViewModel
         let onManualDismiss: () -> Void
 
+        static let daxAnimation = DaxAnimation(
+            animationName: "Dax-EndOfJourney-TryWebsite",
+            size: CGSize(width: 153, height: 169.67),
+            position: .left(bottomPadding: -60.0, xOffset: -40.0),
+            largeScreenPosition: .left(bottomPadding: 0.0, xOffset: 0.0)
+        )
+
         var body: some View {
             ScrollView(.vertical, showsIndicators: false) {
                 OnboardingBubbleView.withDismissButton(tailPosition: nil, onDismiss: onManualDismiss) {

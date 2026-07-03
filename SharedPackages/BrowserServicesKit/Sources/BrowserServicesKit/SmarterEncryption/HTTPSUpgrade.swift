@@ -18,6 +18,7 @@
 
 import BloomFilterWrapper
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 import PrivacyConfig

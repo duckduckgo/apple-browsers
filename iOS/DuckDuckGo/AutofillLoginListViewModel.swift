@@ -20,6 +20,7 @@
 import Foundation
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import UIKit
 import Combine
 import Core
@@ -94,7 +95,7 @@ class AutofillLoginListViewModel: ObservableObject {
                                                                                                                                       reporter: SecureVaultReporter(),
                                                                                                                                       tld: tld)
 
-    private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager(syncService: syncService)
+    private let syncPromoManager: SyncPromoManaging
 
     private lazy var autofillCredentialsImportManager: AutofillCredentialsImportPresentationManager = AutofillCredentialsImportPresentationManager(loginImportStateProvider: AutofillLoginImportState(keyValueStore: keyValueStore))
 
@@ -133,7 +134,8 @@ class AutofillLoginListViewModel: ObservableObject {
          keyValueStore: ThrowingKeyValueStoring,
          locale: Locale = Locale.current,
          extensionPromotionManager: AutofillExtensionPromotionManaging? = nil,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         syncPromoManager: SyncPromoManaging? = nil) {
         self.appSettings = appSettings
         self.tld = tld
         self.secureVault = secureVault
@@ -145,6 +147,7 @@ class AutofillLoginListViewModel: ObservableObject {
         self.locale = locale
         self.extensionPromotionManager = extensionPromotionManager ?? AutofillExtensionPromotionManager(keyValueStore: keyValueStore)
         self.featureFlagger = featureFlagger
+        self.syncPromoManager = syncPromoManager ?? SyncPromoManager(syncService: syncService)
 
         if let count = getAccountsCount() {
             authenticationNotRequired = count == 0 || AppDependencyProvider.shared.autofillLoginSession.isSessionValid
@@ -272,6 +275,7 @@ class AutofillLoginListViewModel: ObservableObject {
             accountsToSuggest = fetchSuggestedAccounts()
         }
         self.sections = makeSections(with: filteredAccounts)
+        self.showBreakageReporter = shouldShowBreakageReporter()
     }
 
     /// - returns: True if the query is present within the domain, false otherwise.
@@ -328,7 +332,7 @@ class AutofillLoginListViewModel: ObservableObject {
     }
 
     func dismissSyncPromo() {
-        syncPromoManager.dismissPromoFor(.passwords)
+        syncPromoManager.dismissPromoFor(.passwords, reason: .userTapped)
     }
 
     func getSurveyToPresent() -> AutofillSurveyManager.AutofillSurvey? {
@@ -473,6 +477,16 @@ class AutofillLoginListViewModel: ObservableObject {
         })
     }
 
+    private func hasSuggestedAccountMatchingCurrentTab(url: URL) -> Bool {
+        accountsToSuggest.contains { account in
+            autofillDomainNameUrlMatcher.isMatchingForAutofill(
+                currentSite: url.absoluteString,
+                savedSite: account.domain ?? "",
+                tld: tld
+            )
+        }
+    }
+
     private func makeSections(with accounts: [SecureVaultModels.WebsiteAccount]) -> [AutofillLoginListSectionType] {
         var newSections = [AutofillLoginListSectionType]()
 
@@ -597,7 +611,7 @@ class AutofillLoginListViewModel: ObservableObject {
 
     func shouldShowBreakageReporter() -> Bool {
         guard let currentTabUrl = currentTabUrl,
-              !accountsToSuggest.isEmpty,
+              hasSuggestedAccountMatchingCurrentTab(url: currentTabUrl),
               privacyConfig.isEnabled(featureKey: .autofillBreakageReporter),
               let identifier = currentTabUrl.privacySafeDomainIdentifier,
               !privacyConfig.isInExceptionList(domain: currentTabUrl.host, forFeature: .autofillBreakageReporter) else {

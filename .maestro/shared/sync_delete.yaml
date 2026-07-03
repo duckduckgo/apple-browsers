@@ -1,9 +1,14 @@
 appId: com.duckduckgo.mobile.ios
+# Turns off Sync and deletes server data via the simplified UI's
+# "Turn Off Sync and Delete Server Data" action
 ---
 
 - assertVisible: Sync & Backup
-- scroll
-- tapOn: Turn Off and Delete Server Data...
-- assertVisible: Delete Server Data?
+- scrollUntilVisible:
+    element:
+      text: Turn Off Sync and Delete Server Data
+    direction: DOWN
+- tapOn: Turn Off Sync and Delete Server Data
+- assertVisible: Delete server data?
 - tapOn: Delete Server Data
-- assertVisible: Begin Syncing
+- assertVisible: Use Recovery Code

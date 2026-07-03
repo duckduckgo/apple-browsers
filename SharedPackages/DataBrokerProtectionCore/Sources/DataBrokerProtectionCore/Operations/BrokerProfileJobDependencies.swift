@@ -37,16 +37,17 @@ public protocol BrokerProfileJobDependencyProviding {
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var jobSortPredicate: BrokerJobDataComparators.Predicate { get }
     var featureFlagger: DBPFeatureFlagging { get }
-    var applicationNameForUserAgent: String? { get }
+    var applicationNameForUserAgentProvider: () -> String? { get }
     var wideEvent: WideEventManaging? { get }
+    var contentBlocking: DBPWebViewContentBlocking? { get }
 
     func isAuthenticatedUser() async -> Bool
 
-    func createScanRunner(profileQuery: BrokerProfileQueryData,
+    func createScanRunner(profileQuery: SubJobContextProviding,
                           stageDurationCalculator: StageDurationCalculator,
                           shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileScanSubJobWebRunning
 
-    func createOptOutRunner(profileQuery: BrokerProfileQueryData,
+    func createOptOutRunner(profileQuery: SubJobContextProviding,
                             stageDurationCalculator: StageDurationCalculator,
                             shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning
 }
@@ -65,8 +66,9 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let jobSortPredicate: BrokerJobDataComparators.Predicate
     public let featureFlagger: DBPFeatureFlagging
-    public let applicationNameForUserAgent: String?
+    public let applicationNameForUserAgentProvider: () -> String?
     public let wideEvent: WideEventManaging?
+    public let contentBlocking: DBPWebViewContentBlocking?
     public let isAuthenticatedUserProvider: () async -> Bool
 
     public init(database: any DataBrokerProtectionRepository,
@@ -80,10 +82,11 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgent: String?,
+                applicationNameForUserAgentProvider: @escaping () -> String?,
                 vpnBypassService: VPNBypassFeatureProvider? = nil,
                 jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default,
                 wideEvent: WideEventManaging? = nil,
+                contentBlocking: DBPWebViewContentBlocking? = nil,
                 isAuthenticatedUserProvider: @escaping () async -> Bool = { true }
     ) {
         self.database = database
@@ -99,12 +102,13 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.vpnBypassService = vpnBypassService
         self.jobSortPredicate = jobSortPredicate
         self.featureFlagger = featureFlagger
-        self.applicationNameForUserAgent = applicationNameForUserAgent
+        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
         self.wideEvent = wideEvent
+        self.contentBlocking = contentBlocking
         self.isAuthenticatedUserProvider = isAuthenticatedUserProvider
     }
 
-    public func createScanRunner(profileQuery: BrokerProfileQueryData,
+    public func createScanRunner(profileQuery: SubJobContextProviding,
                                  stageDurationCalculator: StageDurationCalculator,
                                  shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileScanSubJobWebRunning {
         return BrokerProfileScanSubJobWebRunner(
@@ -114,15 +118,16 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             emailConfirmationDataService: self.emailConfirmationDataService,
             captchaService: self.captchaService,
             featureFlagger: self.featureFlagger,
-            applicationNameForUserAgent: self.applicationNameForUserAgent,
+            applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
             stageDurationCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
             executionConfig: self.executionConfig,
+            contentBlocking: self.contentBlocking,
             shouldRunNextStep: shouldRunNextStep
         )
     }
 
-    public func createOptOutRunner(profileQuery: BrokerProfileQueryData,
+    public func createOptOutRunner(profileQuery: SubJobContextProviding,
                                    stageDurationCalculator: StageDurationCalculator,
                                    shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning {
         return BrokerProfileOptOutSubJobWebRunner(
@@ -132,11 +137,12 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             emailConfirmationDataService: self.emailConfirmationDataService,
             captchaService: self.captchaService,
             featureFlagger: self.featureFlagger,
-            applicationNameForUserAgent: self.applicationNameForUserAgent,
+            applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
             stageCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
             executionConfig: self.executionConfig,
             actionsHandlerMode: .optOut,
+            contentBlocking: self.contentBlocking,
             shouldRunNextStep: shouldRunNextStep
         )
     }

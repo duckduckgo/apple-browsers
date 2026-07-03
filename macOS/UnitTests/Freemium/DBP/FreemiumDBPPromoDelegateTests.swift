@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import Freemium
@@ -68,6 +69,58 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         let expectation = XCTestExpectation()
         coordinator.$isFeatureAvailable.dropFirst().sink { _ in expectation.fulfill() }.store(in: &cancellables)
         wait(for: [expectation], timeout: 2.0)
+
+        XCTAssertFalse(sut.isEligible)
+    }
+
+    func testIsEligible_whenFeatureUnavailableOnlyBecausePurchaseAvailabilitySettles_andRecentlyShown() {
+        mockFeature.featureAvailable = false
+        mockFeature.mockIsAvailableIgnoringPurchaseCapability = true
+
+        coordinator = FreemiumDBPPromotionViewCoordinator(
+            freemiumDBPUserStateManager: mockUserStateManager,
+            freemiumDBPFeature: mockFeature,
+            freemiumDBPPresenter: MockFreemiumDBPPresenter(),
+            dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler(),
+            contextualOnboardingPublisher: Empty<Bool, Never>().eraseToAnyPublisher()
+        )
+
+        let provider = MockPromoHistoryProvider()
+        var record = PromoHistoryRecord(id: "freemium-dbp")
+        record.lastShown = Date().addingTimeInterval(-86_400)
+        provider.record = record
+
+        sut = FreemiumDBPPromoDelegate(
+            coordinator: coordinator,
+            historyProvider: provider,
+            promoId: "freemium-dbp"
+        )
+
+        XCTAssertTrue(sut.isEligible)
+    }
+
+    func testIsEligible_whenAuthGateBlocksFastPathEvenWithRecentLastShown() {
+        mockFeature.featureAvailable = false
+        mockFeature.mockIsAvailableIgnoringPurchaseCapability = false
+
+        coordinator = FreemiumDBPPromotionViewCoordinator(
+            freemiumDBPUserStateManager: mockUserStateManager,
+            freemiumDBPFeature: mockFeature,
+            freemiumDBPPresenter: MockFreemiumDBPPresenter(),
+            dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler(),
+            contextualOnboardingPublisher: Empty<Bool, Never>().eraseToAnyPublisher()
+        )
+
+        let provider = MockPromoHistoryProvider()
+        var record = PromoHistoryRecord(id: "freemium-dbp")
+        record.lastShown = Date().addingTimeInterval(-86_400)
+        provider.record = record
+
+        sut = FreemiumDBPPromoDelegate(
+            coordinator: coordinator,
+            historyProvider: provider,
+            promoId: "freemium-dbp"
+        )
 
         XCTAssertFalse(sut.isEligible)
     }
@@ -274,4 +327,25 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         wait(for: [expectation], timeout: 2.0)
     }
 
+}
+
+private final class MockPromoHistoryProvider: PromoHistoryProviding {
+    private let subject: CurrentValueSubject<PromoHistoryRecord?, Never>
+
+    var record: PromoHistoryRecord? {
+        get { subject.value }
+        set { subject.send(newValue) }
+    }
+
+    init(record: PromoHistoryRecord? = nil) {
+        self.subject = CurrentValueSubject(record)
+    }
+
+    func historyPublisher(for promoId: String) -> AnyPublisher<PromoHistoryRecord?, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    var allHistoryPublisher: AnyPublisher<[PromoHistoryRecord], Never> {
+        Empty().eraseToAnyPublisher()
+    }
 }

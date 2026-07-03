@@ -37,8 +37,8 @@ struct SettingsAIExperimentalPickerView: View {
         HStack(alignment: .top, spacing: SettingsAIExperimentalPickerViewLayout.optionsHorizontalSpacing) {
             PickerOptionView(
                 isSelected: !isDuckAISelected,
-                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAIActive : .searchExperimentalOn,
-                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithoutAI : .searchExperimentalOff,
+                selectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadSearchSelected, legacy: .inputToggleIPadSearchSelectedLegacy) : rebrandableImage(.inputToggleSearchSelected, legacy: .inputToggleSearchSelectedLegacy),
+                unselectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadSearchLight, legacy: .inputToggleIPadSearchLightLegacy) : rebrandableImage(.inputToggleSearchLight, legacy: .inputToggleSearchLightLegacy),
                 title: UserText.Onboarding.SearchExperience.searchOnlyOption,
                 showNewBadge: false,
                 titleMinHeight: maxOptionTitleHeight
@@ -50,8 +50,8 @@ struct SettingsAIExperimentalPickerView: View {
 
             PickerOptionView(
                 isSelected: isDuckAISelected,
-                selectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAIActive : .aiExperimentalOn,
-                unselectedImage: shouldUseIPadAssets ? .iPadSettingsSearchWithAI : .aiExperimentalOff,
+                selectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadAISelectedLight, legacy: .inputToggleIPadAISelectedLightLegacy) : rebrandableImage(.inputToggleAISelectedLight, legacy: .inputToggleAISelectedLightLegacy),
+                unselectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadAILight, legacy: .inputToggleIPadAILightLegacy) : rebrandableImage(.inputToggleAILight, legacy: .inputToggleAILightLegacy),
                 title: UserText.Onboarding.SearchExperience.searchAndDuckAIOption,
                 showNewBadge: false,
                 titleMinHeight: maxOptionTitleHeight
@@ -70,11 +70,11 @@ struct SettingsAIExperimentalPickerView: View {
     }
 
     private var shouldUseIPadAssets: Bool {
-        isIPadAIToggleOn && UIDevice.current.userInterfaceIdiom == .pad
+        UIDevice.current.userInterfaceIdiom == .pad
     }
 
-    private var isIPadAIToggleOn: Bool {
-        AppDependencyProvider.shared.featureFlagger.isFeatureOn(.iPadAIToggle)
+    private func rebrandableImage(_ rebranded: ImageResource, legacy: ImageResource) -> ImageResource {
+        AppRebrand.isAppRebranded() ? rebranded : legacy
     }
 }
 
@@ -172,7 +172,7 @@ private struct CheckmarkView: View {
             Image(uiImage: DesignSystemImages.Recolorable.Size24.check)
                 .resizable()
                 .renderingMode(.template)
-                .foregroundStyle(Color(designSystemColor: .accent))
+                .foregroundStyle(Color(designSystemColor: .accentPrimary))
         } else {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle)
                 .resizable()

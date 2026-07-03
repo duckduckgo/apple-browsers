@@ -25,7 +25,7 @@ extension CompositeShadowView.Shadow {
     private static let defaultColor: UIColor = UIColor(designSystemColor: .shadowSecondary)
     private static let focusColor: UIColor = UIColor(designSystemColor: .shadowTertiary)
 
-    static let defaultLayer1 = CompositeShadowView.Shadow(
+    public static let defaultLayer1 = CompositeShadowView.Shadow(
         id: "ddg.shadow1",
         color: defaultColor,
         opacity: 1,
@@ -33,7 +33,7 @@ extension CompositeShadowView.Shadow {
         offset: CGSize(width: 0, height: 4)
     )
 
-    static let defaultLayer2 = CompositeShadowView.Shadow(
+    public static let defaultLayer2 = CompositeShadowView.Shadow(
         id: "ddg.shadow2",
         color: defaultColor,
         opacity: 1,
@@ -56,6 +56,13 @@ extension CompositeShadowView.Shadow {
         radius: 32.0,
         offset: CGSize(width: 0, height: 16)
     )
+}
+
+public extension CompositeShadowView.Shadow {
+    /// Copy with overridden `id` — reuse a shadow under a different sublayer key.
+    func withID(_ id: String) -> Self {
+        Self(id: id, color: color, opacity: opacity, radius: radius, offset: offset)
+    }
 }
 
 public extension CompositeShadowView {

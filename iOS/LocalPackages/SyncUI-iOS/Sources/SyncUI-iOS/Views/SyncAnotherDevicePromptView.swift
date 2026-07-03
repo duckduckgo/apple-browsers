@@ -24,11 +24,12 @@ import SwiftUI
 struct SyncAnotherDevicePromptView: View {
 
     @ObservedObject var model: SyncSettingsViewModel
+    @State private var bottomSafeArea: CGFloat = 0
 
     var body: some View {
-        UnderflowContainer {
+        VStack(spacing: 0) {
             VStack(spacing: 0) {
-                Image("Desktop-Sync-New-Feature-128")
+                Image(rebrandable: "Desktop-Sync-New-Feature-128", bundle: .module)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 128, height: 96)
@@ -42,15 +43,17 @@ struct SyncAnotherDevicePromptView: View {
                 Text(UserText.simplifiedSyncAnotherDeviceBody)
                     .daxBodyRegular()
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(Color(designSystemColor: .textPrimary))
             .padding(.horizontal, 24)
             .padding(.top, 56)
-        } foregroundContent: {
+
+            Spacer()
+
             VStack(spacing: 8) {
                 Button {
-                    model.dismissSyncWithAnotherDevicePrompt()
-                    model.scanQRCode()
+                    model.syncAnotherDeviceFromPromptTapped()
                 } label: {
                     HStack(spacing: 8) {
                         Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
@@ -62,13 +65,50 @@ struct SyncAnotherDevicePromptView: View {
                 Button {
                     model.dismissSyncWithAnotherDevicePrompt()
                 } label: {
-                    Text(model.simplifiedSyncAnotherDevicePromptDismissButtonTitle)
+                    Text(UserText.simplifiedSyncAnotherDeviceNotNow)
                 }
                 .buttonStyle(GhostButtonStyle())
             }
             .frame(maxWidth: 360)
             .padding(.horizontal, 30)
+            .padding(.bottom, max(20 - bottomSafeArea, 0))
         }
-        .background(Color(designSystemColor: .backgroundSheets))
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear { bottomSafeArea = geometry.safeAreaInsets.bottom }
+            }
+        )
+        .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+
+private extension SyncSettingsViewModel {
+    /// A bare model for previews — this view only calls model methods from its buttons and doesn't
+    /// branch on model state, so no configuration is needed.
+    static func previewModel() -> SyncSettingsViewModel {
+        SyncSettingsViewModel(
+            isOnDevEnvironment: { false },
+            switchToProdEnvironment: {},
+            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+        )
+    }
+}
+
+#Preview("Rebranded") {
+    RebrandedPreview(isRebranded: true) {
+        SyncAnotherDevicePromptView(model: .previewModel())
+    }
+}
+
+#Preview("Legacy brand") {
+    RebrandedPreview(isRebranded: false) {
+        SyncAnotherDevicePromptView(model: .previewModel())
+    }
+}
+
+#endif

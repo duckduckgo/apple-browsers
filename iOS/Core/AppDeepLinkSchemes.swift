@@ -32,6 +32,8 @@ public enum AppDeepLinkSchemes: String, CaseIterable {
     case openPasswords = "ddgOpenPasswords"
     case openAIChat = "ddgOpenAIChat"
     case openAIVoiceChat = "ddgOpenAIVoiceChat"
+    case openBookmarks = "ddgOpenBookmarks"
+    case customProductPage = "ddgCPP"
 
     public var url: URL {
         URL(string: rawValue + "://")!

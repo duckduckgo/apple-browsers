@@ -1,0 +1,176 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent at the end of a Privacy Pro subscription restore journey, covering restores via the user's Apple account, via the email address activation flow, and via a background transaction observed after a purchase attempt, until the restore succeeds, fails, or is orphaned by app termination and resolved on a later launch.",
+    "$comment": "{\"owners\":[\"samsymons\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "macos-subscription-restore" }, "version": { "const": "1.1.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, PIR agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
+                    "enum": [
+                        "DuckDuckGo",
+                        "DuckDuckGo Alpha",
+                        "DuckDuckGo Review",
+                        "DuckDuckGo App Store",
+                        "DuckDuckGo VPN",
+                        "DuckDuckGo VPN Alpha",
+                        "DuckDuckGo VPN Review",
+                        "DuckDuckGo VPN App Store",
+                        "DuckDuckGo Personal Information Removal",
+                        "DuckDuckGo Personal Information Removal App Store",
+                        "NetworkProtectionAppExtension",
+                        "com.duckduckgo.macos.vpn.network-extension",
+                        "com.duckduckgo.macos.vpn.network-extension.debug",
+                        "com.duckduckgo.macos.vpn.network-extension.review",
+                        "com.duckduckgo.macos.vpn.network-extension.alpha",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+                    ]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["macOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["subscription-restore"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Reason accompanying UNKNOWN outcomes. `partial_data` = an orphaned flow was completed after app launch without enough captured data to classify it; `timeout` = the restore did not complete within the 15 minute restore window.",
+                                    "enum": ["partial_data", "timeout"]
+                                },
+                                "restore_platform": {
+                                    "type": "string",
+                                    "description": "How the user attempted to restore their subscription. `apple_account` = restore from the signed-in Apple account; `email_address` = restore via the email activation flow; `purchase_background_task` = restore triggered by a background transaction observed after a purchase attempt.",
+                                    "enum": ["apple_account", "email_address", "purchase_background_task"]
+                                },
+                                "funnel_name": {
+                                    "type": "string",
+                                    "description": "Name of the funnel or entry point that originated the restore."
+                                },
+                                "email_address_restore_last_url": {
+                                    "type": "string",
+                                    "description": "The last step the user reached in the email activation flow. Present on email_address restores; identifies where in the flow the journey ended.",
+                                    "enum": [
+                                        "activation_flow",
+                                        "activation_flow_email",
+                                        "activation_flow_activate_email",
+                                        "activation_flow_activate_email_otp",
+                                        "activation_flow_success"
+                                    ]
+                                },
+                                "apple_account_restore_latency_ms_bucketed": {
+                                    "type": "integer",
+                                    "description": "Time taken to restore via the Apple account, in milliseconds, rounded up into a bucket.",
+                                    "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+                                },
+                                "email_address_restore_latency_ms_bucketed": {
+                                    "type": "integer",
+                                    "description": "Time taken to restore via email address activation, in milliseconds, rounded up into a bucket. A value of -1 indicates the restore ran past the 15 minute window.",
+                                    "enum": [10000, 30000, 60000, 300000, 600000, 900000, -1]
+                                },
+                                "error": {
+                                    "type": "object",
+                                    "description": "Shared wide-event error details",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "error_description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

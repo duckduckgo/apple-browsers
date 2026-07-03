@@ -19,32 +19,46 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import DataBrokerProtectionCore
 
 public class BrokerProfileJobEventsHandler: EventMapping<JobEvent> {
 
     private let userNotificationService: DataBrokerProtectionUserNotificationService
+    private let freemiumUserStateManager: FreemiumDBPUserStateManaging
 
-    public init(userNotificationService: DataBrokerProtectionUserNotificationService) {
+    public init(
+        userNotificationService: DataBrokerProtectionUserNotificationService,
+        freemiumUserStateManager: FreemiumDBPUserStateManaging
+    ) {
         self.userNotificationService = userNotificationService
-        super.init { event, _, _, _ in
+        self.freemiumUserStateManager = freemiumUserStateManager
+        super.init { event, _, _, onComplete in
             switch event {
             case .profileSaved:
                 userNotificationService.resetFirstScanCompletedNotificationState()
                 userNotificationService.requestNotificationPermission()
+                Task {
+                    await freemiumUserStateManager.recordProfileSavedIfNeeded()
+                    onComplete(nil)
+                }
             case .firstScanCompleted:
                 userNotificationService.sendFirstScanCompletedNotification()
+                onComplete(nil)
             case .firstScanCompletedAndMatchesFound:
                 userNotificationService.scheduleCheckInNotificationIfPossible()
+                onComplete(nil)
             case .firstProfileRemoved:
                 userNotificationService.sendFirstRemovedNotificationIfPossible()
+                onComplete(nil)
             case .allProfilesRemoved:
                 userNotificationService.sendAllInfoRemovedNotificationIfPossible()
+                onComplete(nil)
             }
         }
     }
 
     override init(mapping: @escaping EventMapping<JobEvent>.Mapping) {
-        fatalError("Use init(userNotificationService:)")
+        fatalError("Use init(userNotificationService:freemiumUserStateManager:)")
     }
 }

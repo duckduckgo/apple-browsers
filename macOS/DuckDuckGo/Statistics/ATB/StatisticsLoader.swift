@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import BrowserServicesKit
 import Networking
@@ -73,7 +74,7 @@ final class StatisticsLoader {
                         completion()
                     }
                 }
-                PixelKit.fire(GeneralPixel.serp, frequency: .standard)
+                PixelKit.fire(GeneralPixel.serp, frequency: .dailyAndStandard)
                 PixelKit.fire(GeneralPixel.serpInitial, frequency: .uniqueByName)
                 self.fireSearchExperimentPixels()
                 if AppVersion.runType == .normal {
@@ -81,6 +82,9 @@ final class StatisticsLoader {
                 }
                 self.fireDockPixel()
             }
+
+            PixelKit.fireOSDistributionPixel(metric: .client)
+
             if !self.statisticsStore.isAppRetentionFiredToday {
                 self.refreshAppRetentionAtb(completion: completion)
                 self.fireAppRetentionExperimentPixels()
@@ -99,6 +103,8 @@ final class StatisticsLoader {
             group.enter()
             group.enter()
 
+            // The refreshSearchRetentionAtb call below fires the `.searches` OS-distribution pixel
+            // for a Duck.ai prompt, so Duck.ai usage is included in our search + AI-query traffic count.
             self.refreshSearchRetentionAtb {
                 group.leave()
             }
@@ -184,6 +190,8 @@ final class StatisticsLoader {
 
     func refreshSearchRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
+
+        PixelKit.fireOSDistributionPixel(metric: .searches)
 
         guard !isSearchRetentionRequestInProgress else {
             completion()

@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Networking
 import PixelKit
 
@@ -27,12 +28,19 @@ public class AuthV2TokenAdoptionWideEventData: WideEventData {
         featureName: "authv2-token-adoption",
         mobileMetaType: "ios-authv2-token-adoption",
         desktopMetaType: "macos-authv2-token-adoption",
-        version: "1.0.0"
+        version: "1.2.0"
     )
 
     public enum FailingStep: String, Codable, CaseIterable {
         case adoptingToken = "token_adoption"
         case refreshingToken = "token_refresh"
+    }
+
+    /// What caused a token to be adopted. Distinguishes the main-app email-restore path from the
+    /// VPN token-bridge path, which otherwise share the same `meta.type` and platform.
+    public enum AdoptionSource: String, Codable {
+        case webRestore = "web_restore"
+        case vpn
     }
 
     public var globalData: WideEventGlobalData
@@ -41,6 +49,10 @@ public class AuthV2TokenAdoptionWideEventData: WideEventData {
     public var errorData: WideEventErrorData?
 
     public var failingStep: FailingStep?
+
+    /// Optional: only set by the known entry points. Left absent (rather than defaulted) when unknown,
+    /// so an un-annotated adoption reads as "unknown" rather than being misattributed.
+    public var adoptionSource: AdoptionSource?
 
     public init(errorData: WideEventErrorData? = nil,
                 contextData: WideEventContextData = WideEventContextData(),
@@ -62,6 +74,7 @@ extension AuthV2TokenAdoptionWideEventData {
     public func jsonParameters() -> [String: Encodable] {
         Dictionary(compacting: [
             (WideEventParameter.AuthV2AdoptionFeature.failingStep, failingStep?.rawValue),
+            (WideEventParameter.AuthV2AdoptionFeature.adoptionSource, adoptionSource?.rawValue),
         ])
     }
 
@@ -71,6 +84,7 @@ extension WideEventParameter {
 
     public enum AuthV2AdoptionFeature {
         static let failingStep = "feature.data.ext.failing_step"
+        static let adoptionSource = "feature.data.ext.adoption_source"
     }
 
 }

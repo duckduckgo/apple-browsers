@@ -23,6 +23,7 @@ import NewTabPage
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
+@MainActor
 final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
     private var mockModelsService: MockModelsService!
@@ -51,7 +52,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
     func testWhenFetchingModelsThenFieldsAreMappedCorrectly() async {
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "gpt-4o-mini", name: "GPT-4o mini", shortName: "4o-mini",
-                            supportsImageUpload: true, accessTier: ["free"])
+                            supportsImageUpload: true, supportedTools: ["WebSearch", "NewsSearch"], accessTier: ["free"])
         ]
 
         let sections = await provider.fetchAIModelSections()
@@ -62,6 +63,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertEqual(item?.shortName, "4o-mini")
         XCTAssertTrue(item?.isEnabled == true)
         XCTAssertTrue(item?.supportsImageUpload == true)
+        XCTAssertEqual(item?.supportedTools, ["WebSearch", "NewsSearch"])
     }
 
     func testWhenFreeUserThenPremiumModelsAreDisabled() async {
@@ -107,6 +109,30 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertTrue(allIds.contains("plus-model"))
         XCTAssertTrue(allIds.contains("free-model"))
         XCTAssertFalse(allIds.contains("pro-only"))
+    }
+
+    // MARK: - Reasoning Effort Tests
+
+    func testWhenModelHasSupportedReasoningEffortThenItIsMappedToItem() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "reasoning-model", supportedReasoningEffort: [.none, .low, .medium], accessTier: ["free"])
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let item = sections.flatMap(\.items).first(where: { $0.id == "reasoning-model" })
+
+        XCTAssertEqual(item?.supportedReasoningEffort, ["none", "low", "medium"])
+    }
+
+    func testWhenModelHasNoReasoningSupportThenMappedItemHasEmptyArray() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "plain-model", accessTier: ["free"])
+        ]
+
+        let sections = await provider.fetchAIModelSections()
+        let item = sections.flatMap(\.items).first(where: { $0.id == "plain-model" })
+
+        XCTAssertEqual(item?.supportedReasoningEffort, [])
     }
 
     // MARK: - Section Structure Tests
@@ -183,6 +209,47 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertTrue(premiumItem?.isEnabled == false)
     }
 
+    // MARK: - Concurrency
+
+    /// Overlapping callers (`NewTabPageOmnibarClient.getConfig` and `refreshModelsAndNotify`) must
+    /// not corrupt the cached sections. `@MainActor` isolation serializes these accesses on the main
+    /// actor; before isolation the provider was non-isolated, so concurrent writes to
+    /// `lastFetchedSections` raced on the array's ARC refcount and double-freed its backing storage
+    /// (EXC_BAD_ACCESS in `swift_arrayDestroy`, Sentry APPLE-MACOS-C4H/C6Q/C72). Hammering the
+    /// provider from many overlapping tasks must complete with a well-formed cache; most effective
+    /// under the Thread Sanitizer.
+    func testWhenFetchedConcurrentlyThenCachedSectionsAreNotCorrupted() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "free-model", accessTier: ["free"]),
+            makeRemoteModel(id: "premium-model", accessTier: ["plus", "pro"]),
+        ]
+        let provider = self.provider!
+
+        // Child tasks only return values; assertions run in this `@MainActor` parent so XCTest
+        // failure recording is never invoked concurrently from background executors.
+        let fetchedIDs = await withTaskGroup(of: [String]?.self) { group -> [[String]] in
+            for _ in 0..<500 {
+                group.addTask {
+                    await provider.fetchAIModelSections().flatMap(\.items).map(\.id)
+                }
+                // Interleave concurrent reads of the cached property with the in-flight writes.
+                group.addTask {
+                    _ = await provider.lastFetchedSections
+                    return nil
+                }
+            }
+            return await group.reduce(into: [[String]]()) { result, ids in
+                if let ids { result.append(ids) }
+            }
+        }
+
+        for ids in fetchedIDs {
+            XCTAssertEqual(Set(ids), ["free-model", "premium-model"])
+        }
+        XCTAssertEqual(Set(provider.lastFetchedSections?.flatMap(\.items).map(\.id) ?? []),
+                       ["free-model", "premium-model"])
+    }
+
     // MARK: - Helpers
 
     private func makeRemoteModel(
@@ -190,6 +257,8 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         name: String = "Model",
         shortName: String? = nil,
         supportsImageUpload: Bool = false,
+        supportedTools: [String] = [],
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
         accessTier: [String]
     ) -> AIChatRemoteModel {
         AIChatRemoteModel(
@@ -199,8 +268,9 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
             provider: "openai",
             entityHasAccess: true,
             supportsImageUpload: supportsImageUpload,
-            supportedTools: [],
-            accessTier: accessTier
+            supportedTools: supportedTools,
+            accessTier: accessTier,
+            supportedReasoningEffort: supportedReasoningEffort
         )
     }
 
@@ -227,8 +297,8 @@ private final class MockModelsService: AIChatModelsProviding {
     var modelsToReturn: [AIChatRemoteModel] = []
     var errorToThrow: Error?
 
-    func fetchModels() async throws -> [AIChatRemoteModel] {
+    func fetchModels() async throws -> AIChatModelsResponse {
         if let error = errorToThrow { throw error }
-        return modelsToReturn
+        return AIChatModelsResponse(models: modelsToReturn)
     }
 }

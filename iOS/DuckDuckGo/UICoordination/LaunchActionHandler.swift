@@ -40,11 +40,26 @@ enum LaunchAction {
         }
     }
 
+    var url: URL? {
+        switch self {
+        case .openURL(let url):
+            return url
+        case .handleShortcutItem, .handleUserActivity, .standardLaunch:
+            return nil
+        }
+    }
+
+}
+
+@MainActor
+protocol OnboardingPresenting: AnyObject {
+    func startOnboardingFlowIfNotSeenBefore(url: URL?)
 }
 
 @MainActor
 protocol IdleReturnLaunchDelegate: AnyObject {
     func showNewTabPageAfterIdleReturn()
+    func markLastUsedTabAsResumedAfterIdle()
 }
 
 @MainActor
@@ -97,16 +112,21 @@ final class LaunchActionHandler: LaunchActionHandling {
             userActivityHandler.handleUserActivity(userActivity)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
             launchSourceManager.setSource(.standard)
-            if idleReturnEvaluator.shouldShowNTPAfterIdle(lastBackgroundDate: lastBackgroundDate) {
-                idleReturnDelegate?.showNewTabPageAfterIdleReturn()
-            } else {
-                keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
+            if idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate) {
+                switch idleReturnEvaluator.treatmentForIdleReturn() {
+                case .ntp:
+                    idleReturnDelegate?.showNewTabPageAfterIdleReturn()
+                    return
+                case .lut:
+                    idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle()
+                }
             }
+            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
         }
     }
     
     private func openURL(_ url: URL) {
-        Logger.sync.debug("App launched with url \(url.absoluteString)")
+        Logger.sync.debug("App launched with url \(url.shortDescription)")
         fireAppLaunchedWithExternalLinkPixel(url: url)
         guard urlHandler.shouldProcessDeepLink(url) else { return }
         NotificationCenter.default.post(name: AutofillLoginListAuthenticator.Notifications.invalidateContext, object: nil)

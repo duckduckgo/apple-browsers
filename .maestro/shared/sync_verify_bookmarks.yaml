@@ -19,7 +19,7 @@ appId: com.duckduckgo.mobile.ios
     commands:
       - tapOn: Not Now
 
-- assertVisible: Spread Privacy
+- assertVisible: ".*Spread Privacy.*"
 - assertVisible: Stack Overflow - Where Developers Learn, Share, & Build Careers
 - assertVisible: DuckDuckGo — Privacy, simplified.
 - assertVisible: DuckDuckGo · GitHub

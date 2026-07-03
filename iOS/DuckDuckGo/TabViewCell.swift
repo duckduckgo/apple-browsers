@@ -39,18 +39,17 @@ class TabViewCell: UICollectionViewCell {
 
         static let swipeToDeleteAlpha: CGFloat = 0.5
 
-        static let borderRadius: CGFloat = 14.0
+        static var borderRadius: CGFloat { AppRebrand.isAppRebranded() ? 28.0 : 14.0 }
 
-        static let cellCornerRadius: CGFloat = 12.0
+        static var cellCornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 26.0 : 12.0 }
         static let cellHeaderHeight: CGFloat = 36.0 + 4.0 // height + top padding
         static let cellLogoSize: CGFloat = 68.0
-
-        static let previewCornerRadius: CGFloat = 8
 
         static let selectedBorderWidth: CGFloat = 2.0
         static let unselectedBorderWidth: CGFloat = 0.0
         static let previewPadding: CGFloat = 4.0
-
+        static var previewCornerRadius: CGFloat { cellCornerRadius - previewPadding }
+        
         static let removeButtonTextSpacingRegular: CGFloat = -12
         static let removeButtonTextSpacingHighlighted: CGFloat = 2
 
@@ -120,6 +119,14 @@ class TabViewCell: UICollectionViewCell {
     // Grid view
     var preview: UIImageView?
 
+    /// Container for the Duck.ai rich tab grid card content (text/image/voice/empty).
+    var richCardContainer: DuckAIGridCardView?
+
+    /// File-ref token guarding the in-flight thumbnail load.
+    private var currentThumbnailFileRef: String?
+    private var thumbnailLoadTask: Task<Void, Never>?
+    private weak var thumbnailLoader: DuckAIThumbnailLoading?
+
     weak var previewAspectRatio: NSLayoutConstraint?
     var previewTopConstraint: NSLayoutConstraint?
     var previewBottomConstraint: NSLayoutConstraint?
@@ -182,8 +189,8 @@ class TabViewCell: UICollectionViewCell {
     }
 
     private func updatePreviewToDisplay(image: UIImage) {
-        let imageAspectRatio = image.size.height / image.size.width
-        let containerAspectRatio = (background.bounds.height - TabViewCell.Constants.cellHeaderHeight) / background.bounds.width
+        let imageAspectRatio = image.size.width > 0 ? image.size.height / image.size.width : 1.0
+        let containerAspectRatio = background.bounds.width > 0 ? (background.bounds.height - TabViewCell.Constants.cellHeaderHeight) / background.bounds.width : 1.0
 
         let strechContainerVerically = containerAspectRatio < imageAspectRatio
 
@@ -231,26 +238,27 @@ class TabViewCell: UICollectionViewCell {
         return asset
     }
 
-    private static let regularLogoImage: UIImage = {
-        let image = UIImage(resource: .logo)
+    private static let legacyLogoImage: UIImage = {
         let renderFormat = UIGraphicsImageRendererFormat.default()
         renderFormat.opaque = false
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: Constants.cellLogoSize,
                                                             height: Constants.cellLogoSize),
                                                format: renderFormat)
         return renderer.image { _ in
-            image.draw(in: CGRect(x: 0,
-                                  y: 0,
-                                  width: Constants.cellLogoSize,
-                                  height: Constants.cellLogoSize))
+            UIImage(resource: .logo).draw(in: CGRect(x: 0,
+                                                     y: 0,
+                                                     width: Constants.cellLogoSize,
+                                                     height: Constants.cellLogoSize))
         }
     }()
 
     static func logoImage(for tab: Tab?) -> UIImage {
         if let tab, tab.fireTab {
             return DesignSystemImages.Color.Size96.fireTab
+        } else if AppRebrand.isAppRebranded() {
+            return DesignSystemImages.Color.Size96.duckDuckGo
         } else {
-            return regularLogoImage
+            return legacyLogoImage
         }
     }
 
@@ -259,7 +267,7 @@ class TabViewCell: UICollectionViewCell {
     }
     
     var accentColor: UIColor {
-        isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+        isFireTab ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
     }
 
     // MARK: - Programmatic Layout
@@ -397,7 +405,9 @@ class TabViewCell: UICollectionViewCell {
 
     private func startRemoveAnimation() {
         self.isDeleting = true
-        Pixel.fire(pixel: .tabSwitcherSwipeCloseTab)
+        Pixel.fire(pixel: .tabSwitcherSwipeCloseTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: isFireTab ? BrowsingMode.fire.pixelParamValue : BrowsingMode.normal.pixelParamValue
+        ])
         self.deleteTab()
         UIView.animate(withDuration: Constants.swipeAnimationDuration, animations: {
             self.transform = CGAffineTransform.identity.translatedBy(x: -self.frame.width, y: 0)
@@ -424,7 +434,9 @@ class TabViewCell: UICollectionViewCell {
     }
 
     @objc func deleteTab() {
-        Pixel.fire(pixel: .tabSwitcherClickCloseTab)
+        Pixel.fire(pixel: .tabSwitcherClickCloseTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: isFireTab ? BrowsingMode.fire.pixelParamValue : BrowsingMode.normal.pixelParamValue
+        ])
         closeTab()
     }
 
@@ -453,7 +465,7 @@ class TabViewCell: UICollectionViewCell {
             if isFireTab {
                 return UIColor(singleUseColor: .fireModeAccent)
             }
-            return isSelectionModeEnabled ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .decorationTertiary)
+            return isSelectionModeEnabled ? UIColor(designSystemColor: .accentPrimary) : UIColor(designSystemColor: .decorationTertiary)
         }
         let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
         border.layer.borderColor = borderColor.cgColor
@@ -474,9 +486,9 @@ class TabViewCell: UICollectionViewCell {
     func update(withTab tab: Tab,
                 isSelectionModeEnabled: Bool,
                 preview: UIImage?,
-                isFireModeEnabled: Bool) {
-        accessibilityElements = [ title as Any, removeButton as Any ]
-
+                isFireModeEnabled: Bool,
+                duckAIGridItem: DuckAIGridItem? = nil,
+                thumbnailLoader: DuckAIThumbnailLoading? = nil) {
         self.tab = tab
         self.isSelectionModeEnabled = isSelectionModeEnabled
         self.isFireModeEnabled = isFireModeEnabled
@@ -498,11 +510,21 @@ class TabViewCell: UICollectionViewCell {
 
         unread.isHidden = tab.viewed
 
+        // Reset rich-card / preview visibility on every reuse; cancel any in-flight
+        // thumbnail load and clear the cached image so the next item starts clean.
+        richCardContainer?.isHidden = true
+        self.preview?.isHidden = false
+        cancelThumbnailLoad()
+        richCardContainer?.setThumbnail(nil)
+
         if tab.isAITab {
             let aiChatTitle = UserText.omnibarFullAIChatModeDisplayTitle
             let conversationTitle = tab.aiChatConversationTitle
             let isListMode = link != nil
-            let displayTitle = isListMode ? aiChatTitle : (conversationTitle ?? aiChatTitle)
+            // When the rich card is rendered, the conversation title lives inside the
+            // card body, so the cell header always reads "Duck.ai" — same as list mode.
+            let showsRichCard = duckAIGridItem != nil
+            let displayTitle = (isListMode || showsRichCard) ? aiChatTitle : (conversationTitle ?? aiChatTitle)
             removeButton.accessibilityLabel = UserText.closeTab(withTitle: conversationTitle ?? aiChatTitle, atAddress: "")
             title.accessibilityLabel = UserText.openTab(withTitle: conversationTitle ?? aiChatTitle, atAddress: "")
             title.text = displayTitle
@@ -515,13 +537,9 @@ class TabViewCell: UICollectionViewCell {
                 link?.isHidden = true
             }
 
-            if let preview = preview {
-                self.updatePreviewToDisplay(image: preview)
-                self.preview?.contentMode = .scaleAspectFill
-                self.preview?.image = preview
-            } else {
-                self.preview?.image = nil
-            }
+            configureAIContent(duckAIGridItem: duckAIGridItem,
+                               screenshotPreview: preview,
+                               thumbnailLoader: thumbnailLoader)
 
             removeButton.isHidden = false
 
@@ -564,8 +582,83 @@ class TabViewCell: UICollectionViewCell {
         }
 
         updateUIForSelectionMode(removeButton, selectionIndicator)
+
+        // Include the rich card between the header title and close button so VoiceOver
+        // reads the conversation title/snippet that lives inside the card body.
+        if let richCard = richCardContainer, !richCard.isHidden {
+            accessibilityElements = [title as Any, richCard as Any, removeButton as Any]
+        } else {
+            accessibilityElements = [title as Any, removeButton as Any]
+        }
     }
     
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        cancelThumbnailLoad()
+        richCardContainer?.setThumbnail(nil)
+        richCardContainer?.resetAppearance()
+    }
+
+    private func cancelThumbnailLoad() {
+        thumbnailLoadTask?.cancel()
+        thumbnailLoadTask = nil
+        currentThumbnailFileRef = nil
+        thumbnailLoader = nil
+    }
+
+    /// Synchronously loads the `.image` thumbnail into the card so a snapshot taken during the
+    /// tab-switcher transition includes it. No-op for non-image cards or once it's already set.
+    func prepareForSnapshot() {
+        guard let fileRef = currentThumbnailFileRef,
+              let loader = thumbnailLoader,
+              richCardContainer?.hasThumbnail == false,
+              let image = loader.loadImageSynchronously(fileRef: fileRef) else { return }
+        richCardContainer?.setThumbnail(image)
+    }
+
+    /// Chooses what fills an AI tab's preview slot: the bare-empty new-tab logo, the rich card,
+    /// or the screenshot fallback.
+    private func configureAIContent(duckAIGridItem: DuckAIGridItem?,
+                                    screenshotPreview: UIImage?,
+                                    thumbnailLoader: DuckAIThumbnailLoading?) {
+        if case .empty(nil, nil) = duckAIGridItem {
+            richCardContainer?.isHidden = true
+            preview?.isHidden = false
+            updatePreviewToDisplayLogo()
+            preview?.image = DesignSystemImages.Color.Size96.duckAI
+            preview?.contentMode = .center
+        } else if let item = duckAIGridItem {
+            richCardContainer?.configure(with: item)
+            richCardContainer?.isHidden = false
+            preview?.isHidden = true
+            startThumbnailLoadIfNeeded(for: item, loader: thumbnailLoader)
+        } else if let screenshotPreview {
+            updatePreviewToDisplay(image: screenshotPreview)
+            preview?.contentMode = .scaleAspectFill
+            preview?.image = screenshotPreview
+        } else {
+            preview?.image = nil
+        }
+    }
+
+    private func startThumbnailLoadIfNeeded(for item: DuckAIGridItem,
+                                            loader: DuckAIThumbnailLoading?) {
+        guard case .image(_, let fileRef) = item, let loader else { return }
+        currentThumbnailFileRef = fileRef
+        thumbnailLoader = loader
+        thumbnailLoadTask = Task { @MainActor [weak self, weak loader] in
+            guard let loader else { return }
+            let image = await loader.loadImage(fileRef: fileRef)
+            // Drop the result on cell reuse / item change. Identity check is on the
+            // file ref token, not just `Task.isCancelled`, so we also discard stale
+            // loads when a new image item replaced this one without a full reuse.
+            guard let self,
+                  !Task.isCancelled,
+                  self.currentThumbnailFileRef == fileRef else { return }
+            self.richCardContainer?.setThumbnail(image)
+        }
+    }
+
     private func updateEmptyTabLabel(for tab: Tab) {
         if isFireModeEnabled {
             title.text = tab.fireTab ? UserText.fireTabTitle : UserText.newTabTitle

@@ -22,9 +22,12 @@ import Core
 import TrackerRadarKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import PrivacyDashboard
 import Combine
+import AIChat
 import os.log
+import Onboarding
 
 protocol EntityProviding {
     
@@ -34,6 +37,7 @@ protocol EntityProviding {
 
 protocol NewTabDialogSpecProvider {
     func nextHomeScreenMessageNew() -> DaxDialogs.HomeScreenSpec?
+    func setFinalOnboardingDialogSeen()
     func dismiss()
 }
 
@@ -57,6 +61,8 @@ protocol ContextualOnboardingLogic {
 
     func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType)
 
+    var tryAnonymousSearchMessageSeen: Bool { get }
+
     func setTryAnonymousSearchMessageSeen()
     func setSearchMessageSeen()
 
@@ -67,9 +73,28 @@ protocol ContextualOnboardingLogic {
     func fireButtonPulseStarted()
     func fireButtonPulseCancelled()
 
+    func setDialogsPriorFinalSeen()
+
     func setFinalOnboardingDialogSeen()
 
     func setDaxDialogDismiss()
+
+    /// Marks that the "try visiting a site" step has been shown in the chat-first (Duck.ai) onboarding path.
+    func setChatPathVisitSiteSeen()
+
+    /// Marks the user as having entered the Duck.ai chat-first onboarding path.
+    func setAsChatFirstPath()
+
+    /// The current phase of the Duck.ai chat-first onboarding path.
+    var chatPathPhase: DaxDialogs.ChatPathPhase { get }
+
+    /// Whether the user entered the Duck.ai chat-first onboarding path.
+    /// Unlike `chatPathPhase`, this stays `true` even after the path completes (e.g. past `finalDialogSeen`).
+    var isChatFirstPath: Bool { get }
+
+    /// Whether Duck.ai is currently enabled in app settings.
+    /// When false, chat-path onboarding UI should fall back to the standard search-path equivalent.
+    var isAIChatEnabled: Bool { get }
 
     func enableAddFavoriteFlow()
     func resumeRegularFlow()
@@ -91,6 +116,10 @@ protocol SubscriptionPromotionCoordinating {
 
     /// Indicates whether the user has seen the Subscription promotion dialog
     var subscriptionPromotionDialogSeen: Bool { get set }
+
+    /// True when the subscription promotion dialog is eligible to be shown but hasn't been shown yet.
+    /// Used to defer `disableContextualDaxDialogs()` until after the promo is dismissed.
+    var subscriptionPromotionPending: Bool { get }
 }
 
 extension ContentBlockerRulesManager: EntityProviding {
@@ -102,6 +131,16 @@ extension ContentBlockerRulesManager: EntityProviding {
 }
 
 final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, ContextualDaxDialogStatusProvider {
+
+    /// Represents the current phase of the Duck.ai chat-first onboarding path.
+    enum ChatPathPhase {
+        /// Not in the chat-first path, or the path has been completed.
+        case none
+        /// Fire step done; the "try visiting a site" NTP prompt is pending.
+        case visitSite
+        /// Visit-site step shown; the user needs to see the trackers-blocked dialog and then the EOJ dialog.
+        case trackerToEOJ
+    }
 
     struct MajorTrackers {
         
@@ -190,9 +229,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
                                        message: UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage)
 
         static let fireDuckAIOnboarding = BrowsingSpec(type: .fire(.duckAIOnboarding),
-                                                       pixelName: .onboardingDuckAIExperimentFireDialogShownUnique,
-                                                       title: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingTitle,
-                                                       message: UserText.Onboarding.DuckAIQueryExperiment.fireOnboardingMessage,
+                                                       pixelName: .onboardingDuckAIFireDialogShownUnique,
+                                                       title: UserText.Onboarding.DuckAIQuery.fireOnboardingTitle,
+                                                       message: UserText.Onboarding.DuckAIQuery.fireOnboardingMessage,
                                                        allowsManualDismiss: false)
 
         static let final = BrowsingSpec(type: .final,
@@ -259,7 +298,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
     private var currentHomeSpec: HomeScreenSpec?
 
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
-    
+    private let aiChatSettings: AIChatSettingsProvider
+    private let onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
+
     public let isDismissedPublisher: PassthroughSubject<Bool, Never>
 
     /// Use singleton accessor, this is only accessible for tests
@@ -267,13 +308,17 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
          entityProviding: EntityProviding,
          variantManager: VariantManager = DefaultVariantManager(),
          launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
-         onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper()
+         onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
+         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
         self.variantManager = variantManager
         self.launchOptionsHandler = launchOptionsHandler
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
+        self.aiChatSettings = aiChatSettings
+        self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         self.isDismissedPublisher = PassthroughSubject<Bool, Never>()
     }
 
@@ -359,11 +404,24 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         if peekNextHomeScreenMessageExperiment() != nil {
             return true
         }
+        // Chat-path users suppress the standard NTP spec while their EOJ is driven by
+        // presentChatPathOnboardingCompletionIfNeeded, so peekNextHomeScreenMessageExperiment
+        // returns nil during that window. Keep isStillOnboarding = true until the EOJ is seen
+        // to prevent unrelated NTP widgets (e.g. fire-mode promotion) from appearing.
+        if settings.isChatFirstPath && !finalDaxDialogSeen {
+            return true
+        }
         return false
     }
 
     func dismiss() {
         Logger.onboarding.debug("DaxDialogs.dismiss() called – ending onboarding, isDismissed will be set to true")
+        // Chat-path EOJ is dismissed via this method rather than via setFinalOnboardingDialogSeen()
+        // (which the standard path calls inside the factory's onCompletion). Ensure the flag is set
+        // so isStillOnboarding() resolves to false and finalDaxDialogSeen-gated paths work correctly.
+        if settings.isChatFirstPath {
+            settings.browsingFinalDialogShown = true
+        }
         settings.isDismissed = true
         // Reset last shown dialog as we don't have to show it anymore.
         isDismissedPublisher.send(true)
@@ -456,6 +514,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         settings.tryAnonymousSearchShown = true
     }
 
+    var tryAnonymousSearchMessageSeen: Bool {
+        settings.tryAnonymousSearchShown
+    }
+
     func setTryVisitSiteMessageSeen() {
         settings.tryVisitASiteShown = true
     }
@@ -483,8 +545,47 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
         clearOnboardingBrowsingData()
     }
 
+    func setDialogsPriorFinalSeen() {
+        settings.tryAnonymousSearchShown = true
+        settings.tryVisitASiteShown = true
+        settings.browsingAfterSearchShown = true
+        settings.browsingWithTrackersShown = true
+        settings.browsingWithoutTrackersShown = true
+        settings.browsingMajorTrackingSiteShown = true
+        settings.fireButtonEducationShownOrExpired = true
+        settings.fireMessageExperimentShown = true
+        settings.privacyButtonPulseShown = true
+    }
+
     func setFinalOnboardingDialogSeen() {
         settings.browsingFinalDialogShown = true
+    }
+
+    func setChatPathVisitSiteSeen() {
+        settings.chatPathVisitSiteSeen = true
+    }
+
+    func setAsChatFirstPath() {
+        settings.isChatFirstPath = true
+        // Reset visit-site progress so stale state from a previous run doesn't skip straight to EOJ.
+        settings.chatPathVisitSiteSeen = false
+        settings.browsingWithTrackersShown = false
+        settings.browsingWithoutTrackersShown = false
+        settings.browsingMajorTrackingSiteShown = false
+        settings.browsingFinalDialogShown = false
+        settings.browsingAfterSearchShown = false
+    }
+
+    var chatPathPhase: ChatPathPhase {
+        settings.chatPathPhase
+    }
+
+    var isChatFirstPath: Bool {
+        settings.isChatFirstPath
+    }
+
+    var isAIChatEnabled: Bool {
+        aiChatSettings.isAIChatEnabled
     }
 
     func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> BrowsingSpec? {
@@ -581,6 +682,19 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             }
 
             return nil
+        }
+
+        // Chat-first path: visit-site and trackers-blocked steps come after fire, so EOJ is
+        // delivered via presentChatPathOnboardingCompletionIfNeeded — suppress .final here.
+        // chatPathPhase (not chatPathVisitSiteSeen) is used because chatPathVisitSiteSeen is
+        // set on first appearance and would block re-presentation after an app relaunch.
+        if settings.isChatFirstPath && settings.fireMessageExperimentShown {
+            if chatPathPhase == .visitSite {
+                return .subsequent
+            }
+            // When AI Chat is enabled the EOJ is driven by presentChatPathOnboardingCompletionIfNeeded.
+            // When disabled, fall through to .final so users still see an end-of-journey dialog.
+            return isAIChatEnabled ? nil : .final
         }
 
         // Check final first as if we skip anonymous searches we don't want to show this.
@@ -733,6 +847,13 @@ extension DaxDialogs: SubscriptionPromotionCoordinating {
             settings.subscriptionPromotionDialogShown = newValue
         }
     }
+
+    /// True when the subscription promotion dialog is eligible to be shown but hasn't been shown yet.
+    /// Used to defer `disableContextualDaxDialogs()` until after the promo is dismissed.
+    var subscriptionPromotionPending: Bool {
+        isEnabled && finalDaxDialogSeen && onboardingSubscriptionPromotionHelper.shouldDisplay && !subscriptionPromotionDialogSeen
+    }
+
 }
 
 extension DaxDialogs: ContextualDaxDialogDisabling {

@@ -20,6 +20,7 @@
 import UIKit
 import SwiftUI
 import Core
+import MetricBuilder
 
 /// Presenter for the Win-back offer prompt.
 /// 
@@ -78,7 +79,7 @@ private extension WinBackOfferPresenter {
         }
 
         presentationController.prefersGrabberVisible = false
-        presentationController.preferredCornerRadius = 16
+        presentationController.preferredCornerRadius = MainActor.assumeIsolated { SheetMetrics.cornerRadius }
     }
 
     @available(iOS 16.0, *)

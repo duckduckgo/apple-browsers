@@ -20,7 +20,7 @@ import Foundation
 import StoreKit
 
 /// A protocol for types that can fetch subscription products.
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public protocol ProductFetching {
     /// Fetches products for the specified identifiers.
     /// - Parameter identifiers: An array of product identifiers to fetch.
@@ -30,7 +30,7 @@ public protocol ProductFetching {
 }
 
 /// A default implementation of ProductFetching that uses StoreKit's standard product fetching.
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public final class DefaultProductFetcher: ProductFetching {
     /// Initializes a new DefaultProductFetcher instance.
     public init() {}

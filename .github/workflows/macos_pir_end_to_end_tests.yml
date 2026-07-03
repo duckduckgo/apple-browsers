@@ -38,10 +38,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26-xlarge]
+        runner: [macos-26]
         include:
           - xcode-version: "26.4"
-            runner: macos-26-xlarge
+            runner: macos-26
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
@@ -86,7 +86,12 @@ jobs:
         ./install-prerequisites.sh
         ./setup-ci.sh
         cd ..
-        pnpm start:all &
+        # install-prerequisites.sh runs `npm install -g pnpm` unpinned, which now
+        # resolves to pnpm 10 and turns ignored-builds into a hard error. Override
+        # to v9 (matches the broker lockfile) until the broker repo pins it itself.
+        npm install -g pnpm@9.7.1
+        pnpm start:all > "$GITHUB_WORKSPACE/macOS/pir-fake-broker.log" 2>&1 &
+        echo $! > "$GITHUB_WORKSPACE/macOS/pir-fake-broker.pid"
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -151,6 +156,27 @@ jobs:
         restore-keys: |
           xcode-compilation-cache-pir-e2e-
 
+    - name: Wait for PIR Fake Broker
+      run: |
+        for i in {1..60}; do
+          if curl -sS -o /dev/null --max-time 2 http://localhost:3001/; then
+            echo "PIR Fake Broker is reachable on port 3001 (after ${i}s)"
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "::error::PIR Fake Broker did not become reachable on port 3001 within 60s"
+        echo "--- listeners on :3001 ---"
+        lsof -iTCP:3001 -sTCP:LISTEN || echo "(nothing listening on :3001)"
+        if [ -f pir-fake-broker.pid ]; then
+          pid=$(cat pir-fake-broker.pid)
+          echo "--- broker process status (pid=$pid) ---"
+          ps -p "$pid" -o pid,stat,etime,command || echo "(broker process is no longer running)"
+        fi
+        echo "--- pir-fake-broker.log (last 200 lines) ---"
+        tail -n 200 pir-fake-broker.log || echo "(no broker log)"
+        exit 1
+
     - name: Run PIR e2e Tests
       id: run-tests
       run: |
@@ -162,9 +188,10 @@ jobs:
           -skipPackagePluginValidation -skipMacroValidation \
           ENABLE_TESTABILITY=true \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "-only-testing:DBPE2ETests" \
+          -test-iterations 3 \
           -retry-tests-on-failure \
-          -test-iterations 2 \
           | tee xcodebuild.log \
           | tee pir-e2e-tests.log
       env:
@@ -206,7 +233,7 @@ jobs:
         pixel-name: m_ci_apple_status_mac_e2e_pir_${{ steps.run-tests.outcome }}
 
     - name: Prepare test report
-      if: always()
+      if: always() && steps.run-tests.outcome != 'skipped'
       run: |
         xcbeautify --report junit --report-path . --junit-report-filename pir-e2e-tests.xml < pir-e2e-tests.log
 
@@ -216,7 +243,7 @@ jobs:
       with:
         check_name: "Test Report ${{ matrix.runner }}"
         report_paths: macOS/pir-e2e-tests.xml
-        check_retries: true
+        check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
 
     - name: Collect PIR process logs
       if: failure() || cancelled()
@@ -231,6 +258,7 @@ jobs:
         path: |
           macOS/xcodebuild.log
           macOS/pir-process.log
+          macOS/pir-fake-broker.log
           macOS/DerivedData/Logs/Test/*.xcresult
           ~/Library/Logs/DiagnosticReports/*
         retention-days: 7

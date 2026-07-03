@@ -35,7 +35,6 @@ public extension OnboardingTheme {
             lhs.contentInnerSpacing == rhs.contentInnerSpacing &&
             lhs.buttonSpacing == rhs.buttonSpacing &&
             lhs.bubbleMaxWidth == rhs.bubbleMaxWidth &&
-            lhs.bubbleTailOffset == rhs.bubbleTailOffset &&
             lhs.topMarginRatio == rhs.topMarginRatio &&
             lhs.minTopMargin == rhs.minTopMargin &&
             lhs.maxTopMargin == rhs.maxTopMargin &&
@@ -56,8 +55,6 @@ public extension OnboardingTheme {
         public let actionsSpacing: CGFloat
         /// Maximum width for linear onboarding bubbles.
         public let bubbleMaxWidth: CGFloat
-        /// Horizontal offset for the bubble tail position (0.0–1.0).
-        public let bubbleTailOffset: CGFloat
         /// Ratio used to compute the top margin from the available height.
         public let topMarginRatio: CGFloat
         /// Minimum top margin.
@@ -84,7 +81,6 @@ public extension OnboardingTheme {
             contentInnerSpacing: CGFloat,
             buttonSpacing: CGFloat,
             bubbleMaxWidth: CGFloat,
-            bubbleTailOffset: CGFloat,
             topMarginRatio: CGFloat,
             minTopMargin: CGFloat,
             maxTopMargin: CGFloat,
@@ -99,7 +95,6 @@ public extension OnboardingTheme {
             self.contentInnerSpacing = contentInnerSpacing
             self.buttonSpacing = buttonSpacing
             self.bubbleMaxWidth = bubbleMaxWidth
-            self.bubbleTailOffset = bubbleTailOffset
             self.topMarginRatio = topMarginRatio
             self.minTopMargin = minTopMargin
             self.maxTopMargin = maxTopMargin
@@ -116,7 +111,6 @@ public extension OnboardingTheme {
             contentInnerSpacing: CGFloat,
             buttonSpacing: CGFloat,
             bubbleMaxWidth: CGFloat,
-            bubbleTailOffset: CGFloat,
             topMarginRatio: CGFloat,
             minTopMargin: CGFloat,
             maxTopMargin: CGFloat,
@@ -130,7 +124,6 @@ public extension OnboardingTheme {
             self.contentInnerSpacing = contentInnerSpacing
             self.buttonSpacing = buttonSpacing
             self.bubbleMaxWidth = bubbleMaxWidth
-            self.bubbleTailOffset = bubbleTailOffset
             self.topMarginRatio = topMarginRatio
             self.minTopMargin = minTopMargin
             self.maxTopMargin = maxTopMargin

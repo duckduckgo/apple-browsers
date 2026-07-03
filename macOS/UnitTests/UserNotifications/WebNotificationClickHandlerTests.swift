@@ -26,17 +26,12 @@ import XCTest
 final class MockWebNotificationTabFinder: WebNotificationTabFinding {
 
     var tabToReturn: Tab?
-    private(set) var findTabCalledWithUUID: String?
-    private(set) var focusTabCalledWithTab: Tab?
+    private(set) var focusTabCalledWithUUID: String?
     private(set) var focusBrowserCalled = false
 
-    func findTab(byUUID uuid: String) -> Tab? {
-        findTabCalledWithUUID = uuid
+    func focusTab(byUUID uuid: String) -> Tab? {
+        focusTabCalledWithUUID = uuid
         return tabToReturn
-    }
-
-    func focusTab(_ tab: Tab) {
-        focusTabCalledWithTab = tab
     }
 
     func focusBrowser() {
@@ -77,22 +72,13 @@ final class WebNotificationClickHandlerTests: XCTestCase {
 
     // MARK: - Tab Found Tests
 
-    func testWhenTabExistsThenFindsTabByUUID() {
+    func testWhenTabExistsThenFocusesTabByUUID() {
         let tab = Tab(content: .newtab)
         mockTabFinder.tabToReturn = tab
 
         handler.handleClick(tabUUID: "test-uuid-123", notificationId: "notif-1")
 
-        XCTAssertEqual(mockTabFinder.findTabCalledWithUUID, "test-uuid-123")
-    }
-
-    func testWhenTabExistsThenFocusesTab() {
-        let tab = Tab(content: .newtab)
-        mockTabFinder.tabToReturn = tab
-
-        handler.handleClick(tabUUID: "test-uuid", notificationId: "notif-1")
-
-        XCTAssertTrue(mockTabFinder.focusTabCalledWithTab === tab)
+        XCTAssertEqual(mockTabFinder.focusTabCalledWithUUID, "test-uuid-123")
     }
 
     func testWhenTabExistsThenDoesNotFocusBrowser() {
@@ -112,13 +98,5 @@ final class WebNotificationClickHandlerTests: XCTestCase {
         handler.handleClick(tabUUID: "missing-uuid", notificationId: "notif-1")
 
         XCTAssertTrue(mockTabFinder.focusBrowserCalled)
-    }
-
-    func testWhenTabNotFoundThenDoesNotFocusTab() {
-        mockTabFinder.tabToReturn = nil
-
-        handler.handleClick(tabUUID: "missing-uuid", notificationId: "notif-1")
-
-        XCTAssertNil(mockTabFinder.focusTabCalledWithTab)
     }
 }

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import SwiftUI
 
@@ -48,7 +49,7 @@ struct MenuItemCustomButton<Label: View>: View {
             buttonBackground(highlighted: isHovered)
         )
         .contentShape(Rectangle())
-        .cornerRadius(4)
+        .cornerRadius(AppVersion.isLiquidGlassSupported ? 7 : 4)
         .onTapGesture {
             buttonTapped()
         }

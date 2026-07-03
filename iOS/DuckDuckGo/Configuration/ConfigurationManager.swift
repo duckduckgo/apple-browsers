@@ -24,6 +24,7 @@ import Configuration
 import PrivacyConfig
 import Persistence
 import Common
+import FoundationExtensions
 import os.log
 
 final class ConfigurationManager: DefaultConfigurationManager {

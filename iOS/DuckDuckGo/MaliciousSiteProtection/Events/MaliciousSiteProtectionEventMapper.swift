@@ -19,6 +19,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Core
 import MaliciousSiteProtection
 
@@ -26,8 +27,10 @@ enum MaliciousSiteProtectionEventMapper {
 
     static let debugEvents = EventMapping<MaliciousSiteProtection.Event> { event, _, _, _ in
         switch event {
-        case .errorPageShown,
-             .visitSite,
+        case .errorPageShown:
+            Pixel.fireDailyAndStandard(event)
+        case .visitSite,
+             .leaveSite,
              .iframeLoaded,
              .settingToggled,
              .matchesApiTimeout,

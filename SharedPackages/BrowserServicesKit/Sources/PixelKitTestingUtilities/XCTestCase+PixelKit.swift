@@ -29,6 +29,7 @@ public extension XCTestCase {
     private static var standardPixelParameters = [
         PixelKit.Parameters.appVersion,
         PixelKit.Parameters.pixelSource,
+        PixelKit.Parameters.channel,
         PixelKit.Parameters.test
     ]
 
@@ -171,6 +172,8 @@ public extension XCTestCase {
             expectedPixelNames.append(originalName)
         case .daily:
             expectedPixelNames.append(originalName.appending("_daily"))
+        case .monthly:
+            expectedPixelNames.append(originalName.appending("_monthly"))
         case .dailyAndCount:
             expectedPixelNames.append(originalName.appending("_daily"))
             expectedPixelNames.append(originalName.appending("_count"))
@@ -190,6 +193,8 @@ public extension XCTestCase {
             expectedPixelNames.append(originalName)
         case .sample(let percentage):
             expectedPixelNames.append(originalName.appending("_sample\(percentage)"))
+        case .debounce:
+            expectedPixelNames.append(originalName)
         }
         return expectedPixelNames
     }

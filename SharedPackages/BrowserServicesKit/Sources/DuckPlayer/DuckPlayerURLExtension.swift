@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 extension String {
 
@@ -32,21 +33,9 @@ extension URL {
 
     /**
      * Returns the actual URL of the Private Player page.
-     *
-     * Depending on the use of simulated requests, it's either the custom scheme URL
-     * (without simulated requests, macOS <12), or youtube-nocookie.com URL (macOS 12 and newer).
-     * iOS 15+ supports simulated requests, so no need to check
      */
     public static func effectiveDuckPlayer(_ videoID: String, timestamp: String? = nil) -> URL {
-        #if os(iOS)
-            return youtubeNoCookie(videoID, timestamp: timestamp)
-        #else
-        if #available(macOS 12.0, *) {
-            return youtubeNoCookie(videoID, timestamp: timestamp)
-        } else {
-            return duckPlayer(videoID, timestamp: timestamp)
-        }
-        #endif
+        return youtubeNoCookie(videoID, timestamp: timestamp)
     }
 
     public static func duckPlayer(_ videoID: String, timestamp: String? = nil) -> URL {
@@ -165,22 +154,12 @@ extension URL {
     /**
      * Returns true if a URL represents a Private Player URL.
      *
-     * It primarily checks for `duck://player/` URL, but on macOS 12 and above (when using simulated requests),
-     * the Duck Scheme URL is eventually replaced by `www.youtube-nocookie.com/embed/VIDEOID` URL so this
-     * is checked too and this function returns `true` if any of the two is true on macOS 12.
+     * It checks for `duck://player/` URL and `www.youtube-nocookie.com/embed/VIDEOID`
+     * URL as both are valid representations.
      */
     public var isDuckPlayer: Bool {
         let isPrivatePlayer = isDuckURLScheme && host == Self.duckPlayerHost
-        #if os(iOS)
-            return isPrivatePlayer || isYoutubeNoCookie
-        #else
-        if #available(macOS 12.0, *) {
-            return isPrivatePlayer || isYoutubeNoCookie
-        } else {
-            return isPrivatePlayer
-        }
-        #endif
-
+        return isPrivatePlayer || isYoutubeNoCookie
     }
 
     public var isYoutube: Bool {

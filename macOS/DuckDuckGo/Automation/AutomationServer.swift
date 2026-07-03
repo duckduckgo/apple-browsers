@@ -151,10 +151,6 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
             return .failure(AutomationServerError.noWindow)
         }
 
-        guard #available(macOS 12.0, *) else {
-            return .failure(AutomationServerError.unsupportedOSVersion)
-        }
-
         do {
             let result = try await webView.callAsyncJavaScript(
                 script,

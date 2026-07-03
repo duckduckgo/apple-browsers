@@ -40,7 +40,7 @@ final class DBPEndToEndTests: XCTestCase {
     var viewModel: DBPUIViewModel!
     var testUserDefault: UserDefaults! = UserDefaults(suiteName: #function)
 
-    override func setUpWithError() throws {
+    override func setUp() async throws {
         continueAfterFailure = false
 
         // Store the integration test run type so that the agent can reliably access it:
@@ -49,7 +49,7 @@ final class DBPEndToEndTests: XCTestCase {
 
         pirProtectionManager = DataBrokerProtectionManager.shared
         loginItemsManager = LoginItemsManager()
-        loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
+        await loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
 
         communicationLayer = DBPUICommunicationLayer(webURLSettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
@@ -67,7 +67,7 @@ final class DBPEndToEndTests: XCTestCase {
 
     override func tearDown() async throws {
         try pirProtectionManager.dataManager!.database.deleteProfileData()
-        loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
+        await loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
 
         loginItemsManager = nil
         pirProtectionManager = nil
@@ -122,13 +122,13 @@ final class DBPEndToEndTests: XCTestCase {
         let database = dataManager!.database
         let communicator = pirProtectionManager.dataManager!.communicator
         try database.deleteProfileData()
-        XCTAssert(try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false).isEmpty)
+        XCTAssert(try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting).isEmpty)
 
         // Fake broker set up
-        await deleteAllProfilesOnFakeBroker()
+        try await deleteAllProfilesOnFakeBroker()
 
         let mockUserProfile = mockFakeBrokerUserProfile()
-        let returnedUserProfile = await createProfileOnFakeBroker(mockUserProfile)
+        let returnedUserProfile = try await createProfileOnFakeBroker(mockUserProfile)
         XCTAssertEqual(mockUserProfile.firstName, returnedUserProfile.firstName)
 
         // When
@@ -155,13 +155,13 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 3,
                                whenCondition: {
             autoreleasepool {
-                try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false).count > 0
+                try! database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting).count > 0
             }
         })
 
         // Also check that we made the broker profile queries correctly and that removed brokers are filtered
-        let allQueries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
-        let filteredQueries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true)
+        let allQueries = try! database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
+        let filteredQueries = try! database.fetchActiveBrokerProfileQueryData()
         let allBrokers = allQueries.compactMap { $0.dataBroker }
         let nonRemovedBrokers = allBrokers.filter { $0.removedAt == nil }
         let removedBrokers = allBrokers.filter { $0.removedAt != nil }
@@ -191,8 +191,9 @@ final class DBPEndToEndTests: XCTestCase {
         print("Successfully detected 1 non-removed broker and 1 removed broker with proper filtering")
 
         // At this stage the login item should be running
+        let isLoginItemEnabled = await loginItemsManager.isAnyEnabled([.dbpBackgroundAgent])
         assertCondition(withExpectationDescription: "Login item enabled after profile save",
-                        condition: { loginItemsManager.isAnyEnabled([.dbpBackgroundAgent]) })
+                        condition: { isLoginItemEnabled })
 
         // This needs to be await since it takes time to start the login item
         let loginItemRunningExpectation = expectation(description: "Login item running after profile save")
@@ -238,7 +239,7 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 60,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
+                let queries = try! database.fetchActiveBrokerProfileQueryData() // Only check non-removed brokers
                 let brokerIDs = queries.compactMap { $0.dataBroker.id }
                 let extractedProfiles = brokerIDs.flatMap { try! database.fetchExtractedProfiles(for: $0) }
                 return extractedProfiles.count > 0
@@ -267,14 +268,14 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 10,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
+                let queries = try! database.fetchActiveBrokerProfileQueryData() // Only check non-removed brokers
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 return optOutJobs.count > 0
             }
         })
 
         // Verify opt-out jobs are only created for non-removed brokers
-        let allQueriesWithJobs = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        let allQueriesWithJobs = try! database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
         var removedBrokerQueries = allQueriesWithJobs.filter { $0.dataBroker.removedAt != nil }
         assertCondition(withExpectationDescription: "Should have exactly 1 removed broker query to check",
                         condition: { removedBrokerQueries.count == 1 })
@@ -296,7 +297,7 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 300,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
+                let queries = try! database.fetchActiveBrokerProfileQueryData() // Only check non-removed brokers
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 return optOutJobs.first?.lastRunDate != nil
             }
@@ -307,7 +308,7 @@ final class DBPEndToEndTests: XCTestCase {
         await awaitFulfillment(of: optOutRequestedExpectation,
                                withTimeout: 300,
                                whenCondition: {
-            let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
+            let queries = try! database.fetchActiveBrokerProfileQueryData() // Only check non-removed brokers
             let optOutJobs = queries.flatMap { $0.optOutJobData }
             let events = optOutJobs.flatMap { $0.historyEvents }
             let optOutsRequested = events.filter { $0.type == .optOutRequested }
@@ -362,7 +363,7 @@ final class DBPEndToEndTests: XCTestCase {
                                withTimeout: 600,
                                whenCondition: {
             autoreleasepool {
-                let queries = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) // Only check non-removed brokers
+                let queries = try! database.fetchActiveBrokerProfileQueryData() // Only check non-removed brokers
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 let events = optOutJobs.flatMap { $0.historyEvents }
                 let optOutsConfirmed = events.filter { $0.type == .optOutConfirmed }
@@ -371,7 +372,7 @@ final class DBPEndToEndTests: XCTestCase {
         })
 
         // Final verification: ensure removed brokers have no confirmed opt-outs
-        let allQueriesWithEvents = try! database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+        let allQueriesWithEvents = try! database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
         removedBrokerQueries = allQueriesWithEvents.filter { $0.dataBroker.removedAt != nil }
         assertCondition(withExpectationDescription: "Should have exactly 1 removed broker query for final verification, got \(removedBrokerQueries.count)",
                         condition: { removedBrokerQueries.count == 1 })
@@ -417,16 +418,16 @@ extension DBPEndToEndTests {
         "http://localhost:3001/api/"
     }
 
-    func deleteAllProfilesOnFakeBroker() async {
+    func deleteAllProfilesOnFakeBroker() async throws {
         let deleteProfilesURL = URL(string: fakeBrokerAPIAddress + "profiles")!
         var deleteRequest = URLRequest(url: deleteProfilesURL)
         deleteRequest.httpMethod = "DELETE"
 
-        let (responseData, response) = try! await URLSession.shared.data(for: deleteRequest)
+        let (responseData, response) = try await fakeBrokerData(for: deleteRequest)
         validateFakeBrokerResponse(responseData: responseData, response: response)
     }
 
-    func createProfileOnFakeBroker(_ profile: FakeBrokerUserProfile) async -> FakeBrokerReturnedUserProfile {
+    func createProfileOnFakeBroker(_ profile: FakeBrokerUserProfile) async throws -> FakeBrokerReturnedUserProfile {
         let url = URL(string: fakeBrokerAPIAddress + "profiles")!
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -435,11 +436,25 @@ extension DBPEndToEndTests {
         let data = try! encoder.encode(profile)
         request.httpBody = data
 
-        let (responseData, response) = try! await URLSession.shared.data(for: request)
+        let (responseData, response) = try await fakeBrokerData(for: request)
         validateFakeBrokerResponse(responseData: responseData, response: response)
 
         let decoder = JSONDecoder()
         return try! decoder.decode(FakeBrokerReturnedUserProfile.self, from: responseData)
+    }
+
+    /// Wraps `URLSession.data(for:)` so that "broker not reachable" surfaces as `XCTSkip`
+    /// rather than a `try!` crash that aborts the entire xctest process before any test runs.
+    private func fakeBrokerData(for request: URLRequest) async throws -> (Data, URLResponse) {
+        do {
+            return try await URLSession.shared.data(for: request)
+        } catch let error as URLError where error.code == .cannotConnectToHost
+                                          || error.code == .cannotFindHost
+                                          || error.code == .networkConnectionLost
+                                          || error.code == .notConnectedToInternet
+                                          || error.code == .timedOut {
+            throw XCTSkip("PIR fake broker unreachable at \(fakeBrokerAPIAddress) - skipping test. Underlying error: \(error)")
+        }
     }
 }
 

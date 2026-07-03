@@ -92,45 +92,165 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
 
     enum ParameterKey {
         static let source = "source"
+        static let flowVersion = "flow_version"
+        static let myKind = "my_kind"
+        static let codeType = "code_type"
+        static let codeVersion = "code_version"
+        static let path = "path"
+        static let reason = "reason"
+        static let timeoutStage = "timeout_stage"
+        static let peerKind = "peer_kind"
+        static let myRole = "my_role"
     }
 
-    case syncSetupBarcodeScreenShown(SyncSetupSource)
-    case syncSetupBarcodeCodeCopied(SyncSetupSource)
-    case syncSetupManualCodeEntryScreenShown
-    case syncSetupManualCodeEnteredSuccess(SyncSetupSource)
-    case syncSetupManualCodeEnteredFailed
-    case syncSetupEndedAbandoned(SyncSetupSource)
-    case syncSetupEndedSuccessful(SyncSetupSource)
+    enum ParameterValue {
+        static let ddg = "ddg"
+        static let recovery = "recovery"
+        static let pairing = "pairing"
+        static let linking = "linking"
+        static let v1 = "v1"
+        static let v2 = "v2"
+        static let alreadyPaired = "already_paired"
+        static let scanningCancelled = "scanning_cancelled"
+        static let syncConfirmationDenied = "sync_confirmation_denied"
+        static let host = "host"
+        static let joiner = "joiner"
+    }
+
+    case syncSetupBarcodeScreenShown(SyncSetupSource, flowVersion: String?)
+    case syncSetupBarcodeCodeCopied(SyncSetupSource, flowVersion: String?)
+    case syncSetupManualCodeEntryScreenShown(flowVersion: String?)
+    case syncSetupManualCodeEnteredSuccess(SyncSetupSource, flowVersion: String?, codeVersion: String?)
+    case syncSetupManualCodeEnteredFailed(SyncSetupSource?, flowVersion: String?, reason: String?)
+    case syncSetupEndedAbandoned(SyncSetupSource, flowVersion: String?, reason: String? = nil)
+    case syncSetupEndedFailed(SyncSetupSource?, flowVersion: String?, peerKind: String?, myRole: String?, reason: String?, timeoutStage: String?)
+    case syncSetupEndedSuccessful(SyncSetupSource, flowVersion: String?, peerKind: String?, myRole: String?)
 
     var name: String {
         switch self {
-        case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
-        case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
-        case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown"
-        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success"
-        case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
-        case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
-        case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"
+        case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown_mac"
+        case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied_mac"
+        case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown_mac"
+        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success_mac"
+        case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed_mac"
+        case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned_mac"
+        case .syncSetupEndedFailed: return "sync_setup_ended_failed_mac"
+        case .syncSetupEndedSuccessful: return "sync_setup_ended_successful_mac"
         }
     }
 
     var parameters: [String: String]? {
-        guard let source else { return nil }
-        return [ParameterKey.source: source.rawValue]
+        var parameters = [ParameterKey.myKind: ParameterValue.ddg]
+        parameters[ParameterKey.source] = source?.rawValue
+        parameters[ParameterKey.flowVersion] = flowVersion
+        parameters[ParameterKey.codeType] = codeType
+        parameters[ParameterKey.codeVersion] = codeVersion
+        parameters[ParameterKey.path] = path
+        parameters[ParameterKey.reason] = reason
+        parameters[ParameterKey.timeoutStage] = timeoutStage
+        parameters[ParameterKey.peerKind] = peerKind
+        parameters[ParameterKey.myRole] = myRole
+        return parameters
     }
 
     private var source: SyncSetupSource? {
         switch self {
         case
-            .syncSetupBarcodeScreenShown(let source),
-            .syncSetupBarcodeCodeCopied(let source),
-            .syncSetupManualCodeEnteredSuccess(let source),
-            .syncSetupEndedAbandoned(let source),
-            .syncSetupEndedSuccessful(let source):
+            .syncSetupBarcodeScreenShown(let source, _),
+            .syncSetupBarcodeCodeCopied(let source, _),
+            .syncSetupManualCodeEnteredSuccess(let source, _, _),
+            .syncSetupEndedAbandoned(let source, _, _),
+            .syncSetupEndedSuccessful(let source, _, _, _):
             return source
         case
-            .syncSetupManualCodeEntryScreenShown,
-            .syncSetupManualCodeEnteredFailed:
+            .syncSetupManualCodeEnteredFailed(let source, _, _),
+            .syncSetupEndedFailed(let source, _, _, _, _, _):
+            return source
+        case
+            .syncSetupManualCodeEntryScreenShown:
+            return nil
+        }
+    }
+
+    private var flowVersion: String? {
+        switch self {
+        case .syncSetupBarcodeScreenShown(_, let flowVersion),
+                .syncSetupBarcodeCodeCopied(_, let flowVersion),
+                .syncSetupManualCodeEntryScreenShown(let flowVersion),
+                .syncSetupManualCodeEnteredSuccess(_, let flowVersion, _),
+                .syncSetupManualCodeEnteredFailed(_, let flowVersion, _),
+                .syncSetupEndedAbandoned(_, let flowVersion, _),
+                .syncSetupEndedFailed(_, let flowVersion, _, _, _, _),
+                .syncSetupEndedSuccessful(_, let flowVersion, _, _):
+            return flowVersion
+        }
+    }
+
+    private var codeType: String? {
+        switch self {
+        case .syncSetupManualCodeEnteredSuccess(let source, _, _):
+            return source.syncSetupCodeType
+        default:
+            return nil
+        }
+    }
+
+    private var codeVersion: String? {
+        switch self {
+        case .syncSetupManualCodeEnteredSuccess(_, _, let codeVersion):
+            return codeVersion
+        default:
+            return nil
+        }
+    }
+
+    private var path: String? {
+        switch self {
+        case .syncSetupEndedSuccessful(let source, _, _, _):
+            return source.syncSetupPath
+        case .syncSetupEndedFailed(let source, _, _, _, _, _):
+            return source?.syncSetupPath
+        default:
+            return nil
+        }
+    }
+
+    private var reason: String? {
+        switch self {
+        case .syncSetupManualCodeEnteredFailed(_, _, let reason),
+                .syncSetupEndedAbandoned(_, _, let reason),
+                .syncSetupEndedFailed(_, _, _, _, let reason, _):
+            return reason
+        default:
+            return nil
+        }
+    }
+
+    private var peerKind: String? {
+        switch self {
+        case .syncSetupEndedSuccessful(_, _, let peerKind, _),
+                .syncSetupEndedFailed(_, _, let peerKind, _, _, _):
+            return peerKind
+        default:
+            return nil
+        }
+    }
+
+    private var myRole: String? {
+        switch self {
+        case .syncSetupEndedSuccessful(_, _, _, let myRole),
+                .syncSetupEndedFailed(_, _, _, let myRole, _, _):
+            return myRole
+        default:
+            return nil
+        }
+    }
+
+    private var timeoutStage: String? {
+        switch self {
+        case .syncSetupEndedFailed(_, _, _, _, _, let timeoutStage):
+            return timeoutStage
+        default:
             return nil
         }
     }
@@ -143,8 +263,56 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
                 .syncSetupManualCodeEnteredSuccess,
                 .syncSetupManualCodeEnteredFailed,
                 .syncSetupEndedAbandoned,
+                .syncSetupEndedFailed,
                 .syncSetupEndedSuccessful:
             return [.pixelSource]
         }
+    }
+}
+
+private extension SyncSetupSource {
+
+    var syncSetupCodeType: String? {
+        switch self {
+        case .recovery:
+            return SyncSetupPixelKitEvent.ParameterValue.recovery
+        case .exchange, .connect:
+            return SyncSetupPixelKitEvent.ParameterValue.linking
+        case .unknown:
+            return nil
+        }
+    }
+
+    var syncSetupPath: String? {
+        switch self {
+        case .recovery:
+            return SyncSetupPixelKitEvent.ParameterValue.recovery
+        case .exchange, .connect:
+            return SyncSetupPixelKitEvent.ParameterValue.pairing
+        case .unknown:
+            return nil
+        }
+    }
+
+}
+
+extension SyncSetupSource {
+
+    var syncSetupMyRole: String? {
+        switch self {
+        case .connect:
+            return SyncSetupPixelKitEvent.ParameterValue.host
+        case .exchange:
+            return SyncSetupPixelKitEvent.ParameterValue.joiner
+        case .recovery, .unknown:
+            return nil
+        }
+    }
+}
+
+extension PairingV2DeviceKind {
+
+    var syncSetupPeerKind: String {
+        rawValue
     }
 }

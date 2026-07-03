@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import Persistence
@@ -69,6 +70,7 @@ final class FireCoordinator {
     private let tabViewModelGetter: (NSWindow) -> TabCollectionViewModel?
     private let pixelFiring: PixelFiring?
     private let aiChatSyncCleaner: (() -> AIChatSyncCleaning?)?
+    private let onboardingFireReporting: (() -> OnboardingFireReporting)?
     private let visualizeFireAnimationDecider: OverridableVisualizeFireSettingsDecider
     let dataClearingPixelsReporter: DataClearingPixelsReporter
     let dataClearingWideEventService: DataClearingWideEventService?
@@ -87,7 +89,8 @@ final class FireCoordinator {
          historyProvider: HistoryViewDataProviding? = nil, // for testing: created if not provided
          fireViewModel: FireViewModel? = nil, // for testing: created if not provided
          tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil, // for testing: created if not provided
-         fireDialogViewFactory: FireDialogViewFactory? = nil // for testing: created if not provided
+         fireDialogViewFactory: FireDialogViewFactory? = nil, // for testing: created if not provided
+         onboardingFireReporting: (() -> OnboardingFireReporting)? = nil // for testing: created if not provided
     ) {
 
         self.tld = tld
@@ -102,6 +105,7 @@ final class FireCoordinator {
         }
         self.pixelFiring = pixelFiring
         self.aiChatSyncCleaner = aiChatSyncCleaner
+        self.onboardingFireReporting = onboardingFireReporting ?? { OnboardingPixelReporter() }
         self.dataClearingPixelsReporter = .init(pixelFiring: self.pixelFiring)
         if let wideEventManaging = wideEventManaging {
             self.dataClearingWideEventService = .init(wideEvent: wideEventManaging)
@@ -260,6 +264,7 @@ extension FireCoordinator {
 
         switch response {
         case .noAction:
+            onboardingFireReporting?().measureFireDialogDismissed()
             return .noAction
 
         case .burn(let options):
@@ -285,6 +290,7 @@ extension FireCoordinator {
                 // Record fire button usage for contextual onboarding flows
                 onboardingContextualDialogsManager?().fireButtonUsed()
             }
+            onboardingFireReporting?().measureFireDialogBurnAction()
             return .burn(options: options)
         }
     }

@@ -39,7 +39,7 @@ struct OnboardingView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var model: OnboardingIntroViewModel
-    @State private var isExperimentExitTransitionActive = false
+    @State private var isDuckAIQueryExitTransitionActive = false
 
     init(model: OnboardingIntroViewModel) {
         self.model = model
@@ -75,8 +75,8 @@ struct OnboardingView: View {
                     logoPosition: .top,
                     matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
                     showDialogBox: $model.introState.showDaxDialogBox,
-                    showLogo: !state.type.isExperimentSearchScreen,
-                    showBubbleArrow: !state.type.isExperimentSearchScreen,
+                    showLogo: !state.type.isDuckAIQueryScreen,
+                    showBubbleArrow: !state.type.isDuckAIQueryScreen,
                     onTapGesture: {
                         withAnimation {
                             model.tapped()
@@ -85,9 +85,11 @@ struct OnboardingView: View {
                     content: {
                         VStack {
                             switch state.type {
-                            case .startOnboardingDialog(let dialogType):
+                            case .startOnboardingDialog(_, let dialogType):
                                 introView(dialogType: dialogType)
                             case .browsersComparisonDialog:
+                                browsersComparisonView
+                            case .aiComparisonDialog:
                                 browsersComparisonView
                             case .addToDockPromoDialog:
                                 addToDockPromoView
@@ -97,8 +99,8 @@ struct OnboardingView: View {
                                 addressBarPreferenceSelectionView
                             case .chooseSearchExperienceDialog:
                                 searchExperienceSelectionView
-                            case .duckAIQueryExperimentDialog(let defaultMode):
-                                experimentSearchExperienceSelectionView(defaultMode: defaultMode)
+                            case .duckAIQueryDialog(_, let defaultMode):
+                                duckAIQuerySelectionView(defaultMode: defaultMode)
                             }
                         }
                     }
@@ -106,16 +108,16 @@ struct OnboardingView: View {
                 .onboardingProgressIndicator(
                     currentStep: state.step.currentStep,
                     totalSteps: state.step.totalSteps,
-                    isVisible: !state.type.isExperimentSearchScreen
+                    isVisible: !state.type.isDuckAIQueryScreen
                 )
             }
-            .opacity(isExperimentExitTransitionActive && state.type.isExperimentSearchScreen ? 0 : 1)
+            .opacity(isDuckAIQueryExitTransitionActive && state.type.isDuckAIQueryScreen ? 0 : 1)
             .frame(width: geometry.size.width, alignment: .center)
             .offset(y: geometry.size.height * Metrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass))
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.daxDialogVisibilityDelay) {
                     model.introState.showDaxDialogBox = true
-                    if case .startOnboardingDialog(type: .restoreData) = state.type {
+                    if case .startOnboardingDialog(_, .restoreData) = state.type {
                         model.restorePromptState.animateTitle = true
                     } else {
                         model.introState.animateIntroText = true
@@ -175,13 +177,16 @@ struct OnboardingView: View {
                 skipAction: {
                     model.restorePromptSkipAction()
                     model.skipOnboardingAction()
+                },
+                onSkipOnboardingPresented: {
+                    model.skipOnboardingPresented()
                 }
             )
             .onboardingDaxDialogStyle()
             .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
         case .skipTutorial, .default:
             IntroDialogContent(
-                title: model.copy.introTitle,
+                title: UserText.Onboarding.Intro.title,
                 skipOnboardingView: skipOnboardingView,
                 animateText: $model.introState.animateIntroText,
                 showCTA: $model.introState.showIntroButton,
@@ -189,7 +194,10 @@ struct OnboardingView: View {
                 continueAction: {
                     animateBrowserComparisonViewState(isResumingOnboarding: false)
                 },
-                skipAction: model.skipOnboardingAction
+                skipAction: model.skipOnboardingAction,
+                onSkipOnboardingPresented: {
+                    model.skipOnboardingPresented()
+                }
             )
             .onboardingDaxDialogStyle()
             .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
@@ -198,7 +206,7 @@ struct OnboardingView: View {
 
     private var browsersComparisonView: some View {
         BrowsersComparisonContent(
-            title: model.copy.browserComparisonTitle,
+            title: UserText.Onboarding.BrowsersComparison.title,
             animateText: $model.browserComparisonState.animateComparisonText,
             showContent: $model.browserComparisonState.showComparisonButton,
             isSkipped: $model.isSkipped,
@@ -251,24 +259,24 @@ struct OnboardingView: View {
         .onboardingDaxDialogStyle()
     }
 
-    private func experimentSearchExperienceSelectionView(defaultMode: DuckAIQueryExperimentMode) -> some View {
-        DuckAIExperimentSearchContent(
+    private func duckAIQuerySelectionView(defaultMode: DuckAIQueryMode) -> some View {
+        DuckAIQuerySearchContent(
             defaultMode: defaultMode,
             animateTitle: $model.introState.animateIntroText,
-            onModeConfirmed: model.selectDuckAIQueryExperimentAction(selection:),
+            onModeConfirmed: model.selectDuckAIQueryAction(selection:),
             openAIChatAction: model.openAIChatFromOnboarding,
             openSearchAction: model.searchFromOnboarding,
-            measureQuerySubmissionAction: model.measureDuckAIQueryExperimentQuerySubmission,
+            measureQuerySubmissionAction: model.measureDuckAIQuerySubmission,
             startExitTransitionAction: {
-                beginExperimentExitTransition()
+                beginDuckAIQueryExitTransition()
             }
         )
         .onboardingDaxDialogStyle()
     }
 
-    private func beginExperimentExitTransition() {
+    private func beginDuckAIQueryExitTransition() {
         withAnimation(.easeInOut(duration: 0.18)) {
-            isExperimentExitTransitionActive = true
+            isDuckAIQueryExitTransitionActive = true
         }
     }
 
@@ -305,7 +313,7 @@ struct OnboardingView: View {
 extension OnboardingView {
 
     enum ViewState: Equatable {
-        case landing
+        case landing(OnboardingLandingContent)
         case onboarding(Intro)
 
         var intro: Intro? {
@@ -338,13 +346,14 @@ extension OnboardingView.ViewState.Intro {
     }
 
     enum IntroType: Equatable {
-        case startOnboardingDialog(type: IntroDialogType)
-        case browsersComparisonDialog
-        case addToDockPromoDialog
-        case chooseAppIconDialog
-        case chooseAddressBarPositionDialog
-        case chooseSearchExperienceDialog
-        case duckAIQueryExperimentDialog(defaultMode: DuckAIQueryExperimentMode)
+        case startOnboardingDialog(content: OnboardingIntroStepContent, type: IntroDialogType)
+        case browsersComparisonDialog(content: OnboardingBrowserComparisonContent)
+        case aiComparisonDialog(content: OnboardingAIComparisonContent)
+        case addToDockPromoDialog(content: OnboardingAddToDockContent)
+        case chooseAppIconDialog(content: OnboardingAppIconColorContent)
+        case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
+        case chooseSearchExperienceDialog(content: OnboardingSearchExperienceContent)
+        case duckAIQueryDialog(content: OnboardingDuckAIQueryContent, defaultMode: DuckAIQueryMode)
     }
 
     struct StepInfo: Equatable {
@@ -357,20 +366,14 @@ extension OnboardingView.ViewState.Intro {
 }
 
 private extension OnboardingView.ViewState.Intro.IntroType {
-    var isExperimentSearchScreen: Bool {
-        if case .duckAIQueryExperimentDialog = self {
+    var isDuckAIQueryScreen: Bool {
+        if case .duckAIQueryDialog = self {
             return true
         } else {
             return false
         }
     }
 
-    var duckAIQueryExperimentDefaultMode: DuckAIQueryExperimentMode? {
-        if case .duckAIQueryExperimentDialog(let mode) = self {
-            return mode
-        }
-        return nil
-    }
 }
 
 // MARK: - Metrics
@@ -407,6 +410,16 @@ struct OnboardingView_Previews: PreviewProvider {
         func disableContextualDaxDialogs() {}
     }
 
+    class MockOnboardingManager: OnboardingManaging {
+        let currentOnboardingFlow: OnboardingFlowType = .default
+
+        let onboardingSteps: [OnboardingIntroStep] = [.introDialog(isReturningUser: true), .browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection, .searchExperienceSelection]
+
+        let userHasSeenAddToDockPromoDuringOnboarding: Bool = false
+
+        func configureOnboardingFlow(from url: URL?) {}
+    }
+
     final class MockRestorePromptHandler: OnboardingRestorePromptHandling {
         func isEligibleForRestorePrompt() -> Bool {
             false
@@ -426,7 +439,8 @@ struct OnboardingView_Previews: PreviewProvider {
                         eventMapper: SystemSettingsPiPTutorialPixelHandler(),
                     ),
                     daxDialogsManager: MockDaxDialogDisabling(),
-                    restorePromptHandler: MockRestorePromptHandler()
+                    restorePromptHandler: MockRestorePromptHandler(),
+                    onboardingManager: MockOnboardingManager()
                 )
             )
             .preferredColorScheme($0)

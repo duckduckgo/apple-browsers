@@ -76,7 +76,10 @@ final class OmniBarNotificationContainerView: UIView {
     }
     
     private func makeNotificationViewModel(for type: OmniBarNotificationType) -> OmniBarNotificationViewModel {
-        let useDarkStyle = traitCollection.userInterfaceStyle == .dark
+        Self.makeNotificationViewModel(for: type, useDarkStyle: traitCollection.userInterfaceStyle == .dark)
+    }
+    
+    static func makeNotificationViewModel(for type: OmniBarNotificationType, useDarkStyle: Bool) -> OmniBarNotificationViewModel {
         let notificationText: String
         let notificationAnimationName: String
         var eventCount: Int = 0

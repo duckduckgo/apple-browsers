@@ -19,6 +19,8 @@
 import SwiftUI
 import SwiftUIExtensions
 import Combine
+import Common
+import FoundationExtensions
 import VPN
 
 extension View {
@@ -56,6 +58,9 @@ public struct NetworkProtectionStatusView: View {
                     model.uninstallVPN()
                 }
                 .padding(5)
+                .onAppear {
+                    model.subscriptionExpiredViewDidAppear()
+                }
             } else if let promptActionViewModel = model.promptActionViewModel {
                 PromptActionView(model: promptActionViewModel)
                     .padding(.horizontal, 5)
@@ -78,7 +83,7 @@ public struct NetworkProtectionStatusView: View {
 
             bottomMenuView()
         }
-        .padding(5)
+        .padding(AppVersion.isLiquidGlassSupported ? 14 : 5)
         .frame(width: 350, alignment: .top)
         .transition(.slide)
     }

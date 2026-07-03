@@ -117,20 +117,11 @@ struct PasswordManagementItemListCategoryView: View {
                     return 11
                 }
 
-            // MenuButton incorrectly displays a disabled state when you re-render it with a different image.
-            // According to Stack Overflow, this was fixed in macOS 12, but it can still be reproduced on 12.2.
-            // This also happens with Menu in macOS 11.0+, so using that on later macOS versions doesn't help.
-            // To work around this, two separate buttons are used depending on the sort order. But, to make matters worse: this hack doesn't always work!
-            // So, as a last resort, both buttons are kept in a ZStack with their image and opacity is used to determine whether they're visible, which so far seems reliable.
-            //
-            // Reference: https://stackoverflow.com/questions/65602163/swiftui-menu-button-displayed-as-disabled-initially
-
+            // Separate branches for macOS 12 compatibility: SwiftUI can render the menu label as disabled when the image changes in place.
             if model.sortDescriptor.order == .ascending {
                 PasswordManagementSortButton(imageName: "SortAscending")
-                    .frame(width: 24)
             } else {
                 PasswordManagementSortButton(imageName: "SortDescending")
-                    .frame(width: 24)
             }
         }
         .padding(.vertical, -4)
@@ -410,60 +401,59 @@ private struct PasswordManagerItemButtonStyle: ButtonStyle {
     }
 }
 
-struct PasswordManagementSortButton: View {
+private struct PasswordManagementSortButton: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
 
-    @State var sortHover: Bool = false
+    @State private var showHoverState = false
 
     let imageName: String
 
+    private enum Constants {
+        static let buttonSize: CGFloat = 24
+    }
+
     var body: some View {
-
         ZStack {
-            Image(imageName)
+            RoundedRectangle(cornerRadius: 4)
+                .foregroundColor(showHoverState ? .secureVaultCategoryDefault : .clear)
+                .frame(width: Constants.buttonSize, height: Constants.buttonSize)
 
-            // The image is added elsewhere, because MenuButton has a bug with using Images as labels.
-            MenuButton(label: Image(nsImage: NSImage())) {
+            Menu {
                 Picker("", selection: $model.sortDescriptor.parameter) {
                     ForEach(SecureVaultSorting.SortParameter.allCases, id: \.self) { parameter in
-                        Text(menuTitle(for: parameter.title, checked: parameter == model.sortDescriptor.parameter))
+                        Text(parameter.title)
+                            .tag(parameter)
                     }
                 }
                 .labelsHidden()
-                .pickerStyle(.radioGroup)
+                .pickerStyle(.inline)
 
                 Divider()
 
                 Picker("", selection: $model.sortDescriptor.order) {
                     ForEach(SecureVaultSorting.SortOrder.allCases, id: \.self) { order in
-                        let orderTitle = order.title(for: model.sortDescriptor.parameter.type)
-                        let labelTitle = menuTitle(for: orderTitle, checked: order == model.sortDescriptor.order)
-                        Text(labelTitle)
+                        Text(order.title(for: model.sortDescriptor.parameter.type))
+                            .tag(order)
                     }
                 }
                 .labelsHidden()
-                .pickerStyle(.radioGroup)
+                .pickerStyle(.inline)
+            } label: {
+                Image(imageName)
+                    .frame(width: Constants.buttonSize, height: Constants.buttonSize)
+                    .contentShape(Rectangle())
             }
-            .menuButtonStyle(BorderlessButtonMenuButtonStyle())
-            .padding(5)
-            .background(RoundedRectangle(cornerRadius: 5).foregroundColor(sortHover ? .secureVaultCategoryDefault : .clear))
-            .onHover { isOver in
-                sortHover = isOver
-            }
-            .foregroundColor(.red)
+                .menuStyle(BorderlessButtonMenuStyle())
+                .modifier(HideMenuIndicatorModifier())
+                .frame(width: Constants.buttonSize, height: Constants.buttonSize)
+        }
+        .frame(width: Constants.buttonSize, height: Constants.buttonSize)
+        .contentShape(Rectangle())
+        .onHover { isOver in
+            showHoverState = isOver
         }
 
-    }
-
-    // The SwiftUI MenuButton view doesn't allow pickers which have checkmarks at the top level; they get put into a submenu.
-    // This title is used in place of a nested picker.
-    private func menuTitle(for string: String, checked: Bool) -> String {
-        if checked {
-            return "✓ \(string)"
-        } else {
-            return "    \(string)"
-        }
     }
 
 }
@@ -537,12 +527,8 @@ private struct PasswordManagementAddButton: View {
 private struct HideMenuIndicatorModifier: ViewModifier {
 
     func body(content: Content) -> some View {
-        if #available(macOS 12, *) {
-            content
-                .menuIndicator(.hidden)
-        } else {
-            content
-        }
+        content
+            .menuIndicator(.hidden)
     }
 
 }

@@ -23,6 +23,16 @@ import Foundation
 import PrivacyConfig
 import Subscription
 
+/// Landing-page hint appended to the subscription purchase URL so the web flow can deep-link to a specific feature of the Subscription.
+///
+/// Raw values are passed to the subscription web flow as the `featurePage` query parameter via
+/// `SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin:featurePage:)`.
+/// Add a new case here whenever a new onboarding flow needs its own dedicated landing page; the raw value
+/// must match what the subscription web flow expects.
+enum OnboardingSubscriptionPromotionPage: String {
+    case duckAI = "duckai"
+}
+
 /// Protocol defining the interface for the Subscription onboarding promotion helper.
 ///
 /// Conforming types provide logic for determining when the Subscription promotion should be shown during onboarding,
@@ -37,8 +47,11 @@ protocol OnboardingSubscriptionPromotionHelping {
 
     /// Provides the URL components for redirecting as part of the onboarding promotion experiment.
     ///
+    /// - Parameter featurePage: Optional landing-page hint appended to the purchase URL as the
+    ///   `featurePage` query parameter. Pass `nil` for the default purchase landing page; pass a
+    ///   case (e.g. `.duckAI`) when an onboarding flow should deep-link into a feature-specific page.
     /// - Returns: URL components for the experiment, or `nil` if not applicable.
-    func redirectURLComponents() -> URLComponents?
+    func redirectURLComponents(featurePage: OnboardingSubscriptionPromotionPage?) -> URLComponents?
 
     /// Fires a pixel when the onboarding promotion is shown to the user.
     func fireImpressionPixel()
@@ -101,9 +114,12 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
 
     /// Provides the URL components for redirecting as part of the onboarding promotion experiment.
     ///
+    /// - Parameter featurePage: Optional landing-page hint appended to the purchase URL as the
+    ///   `featurePage` query parameter. Pass `nil` for the default purchase landing page; pass a
+    ///   case (e.g. `.duckAI`) when an onboarding flow should deep-link into a feature-specific page.
     /// - Returns: URL components for the experiment, or `nil` if not applicable.
-    func redirectURLComponents() -> URLComponents? {
-        SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue)
+    func redirectURLComponents(featurePage: OnboardingSubscriptionPromotionPage?) -> URLComponents? {
+        SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: SubscriptionFunnelOrigin.onboarding.rawValue, featurePage: featurePage?.rawValue)
     }
 
     /// Fires a pixel when the onboarding promotion is shown to the user.

@@ -37,4 +37,5 @@ public extension Logger {
     static let networkProtectionSleep = Logger(subsystem: Logger.subsystem, category: "Sleep and Wake")
     static let networkProtectionEntitlement = Logger(subsystem: Logger.subsystem, category: "Entitlement Monitor")
     static let networkProtectionWireGuard = Logger(subsystem: Logger.subsystem, category: "WireGuardAdapter")
+    static let networkProtectionIPLeakCheck = Logger(subsystem: Logger.subsystem, category: "IP Leak Check")
 }

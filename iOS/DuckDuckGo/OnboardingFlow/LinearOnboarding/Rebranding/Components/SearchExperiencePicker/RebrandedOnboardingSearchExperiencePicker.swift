@@ -23,34 +23,55 @@ import Onboarding
 extension OnboardingRebranding.OnboardingView {
 
     struct OnboardingSearchExperiencePicker: View {
-        @ObservedObject var viewModel: OnboardingSearchExperiencePickerViewModel
+        @Binding var isDuckAISelected: Bool
         @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
         // Keep both option titles at the same measured height so indicators align
         // whether one title wraps or both remain on a single line.
         @State private var maxOptionTitleHeight: CGFloat = 0
 
+        init(isDuckAISelected: Binding<Bool>) {
+            self._isDuckAISelected = isDuckAISelected
+        }
+
         var body: some View {
             HStack(alignment: .top, spacing: PickerMetrics.optionsSpacing) {
                 PickerOption(
-                    isSelected: !viewModel.isSearchAndAIChatEnabled.wrappedValue,
-                    selectedImage: OnboardingRebrandingImages.SearchExperience.searchOn,
-                    unselectedImage: OnboardingRebrandingImages.SearchExperience.searchOff,
+                    isSelected: !isDuckAISelected,
                     title: UserText.Onboarding.SearchExperience.searchOnlyOption,
                     accentColor: onboardingTheme.colorPalette.optionsListIconColor,
-                    titleMinHeight: maxOptionTitleHeight
+                    titleMinHeight: maxOptionTitleHeight,
+                    action: { isDuckAISelected = false }
                 ) {
-                    viewModel.isSearchAndAIChatEnabled.wrappedValue = false
+                    (isDuckAISelected
+                        ? OnboardingRebrandingImages.SearchExperience.searchOff
+                        : OnboardingRebrandingImages.SearchExperience.searchOn)
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: PickerMetrics.imageHeight, alignment: .top)
                 }
 
                 PickerOption(
-                    isSelected: viewModel.isSearchAndAIChatEnabled.wrappedValue,
-                    selectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOn,
-                    unselectedImage: OnboardingRebrandingImages.SearchExperience.searchAIOff,
+                    isSelected: isDuckAISelected,
                     title: UserText.Onboarding.SearchExperience.searchAndDuckAIOption,
                     accentColor: onboardingTheme.colorPalette.optionsListIconColor,
-                    titleMinHeight: maxOptionTitleHeight
+                    titleMinHeight: maxOptionTitleHeight,
+                    action: { isDuckAISelected = true }
                 ) {
-                    viewModel.isSearchAndAIChatEnabled.wrappedValue = true
+                    if reduceMotion {
+                        // Static fallback when the user has requested reduced motion.
+                        (isDuckAISelected
+                            ? OnboardingRebrandingImages.SearchExperience.searchAIOn
+                            : OnboardingRebrandingImages.SearchExperience.searchAIOff)
+                            .renderingMode(.original)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: PickerMetrics.imageHeight, alignment: .top)
+                    } else {
+                        SearchExperienceToggleAnimationView(isDuckAISelected: isDuckAISelected)
+                            .frame(height: PickerMetrics.imageHeight, alignment: .top)
+                    }
                 }
             }
             // Collect per-option measured title heights and apply the maximum to both.
@@ -62,25 +83,34 @@ extension OnboardingRebranding.OnboardingView {
 
 }
 
-private struct PickerOption: View {
+private struct PickerOption<ImageContent: View>: View {
     let isSelected: Bool
-    let selectedImage: Image
-    let unselectedImage: Image
     let title: String
     let accentColor: Color
     let titleMinHeight: CGFloat
     let action: () -> Void
+    let imageContent: () -> ImageContent
+
+    init(isSelected: Bool,
+         title: String,
+         accentColor: Color,
+         titleMinHeight: CGFloat,
+         action: @escaping () -> Void,
+         @ViewBuilder imageContent: @escaping () -> ImageContent) {
+        self.isSelected = isSelected
+        self.title = title
+        self.accentColor = accentColor
+        self.titleMinHeight = titleMinHeight
+        self.action = action
+        self.imageContent = imageContent
+    }
 
     @Environment(\.onboardingTheme) private var onboardingTheme
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: PickerMetrics.contentSpacing) {
-                (isSelected ? selectedImage : unselectedImage)
-                    .renderingMode(.original)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: PickerMetrics.imageHeight, alignment: .top)
+                imageContent()
 
                 measuredTitleBlock {
                     Text(title)
@@ -119,7 +149,8 @@ private struct PickerOption: View {
 private enum PickerMetrics {
     static let optionsSpacing: CGFloat = 8
     static let contentSpacing: CGFloat = 8
-    static let imageHeight: CGFloat = 72
+    // Animation canvas is 128×80; static images were updated to match.
+    static let imageHeight: CGFloat = 80
 }
 
 private struct RebrandedOptionTitleHeightPreferenceKey: PreferenceKey {

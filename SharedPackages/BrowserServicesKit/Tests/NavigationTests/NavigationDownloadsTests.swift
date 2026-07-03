@@ -25,7 +25,7 @@ import WebKit
 import XCTest
 @testable import Navigation
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
 
     func testDownloadNavigationAction() throws {
@@ -116,7 +116,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [data, urls] request in
             guard request.path == "/" else { return nil }
             return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
-                try! writer.write(data.empty)
+                try writer.write(data.empty)
             }
         }, { [data] request in
             return .ok(.data(data.html, contentType: "application/zip"))

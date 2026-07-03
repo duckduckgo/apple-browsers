@@ -174,25 +174,14 @@ public struct DaxDialogView<Content: View>: View {
                 alignment: .topLeading
             )
 
-        if #available(macOS 12.0, iOS 15.0, *) {
-            styledContent
-                .ifLet(onManualDismiss) { view, onDismiss in
-                    view.overlay(alignment: .topTrailing) {
-                        OnboardingDismissButton(action: onDismiss)
-                            .alignmentGuide(.top) { $0.height / 2 - DaxDialogMetrics.dismissButtonPadding }
-                            .alignmentGuide(.trailing) { $0.width / 2 + DaxDialogMetrics.dismissButtonPadding }
-                    }
-                }
-        } else {
-            ZStack(alignment: .topTrailing) {
-                styledContent
-                if let onDismiss = onManualDismiss {
+        styledContent
+            .ifLet(onManualDismiss) { view, onDismiss in
+                view.overlay(alignment: .topTrailing) {
                     OnboardingDismissButton(action: onDismiss)
                         .alignmentGuide(.top) { $0.height / 2 - DaxDialogMetrics.dismissButtonPadding }
                         .alignmentGuide(.trailing) { $0.width / 2 + DaxDialogMetrics.dismissButtonPadding }
                 }
             }
-        }
     }
 
     private var arrowOffset: CGSize {

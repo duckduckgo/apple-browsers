@@ -223,6 +223,7 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
         wait(for: [expectation], timeout: 2.0)
         XCTAssertFalse(sut.shouldShowNotificationDot)
     }
+
 }
 
 // MARK: - Helpers
@@ -248,7 +249,9 @@ extension NetworkProtectionNavBarButtonModelTests {
         return manager
     }
 
-    private func createButtonModel(with upsellManager: VPNUpsellVisibilityManager) -> NetworkProtectionNavBarButtonModel {
+    private func createButtonModel(
+        with upsellManager: VPNUpsellVisibilityManager
+    ) -> NetworkProtectionNavBarButtonModel {
         let popoverManager = NetPPopoverManagerMock()
         let pinningManager = TestPinningManager()
         let vpnGatekeeper = MockVPNFeatureGatekeeper(

@@ -18,6 +18,7 @@
                     "widget.controlcenter",
                     "widget.lockscreen.complication",
                     "widget.quickactions",
+                    "widget.quickactions.medium",
                     "siri"
                 ]
             }

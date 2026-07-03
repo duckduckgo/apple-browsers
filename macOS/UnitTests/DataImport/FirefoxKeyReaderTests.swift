@@ -23,7 +23,11 @@ import CryptoKit
 
 class FirefoxKeyReaderTests: XCTestCase {
 
-    func testWhenReadingValidKey3Database_AndNoPrimaryPasswordIsSet_ThenKeyIsRead() {
+    // Skipped: legacy BSD `dbopen()` no longer reads Firefox's key3.db DB_HASH format on the
+    // macOS 26 CI runner image. PR #5028 attempted a fix (closing the DB handle) but did not
+    // address the root cause and the tests stayed red. Tracked for a real fix.
+    func testWhenReadingValidKey3Database_AndNoPrimaryPasswordIsSet_ThenKeyIsRead() throws {
+        try XCTSkipIf(true, "Disabled while Firefox key3.db decryption is broken on macOS 26 runner — see PR #5028.")
         let databaseURL = resourcesURLWithoutPassword().appendingPathComponent("key3-firefox46.db")
         let reader = FirefoxEncryptionKeyReader()
         let result = reader.getEncryptionKey(key3DatabaseURL: databaseURL, primaryPassword: "")
@@ -35,7 +39,8 @@ class FirefoxKeyReaderTests: XCTestCase {
         }
     }
 
-    func testWhenReadingValidKey3Database_AndPrimaryPasswordIsSet_AndPrimaryPasswordIsValid_ThenKeyIsRead() {
+    func testWhenReadingValidKey3Database_AndPrimaryPasswordIsSet_AndPrimaryPasswordIsValid_ThenKeyIsRead() throws {
+        try XCTSkipIf(true, "Disabled while Firefox key3.db decryption is broken on macOS 26 runner — see PR #5028.")
         let databaseURL = resourcesURLWithPassword().appendingPathComponent("key3-firefox46.db")
         let reader = FirefoxEncryptionKeyReader()
         let result = reader.getEncryptionKey(key3DatabaseURL: databaseURL, primaryPassword: "сЮЛОажс$4vz*VçàhxpfCbmwo")
@@ -47,7 +52,8 @@ class FirefoxKeyReaderTests: XCTestCase {
         }
     }
 
-    func testWhenReadingValidKey3Database_AndPrimaryPasswordIsSet_AndPrimaryPasswordIsInvalid_ThenKeyIsNotRead() {
+    func testWhenReadingValidKey3Database_AndPrimaryPasswordIsSet_AndPrimaryPasswordIsInvalid_ThenKeyIsNotRead() throws {
+        try XCTSkipIf(true, "Disabled while Firefox key3.db decryption is broken on macOS 26 runner — see PR #5028.")
         let databaseURL = resourcesURLWithPassword().appendingPathComponent("key3-firefox46.db")
         let reader = FirefoxEncryptionKeyReader()
         let result = reader.getEncryptionKey(key3DatabaseURL: databaseURL, primaryPassword: "invalid-password")

@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import Persistence
+import SERPSettings
 
 private extension BoolFileMarker.Name {
     static let hasSuccessfullyLaunchedBefore = BoolFileMarker.Name(rawValue: "app-launched-successfully")
@@ -87,11 +88,7 @@ struct Foreground: ForegroundHandling {
             privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
             isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
         )
-        let idleReturnEvaluator = IdleReturnEvaluator(
-            featureFlagger: appDependencies.featureFlagger,
-            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
-            idleReturnEligibilityManager: idleReturnEligibilityManager
-        )
+        let idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager)
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
@@ -104,7 +101,8 @@ struct Foreground: ForegroundHandling {
         interactionManager = UIInteractionManager(
             authenticationService: sceneDependencies.authenticationService,
             autoClearService: sceneDependencies.autoClearService,
-            launchActionHandler: launchActionHandler
+            launchActionHandler: launchActionHandler,
+            onboardingPresenter: appDependencies.mainCoordinator
         )
     }
 
@@ -130,7 +128,9 @@ struct Foreground: ForegroundHandling {
             /// Handle **WebView related logic** here that could be affected by `AutoClear` feature.
             /// This is called when the **app is ready to handle web navigations** after all browser data has been cleared.
             onWebViewReadyForInteractions: {
-                /* ... */
+                if #available(iOS 18.4, *) {
+                    appDependencies.mainCoordinator.loadWebExtensionsIfPending()
+                }
             },
             /// Handle **UI related logic** here that could be affected by Authentication screen or `AutoClear` feature
             /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.
@@ -168,6 +168,27 @@ struct Foreground: ForegroundHandling {
 
         let switchBarRetentionMetrics = SwitchBarRetentionMetrics(aiChatSettings: appDependencies.aiChatSettings)
         switchBarRetentionMetrics.checkDailyAndSendPixelIfApplicable()
+
+        fireAIFeaturesStateDailyPixel()
+    }
+
+    /// Once-daily snapshot of the three AI settings + the derived "no AI" state, across the active base.
+    private func fireAIFeaturesStateDailyPixel() {
+        let aiChatSettings = appDependencies.aiChatSettings
+        let serpSettings = SERPSettingsProvider(aiChatProvider: aiChatSettings)
+        serpSettings.keyValueStore = appDependencies.services.keyValueFileStoreService.keyValueFilesStore
+
+        let duckAIEnabled = aiChatSettings.isAIChatEnabled
+        let searchAssist = serpSettings.searchAssistFrequency
+        let hideAIImages = serpSettings.hideAIGeneratedImages
+        let noAI = !duckAIEnabled && searchAssist == .never && hideAIImages
+
+        DailyPixel.fire(pixel: .aiFeaturesStateDaily, withAdditionalParameters: [
+            "duck_ai": duckAIEnabled ? "true" : "false",
+            "search_assist": searchAssist.rawValue,
+            "hide_ai_images": hideAIImages ? "on" : "off",
+            "no_ai": noAI ? "true" : "false"
+        ])
     }
 
     private func configureAppearance() {

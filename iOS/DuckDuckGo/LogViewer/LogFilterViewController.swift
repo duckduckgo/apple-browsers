@@ -115,19 +115,29 @@ extension LogFilterViewController: UITableViewDataSource {
     
     enum Section: Int, CaseIterable {
         case toggleFilters = 0
-        case customFilters = 1
-        case logLevel = 2
-        
+        case presets = 1
+        case customFilters = 2
+        case logLevel = 3
+
         var title: String {
             switch self {
             case .toggleFilters:
                 return "Filter Options"
+            case .presets:
+                return "Presets"
             case .customFilters:
                 return "Custom Filters"
             case .logLevel:
                 return "Minimum Log Level"
             }
         }
+    }
+
+    enum PresetRow: Int, CaseIterable {
+        case pixels = 0
+
+        var title: String { "Pixels" }
+        var filter: LogFilter { .pixelFilter }
     }
     
     enum ToggleFilterRow: Int, CaseIterable {
@@ -166,6 +176,8 @@ extension LogFilterViewController: UITableViewDataSource {
         guard let sectionType = Section(rawValue: section) else { return 0 }
         
         switch sectionType {
+        case .presets:
+            return PresetRow.allCases.count
         case .toggleFilters:
             return ToggleFilterRow.allCases.count
         case .customFilters:
@@ -188,6 +200,8 @@ extension LogFilterViewController: UITableViewDataSource {
         guard let sectionType = Section(rawValue: indexPath.section) else { return cell }
         
         switch sectionType {
+        case .presets:
+            configurePresetCell(cell, at: indexPath)
         case .toggleFilters:
             configureToggleFilterCell(cell, at: indexPath)
         case .customFilters:
@@ -199,6 +213,17 @@ extension LogFilterViewController: UITableViewDataSource {
         return cell
     }
     
+    private func configurePresetCell(_ cell: UITableViewCell, at indexPath: IndexPath) {
+        guard let row = PresetRow(rawValue: indexPath.row) else { return }
+        let isSelected = currentFilter.subsystemFilter == row.filter.subsystemFilter
+            && currentFilter.categoryFilter == row.filter.categoryFilter
+        cell.textLabel?.text = row.title
+        cell.textLabel?.textColor = isSelected
+            ? cell.tintColor
+            : UIColor(designSystemColor: .textPrimary)
+        cell.accessoryType = isSelected ? .checkmark : .none
+    }
+
     private func configureToggleFilterCell(_ cell: UITableViewCell, at indexPath: IndexPath) {
         guard let toggleRow = ToggleFilterRow(rawValue: indexPath.row) else { return }
         
@@ -253,8 +278,9 @@ extension LogFilterViewController: UITableViewDelegate {
         guard let sectionType = Section(rawValue: indexPath.section) else { return }
         
         switch sectionType {
+        case .presets:
+            handlePresetSelection(at: indexPath)
         case .toggleFilters:
-            // Toggle switches handle their own actions, no selection needed
             break
         case .customFilters:
             handleCustomFilterSelection(at: indexPath)
@@ -263,6 +289,13 @@ extension LogFilterViewController: UITableViewDelegate {
         }
     }
     
+    private func handlePresetSelection(at indexPath: IndexPath) {
+        guard let row = PresetRow(rawValue: indexPath.row) else { return }
+        currentFilter = row.filter
+        tableView.reloadSections(IndexSet(integer: Section.presets.rawValue), with: .none)
+        doneTapped()
+    }
+
     private func handleCustomFilterSelection(at indexPath: IndexPath) {
         guard let filterRow = CustomFilterRow(rawValue: indexPath.row) else { return }
         

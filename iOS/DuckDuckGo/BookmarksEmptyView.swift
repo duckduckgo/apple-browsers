@@ -19,8 +19,8 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
-import Core
 
 struct BookmarksEmptyView: View {
 
@@ -29,7 +29,7 @@ struct BookmarksEmptyView: View {
 
     var body: some View {
             VStack(spacing: 0) {
-                Image(.bookmarks96)
+                Image(rebrandable: "Bookmarks-96")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 96, height: 96)
@@ -57,9 +57,6 @@ struct BookmarksEmptyView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle(fullWidth: false))
                     .padding(.top, 24)
-                    .onFirstAppear {
-                        Pixel.fire(pixel: .bookmarksImportButtonShown)
-                    }
                 } else {
                     Button {
                         importDocumentButtonAction?()
@@ -75,8 +72,11 @@ struct BookmarksEmptyView: View {
     }
 
     private func maxButtonWidth() -> CGFloat {
-        let maxWidth = AutofillViews.maxWidthFor(title1: UserText.autofillEmptyViewImportButtonTitle, title2: UserText.autofillEmptyViewImportViaSyncButtonTitle, font: UIFont.boldAppFont(ofSize: 15))
-        return min(maxWidth, 300)
+        let labelFont = AppRebrand.isAppRebranded()
+            ? UIFont.systemFont(ofSize: 17, weight: .medium)
+            : UIFont.boldAppFont(ofSize: 15)
+        let maxWidth = AutofillViews.maxWidthFor(title1: UserText.importBookmarksActionTitle, title2: UserText.importBookmarksActionHtmlTitle, font: labelFont)
+        return min(maxWidth.rounded(.up), 300)
     }
 }
 

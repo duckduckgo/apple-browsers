@@ -1,0 +1,33 @@
+{
+  "configurations" : [
+    {
+      "id" : "1F2BB99F-2C30-4C5E-B9A4-2D5A1A1F8F5E",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : {
+      "targets" : [
+        {
+          "containerPath" : "container:",
+          "identifier" : "ICSParser",
+          "name" : "ICSParser"
+        }
+      ]
+    },
+    "testRepetitionMode" : "retryOnFailure"
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "ICSParserTests",
+        "name" : "ICSParserTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -1,0 +1,47 @@
+{
+    // MARK: - Mode Switching
+
+    "m_browsing-mode_switched": {
+        "description": "Fired when the browsing mode actually changes (on tab switcher dismiss, long press, promotions, etc.)",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "browsingMode",
+            {
+                "key": "source",
+                "description": "The entry point that triggered the mode switch",
+                "type": "string",
+                "enum": ["tab_selection", "long_press_tabs_icon", "long_press_link", "tab_switcher_long_press", "key_command"]
+            }
+        ]
+    },
+
+    "m_tab-switcher_mode-toggled": {
+        "description": "Fired when the user toggles or swipes between fire and normal modes in the tab switcher UI",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "browsingMode",
+            {
+                "key": "source",
+                "description": "How the user toggled the mode",
+                "type": "string",
+                "enum": ["tap", "swipe"]
+            }
+        ]
+    },
+
+    // MARK: - Empty State
+
+    "m_fire-mode_empty-state_new-tab": {
+        "description": "Fired when the user taps 'New Fire Tab' from the Fire Mode empty state in the tab switcher",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

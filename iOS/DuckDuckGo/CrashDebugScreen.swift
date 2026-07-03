@@ -22,6 +22,8 @@ import Crashes
 
 struct CrashDebugScreen: View {
 
+    @State private var forcedOnboarding: CrashCollectionOnboarding?
+
     var body: some View {
         List {
             Section {
@@ -61,7 +63,35 @@ struct CrashDebugScreen: View {
                 ActionMessageView.present(message: "Crash Send logs reset")
             }, isButton: true)
 
+            SettingsCellView(label: "Force Crash Onboarding", action: {
+                forceCrashOnboarding()
+            }, isButton: true)
+
         }.navigationTitle("Crashes")
+    }
+
+    private func forceCrashOnboarding() {
+        let settings = AppUserDefaults()
+        settings.crashCollectionOptInStatus = .undetermined
+
+        let onboarding = CrashCollectionOnboarding(appSettings: settings)
+        forcedOnboarding = onboarding
+
+        let stub = """
+        {"crashDiagnostics":[{"diagnosticMetaData":{"appVersion":"DEBUG","exceptionType":1,"exceptionCode":1,"signal":11,"objectiveCexceptionReason":{"composedMessage":"Simulator forced onboarding","stackTrace":["0 test"]}},"callStackTree":{"callStacks":[],"callStackPerThread":true}}],"timeStampBegin":"2026-01-01 12:00:00","timeStampEnd":"2026-01-01 12:00:00"}
+        """
+
+        guard let payload = stub.data(using: .utf8),
+              let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let root = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController ?? scene.windows.first?.rootViewController else {
+            forcedOnboarding = nil
+            return
+        }
+
+        let presenter = root.presentedViewController ?? root
+        onboarding.presentOnboardingIfNeeded(for: [payload], from: presenter, sendReport: {
+            print("[CrashDebug] sendReport invoked")
+        })
     }
 
 }

@@ -6,6 +6,7 @@
 API_URL="https://duckduckgo.com/api/protection"
 
 work_dir="${PWD}/DuckDuckGo/MaliciousSiteProtection"
+resources_dir="${work_dir}/Resources"
 def_filename="${work_dir}/MaliciousSiteProtectionManager.swift"
 
 old_revision="$(grep "static let embeddedDataRevision =" "${def_filename}" | awk -F '[=,]' '{print $2}' | xargs)"
@@ -62,7 +63,9 @@ performUpdate() {
         printf "New SHA256: %s ✨\n" "$new_sha"
     fi
 
-    sed -i '' -e "s/${threat_type}Embedded${capitalized_data_type}DataSHA =.*/${threat_type}Embedded${capitalized_data_type}DataSHA = \"$new_sha\"/g" "${def_filename}"
+    # `sed -i ''` is BSD-only; GNU sed on the Linux CI runner reads '' as a filename and fails silently.
+    # `-i.bak` (suffix attached) is accepted by both; delete the backup once the edit succeeds.
+    sed -i.bak -e "s/${threat_type}Embedded${capitalized_data_type}DataSHA =.*/${threat_type}Embedded${capitalized_data_type}DataSHA = \"$new_sha\"/g" "${def_filename}" && rm -f "${def_filename}.bak"
 
     # Validate number of records in the data file
     record_count=$(jq 'length' "$data_path")
@@ -79,19 +82,19 @@ performUpdate() {
 
 updateRevision() {
     local revision_to_use=$1
-    sed -i '' -e "s/embeddedDataRevision = $old_revision/embeddedDataRevision = $revision_to_use/" "${def_filename}"
+    sed -i.bak -e "s/embeddedDataRevision = $old_revision/embeddedDataRevision = $revision_to_use/" "${def_filename}" && rm -f "${def_filename}.bak"
     printf "Updated revision from %s to %s\n" "$old_revision" "$revision_to_use"
 }
 
 if [[ "$old_revision" -lt "$server_revision" ]] || [[ "$*" == *"-f"* ]]; then
-    performUpdate phishing hashPrefix "${work_dir}/phishingHashPrefixes.json"
-    performUpdate phishing filterSet "${work_dir}/phishingFilterSet.json"
+    performUpdate phishing hashPrefix "${resources_dir}/phishingHashPrefixes.json"
+    performUpdate phishing filterSet "${resources_dir}/phishingFilterSet.json"
 
-    performUpdate malware hashPrefix "${work_dir}/malwareHashPrefixes.json"
-    performUpdate malware filterSet "${work_dir}/malwareFilterSet.json"
+    performUpdate malware hashPrefix "${resources_dir}/malwareHashPrefixes.json"
+    performUpdate malware filterSet "${resources_dir}/malwareFilterSet.json"
 
-    performUpdate scam hashPrefix "${work_dir}/scamHashPrefixes.json"
-    performUpdate scam filterSet "${work_dir}/scamFilterSet.json"
+    performUpdate scam hashPrefix "${resources_dir}/scamHashPrefixes.json"
+    performUpdate scam filterSet "${resources_dir}/scamFilterSet.json"
 
     # Find the smallest revision
     min_revision=$phishing_revision

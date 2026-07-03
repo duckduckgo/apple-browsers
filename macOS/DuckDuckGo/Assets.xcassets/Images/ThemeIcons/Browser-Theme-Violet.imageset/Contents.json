@@ -1,18 +1,14 @@
 {
   "images" : [
     {
-      "filename" : "Browser-Theme-Violet.png",
-      "idiom" : "universal",
+      "filename" : "Browser-Theme-Violet-128.png",
+      "idiom" : "mac",
       "scale" : "1x"
     },
     {
-      "filename" : "Browser-Theme-Violet@2x.png",
-      "idiom" : "universal",
+      "filename" : "Browser-Theme-Violet-256.png",
+      "idiom" : "mac",
       "scale" : "2x"
-    },
-    {
-      "idiom" : "universal",
-      "scale" : "3x"
     }
   ],
   "info" : {

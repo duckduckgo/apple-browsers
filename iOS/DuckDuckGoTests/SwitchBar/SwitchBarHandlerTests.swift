@@ -34,18 +34,23 @@ final class SwitchBarHandlerTests: XCTestCase {
         static var isIphone: Bool = true
     }
 
+    private final class MockUnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
+        var isAvailable: Bool = false
+        var isToggleHiddenOnDuckAITab: Bool = false
+    }
+
     private var sut: SwitchBarHandler!
     private var mockVoiceSearchHelper: MockVoiceSearchHelper!
+    private var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeature!
     private var mockStorage: MockKeyValueStore!
-    private var mockFeatureFlagger: MockFeatureFlagger!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         MockDevicePlatform.isIphone = true
         mockVoiceSearchHelper = MockVoiceSearchHelper()
+        mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeature()
         mockStorage = MockKeyValueStore()
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         cancellables = Set<AnyCancellable>()
         createSUT()
     }
@@ -54,17 +59,17 @@ final class SwitchBarHandlerTests: XCTestCase {
         cancellables = nil
         sut = nil
         mockVoiceSearchHelper = nil
+        mockUnifiedToggleInputFeature = nil
         mockStorage = nil
-        mockFeatureFlagger = nil
         super.tearDown()
     }
 
-    private func createSUT(devicePlatform: DevicePlatformProviding.Type = MockDevicePlatform.self, featureFlagger: FeatureFlagger? = nil) {
+    private func createSUT(devicePlatform: DevicePlatformProviding.Type = MockDevicePlatform.self) {
         sut = SwitchBarHandler(
             voiceSearchHelper: mockVoiceSearchHelper,
             aiChatSettings: MockAIChatSettingsProvider(),
             sessionStateMetrics: SessionStateMetrics(storage: mockStorage),
-            featureFlagger: featureFlagger ?? mockFeatureFlagger,
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
             devicePlatform: devicePlatform,
             isFireTab: false
         )

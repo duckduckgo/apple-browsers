@@ -19,6 +19,7 @@
 import Foundation
 import AutofillResources
 import Common
+import FoundationExtensions
 import os.log
 import PrivacyConfig
 

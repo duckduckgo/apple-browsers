@@ -85,17 +85,23 @@
 /* Title for editing custom shortcuts */
 "widget.gallery.customshortcuts.edit.title" = "Διαμόρφωση συντομεύσεων";
 
+/* Label for first shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut1" = "Συντόμευση 1";
+
+/* Label for second shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut2" = "Συντόμευση 2";
+
+/* Label for third shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut3" = "Συντόμευση 3";
+
+/* Label for fourth shortcut slot in medium widget configuration */
+"widget.gallery.medium.customshortcuts.edit.shortcut4" = "Συντόμευση 4";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Αναζητήστε γρήγορα τους αποθηκευμένους κωδικούς πρόσβασής σας στο DuckDuckGo.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Αναζήτηση κωδικών πρόσβασης";
-
-/* Description of medium quickActions widget in widget gallery */
-"widget.gallery.quickactions.medium.display.description" = "Συντομεύσεις για τις αγαπημένες σας ενέργειες.";
-
-/* Display name for medium quick actions widget in widget gallery */
-"widget.gallery.quickactions.medium.display.name" = "Συντομευσεις";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Κάντε αναζήτηση ή επισκεφτείτε τους αγαπημένους ιστότοπούς σας ιδιωτικά, με μόνο ένα πάτημα.";
@@ -129,6 +135,33 @@
 
 /* Placeholder text in search field on the search and favorites widget */
 "widget.search.duckduckgo" = "Αναζήτηση DuckDuckGo";
+
+/* Display name shown in the widget configuration picker for the Bookmarks shortcut option */
+"widget.shortcut.option.bookmarks" = "Σελιδοδείκτες";
+
+/* Display name shown in the widget configuration picker for the Duck Address (email protection) shortcut option */
+"widget.shortcut.option.duck-address" = "Duck Address";
+
+/* Display name shown in the widget configuration picker for the Duck.ai shortcut option */
+"widget.shortcut.option.duck-ai" = "Duck.ai";
+
+/* Display name shown in the widget configuration picker for the Duck.ai Voice shortcut option */
+"widget.shortcut.option.duck-ai-voice" = "Φωνή Duck.ai";
+
+/* Display name shown in the widget configuration picker for the Favorites shortcut option */
+"widget.shortcut.option.favorites" = "Αγαπημένα";
+
+/* Display name shown in the widget configuration picker for the Passwords shortcut option */
+"widget.shortcut.option.passwords" = "Κωδικοί πρόσβασης";
+
+/* Type name shown in the widget configuration picker for the shortcut option enum */
+"widget.shortcut.option.type-name" = "Επιλογή συντόμευσης";
+
+/* Display name shown in the widget configuration picker for the Voice Search shortcut option */
+"widget.shortcut.option.voice-search" = "Φωνητική αναζήτηση";
+
+/* Display name shown in the widget configuration picker for the VPN shortcut option */
+"widget.shortcut.option.vpn" = "VPN";
 
 /* VPN connect button text */
 "widget.vpn.button.connect" = "Σύνδεση";

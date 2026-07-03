@@ -62,7 +62,7 @@ final class JobQueueManagerTests: XCTestCase {
                                                         emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                                         captchaService: CaptchaServiceMock(),
                                                         featureFlagger: MockDBPFeatureFlagger(),
-                                                        applicationNameForUserAgent: nil)
+                                                        applicationNameForUserAgentProvider: { nil })
     }
 
     func testWhenStartImmediateScanOperations_thenCreatorIsCalledWithManualScanOperationType() async throws {
@@ -75,6 +75,7 @@ final class JobQueueManagerTests: XCTestCase {
 
         // When
         sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
                                                     jobDependencies: mockDependencies,
                                                     errorHandler: nil,
                                                     completion: nil)
@@ -93,6 +94,7 @@ final class JobQueueManagerTests: XCTestCase {
 
         // When
         sut.startScheduledAllOperationsIfPermitted(showWebView: false,
+                                                   isAuthenticatedUser: true,
                                                    jobDependencies: mockDependencies,
                                                    errorHandler: nil,
                                                    completion: nil)
@@ -111,12 +113,32 @@ final class JobQueueManagerTests: XCTestCase {
 
         // When
         sut.startScheduledScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
                                                     jobDependencies: mockDependencies,
                                                     errorHandler: nil,
                                                     completion: nil)
 
         // Then
         XCTAssertEqual(mockOperationsCreator.createdType, .scheduledScan)
+    }
+
+    func testWhenStartScheduledScanOperations_thenCreatorReceivesAuthenticationState() async throws {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+
+        // When
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: false,
+                                                    jobDependencies: mockDependencies,
+                                                    errorHandler: nil,
+                                                    completion: nil)
+
+        // Then
+        XCTAssertEqual(mockOperationsCreator.isAuthenticatedUser, false)
     }
 
     func testWhenStartImmediateScan_andScanCompletesWithErrors_thenCompletionIsCalledWithErrors() async throws {
@@ -135,7 +157,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorHandlerCalled = false
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             errorHandlerCalled = true
         } completion: {
@@ -167,7 +189,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorHandlerCalled = false
 
         // When
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             errorHandlerCalled = true
         } completion: {
@@ -200,7 +222,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorHandlerCalled = false
 
         // When
-        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             errorHandlerCalled = true
         } completion: {
@@ -230,7 +252,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             // no-op
@@ -246,7 +268,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = mockOperations
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { _ in
         } completion: {
             // no-op
         }
@@ -273,7 +295,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             // no-op
@@ -289,7 +311,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = mockOperations
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { _ in
         } completion: {
             // no-op
         }
@@ -316,7 +338,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollectionFirst: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollectionFirst = errors
         } completion: {
             // no-op
@@ -334,7 +356,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = mockOperationsWithError + mockOperations
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollectionSecond = errors
         } completion: {
             // no-op
@@ -364,7 +386,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { _ in
         } completion: {
             // no-op
         }
@@ -383,7 +405,7 @@ final class JobQueueManagerTests: XCTestCase {
         var completionCalled = false
 
         // When
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             completionCalled.toggle()
         } completion: {
@@ -414,7 +436,9 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in } completion: {
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
+                                                    jobDependencies: mockDependencies) { _ in } completion: {
             // no-op
         }
 
@@ -432,7 +456,7 @@ final class JobQueueManagerTests: XCTestCase {
         var completionCalled = false
 
         // When
-        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             completionCalled.toggle()
@@ -458,7 +482,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             expectation.fulfill()
@@ -481,6 +505,7 @@ final class JobQueueManagerTests: XCTestCase {
 
         // When
         sut.startImmediateOptOutOperationsIfPermitted(showWebView: false,
+                                                      isAuthenticatedUser: true,
                                                       jobDependencies: mockDependencies,
                                                       errorHandler: nil,
                                                       completion: nil)
@@ -555,7 +580,7 @@ final class JobQueueManagerTests: XCTestCase {
         }
         var interruptedErrors: DataBrokerProtectionJobsErrorCollection?
 
-        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             interruptedErrors = errors
         } completion: {
             // no-op
@@ -566,6 +591,7 @@ final class JobQueueManagerTests: XCTestCase {
         }
 
         sut.startImmediateOptOutOperationsIfPermitted(showWebView: false,
+                                                      isAuthenticatedUser: true,
                                                       jobDependencies: mockDependencies,
                                                       errorHandler: nil,
                                                       completion: nil)
@@ -791,7 +817,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = mockOperationsWithError + mockOperations
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             XCTFail("Completion should not be called")
@@ -807,7 +833,7 @@ final class JobQueueManagerTests: XCTestCase {
         var completionCalled = false
 
         // This shouldn't be allowed to be proceed, and the completion handlers should be called
-        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             completionCalled.toggle()
@@ -831,7 +857,7 @@ final class JobQueueManagerTests: XCTestCase {
 
         let expectation = XCTestExpectation(description: "completion called")
 
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             expectation.fulfill()

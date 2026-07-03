@@ -52,6 +52,18 @@ extension View {
         }
     }
 
+    /// Applies the same shadow used on the search bar to widget tiles. Only applied on iOS 26+,
+    /// where the system-managed liquid glass widget background washes out tile outlines. On iOS 18
+    /// the custom darker background already provides enough contrast, so the shadow is skipped.
+    @ViewBuilder
+    func iOS26TileShadow() -> some View {
+        if #available(iOSApplicationExtension 26.0, *) {
+            self.shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
+        } else {
+            self
+        }
+    }
+
     /// Hide or show the view based on a boolean value.
     ///
     /// Example for visibility:

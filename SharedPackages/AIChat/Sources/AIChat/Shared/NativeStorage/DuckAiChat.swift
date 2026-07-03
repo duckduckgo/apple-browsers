@@ -38,13 +38,23 @@ public struct DuckAiChat: Equatable {
     /// UUIDs of files referenced by this chat, stored in the native file store.
     public let fileRefs: [String]
 
+    /// Raw FE-supplied reasoning-mode string for this chat.
+    public let reasoningMode: String?
+
+    /// True when any assistant message in the chat carries a `ui-component` part named
+    /// `generate-image` — i.e. the chat produced generated images via a tool call,
+    /// regardless of the chat's `model` field.
+    public let isImageGeneration: Bool
+
     public init(
         chatId: String,
         title: String,
         model: String,
         lastEdit: String,
         pinned: Bool,
-        fileRefs: [String] = []
+        fileRefs: [String] = [],
+        reasoningMode: String? = nil,
+        isImageGeneration: Bool = false
     ) {
         self.chatId = chatId
         self.title = title
@@ -52,6 +62,26 @@ public struct DuckAiChat: Equatable {
         self.lastEdit = lastEdit
         self.pinned = pinned
         self.fileRefs = fileRefs
+        self.reasoningMode = reasoningMode
+        self.isImageGeneration = isImageGeneration
+    }
+}
+
+// MARK: - Mutation helpers
+
+public extension DuckAiChat {
+    /// Returns a copy with `pinned` set to the supplied value.
+    func withPinned(_ newValue: Bool) -> DuckAiChat {
+        DuckAiChat(
+            chatId: chatId,
+            title: title,
+            model: model,
+            lastEdit: lastEdit,
+            pinned: newValue,
+            fileRefs: fileRefs,
+            reasoningMode: reasoningMode,
+            isImageGeneration: isImageGeneration
+        )
     }
 }
 
@@ -59,13 +89,13 @@ public struct DuckAiChat: Equatable {
 
 extension DuckAiChat {
 
-    /// Decodes a `DuckAiChat` and its first user message content from a raw JSON data blob
-    /// as stored in the native data store's `duck_ai_chats` table.
-    /// - Parameter data: The raw JSON data.
-    /// - Returns: A tuple of the decoded chat and the optional first user message content,
-    ///   or `nil` if decoding fails.
-    static func decode(from data: Data) -> (chat: DuckAiChat, firstUserMessageContent: String?)? {
-        guard let blob = try? JSONDecoder().decode(ChatBlob.self, from: data) else { return nil }
+    /// Decodes a `DuckAiChat`, the text of the first user message, and the text of the last
+    /// message (regardless of role) from a raw JSON data blob as stored in the native data
+    /// store's `duck_ai_chats` table. Throws on invalid JSON or missing required fields.
+    public static func decode(from data: Data) throws -> (chat: DuckAiChat,
+                                                          firstUserMessageContent: String?,
+                                                          lastMessageContent: String?) {
+        let blob = try JSONDecoder().decode(ChatBlob.self, from: data)
 
         let chat = DuckAiChat(
             chatId: blob.chatId,
@@ -73,14 +103,20 @@ extension DuckAiChat {
             model: blob.model ?? "",
             lastEdit: blob.lastEdit ?? "",
             pinned: blob.pinned ?? false,
-            fileRefs: blob.fileRefs ?? []
+            fileRefs: blob.fileRefs ?? [],
+            reasoningMode: blob.reasoningMode,
+            isImageGeneration: blob.hasGenerateImageUiComponent
         )
 
         let firstUserMessage = blob.messages?
             .first(where: { $0.role == "user" })?
-            .content.textValue
+            .effectiveTextContent
 
-        return (chat: chat, firstUserMessageContent: firstUserMessage)
+        let lastMessage = blob.messages?.last?.effectiveTextContent
+
+        return (chat: chat,
+                firstUserMessageContent: firstUserMessage,
+                lastMessageContent: lastMessage)
     }
 }
 
@@ -94,11 +130,53 @@ private struct ChatBlob: Decodable {
     let pinned: Bool?
     let fileRefs: [String]?
     let messages: [MessageBlob]?
+    let reasoningMode: String?
+
+    /// True when any assistant message carries a `ui-component` part named `generate-image`.
+    var hasGenerateImageUiComponent: Bool {
+        guard let messages else { return false }
+        return messages.contains { message in
+            guard message.role == "assistant" else { return false }
+            return message.parts?.contains { part in
+                part.type == "ui-component" && part.name == "generate-image"
+            } ?? false
+        }
+    }
 }
 
 private struct MessageBlob: Decodable {
     let role: String
-    let content: MessageContent
+    /// Assistant tool-call messages can ship without a `content` string — they carry the
+    /// payload in `parts` instead. Keeping this optional means we still decode the message
+    /// (and can inspect `parts` to detect image-gen chats) instead of failing the whole
+    /// `messages` array.
+    let content: MessageContent?
+    let parts: [MessagePart]?
+
+    /// Returns the visible text of the message. Prefers `content` (used by most chats and
+    /// by all user messages); falls back to concatenating `parts[].text` of `type == "text"`
+    /// because reasoning-model assistant messages (e.g. `gpt-5-mini`) ship with `content == ""`
+    /// and carry the actual response in `parts`. Returns `nil` when neither path produces text.
+    var effectiveTextContent: String? {
+        if let direct = content?.textValue, !direct.isEmpty {
+            return direct
+        }
+        guard let parts else { return nil }
+        let textParts = parts.compactMap { part -> String? in
+            guard part.type == "text", let text = part.text, !text.isEmpty else { return nil }
+            return text
+        }
+        guard !textParts.isEmpty else { return nil }
+        return textParts.joined(separator: "\n\n")
+    }
+}
+
+private struct MessagePart: Decodable {
+    let type: String?
+    let name: String?
+    /// Visible text payload of a `type == "text"` part. Other part types (`reasoning`,
+    /// `ui-component`, `tool-invocation`) don't carry user-visible text and leave this nil.
+    let text: String?
 }
 
 /// Handles polymorphic message content: either a plain string or a rich object with a `text` field.

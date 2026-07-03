@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import Networking
 import os.log
@@ -77,31 +78,12 @@ public enum SubscriptionEndpointServiceError: DDGError {
     }
 }
 
-/// Defines the caching strategy used when retrieving a `DuckDuckGoSubscription`.
-public enum SubscriptionCachePolicy {
-
-    /// Always attempts to fetch the subscription from the remote source.
-    /// If the remote fetch or keychain access fails, falls back to the cached subscription if available.
-    case remoteFirst
-
-    /// Returns the cached subscription if it exists; otherwise, attempts to fetch from the remote source.
-    case cacheFirst
-
-    public var apiCachePolicy: APICachePolicy {
-        switch self {
-        case .remoteFirst:
-            return .reloadIgnoringLocalCacheData
-        case .cacheFirst:
-            return .returnCacheDataElseLoad
-        }
-    }
-}
-
 public protocol SubscriptionEndpointService {
-    func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws
-    func getSubscription(accessToken: String?, cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription
-    func getCachedSubscription() -> DuckDuckGoSubscription?
-    func clearSubscription()
+
+    /// Fetches the subscription from the remote backend.
+    /// - Parameter accessToken: The user's access token for authentication
+    /// - Returns: The subscription as returned by the server
+    func getSubscription(accessToken: String) async throws -> DuckDuckGoSubscription
 
     /// Fetches products using the new /api/v2/products endpoint with tier information.
     /// - Parameters:
@@ -130,32 +112,21 @@ public protocol SubscriptionEndpointService {
     func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> ConfirmPurchaseResponse
 }
 
-extension SubscriptionEndpointService {
-
-    public func getSubscription(accessToken: String) async throws -> DuckDuckGoSubscription {
-        try await getSubscription(accessToken: accessToken, cachePolicy: SubscriptionCachePolicy.cacheFirst)
-    }
-}
-
 /// Communicates with our backend
 public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
 
     private let apiService: APIService
     private let baseURL: URL
-    private let subscriptionCache: UserDefaultsCache<DuckDuckGoSubscription>
-    private let cacheSerialQueue = DispatchQueue(label: "com.duckduckgo.subscriptionEndpointService.cache", qos: .background)
 
     public init(apiService: APIService,
-                baseURL: URL,
-                subscriptionCache: UserDefaultsCache<DuckDuckGoSubscription> = UserDefaultsCache<DuckDuckGoSubscription>(key: UserDefaultsCacheKey.subscription, settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))) {
+                baseURL: URL) {
         self.apiService = apiService
         self.baseURL = baseURL
-        self.subscriptionCache = subscriptionCache
     }
 
-    // MARK: - Subscription fetching with caching
+    // MARK: - Subscription
 
-    private func getRemoteSubscription(accessToken: String) async throws -> DuckDuckGoSubscription {
+    public func getSubscription(accessToken: String) async throws -> DuckDuckGoSubscription {
 
         Logger.subscriptionEndpointService.log("Requesting subscription details")
         guard let request = SubscriptionRequest.getSubscription(baseURL: baseURL, accessToken: accessToken) else {
@@ -167,11 +138,10 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
         if statusCode.isSuccess {
             let subscription: DuckDuckGoSubscription = try response.decodeBody()
             Logger.subscriptionEndpointService.log("Subscription details retrieved successfully: \(subscription.debugDescription, privacy: .public)")
-            return try await storeAndAddFeaturesIfNeededTo(subscription: subscription)
+            return subscription
         } else {
             if statusCode == .badRequest || statusCode == .notFound {
                 Logger.subscriptionEndpointService.log("No subscription found")
-                clearSubscription()
                 throw SubscriptionEndpointServiceError.noData
             } else {
                 let bodyString: String = try response.decodeBody()
@@ -181,104 +151,7 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
         }
     }
 
-    @discardableResult
-    private func storeAndAddFeaturesIfNeededTo(subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription {
-        let cachedSubscription = getCachedSubscription()
-        var subscription = subscription
-        // fetch remote features
-        Logger.subscriptionEndpointService.log("Getting features for subscription: \(subscription.productId, privacy: .public)")
-        let tierFeaturesResponse = try await getSubscriptionTierFeatures(for: [subscription.productId])
-        let tierFeatures = tierFeaturesResponse.features[subscription.productId] ?? []
-        subscription.features = tierFeatures.map { $0.product }
-        Logger.subscriptionEndpointService.debug("""
-Subscription:
-Cached: \(cachedSubscription?.debugDescription ?? "nil", privacy: .public)
-New: \(subscription.debugDescription, privacy: .public)
-""")
-        if subscription != cachedSubscription {
-            updateCache(with: subscription)
-        } else {
-            Logger.subscriptionEndpointService.debug("No subscription update required")
-        }
-        return subscription
-    }
-
-    func updateCache(with subscription: DuckDuckGoSubscription) {
-        cacheSerialQueue.sync {
-            let expiryDate = subscription.expiresOrRenewsAt
-#if DEBUG
-            // In DEBUG the subscription duration is just a few minutes, we want to avoid the cache to be immediately invalidated
-            let isInTheFuture = false
-#else
-            let isInTheFuture = expiryDate.isInTheFuture()
-#endif
-            if isInTheFuture {
-                Logger.subscriptionEndpointService.debug("Subscription cache set with expiration date: \(expiryDate, privacy: .public)")
-                subscriptionCache.set(subscription, expires: expiryDate)
-            } else {
-                Logger.subscriptionEndpointService.debug("Subscription cache set with default expiration date")
-                subscriptionCache.set(subscription)
-            }
-            Task { @MainActor in
-                Logger.subscriptionEndpointService.debug("Notifying subscription changed")
-                NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: subscription])
-            }
-        }
-    }
-
-    public func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws {
-        try await storeAndAddFeaturesIfNeededTo(subscription: subscription)
-    }
-
-    public func getSubscription(accessToken: String?, cachePolicy: SubscriptionCachePolicy = .cacheFirst) async throws -> DuckDuckGoSubscription {
-
-        guard let accessToken else {
-            if let subscription = getCachedSubscription() {
-                return subscription
-            } else {
-                throw SubscriptionEndpointServiceError.noData
-            }
-        }
-
-        switch cachePolicy {
-        case .remoteFirst:
-            do {
-                let subscription = try await getRemoteSubscription(accessToken: accessToken)
-                return subscription
-            } catch SubscriptionEndpointServiceError.noData {
-                throw SubscriptionEndpointServiceError.noData
-            } catch {
-                if let cachedSubscription = getCachedSubscription() {
-                    return cachedSubscription
-                } else {
-                    throw SubscriptionEndpointServiceError.noData
-                }
-            }
-
-        case .cacheFirst:
-            if let cachedSubscription = getCachedSubscription() {
-                return cachedSubscription
-            } else {
-                return try await getRemoteSubscription(accessToken: accessToken)
-            }
-        }
-    }
-
-    public func getCachedSubscription() -> DuckDuckGoSubscription? {
-        var result: DuckDuckGoSubscription?
-        cacheSerialQueue.sync {
-            result = subscriptionCache.get()
-        }
-        return result
-    }
-
-    public func clearSubscription() {
-        cacheSerialQueue.sync {
-            subscriptionCache.reset()
-        }
-    }
-
-    // MARK: -
+    // MARK: - Products
 
     public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
         guard let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, region: region, platform: platform) else {
@@ -295,7 +168,7 @@ New: \(subscription.debugDescription, privacy: .public)
         }
     }
 
-    // MARK: -
+    // MARK: - Customer Portal
 
     public func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> GetCustomerPortalURLResponse {
         guard let request = SubscriptionRequest.getCustomerPortalURL(baseURL: baseURL, accessToken: accessToken, externalID: externalID) else {
@@ -311,7 +184,7 @@ New: \(subscription.debugDescription, privacy: .public)
         }
     }
 
-    // MARK: -
+    // MARK: - Purchase Confirmation
 
     public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> ConfirmPurchaseResponse {
         guard let request = SubscriptionRequest.confirmPurchase(baseURL: baseURL,

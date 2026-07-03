@@ -94,4 +94,4 @@ excluded:
 
   # Specific files to exclude
   - SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Model/AnyDecodable.swift
-  - SharedPackages/BrowserServicesKit/Sources/Common/Concurrency/AsyncStream.swift
+  - SharedPackages/Infrastructure/SystemFrameworksExtensions/Sources/ConcurrencyExtensions/AsyncStream.swift

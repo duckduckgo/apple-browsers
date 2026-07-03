@@ -27,7 +27,7 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
@@ -37,6 +37,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../Infrastructure/DesignResourcesKit"),
         .package(path: "../Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../UIComponents"),
@@ -50,6 +51,10 @@ let package = Package(
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "PixelKit", package: "BrowserServicesKit"),
                 "DesignResourcesKit",
                 "DesignResourcesKitIcons",
                 "UIComponents",
@@ -66,7 +71,9 @@ let package = Package(
             name: "OnboardingTests",
             dependencies: [
                 "Onboarding",
-                "DesignResourcesKit"
+                "DesignResourcesKit",
+                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKitTestingUtilities", package: "BrowserServicesKit")
             ]
         )
     ]

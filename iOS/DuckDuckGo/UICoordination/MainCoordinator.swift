@@ -33,6 +33,7 @@ import DataBrokerProtection_iOS
 import PrivacyStats
 import Networking
 import WebExtensions
+import Onboarding
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -69,6 +70,7 @@ final class MainCoordinator {
     private let featureFlagger: FeatureFlagger
     private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
+    private let keyValueStore: ThrowingKeyValueStoring
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
     private let wideEvent: WideEventManaging
@@ -78,14 +80,25 @@ final class MainCoordinator {
     private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionEventsCoordinator: WebExtensionEventsCoordinator?
     private var webExtensionFeatureFlagHandler: AnyObject?
+    private var webExtensionLifecycleCoordinatorStorage: Any?
+
+    @available(iOS 18.4, *)
+    var webExtensionLifecycleCoordinator: WebExtensionLifecycleCoordinator? {
+        get { webExtensionLifecycleCoordinatorStorage as? WebExtensionLifecycleCoordinator }
+        set { webExtensionLifecycleCoordinatorStorage = newValue }
+    }
     private var dataImportUserActivityHandler: DataImportUserActivityHandling?
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
-    private var isSyncingEmbeddedExtensions = false
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
     private var webExtensionLoadTask: Task<Void, Never>?
+    private var isWebExtensionLoadPending = false
+    private var protectedDataCancellable: AnyCancellable?
+    private var pendingProtectedDataWork: [() -> Void] = []
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
-    private let keyValueStore: ThrowingKeyValueStoring
+    private let onboardingManager: OnboardingFlowManaging
+
+    private var hasPresentedOnboarding = false
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -112,13 +125,17 @@ final class MainCoordinator {
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
          launchSourceManager: LaunchSourceManaging,
          winBackOfferService: WinBackOfferService,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          modalPromptCoordinationService: ModalPromptCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          whatsNewRepository: WhatsNewMessageRepository,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
-         wideEvent: WideEventManaging
+         wideEvent: WideEventManaging,
+         onboardingManager: OnboardingManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -127,15 +144,15 @@ final class MainCoordinator {
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.modalPromptCoordinationService = modalPromptCoordinationService
         self.wideEvent = wideEvent
+        self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
         self.voiceShortcutFeature = DuckAIVoiceShortcutFeature(featureFlagger: featureFlagger)
         FireModeCapability.resolve(using: featureFlagger)
+        UnifiedToggleInputFeature.resolve(using: featureFlagger)
         let fireModeCapability = FireModeCapability.create()
-        let fireModePromotionsCoordinator = FireModePromotionsCoordinator(fireModeCapability: fireModeCapability)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
-                                                          fireModePromotionEligibility: fireModePromotionsCoordinator,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
@@ -151,11 +168,15 @@ final class MainCoordinator {
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
+        let onboardingSearchExperienceProvider = OnboardingSearchExperience()
         onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
             daxDialogs: daxDialogs,
             aiChatSettings: aiChatSettings,
-            featureFlagger: featureFlagger,
-            onboardingSearchExperienceProvider: OnboardingSearchExperience()
+            onboardingSearchExperienceProvider: onboardingSearchExperienceProvider
+        )
+        let onboardingSearchExperienceSettingsResolver = OnboardingSearchExperienceSettingsResolver(
+            onboardingProvider: onboardingSearchExperienceProvider,
+            daxDialogsStatusProvider: daxDialogs
         )
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
@@ -193,8 +214,9 @@ final class MainCoordinator {
                                 launchSourceManager: launchSourceManager,
                                 darkReaderFeatureSettings: darkReaderFeatureSettings,
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
-                                fireModePromotionEligibility: fireModePromotionsCoordinator)
+                                adBlockingAvailability: contentBlockingService.adBlockingAvailability)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -211,6 +233,7 @@ final class MainCoordinator {
                                         privacyStats: privacyStats,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                        fireModeStorageController: contentBlockingService.fireModeStorageController,
                                         wideEvent: wideEvent)
         let syncAutoRestoreHandler = SyncAutoRestoreHandler(
             decisionManager: syncAutoRestoreDecisionManager,
@@ -223,6 +246,11 @@ final class MainCoordinator {
             privacyConfigurationManager: privacyConfigurationManager,
             isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
         )
+        let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
+            keyValueStore: keyValueStore,
+            idleReturnEligibilityManager: idleReturnEligibilityManager
+        )
+        let lastTabShortcutAdapter = LastTabShortcutAdapter(keyValueStore: keyValueStore)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -232,6 +260,7 @@ final class MainCoordinator {
                                         userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                                         contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
+                                        duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,
@@ -243,6 +272,8 @@ final class MainCoordinator {
                                         voiceSearchHelper: voiceSearchHelper,
                                         featureFlagger: featureFlagger,
                                         idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                        afterInactivityOptionAdapter: afterInactivityOptionAdapter,
+                                        lastTabShortcutAdapter: lastTabShortcutAdapter,
                                         syncAutoRestoreHandler: syncAutoRestoreHandler,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
@@ -252,13 +283,18 @@ final class MainCoordinator {
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
+                                        aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         aiChatAddressBarExperience: aiChatAddressBarExperience,
                                         themeManager: ThemeManager.shared,
                                         keyValueStore: keyValueStore,
                                         customConfigurationURLProvider: customConfigurationURLProvider,
                                         systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                         daxDialogsManager: daxDialogsManager,
+                                        onboardingSearchExperienceSettingsResolver: onboardingSearchExperienceSettingsResolver,
                                         dbpIOSPublicInterface: dbpIOSPublicInterface,
+                                        freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                        freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
@@ -272,7 +308,8 @@ final class MainCoordinator {
                                         whatsNewRepository: whatsNewRepository,
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
-                                        fireModePromotionEligibility: fireModePromotionsCoordinator)
+                                        onboardingManager: onboardingManager,
+                                        recentModalPromptStatusProvider: modalPromptCoordinationService)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -325,10 +362,16 @@ final class MainCoordinator {
             .removeDuplicates()
             .eraseToAnyPublisher()
 
+        let adBlockingDefaultsPublisher = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.adBlockingExtensionEnabledByDefault)
+            }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+
         youTubeAdBlockingCancellable = NotificationCenter.default
             .publisher(for: YouTubeAdBlockingStorageKeys.youTubeAdBlockingEnabledDidChangeNotification)
             .sink { [weak self] _ in
-                guard #available(iOS 18.4, *) else { return }
                 Task { @MainActor in
                     await self?.syncEmbeddedExtensions()
                 }
@@ -339,6 +382,7 @@ final class MainCoordinator {
             featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
+            adBlockingDefaultsFlagPublisher: adBlockingDefaultsPublisher,
             onFeatureFlagEnabled: { [weak self] in
                 self?.initializeWebExtensions()
             },
@@ -349,6 +393,9 @@ final class MainCoordinator {
                 await self?.syncEmbeddedExtensions()
             },
             onAdBlockingExtensionFlagEnabled: { [weak self] in
+                await self?.syncEmbeddedExtensions()
+            },
+            onAdBlockingDefaultsFlagChanged: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             }
         )
@@ -364,14 +411,7 @@ final class MainCoordinator {
     private func initializeWebExtensions() {
         guard webExtensionManager == nil else {
             // Already initialized, just reload extensions and re-register tabs
-            webExtensionLoadTask?.cancel()
-            webExtensionLoadTask = Task { @MainActor [weak self] in
-                await self?.webExtensionManager?.loadInstalledExtensions()
-                guard !Task.isCancelled else { return }
-                await self?.syncEmbeddedExtensions()
-                guard !Task.isCancelled else { return }
-                self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
-            }
+            scheduleExtensionLoad()
             return
         }
 
@@ -386,6 +426,14 @@ final class MainCoordinator {
         )
         self.webExtensionManager = webExtensionManager
 
+        let lifecycleCoordinator = WebExtensionLifecycleCoordinator(
+            manager: webExtensionManager,
+            pixelFiring: iOSWebExtensionPixelFiring()
+        ) { [weak self] in
+            self?.enabledEmbeddedExtensionTypes() ?? []
+        }
+        self.webExtensionLifecycleCoordinator = lifecycleCoordinator
+
         self.webExtensionEventsCoordinator = WebExtensionEventsCoordinator(
             webExtensionManager: webExtensionManager,
             mainViewController: controller
@@ -394,16 +442,76 @@ final class MainCoordinator {
         tabManager.setWebExtensionManager(webExtensionManager)
         controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
         controller.setWebExtensionManager(webExtensionManager)
+        controller.setWebExtensionLifecycleCoordinator(lifecycleCoordinator)
         subscribeToDarkReaderChanges()
 
-        // Load extensions asynchronously - the controller is already attached to tabs
-        webExtensionLoadTask = Task { @MainActor [weak self] in
-            await webExtensionManager.loadInstalledExtensions()
-            guard !Task.isCancelled else { return }
-            await self?.syncEmbeddedExtensions()
-            guard !Task.isCancelled else { return }
-            self?.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+        // Defer extension loading until onAppReadyForInteractions to ensure
+        // the WebKit process, protected data, and UI are fully available.
+        // Loading too early blocks the main thread with WKWebExtension file I/O,
+        // risking a watchdog kill (0x8badf00d) during launch.
+        isWebExtensionLoadPending = true
+        if UIApplication.shared.applicationState == .active {
+            loadWebExtensionsIfPending()
         }
+    }
+
+    @available(iOS 18.4, *)
+    func loadWebExtensionsIfPending() {
+        guard isWebExtensionLoadPending else { return }
+        scheduleExtensionLoad()
+    }
+
+    @available(iOS 18.4, *)
+    private func scheduleExtensionLoad() {
+        // Reading the extension archive from Application Support while protected data is
+        // unavailable (device locked / before first unlock) makes WKWebExtension fail with
+        // WKWebExtensionErrorInvalidArchive (domain code 9). Stay pending and retry on unlock.
+        // Failsafe-disableable via .webExtensionProtectedDataLoadGate (off → load immediately).
+        if featureFlagger.isFeatureOn(.webExtensionProtectedDataLoadGate),
+           !UIApplication.shared.isProtectedDataAvailable {
+            isWebExtensionLoadPending = true
+            deferUntilProtectedDataAvailable { [weak self] in
+                self?.loadWebExtensionsIfPending()
+            }
+            return
+        }
+
+        isWebExtensionLoadPending = false
+        webExtensionLoadTask?.cancel()
+        webExtensionLoadTask = Task { @MainActor [weak self] in
+            guard let self, let coordinator = self.webExtensionLifecycleCoordinator else { return }
+            await coordinator.loadAndSync().value
+            guard !Task.isCancelled else { return }
+            self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
+        }
+    }
+
+    /// Runs `operation` when protected data becomes available. Web extension loading and
+    /// embedded-extension installing read the extension archive from Application Support, which
+    /// fails with WKWebExtensionErrorInvalidArchive (domain code 9) while protected data is
+    /// unavailable (device locked). Deferred work is coalesced and run once on the next
+    /// `protectedDataDidBecomeAvailable`.
+    @available(iOS 18.4, *)
+    private func deferUntilProtectedDataAvailable(_ operation: @escaping () -> Void) {
+        pendingProtectedDataWork.append(operation)
+        DailyPixel.fireDailyAndCount(pixel: .webExtensionDeferredProtectedDataUnavailable,
+                                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+
+        guard protectedDataCancellable == nil else { return }
+        protectedDataCancellable = NotificationCenter.default
+            .publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.protectedDataCancellable = nil
+                    let pendingWork = self.pendingProtectedDataWork
+                    self.pendingProtectedDataWork.removeAll()
+                    guard !pendingWork.isEmpty else { return }
+                    DailyPixel.fireDailyAndCount(pixel: .webExtensionResumedProtectedDataAvailable,
+                                                 pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                    pendingWork.forEach { $0() }
+                }
+            }
     }
 
     @available(iOS 18.4, *)
@@ -424,12 +532,25 @@ final class MainCoordinator {
 
     @available(iOS 18.4, *)
     private func syncEmbeddedExtensions() async {
-        guard !isSyncingEmbeddedExtensions else { return }
-        guard let webExtensionManager = webExtensionManager as? WebExtensionManager else { return }
+        guard let coordinator = webExtensionLifecycleCoordinator else { return }
 
-        isSyncingEmbeddedExtensions = true
-        defer { isSyncingEmbeddedExtensions = false }
+        // Installing copies/loads the extension archive from Application Support; like the load
+        // path this fails with WKWebExtensionErrorInvalidArchive (code 9) while protected data is
+        // unavailable. Defer the sync until protected data becomes available.
+        // Failsafe-disableable via .webExtensionProtectedDataLoadGate (off → install immediately).
+        if featureFlagger.isFeatureOn(.webExtensionProtectedDataLoadGate),
+           !UIApplication.shared.isProtectedDataAvailable {
+            deferUntilProtectedDataAvailable { [weak self] in
+                Task { @MainActor in await self?.syncEmbeddedExtensions() }
+            }
+            return
+        }
 
+        await coordinator.sync().value
+    }
+
+    @available(iOS 18.4, *)
+    private func enabledEmbeddedExtensionTypes() -> Set<DuckDuckGoWebExtensionType> {
         var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
         if featureFlagger.isFeatureOn(.embeddedExtension) {
             enabledTypes.insert(.embedded)
@@ -440,12 +561,20 @@ final class MainCoordinator {
         if controller.adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
         }
-        await webExtensionManager.syncEmbeddedExtensions(enabledTypes: enabledTypes)
+        return enabledTypes
     }
 
     private func clearWebExtensionReferences() {
+        isWebExtensionLoadPending = false
         webExtensionLoadTask?.cancel()
         webExtensionLoadTask = nil
+        protectedDataCancellable = nil
+        pendingProtectedDataWork.removeAll()
+        if #available(iOS 18.4, *) {
+            webExtensionLifecycleCoordinator?.cancelAll()
+            webExtensionLifecycleCoordinator = nil
+            controller.setWebExtensionLifecycleCoordinator(nil)
+        }
         webExtensionManager = nil
         webExtensionEventsCoordinator = nil
         darkReaderCancellables.removeAll()
@@ -474,7 +603,8 @@ final class MainCoordinator {
         let normalModel: TabsModel
         let fireModel: TabsModel
 
-        if AutoClearSettingsModel(settings: appSettings) != nil {
+        if let autoClearSettings = AutoClearSettingsModel(settings: appSettings),
+           autoClearSettings.action.contains(.tabs) {
             normalModel = TabsModel(desktop: isPadDevice, mode: .normal)
             fireModel = TabsModel(desktop: isPadDevice, mode: .fire)
             tabsPersistence.clearAll()
@@ -500,18 +630,17 @@ final class MainCoordinator {
                                                dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WebsiteDataManaging {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
-                        dataStoreIDManager: dataStoreIDManager,
-                        isFireproofingETLDPlus1Enabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.fireproofingETLDPlus1) })
+                        dataStoreIDManager: dataStoreIDManager)
     }
 
     // MARK: - Public API
 
-    func segueToDuckDuckGoSubscription() {
-        controller.segueToDuckDuckGoSubscription()
+    func segueToDuckDuckGoSubscription(origin: String?) {
+        controller.segueToDuckDuckGoSubscription(origin: origin)
     }
 
-    func presentNetworkProtectionStatusSettingsModal() {
-        controller.presentNetworkProtectionStatusSettingsModal()
+    func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
+        controller.presentNetworkProtectionStatusSettingsModal(origin: origin)
     }
 
     func presentDataBrokerProtectionDashboard() {
@@ -558,9 +687,14 @@ final class MainCoordinator {
 
     private func fireDailyAdBlockingPixel() {
         let isEnabled = controller.adBlockingAvailability.isEnabled
+        let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
+        let analyticsEnabled = isEnabled && ((try? storage.value(for: \.youTubeAnalyticsEnabled)) ?? false)
         DailyPixel.fire(
             pixel: .webExtensionDailyAdBlockingState,
-            withAdditionalParameters: ["is_enabled": isEnabled ? "true" : "false"]
+            withAdditionalParameters: [
+                "is_enabled": isEnabled ? "true" : "false",
+                "analytics_enabled": analyticsEnabled ? "true" : "false"
+            ]
         )
     }
 
@@ -592,7 +726,12 @@ extension MainCoordinator: URLHandling {
     private func handleAppDeepLink(url: URL, application: UIApplication = UIApplication.shared) -> Bool {
         controller.currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
 
-        if url != AppDeepLinkSchemes.openVPN.url
+        fireMediumWidgetPixelIfNeeded(url: url)
+
+        let syncPairingInfo = featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls) ? PairingInfo(url: url) : nil
+
+        if syncPairingInfo == nil
+            && url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
@@ -616,26 +755,23 @@ extension MainCoordinator: URLHandling {
         case .newEmail:
             controller.newEmailAddress()
         case .openVPN:
-            presentNetworkProtectionStatusSettingsModal()
+            presentNetworkProtectionStatusSettingsModal(origin: .widgetVPN)
         case .openPasswords:
             handleOpenPasswords(url: url)
         case .openAIChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
         case .openAIVoiceChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller, voiceMode: true)
+        case .openBookmarks:
+            controller.segueToBookmarks()
+        case .customProductPage:
+            AppStoreCustomProductPageDeepLinkHandler().handleDeepLink(url, on: controller)
         default:
-            if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
-                controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
+            if let syncPairingInfo {
+                controller.segueToSettingsSync(with: nil, pairingInfo: syncPairingInfo)
                 return true
             }
-            guard application.applicationState == .active, let currentTab = controller.currentTab else {
-                return false
-            }
-            // If app is in active state, treat this navigation as something initiated form the context of the current tab.
-            controller.tab(currentTab,
-                           didRequestNewTabForUrl: url,
-                           openedByPage: true,
-                           inheritingAttribution: nil)
+            return false
         }
         return true
     }
@@ -656,6 +792,20 @@ extension MainCoordinator: URLHandling {
         }
     }
 
+    private func fireMediumWidgetPixelIfNeeded(url: URL) {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems,
+              queryItems.first(where: { $0.name == WidgetSourceType.sourceKey })?.value
+                  == WidgetSourceType.quickActionsMedium.rawValue,
+              let shortcut = queryItems.first(where: { $0.name == WidgetSourceType.shortcutKey })?.value
+        else { return }
+
+        DailyPixel.fireDailyAndCount(
+            pixel: .widgetMediumLaunch,
+            withAdditionalParameters: [PixelParameters.shortcut: shortcut]
+        )
+    }
+
     func handleAIChatAppIconShortuct() {
           controller.clearNavigationStack()
           // Give the `clearNavigationStack` call time to complete.
@@ -674,7 +824,7 @@ extension MainCoordinator: ShortcutItemHandling {
         } else if item.type == ShortcutKey.passwords {
             handleSearchPassword()
         } else if item.type == ShortcutKey.openVPNSettings {
-            controller.presentNetworkProtectionStatusSettingsModal()
+            controller.presentNetworkProtectionStatusSettingsModal(origin: .shortcutVPN)
         } else if item.type == ShortcutKey.aiChat {
             handleAIChatAppIconShortuct()
         } else if item.type == ShortcutKey.voiceSearch {
@@ -702,20 +852,31 @@ extension MainCoordinator: UserActivityHandling {
 
     @discardableResult
     func handleUserActivity(_ userActivity: NSUserActivity) -> Bool {
-        switch userActivity.activityType {
-        case DataImportUserActivityHandler.browserKitImportActivityType:
-            if dataImportUserActivityHandler == nil {
-                dataImportUserActivityHandler = makeDataImportUserActivityHandler()
-            }
-            return dataImportUserActivityHandler?.handle(userActivity) ?? false
-        default:
+        if dataImportUserActivityHandler == nil {
+            dataImportUserActivityHandler = makeDataImportUserActivityHandler()
+        }
+
+        guard dataImportUserActivityHandler?.handle(userActivity) == true else {
             Logger.general.debug("Unhandled user activity type: \(userActivity.activityType)")
             return false
         }
+
+        return true
     }
 
     private func makeDataImportUserActivityHandler() -> DataImportUserActivityHandler {
-        DataImportUserActivityHandler()
+        DataImportUserActivityHandler(keyValueStore: keyValueStore) { [weak self] result in
+            self?.handleDataImportResult(result)
+        }
+    }
+
+    private func handleDataImportResult(_ result: Result<DataImportSummary, Error>) {
+        switch result {
+        case .success(let summary):
+            controller.presentDataImportSummary(summary, importScreen: .passwords)
+        case .failure(let error):
+            Logger.general.error("Data import failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
 }
@@ -729,10 +890,25 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             return
         }
 
+        // Already on the NTP — no rebuild needed. This preserves any existing
+        // escape hatch state, avoids bouncing the omnibar/keyboard on idle return,
+        // and avoids surfacing a stale hatch when the user has already consumed
+        // the after-idle moment and returned to the NTP.
+        //
+        // We require a non-nil current tab here: if there is no current tab,
+        // we still want to fall through to `newTab(...)` to create one.
+        if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
+            return
+        }
+
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
         }
+    }
+
+    func markLastUsedTabAsResumedAfterIdle() {
+        controller.postIdleSessionInstrumentation.sessionStarted(surface: .lut)
     }
 
 }
@@ -757,4 +933,26 @@ extension MainCoordinator: SystemSettingsPiPTutorialPresenting {
     func detachPlayerView(_ view: UIView) {
         view.removeFromSuperview()
     }
+
+}
+
+// MARK: MainCoordinator + Onboarding
+
+extension MainCoordinator: OnboardingPresenting {
+
+    func startOnboardingFlowIfNotSeenBefore(url: URL?) {
+        // 1. Configure Onboarding Flow
+        onboardingManager.configureOnboardingFlow(from: url)
+
+        // The flow is now known. Duck.ai tailored-flow users need UTI set up before the
+        // Duck.ai interlude runs inside their onboarding
+        controller.setUpUnifiedToggleInputIfNeeded()
+
+        // 2. Presenting Onboarding Flow if needed
+        guard !hasPresentedOnboarding, controller.isStartupOnboardingPending else { return }
+        hasPresentedOnboarding = true
+        controller.startupOnboardingCover.bringToFront()
+        controller.startOnboardingFlowIfNotSeenBefore()
+    }
+
 }

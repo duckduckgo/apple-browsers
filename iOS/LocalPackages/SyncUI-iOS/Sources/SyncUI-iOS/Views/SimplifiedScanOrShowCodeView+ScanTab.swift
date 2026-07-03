@@ -34,7 +34,7 @@ extension SimplifiedScanOrShowCodeView {
             manuallyEnterCodeButton
                 .padding(.bottom, 16)
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 16)
     }
 
     // MARK: - Instructions
@@ -45,6 +45,7 @@ extension SimplifiedScanOrShowCodeView {
             .foregroundColor(SimplifiedSyncStyle.instructionText)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, minHeight: 72, maxHeight: .infinity)
     }
 
     // MARK: - Camera
@@ -66,7 +67,7 @@ extension SimplifiedScanOrShowCodeView {
                     Color.black
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
 
             if model.showCamera && model.videoPermission != .denied {
                 cameraPromptPill
@@ -97,7 +98,7 @@ extension SimplifiedScanOrShowCodeView {
         VStack(spacing: 0) {
             Spacer()
 
-            Image("SyncCameraPermission")
+            Image(rebrandable: "SyncCameraPermission")
                 .padding(.bottom, 20)
 
             Text(UserText.cameraPermissionRequired)
@@ -137,7 +138,7 @@ extension SimplifiedScanOrShowCodeView {
         VStack(spacing: 0) {
             Spacer()
 
-            Image("SyncCameraUnavailable")
+            Image(rebrandable: "SyncCameraUnavailable")
                 .padding(.bottom, 20)
 
             Text(UserText.cameraIsUnavailableTitle)

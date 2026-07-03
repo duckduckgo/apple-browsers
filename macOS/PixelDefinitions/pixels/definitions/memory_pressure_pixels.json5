@@ -59,7 +59,8 @@
                 "key": "uptime",
                 "type": "integer",
                 "description": "Minutes elapsed since app launch (raw value, not bucketed)"
-            }
+            },
+            "channel"
         ]
     }
 }

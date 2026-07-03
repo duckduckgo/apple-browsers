@@ -45,9 +45,6 @@ struct SaveLoginDebugView: View {
 
 private enum SaveLoginVariant: String, CaseIterable, Identifiable {
     case newUser
-    case newUserVariant1
-    case newUserVariant2
-    case newUserVariant3
     case saveLogin
     case savePassword
     case updateUsername
@@ -57,10 +54,7 @@ private enum SaveLoginVariant: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .newUser: return "New user (control)"
-        case .newUserVariant1: return "New user (variant 1)"
-        case .newUserVariant2: return "New user (variant 2)"
-        case .newUserVariant3: return "New user (variant 3)"
+        case .newUser: return "New user"
         case .saveLogin: return "Save login"
         case .savePassword: return "Save password only"
         case .updateUsername: return "Update username"
@@ -71,9 +65,6 @@ private enum SaveLoginVariant: String, CaseIterable, Identifiable {
     var layoutType: SaveLoginView.LayoutType {
         switch self {
         case .newUser: return .newUser
-        case .newUserVariant1: return .newUserVariant1
-        case .newUserVariant2: return .newUserVariant2
-        case .newUserVariant3: return .newUserVariant3
         case .saveLogin: return .saveLogin
         case .savePassword: return .savePassword
         case .updateUsername: return .updateUsername
@@ -99,11 +90,9 @@ private struct SaveLoginDebugSheet: View {
                 viewModel.contentHeight = height
             }
             let appSettings = AppDependencyProvider.shared.appSettings
-            let featureFlagger = AppDependencyProvider.shared.featureFlagger
             let vm = SaveLoginViewModel(
                 credentialManager: SaveLoginDebugMockManager(layoutType: variant),
                 appSettings: appSettings,
-                featureFlagger: featureFlagger,
                 layoutType: variant
             )
             vm.delegate = delegate
@@ -184,7 +173,7 @@ private struct SaveLoginDebugMockManager: SaveAutofillLoginManagerProtocol {
 
     var username: String { "dax@duck.com" }
     var visiblePassword: String { "supersecurepasswordquack" }
-    var isNewAccount: Bool { layoutType.isNewUserVariant || layoutType == .saveLogin }
+    var isNewAccount: Bool { layoutType == .newUser || layoutType == .saveLogin }
     var accountDomain: String { "duck.com" }
 
     var isPasswordOnlyAccount: Bool {

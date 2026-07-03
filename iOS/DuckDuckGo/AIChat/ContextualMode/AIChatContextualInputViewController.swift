@@ -162,6 +162,10 @@ final class AIChatContextualInputViewController: UIViewController {
     func setChipTapCallback(_ callback: @escaping () -> Void) {
         nativeInputViewController.setChipTapCallback(callback)
     }
+
+    func updateQuickActions(with actions: [AIChatContextualQuickAction]) {
+        quickActionsView.configure(with: actions)
+    }
 }
 
 // MARK: - Private Setup
@@ -262,13 +266,8 @@ private extension AIChatContextualInputViewController {
         }
     }
 
-    internal func updateQuickActions(with actions: [AIChatContextualQuickAction]) {
-        quickActionsView.configure(with: actions)
-    }
-
     func configureWelcomeLabel() {
         let font = UIFont(name: "DuckSansDisplay-Medium", size: 25) ?? UIFont.daxTitle2()
-        let privatelyColor = UIColor(designSystemColor: .shieldPrivacy)
 
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center
@@ -279,21 +278,21 @@ private extension AIChatContextualInputViewController {
             .paragraphStyle: paragraphStyle
         ]
 
-        let mutableText = NSMutableAttributedString(string: UserText.aiChatWelcomeAskAnything, attributes: defaultAttributes)
-
-        let shieldImage = DesignSystemImages.Color.Size42.shieldUtility
+        let shieldImage = DesignSystemImages.Color.Size32.shieldUtility
         let iconAttachment = NSTextAttachment()
         iconAttachment.image = shieldImage
         let iconVerticalOffset = (font.capHeight - shieldImage.size.height) / 2
         iconAttachment.bounds = CGRect(x: 0, y: iconVerticalOffset, width: shieldImage.size.width, height: shieldImage.size.height)
-        mutableText.append(NSAttributedString(attachment: iconAttachment))
+        let iconString = NSAttributedString(attachment: iconAttachment)
 
-        let privatelyAttributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: privatelyColor,
-            .paragraphStyle: paragraphStyle
-        ]
-        mutableText.append(NSAttributedString(string: UserText.aiChatWelcomePrivately, attributes: privatelyAttributes))
+        let placeholder = "%@"
+        let fullText = UserText.aiChatWelcomeMessage
+        let mutableText = NSMutableAttributedString(string: fullText, attributes: defaultAttributes)
+
+        if let placeholderRange = fullText.range(of: placeholder) {
+            let nsRange = NSRange(placeholderRange, in: fullText)
+            mutableText.replaceCharacters(in: nsRange, with: iconString)
+        }
 
         welcomeLabel.attributedText = mutableText
     }

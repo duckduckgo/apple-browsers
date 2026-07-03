@@ -17,28 +17,30 @@
 //  limitations under the License.
 //
 
-import UIKit
-import SwiftUI
-import DataBrokerProtectionCore
-import DataBrokerProtection_iOS
 import BrowserServicesKit
-import ContentScopeScripts
-import WebKit
-import Common
 import Combine
+import Common
+import ConcurrencyExtensions
+import ContentScopeScripts
+import Core
+import DataBrokerProtection_iOS
+import DataBrokerProtectionCore
+import enum UserScript.UserScriptError
+import FoundationExtensions
 import os.log
 import PixelKit
 import PrivacyConfig
-import Core
-import enum UserScript.UserScriptError
+import SwiftUI
+import UIKit
+import WebKit
 
 // MARK: - Main View Controller
 
 final class RunDBPDebugModeViewController: UIHostingController<RunDBPDebugModeView> {
     private var viewModel: RunDBPDebugModeViewModel
     
-    init() {
-        let viewModel = RunDBPDebugModeViewModel()
+    init(freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
+        let viewModel = RunDBPDebugModeViewModel(freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let contentView = RunDBPDebugModeView(viewModel: viewModel)
         self.viewModel = viewModel
         super.init(rootView: contentView)
@@ -373,6 +375,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         return ContentBlocking.shared.privacyConfigurationManager
     }
 
+    private func makeContentBlocking() -> DBPWebViewContentBlocking {
+        DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
+    }
+
     private let contentScopeProperties: ContentScopeProperties
     private let emailConfirmationDataService: EmailConfirmationDataService
     private let debugEmailConfirmationStore: DebugEmailConfirmationStore
@@ -398,7 +404,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     }
     
-    init() {
+    init(freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
         let features = ContentScopeFeatureToggles(
             emailProtection: false,
             emailProtectionIncontextSignup: false,
@@ -434,7 +440,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         }
 
         let appDependencies = AppDependencyProvider.shared
-        self.featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
+        self.featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies,
+                                                freemiumPIRDebugSettings: freemiumPIRDebugSettings)
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
             subscriptionManager: appDependencies.subscriptionManager,
             runTypeProvider: appDependencies.dbpSettings
@@ -466,7 +473,6 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             database: nil,
             emailServiceV0: emailService,
             emailServiceV1: emailServiceV1,
-            featureFlagger: featureFlagger,
             pixelHandler: fakePixelHandler
         )
         
@@ -555,15 +561,16 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         emailConfirmationDataService: emailConfirmationDataService,
                         captchaService: captchaService,
                         featureFlagger: featureFlagger,
-                        applicationNameForUserAgent: nil,
+                        applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                         stageDurationCalculator: FakeStageDurationCalculator(),
                         pixelHandler: fakePixelHandler,
-                        executionConfig: executionConfig
+                        executionConfig: executionConfig,
+                        contentBlocking: makeContentBlocking()
                     ) { true }
 
                     self.currentRunner = runner
                     
-                    let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: true) { true }
+                    let extractedProfiles = try await runner.scan(showWebView: true) { true }
                     for profile in extractedProfiles {
                         let assignedProfile = debugEmailConfirmationStore.storeExtractedProfile(
                             profile,
@@ -687,17 +694,17 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
                     featureFlagger: featureFlagger,
-                    applicationNameForUserAgent: nil,
+                    applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,
-                    actionsHandlerMode: .optOut
+                    actionsHandlerMode: .optOut,
+                    contentBlocking: makeContentBlocking()
                 ) { true }
                 
                 self.currentOptOutRunner = runner
                 
                 try await runner.optOut(
-                    profileQuery: brokerProfileQueryData,
                     extractedProfile: result.extractedProfile,
                     showWebView: true
                 ) { true }
@@ -860,17 +867,17 @@ extension RunDBPDebugModeViewModel: DebugModeEmailConfirming {
                     emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
                     featureFlagger: featureFlagger,
-                    applicationNameForUserAgent: nil,
+                    applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: executionConfig,
-                    actionsHandlerMode: .emailConfirmation(confirmationURL)
+                    actionsHandlerMode: .emailConfirmation(confirmationURL),
+                    contentBlocking: makeContentBlocking()
                 ) { true }
 
                 self.currentOptOutRunner = runner
 
                 try await runner.optOut(
-                    profileQuery: brokerProfileQueryData,
                     extractedProfile: scanResult.extractedProfile,
                     showWebView: true
                 ) { true }
@@ -910,6 +917,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     func fireOptOutSubmit() {}
     func fireOptOutEmailReceive() {}
     func fireOptOutEmailConfirm() {}
+    func fireOptOutEmailGetData() {}
     func fireOptOutFillForm() {}
     func fireOptOutValidate() {}
     func fireOptOutSubmitSuccess(tries: Int) {}

@@ -25,18 +25,10 @@ public class ActionsHandler {
 
     public let stepType: StepType
 
-    /// Temporary flag for short-lived payload telemetry validation.
-    /// Excludes the synthetic navigate action created for email-confirmation continuation
-    /// from the typed-fallback injection pixel while we verify the new raw-JSON path.
-    public let isEmailConfirmationContinuation: Bool
-    public let syntheticContinuationActionId: String?
-
     private var actions: [Action]
 
-    public init(stepType: StepType, actions: [Action], isEmailConfirmationContinuation: Bool = false, syntheticContinuationActionId: String? = nil) {
+    public init(stepType: StepType, actions: [Action]) {
         self.stepType = stepType
-        self.isEmailConfirmationContinuation = isEmailConfirmationContinuation
-        self.syntheticContinuationActionId = syntheticContinuationActionId
         self.actions = actions
     }
 
@@ -86,16 +78,16 @@ public class ActionsHandler {
         return ActionsHandler(stepType: .scan, actions: step.actions)
     }
 
-    /// Creates an ActionsHandler for opt-out steps - may halt at email confirmation
-    public static func forOptOut(_ step: Step, haltsAtEmailConfirmation: Bool) -> ActionsHandler {
+    /// Creates an ActionsHandler for opt-out steps - halts before the email confirmation action.
+    /// The EmailConfirmationJob handles the confirmation link separately and resumes from that point.
+    public static func forOptOut(_ step: Step) -> ActionsHandler {
         guard step.type == .optOut else {
             assertionFailure("Expected optOut step but got \(step.type)")
             return ActionsHandler(stepType: step.type, actions: step.actions)
         }
 
         let actions: [Action]
-        if haltsAtEmailConfirmation,
-           let emailConfirmIndex = step.actions.firstIndex(where: { $0 is EmailConfirmationAction }) {
+        if let emailConfirmIndex = step.actions.firstIndex(where: { $0 is EmailConfirmationAction }) {
             actions = Array(step.actions.prefix(emailConfirmIndex))
         } else {
             actions = step.actions
@@ -123,9 +115,7 @@ public class ActionsHandler {
         actions.append(contentsOf: Array(step.actions.suffix(from: afterIndex)))
 
         return ActionsHandler(stepType: .optOut,
-                              actions: actions,
-                              isEmailConfirmationContinuation: true,
-                              syntheticContinuationActionId: emailConfirmationAction.id)
+                              actions: actions)
     }
 
 }

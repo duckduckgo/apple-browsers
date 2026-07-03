@@ -70,7 +70,7 @@ public final class DefaultSubscriptionFlowsExecuter: SubscriptionFlowsExecuting 
         setTransactionStatus?(.changingPlan)
 
         // Get current subscription info for wide event tracking
-        let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+        let currentSubscription = try? await subscriptionManager.getSubscription()
         let fromPlan = currentSubscription?.productId ?? ""
         let resolvedChangeType = determineChangeType(change: changeType)
 

@@ -19,6 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import WebKit
 import UserScript
 import Subscription
@@ -74,6 +75,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private let notificationCenter: NotificationCenter
     /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
+    private let dataBrokerProtectionSharedPixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let aiChatURL: URL
     private let requestValidator: any ScriptRequestValidator
 
@@ -95,6 +97,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
                 notificationCenter: NotificationCenter = .default,
                 dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
+                dataBrokerProtectionSharedPixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = PixelKit.shared.map { DataBrokerProtectionSharedPixelsHandler(pixelKit: $0, platform: .macOS) },
                 aiChatURL: URL,
                 wideEvent: WideEventManaging,
                 subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
@@ -110,6 +113,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.notificationCenter = notificationCenter
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
+        self.dataBrokerProtectionSharedPixelHandler = dataBrokerProtectionSharedPixelHandler
         self.wideEvent = wideEvent
         self.subscriptionEventReporter = subscriptionEventReporter
         self.pendingTransactionHandler = pendingTransactionHandler
@@ -198,9 +202,13 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         do {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
-            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else {
+                Logger.subscription.error("No subscription found after token adoption")
+                markEmailAddressRestoreAsFailure(data: restoreDataList)
+                return nil
+            }
             markEmailAddressRestoreAsSuccess(data: restoreDataList)
-            Logger.subscription.log("Subscription retrieved")
+            Logger.subscription.log("Subscription retrieved: \(subscription.isActive ? "active" : "inactive", privacy: .public)")
         } catch {
             markEmailAddressRestoreAsFailure(data: restoreDataList, with: error)
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
@@ -248,7 +256,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier)
             }
 
-            subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsSuccess)
+            let origin = await originFrom(originalMessage: original)
+            subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsSuccess(origin: origin))
 
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
             return subscriptionTierOptions
@@ -264,7 +273,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     // swiftlint:disable:next cyclomatic_complexity
     func subscriptionSelected(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        PixelKit.fire(SubscriptionPixel.subscriptionPurchaseAttempt, frequency: .legacyDailyAndCount)
         struct SubscriptionSelection: Decodable {
             let id: String
         }
@@ -272,160 +280,159 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         let message = original
 
         let origin = await setPixelOrigin(from: message)
+        PixelKit.fire(SubscriptionPixel.subscriptionPurchaseAttempt(origin: origin), frequency: .legacyDailyAndCount)
 
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
-            if #available(macOS 12.0, *) {
-                // 1: Parse subscription selection from message object
-                guard let subscriptionSelection: SubscriptionSelection = CodableHelper.decode(from: params) else {
-                    assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionSelection")
-                    subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
+            // 1: Parse subscription selection from message object
+            guard let subscriptionSelection: SubscriptionSelection = CodableHelper.decode(from: params) else {
+                assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionSelection")
+                subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
+                await uiHandler.dismissProgressViewController()
+                return nil
+            }
+
+            Logger.subscription.log("[Purchase] Starting purchase for: \(subscriptionSelection.id, privacy: .public)")
+
+            // 2: Show purchase progress UI to user
+            await uiHandler.presentProgressViewController(withTitle: UserText.purchasingSubscriptionTitle)
+
+            // 3: Check for active subscriptions
+            if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
+                // Sandbox note: Looks like our BE is not receiving updates when a subscription transitions from grace period to expired, so during testing we can end up with a subscription in grace period and we will not be able to purchase a new one, only restore it because Transaction.currentEntitlements will not return the subscription to restore.
+                PixelKit.fire(SubscriptionPixel.subscriptionRestoreAfterPurchaseAttempt)
+                Logger.subscription.log("[Purchase] Found active subscription during purchase")
+                subscriptionEventReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
+                await showSubscriptionFoundAlert(originalMessage: message)
+                await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
+                return nil
+            }
+
+            // 4: Configure wide event and start the flow
+            let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
+            let data = SubscriptionPurchaseWideEventData(purchasePlatform: .appStore,
+                                                         subscriptionIdentifier: subscriptionSelection.id,
+                                                         freeTrialEligible: freeTrialEligible,
+                                                         funnelName: origin)
+            self.purchaseWideEventData = data
+            wideEvent.startFlow(data)
+
+            // 5: No existing subscription was found, so proceed with the remaining purchase flow
+            let purchaseTransactionJWS: String
+            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager())
+            let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
+                                                                     storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                                     appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                     wideEvent: wideEvent)
+            // 6: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
+            Logger.subscription.log("[Purchase] Purchasing")
+            let purchaseResult = await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+
+            switch purchaseResult {
+            case .success(let result):
+                purchaseTransactionJWS = result.transactionJWS
+
+                // Account creation is only one piece of the purchase function's job, so we extract the creation
+                // duration from the result rather than time the execution of the entire call.
+                if let accountCreationDuration = result.accountCreationDuration {
+                    data.createAccountDuration = accountCreationDuration
+                }
+            case .failure(let error):
+                reportPurchaseFlowError(error)
+
+                if error != .cancelledByUser {
+                    await showSomethingWentWrongAlert(originalMessage: message)
+                } else {
                     await uiHandler.dismissProgressViewController()
-                    return nil
                 }
 
-                Logger.subscription.log("[Purchase] Starting purchase for: \(subscriptionSelection.id, privacy: .public)")
+                await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
 
-                // 2: Show purchase progress UI to user
-                await uiHandler.presentProgressViewController(withTitle: UserText.purchasingSubscriptionTitle)
+                // Complete the wide event flow if the purchase step fails:
+                if error == .cancelledByUser {
+                    wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
+                } else if error == .activeSubscriptionAlreadyPresent {
+                    // If we found a subscription, then this is not a purchase flow - discard the purchase pixel.
+                    if let data = self.purchaseWideEventData {
+                        wideEvent.discardFlow(data)
+                        self.purchaseWideEventData = nil
+                    }
+                } else {
+                    switch error {
+                    case .accountCreationFailed(let creationError):
+                        data.markAsFailed(at: .accountCreate, error: creationError)
+                    case .purchaseFailed(let purchaseError):
+                        data.markAsFailed(at: .accountPayment, error: purchaseError)
+                    case .internalError(let internalError):
+                        data.markAsFailed(at: .accountCreate, error: internalError ?? error)
+                    default:
+                        data.markAsFailed(at: .accountPayment, error: error)
+                    }
 
-                // 3: Check for active subscriptions
-                if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
-                    // Sandbox note: Looks like our BE is not receiving updates when a subscription transitions from grace period to expired, so during testing we can end up with a subscription in grace period and we will not be able to purchase a new one, only restore it because Transaction.currentEntitlements will not return the subscription to restore.
-                    PixelKit.fire(SubscriptionPixel.subscriptionRestoreAfterPurchaseAttempt)
-                    Logger.subscription.log("[Purchase] Found active subscription during purchase")
-                    subscriptionEventReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
-                    await showSubscriptionFoundAlert(originalMessage: message)
-                    await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
-                    return nil
+                    wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
                 }
 
-                // 4: Configure wide event and start the flow
-                let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
-                let data = SubscriptionPurchaseWideEventData(purchasePlatform: .appStore,
-                                                             subscriptionIdentifier: subscriptionSelection.id,
-                                                             freeTrialEligible: freeTrialEligible,
-                                                             funnelName: origin)
-                self.purchaseWideEventData = data
-                wideEvent.startFlow(data)
+                return nil
+            }
 
-                // 5: No existing subscription was found, so proceed with the remaining purchase flow
-                let purchaseTransactionJWS: String
-                let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
-                                                                       storePurchaseManager: subscriptionManager.storePurchaseManager())
-                let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
-                                                                         storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                         appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                         wideEvent: wideEvent)
-                // 6: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
-                Logger.subscription.log("[Purchase] Purchasing")
-                let purchaseResult = await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+            // 7: Update UI to indicate that the purchase is completing
+            await uiHandler.updateProgressViewController(title: UserText.completingPurchaseTitle)
 
-                switch purchaseResult {
-                case .success(let result):
-                    purchaseTransactionJWS = result.transactionJWS
+            // 8: Attempt to complete the purchase, measuring the duration
+            var accountActivationDuration = WideEvent.MeasuredInterval.startingNow()
+            data.activateAccountDuration = accountActivationDuration
+            wideEvent.updateFlow(data)
 
-                    // Account creation is only one piece of the purchase function's job, so we extract the creation
-                    // duration from the result rather than time the execution of the entire call.
-                    if let accountCreationDuration = result.accountCreationDuration {
-                        data.createAccountDuration = accountCreationDuration
-                    }
-                case .failure(let error):
-                    reportPurchaseFlowError(error)
+            let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil)
 
-                    if error != .cancelledByUser {
-                        await showSomethingWentWrongAlert()
-                    } else {
-                        await uiHandler.dismissProgressViewController()
-                    }
+            func completeWideEventFlow(with error: Error) {
+                guard let purchaseWideEventData = self.purchaseWideEventData else { return }
+                accountActivationDuration.complete()
+                purchaseWideEventData.activateAccountDuration = accountActivationDuration
+                purchaseWideEventData.markAsFailed(at: .accountActivation, error: error)
+                wideEvent.updateFlow(purchaseWideEventData)
+                wideEvent.completeFlow(purchaseWideEventData, status: .failure, onComplete: { _, _ in })
+            }
 
-                    await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
+            // 9: Handle purchase completion result
+            switch completePurchaseResult {
+            case .success(let purchaseUpdate):
+                Logger.subscription.log("[Purchase] Purchase completed")
+                PixelKit.fire(SubscriptionPixel.subscriptionPurchaseSuccess, frequency: .legacyDailyAndCount)
+                sendFreemiumSubscriptionPixelIfFreemiumActivated()
+                saveSubscriptionUpgradeTimestampIfFreemiumActivated()
+                PixelKit.fire(SubscriptionPixel.subscriptionActivated, frequency: .uniqueByName)
+                subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: freeTrialEligible)
+                sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
+                notificationCenter.post(name: .subscriptionDidChange, object: self)
+                await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
 
-                    // Complete the wide event flow if the purchase step fails:
-                    if error == .cancelledByUser {
-                        wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
-                    } else if error == .activeSubscriptionAlreadyPresent {
-                        // If we found a subscription, then this is not a purchase flow - discard the purchase pixel.
-                        if let data = self.purchaseWideEventData {
-                            wideEvent.discardFlow(data)
-                            self.purchaseWideEventData = nil
-                        }
-                    } else {
-                        switch error {
-                        case .accountCreationFailed(let creationError):
-                            data.markAsFailed(at: .accountCreate, error: creationError)
-                        case .purchaseFailed(let purchaseError):
-                            data.markAsFailed(at: .accountPayment, error: purchaseError)
-                        case .internalError(let internalError):
-                            data.markAsFailed(at: .accountCreate, error: internalError ?? error)
-                        default:
-                            data.markAsFailed(at: .accountPayment, error: error)
-                        }
-
-                        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
-                    }
-
-                    return nil
-                }
-
-                // 7: Update UI to indicate that the purchase is completing
-                await uiHandler.updateProgressViewController(title: UserText.completingPurchaseTitle)
-
-                // 8: Attempt to complete the purchase, measuring the duration
-                var accountActivationDuration = WideEvent.MeasuredInterval.startingNow()
+                accountActivationDuration.complete()
                 data.activateAccountDuration = accountActivationDuration
                 wideEvent.updateFlow(data)
+                wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+            case .failure(let error):
+                reportPurchaseFlowError(error)
 
-                let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil)
-
-                func completeWideEventFlow(with error: Error) {
-                    guard let purchaseWideEventData = self.purchaseWideEventData else { return }
-                    accountActivationDuration.complete()
-                    purchaseWideEventData.activateAccountDuration = accountActivationDuration
-                    purchaseWideEventData.markAsFailed(at: .accountActivation, error: error)
-                    wideEvent.updateFlow(purchaseWideEventData)
-                    wideEvent.completeFlow(purchaseWideEventData, status: .failure, onComplete: { _, _ in })
-                }
-
-                // 9: Handle purchase completion result
-                switch completePurchaseResult {
-                case .success(let purchaseUpdate):
-                    Logger.subscription.log("[Purchase] Purchase completed")
-                    PixelKit.fire(SubscriptionPixel.subscriptionPurchaseSuccess, frequency: .legacyDailyAndCount)
-                    sendFreemiumSubscriptionPixelIfFreemiumActivated()
-                    saveSubscriptionUpgradeTimestampIfFreemiumActivated()
-                    PixelKit.fire(SubscriptionPixel.subscriptionActivated, frequency: .uniqueByName)
-                    subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
-                    sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
-                    notificationCenter.post(name: .subscriptionDidChange, object: self)
-                    await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
-
-                    accountActivationDuration.complete()
-                    data.activateAccountDuration = accountActivationDuration
-                    wideEvent.updateFlow(data)
-                    wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
-                case .failure(let error):
-                    reportPurchaseFlowError(error)
-
-                    switch error {
-                    case .cancelledByUser:
-                        if let purchaseWideEventData {
-                            wideEvent.completeFlow(purchaseWideEventData, status: .cancelled, onComplete: { _, _ in })
-                        }
-                    case .missingEntitlements:
-                        // This case deliberately avoids sending a failure wide event in case activation succeeds later
-                        DispatchQueue.main.async { [weak self] in
-                            self?.notificationCenter.post(name: .subscriptionPageCloseAndOpenPreferences, object: self)
-                        }
-                        await uiHandler.dismissProgressViewController()
-                        return nil
-                    case .internalError(let internalError):
-                        completeWideEventFlow(with: internalError ?? error)
-                    default:
-                        completeWideEventFlow(with: error)
+                switch error {
+                case .cancelledByUser:
+                    if let purchaseWideEventData {
+                        wideEvent.completeFlow(purchaseWideEventData, status: .cancelled, onComplete: { _, _ in })
                     }
-
-                    await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "completed"))
+                case .missingEntitlements:
+                    // This case deliberately avoids sending a failure wide event in case activation succeeds later
+                    DispatchQueue.main.async { [weak self] in
+                        self?.notificationCenter.post(name: .subscriptionPageCloseAndOpenPreferences, object: self)
+                    }
+                    await uiHandler.dismissProgressViewController()
+                    return nil
+                case .internalError(let internalError):
+                    completeWideEventFlow(with: internalError ?? error)
+                default:
+                    completeWideEventFlow(with: error)
                 }
+
+                await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "completed"))
             }
         } else if subscriptionPlatform == .stripe {
             let emailAccessToken = try? EmailManager().getToken()
@@ -452,7 +459,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: success.purchaseUpdate)
             case .failure(let error):
-                await showSomethingWentWrongAlert()
+                await showSomethingWentWrongAlert(originalMessage: message)
                 switch error {
                 case .noProductsFound, .tieredProductsApiCallFailed, .tieredProductsEmptyProductsFromAPI, .tieredProductsEmptyAfterFiltering, .tieredProductsTierCreationFailed:
                     subscriptionEventReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
@@ -498,7 +505,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         }
 
         Logger.subscription.log("[TierChange] Parsed - id: \(subscriptionSelection.id, privacy: .public), change: \(subscriptionSelection.change ?? "nil", privacy: .public)")
-        let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+        let currentSubscription = try? await subscriptionManager.getSubscription()
         let effectivePlatform: DuckDuckGoSubscription.Platform = currentSubscription?.platform ?? (subscriptionPlatform == .stripe ? .stripe : .apple)
 
         switch effectivePlatform {
@@ -544,7 +551,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             } catch {
                 Logger.subscription.error("[TierChange] Failed to get token for Stripe tier change: \(error, privacy: .public)")
                 subscriptionEventReporter.report(subscriptionActivationError: .otherPurchaseError)
-                await showSomethingWentWrongAlert()
+                await showSomethingWentWrongAlert(originalMessage: message)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
 
                 wideData.markAsFailed(at: SubscriptionPlanChangeWideEventData.FailingStep.payment, error: error)
@@ -634,7 +641,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             Logger.subscription.log("[TierChange] Stripe \(changeType, privacy: .public) completed successfully")
         } else {
             PixelKit.fire(SubscriptionPixel.subscriptionPurchaseStripeSuccess, frequency: .legacyDailyAndCount)
-            subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
+            subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
         }
 
         sendFreemiumSubscriptionPixelIfFreemiumActivated()
@@ -741,12 +748,13 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     // MARK: - UI interactions
 
-    func showSomethingWentWrongAlert() async {
+    func showSomethingWentWrongAlert(originalMessage: WKScriptMessage) async {
         switch await uiHandler.dismissProgressViewAndShow(alertType: .somethingWentWrong, text: nil) {
         case .alertFirstButtonReturn:
-            let url = subscriptionManager.url(for: .purchase)
+            let origin = await originFrom(originalMessage: originalMessage)
+            let url = subscriptionManager.url(for: .purchase).appendingOriginParameterIfPresent(origin)
             await uiHandler.showTab(with: .subscription(url))
-            PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
+            PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression(origin: origin))
         default: return
         }
     }
@@ -760,26 +768,24 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         switch await uiHandler.dismissProgressViewAndShow(alertType: .subscriptionFound, text: nil) {
         case .alertFirstButtonReturn:
-            if #available(macOS 12.0, *) {
-                restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
-                wideEvent.startFlow(restorePrePurcahseBackgroundWideEventData)
-                let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
-                                                                       storePurchaseManager: subscriptionManager.storePurchaseManager())
-                let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
-                switch result {
-                case .success:
-                    PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
-                    restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration?.complete()
-                    wideEvent.completeFlow(restorePrePurcahseBackgroundWideEventData, status: .success(reason: nil), onComplete: { _, _ in })
-                case .failure(let error):
-                    Logger.subscription.error("Failed to restore account from past purchase: \(error, privacy: .public)")
-                    restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration?.complete()
-                    restorePrePurcahseBackgroundWideEventData.errorData = .init(error: error)
-                    wideEvent.completeFlow(restorePrePurcahseBackgroundWideEventData, status: .failure, onComplete: { _, _ in })
-                }
-                Task { @MainActor in
-                    originalMessage.webView?.reload()
-                }
+            restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+            wideEvent.startFlow(restorePrePurcahseBackgroundWideEventData)
+            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager())
+            let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
+            switch result {
+            case .success:
+                PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
+                restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration?.complete()
+                wideEvent.completeFlow(restorePrePurcahseBackgroundWideEventData, status: .success(reason: nil), onComplete: { _, _ in })
+            case .failure(let error):
+                Logger.subscription.error("Failed to restore account from past purchase: \(error, privacy: .public)")
+                restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration?.complete()
+                restorePrePurcahseBackgroundWideEventData.errorData = .init(error: error)
+                wideEvent.completeFlow(restorePrePurcahseBackgroundWideEventData, status: .failure, onComplete: { _, _ in })
+            }
+            Task { @MainActor in
+                originalMessage.webView?.reload()
             }
         default: return
         }
@@ -788,7 +794,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     // MARK: - Purchase Flow Helpers
 
     /// Creates an App Store purchase flow with the required dependencies.
-    @available(macOS 12.0, *)
     private func makeAppStorePurchaseFlow() -> DefaultAppStorePurchaseFlow {
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(
             subscriptionManager: subscriptionManager,
@@ -846,21 +851,19 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 extension SubscriptionPagesUseSubscriptionFeature: SubscriptionAccessActionHandling {
 
     func subscriptionAccessActionRestorePurchases(message: WKScriptMessage) {
-        if #available(macOS 12.0, *) {
-            Task { @MainActor in
-                let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
-                                                                       storePurchaseManager: subscriptionManager.storePurchaseManager())
-                let subscriptionRestoreAppleOfferPageWideEventData = SubscriptionRestoreWideEventData(
-                    restorePlatform: .appleAccount,
-                    funnelName: SubscriptionRestoreFunnelOrigin.purchaseOffer.rawValue
-                )
-                let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: self.subscriptionManager,
-                                                                                         appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                                         uiHandler: self.uiHandler,
-                                                                                         subscriptionRestoreWideEventData: subscriptionRestoreAppleOfferPageWideEventData)
-                await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
-                message.webView?.reload()
-            }
+        Task { @MainActor in
+            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager())
+            let subscriptionRestoreAppleOfferPageWideEventData = SubscriptionRestoreWideEventData(
+                restorePlatform: .appleAccount,
+                funnelName: SubscriptionRestoreFunnelOrigin.purchaseOffer.rawValue
+            )
+            let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: self.subscriptionManager,
+                                                                                     appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                                     uiHandler: self.uiHandler,
+                                                                                     subscriptionRestoreWideEventData: subscriptionRestoreAppleOfferPageWideEventData)
+            await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
+            message.webView?.reload()
         }
     }
 
@@ -897,6 +900,7 @@ private extension SubscriptionPagesUseSubscriptionFeature {
     func sendFreemiumSubscriptionPixelIfFreemiumActivated() {
         if freemiumDBPUserStateManager.didActivate {
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.subscription)
+            dataBrokerProtectionSharedPixelHandler?.fire(.freemiumUpsell)
         }
     }
 

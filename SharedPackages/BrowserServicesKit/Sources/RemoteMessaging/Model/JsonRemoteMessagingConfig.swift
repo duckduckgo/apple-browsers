@@ -33,6 +33,7 @@ public enum RemoteMessageResponse {
         let translations: [String: JsonContentTranslation]?
         let matchingRules, exclusionRules: [Int]?
         let metrics: JsonMetrics?
+        let displayConditions: JsonDisplayConditions?
 
         static func == (lhs: JsonRemoteMessage, rhs: JsonRemoteMessage) -> Bool {
             return lhs.id == rhs.id
@@ -41,6 +42,11 @@ public enum RemoteMessageResponse {
         var isMetricsEnabled: Bool {
             metrics?.state.flatMap(JsonMetrics.MetricsState.init) != .disabled
         }
+    }
+
+    struct JsonDisplayConditions: Decodable, Equatable {
+        let trigger: String?
+        let dismissAfterDaysShown: Int?
     }
 
     struct JsonMetrics: Decodable {
@@ -82,6 +88,9 @@ public enum RemoteMessageResponse {
         /// by their rules, sections are removed if none of their referenced itemIds exist.
         /// Ignored for `two_line_list_item` type.
         let itemIDs: [String]?
+        /// Optional remote image URL for this item. Only applicable to `two_line_list_item`
+        /// and `featured_two_line_single_action_list_item` types. Ignored for `section_title`.
+        let imageUrl: String?
     }
 
     enum JsonListItemType: String, CaseIterable {
@@ -170,6 +179,7 @@ public enum RemoteMessageResponse {
         case pir = "PIR"
         case subscription = "Subscription"
         case veryCriticalUpdate = "VeryCriticalUpdate"
+        case youtubeNew = "YoutubeNew"
     }
 
     public enum StatusError: Error {

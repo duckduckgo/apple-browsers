@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import SharedTestUtilities
 import WebKit
 import XCTest

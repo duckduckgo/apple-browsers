@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import Foundation
 import VPN
 import NetworkProtectionIPC
@@ -110,7 +111,7 @@ final class NetworkProtectionIPCTunnelController {
     // MARK: - Login Items Manager
 
     private func enableLoginItems() async throws {
-        try loginItemsManager.throwingEnableLoginItems(LoginItemsManager.vpnLoginItems)
+        try await loginItemsManager.throwingEnableLoginItems(LoginItemsManager.vpnLoginItems)
     }
 }
 

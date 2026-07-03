@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import HistoryView
 
 final class CapturingErrorHandler: EventMapping<HistoryViewEvent> {

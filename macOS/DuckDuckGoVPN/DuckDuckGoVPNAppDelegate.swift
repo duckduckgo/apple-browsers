@@ -34,6 +34,7 @@ import PixelKit
 import ServiceManagement
 import Subscription
 import SwiftUI
+import SystemExtensionManager
 import VPNAppLauncher
 import VPNAppState
 
@@ -79,11 +80,15 @@ final class DuckDuckGoVPNApplication: NSApplication {
     @MainActor
     private func setupPixelKit() {
         let pixelSource = AppVersion.isAppStoreBuild ? "vpnAgentAppStore" : "vpnAgent"
+        let internalUserDecider = DefaultInternalUserDecider(store: UserDefaults.appConfiguration)
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: pixelSource,
+                       session: "vpn-agent",
+                       channel: channel,
                        defaultHeaders: [:],
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
@@ -139,6 +144,12 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         self.configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: VPNAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
         super.init()
 
+        configurationManager.onPrivacyConfigurationUpdated = { [weak self] in
+            Task { @MainActor in
+                self?.applyOrphanProxyFeatureFlags()
+            }
+        }
+
         let tokenFound = subscriptionManager.isUserAuthenticated
         if tokenFound {
             Logger.networkProtection.debug("🟢 VPN Agent found")
@@ -148,6 +159,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var cancellables = Set<AnyCancellable>()
+    private var systemExtensionStateObserver: AnyObject?
     private lazy var networkExtensionController = NetworkExtensionController(sysexBundleID: Self.tunnelSysexBundleID, featureFlagger: featureFlagger)
     private let vpnAppState = VPNAppState(defaults: .netP)
     private let tunnelSettings: VPNSettings
@@ -448,6 +460,9 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             isExtensionUpdateOfferedPublisher: isExtensionUpdateOfferedPublisher,
             userDefaults: .netP,
             locationFormatter: DefaultVPNLocationFormatter(),
+            onWillShowPopover: { [weak self] in
+                await self?.tunnelController.refreshSystemState()
+            },
             uninstallHandler: { [weak self] _ in
                 guard let self else { return }
 
@@ -458,11 +473,37 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
                     // Intentional no-op: we already anonymously track VPN uninstallation failures using
                     // pixels within the vpn uninstaller.
                 }
-            }
+            },
+            buttonClickedHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNButtonClicked)
+            },
+            popoverShownHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNPopoverShown)
+            },
+            subscriptionExpiredViewAppearHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNPopoverExpiredViewShown)
+            },
+            subscriptionExpiredViewSubscribeButtonClickPixelHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNPopoverExpiredViewSubscribeButtonClicked)
+            },
+            subscribeButtonOrigin: SubscriptionFunnelOrigin.vpnMenuBarRevoked.rawValue
         )
     }
 
     @MainActor
+    /// Resolves the orphan-proxy kill switches into the tunnel and proxy settings.
+    ///
+    /// Both flags are kill switches: enabling the remote subfeature *disables* the corresponding behavior,
+    /// so each setting is the negation of the flag. They default to enabled when the flags are off.
+    private func applyOrphanProxyFeatureFlags() {
+        let detectionEnabled = !featureFlagger.isFeatureOn(.vpnOrphanProxyDetectionKillSwitch)
+        let bypassEnabled = !featureFlagger.isFeatureOn(.vpnOrphanProxyBypassKillSwitch)
+
+        tunnelSettings.isOrphanProxyDetectionEnabled = detectionEnabled
+        proxySettings.isOrphanProxyDetectionEnabled = detectionEnabled
+        proxySettings.isOrphanProxyBypassEnabled = bypassEnabled
+    }
+
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
@@ -479,12 +520,19 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         // as it relies on it for the remote feature flag.
         TipKitAppEventHandler(featureFlagger: featureFlagger).appDidFinishLaunching()
 
+        // Resolve the orphan-proxy kill switches into settings so the tunnel and proxy pick them up
+        // on their next start. Must run after the privacy configuration is loaded above.
+        applyOrphanProxyFeatureFlags()
+
         setupMenuVisibility()
 
         Task { @MainActor in
             // Initialize lazy properties
             _ = tunnelControllerIPCService
             _ = vpnProxyLauncher
+
+            setupSystemExtensionStateObserver()
+            await tunnelController.refreshSystemState()
 
             vpnAppEventsHandler.appDidFinishLaunching()
 
@@ -503,6 +551,28 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             }
+        }
+    }
+
+    @MainActor
+    private func setupSystemExtensionStateObserver() {
+        guard #available(macOS 15.1, *),
+              systemExtensionStateObserver == nil else {
+            return
+        }
+
+        let observer = networkExtensionController.makeSystemExtensionActivationStateObserver { [weak self] in
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                await self?.tunnelController.refreshSystemState()
+            }
+        }
+
+        do {
+            try observer.start()
+            systemExtensionStateObserver = observer
+        } catch {
+            Logger.networkProtection.error("Failed to observe VPN system extension state: \(error.localizedDescription, privacy: .public)")
         }
     }
 

@@ -90,7 +90,7 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var accessibilityIcon: NSImage = DesignSystemImages.Color.Size16.accessibility
     var dataClearingIcon: NSImage = DesignSystemImages.Color.Size16.fire
     var duckPlayerIcon: NSImage = DesignSystemImages.Color.Size16.videoPlayer
-    var youTubeAdBlockingIcon: NSImage = DesignSystemImages.Color.Size16.videoPlayerBlocked
+    var youTubeAdBlockingIcon: NSImage = DesignSystemImages.Color.Size16.adsBlocked
     var duckAIIcon: NSImage = DesignSystemImages.Color.Size16.aiChat
     var paidAIChatIcon: NSImage = DesignSystemImages.Color.Size16.paidAiChat
     var aboutIcon: NSImage = DesignSystemImages.Color.Size16.duckDuckGo

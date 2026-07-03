@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import UIKit
 import Core
 import DesignResourcesKit
@@ -39,6 +40,19 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
     var selectedSuggestion: Suggestion?
 
+    /// The keyboard-highlighted suggestion. Reads the live model selection (unlike `selectedSuggestion`, which is never set).
+    var highlightedSuggestion: Suggestion? {
+        model.selection?.suggestion
+    }
+
+    var isKeyboardSelectionAtFirstRow: Bool {
+        model.isSelectionAtFirstRow
+    }
+
+    func clearKeyboardSelection() {
+        model.selection = nil
+    }
+
     weak var delegate: AutocompleteViewControllerDelegate?
     weak var presentationDelegate: AutocompleteViewControllerPresentationDelegate?
 
@@ -50,7 +64,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
     private var lastResults: SuggestionResult?
     private var loader: SuggestionLoader?
-    private var historyMessageManager: HistoryMessageManager
     private var featureFlagger: FeatureFlagger
     private let historyManager: HistoryManaging
     private let bookmarksDatabase: CoreDataDatabase
@@ -89,7 +102,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     init(historyManager: HistoryManaging,
          bookmarksDatabase: CoreDataDatabase,
          appSettings: AppSettings,
-         historyMessageManager: HistoryMessageManager = HistoryMessageManager(),
          tabsModel: TabsModelManaging,
          featureFlagger: FeatureFlagger,
          aiChatSettings: AIChatSettingsProvider,
@@ -103,17 +115,13 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
         self.appSettings = appSettings
-        self.historyMessageManager = historyMessageManager
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
 
-        let isAIChatSearchInputUserSettingsEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
         let isAddressBarAtBottom = appSettings.currentAddressBarPosition == .bottom
         self.showAskAIChat = aiChatSettings.isAIChatEnabled
         self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
-                                           showMessage: historyMessageManager.shouldShow(),
-                                           showAskAIChat: showAskAIChat,
-                                           isSwipeToDeleteEnabled: !isAIChatSearchInputUserSettingsEnabled)
+                                           showAskAIChat: showAskAIChat)
 
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self
@@ -143,7 +151,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        historyMessageManager.incrementDisplayCount()
         fireUsagePixels()
     }
 
@@ -164,6 +171,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         cancelInFlightRequests()
         self.query = query
         model.query = query
+    }
+
+    func refreshSuggestions() {
+        requestSuggestions(query: self.query)
     }
 
     func setSectionTitle(_ title: String?) {
@@ -270,7 +281,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private func updateHeight() {
         guard let lastResults else { return }
 
-        let messageHeight = model.isMessageVisible ? 196 : 0
         let sectionPadding = 12
         let controllerPadding = 20
 
@@ -282,7 +292,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             sectionHeight(lastResults.localSuggestions) +
             (lastResults.localSuggestions.isEmpty ? 0 : sectionPadding) +
             (showAskAIChat ? sectionHeight([.askAIChat(value: "")]) + sectionPadding : 0) +
-            messageHeight +
             controllerPadding
 
         self.presentationDelegate?
@@ -316,15 +325,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 }
 
 extension AutocompleteViewController: AutocompleteViewModelDelegate {
-
-    func onMessageDismissed() {
-        historyMessageManager.dismissedByUser()
-        updateHeight()
-    }
-
-    func onMessageShown() {
-        historyMessageManager.shownToUser()
-    }
 
     func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?) {
         switch suggestion {
@@ -370,14 +370,20 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         switch suggestion {
         case .historyEntry(_, let url, _):
             Task {
-                await historyManager.deleteHistoryForURL(url)
-                Pixel.fire(pixel: .autocompleteSwipeToDelete)
-                DailyPixel.fireDaily(.autocompleteSwipeToDeleteDaily)
-                requestSuggestions(query: self.query)
+                await deleteURLSuggestion(suggestion, url: url)
             }
         default:
             assertionFailure("Only history items can be deleted")
         }
+    }
+
+    private func deleteURLSuggestion(_ suggestion: Suggestion, url: URL) async {
+        await historyManager.deleteHistoryForURL(url)
+        requestSuggestions(query: self.query)
+        delegate?.autocomplete(deletedSuggestion: suggestion)
+
+        Pixel.fire(pixel: .autocompleteDeleteHistoryEntry)
+        DailyPixel.fireDaily(.autocompleteDeleteHistoryEntryDaily)
     }
 
     private func createPixelIndexParam(for index: Int?) -> [String: String] {
@@ -389,27 +395,6 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
 
 private extension SuggestionResult {
     static let empty = SuggestionResult(topHits: [], duckduckgoSuggestions: [], localSuggestions: [])
-
-    /// Returns a copy containing only URL-based suggestions (websites, bookmarks, history).
-    /// Excludes search phrases, open tabs, and AI chat suggestions.
-    func filteringToURLsOnly() -> SuggestionResult {
-        SuggestionResult(
-            topHits: topHits.filter(\.isURLSuggestion),
-            duckduckgoSuggestions: duckduckgoSuggestions.filter(\.isURLSuggestion),
-            localSuggestions: localSuggestions.filter(\.isURLSuggestion)
-        )
-    }
-}
-
-private extension Suggestion {
-    var isURLSuggestion: Bool {
-        switch self {
-        case .website, .bookmark, .historyEntry, .openTab:
-            return true
-        case .phrase, .internalPage, .unknown, .askAIChat:
-            return false
-        }
-    }
 }
 
 extension HistoryEntry: HistorySuggestion {

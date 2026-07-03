@@ -125,6 +125,9 @@ extension XCUIApplication {
         if let arguments {
             app.launchArguments.append(contentsOf: arguments)
         }
+        if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {
+            app.launchArguments += ["-isInternalUser", "true"]
+        }
         app.launch()
         return app
     }
@@ -135,6 +138,11 @@ extension XCUIApplication {
 
     var bundleID: String? {
         value(forKey: "bundleID") as? String
+    }
+
+    var isSandboxed: Bool {
+        // Naive bundleID-based check
+        bundleID?.starts(with: "com.duckduckgo.mobile.ios") == true
     }
 
     /// Enforces single a single window by:
@@ -251,6 +259,19 @@ extension XCUIApplication {
         return addressBar.value as? String
     }
 
+    func navigateToYouTubeVideo(_ videoID: String, file: StaticString = #file, line: UInt = #line) {
+        let url = URL(string: "https://www.youtube.com/watch?v=\(videoID)")!
+        XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Address bar did not appear before navigating to YouTube",
+                      file: file, line: line)
+        addressBar.typeURL(url)
+        let titlePredicate = NSPredicate(format: "label CONTAINS[c] %@", "YouTube")
+        let webView = windows.webViews.matching(titlePredicate).firstMatch
+        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.navigation),
+                      "YouTube video page did not load",
+                      file: file, line: line)
+    }
+
     /// Opens a new window
     func openNewWindow() {
         typeKey("n", modifierFlags: .command)
@@ -345,6 +366,7 @@ extension XCUIApplication {
                 scheme + naked + "/",
                 scheme + "www." + naked,
                 scheme + "www." + naked + "/",
+                url.absoluteString,
             ]), timeout: UITests.Timeouts.navigation),
             "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
         )

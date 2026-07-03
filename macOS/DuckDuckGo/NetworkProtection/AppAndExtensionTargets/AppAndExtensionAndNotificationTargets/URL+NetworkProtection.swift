@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import Foundation
 
 extension URL {
@@ -29,12 +30,7 @@ extension URL {
 
 #elseif NETP_SYSTEM_EXTENSION // for the System Extension (Developer ID)
         // find an appropriate main App as we‘re running alone from /Library/SystemExtensions
-        let mainAppUrls: [URL] = { () -> [URL] in
-            if #available(macOS 12.0, *) {
-                return NSWorkspace.shared.urlsForApplications(withBundleIdentifier: Bundle.main.mainAppBundleIdentifier)
-            }
-            return LSCopyApplicationURLsForBundleIdentifier(Bundle.main.mainAppBundleIdentifier as CFString, nil)?.takeRetainedValue() as? [URL] ?? []
-        }().filter { appUrl in
+        let mainAppUrls: [URL] = NSWorkspace.shared.urlsForApplications(withBundleIdentifier: Bundle.main.mainAppBundleIdentifier).filter { appUrl in
             // filter out apps removed to Trash
             !appUrl.path.contains("/.Trash/") // no, FileManager.urls(for: .trashDirectory) doesn‘t work in SysExt
         }

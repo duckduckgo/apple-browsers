@@ -22,24 +22,27 @@ import Foundation
 struct UTIRenderState: Equatable {
     var isInputVisible: Bool
     var isContentVisible: Bool
-    var isExpanded: Bool
+    var cardLayout: UnifiedToggleInputCardLayout
     var cardPosition: UnifiedToggleInputCardPosition
     var usesOmnibarMargins: Bool
-    var isToolbarSubmitHidden: Bool
     var inactiveAppearance: Bool
-    var isFloatingSubmitVisible: Bool
+    var isFloatingReturnKeyVisible: Bool
     var contentInputMode: TextEntryMode
     var inputMode: TextEntryMode
+    /// True when the UTI is hosted by a Duck.ai tab.
+    var isAITab: Bool
+
+    var isExpanded: Bool { cardLayout.isExpanded }
 
     var viewConfig: UTIViewConfig {
         UTIViewConfig(
-            isExpanded: isExpanded,
+            cardLayout: cardLayout,
             cardPosition: cardPosition,
             usesOmnibarMargins: usesOmnibarMargins,
-            isToolbarSubmitHidden: isToolbarSubmitHidden,
             inactiveAppearance: inactiveAppearance,
             inputMode: inputMode,
-            isTopBarPosition: usesOmnibarMargins
+            isTopBarPosition: usesOmnibarMargins,
+            isAITab: isAITab
         )
     }
 

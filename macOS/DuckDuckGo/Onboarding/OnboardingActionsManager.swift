@@ -19,7 +19,10 @@
 import AIChat
 import Combine
 import Common
+import DuckPlayer
+import FoundationExtensions
 import Foundation
+import Onboarding
 import os.log
 import PixelKit
 import PrivacyConfig
@@ -37,6 +40,17 @@ enum OnboardingSteps: String, CaseIterable {
 /// Defines which onboarding steps should be excluded from the flow
 enum OnboardingExcludedStep: String {
     case addressBarMode
+    case duckPlayerSingle
+}
+
+enum OnboardingRow: String, Decodable {
+    case dock
+    case dockInstructions = "dock-instructions"
+    case dataImport = "import"
+}
+
+enum OnboardingOption: String {
+    case chromeExtensionInstall = "chrome-extension-install"
 }
 
 protocol OnboardingActionsManaging {
@@ -73,11 +87,20 @@ protocol OnboardingActionsManaging {
     /// At user input set the Duck.ai toggle visibility in the address bar
     func setDuckAiInAddressBar(enabled: Bool)
 
+    /// At user input installs the Chrome browser extension
+    func installChromeExtension()
+
     /// It is called every time the user ends an onboarding step
     func stepCompleted(step _: OnboardingSteps)
 
+    /// It is called every time the user ends an onboarding step with another step to show next
+    func stepShown(step _: OnboardingSteps)
+
     /// It is called in case of error loading the pages
     func reportException(with param: [String: String])
+
+    /// Used for any event sent exclusively for telemetry
+    func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent)
 }
 
 protocol OnboardingNavigating: AnyObject {
@@ -96,8 +119,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let startupPreferences: StartupPreferences
     private let dataImportProvider: DataImportStatusProviding
     private var aiChatPreferencesStorage: AIChatPreferencesStorage
+    private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
-    private let applicationBuildType: ApplicationBuildType
+    private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
+    private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     private var cancellables = Set<AnyCancellable>()
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
@@ -105,18 +130,27 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     var configuration: OnboardingConfiguration {
         let systemSettings: SystemSettings
-        let order = "v3"
+        let order = featureFlagger.isFeatureOn(.onboardingRebranding) ? "v4" : "v3"
         let platform = OnboardingPlatform(name: "macos")
-        if applicationBuildType.isAppStoreBuild {
-            let rows = [
-                featureFlagger.isFeatureOn(.addToDockAppStore) ? "dock-instructions" : nil,
-                "import",
-            ].compactMap { $0 }
-            systemSettings = SystemSettings(rows: rows)
+        if dockCustomization.supportsAddingToDock {
+            systemSettings = SystemSettings(rows: [
+                OnboardingRow.dock.rawValue,
+                OnboardingRow.dataImport.rawValue,
+            ])
         } else {
-            systemSettings = SystemSettings(rows: ["dock", "import"])
+            systemSettings = SystemSettings(rows: [
+                OnboardingRow.dockInstructions.rawValue,
+                OnboardingRow.dataImport.rawValue
+            ])
         }
-        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        var getStartedOptions: [String] = []
+        if shouldShowChromeInstallOption {
+            getStartedOptions.append(OnboardingOption.chromeExtensionInstall.rawValue)
+        }
+        let stepDefinitions = StepDefinitions(
+            systemSettings: systemSettings,
+            getStarted: GetStarted(options: getStartedOptions)
+        )
         let preferredLocale = Bundle.main.preferredLocalizations.first ?? "en"
         var env: String
         let buildType = StandardApplicationBuildType()
@@ -137,16 +171,21 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     private func buildExcludedSteps() -> [String] {
-        var excludedSteps: [String] = []
+        var excludedSteps: [String] = [OnboardingExcludedStep.duckPlayerSingle.rawValue]
 
-        let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
         let isAIChatOmnibarOnboardingEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
 
-        if !(isAIChatOmnibarToggleEnabled && isAIChatOmnibarOnboardingEnabled) {
+        if !isAIChatOmnibarOnboardingEnabled {
             excludedSteps.append(OnboardingExcludedStep.addressBarMode.rawValue)
         }
 
         return excludedSteps
+    }
+
+    private var didRequestDefaultBrowser: Bool = false
+
+    private var shouldShowChromeInstallOption: Bool {
+        featureFlagger.isFeatureOn(.onboardingChromeExtension) && chromeExtensionInstaller.canInstallDDGExtension
     }
 
     convenience init(
@@ -157,8 +196,18 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         startupPreferences: StartupPreferences,
         bookmarkManager: BookmarkManager,
         pinningManager: PinningManager,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        reinstallUserDetection: ReinstallingUserDetecting,
+        installDateProvider: @escaping () -> Date
     ) {
+        let chromeExtensionInstaller = ChromeExtensionInstaller(
+            featureFlagger: featureFlagger,
+            buildType: StandardApplicationBuildType(),
+            isChromeInstalled: { ThirdPartyBrowser.chrome.isInstalled },
+            applicationSupportURL: .nonSandboxApplicationSupportDirectoryURL,
+            fileManager: .default,
+            pixelFiring: PixelKit.shared
+        )
         self.init(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -167,7 +216,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             startupPreferences: startupPreferences,
             dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager, pinningManager: pinningManager),
             aiChatPreferencesStorage: DefaultAIChatPreferencesStorage(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: OnboardingSharedPixelHandler(
+                platform: .macOS,
+                installTypeProvider: {
+                    reinstallUserDetection.isReinstallingUser ? .reinstall : .newInstall
+                },
+                installDateProvider: installDateProvider
+             ),
+            chromeExtensionInstaller: chromeExtensionInstaller
         )
     }
 
@@ -179,8 +236,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         startupPreferences: StartupPreferences,
         dataImportProvider: DataImportStatusProviding,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
-        applicationBuildType: ApplicationBuildType = StandardApplicationBuildType()
+        onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
+        chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     ) {
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
@@ -189,12 +248,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.startupPreferences = startupPreferences
         self.dataImportProvider = dataImportProvider
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
-        self.applicationBuildType = applicationBuildType
+        self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
+        self.chromeExtensionInstaller = chromeExtensionInstaller
     }
 
     func onboardingStarted() {
         navigation.updatePreventUserInteraction(prevent: true)
+        stepShown(step: .welcome)
     }
 
     @MainActor
@@ -220,15 +282,20 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     func addToDock() {
         dockCustomization.addToDock()
+        onboardingSharedPixelHandler.fire(.addToDock(.clicked(.engage)))
     }
 
     @MainActor
     func importData() async -> Bool {
+        onboardingSharedPixelHandler.fire(.importData(.clicked(.engage)))
         return await withCheckedContinuation { continuation in
             dataImportProvider.showImportWindow(customTitle: UserText.importDataTitleOnboarding, completion: { [weak self] in
                 guard let self else {
                     continuation.resume(returning: false)
                     return
+                }
+                if dataImportProvider.didImport {
+                    onboardingSharedPixelHandler.fire(.importData(.confirmed))
                 }
                 continuation.resume(returning: self.dataImportProvider.didImport)
             })
@@ -237,6 +304,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     func setAsDefault() {
         try? defaultBrowserProvider.presentDefaultBrowserPrompt()
+        onboardingSharedPixelHandler.fire(.setDefault(.clicked(.engage)))
+        didRequestDefaultBrowser = true
     }
 
     func setBookmarkBar(enabled: Bool) {
@@ -256,6 +325,14 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     func setDuckAiInAddressBar(enabled: Bool) {
         aiChatPreferencesStorage.showSearchAndDuckAIToggle = enabled
+        guard featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg) else { return }
+        aiChatPreferencesStorage.showShortcutOnNewTabPage = enabled
+        homepageSearchModeSeedPersistor.pendingShowSearchModeToggle = enabled
+    }
+
+    func installChromeExtension() {
+        chromeExtensionInstaller.installDDGExtension()
+        onboardingSharedPixelHandler.fire(.chromeExtensionInstall(.clicked(.engage)))
     }
 
     private func onMainThreadIfNeeded(_ function: @escaping () -> Void) {
@@ -269,6 +346,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     func stepCompleted(step: OnboardingSteps) {
         Logger.general.debug("Onboarding step completed: \("\(step)", privacy: .public)")
         fireStepCompletedPixel(for: step)
+        fireSharedPixelOnStepCompletion(for: step)
     }
 
     private func fireStepCompletedPixel(for step: OnboardingSteps) {
@@ -295,11 +373,97 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
     }
 
+    private func fireSharedPixelOnStepCompletion(for step: OnboardingSteps) {
+        let pixel: OnboardingSharedPixelEvent?
+        switch step {
+        case .welcome:
+            // This step is measured as part of the getStarted step, when the button is clicked
+            pixel = nil
+        case .getStarted:
+            pixel = .welcome(.clicked(.engage))
+        case .makeDefaultSingle:
+            if !didRequestDefaultBrowser {
+                pixel = .setDefault(.clicked(.dismiss))
+            } else {
+                // If the user sets the default browser, we measure that click when it happens
+                pixel = nil
+            }
+        case .systemSettings:
+            // Each system settings row is measured separately, when it is completed
+            pixel = nil
+        case .duckPlayerSingle:
+            // We fire the engage pixel when the user engages with the Duck Player toggle or completes the step.
+            pixel = .duckPlayer(.clicked(.engage))
+        case .customize:
+            let enabled: [OnboardingSharedPixelEvent.CustomizeEvent.Value] = [
+                appearancePreferences.showBookmarksBar ? .bookmarksBar : nil,
+                startupPreferences.restorePreviousSession ? .restoreSession : nil,
+                startupPreferences.homeButtonPosition == .left ? .homeButton : nil
+            ].compactMap { $0 }
+            pixel = .customization(.clicked(enabled))
+        case .addressBarMode:
+            let value: OnboardingSharedPixelEvent.SearchExperienceEvent.Value = aiChatPreferencesStorage.showSearchAndDuckAIToggle ? .searchPlusDuckAI : .searchOnly
+            pixel = .searchExperience(.clicked(value))
+        }
+        if let pixel {
+            onboardingSharedPixelHandler.fire(pixel)
+        }
+    }
+
+    func stepShown(step: OnboardingSteps) {
+        let pixel: OnboardingSharedPixelEvent?
+        switch step {
+        case .welcome:
+            pixel = .welcome(.shown)
+        case .getStarted:
+            // This step is measured as part of the welcome step, since it is shown automatically
+            // We only need to measure if the Chrome extension option is shown
+            pixel = shouldShowChromeInstallOption ? .chromeExtensionInstall(.shown) : nil
+        case .makeDefaultSingle:
+            pixel = .setDefault(.shown)
+        case .systemSettings:
+            // Each system settings row is measured separately, when it is shown
+            pixel = nil
+        case .duckPlayerSingle:
+            pixel = .duckPlayer(.shown)
+        case .customize:
+            pixel = .customization(.shown)
+        case .addressBarMode:
+            pixel = .searchExperience(.shown)
+        }
+        if let pixel {
+            onboardingSharedPixelHandler.fire(pixel)
+        }
+    }
+
     func reportException(with param: [String: String]) {
         let message = param["message"] ?? ""
         let id = param["id"] ?? ""
         PixelKit.fire(GeneralPixel.onboardingExceptionReported(message: message, id: id), frequency: .standard)
         Logger.general.error("Onboarding error: \("\(id): \(message)", privacy: .public)")
+    }
+
+    func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent) {
+        switch event {
+        case .dockInstructionsShown:
+            onboardingSharedPixelHandler.fire(.addToDock(.clicked(.engage)))
+        case .duckPlayerToggled:
+            onboardingSharedPixelHandler.fire(.duckPlayer(.clicked(.engage)))
+        case .rowShown(let row):
+            switch row {
+            case .dock, .dockInstructions:
+                onboardingSharedPixelHandler.fire(.addToDock(.shown))
+            case .dataImport:
+                onboardingSharedPixelHandler.fire(.importData(.shown))
+            }
+        case .rowSkipped(let row):
+            switch row {
+            case .dock, .dockInstructions:
+                onboardingSharedPixelHandler.fire(.addToDock(.clicked(.dismiss)))
+            case .dataImport:
+                onboardingSharedPixelHandler.fire(.importData(.clicked(.dismiss)))
+            }
+        }
     }
 
     private func onboardingHasFinished() {
@@ -314,19 +478,32 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
         }
 
+        Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
+
         fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
     }
 
+    /// Applies the Duck Player default dictated by the ad-blocking defaults rollout for a
+    /// newly-onboarded user (Duck Player off). Static so every onboarding-completion path can invoke
+    /// it — normal completion, the debug "Skip Onboarding" action, and the automation/UI-test bypass
+    /// — keeping the behavior consistent regardless of how onboarding ends.
+    static func applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: FeatureFlagger) {
+        guard AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger) else { return }
+        DuckPlayerPreferencesUserDefaultsPersistor().duckPlayerModeBool = DuckPlayerMode.disabled.boolValue
+        // Refresh any live DuckPlayerPreferences (e.g. the app delegate's) so its in-memory
+        // @Published mode reflects the new stored value without waiting for a cold relaunch.
+        NotificationCenter.default.post(name: DuckPlayerPreferences.duckPlayerModeDidChangeNotification, object: nil)
+    }
+
     /// Returns true if the toggle onboarding step was shown to the user.
-    /// The step is only shown when both aiChatOmnibarToggle AND aiChatOmnibarOnboarding flags are enabled.
+    /// The step is only shown when the aiChatOmnibarOnboarding flag is enabled.
     private func wasToggleOnboardingStepShown() -> Bool {
-        let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        let isAIChatOmnibarOnboardingEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
-        return isAIChatOmnibarToggleEnabled && isAIChatOmnibarOnboardingEnabled
+        return featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
     }
 
     private func fireOnboardingFinishedPixels(userSawToggleOnboarding: Bool) {
         PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
+        fireSharedPixelForFinalStep(userSawToggleOnboarding)
 
         guard userSawToggleOnboarding else { return }
 
@@ -334,6 +511,14 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             ? .aiChatOnboardingFinishedToggleOn
             : .aiChatOnboardingFinishedToggleOff
         PixelKit.fire(togglePixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+    }
+
+    private func fireSharedPixelForFinalStep(_ userSawToggleOnboarding: Bool) {
+        if userSawToggleOnboarding {
+            fireSharedPixelOnStepCompletion(for: .addressBarMode)
+        } else {
+            fireSharedPixelOnStepCompletion(for: .customize)
+        }
     }
 
 }

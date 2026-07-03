@@ -18,7 +18,9 @@
 
 import Combine
 import Common
+import ConcurrencyExtensions
 import FeatureFlags
+import FoundationExtensions
 import PrivacyConfig
 import WebKit
 import XCTest
@@ -46,8 +48,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockPopupBlockingConfig = MockPopupBlockingConfiguration()
         testPermissionManager = TestPermissionManager()
-        mockPermissionModel = PermissionModel(permissionManager: testPermissionManager,
-                                              featureFlagger: mockFeatureFlagger)
+        mockPermissionModel = PermissionModel(permissionManager: testPermissionManager)
         webView = WebView(featureFlagger: mockFeatureFlagger)
         configuration = WKWebViewConfiguration()
         windowFeatures = WKWindowFeatures()
@@ -2099,6 +2100,10 @@ class TestPermissionManager: PermissionManagerProtocol {
 
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
         return persistedPermissions[domain]?[permissionType] ?? .ask
+    }
+
+    func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
+        return persistedPermissions[domain]?[permissionType]
     }
 
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {

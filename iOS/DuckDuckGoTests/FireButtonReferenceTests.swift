@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import XCTest
 import os.log
 import WebKit

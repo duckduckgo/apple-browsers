@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import ConcurrencyExtensions
 import SwiftUI
 
 final class CircularProgressView: NSView {

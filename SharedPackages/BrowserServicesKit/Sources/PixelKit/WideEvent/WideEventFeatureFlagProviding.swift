@@ -16,9 +16,7 @@
 //  limitations under the License.
 //
 
-public enum WideEventFeatureFlag {
-    case postEndpoint
-}
+public enum WideEventFeatureFlag {}
 
 public protocol WideEventFeatureFlagProviding {
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool

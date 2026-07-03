@@ -35,6 +35,8 @@ extension FileManager: ZipArchiveHandling {
 }
 
 public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
+    public typealias FeatureFlagging = RemoteBrokerDeliveryFeatureFlagging & OptOutRetryErrorFeatureFlagging
+
     enum Error: Swift.Error, CustomNSError {
         case serverError(httpCode: Int?)
         case clientError
@@ -68,8 +70,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         static func request(for endpoint: Endpoint,
                             endpointURL: URL,
                             contentType: String? = nil,
-                            eTag: String? = nil,
-                            accessToken: String) throws -> URLRequest {
+                            eTag: String? = nil) throws -> URLRequest {
             var request = URLRequest(url: try url(for: endpoint, endpointURL: endpointURL))
             request.httpMethod = "GET"
             if let contentType {
@@ -79,7 +80,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 request.cachePolicy = .reloadIgnoringCacheData
                 request.setValue(eTag, forHTTPHeaderField: "If-None-Match")
             }
-            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
             return request
         }
@@ -119,16 +119,17 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     private static let updateCheckInterval = TimeInterval.hours(1)
 
-    private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
+    private let featureFlagger: FeatureFlagging
     private let settings: DataBrokerProtectionSettings
     public let vault: any DataBrokerProtectionSecureVault
+    public var optOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFlagging { featureFlagger }
     private let fileManager: ZipArchiveHandling
     private let urlSession: URLSession
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let localBrokerProvider: BrokerJSONFallbackProvider?
 
-    public init(featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+    public init(featureFlagger: FeatureFlagging,
                 settings: DataBrokerProtectionSettings,
                 vault: any DataBrokerProtectionSecureVault,
                 fileManager: ZipArchiveHandling = FileManager.default,
@@ -183,16 +184,10 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             try? await localBrokerProvider?.checkForUpdates()
 
             /// 3. Hit main_config.json endpoint for ETag and active broker changes
-            guard let accessToken = await authenticationManager.accessToken() else {
-                Logger.dataBrokerProtection.log("🧩 Skipping broker JSON update check due to absence of access token")
-                return
-            }
-
             let request = try Endpoint.request(for: .mainConfig,
                                                endpointURL: settings.endpointURL,
                                                contentType: "application/json",
-                                               eTag: settings.mainConfigETag,
-                                               accessToken: accessToken)
+                                               eTag: settings.mainConfigETag)
             let (data, response) = try await urlSession.data(for: request)
             guard let response = response as? HTTPURLResponse else { return }
 
@@ -259,14 +254,8 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         /// 2. Download all.zip if not exists
         do {
             if !fileManager.fileExists(atPath: brokerArchiveURL.path) {
-                guard let accessToken = await authenticationManager.accessToken() else {
-                    Logger.dataBrokerProtection.log("🧩 Skipping broker JSON update check due to absence of access token")
-                    return
-                }
-
                 let request = try Endpoint.request(for: .allBrokers,
-                                                   endpointURL: settings.endpointURL,
-                                                   accessToken: accessToken)
+                                                   endpointURL: settings.endpointURL)
 
                 let _: URL = try await withCheckedThrowingContinuation { [weak fileManager] continuation in
                     let task = urlSession.downloadTask(with: request) { url, response, error in

@@ -21,26 +21,36 @@ import Foundation
 @MainActor
 public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerWillBeginTransmittingRecoveryKey() async
-    func controllerDidFinishTransmittingRecoveryKey()
+    func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool)
 
     func controllerDidReceiveRecoveryKey()
 
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async
+    func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource, codeVersion: SyncSetupCodeVersion) async
 
     func controllerWillPerformServerSyncOperation(setupRole: SyncSetupRole) async -> Bool
+    func controllerShouldAllowPairingV2PeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
+    func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
 
-    func controllerDidCreateSyncAccount()
+    func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool)
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource)
 
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole)
+    func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: SyncSetupRole)
 
-    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async
+    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
+                                                    setupRole: SyncSetupRole,
+                                                    shouldPromptBeforeSwitchingAccounts: Bool) async
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: Error?, setupRole: SyncSetupRole) async
 }
 
-public enum SyncConnectionError: Error {
+public enum SyncConnectionError: Error, Equatable {
     case unableToRecognizeCode
+    case updateRequired
+    case unsupportedThirdPartyRecoveryCode
+    case thirdPartyAccountAlreadyUpgraded
+    case syncCancelledFromOtherDevice
 
     case failedToFetchPublicKey
     case failedToTransmitExchangeRecoveryKey
@@ -53,7 +63,135 @@ public enum SyncConnectionError: Error {
     case failedToCreateAccount
     case failedToTransmitConnectRecoveryKey
 
+    case accountCreationFailed
+    case accountUpgradeFailed
+    case protocolError
+
     case pollingForRecoveryKeyTimedOut
+    case pairingV2SessionTimedOut(timeoutStage: SyncSetupTimeoutStage?)
+
+    case unexpectedSecondHello
+    case unexpectedEvent
+    case pairingSessionNotReady
+    case relayChannelUnavailable
+    case recoveryCodePreparationFailed
+    case peerRecoveryCodeUnavailable
+    case transportFailure
+    case unexpectedFailure
+    case missingThirdPartyCredential
+    case undecryptableThirdPartyCredential
+    case accountExtendFailed
+    case missingThirdPartyKey
+    case localStorageFailed
+    case invalidCredentials
+}
+
+public enum SyncSetupTimeoutStage: String, Equatable {
+    case waitingForPeerHello = "waiting_for_peer_hello"
+    case waitingForPeerStatus = "waiting_for_peer_status"
+    case waitingForConfirmation = "waiting_for_confirmation"
+    case waitingForRecoveryCode = "waiting_for_recovery_code"
+    case loggingIn = "logging_in"
+}
+
+enum SyncSetupFailureReason {
+    static let v1Failure = "v1_failure"
+    static let sessionTimeout = "session_timeout"
+    static let needsUpgrade = "needs_upgrade"
+    static let incompatibleCode = "incompatible_code"
+    static let alreadyUpgraded = "already_upgraded"
+    static let unrecognizedCode = "unrecognized_code"
+    static let accountCreationFailed = "account_creation_failed"
+    static let accountUpgradeFailed = "account_upgrade_failed"
+    static let invalidCredentials = "invalid_credentials"
+    static let protocolError = "protocol_error"
+    static let transportFailure = "transport_failure"
+    static let unexpectedSecondHello = "unexpected_second_hello"
+    static let unexpectedEvent = "unexpected_event"
+    static let pairingSessionNotReady = "pairing_session_not_ready"
+    static let relayChannelUnavailable = "relay_channel_unavailable"
+    static let recoveryCodePreparationFailed = "recovery_code_preparation_failed"
+    static let peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
+    static let unexpectedFailure = "unexpected_failure"
+    static let missingThirdPartyCredential = "missing_3party_credential"
+    static let undecryptableThirdPartyCredential = "undecryptable_3party_credential"
+    static let accountExtendFailed = "account_extend_failed"
+    static let missingThirdPartyKey = "missing_3party_key"
+    static let localStorageFailed = "local_storage_failed"
+}
+
+public extension SyncConnectionError {
+
+    var syncSetupFailureReason: String? {
+        switch self {
+        // These cases are emitted by the legacy V1 exchange/connect flow and are intentionally bucketed together.
+        case .failedToLogIn,
+                .failedToFetchPublicKey,
+                .failedToTransmitExchangeRecoveryKey,
+                .failedToFetchConnectRecoveryKey,
+                .failedToTransmitExchangeKey,
+                .failedToFetchExchangeRecoveryKey,
+                .failedToTransmitConnectRecoveryKey,
+                .pollingForRecoveryKeyTimedOut,
+                .failedToCreateAccount:
+            return SyncSetupFailureReason.v1Failure
+        case .invalidCredentials:
+            return SyncSetupFailureReason.invalidCredentials
+        case .pairingV2SessionTimedOut:
+            return SyncSetupFailureReason.sessionTimeout
+        case .updateRequired:
+            return SyncSetupFailureReason.needsUpgrade
+        case .unsupportedThirdPartyRecoveryCode:
+            return SyncSetupFailureReason.incompatibleCode
+        case .thirdPartyAccountAlreadyUpgraded:
+            return SyncSetupFailureReason.alreadyUpgraded
+        case .unableToRecognizeCode:
+            return SyncSetupFailureReason.unrecognizedCode
+        case .accountCreationFailed:
+            return SyncSetupFailureReason.accountCreationFailed
+        case .accountUpgradeFailed:
+            return SyncSetupFailureReason.accountUpgradeFailed
+        case .transportFailure:
+            return SyncSetupFailureReason.transportFailure
+        case .protocolError:
+            return SyncSetupFailureReason.protocolError
+        case .syncCancelledFromOtherDevice:
+            return nil
+        case .unexpectedSecondHello:
+            return SyncSetupFailureReason.unexpectedSecondHello
+        case .unexpectedEvent:
+            return SyncSetupFailureReason.unexpectedEvent
+        case .pairingSessionNotReady:
+            return SyncSetupFailureReason.pairingSessionNotReady
+        case .relayChannelUnavailable:
+            return SyncSetupFailureReason.relayChannelUnavailable
+        case .recoveryCodePreparationFailed:
+            return SyncSetupFailureReason.recoveryCodePreparationFailed
+        case .peerRecoveryCodeUnavailable:
+            return SyncSetupFailureReason.peerRecoveryCodeUnavailable
+        case .unexpectedFailure:
+            return SyncSetupFailureReason.unexpectedFailure
+        case .missingThirdPartyCredential:
+            return SyncSetupFailureReason.missingThirdPartyCredential
+        case .undecryptableThirdPartyCredential:
+            return SyncSetupFailureReason.undecryptableThirdPartyCredential
+        case .accountExtendFailed:
+            return SyncSetupFailureReason.accountExtendFailed
+        case .missingThirdPartyKey:
+            return SyncSetupFailureReason.missingThirdPartyKey
+        case .localStorageFailed:
+            return SyncSetupFailureReason.localStorageFailed
+        }
+    }
+
+    var syncSetupTimeoutStage: String? {
+        switch self {
+        case .pairingV2SessionTimedOut(let timeoutStage):
+            return timeoutStage?.rawValue
+        default:
+            return nil
+        }
+    }
 }
 
 public protocol SyncConnectionControlling {
@@ -79,13 +217,15 @@ public protocol SyncConnectionControlling {
      Handles a scanned or pasted key and starts excange, recovery or connect flow
      */
     @discardableResult
-    func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool
+    func syncCodeEntered(code: String, canScanLegacyURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool
 }
 
 private actor SyncConnectionState {
     private var _isCodeHandlingInFlight: Bool = false
     private var _exchanger: RemoteKeyExchanging?
     private var _connector: RemoteConnecting?
+    private var _pairingV2Coordinator: PairingV2Coordinator?
+    private var _pairingV2PresenterPollingTask: Task<Void, Never>?
 
     func setCodeHandlingInFlight(_ value: Bool) {
         _isCodeHandlingInFlight = value
@@ -111,6 +251,33 @@ private actor SyncConnectionState {
         return _connector
     }
 
+    func replacePairingV2Coordinator(with coordinator: PairingV2Coordinator) async {
+        await cancelPairingV2()
+        _pairingV2Coordinator = coordinator
+    }
+
+    func setPairingV2PresenterPollingTask(_ task: Task<Void, Never>, for coordinator: PairingV2Coordinator) {
+        guard _pairingV2Coordinator === coordinator else {
+            task.cancel()
+            return
+        }
+
+        _pairingV2PresenterPollingTask?.cancel()
+        _pairingV2PresenterPollingTask = task
+    }
+
+    func isActivePairingV2Coordinator(_ coordinator: PairingV2Coordinator) -> Bool {
+        _pairingV2Coordinator === coordinator
+    }
+
+    func clearPairingV2Coordinator(_ coordinator: PairingV2Coordinator) {
+        guard _pairingV2Coordinator === coordinator else {
+            return
+        }
+        _pairingV2PresenterPollingTask = nil
+        _pairingV2Coordinator = nil
+    }
+
     func stopConnectMode() {
         _connector?.stopPolling()
         _connector = nil
@@ -120,35 +287,67 @@ private actor SyncConnectionState {
         _exchanger?.stopPolling()
         _exchanger = nil
     }
+
+    func cancelPairingV2() async {
+        let coordinator = _pairingV2Coordinator
+        _pairingV2Coordinator = nil
+        _pairingV2PresenterPollingTask?.cancel()
+        _pairingV2PresenterPollingTask = nil
+
+        await coordinator?.cancel()
+    }
+
+    func prepareForNewFlow() async {
+        stopConnectMode()
+        stopExchangeMode()
+        await cancelPairingV2()
+    }
 }
 
 public class SyncConnectionController: SyncConnectionControlling {
+    private static let pairingURLBase = URL(string: "https://duckduckgo.com")!
+
     private let deviceName: String
     private let deviceType: String
     private let syncService: DDGSyncing
     private let dependencies: SyncDependencies
+    private let pairingV2PollingTimeout: TimeInterval
+    private let pairingV2PollIntervalNanoseconds: UInt64
 
     private weak var delegate: SyncConnectionControllerDelegate?
 
     private let state = SyncConnectionState()
 
-    private var recoveryCode: String {
-        guard let code = syncService.account?.recoveryCode else {
-            return ""
-        }
-
-        return code
+    private var isPairingV2PresentationEnabled: Bool {
+        isPairingV2ScanningEnabled && dependencies.syncFeatureFlags.isPairingV2CodeEnabled()
     }
 
-    init(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate? = nil, syncService: DDGSyncing, dependencies: SyncDependencies) {
+    private var isPairingV2ScanningEnabled: Bool {
+        dependencies.syncFeatureFlags.isPairingV2ScanningEnabled()
+    }
+
+    init(deviceName: String,
+         deviceType: String,
+         delegate: SyncConnectionControllerDelegate? = nil,
+         syncService: DDGSyncing,
+         dependencies: SyncDependencies,
+         pairingV2PollingTimeout: TimeInterval = PairingV2PollingDefaults.sessionTimeout,
+         pairingV2PollIntervalNanoseconds: UInt64 = PairingV2PollingDefaults.pollIntervalNanoseconds) {
         self.deviceName = deviceName
         self.deviceType = deviceType
         self.syncService = syncService
         self.delegate = delegate
         self.dependencies = dependencies
+        self.pairingV2PollingTimeout = pairingV2PollingTimeout
+        self.pairingV2PollIntervalNanoseconds = pairingV2PollIntervalNanoseconds
     }
 
     public func startExchangeMode() async throws -> PairingInfo {
+        guard !isPairingV2PresentationEnabled else {
+            return try await startPairingV2PresenterMode()
+        }
+
+        await state.prepareForNewFlow()
         let exchanger = try remoteExchange()
         await state.setExchanger(exchanger)
         startExchangePolling()
@@ -157,6 +356,11 @@ public class SyncConnectionController: SyncConnectionControlling {
     }
 
     public func startConnectMode() async throws -> PairingInfo {
+        guard !isPairingV2PresentationEnabled else {
+            return try await startPairingV2PresenterMode()
+        }
+
+        await state.prepareForNewFlow()
         let connector = try remoteConnect()
         await state.setConnector(connector)
         self.startConnectPolling()
@@ -168,6 +372,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         await state.setCodeHandlingInFlight(false)
         await state.stopConnectMode()
         await state.stopExchangeMode()
+        await state.cancelPairingV2()
     }
 
     @discardableResult
@@ -181,33 +386,35 @@ public class SyncConnectionController: SyncConnectionControlling {
         do {
             syncCode = try SyncCode.decodeBase64String(pairingInfo.base64Code)
         } catch {
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown, codeSource))
+            await delegate?.controllerDidError(syncCodeDecodingConnectionError(for: error), underlyingError: error, setupRole: .receiver(.unknown, codeSource))
             return false
         }
 
         if let exchangeKey = syncCode.exchangeKey {
             let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
-            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource, codeVersion: .v1)
             guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
                 return false
             }
+            await state.prepareForNewFlow()
             return await handleExchangeKey(exchangeKey, codeSource: codeSource)
         } else if let connectKey = syncCode.connect {
             let setupRole: SyncSetupRole = .receiver(.connect, codeSource)
-            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource, codeVersion: .v1)
             guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
                 return false
             }
+            await state.prepareForNewFlow()
             return await handleConnectKey(connectKey, codeSource: codeSource)
         } else {
-            await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource, codeVersion: .v1)
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown, codeSource))
             return false
         }
     }
 
     @discardableResult
-    public func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
+    public func syncCodeEntered(code: String, canScanLegacyURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
         guard !(await state.isCodeHandlingInFlight()) else {
             return false
         }
@@ -218,45 +425,264 @@ public class SyncConnectionController: SyncConnectionControlling {
             }
         }
 
-        let syncCode: SyncCode
+        if let result = await handleURLCode(code, canScanLegacyURLBarcodes: canScanLegacyURLBarcodes, codeSource: codeSource) {
+            return result
+        }
+
         do {
-            if canScanURLBarcodes, let url = URL(string: code), let pairingInfo = PairingInfo(url: url) {
-                return await startPairingMode(pairingInfo, codeSource: codeSource)
-            } else {
-                syncCode = try SyncCode.decodeBase64String(code)
-            }
+            let syncCode = try SyncCode.decodeBase64String(code)
+            return await handleDecodedSyncCode(syncCode, codeSource: codeSource)
         } catch {
             // Very important that this returning blocks further execution as it could be a camera scanning continuously
             // and therefore call this multiple times.
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown, codeSource))
+            await delegate?.controllerDidError(syncCodeDecodingConnectionError(for: error), underlyingError: error, setupRole: .receiver(.unknown, codeSource))
+            return false
+        }
+    }
+
+    private func handleURLCode(_ code: String, canScanLegacyURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool? {
+        guard let url = URL(string: code) else {
+            return nil
+        }
+
+        if let pairingV2Payload = PairingV2QRCodePayload(url: url) {
+            return await handlePairingV2(qrPayload: pairingV2Payload, codeSource: codeSource)
+        }
+
+        if let unsupportedVersion = PairingV2QRCodePayload.unsupportedMajorVersion(in: url) {
+            return await handleUnsupportedPairingV2Version(unsupportedVersion, codeSource: codeSource)
+        }
+
+        guard canScanLegacyURLBarcodes, let pairingInfo = PairingInfo(url: url) else {
+            return nil
+        }
+
+        return await startPairingMode(pairingInfo, codeSource: codeSource)
+    }
+
+    private func handleUnsupportedPairingV2Version(_ unsupportedVersion: String, codeSource: SyncCodeSource) async -> Bool {
+        let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
+        guard isPairingV2ScanningEnabled else {
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: setupRole)
             return false
         }
 
+        await delegate?.controllerDidError(.updateRequired, underlyingError: PairingV2Error.unsupportedVersion(unsupportedVersion), setupRole: setupRole)
+        return false
+    }
+
+    private func handleDecodedSyncCode(_ syncCode: SyncCode, codeSource: SyncCodeSource) async -> Bool {
         if let exchangeKey = syncCode.exchangeKey {
             let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
-            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource, codeVersion: .v1)
             guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
                 return false
             }
+            await state.prepareForNewFlow()
             return await handleExchangeKey(exchangeKey, codeSource: codeSource)
-        } else if let recoveryKey = syncCode.recovery {
-            let setupRole: SyncSetupRole = .receiver(.recovery, codeSource)
-            await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource)
-            guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
-                return false
-            }
-            return await handleRecoveryKey(recoveryKey, isRecovery: true, setupRole: .receiver(.recovery, codeSource))
+        } else if let recovery = syncCode.recovery {
+            return await handleRecoveryCode(recovery, codeSource: codeSource)
         } else if let connectKey = syncCode.connect {
             let setupRole: SyncSetupRole = .receiver(.connect, codeSource)
-            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource, codeVersion: .v1)
             guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
                 return false
             }
+            await state.prepareForNewFlow()
             return await handleConnectKey(connectKey, codeSource: codeSource)
         } else {
             // We shouldn't ever really reach this point
             assertionFailure("Shouldn't be able to parse SyncCode without any of the supported keys")
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown, codeSource))
+            return false
+        }
+    }
+
+    private func startPairingV2PresenterMode() async throws -> PairingInfo {
+        await state.prepareForNewFlow()
+        let coordinator = makePairingV2Coordinator()
+        let payload = try await coordinator.startPresenting()
+        let url: URL
+        do {
+            url = try payload.toURL(baseURL: Self.pairingURLBase)
+        } catch {
+            await coordinator.cancel()
+            throw error
+        }
+
+        await state.replacePairingV2Coordinator(with: coordinator)
+        startPairingV2PresenterPolling(coordinator)
+
+        return PairingInfo(pairingV2URL: url, deviceName: deviceName)
+    }
+
+    private func handlePairingV2(qrPayload: PairingV2QRCodePayload, codeSource: SyncCodeSource) async -> Bool {
+        let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
+        guard isPairingV2ScanningEnabled else {
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: setupRole)
+            return false
+        }
+        await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource, codeVersion: .v2)
+        guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
+            return false
+        }
+
+        await state.prepareForNewFlow()
+        let coordinator = makePairingV2Coordinator()
+        await state.replacePairingV2Coordinator(with: coordinator)
+        defer {
+            Task {
+                await self.state.clearPairingV2Coordinator(coordinator)
+            }
+        }
+
+        do {
+            try await coordinator.startScanning(qrPayload: qrPayload)
+            let completion = try await pollPairingV2UntilFinished(coordinator)
+            await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
+            return true
+        } catch {
+            await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
+            return false
+        }
+    }
+
+    private func startPairingV2PresenterPolling(_ coordinator: PairingV2Coordinator) {
+        let task = Task { @MainActor in
+            defer {
+                Task {
+                    await self.state.clearPairingV2Coordinator(coordinator)
+                }
+            }
+
+            let setupRole = SyncSetupRole.sharer
+            var didNotifyPeerConnected = false
+            do {
+                let completion = try await pollPairingV2UntilFinished(coordinator) { state in
+                    guard !didNotifyPeerConnected && self.shouldDismissPairingV2PresenterCode(for: state) else {
+                        return
+                    }
+                    didNotifyPeerConnected = true
+                    await self.delegate?.controllerWillBeginTransmittingRecoveryKey()
+                }
+                await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
+            } catch {
+                await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
+            }
+        }
+
+        Task {
+            await state.setPairingV2PresenterPollingTask(task, for: coordinator)
+        }
+    }
+
+    private func handlePairingV2PollingError(_ error: Error, coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
+        if let pairingV2Error = error as? PairingV2Error, pairingV2Error == .cancelled {
+            return
+        }
+
+        guard await state.isActivePairingV2Coordinator(coordinator) else {
+            return
+        }
+
+        if let syncError = error as? SyncError {
+            await handlePairingV2SyncError(syncError, coordinator: coordinator, setupRole: setupRole)
+        } else if let pairingV2Error = error as? PairingV2Error {
+            await delegate?.controllerDidError(pairingV2ConnectionError(for: pairingV2Error), underlyingError: nil, setupRole: setupRole)
+        } else if let cryptoError = error as? PairingV2MessageCryptoError {
+            await delegate?.controllerDidError(pairingV2CryptoConnectionError(for: cryptoError), underlyingError: cryptoError, setupRole: setupRole)
+        } else {
+            await delegate?.controllerDidError(.unexpectedFailure, underlyingError: error, setupRole: setupRole)
+        }
+
+        await coordinator.cancel()
+    }
+
+    private func handlePairingV2SyncError(_ error: SyncError, coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
+        switch error {
+        case .pollingDidTimeOut:
+            await delegate?.controllerDidError(.pairingV2SessionTimedOut(timeoutStage: timeoutStage(for: coordinator.state)), underlyingError: nil, setupRole: setupRole)
+        case .accountAlreadyExists:
+            await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
+        default:
+            await delegate?.controllerDidError(.transportFailure, underlyingError: error, setupRole: setupRole)
+        }
+    }
+
+    private func timeoutStage(for state: PairingV2State) -> SyncSetupTimeoutStage? {
+        switch state {
+        case .waitingForPeerHello:
+            return .waitingForPeerHello
+        case .waitingForPeerStatus:
+            return .waitingForPeerStatus
+        case .hostWaitingForConfirmation,
+                .joinerWaitingForConfirmation:
+            return .waitingForConfirmation
+        case .hostPreparingRecoveryCode,
+                .hostSendingRecoveryCode,
+                .joinerWaitingForRecoveryCode:
+            return .waitingForRecoveryCode
+        case .joinerLoggingIn:
+            return .loggingIn
+        case .idle,
+                .completed,
+                .failed:
+            return nil
+        }
+    }
+
+    private func handlePairingV2AccountAlreadyExists(_ coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
+        if let recoveryKey = coordinator.pendingRecoveryKey {
+            await delegate?.controllerDidFindTwoAccountsDuringRecovery(
+                recoveryKey,
+                setupRole: setupRole,
+                shouldPromptBeforeSwitchingAccounts: false)
+        } else {
+            await delegate?.controllerDidError(.failedToLogIn, underlyingError: SyncError.accountAlreadyExists, setupRole: setupRole)
+        }
+    }
+
+    private func pairingV2CryptoConnectionError(for error: PairingV2MessageCryptoError) -> SyncConnectionError {
+        switch error {
+        case .unsupportedVersion(let version):
+            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor)
+        default:
+            return .unableToRecognizeCode
+        }
+    }
+
+    private func pollPairingV2UntilFinished(_ coordinator: PairingV2Coordinator,
+                                            onDidPoll: ((PairingV2State) async -> Void)? = nil) async throws -> PairingV2State.Completion {
+        try await coordinator.pollUntilFinished(
+            timeout: pairingV2PollingTimeout,
+            pollInterval: pairingV2PollIntervalNanoseconds,
+            onDidPoll: onDidPoll)
+    }
+
+    private func handlePairingV2Completion(_ completion: PairingV2State.Completion,
+                                           coordinator: PairingV2Coordinator,
+                                           setupRole: SyncSetupRole) async {
+        switch completion {
+        case .loggedIn:
+            await delegate?.controllerDidCompleteLogin(registeredDevices: coordinator.completedRegisteredDevices ?? [], isRecovery: false, setupRole: setupRole)
+        case .recoveryCodeSent(let credentialKind):
+            await delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: credentialKind == .ddg)
+        case .alreadyConnected:
+            await delegate?.controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: setupRole)
+        }
+    }
+
+    private func shouldDismissPairingV2PresenterCode(for state: PairingV2State) -> Bool {
+        switch state {
+        case .waitingForPeerStatus,
+             .hostWaitingForConfirmation,
+             .hostPreparingRecoveryCode,
+             .hostSendingRecoveryCode,
+             .joinerWaitingForConfirmation,
+             .joinerWaitingForRecoveryCode,
+             .joinerLoggingIn:
+            return true
+        case .idle, .waitingForPeerHello, .completed, .failed:
             return false
         }
     }
@@ -293,9 +719,11 @@ public class SyncConnectionController: SyncConnectionControlling {
                 try await syncService.transmitExchangeRecoveryKey(for: exchangeMessage)
             } catch {
                 await delegate?.controllerDidError(.failedToTransmitExchangeRecoveryKey, underlyingError: error, setupRole: .sharer)
+                (await state.getExchanger())?.stopPolling()
+                return
             }
 
-            delegate?.controllerDidFinishTransmittingRecoveryKey()
+            delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
             (await state.getExchanger())?.stopPolling()
         }
     }
@@ -323,7 +751,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             do {
                 try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false, setupRole: .sharer)
             } catch {
-                await delegate?.controllerDidError(.failedToLogIn, underlyingError: error, setupRole: .sharer)
+                await delegate?.controllerDidError(loginConnectionError(for: error), underlyingError: error, setupRole: .sharer)
             }
         }
     }
@@ -357,6 +785,36 @@ public class SyncConnectionController: SyncConnectionControlling {
         return try dependencies.createRemoteExchangeRecoverer(exchangeInfo)
     }
 
+    private func handleRecoveryCode(_ recovery: SyncCode.Recovery, codeSource: SyncCodeSource) async -> Bool {
+        let setupRole: SyncSetupRole = .receiver(.recovery, codeSource)
+
+        if case .v2(let recoveryKey) = recovery {
+            guard isPairingV2ScanningEnabled else {
+                await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: setupRole)
+                return false
+            }
+            guard recoveryKey.cid != SyncCode.RecoveryKeyV2.thirdPartyCredentialId else {
+                await delegate?.controllerDidError(.unsupportedThirdPartyRecoveryCode, underlyingError: nil, setupRole: setupRole)
+                return false
+            }
+        }
+
+        let recoveryKey: SyncCode.RecoveryKey
+        do {
+            recoveryKey = try recovery.defaultCredentialRecoveryKey()
+        } catch {
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown, codeSource))
+            return false
+        }
+
+        await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource, codeVersion: recovery.syncSetupCodeVersion)
+        guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
+            return false
+        }
+        await state.prepareForNewFlow()
+        return await handleRecoveryKey(recoveryKey, isRecovery: true, setupRole: setupRole)
+    }
+
     private func handleRecoveryKey(_ recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool, setupRole: SyncSetupRole) async -> Bool {
         do {
             try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: isRecovery, setupRole: setupRole)
@@ -373,7 +831,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         if syncService.account == nil {
             do {
                 try await syncService.createAccount(deviceName: deviceName, deviceType: deviceType)
-                await delegate?.controllerDidCreateSyncAccount()
+                await delegate?.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
                 shouldShowSyncEnabled = false
             } catch {
                 Task {
@@ -395,20 +853,160 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func handleRecoveryCodeLoginError(recoveryKey: SyncCode.RecoveryKey, error: Error, setupRole: SyncSetupRole) async {
         if syncService.account != nil {
-            await delegate?.controllerDidFindTwoAccountsDuringRecovery(recoveryKey, setupRole: setupRole)
+            await delegate?.controllerDidFindTwoAccountsDuringRecovery(
+                recoveryKey,
+                setupRole: setupRole,
+                shouldPromptBeforeSwitchingAccounts: true)
         } else {
-            await delegate?.controllerDidError(.failedToLogIn, underlyingError: error, setupRole: setupRole)
+            await delegate?.controllerDidError(loginConnectionError(for: error), underlyingError: error, setupRole: setupRole)
         }
     }
 
     private func shouldContinueServerSyncOperation(setupRole: SyncSetupRole) async -> Bool {
         await delegate?.controllerWillPerformServerSyncOperation(setupRole: setupRole) ?? true
     }
+
+    private func makePairingV2Coordinator() -> PairingV2Coordinator {
+        return PairingV2Coordinator(
+            syncService: syncService,
+            messageExchanger: dependencies.createPairingV2MessageExchanger(),
+            deviceName: deviceName,
+            deviceType: deviceType,
+            flags: PairingV2RolloutFlags(isV2ScanningEnabled: isPairingV2ScanningEnabled,
+                                         isV2CodeEnabled: isPairingV2PresentationEnabled),
+            confirmationDelegate: self
+        )
+    }
+
+    private func pairingV2ConnectionError(for error: PairingV2Error) -> SyncConnectionError {
+        switch error {
+        case .recoveryCodePreparationFailed:
+            return .recoveryCodePreparationFailed
+        case .missingThirdPartyCredential:
+            return .missingThirdPartyCredential
+        case .undecryptableThirdPartyCredential:
+            return .undecryptableThirdPartyCredential
+        case .accountCreationFailed:
+            return .accountCreationFailed
+        case .accountExtendFailed:
+            return .accountExtendFailed
+        case .recoveryCodeSendFailed:
+            return .transportFailure
+        case .missingThirdPartyKey:
+            return .missingThirdPartyKey
+        case .localStorageFailed:
+            return .localStorageFailed
+        case .invalidCredentials:
+            return .invalidCredentials
+        case .loginFailed:
+            return .transportFailure
+        case .upgradeFailed:
+            return .accountUpgradeFailed
+        case .nativeCredentialAlreadyPresent:
+            return .thirdPartyAccountAlreadyUpgraded
+        case .recoveryCodeDenied:
+            return .syncCancelledFromOtherDevice
+        case .recoveryCodeUnavailable:
+            return .peerRecoveryCodeUnavailable
+        case .unsupportedVersion(let version):
+            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor)
+        case .v2ScanningDisabled, .unknownCode, .unsupportedFlow:
+            return .unableToRecognizeCode
+        case .secondHello:
+            return .unexpectedSecondHello
+        case .unexpectedEvent:
+            return .unexpectedEvent
+        case .pairingSessionNotReady:
+            return .pairingSessionNotReady
+        case .relayChannelUnavailable, .relayChannelExpired:
+            return .relayChannelUnavailable
+        case .cancelled:
+            return .syncCancelledFromOtherDevice
+        }
+    }
+
+    private func loginConnectionError(for error: Error) -> SyncConnectionError {
+        if let error = error as? SyncError {
+            switch error {
+            case .unexpectedStatusCode(let statusCode) where statusCode == 401:
+                return .invalidCredentials
+            case .failedToWriteSecureStore:
+                return .localStorageFailed
+            default:
+                break
+            }
+        }
+        return .failedToLogIn
+    }
+
+    private func syncCodeDecodingConnectionError(for error: Error) -> SyncConnectionError {
+        guard let error = error as? SyncCode.RecoveryCodeVersionError,
+              case .unsupported(let version) = error else {
+            return .unableToRecognizeCode
+        }
+        guard isPairingV2ScanningEnabled else {
+            return .unableToRecognizeCode
+        }
+        return unsupportedVersionConnectionError(for: version, supportedMajor: SyncCode.Recovery.supportedMajor)
+    }
+
+    private func unsupportedVersionConnectionError(for version: String, supportedMajor: Int) -> SyncConnectionError {
+        guard let major = SyncProtocolVersion.parseMajor(version),
+              major > supportedMajor else {
+            return .unableToRecognizeCode
+        }
+        return .updateRequired
+    }
+}
+
+private extension SyncCode.Recovery {
+
+    var syncSetupCodeVersion: SyncSetupCodeVersion {
+        switch self {
+        case .v1:
+            return .v1
+        case .v2:
+            return .v2
+        }
+    }
 }
 
 @MainActor
 public extension SyncConnectionControllerDelegate {
+    func controllerDidRecognizeCode(setupSource _: SyncSetupSource, codeSource _: SyncCodeSource) async {
+    }
+
+    func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource, codeVersion _: SyncSetupCodeVersion) async {
+        await controllerDidRecognizeCode(setupSource: setupSource, codeSource: codeSource)
+    }
+
     func controllerWillPerformServerSyncOperation(setupRole _: SyncSetupRole) async -> Bool {
         true
+    }
+
+    func controllerShouldAllowPairingV2PeerToJoin(peerName _: String?, peerKind _: PairingV2DeviceKind) async -> Bool {
+        false
+    }
+
+    func controllerShouldJoinPairingV2Peer(peerName _: String?, peerKind _: PairingV2DeviceKind) async -> Bool {
+        false
+    }
+
+    func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole _: SyncSetupRole) {
+    }
+}
+
+extension SyncConnectionController: PairingV2ConfirmationDelegate {
+
+    func pairingV2CoordinatorShouldAllowPeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
+        await delegate?.controllerShouldAllowPairingV2PeerToJoin(peerName: peerName, peerKind: peerKind) ?? false
+    }
+
+    func pairingV2CoordinatorShouldJoinPeer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
+        await delegate?.controllerShouldJoinPairingV2Peer(peerName: peerName, peerKind: peerKind) ?? false
+    }
+
+    func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async {
+        await delegate?.controllerDidCreateSyncAccount(shouldShowSyncEnabled: credentialKind == .ddg)
     }
 }

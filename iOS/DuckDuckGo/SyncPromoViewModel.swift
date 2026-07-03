@@ -33,7 +33,7 @@ struct SyncPromoViewModel {
             UserText.syncPromoBookmarksTitle
         case .passwords:
             UserText.syncPromoPasswordsTitle
-        case .dataImport:
+        case .dataImport, .aiChat:
             ""
         }
     }
@@ -44,7 +44,7 @@ struct SyncPromoViewModel {
             UserText.syncPromoBookmarksMessage
         case .passwords:
             UserText.syncPromoPasswordsMessage
-        case .dataImport:
+        case .dataImport, .aiChat:
             ""
         }
     }

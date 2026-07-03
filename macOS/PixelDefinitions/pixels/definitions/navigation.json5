@@ -19,7 +19,7 @@
         "owners": ["ayoy"],
         "triggers": ["other"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_debug_unified_url_prediction_mismatch": {
         "description": "Only for internal users that have opted in to this pixel - fires when the unified URL prediction mechanism predicted the wrong URL than the pre-existing native logic.",
@@ -46,12 +46,24 @@
         "description": "Fired when a site loading navigation completes successfully.",
         "owners": ["diegoreymendez"],
         "triggers": ["page_load"],
-        "parameters": ["appVersion", "pixelSource", "duration", "navigation_type"]
+        "suffixes": [
+            {
+                "description": "Sampling percentage (between 1 and 100 inclusive)",
+                "pattern": "^sample(?:100|0?[1-9]|[1-9][0-9])$"
+            }
+        ],
+        "parameters": ["appVersion", "pixelSource", "duration", "navigation_type", "channel"]
     },
     "m_mac_site_loading_failure": {
         "description": "Fired when a site loading navigation fails.",
         "owners": ["diegoreymendez"],
         "triggers": ["page_load"],
+        "suffixes": [
+            {
+                "description": "Sampling percentage (between 1 and 100 inclusive)",
+                "pattern": "^sample(?:100|0?[1-9]|[1-9][0-9])$"
+            }
+        ],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -60,7 +72,8 @@
             "errorCode",
             "errorDomain",
             "underlyingErrorCode",
-            "underlyingErrorDomain"
+            "underlyingErrorDomain",
+            "channel"
         ]
     },
     "m_mac_site_loading_timing": {
@@ -94,7 +107,8 @@
                 "key": "consentHeuristicEnabled",
                 "type": "integer",
                 "description": "Whether the user is in CPM heuristic experiment treatment group"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_site_loading_performance": {
@@ -180,7 +194,15 @@
                 "type": "string",
                 "enum": ["none", "few", "moderate", "many"],
                 "description": "Redirect count bucket to prevent fingerprinting"
-            }
+            },
+            "channel"
         ]
+    },
+    "m_mac_navigation_search": {
+        "description": "Fires when the user performs a search via the DuckDuckGo SERP.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

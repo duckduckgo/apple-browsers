@@ -21,33 +21,54 @@ import Foundation
 /// Represents the origin point from which the user enters the subscription funnel in the macOS app.
 enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel via the App Settings screen.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1210468753388392
     case appSettings = "funnel_appsettings_macos"
 
     /// User entered the funnel via the App More Menu.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1210468753388401
     case appMenu = "funnel_appmenu_macos"
 
     /// User entered the funnel via the Free Scan feature.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1210468753388402
     case freeScan = "funnel_freescan_macos"
-
-    /// User entered the funnel via the VPN upsell.
-    case vpnUpsell = "funnel_toolbar_macos"
 
     // MARK: - Win-Back Offer Origins
 
     /// User entered via win-back offer launch prompt
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213998044482808
     case winBackLaunch = "funnel_applaunch_macos_winback"
 
     /// User entered via win-back offer in App More Menu
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213998044482808
     case winBackMenu = "funnel_appmenu_macos_winback"
 
     /// User entered via win-back offer in App Settings
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213998044482808
     case winBackSettings = "funnel_appsettings_macos_winback"
 
     /// User entered via win-back offer in New Tab Page
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213998044482808
     case winBackNewTabPage = "funnel_newtab_macos_winback"
 
     /// User entered the funnel via the New Tab Page next steps card.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860324
     case newTabPageNextStepsCard = "funnel_onboarding_macOS__nextstepscard"
+
+    /// User entered the funnel via the subscription promo on the Fire Window home page.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1214355390442152
+    case fireWindowPromo = "funnel_newtab_macos__firewindowvpn"
+
+    /// User entered the funnel via the VPN toolbar button upsell popover.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860320
+    case vpnToolbarUpsell = "funnel_toolbar_macos__subscriptionvpnupsell"
+
+    /// User entered the funnel via the VPN toolbar button popover when their subscription was revoked.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1214811710571517
+    case vpnToolbarRevoked = "funnel_toolbar_macos__subscriptionvpnrevoked"
+
+    /// User entered the funnel via the VPN menu-bar status item popover when their subscription was revoked.
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1214811710571517
+    case vpnMenuBarRevoked = "funnel_menubar_macos__subscriptionvpnrevoked"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

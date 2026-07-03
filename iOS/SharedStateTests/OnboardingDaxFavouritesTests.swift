@@ -25,6 +25,7 @@ import History
 import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
+import DataBrokerProtection_iOS
 @testable import Configuration
 import Core
 import SubscriptionTestingUtilities
@@ -39,9 +40,11 @@ import AIChatTestingUtilities
 // swiftlint:disable force_try
 
 private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
+    func isFeatureAvailable() -> Bool { false }
     func isEligibleForNTPAfterIdle() -> Bool { false }
     func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
     func idleThresholdSeconds() -> Int { 60 }
+    func ntpAfterIdleState() -> NTPAfterIdleState { .notEligible }
 }
 
  @MainActor
@@ -62,6 +65,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             bookmarksDatabase: db,
             secureVaultFactory: AutofillSecureVaultFactory,
             secureVaultErrorReporter: SecureVaultReporter(),
+            keyValueStore: keyValueStore,
             settingHandlers: [],
             favoritesDisplayModeStorage: MockFavoritesDisplayModeStoring(),
             syncErrorHandler: SyncErrorHandler(),
@@ -79,6 +83,13 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let syncAutoRestoreHandler = MockSyncAutoRestoreHandler()
         let featureFlagger = MockFeatureFlagger()
         let aiChatSettings = MockAIChatSettingsProvider()
+        let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: keyValueStore)
+        let freemiumDBPUserDefaults = try XCTUnwrap(UserDefaults(suiteName: "OnboardingDaxFavouritesTests.\(UUID().uuidString)"))
+        let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+            userDefaults: freemiumDBPUserDefaults,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { false }
+        )
         let fireproofing = MockFireproofing()
         let textZoomCoordinatorProvider = MockTextZoomCoordinatorProvider()
         let subscriptionDataReporter = MockSubscriptionDataReporter()
@@ -127,17 +138,18 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                     keyValueStore: MockKeyValueFileStore(),
-                                    daxDialogsManager: DummyDaxDialogsManager(),
+                                    daxDialogsManager: MockDaxDialogsManager(),
                                     aiChatSettings: aiChatSettings,
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry(),
                                     privacyStats: MockPrivacyStats(),
                                     voiceSearchHelper: MockVoiceSearchHelper(),
                                     launchSourceManager: MockLaunchSourceManager(),
-                                    darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
+                                    darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+                                    adBlockingAvailability: StubAdBlockingAvailability()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,
-                                        daxDialogsManager: DummyDaxDialogsManager(),
+                                        daxDialogsManager: MockDaxDialogsManager(),
                                         syncService: syncService,
                                         bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
                                         fireproofing: fireproofing,
@@ -170,6 +182,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
             featureFlagger: featureFlagger,
             idleReturnEligibilityManager: MockIdleReturnEligibilityManagerForMainVC(),
+            afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .lastUsedTab, keyValueStore: keyValueStore),
+            lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: keyValueStore),
             syncAutoRestoreHandler: syncAutoRestoreHandler,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,
@@ -185,8 +199,16 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider(),
             systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
-            daxDialogsManager: DummyDaxDialogsManager(),
+            daxDialogsManager: MockDaxDialogsManager(),
             dbpIOSPublicInterface: nil,
+            freemiumPIREligibilityChecker: DefaultFreemiumPIREligibilityChecker(
+                featureFlagger: featureFlagger,
+                runPrerequisitesDelegate: nil,
+                subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
+                freemiumPIRDebugSettings: freemiumPIRDebugSettings
+            ),
+            freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),
@@ -198,7 +220,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
             privacyStats: MockPrivacyStats(),
             whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
-            darkReaderFeatureSettings: MockDarkReaderFeatureSettings()
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+            onboardingManager: OnboardingManagerMock()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

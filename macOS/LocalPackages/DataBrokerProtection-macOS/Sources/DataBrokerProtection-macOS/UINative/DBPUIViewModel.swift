@@ -21,6 +21,7 @@ import Combine
 import WebKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import os.log
 import PrivacyConfig
 import DataBrokerProtectionCore

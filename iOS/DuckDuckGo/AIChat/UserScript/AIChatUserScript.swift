@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import UserScript
 import Foundation
 import AIChat
@@ -44,7 +45,6 @@ protocol AIChatUserScriptDelegate: AnyObject {
 // MARK: - AIChatUserScript Class
 
 final class AIChatUserScript: NSObject, Subfeature {
-
     // MARK: - Push Message Enum
 
     enum AIChatPushMessage {
@@ -56,6 +56,11 @@ final class AIChatUserScript: NSObject, Subfeature {
         case toggleSidebarAction
         case syncStatusChanged(AIChatSyncHandler.SyncStatus)
         case customizeResponsesAction
+        case changeModelAction(modelId: String)
+
+        struct ChangeModelActionParams: Encodable {
+            let modelId: String
+        }
 
         var methodName: String {
             switch self {
@@ -75,6 +80,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitSyncStatusChanged"
             case .customizeResponsesAction:
                 return "submitCustomizeResponsesAction"
+            case .changeModelAction:
+                return "submitChangeModelAction"
             }
         }
 
@@ -84,6 +91,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return prompt
             case .syncStatusChanged(let status):
                 return status
+            case .changeModelAction(let modelId):
+                return ChangeModelActionParams(modelId: modelId)
             default:
                 return nil
             }
@@ -100,6 +109,14 @@ final class AIChatUserScript: NSObject, Subfeature {
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
     private var inputBoxCancellables = Set<AnyCancellable>()
+    /// Returns the page context currently attached to the chat session, queried at submit time
+    /// and inlined into the `submitPrompt` payload so the FE always sees it. Set by the host that
+    /// owns the attachment state (e.g. `AIChatContextualUTIHost`).
+    var attachedPageContextProvider: (() -> AIChatPageContextData?)?
+
+    /// Fires after a prompt is submitted via the multi-modal `submitPrompt(...)` path (used by
+    /// the native UTI). Set by the host so the chip can flip to its post-submit silent state.
+    var onPromptSubmitted: (() -> Void)?
 
     var inputBoxHandler: AIChatInputBoxHandling? {
         didSet { subscribeToInputBoxEvents() }
@@ -163,6 +180,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             Logger.aiChat.debug("AIChatUserScript: unhandled message: \(methodName)")
             return nil
         }
+        Logger.aiChat.debug("AIChatUserScript: handled message: \(methodName)")
 
         delegate?.aiChatUserScript(self, didReceiveMessage: message)
 
@@ -179,6 +197,12 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatPageContext
         case .openAIChat:
             return handler.openAIChat
+        case .openSummarizationSourceLink:
+            return handler.openSummarizationSourceLink
+        case .openTranslationSourceLink:
+            return handler.openTranslationSourceLink
+        case .openAIChatLink:
+            return handler.openAIChatLink
         case .hideChatInput:
             return handler.hideChatInput
         case .showChatInput:
@@ -219,6 +243,16 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.voiceSessionStarted
         case .voiceSessionEnded:
             return handler.voiceSessionEnded
+        case .newImageGenerationChatStarted:
+            return handler.newImageGenerationChatStarted
+        case .showModelPicker:
+            return handler.showModelPicker
+        case .disableChatInput:
+            return handler.disableChatInput
+        case .enableChatInput:
+            return handler.enableChatInput
+        case .focusChatInput:
+            return handler.focusChatInput
         default:
             return nil
         }
@@ -226,6 +260,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling) {
         handler.setPayloadHandler(payloadHandler)
+    }
+
+    func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
+        handler.setOpenLinkHandler(openLinkHandler)
     }
 
     func setDisplayMode(_ displayMode: AIChatDisplayMode) {
@@ -244,17 +282,14 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.isFireModeProvider = provider
     }
 
+    func setFocusChatInputHandler(_ handler: (@MainActor () -> Void)?) {
+        self.handler.focusChatInputHandler = handler
+    }
+
     // MARK: - Input Box Event Subscription
 
     private func subscribeToInputBoxEvents() {
         inputBoxCancellables.removeAll()
-
-        inputBoxHandler?.didSubmitPrompt
-            .sink(receiveValue: { [weak self] prompt in
-                let modelId = self?.inputBoxHandler?.persistedModelId
-                self?.submitPrompt(prompt, modelId: modelId)
-            })
-            .store(in: &inputBoxCancellables)
 
         inputBoxHandler?.didPressNewChatButton
             .sink(receiveValue: { [weak self] _ in self?.push(.newChatAction) })
@@ -277,28 +312,41 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     // MARK: - AI Chat Actions
 
+    var canDispatchBridgeMessages: Bool {
+        webView != nil && broker != nil
+    }
+
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         submitPrompt(prompt, pageContext: pageContext, modelId: nil)
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?) {
-        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+        // `AIChatNativePrompt.pageContext` accepts either a single `PageContext` or an array
+        // (omnibar's multi-tab case on macOS). iOS today always sends the single form, which
+        // matches the duck.ai sidebar's existing current-page semantics.
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId, pageContext: pageContext.map(AIChatPageContextPayload.single), reasoningEffort: reasoningEffort)
         push(.submitPrompt(promptPayload))
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?) {
-        submitPrompt(prompt, images: images, modelId: modelId, tools: nil)
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: nil, reasoningEffort: reasoningEffort)
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, modelId: String?, tools: [AIChatRAGTool]?) {
+    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort? = nil) {
+        // `attachedPageContextProvider` returns the single current-page form on iOS; wrap it
+        // in the `.single` variant of the union the schema now accepts.
         let promptPayload = AIChatNativePrompt.queryPrompt(
             prompt,
             autoSubmit: true,
             toolChoice: tools?.map(\.rawValue),
             images: images,
-            modelId: modelId
+            files: files,
+            modelId: modelId,
+            pageContext: attachedPageContextProvider?().map(AIChatPageContextPayload.single),
+            reasoningEffort: reasoningEffort
         )
         push(.submitPrompt(promptPayload))
+        onPromptSubmitted?()
     }
 
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.
@@ -309,6 +357,12 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// Submits an open settings action to the web content, opening the AI Chat settings.
     func submitOpenSettingsAction() {
         push(.openSettingsAction)
+    }
+
+    /// Pushes a model-change action to the web content, switching the active chat's model.
+    /// Used when the user picks a supported model in the native picker mid-chat.
+    func submitChangeModel(_ modelId: String) {
+        push(.changeModelAction(modelId: modelId))
     }
 
     /// Submits page context to the frontend (push update).

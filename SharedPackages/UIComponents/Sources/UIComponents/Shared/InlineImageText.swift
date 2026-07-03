@@ -100,7 +100,7 @@ public extension Text {
             }
             self = text
         case .attributed(let attributedString):
-            if #available(iOS 15, macOS 12, *) {
+            if #available(iOS 15, *) {
                 self = Text(AttributedString(attributedString))
             } else {
                 self = Text(attributedString.string)

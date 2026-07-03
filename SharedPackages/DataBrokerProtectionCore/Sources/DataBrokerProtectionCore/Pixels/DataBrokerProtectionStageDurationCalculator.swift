@@ -33,6 +33,7 @@ public enum Stage: String {
     case emailConfirm = "email-confirm"
     case emailConfirmHalted = "email-confirm-halted"
     case emailConfirmDecoupled = "email-confirm-decoupled"
+    case emailGetData = "email-get-data"
     case validate
     case other
     case fillForm = "fill-form"
@@ -57,6 +58,7 @@ public protocol StageDurationCalculator {
     func fireOptOutFillForm()
     func fireOptOutEmailReceive()
     func fireOptOutEmailConfirm()
+    func fireOptOutEmailGetData()
     func fireOptOutValidate()
     func fireOptOutSubmitSuccess(tries: Int)
     func fireOptOutFailure(tries: Int, error: Error)
@@ -99,7 +101,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     private(set) var tries = 1
     let vpnConnectionState: String
     let vpnBypassStatus: String
-    let featureFlagger: DBPFeatureFlagging
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),
@@ -111,8 +112,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          isAuthenticated: Bool = true,
          isFreeScan: Bool?,
          vpnConnectionState: String,
-         vpnBypassStatus: String,
-         featureFlagger: DBPFeatureFlagging) {
+         vpnBypassStatus: String) {
         self.attemptId = attemptId
         self.startTime = startTime
         self.lastStateTime = startTime
@@ -125,7 +125,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.isFreeScan = isFreeScan
         self.vpnConnectionState = vpnConnectionState
         self.vpnBypassStatus = vpnBypassStatus
-        self.featureFlagger = featureFlagger
     }
 
     /// Returned in milliseconds
@@ -147,8 +146,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         setStage(.start)
         handler.fire(.optOutStart(dataBroker: dataBrokerURL,
                                   attemptId: attemptId,
-                                  parent: parentURL ?? "",
-                                  clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
+                                  parent: parentURL ?? ""))
     }
 
     func fireOptOutEmailGenerate() {
@@ -204,8 +202,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                    dataBrokerVersion: dataBrokerVersion,
                                    tries: tries,
                                    parent: parentURL ?? "",
-                                   actionId: actionID ?? "",
-                                   clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
+                                   actionId: actionID ?? ""))
     }
 
     func fireOptOutEmailReceive() {
@@ -222,6 +219,17 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     func fireOptOutEmailConfirm() {
         let duration = durationSinceLastStage()
         handler.fire(.optOutEmailConfirm(dataBroker: dataBrokerURL,
+                                         attemptId: attemptId,
+                                         duration: duration,
+                                         dataBrokerVersion: dataBrokerVersion,
+                                         tries: tries,
+                                         parent: parentURL ?? "",
+                                         actionId: actionID ?? ""))
+    }
+
+    func fireOptOutEmailGetData() {
+        let duration = (durationSinceLastStage() / 10.0).rounded() * 10.0
+        handler.fire(.optOutEmailGetData(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
@@ -281,8 +289,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     actionId: actionID ?? "unknown",
                                     actionType: actionType ?? "unknown",
                                     vpnConnectionState: vpnConnectionState,
-                                    vpnBypassStatus: vpnBypassStatus,
-                                    clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
+                                    vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireOptOutConditionFound() {

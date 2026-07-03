@@ -19,6 +19,8 @@
 import AppKit
 import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import OSLog
 import PixelKit
 import PixelKitTestingUtilities
@@ -2969,6 +2971,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
                              frequency: PixelKit.Frequency,
                              includeAppVersionParameter: Bool,
                              withAdditionalParameters: [String: String]?,
+                             withNamePrefix: String?,
                              onComplete: @escaping PixelKit.CompletionBlock) {
                 fireExpectation.fulfill()
                 // Never call completion handler - simulates timeout

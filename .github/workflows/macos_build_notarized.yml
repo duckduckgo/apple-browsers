@@ -15,6 +15,7 @@ on:
         - review
         - release
         - alpha
+        - sandbox-review # Builds sandboxed app for running locally (for App Store UI Tests)
       create-dmg:
         description: "Create DMG image"
         default: false
@@ -146,6 +147,9 @@ jobs:
           "alpha")
             bundle exec fastlane sync_signing_dmg_alpha
             ;;
+          "sandbox-review")
+            bundle exec fastlane sync_signing_sandbox_review
+            ;;
         esac
 
     - name: Retry sync code signing assets
@@ -167,6 +171,9 @@ jobs:
             ;;
           "alpha")
             bundle exec fastlane sync_signing_dmg_alpha
+            ;;
+          "sandbox-review")
+            bundle exec fastlane sync_signing_sandbox_review
             ;;
         esac
 
@@ -333,6 +340,9 @@ jobs:
 
     runs-on: macos-26
 
+    outputs:
+      dmg-url: ${{ steps.upload-dmg-to-s3.outputs.dmg-url }}
+
     env:
       app-version: ${{ needs.export-notarized-app.outputs.app-version }}
       app-name: ${{ needs.export-notarized-app.outputs.app-name }}
@@ -456,17 +466,20 @@ jobs:
         if [[ "${{ env.upload-to }}" == 's3' ]]; then
           if [[ "${{ env.release-type }}" == 'alpha' ]]; then
             RELEASE_BUCKET_PREFIX="${RELEASE_BUCKET_PREFIX}/alpha"
-            echo "${DMG_URL_ROOT}alpha/${{ steps.create-dmg.outputs.dmg }}" > dmg_url.txt
+            dmg_url="${DMG_URL_ROOT}alpha/${{ steps.create-dmg.outputs.dmg }}"
+            echo "${dmg_url}" > dmg_url.txt
+          else
+            dmg_url="${DMG_URL_ROOT}${{ steps.create-dmg.outputs.dmg }}"
           fi
           dmg_s3_path="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/${{ steps.create-dmg.outputs.dmg }}"
         else
           dmg_s3_path="${TEST_BUILD_S3_PATH}${{ steps.create-dmg.outputs.dmg }}"
 
-          # Calculate the URL for the dSYM to report it later
+          # Calculate the URL for the DMG to report it later
           s3_bucket_url="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/"
           dmg_url="${dmg_s3_path/#${s3_bucket_url}/${DMG_URL_ROOT}}" # replace S3 bucket url with CDN URL
-          echo "dmg-url=${dmg_url}" >> $GITHUB_OUTPUT
         fi
+        echo "dmg-url=${dmg_url}" >> $GITHUB_OUTPUT
         aws s3 cp $DMG_LOCAL_PATH $dmg_s3_path --acl public-read
         echo "dmg-s3-path=${dmg_s3_path}" >> $GITHUB_OUTPUT
 
@@ -550,6 +563,7 @@ jobs:
         if: ${{ env.success || env.failure }} # Don't execute when cancelled
         env:
           ASANA_TASK_URL: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
+          DMG_URL: ${{ needs.create-dmg.outputs.dmg-url }}
           GH_TOKEN: ${{ github.token }}
           RELEASE_TYPE: ${{ github.event.inputs.release-type || inputs.release-type }}
           WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

@@ -28,7 +28,6 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 // swiftlint:disable opening_brace
-@available(macOS 12.0, *)
 final class TabTests: XCTestCase {
 
     struct URLs {
@@ -246,6 +245,34 @@ final class TabTests: XCTestCase {
         waitForExpectations(timeout: 5)
 
         withExtendedLifetime((c, c2, c3)) {}
+    }
+
+    @MainActor
+    func testWhenSameDocumentNavigationOccursThenSameDocumentNavigationPublisherEmits() {
+        schemeHandler.middleware = [{ _ in
+            .ok(.html("<html><body>test</body></html>"))
+        }]
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
+
+        // Wait for the initial full-page navigation to finish before triggering pushState.
+        let eDidFinish = expectation(description: "initial navigation finished")
+        let finishCancellable = tab.webViewDidFinishNavigationPublisher.sink {
+            eDidFinish.fulfill()
+        }
+        tab.setContent(.url(urls.url, source: .link))
+        wait(for: [eDidFinish], timeout: 5)
+        finishCancellable.cancel()
+
+        // A same-document navigation (history.pushState) must emit on the dedicated publisher,
+        // since webViewDidFinishNavigationPublisher filters these out.
+        let eSameDocument = expectation(description: "same-document navigation published")
+        tab.webViewDidPerformSameDocumentNavigationPublisher.sink {
+            eSameDocument.fulfill()
+        }.store(in: &cancellables)
+
+        tab.webView.evaluateJavaScript("history.pushState({}, '', '/pushed')")
+
+        wait(for: [eSameDocument], timeout: 5)
     }
 
     @MainActor

@@ -500,6 +500,17 @@ final class PermissionCenterViewModel: ObservableObject {
             otherPermissions.append(.autoplayPolicy)
         }
 
+        // On duck.ai with the voice-chat flag on, `DuckAiVoiceChatPermissionOverride` forces
+        // `.microphone` to `.allow` at read time. A regular editable row here would read the
+        // masked `.allow` through the override and let the user make a change that's silently
+        // re-masked, so drop it. The OS-denied remediation surface lives in
+        // `SystemDisabledPermissionInfoView`, anchored to the address-bar shield — not in the
+        // Permission Center. With the flag off, the override returns nil and the real
+        // persisted decision (if any) is the user's actual state, so the row stays.
+        if featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow), domain == URL.duckAi.host {
+            otherPermissions.removeAll { $0 == .microphone }
+        }
+
         return (externalSchemePermissions, otherPermissions)
     }
 
@@ -534,8 +545,8 @@ final class PermissionCenterViewModel: ObservableObject {
             externalSchemes: []
         )
 
-        // Async check for permissions that require system permission
-        if permissionType.requiresSystemPermission {
+        // Async check for permissions whose OS-level state may surface a system-disabled warning
+        if permissionType.surfacesSystemDisabledWarning {
             checkSystemDisabledAsync(for: item)
         }
 
@@ -579,10 +590,11 @@ final class PermissionCenterViewModel: ObservableObject {
         }
     }
 
-    /// Asynchronously checks system authorization state for permissions that require it
-    /// Uses weak self to handle case where popover is dismissed before check completes
+    /// Asynchronously checks system authorization state for permissions that surface
+    /// a system-disabled warning. Uses weak self to handle case where popover is
+    /// dismissed before check completes.
     private func checkSystemDisabledAsync(for item: PermissionCenterItem) {
-        guard item.permissionType.requiresSystemPermission else { return }
+        guard item.permissionType.surfacesSystemDisabledWarning else { return }
 
         Task { @MainActor [weak self] in
             guard let self else { return }

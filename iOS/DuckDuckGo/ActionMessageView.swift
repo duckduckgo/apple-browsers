@@ -20,6 +20,8 @@
 import UIKit
 import Core
 import DesignResourcesKit
+import DesignResourcesKitIcons
+import MetricBuilder
 
 extension ActionMessageView: NibLoading {}
 
@@ -36,6 +38,7 @@ protocol ActionMessagePresenting {
 class ActionMessageView: UIView, ActionMessagePresenting {
 
     enum PresentationLocation {
+        case top
         case withBottomBar(andAddressBarBottom: Bool)
         case withoutBottomBar
     }
@@ -46,7 +49,11 @@ class ActionMessageView: UIView, ActionMessagePresenting {
         static var maxWidth: CGFloat = 346
         static var minimumHorizontalPadding: CGFloat = 20
         static var cornerRadius: CGFloat = 10
-        
+
+        @MainActor static var rebrandedMinimumHeight: CGFloat {
+            ContainerMetrics.cornerRadius * 2
+        }
+
         static var animationDuration: TimeInterval = 0.2
         static var duration: TimeInterval = 3.0
         
@@ -65,24 +72,21 @@ class ActionMessageView: UIView, ActionMessagePresenting {
         static var windowBottomPaddingWithoutBottomBar: CGFloat {
             return 0
         }
-        
-    }
-    
-    private static func bottomPadding(for location: PresentationLocation) -> CGFloat {
-        switch location {
-        case .withBottomBar(let isAddressBarBottom):
-            return isAddressBarBottom ? Constants.windowBottomPaddingWithAddressBar : Constants.windowBottomPaddingWithBottomBar
-        case .withoutBottomBar:
-            return Constants.windowBottomPaddingWithoutBottomBar
+
+        static var windowTopPadding: CGFloat {
+            return 12
         }
+        
     }
     
     @IBOutlet weak var message: UILabel!
     @IBOutlet weak var actionButton: UIButton!
     
     @IBOutlet var labelToButton: NSLayoutConstraint!
+    @IBOutlet var labelToLeading: NSLayoutConstraint!
     @IBOutlet var labelToTrailing: NSLayoutConstraint!
-    
+    @IBOutlet var buttonToTrailing: NSLayoutConstraint!
+
     private var action: () -> Void = {}
     private var onDidDismiss: () -> Void = {}
     
@@ -95,19 +99,24 @@ class ActionMessageView: UIView, ActionMessagePresenting {
     override func awakeFromNib() {
         super.awakeFromNib()
         
-        layer.cornerRadius = Constants.cornerRadius
+        layer.cornerRadius = AppRebrand.isAppRebranded() ? ContainerMetrics.cornerRadius : Constants.cornerRadius
+        if AppRebrand.isAppRebranded() {
+            heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.rebrandedMinimumHeight).isActive = true
+            labelToLeading.constant = 16
+            buttonToTrailing.constant = 16
+        }
         applySystemFonts()
     }
 
     private func applySystemFonts() {
-        let messageFont = UIFont.daxSubheadRegular()
+        let messageFont = AppRebrand.isAppRebranded() ? UIFont.daxBodyRegular() : UIFont.daxSubheadRegular()
         if let attributedText = message.attributedText {
             message.attributedText = attributedText.withFont(messageFont)
         } else {
             message.font = messageFont
         }
 
-        let buttonFont = UIFont.daxSubheadSemibold()
+        let buttonFont = AppRebrand.isAppRebranded() ? UIFont.daxBodySemibold() : UIFont.daxSubheadSemibold()
         if let attributedTitle = actionButton.attributedTitle(for: .normal) {
             actionButton.setAttributedTitle(attributedTitle.withFont(buttonFont), for: .normal)
         } else {
@@ -173,8 +182,7 @@ class ActionMessageView: UIView, ActionMessagePresenting {
         messageView.onDidDismiss = onDidDismiss
         
         window.addSubview(messageView)
-        window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
-                                                           constant: bottomPadding(for: presentationLocation)).isActive = true
+        pin(messageView, to: window, presentationLocation: presentationLocation)
         
         let messageViewWidth = window.frame.width <= Constants.maxWidth ? window.frame.width - Constants.minimumHorizontalPadding : Constants.maxWidth
         messageView.widthAnchor.constraint(equalToConstant: messageViewWidth).isActive = true
@@ -219,5 +227,25 @@ class ActionMessageView: UIView, ActionMessagePresenting {
     @IBAction func onButtonTap() {
         action()
         dismissAndFadeOut()
+    }
+}
+
+private extension ActionMessageView {
+
+    static func pin(_ messageView: ActionMessageView,
+                    to window: UIWindow,
+                    presentationLocation: PresentationLocation) {
+        switch presentationLocation {
+        case .top:
+            messageView.topAnchor.constraint(equalTo: window.safeAreaLayoutGuide.topAnchor,
+                                             constant: Constants.windowTopPadding).isActive = true
+        case .withBottomBar(let isAddressBarBottom):
+            let bottomPadding = isAddressBarBottom ? Constants.windowBottomPaddingWithAddressBar : Constants.windowBottomPaddingWithBottomBar
+            window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
+                                                               constant: bottomPadding).isActive = true
+        case .withoutBottomBar:
+            window.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: messageView.bottomAnchor,
+                                                               constant: Constants.windowBottomPaddingWithoutBottomBar).isActive = true
+        }
     }
 }

@@ -18,10 +18,11 @@
 
 import AppKit
 import Combine
+import ConcurrencyExtensions
 import Foundation
-import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
+import VPN
 
 /// Model for managing the NetP button in the Nav Bar.
 ///

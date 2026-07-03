@@ -31,4 +31,10 @@ class MockViewSnapshotRenderer: ViewSnapshotRendering {
         lastView = view()
         return nextSnapshot
     }
+
+    @MainActor
+    func renderSnapshotSync(view: NSView) -> NSImage? {
+        lastView = view
+        return nextSnapshot
+    }
 }

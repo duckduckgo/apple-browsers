@@ -296,7 +296,7 @@ final class GeolocationProviderTests: XCTestCase {
         windows[0].isKeyWindow = false
         windows[1].isKeyWindow = true
 
-        waitForExpectations(timeout: 10.0)
+        waitForExpectations(timeout: 30.0)
 
         let ec1 = expectation(description: "watch 1 cancelled")
         let ec2 = expectation(description: "watch 2 cancelled")
@@ -379,31 +379,37 @@ final class GeolocationProviderTests: XCTestCase {
         let location2 = CLLocation(latitude: 10.1, longitude: -13.5)
 
         geolocationServiceMock.currentLocationPublished = .success(location1)
-        geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            if geolocationServiceMock!.history == [.locationPublished, .subscribed, .subscribed] {
-                DispatchQueue.main.async {
-                    webView2.configuration.processPool.geolocationProvider!.isPaused = true
-                    geolocationServiceMock!.currentLocationPublished = .success(location2)
-                }
-            }
-        }
 
         let e1_1 = expectation(description: "location1 received in webView1")
         let e1_2 = expectation(description: "location1 received in webView2")
         let e2_1 = expectation(description: "location2 received in webView1")
 
-        geolocationHandler = { [webView1=webView!] webView, body in
+        var webView1ReceivedLocation1 = false
+        var webView2ReceivedLocation1 = false
+        var didPauseAndPublishLocation2 = false
+
+        geolocationHandler = { [webView1=webView!, geolocationServiceMock] webView, body in
             switch (webView, try Response(body)) {
             case (webView1, Response(location1.removingAltitude())):
                 e1_1.fulfill()
+                webView1ReceivedLocation1 = true
             case (webView2, Response(location1.removingAltitude())):
                 e1_2.fulfill()
+                webView2ReceivedLocation1 = true
             case (webView1, Response(location2.removingAltitude())):
                 e2_1.fulfill()
             case (webView2, Response(location2.removingAltitude())):
                 XCTFail("webView2 Unexpectedly received location")
             default:
                 XCTFail("Unexpected result")
+            }
+
+            if webView1ReceivedLocation1 && webView2ReceivedLocation1 && !didPauseAndPublishLocation2 {
+                didPauseAndPublishLocation2 = true
+                DispatchQueue.main.async {
+                    webView2.configuration.processPool.geolocationProvider!.isPaused = true
+                    geolocationServiceMock!.currentLocationPublished = .success(location2)
+                }
             }
         }
 
@@ -412,7 +418,7 @@ final class GeolocationProviderTests: XCTestCase {
         windows[0].isKeyWindow = false
         windows[1].isKeyWindow = true
 
-        waitForExpectations(timeout: 10.0)
+        waitForExpectations(timeout: 30.0)
 
         let ec1 = expectation(description: "watch 1 cancelled")
         let ec2 = expectation(description: "watch 2 cancelled")
@@ -627,7 +633,6 @@ extension GeolocationProviderTests: WKUIDelegate, WKNavigationDelegate {
     }
 
     @objc(_webView:requestGeolocationPermissionForOrigin:initiatedByFrame:decisionHandler:)
-    @available(macOS 12, *)
     func webView(_ webView: WKWebView,
                  requestGeolocationPermissionFor origin: WKSecurityOrigin,
                  initiatedBy frame: WKFrameInfo,

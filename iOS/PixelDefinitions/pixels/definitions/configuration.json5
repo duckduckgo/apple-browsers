@@ -40,7 +40,23 @@
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": [
+            "appVersion",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "experimentName",
+                "description": "The name of the active TDS experiment Name with Cohort if any. Example: 'tdsNextExperiment007_treatment'",
+                "type": "string"
+            },
+            {
+                "key": "etag",
+                "description": "The etag associated with the TDS. Sent only if TDS experiment is active. Example: '%2272ae7e75715adc6ff4173767c337615c%22'",
+                "type": "string"
+            }
+        ]
     },
     "m_debug_remotemessagingconfig_load_failed": {
         "description": "Fired when the RMF configuration file fails to load",
@@ -62,7 +78,23 @@
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": [
+            "appVersion",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "experimentName",
+                "description": "The name of the active TDS experiment Name with Cohort if any. Example: 'tdsNextExperiment007_treatment'",
+                "type": "string"
+            },
+            {
+                "key": "etag",
+                "description": "The etag associated with the TDS. Sent only if TDS experiment is active. Example: '%2272ae7e75715adc6ff4173767c337615c%22'",
+                "type": "string"
+            }
+        ]
     },
 
     "m_debug_privacyconfiguration_load_failed_vpn": {

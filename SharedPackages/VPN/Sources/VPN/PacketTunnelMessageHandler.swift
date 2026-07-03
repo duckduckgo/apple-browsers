@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 
@@ -25,12 +26,15 @@ import os.log
 protocol TunnelStateProviding: AnyObject {
     @MainActor var connectionStatus: ConnectionStatus { get }
     @MainActor var currentServerSelectionMethod: NetworkProtectionServerSelectionMethod { get }
+    @MainActor var lastSelectedServer: NetworkProtectionServer? { get }
     @MainActor var lastSelectedServerInfo: NetworkProtectionServerInfo? { get }
+    @MainActor var tunnelInterfaceName: String? { get }
+    @MainActor var excludeLocalNetworks: Bool { get }
 }
 
 protocol TunnelLifecycleManaging: AnyObject {
     @MainActor func cancelTunnel(with error: Error) async
-    @MainActor func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod, reassert: Bool) async throws
+    @MainActor func updateTunnelConfiguration(updateMethod: PacketTunnelProvider.TunnelUpdateMethod, reassert: Bool, attemptSource: PacketTunnelProvider.ConnectionAttemptSource) async throws
     @MainActor func restartAdapter() async throws
     @MainActor func resetRegistrationKey()
     @MainActor func removeToken() async throws
@@ -40,6 +44,10 @@ protocol TunnelLifecycleManaging: AnyObject {
 protocol SnoozeManaging: AnyObject {
     @MainActor func startSnooze(duration: TimeInterval) async
     @MainActor func cancelSnooze() async
+}
+
+protocol LeakCheckControlling: AnyObject {
+    @MainActor func triggerLeakCheckFromDebugMenu() async
 }
 
 // MARK: - PacketTunnelMessageHandler
@@ -60,6 +68,7 @@ final class PacketTunnelMessageHandler {
     private weak var tunnelState: (any TunnelStateProviding)?
     private weak var tunnelLifecycle: (any TunnelLifecycleManaging)?
     private weak var snoozeManager: (any SnoozeManaging)?
+    private weak var leakCheckController: (any LeakCheckControlling)?
 
     init(keyStore: NetworkProtectionKeyStore,
          keyExpirationTester: KeyExpirationTesting,
@@ -72,7 +81,8 @@ final class PacketTunnelMessageHandler {
          debugEvents: EventMapping<NetworkProtectionError>,
          tunnelState: any TunnelStateProviding,
          tunnelLifecycle: any TunnelLifecycleManaging,
-         snoozeManager: any SnoozeManaging) {
+         snoozeManager: any SnoozeManaging,
+         leakCheckController: any LeakCheckControlling) {
 
         self.keyStore = keyStore
         self.keyExpirationTester = keyExpirationTester
@@ -86,6 +96,7 @@ final class PacketTunnelMessageHandler {
         self.tunnelState = tunnelState
         self.tunnelLifecycle = tunnelLifecycle
         self.snoozeManager = snoozeManager
+        self.leakCheckController = leakCheckController
     }
 
     // MARK: - Message Routing
@@ -194,8 +205,11 @@ final class PacketTunnelMessageHandler {
             // No-op since this is intended for the agent app
             break
         case .createLogSnapshot:
-            if #available(macOS 12.0, iOS 15.0, *) {
-                handleCreateLogSnapshot(completionHandler: completionHandler)
+            handleCreateLogSnapshot(completionHandler: completionHandler)
+        case .triggerLeakCheck:
+            Task { [weak self] in
+                await self?.leakCheckController?.triggerLeakCheckFromDebugMenu()
+                completionHandler?(nil)
             }
         }
     }
@@ -242,7 +256,8 @@ final class PacketTunnelMessageHandler {
                        let currentMethod = tunnelState?.currentServerSelectionMethod {
                         try? await tunnelLifecycle?.updateTunnelConfiguration(
                             updateMethod: .selectServer(currentMethod),
-                            reassert: true)
+                            reassert: true,
+                            attemptSource: .serverChange)
                     }
                 }
                 completionHandler?(nil)
@@ -258,7 +273,8 @@ final class PacketTunnelMessageHandler {
             if case .connected = tunnelState?.connectionStatus {
                 try? await tunnelLifecycle?.updateTunnelConfiguration(
                     updateMethod: .selectServer(.preferredServer(serverName: serverName)),
-                    reassert: true)
+                    reassert: true,
+                    attemptSource: .serverChange)
             }
             completionHandler?(nil)
         }
@@ -321,7 +337,7 @@ final class PacketTunnelMessageHandler {
     }
 
     // Used for the iOS debug menu by DuckDuckGo VPN developers
-    @available(macOS 12.0, iOS 15.0, *)
+    @available(iOS 15.0, *)
     private func handleCreateLogSnapshot(completionHandler: ((Data?) -> Void)? = nil) {
         Task {
             do {

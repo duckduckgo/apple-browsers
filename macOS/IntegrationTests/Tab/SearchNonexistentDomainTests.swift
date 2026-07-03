@@ -19,6 +19,7 @@
 import Carbon
 import Combine
 import Common
+import FoundationExtensions
 import History
 import Navigation
 import PrivacyConfig
@@ -33,7 +34,6 @@ class MockSearchPreferencesPersistor: SearchPreferencesPersistor {
 }
 
 // swiftlint:disable opening_brace
-@available(macOS 12.0, *)
 final class SearchNonexistentDomainTests: XCTestCase {
 
     struct URLs {

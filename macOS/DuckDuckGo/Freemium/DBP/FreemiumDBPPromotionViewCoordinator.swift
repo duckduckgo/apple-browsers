@@ -23,6 +23,7 @@ import OSLog
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import Common
+import FoundationExtensions
 
 /// Default implementation of `FreemiumDBPPromotionViewCoordinating`, responsible for managing
 /// the visibility of the promotion and responding to user interactions with the promotion view.
@@ -59,6 +60,11 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
         freemiumDBPFeature.isFeatureFlagEnabled
     }
 
+    /// Whether the feature is available ignoring purchase capability. Used by the fast path while product availability settles.
+    var isFeatureAvailableIgnoringPurchaseCapability: Bool {
+        freemiumDBPFeature.isAvailableIgnoringPurchaseCapability
+    }
+
     /// The user state manager, which tracks the user's activation status and scan results.
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
 
@@ -70,6 +76,11 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
 
     /// A set of cancellables for managing Combine subscriptions.
     var cancellables = Set<AnyCancellable>()
+
+    /// Per-window cancellables for banner-impression observers. Keyed by `ObjectIdentifier(windowController)`
+    /// so the subscription — which retains the `@Published` subject and therefore the last emitted
+    /// `TabViewModel` → `Tab` → `WebView` — is dropped when the window closes.
+    private var perWindowBannerImpressionCancellables: [ObjectIdentifier: AnyCancellable] = [:]
 
     /// The `NotificationCenter` instance used when subscribing to notifications
     private let notificationCenter: NotificationCenter
@@ -99,6 +110,10 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
         subscribeToFeatureAvailabilityUpdates()
         observeFreemiumDBPNotifications()
         observeContextualOnboardingCompletion()
+
+        Task { @MainActor [weak self] in
+            self?.observeFreemiumDBPBannerImpressions()
+        }
     }
 
     @MainActor
@@ -120,10 +135,13 @@ private extension FreemiumDBPPromotionViewCoordinator {
             guard let self else { return }
 
             execute(resultsAction: {
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabResultsClickCount)
                 self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabResultsClick)
             }, orNoResultsAction: {
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabNoResultsClickCount)
                 self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabNoResultsClick)
             }, orPromotionAction: {
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanClickCount)
                 self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanClick)
             })
 
@@ -249,4 +267,79 @@ private extension FreemiumDBPPromotionViewCoordinator {
         }
     }
 
+}
+
+// MARK: - Freemium DBP Promo Banner Impression Observation
+
+/// Observes per-window tab-selection changes to detect when the New Tab Page becomes the active tab,
+/// which is the moment the Freemium DBP promo banner (when visible) is presented to the user.
+/// Drives per-impression banner-view counting — `.newTabPageWebViewDidAppear` only fires on
+/// webview-to-window attach, not on tab activation back to an existing NTP, so it cannot.
+private extension FreemiumDBPPromotionViewCoordinator {
+
+    @MainActor
+    func observeFreemiumDBPBannerImpressions() {
+        let manager = Application.appDelegate.windowControllersManager
+
+        // Windows that already existed when this observer started: their @Published replay is
+        // ambient launch-time state, not a fresh impression event.
+        for windowController in manager.mainWindowControllers {
+            observeFreemiumDBPBannerImpressions(in: windowController, opened: false)
+        }
+
+        // Windows opened later (Cmd-N, deeplinks): the first emission is the user's fresh new tab.
+        manager.didRegisterWindowController
+            .sink { [weak self] windowController in
+                self?.observeFreemiumDBPBannerImpressions(in: windowController, opened: true)
+            }
+            .store(in: &cancellables)
+
+        manager.didUnregisterWindowController
+            .sink { [weak self] windowController in
+                self?.perWindowBannerImpressionCancellables.removeValue(forKey: ObjectIdentifier(windowController))
+            }
+            .store(in: &cancellables)
+    }
+
+    @MainActor
+    func observeFreemiumDBPBannerImpressions(in windowController: MainWindowController, opened: Bool) {
+        let selectedTabPublisher = windowController.mainViewController.tabCollectionViewModel.$selectedTabViewModel
+            .compactMap { $0 }
+
+        // The first value @Published replays when we subscribe means very different things depending
+        // on when the window was registered:
+        //  - For windows that were already open at observer-setup time, the replay is the *current
+        //    ambient state* — the user has been looking at this tab; counting it as an impression
+        //    would conflate launch noise (e.g. placeholder→restored tab swaps) with real events.
+        //    Drop it, and rely on subsequent user-driven changes to fire.
+        //  - For just-opened windows, the first emission IS the impression — the user just opened
+        //    a new window and is seeing whatever tab landed in it (typically NTP). Keep it.
+        let pipeline: AnyPublisher<TabViewModel, Never> = opened
+            ? selectedTabPublisher.eraseToAnyPublisher()
+            : selectedTabPublisher.dropFirst().eraseToAnyPublisher()
+
+        perWindowBannerImpressionCancellables[ObjectIdentifier(windowController)] = pipeline
+            .sink { [weak self] selectedTabViewModel in
+                self?.handleSelectedTabChanged(selectedTabViewModel)
+            }
+    }
+
+    @MainActor
+    func handleSelectedTabChanged(_ selectedTabViewModel: TabViewModel) {
+        // Burner (Fire) Window NTPs don't render the freemium banner — skip to avoid over-counting.
+        guard case .newtab = selectedTabViewModel.tab.content,
+              !selectedTabViewModel.tab.burnerMode.isBurner else { return }
+
+        // Banner must actually be presentable. `viewModel == nil` means PromoService / feature
+        // gating has not produced a renderable promotion for this user/state.
+        guard viewModel != nil else { return }
+
+        execute(resultsAction: {
+            self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabResultsImpressionCount)
+        }, orNoResultsAction: {
+            self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabNoResultsImpressionCount)
+        }, orPromotionAction: {
+            self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanImpressionCount)
+        })
+    }
 }

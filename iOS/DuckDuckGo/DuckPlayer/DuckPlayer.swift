@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import ContentScopeScripts
 import Core
 import Foundation
@@ -472,12 +473,11 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     private func setupHideBrowserChromeTimer() {
         hideBrowserChromeTimer?.invalidate()
 
-        weak var weakHostView = hostView
-        hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { _ in
+        hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { [weak hostView] _ in
             DispatchQueue.main.async {
                 let orientation = UIDevice.current.orientation
                 if orientation.isLandscape {
-                    weakHostView?.hideChrome()
+                    hostView?.hideChrome()
                 }
             }
         }
@@ -733,9 +733,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// Encodes UI values for sending to the web content.
     ///
     /// - Returns: An instance of `UIValues`.
-    private func encodeUIValues() -> UIValues {
-        UIValues(
-            allowFirstVideo: settings.allowFirstVideo
+    private func encodeUIValues(with webView: WKWebView?) -> UIValues {
+        let urlRequiresAllowFirst = webView?.url?.getParameter(named: WebDuckPlayerNavigationHandler.Constants.allowFirstVideoParameter) == "1"
+        return UIValues(
+            allowFirstVideo: urlRequiresAllowFirst || settings.allowFirstVideo
         )
     }
 
@@ -753,7 +754,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         let playerSettings = InitialPlayerSettings.PlayerSettings(pip: pip, customError: customError)
 
         let userValues = encodeUserValues()
-        let uiValues = encodeUIValues()
+        let uiValues = encodeUIValues(with: webView)
         let settings = InitialPlayerSettings(
             userValues: userValues,
             ui: uiValues,

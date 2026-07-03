@@ -185,6 +185,21 @@ extension SubscriptionURL {
     }
 }
 
+public enum SubscriptionPurchaseFlowPath: String, CaseIterable {
+    case purchase = "/subscriptions"
+    case plans = "/subscriptions/plans"
+    case pro = "/pro"
+    case proPlans = "/pro/plans"
+
+    public static func contains(_ path: String) -> Bool {
+        allCases.contains { $0.rawValue == path }
+    }
+
+    public static func isPlansPath(_ path: String) -> Bool {
+        path == plans.rawValue || path == proPlans.rawValue
+    }
+}
+
 extension SubscriptionURL {
     public enum FeaturePage {
         public static let winback = "winback"

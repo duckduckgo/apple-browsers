@@ -34,6 +34,8 @@ final class SuggestionViewController: NSViewController {
 
     weak var delegate: SuggestionViewControllerDelegate?
 
+    @IBOutlet weak var shadowView: ShadowView!
+
     @IBOutlet weak var backgroundView: ColorView!
     @IBOutlet weak var innerBorderView: ColorView!
     @IBOutlet weak var innerBorderViewTopConstraint: NSLayoutConstraint!
@@ -92,16 +94,15 @@ final class SuggestionViewController: NSViewController {
         addTrackingArea()
         subscribeToSuggestionResult()
         subscribeToSelectionSync()
+        setupRoundedCorners()
         subscribeToThemeChanges()
         applyThemeStyle()
 
-        if Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            topSeparatorView?.isHidden = true
-        }
+        topSeparatorView?.isHidden = true
     }
 
     private func updateAIChatToggleFlag() {
-        let isToggleFeatureEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatPreferencesStorage.isAIFeaturesEnabled
+        let isToggleFeatureEnabled = aiChatPreferencesStorage.isAIFeaturesEnabled
         isAIChatToggleBeingDisplayed = isToggleFeatureEnabled && aiChatPreferencesStorage.showSearchAndDuckAIToggle
     }
 
@@ -135,6 +136,16 @@ final class SuggestionViewController: NSViewController {
     private func setupTableView() {
         tableView.style = .plain
         tableView.setAccessibilityIdentifier("SuggestionViewController.tableView")
+    }
+
+    private func setupRoundedCorners() {
+        guard featureFlagger.isFeatureOn(.appRebranding) else {
+            return
+        }
+
+        let roundedCorners: RoundedCorners = [.bottomLeft, .bottomRight]
+        backgroundView.roundedCorners = roundedCorners
+        innerBorderView.roundedCorners = roundedCorners
     }
 
     private func addTrackingArea() {
@@ -200,7 +211,7 @@ final class SuggestionViewController: NSViewController {
         }
 
         // Remove the second reload that causes visual glitch in the beginning of typing
-        if suggestionContainerViewModel.suggestionContainer.result != nil || suggestionContainerViewModel.shouldShowSearchCell {
+        if suggestionContainerViewModel.suggestionContainer.result != nil {
             updateHeight()
             tableView.reloadData()
 
@@ -231,13 +242,7 @@ final class SuggestionViewController: NSViewController {
         guard let rowIndex,
               rowIndex >= 0,
               rowIndex < suggestionContainerViewModel.numberOfRows else {
-            if let defaultRow = suggestionContainerViewModel.defaultSelectedRow {
-                tableView.selectRowIndexes(IndexSet(integer: defaultRow), byExtendingSelection: false)
-                // Sync view model with the default selection so keyboard navigation works correctly
-                suggestionContainerViewModel.selectRow(at: defaultRow)
-            } else {
-                self.clearSelection()
-            }
+            self.clearSelection()
             return
         }
 
@@ -344,8 +349,9 @@ extension SuggestionViewController: ThemeUpdateListening {
         let colorsProvider = theme.colorsProvider
 
         backgroundViewTopConstraint.constant = barStyleProvider.topSpaceForSuggestionWindow
-        backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
-        innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
+        backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
+        innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
+        shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
         backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
 
         tableView.reloadData()
@@ -377,21 +383,10 @@ extension SuggestionViewController: NSTableViewDelegate {
         cell.isAIChatToggleBeingDisplayed = isAIChatToggleBeingDisplayed
 
         switch rowContent {
-        case .searchCell:
-            let userText = suggestionContainerViewModel.userStringValue ?? ""
-            let searchIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.phraseEntryIcon
-            cell.display(userText: userText, style: .search, icon: searchIcon, isBurner: self.isBurner)
-
         case .aiChatCell:
             let userText = suggestionContainerViewModel.userStringValue ?? ""
             let aiChatIcon: NSImage = .aiChat
             cell.display(userText: userText, style: .aiChat, icon: aiChatIcon, isBurner: self.isBurner)
-
-        case .visitCell:
-            let userText = suggestionContainerViewModel.userStringValue ?? ""
-            let host = suggestionContainerViewModel.visitCellHost ?? ""
-            let websiteIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.websiteEntryIcon
-            cell.display(userText: userText, style: .visit(host: host), icon: websiteIcon, isBurner: self.isBurner)
 
         case .sectionDivider:
             break // Already handled above

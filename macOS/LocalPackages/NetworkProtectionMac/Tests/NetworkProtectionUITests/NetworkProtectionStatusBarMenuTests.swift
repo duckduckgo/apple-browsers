@@ -99,4 +99,40 @@ final class StatusBarMenuTests: XCTestCase {
 
         XCTAssertFalse(item.isVisible)
     }
+
+    @MainActor
+    func testOpeningStatusBarMenuCallsOnWillShowPopover() async {
+        // statusBarButtonTapped reads NSApp, an implicitly-unwrapped optional that is nil until
+        // NSApplication.shared has been accessed in the process.
+        _ = NSApplication.shared
+
+        let refreshExpectation = expectation(description: "Refresh system state before opening popover")
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let item = NSStatusItem()
+        let model = StatusBarMenuModel(vpnSettings: .init(defaults: defaults))
+        let isExtensionUpdateOfferedPublisher = CurrentValuePublisher<Bool, Never>(initialValue: false, publisher: Just(false).eraseToAnyPublisher())
+
+        let menu = StatusBarMenu(
+            model: model,
+            statusItem: item,
+            onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
+            statusReporter: MockNetworkProtectionStatusReporter(),
+            controller: TestTunnelController(),
+            iconProvider: MenuIconProvider(),
+            uiActionHandler: MockVPNUIActionHandler(),
+            menuItems: { [] },
+            agentLoginItem: nil,
+            isMenuBarStatusView: false,
+            isExtensionUpdateOfferedPublisher: isExtensionUpdateOfferedPublisher,
+            userDefaults: .standard,
+            locationFormatter: MockVPNLocationFormatter(),
+            onWillShowPopover: {
+                refreshExpectation.fulfill()
+            },
+            uninstallHandler: { _ in })
+
+        menu.perform(Selector(("statusBarButtonTapped")))
+
+        await fulfillment(of: [refreshExpectation], timeout: 1)
+    }
 }

@@ -1,0 +1,25 @@
+appId: com.duckduckgo.mobile.ios
+
+---
+
+# Launch fresh and open the Duck.ai chat tab (Surface B) from the NTP omnibar, dismissing
+# any first-launch consent/promo modals. Shared by all chat-tab flows so the launch + open
+# preamble lives in one place (previously copy-pasted into every test, which had drifted).
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+
+- runFlow:
+    file: dismiss_chat_open_modals.yaml
+
+- assertVisible: "Close tab"

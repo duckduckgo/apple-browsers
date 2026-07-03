@@ -21,6 +21,7 @@ import SwiftUI
 import UIKit
 import DesignResourcesKit
 import DuckUI
+import MetricBuilder
 import SyncUI_iOS
 
 struct SyncRecoveryAlternativeView: View {
@@ -40,12 +41,12 @@ struct SyncRecoveryAlternativeView: View {
                     }
                     .frame(height: 56)
 
-                    Image(.syncRecover128)
+                    Image(rebrandable: "Sync-Recover-128")
                         .padding(24)
 
                     Text(UserText.syncRecoveryAlternativePromptTitle)
                         .daxTitle1()
-                        .padding(.bottom, 24)
+                        .padding(.bottom, SheetMetrics.contentSpacing)
 
                     Text(UserText.syncRecoveryAlternativePromptMessage)
                         .font(.callout)
@@ -55,13 +56,13 @@ struct SyncRecoveryAlternativeView: View {
 
                 }
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
                 .foregroundStyle(Color(designSystemColor: .textPrimary))
             }
 
             Spacer()
 
-            VStack(spacing: 8) {
+            VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
                 Button(action: { onSyncFlowSelected(SyncSettingsViewController.SourceConstants.startSyncFlow) }) {
                     Text(UserText.syncRecoveryAlternativePromptSyncButton)
                 }
@@ -70,13 +71,7 @@ struct SyncRecoveryAlternativeView: View {
                 Button(action: { onSyncFlowSelected(SyncSettingsViewController.SourceConstants.startBackupFlow) }) {
                     Text(UserText.syncRecoveryAlternativePromptBackupButton)
                 }
-                .buttonStyle(GhostButtonStyle())
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(designSystemColor: .accent),
-                                lineWidth: 1)
-                        .padding(1)
-                )
+                .buttonStyle(SecondaryButtonStyle())
 
                 Text(UserText.syncRecoveryAlternativePromptFooter)
                     .daxFootnoteRegular()
@@ -85,7 +80,7 @@ struct SyncRecoveryAlternativeView: View {
 
             }
             .frame(maxWidth: 360)
-            .padding(.horizontal, 30)
+            .padding(.horizontal, ButtonStackMetrics.containerPadding)
         }
         .padding(.bottom)
         .background(Color(designSystemColor: .backgroundSheets))
@@ -96,7 +91,7 @@ struct SyncRecoveryAlternativeView: View {
 
         do {
             var attributedString = try AttributedString(markdown: markdownString)
-            attributedString.foregroundColor = Color(designSystemColor: .accent)
+            attributedString.foregroundColor = Color(designSystemColor: .accentPrimary)
 
             return attributedString
         } catch {

@@ -58,6 +58,11 @@ public protocol AttributedMetricSettingsProviding {
     var originSendList: [String] { get }
 }
 
+/// Provides the install date used for all AttributedMetrics day-based calculations
+public protocol AttributedMetricInstallDateProviding {
+    var installDate: Date? { get }
+}
+
 /// Indicates whether the current user is a returning (reinstalling) user.
 ///
 /// iOS: checks the variant stored in `StatisticsStore` for the `"ru"` value.
@@ -67,7 +72,8 @@ public protocol AttributedMetricReturningUserProviding {
 }
 
 /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053?focus=true
-public final class AttributedMetricManager {
+/// Mutable state needs to be accessed through `workQueue` in order for Sendable conformance to be accurate.
+public final class AttributedMetricManager: @unchecked Sendable {
 
     struct Constants {
         static let monthTimeInterval: TimeInterval = Double(Constants.daysInAMonth) * .day
@@ -81,6 +87,7 @@ public final class AttributedMetricManager {
     private let defaultBrowserProvider: any AttributedMetricDefaultBrowserProviding
     private let subscriptionStateProvider: any SubscriptionStateProviding
     private let returningUserProvider: any AttributedMetricReturningUserProviding
+    private let installDateProvider: any AttributedMetricInstallDateProviding
     private var dateProvider: any DateProviding
     private let featureSettings: any AttributedMetricSettingsProviding
     private var bucketModifier: any BucketModifier = DefaultBucketModifier()
@@ -94,6 +101,7 @@ public final class AttributedMetricManager {
                 defaultBrowserProviding: any AttributedMetricDefaultBrowserProviding,
                 subscriptionStateProvider: any SubscriptionStateProviding,
                 returningUserProvider: any AttributedMetricReturningUserProviding,
+                installDateProvider: any AttributedMetricInstallDateProviding,
                 dateProvider: any DateProviding = DefaultDateProvider(),
                 settingsProvider: any AttributedMetricSettingsProviding) {
         self.pixelKit = pixelKit
@@ -103,16 +111,12 @@ public final class AttributedMetricManager {
         self.defaultBrowserProvider = defaultBrowserProviding
         self.subscriptionStateProvider = subscriptionStateProvider
         self.returningUserProvider = returningUserProvider
+        self.installDateProvider = installDateProvider
         self.dateProvider = dateProvider
 
         // Buckets
         self.featureSettings = settingsProvider
         updateBucketSettings()
-
-        if dataStorage.installDate == nil {
-            Logger.attributedMetric.debug("First install, storing Install Date")
-            dataStorage.installDate = self.dateProvider.now()
-        }
 
         if let debugDate = dataStorage.debugDate {
             self.dateProvider.debugDate = debugDate
@@ -121,36 +125,23 @@ public final class AttributedMetricManager {
 
     // MARK: - Private
 
+    var installDate: Date? {
+        installDateProvider.installDate
+    }
+
     var isEnabled: Bool {
         featureFlagger.isFeatureOn(for: AttributedMetricFeatureFlag.attributedMetrics)
     }
 
-    /// The number of whole days elapsed since the app was first installed.
+    /// The number of whole ET calendar days elapsed since the app was first installed.
     ///
-    /// Uses the stored `installDate` and the current date from `dateProvider`,
-    /// converting the `TimeInterval` between them into full days (truncated, not rounded).
-    /// Returns `0` if the install date has not been recorded yet, or if the current
-    /// date is still within the first calendar day of installation.
-    ///
-    /// ## Examples
-    /// ```
-    /// // Install date: Jan 10, 12:00 — Current date: Jan 10, 23:59
-    /// daysSinceInstalled // → 0 (same day, less than 24 h)
-    ///
-    /// // Install date: Jan 10, 12:00 — Current date: Jan 11, 11:59
-    /// daysSinceInstalled // → 0 (less than 24 h elapsed)
-    ///
-    /// // Install date: Jan 10, 12:00 — Current date: Jan 11, 12:00
-    /// daysSinceInstalled // → 1 (exactly 24 h)
-    ///
-    /// // Install date: Jan 10, 12:00 — Current date: Jan 17, 15:30
-    /// daysSinceInstalled // → 7
-    /// ```
+    /// Uses Eastern Time calendar day boundaries (matching ATB and RollingEightDays).
+    /// Returns `0` if the install date has not been recorded yet, or if the current date is still within the same ET calendar day as installation.
     var daysSinceInstalled: Int {
-        guard let installDate = dataStorage.installDate else {
+        guard let installDate = installDate else {
             return 0
         }
-        return Int(dateProvider.now().timeIntervalSince(installDate) / .day)
+        return QuantisedTimePast.daysBetween(from: installDate, to: dateProvider.now())
     }
 
     /// The quantised time period elapsed since the app was installed.
@@ -179,7 +170,7 @@ public final class AttributedMetricManager {
     /// timePastFromInstall // → nil
     /// ```
     var timePastFromInstall: QuantisedTimePast? {
-        guard let installDate = dataStorage.installDate else {
+        guard let installDate = installDate else {
             Logger.attributedMetric.error("Install date missing")
             return nil
         }
@@ -192,7 +183,6 @@ public final class AttributedMetricManager {
            origin.containsAny(of: self.featureSettings.originSendList) {
             return (origin, nil)
         } else {
-            let installDate = dataStorage.installDate
             return (nil, installDate?.ISO8601ETFormat())
         }
     }
@@ -200,15 +190,14 @@ public final class AttributedMetricManager {
     var isDefaultBrowser: Bool { defaultBrowserProvider.isDefaultBrowser }
 
     var isLessThanSixMonths: Bool {
-        guard let installDate = dataStorage.installDate else {
+        guard installDate != nil else {
             return true
         }
-        let days = Constants.daysInAMonth * 6
-        return installDate > self.dateProvider.now().addingTimeInterval(Double(-days) * TimeInterval.day)
+        return daysSinceInstalled < Constants.daysInAMonth * 6
     }
 
     var isSameDayOfInstallDate: Bool {
-        guard let installDate = dataStorage.installDate else {
+        guard let installDate = installDate else {
             return false
         }
         return Calendar.eastern.isDate(dateProvider.now(), inSameDayAs: installDate)
@@ -255,10 +244,18 @@ public final class AttributedMetricManager {
 
     public func process(trigger: Trigger) {
         Logger.attributedMetric.log("Processing \(trigger.debugDescription, privacy: .public)")
+
         guard isEnabled else {
             Logger.attributedMetric.log("Feature disabled")
             return
         }
+
+        guard let installDate = installDateProvider.installDate else {
+            Logger.attributedMetric.log("Install date is nil")
+            return
+        }
+
+        Logger.attributedMetric.debug("Install date: \(installDate)")
 
         guard !returningUserProvider.isReturningUser else {
             Logger.attributedMetric.log("Returning user, skipping")
@@ -266,7 +263,7 @@ public final class AttributedMetricManager {
         }
 
         guard isLessThanSixMonths else {
-            dataStorage.removeAllExceptInstallDate()
+            dataStorage.removeAll()
             return
         }
 
@@ -528,73 +525,94 @@ public final class AttributedMetricManager {
 
         Task {
             let isFreeTrial = await subscriptionStateProvider.isFreeTrial()
-            if isFreeTrial  {
-                dataStorage.subscriptionFreeTrialFired = true
-            } else {
-                dataStorage.subscriptionMonth1Fired = true
+            workQueue.async { [self] in
+                processSubscriptionDay(isFreeTrial: isFreeTrial)
             }
-
-            let month = isFreeTrial ? 0 : 1
-            guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userSubscribed) else {
-                Logger.attributedMetric.error("Failed to bucket month value")
-                return
-            }
-            pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
-                                                                installDate: originOrInstall.installDate,
-                                                                month: bucket.value,
-                                                                bucketVersion: bucket.version),
-                           frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           doNotEnforcePrefix: true)
         }
     }
 
+    private func processSubscriptionDay(isFreeTrial: Bool) {
+        if isFreeTrial {
+            dataStorage.subscriptionFreeTrialFired = true
+        } else {
+            dataStorage.subscriptionMonth1Fired = true
+        }
+
+        let month = isFreeTrial ? 0 : 1
+        guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userSubscribed) else {
+            Logger.attributedMetric.error("Failed to bucket month value")
+            return
+        }
+        pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
+                                                            installDate: originOrInstall.installDate,
+                                                            month: bucket.value,
+                                                            bucketVersion: bucket.version),
+                       frequency: .legacyDailyNoSuffix,
+                       includeAppVersionParameter: false,
+                       doNotEnforcePrefix: true)
+    }
+
     func processSubscriptionCheck() {
+        guard let subscriptionDate = dataStorage.subscriptionDate,
+              subscriptionStateProvider.isActive
+        else {
+            Logger.attributedMetric.log("Not subscribed or subscription date is missing")
+            return
+        }
+
+        let now = dateProvider.now()
+        let freeTrialPixelSent = dataStorage.subscriptionFreeTrialFired
+        let firstMonthPixelSent = dataStorage.subscriptionMonth1Fired
+
         Task {
-            guard let subscriptionDate = dataStorage.subscriptionDate,
-                  subscriptionStateProvider.isActive
-             else {
-                Logger.attributedMetric.log("Not subscribed or subscription date is missing")
-                return
-            }
-
-            let now = dateProvider.now()
-            let freeTrialPixelSent = dataStorage.subscriptionFreeTrialFired
-            let firstMonthPixelSent = dataStorage.subscriptionMonth1Fired
             let isFreeTrial = await subscriptionStateProvider.isFreeTrial()
-            let monthsActive = Double(QuantisedTimePast.daysBetween(from: subscriptionDate, to: now)) / Double(Constants.daysInAMonth)
-            let activeFromMoreThan1Month = monthsActive > 1.0
+            workQueue.async { [self] in
+                processSubscriptionCheck(subscriptionDate: subscriptionDate,
+                                         now: now,
+                                         freeTrialPixelSent: freeTrialPixelSent,
+                                         firstMonthPixelSent: firstMonthPixelSent,
+                                         isFreeTrial: isFreeTrial)
+            }
+        }
+    }
 
-            if freeTrialPixelSent && !isFreeTrial {
-                // At each app startup, check the subscription state. If the a month=0 pixel was sent, the user is no longer on a free trial, and the state is autoRenewable or notAutoRenewable, send this pixel with month=1.
-                do {
-                    let bucket = try bucketModifier.bucket(value: 1, pixelName: .userSubscribed)
-                    pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
-                                                                        installDate: originOrInstall.installDate,
-                                                                        month: bucket.value,
-                                                                        bucketVersion: bucket.version),
-                                   frequency: .legacyDailyNoSuffix,
-                                   includeAppVersionParameter: false,
-                                   doNotEnforcePrefix: true)
-                    dataStorage.subscriptionMonth1Fired = true
-                } catch {
-                    Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
-                }
-            } else if firstMonthPixelSent && activeFromMoreThan1Month {
-                // At each app startup, check the subscription state. If the a month=1 pixel was sent, the state is autoRenewable or notAutoRenewable, and the subscription has been active for more than a month, send this pixel with month=2+.
-                do {
-                    let subscriptionMonth = Int(monthsActive.rounded(.up))
-                    let bucket = try bucketModifier.bucket(value: subscriptionMonth, pixelName: .userSubscribed)
-                    pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
-                                                                        installDate: originOrInstall.installDate,
-                                                                        month: bucket.value,
-                                                                        bucketVersion: bucket.version),
-                                   frequency: .legacyDailyNoSuffix,
-                                   includeAppVersionParameter: false,
-                                   doNotEnforcePrefix: true)
-                } catch {
-                    Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
-                }
+    private func processSubscriptionCheck(subscriptionDate: Date,
+                                          now: Date,
+                                          freeTrialPixelSent: Bool,
+                                          firstMonthPixelSent: Bool,
+                                          isFreeTrial: Bool) {
+        let monthsActive = Double(QuantisedTimePast.daysBetween(from: subscriptionDate, to: now)) / Double(Constants.daysInAMonth)
+        let activeFromMoreThan1Month = monthsActive > 1.0
+
+        if freeTrialPixelSent && !isFreeTrial {
+            // At each app startup, check the subscription state. If the a month=0 pixel was sent, the user is no longer on a free trial, and the state is autoRenewable or notAutoRenewable, send this pixel with month=1.
+            do {
+                let bucket = try bucketModifier.bucket(value: 1, pixelName: .userSubscribed)
+                pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
+                                                                    installDate: originOrInstall.installDate,
+                                                                    month: bucket.value,
+                                                                    bucketVersion: bucket.version),
+                               frequency: .legacyDailyNoSuffix,
+                               includeAppVersionParameter: false,
+                               doNotEnforcePrefix: true)
+                dataStorage.subscriptionMonth1Fired = true
+            } catch {
+                Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
+            }
+        } else if firstMonthPixelSent && activeFromMoreThan1Month {
+            // At each app startup, check the subscription state. If the a month=1 pixel was sent, the state is autoRenewable or notAutoRenewable, and the subscription has been active for more than a month, send this pixel with month=2+.
+            do {
+                let subscriptionMonth = Int(monthsActive.rounded(.up))
+                let bucket = try bucketModifier.bucket(value: subscriptionMonth, pixelName: .userSubscribed)
+                pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
+                                                                    installDate: originOrInstall.installDate,
+                                                                    month: bucket.value,
+                                                                    bucketVersion: bucket.version),
+                               frequency: .legacyDailyNoSuffix,
+                               includeAppVersionParameter: false,
+                               doNotEnforcePrefix: true)
+            } catch {
+                Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
             }
         }
     }

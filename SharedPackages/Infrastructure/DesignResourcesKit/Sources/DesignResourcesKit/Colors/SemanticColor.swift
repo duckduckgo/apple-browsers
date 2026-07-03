@@ -25,10 +25,12 @@ public enum DesignSystemColor {
 
     case backgroundTertiary
     case backgroundSheets
+    case backgroundPromptMessage
     case panel
 
     // Surfaces
     case surface // T-surface/secondary
+    case surfaceSecondary
     case surfaceTertiary
     case surfaceCanvas
 
@@ -47,7 +49,7 @@ public enum DesignSystemColor {
     case textPrimary
     case textSecondary
     case textTertiary
-    case textLink
+    case accentTextPrimary
     case textSelectionFill
     case textPlaceholder
 
@@ -59,10 +61,23 @@ public enum DesignSystemColor {
     case controlsRaisedFillPrimary
 
     // Brand
-    case accent
+    case accentPrimary
+    case accentGlowPrimary
     case accentGlowSecondary
     case accentContentPrimary
     case accentTertiary
+
+    // Brand Alt
+    case accentAltGlowPrimary
+    case accentAltContentPrimary
+
+    // Container
+    case containerBorderPrimary
+
+    // Accent Brand
+    case accentBrandPrimary
+    case accentBrandTertiary
+    case accentBrandContentPrimary
 
     // System
     case lines
@@ -82,6 +97,9 @@ public enum DesignSystemColor {
 
     // Destructive
     case destructivePrimary
+    case destructiveTertiary
+    case destructiveContentPrimary
+    case destructiveGlowPrimary
 
     // Buttons/Primary
     case buttonsPrimaryDefault

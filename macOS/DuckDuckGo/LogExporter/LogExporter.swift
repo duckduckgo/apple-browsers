@@ -76,6 +76,14 @@ struct LogExporter {
                 ))
         }
 
+        if configuration.includePixels {
+            filters.append(
+                LogFilter(
+                    predicate: NSPredicate(format: "subsystem CONTAINS[cd] %@ AND process CONTAINS[c] %@", "Pixel", "duckduckgo"),
+                    destinationFileName: "pixels.log"
+                ))
+        }
+
         try await exportFilteredLogsToDesktop(minutesBack: configuration.timeInterval, logFilters: filters)
     }
 

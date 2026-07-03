@@ -25,6 +25,15 @@
 /* No comment provided by engineer. */
 "%@s" = "%@s";
 
+/* Accessibility label for the text half of the iPad Duck.ai chrome chip; tapping opens a new Duck.ai tab. The visible label reads \"Duck.ai\". */
+"accessibility.label.aiChat.openDuckAI" = "Duck.ai'ı aç";
+
+/* Accessibility value when the Duck.ai contextual sheet is closed. */
+"accessibility.value.aiChat.contextualSheet.closed" = "Kapalı";
+
+/* Accessibility value when the Duck.ai contextual sheet is open. */
+"accessibility.value.aiChat.contextualSheet.open" = "Aç";
+
 /* No comment provided by engineer. */
 "Account" = "hesap";
 
@@ -55,14 +64,32 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Ekle";
 
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the bottom-sheet button half. */
+"action.title.aiChat.hideContextualSheetButton" = "Alt Sayfa Kısayolunu Gizle";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that hides the Duck.ai (open) button half. */
+"action.title.aiChat.hideDuckAIButton" = "Duck.ai Kısayolunu Gizle";
+
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Duck.ai Sohbetleri";
 
 /* Start new AI Chat action in the menu list */
 "action.title.aiChat.new" = "Yeni Sohbet";
 
+/* Title of the long-press menu item on the iPad Duck.ai chrome chip that deep-links to Settings → AI Features. */
+"action.title.aiChat.openSettings" = "Yapay Zeka Ayarlarını Aç";
+
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai Ayarları";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the bottom-sheet button half. */
+"action.title.aiChat.showContextualSheetButton" = "Alt Panel Kısayolunu Göster";
+
+/* Long-press menu item on the iPad Duck.ai chrome chip that re-shows the Duck.ai (open) button half. */
+"action.title.aiChat.showDuckAIButton" = "Duck.ai Kısayolunu Göster";
+
+/* Accessibility label for the icon half of the iPad Duck.ai chrome chip; tapping toggles the contextual chat sheet for the current page. */
+"action.title.aiChat.toggleContextualSheet" = "Duck.ai sayfasını aç/kapat";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Şifreler";
@@ -78,6 +105,12 @@
 
 /* Copy action */
 "action.title.copy" = "Kopyala";
+
+/* Copy clean link action */
+"action.title.copy.clean.link" = "Temiz Bağlantıyı Kopyala";
+
+/* Copy link action */
+"action.title.copy.link" = "Bağlantıyı Kopyala";
 
 /* Floating message indicating URL has been copied */
 "action.title.copy.message" = "URL kopyalandı";
@@ -111,6 +144,12 @@
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Arka Planda Aç";
+
+/* Create New Fire Tab action */
+"action.title.newFireTabAction" = "Yeni Fire Sekmesi";
+
+/* Open in New Fire Tab action */
+"action.title.newFireTabForUrl" = "Fire Sekmesinde Aç";
 
 /* Create New Tab action */
 "action.title.newTabAction" = "Yeni Sekme";
@@ -172,6 +211,12 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Description of the Ad Blocking feature in settings */
+"ad.blocking.description" = "İstilacı izleyicileri yüklenmeden önce engelleyerek, izlemeye dayalı reklamları etkili bir şekilde ortadan kaldırır";
+
+/* Section header for YouTube-specific ad blocking settings */
+"ad.blocking.youtube.section.header" = "YouTube'da Reklam Engelleme";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Alt";
 
@@ -194,7 +239,7 @@
 "addWidget.settings.secondParagraph.%@" = "Artı %@ düğmesine dokunun.";
 
 /* No comment provided by engineer. */
-"addWidget.settings.title" = "DuckDuckGo'yu bulun ve seçin. Ardından bir widget seçin.";
+"addWidget.settings.title" = "**DuckDuckGo**'yu bulun ve seçin. Ardından bir widget seçin.";
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Favori sitelerinize tek dokunuşla erişin.";
@@ -202,23 +247,164 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI Özellikleri";
 
-/* Action sheet option to choose a photo from the photo library for attaching to an AI chat message */
-"aichat.attachment.option.choose.photo" = "Fotoğraf Seç";
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Sohbet";
 
-/* Action sheet option to take a photo using the device camera for attaching to an AI chat message */
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Deşifre";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Sesli Sohbet";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Yeni Sohbet";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Dinliyor…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Dinliyor…";
+
+/* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
+"aichat.appMenu.chats" = "Sohbetler";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the recent-chats sidebar */
+"aichat.appMenu.header.chatHistory" = "Sohbet Geçmişi";
+
+/* Header tile label in the app menu on a Duck.ai tab — opens the Duck.ai-specific settings screen */
+"aichat.appMenu.header.chatSettings" = "Sohbet Ayarları";
+
+/* Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files. */
+"aichat.attachment.file.count.limit" = "Konuşma başına en fazla %d dosya ekleyebilirsiniz.";
+
+/* Error message displayed when one or more attached files are encrypted and cannot be read */
+"aichat.attachment.file.encrypted" = "En az birinin şifrelenmiş olması nedeniyle ekli dosyaları okuyamıyoruz.";
+
+/* Error message displayed when the total size of all attached files in a conversation exceeds the allowed limit. Parameter is the backend-provided combined size limit in megabytes. */
+"aichat.attachment.file.exceeds.conversation.limit" = "Ekli dosyalar, toplam boyut sınırını (%d MB) aşıyor.";
+
+/* Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes. */
+"aichat.attachment.file.too.large" = "Bu dosya çok büyük. Maksimum dosya boyutu %d MB'dir.";
+
+/* Error message displayed when one attached file has more pages than supported. Parameter is the backend-provided maximum supported page count. */
+"aichat.attachment.file.too.many.pages" = "Ekli dosyalardan biri, desteklediğimizden daha fazla sayfa içeriyor. Lütfen %d veya daha az sayfa içeren dosyalar yükleyin.";
+
+/* Error message displayed when one or more attached files cannot be read */
+"aichat.attachment.file.unreadable" = "Ekli dosyalardan birini okuyamıyoruz. Lütfen bozuk olmadığını kontrol edin ve tekrar deneyin.";
+
+/* Error message displayed when the user has attached more images than are allowed in a conversation. Parameter is the backend-provided maximum number of images. */
+"aichat.attachment.image.count.limit" = "Konuşma başına en fazla %d görsel ekleyebilirsiniz.";
+
+/* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
+"aichat.attachment.image.turn.limit" = "Bir defada yalnızca %d görsel ekleyebilirsiniz.";
+
+/* Top-level attachment menu option to add a file to an AI chat message */
+"aichat.attachment.option.attach.file" = "Dosya Ekle";
+
+/* Top-level attachment menu option to add an image to an AI chat message */
+"aichat.attachment.option.attach.photo" = "Görsel Ekle";
+
+/* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Fotoğraf Çek";
+
+/* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
+"aichat.attachment.prompt.too.long" = "Bu mesaj, eklerle birlikte gönderilemeyecek kadar uzun.";
+
+/* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
+"aichat.attachment.unavailable" = "Ekler geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.";
+
+/* Generic error message displayed when the user tries to upload an unsupported file type and we cannot determine the accepted types */
+"aichat.attachment.unsupported.file.type" = "Bu dosya türü desteklenmiyor.";
+
+/* Error message for unsupported file type when multiple types are accepted. First parameter is a comma-separated list of all accepted types except the last. Second parameter is the last accepted type. Full example: This file type is not supported, please attach a PNG, JPG, WebP, GIF or PDF. */
+"aichat.attachment.unsupported.file.type.multiple" = "Bu dosya türü desteklenmiyor. Lütfen bir %1$@ veya %2$@ ekleyin.";
+
+/* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
+"aichat.attachment.unsupported.file.type.single" = "Bu dosya türü desteklenmiyor, lütfen bir %@ ekleyin.";
+
+/* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
+"aichat.header.plusMenu.a11y" = "Yeni";
+
+/* Title for the New Fire Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newFireTab" = "Yeni Fire Sekmesi";
+
+/* Title for the New Search row in the Duck.ai tab header Plus (+) menu — opens a new tab and forces search mode for that entry */
+"aichat.header.plusMenu.newSearch" = "Yeni Arama";
+
+/* Title for the New Tab row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newTab" = "Yeni Sekme";
+
+/* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
+"aichat.header.plusMenu.newVoiceChat" = "Yeni Sesli Sohbet";
+
+/* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.subtitle" = "Analitik görevler için";
+
+/* Title for the extended reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.extended.title" = "Genişletilmiş Akıl Yürütme";
+
+/* Subtitle for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.subtitle" = "Hızlı yanıtlar";
+
+/* Title for the fast reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.fast.title" = "Hızlı";
+
+/* Subtitle for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.subtitle" = "Karmaşık görevler için";
+
+/* Title for the reasoning mode in the Duck.ai reasoning picker */
+"aichat.reasoning.reasoning.title" = "Akıl yürütme";
+
+/* Body of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. ** markers indicate bold text and should be preserved around the translated equivalents of the menu options Settings, Sync & Backup, and Sync With Another Device. */
+"aiChat.syncIntroSheet.body" = "Diğer cihazındaki DuckDuckGo uygulamasında **Ayarlar** › **Sync & Backup** › **Başka Bir Cihazla Senkronize Et** seçeneğine giderek QR kodunu bulunj.";
+
+/* Secondary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.notNow" = "Şimdi Değil";
+
+/* Primary button on the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.scan.button" = "QR Kodunu Tara";
+
+/* Title of the intro bottom sheet shown when the user taps the sync promo CTA from Duck.ai. */
+"aiChat.syncIntroSheet.title" = "Sohbetlerinizi cihazlarınız arasında senkronize edelim!";
+
+/* Primary button of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.button" = "Başka Bir Cihazla Senkronize Et";
+
+/* Accessibility label for the close button on the Duck.ai sync promo card. */
+"aiChat.syncPromo.close.accessibility.label" = "Senkronizasyon promosyonunu kapat";
+
+/* Headline of the sync promo card shown above the Duck.ai recent chats list. */
+"aiChat.syncPromo.title" = "Sync & Backup özelliğini kullanarak sohbetlerinize tüm cihazlarınızdan erişin.";
+
+/* Subtitle for the customize responses action in the unified input tools menu */
+"aichat.toolbar.tools.customizeResponses.subtitle" = "Tonu, uzunluğu ve davranış biçimini belirleyin";
 
 /* Title for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.title" = "Yanıtları Özelleştir";
 
+/* Subtitle for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.subtitle" = "Metni görsele dönüştürün";
+
+/* Title for the image generation tool in the unified input tools menu */
+"aichat.toolbar.tools.imagegeneration.title" = "Görsel Oluşturun";
+
 /* Subtitle for the web search tool in the unified input tools menu */
-"aichat.toolbar.tools.websearch.subtitle" = "Güncel bilgilere erişin";
+"aichat.toolbar.tools.websearch.subtitle" = "Web kaynaklı yanıtlar";
 
 /* Title for the web search tool in the unified input tools menu */
 "aichat.toolbar.tools.websearch.title" = "Web araması";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Mevcut yer imleri çoğaltılmayacaktır.";
+
+/* Button title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-button" = "Anladım";
+
+/* Description for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-description" = "Her iki cihazda da bu hesapla zaten eşleşme yapılmış.";
+
+/* Title for Sync error shown when both devices are already paired with the same account */
+"alert.sync-already-paired-with-account-title" = "Zaten Eşleştirilmiş";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Bazı yer işaretleri yanlış biçimlendirilmiş veya çok uzun olduğu için senkronize edilmedi.";
@@ -228,6 +414,21 @@
 
 /* Title for alert shown when sync bookmarks paused for too many items */
 "alert.sync-bookmarks-paused-title" = "Yer İşaretleri Senkronizasyonu Duraklatıldı";
+
+/* Button title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-button" = "Anladım";
+
+/* Description for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-description" = "Lütfen tekrar deneyin.";
+
+/* Title for Sync error shown when setup is canceled from the other device */
+"alert.sync-cancelled-from-other-device-title" = "Diğer cihazından senkronizasyon iptal edildi.";
+
+/* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-description" = "Tarayıcınızda duck.ai adresini ziyaret edin, Ayarlar'a gidin, ardından “Sync & Backup” altından “Aç” ve sonrasında “Başka bir cihazla senkronize et” seçeneğini belirleyin.";
+
+/* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
+"alert.sync-code-only-compatible-with-duckai-title" = "Duck.ai ayarlarından bu kodu tarayın.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Bazı şifreler yanlış biçimlendirilmiş veya çok uzun olduğu için senkronize edilmedi.";
@@ -252,6 +453,9 @@
 
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Senkronizasyon Ayarları";
+
+/* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
+"alert.sync-from-another-connected-device-description" = "Lütfen bu cihazı, başka bir cihazda zaten bağlı olan bir DuckDuckGo tarayıcısından senkronize edin.";
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Senkronizasyon duraklatıldı. Bu cihazın senkronizasyonuna devam etmek istiyorsanız, başka bir cihaz veya kurtarma kodunuzu kullanarak yeniden bağlanın.";
@@ -285,6 +489,12 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Senkronizasyon ve Yedekleme geçici olarak kullanılamıyor.";
+
+/* Description for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-description" = "Bu kod mevcut uygulama sürümünde desteklenmiyor.";
+
+/* Title for Sync error shown when the app version does not support the scanned Sync code */
+"alert.sync-update-required-title" = "DuckDuckGo tarayıcısını güncelleyin ve tekrar deneyin.";
 
 /* Title of the warning message that tells the user that there was an error with the sync feature. */
 "alert.sync.warning.sync-error" = "Senkronizasyon Hatası";
@@ -334,6 +544,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "DuckDuckGo'nun kilidini açın.";
 
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Kilidi açmak için herhangi bir yere dokunun";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Oturum Aç";
 
@@ -360,12 +573,6 @@
 
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "DuckDuckGo'da Ara";
-
-/* The message text shown in suggestions */
-"autocomplete.history.warning.message" = "Arama önerileri artık son ziyaret ettiğiniz siteleri de içeriyor. Ayarlardan kapatabilir veya istediğiniz zaman 🔥 Fire Button ile temizleyebilirsiniz.";
-
-/* Title for message show in suggestions */
-"autocomplete.history.warning.title" = "Aynı gizlilik.\nDaha iyi arama önerileri!";
 
 /* Switch to tab hint */
 "autocomplete.switch.to.tab" = "Sekmeye Geç";
@@ -874,9 +1081,6 @@
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Bu parola kaydedilsin mi?";
 
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Hayır Teşekkürler";
-
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "DuckDuckGo Parolalar ve Otomatik Doldurma ile parolanızı cihazınızda güvenle saklayın.";
 
@@ -1202,7 +1406,7 @@
 "control.center.widget.education.paragraph.1" = "Ekranın sağ üst köşesinden aşağı doğru kaydırın";
 
 /* Second paragraph of the Control Center Widget Education screen */
-"control.center.widget.education.paragraph.2" = "Kontrol Merkezi'nin** sol üst köşesindeki **+** düğmesine dokunun";
+"control.center.widget.education.paragraph.2" = "**Kontrol Merkezi'nin** sol üst köşesindeki **+** düğmesine dokunun";
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Ekranın en altındaki **Kontrol Ekle** seçeneğine dokunun";
@@ -1255,6 +1459,51 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Yer İşaretlerini DuckDuckGo'ya Aktarma";
 
+/* Description on the Chrome import detail screen */
+"data.import.detail.chrome.description" = "Chrome'u açın, ardından Şifre Yöneticisine gidin ve şu adımları izleyin:";
+
+/* Step 1 instruction for importing from Chrome */
+"data.import.detail.chrome.step1" = "**Ayarlar** > **Verileri Dışa Aktar**";
+
+/* Step 2 instruction for importing from Chrome */
+"data.import.detail.chrome.step2" = "**Devam et** butonuna basın";
+
+/* Step 3 instruction for importing from Chrome */
+"data.import.detail.chrome.step3" = "Hedef olarak **DuckDuckGo** seçimi yapın";
+
+/* Navigation title for the Chrome import detail screen */
+"data.import.detail.chrome.title" = "Chrome'dan İçe Aktarın";
+
+/* Section header above the upload file row on the Safari import detail screen */
+"data.import.detail.done-exporting-header" = "Dışa Aktarma tamamlandı mı?";
+
+/* Description on the Passwords App import detail screen */
+"data.import.detail.passwords.description" = "Şifreler uygulamasına giderek içe aktarma adımlarını izlemeniz gerekiyor.";
+
+/* Step 1 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step1" = "**···** ikonuna dokunun, ardından **Verileri Başka Bir Uygulamaya Dışa Aktar** seçimini yapın";
+
+/* Step 2 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step2" = "**Tümünü Seç** > **Devam Et** öğelerine dokunun.";
+
+/* Step 3 instruction for importing from the Passwords app */
+"data.import.detail.passwords.step3" = "Hedef olarak **DuckDuckGo** seçimi yapın";
+
+/* Navigation title for the Passwords App import detail screen */
+"data.import.detail.passwords.title" = "Şifrelerden İçe Aktar";
+
+/* Description on the Safari import detail screen */
+"data.import.detail.safari.description" = "Önce şifrelerinizi ve yer işaretlerinizi Safari'den dışa aktarın, ardından dosyayı yüklemek için buraya geri dönün.";
+
+/* Primary button on the Safari import detail screen to start the export flow */
+"data.import.detail.safari.export-button" = "Safari'den Dışa Aktar";
+
+/* Navigation title for the Safari import detail screen */
+"data.import.detail.safari.title" = "Safari'den İçe Aktar";
+
+/* Row label on import detail screens that opens a file picker to upload an exported password file */
+"data.import.detail.upload-file-row" = "Dışa Aktarılan Dosyayı Yükle...";
+
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "Zip dosyasında desteklenen herhangi bir veri bulunamadı. Lütfen Safari dışa aktarma talimatlarını inceleyin ve tekrar deneyin.";
 
@@ -1264,6 +1513,27 @@
 /* Error message displayed when the (csv|html|zip) file can't be read. */
 "data.import.failed.zip-read-error-message" = "%@ dosyası okunamadı. Dosyadaki verilerde bir sorun olabilir.";
 
+/* Dismiss button on the file import error sheet */
+"data.import.file-error.button" = "Anladım";
+
+/* Message on the error sheet when a file cannot be read. Parameter is the file type (CSV, ZIP, etc.) */
+"data.import.file-error.corrupt.message" = "%@ dosyası okunamadı. Başka bir dosya yüklemeyi deneyin veya farklı bir içe aktarma yöntemi seçin.";
+
+/* Title on the error sheet shown when an imported file cannot be read */
+"data.import.file-error.corrupt.title" = "Dosya bozuk olabilir";
+
+/* Message on the error sheet when no supported data is found in the zip file */
+"data.import.file-error.no-data.message" = "Zip dosyasında desteklenen herhangi bir veri bulunamadı. Lütfen dışa aktarma talimatlarını inceleyin ve tekrar deneyin.";
+
+/* Title on the error sheet shown when no supported data is found in the file */
+"data.import.file-error.no-data.title" = "Veri Bulunamadı";
+
+/* Message on the error sheet when an unsupported file type is selected */
+"data.import.file-error.unsupported.message" = "Seçilen dosya desteklenmiyor. Lütfen farklı bir dosya seçip tekrar deneyin.";
+
+/* Title on the error sheet shown when the selected file type is not supported */
+"data.import.file-error.unsupported.title" = "Desteklenmeyen Dosya";
+
 /* File type for CSV files */
 "data.import.file-type.csv" = "CSV";
 
@@ -1272,6 +1542,9 @@
 
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
+
+/* Title for the data import hub screen */
+"data.import.hub.title" = "DuckDuckGo'ya getirin";
 
 /* Step 2 for instructions to export bookmarks from Safari */
 "data.import.instructions.safari.step2" = "**Dışa Aktar**'ı ve sonraki ekranda **Yer İşaretleri** ve **İndirilenlere Kaydet**'i seçin.";
@@ -1283,7 +1556,7 @@
 "data.import.passwords.instructions.chrome.step1" = "Chrome'da **Google Şifre Yöneticisi**'ne ve ardından **Ayarlar**'a gidin.";
 
 /* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "**Şifreleri dışa aktar**'ı, ardından **Dosyalara Kaydet**'i seçin ve dosyayı hatırlayabileceğiniz bir klasöre kaydedin.";
+"data.import.passwords.instructions.chrome.step2" = "**Verileri dışa aktar**, ardından **···** ve sonra **CSV olarak indir** adımlarını izleyin ve dosyayı hatırlayabileceğiniz bir klasöre kaydedin.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Şifreleri dışa aktarma";
@@ -1311,6 +1584,30 @@
 
 /* Title for screen to import passwords */
 "data.import.passwords.title" = "Şifreleri DuckDuckGo'ya aktar";
+
+/* Button on the Safari export interstitial that triggers the system import sheet */
+"data.import.safari.interstitial.button" = "Dışa Aktarmak için Ayarlar'ı açın";
+
+/* Tip text on the Safari export interstitial reminding users to click Export to Files */
+"data.import.safari.interstitial.tip" = "\"Dosyalara Dışa Aktar\"\nseçeneğine dokunmayı unutmayın";
+
+/* Row title for importing passwords from Chrome */
+"data.import.source.chrome" = "Chrome";
+
+/* Row title for importing from the Apple Passwords app */
+"data.import.source.passwords-app" = "Şifreler Uygulaması";
+
+/* Row title for importing passwords from Safari */
+"data.import.source.safari" = "Safari";
+
+/* Section header for password import sources on the hub screen */
+"data.import.source.section.import-from" = "Şuradan İçe Aktar:";
+
+/* Section header for sync-based import sources on the hub screen */
+"data.import.source.section.sync-from" = "Şuradan Senkronize Et:";
+
+/* Row title for syncing passwords from DuckDuckGo on another device */
+"data.import.source.sync-duckduckgo" = "Başka Bir Cihazda DuckDuckGo";
 
 /* Data import summary of how many bookmarks were successfully imported. */
 "data.import.summary.bookmarks.success" = "Yer İmleri";
@@ -1347,6 +1644,18 @@
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Şifreler";
+
+/* Title for the summary footer promo that suggests importing Safari bookmarks */
+"data.import.summary.promo.bookmarks.title" = "Safari'deki yer işaretlerinizi de getirmek ister misiniz?";
+
+/* Continue button title for summary footer promos */
+"data.import.summary.promo.continue.action" = "Devam et";
+
+/* Dismiss button title for summary footer promos */
+"data.import.summary.promo.dismiss.action" = "Şimdi Değil";
+
+/* Title for the summary footer promo that suggests importing passwords */
+"data.import.summary.promo.passwords.title" = "Şifrelerinizi de getirmek ister misiniz?";
 
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Geçen ay";
@@ -1389,9 +1698,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Hata Ayıklama";
-
-/* No comment provided by engineer. */
-"Delete" = "Sil";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "cihaz";
@@ -1489,17 +1795,41 @@
 /* Info text shown below the context chip explaining that content will be sent with the message */
 "duckai.context.chip.info" = "Duck.ai'a mesajınızla gönderildi";
 
+/* Accessibility label for the recent chats button in the Duck.ai contextual sheet header */
+"duckai.contextual.recent.chats.button" = "Son Sohbetler";
+
+/* Section header in the recent chats popup */
+"duckai.contextual.recent.chats.section" = "Son Sohbetler";
+
+/* Action to view all chats in the recent chats popup */
+"duckai.contextual.view.all.chats" = "Tüm sohbetleri görüntüle";
+
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Duck.ai Voice Kısayolunu Kontrol Merkezinize Ekleyin";
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI özellikleri gizli ve isteğe bağlıdır. Verileriniz yapay zekayı eğitmek için kullanılmaz.";
 
+/* Title for the ask about page quick action chip in Duck.ai contextual sheet. Tapping attaches the current page content. */
+"duckai.quick.action.ask.about.page" = "Sayfa hakkında soru sor";
+
 /* Title for the attach page content quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.attach" = "Sayfa İçeriğini Ekle";
 
 /* Title for the summarize quick action chip in Duck.ai contextual sheet */
 "duckai.quick.action.summarize" = "Bu Sayfayı Özetle";
+
+/* Title for the summarize page quick action chip in the improved Duck.ai contextual sheet */
+"duckai.quick.action.summarize.page" = "Sayfayı özetle";
+
+/* Destructive button confirming deletion of a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.button" = "Sil";
+
+/* Message of the confirmation alert shown before deleting a recent Duck.ai chat. %@ is the chat title. */
+"duckai.recent.chat.remove.confirmation.message" = "\"%@\" her yerden kalıcı olarak silinecek.";
+
+/* Title of the confirmation alert shown before deleting a recent Duck.ai chat */
+"duckai.recent.chat.remove.confirmation.title" = "Bu sohbet silinsin mi?";
 
 /* AI Chat settings row for adding Duck.ai to Control Center */
 "duckai.settings.add.control-center.widget" = "Duck.ai'ı Kontrol Merkezine ekleyin";
@@ -1528,8 +1858,14 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Tarayıcı menüsü";
 
+/* Subtitle for the Tab Bar toggle row in Manage Duck.ai Shortcuts settings */
+"duckai.settings.enable.tab-bar-subtitle" = "Pencere boyutuna bağlı olarak tarayıcı sekme çubuğunda veya adres çubuğunda göster.";
+
+/* Toggle text to enable/disable Duck.ai shortcut in the iPad browser chrome (tabs bar) */
+"duckai.settings.enable.tab-bar-toggle" = "Sekme Çubuğu";
+
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Sekmeler Ekranı";
+"duckai.settings.enable.tab-switcher-toggle" = "Sekme Yöneticisi Ekranı";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Sesli Arama";
@@ -1557,6 +1893,9 @@
 
 /* Title for the Duck.ai Siri education screen */
 "duckai.siri.education.screen.title" = "Siri'yi kullanarak Duck.ai ile konuş!";
+
+/* Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon. */
+"duckai.welcome.message" = "Tüm sohbetler %@ gizlidir";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "iOS için DuckDuckGo";
@@ -1593,6 +1932,9 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Hiçbir zaman";
+
+/* Toast for opening in YouTube app if installed */
+"duckplayer.open-in-youtube-app" = "YouTube uygulamasında aç";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
@@ -1799,6 +2141,9 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
+"Enter a non-negative number of days. The install date will be set to that many days ago." = "Olumsuz olmayan gün sayısını girin. Kurulum tarihi o kadar gün öncesine ayarlanacaktır.";
+
+/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -1837,6 +2182,21 @@
 /* Accessibility hint for the escape hatch card */
 "escapeHatch.accessibility.hint" = "Bu sekmeye geçer";
 
+/* Title shown on the escape hatch card when the target is a fire tab */
+"escapeHatch.fireTab.title" = "En son kullanılan Fire Sekmesi";
+
+/* Menu item that closes the open tab referenced by the escape hatch card */
+"escapeHatch.menu.closeTab" = "Sekmeyi kapat";
+
+/* Menu item that deletes (closes and clears data for) the tab referenced by the escape hatch card */
+"escapeHatch.menu.deleteTab" = "Sekmeyi Sil";
+
+/* Menu item that returns the user to the open tab from the escape hatch card */
+"escapeHatch.menu.returnToTab" = "Sekmeye geri dön";
+
+/* Accessibility label for the more options button on the escape hatch card */
+"escapeHatch.moreButton.accessibility.label" = "Diğer seçenekler";
+
 /* Accessibility label for escape hatch card; %@ is the tab title */
 "escapeHatch.returnTo.accessibility.label" = "%@ sekmesine geri dönün";
 
@@ -1845,6 +2205,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "%1$@, %2$@ bölümüne dönün";
+
+/* Label shown next to the tab count when the escape hatch's tab switcher pill is in its expanded form */
+"escapeHatch.tabSwitcher.privateTabs.label" = "Gizli Sekmeler";
 
 /* No comment provided by engineer. */
 "Experiment:" = "Experiment:";
@@ -2146,6 +2509,27 @@
 /* Title for fire button confirmation screen */
 "fire.confirmation.title" = "Nelerin Silineceğini Seçin";
 
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.account" = "Farklı bir hesapla bir sitede oturum açın";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.history" = "Yerel geçmişi kaydetmeden göz atın";
+
+/* Bullet point describing Fire Tab benefit on the empty state screen */
+"fire.mode.empty.state.bullet.troubleshoot" = "Web sitelerindeki sorunları giderin";
+
+/* Description explaining how Fire Tabs work on the empty state screen */
+"fire.mode.empty.state.description" = "Fire Sekmeleri diğer tarayıcı verilerinden izole edilmiştir. Tüm pencereleri kapattığınızda verileri imha edilir. Diğer sekmelerle aynı izleme korumasını sunarlar.";
+
+/* Button label to create a new Fire Tab on the empty state screen */
+"fire.mode.empty.state.new.fire.tab" = "Yeni Fire Sekmesi";
+
+/* Title shown on the Fire Mode empty state screen */
+"fire.mode.empty.state.title" = "Fire Sekmeleri";
+
+/* Title shown on the Fire tab empty state screen */
+"fire.tab.empty.state.title" = "Fire Sekmesi";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Hava";
 
@@ -2194,6 +2578,18 @@
 /* Home tab title */
 "homeTab.title" = "Ana Sayfa";
 
+/* Toast shown when a tapped .ics calendar link contains more than one event, which we can't auto-add */
+"ics.add-to-calendar.multiple-events" = "Birden fazla etkinlik desteklenmiyor. İndirdiğiniz dosyayı açmayı deneyin.";
+
+/* Toast shown when a tapped .ics calendar link can't be parsed (e.g. malformed RFC 5545 content) */
+"ics.add-to-calendar.parse-failure" = "Bu dosya işlenemiyor. İndirdiğiniz dosyayı açmayı deneyin.";
+
+/* Toast shown when a tapped .ics calendar link uses a time zone identifier we can't resolve */
+"ics.add-to-calendar.unrecognized-time-zone" = "Desteklenmeyen saat dilimi. İndirdiğiniz dosyayı açmayı deneyin.";
+
+/* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
+"ics.event-added-to-calendar" = "Etkinlik Apple Takvim'e eklendi";
+
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 
@@ -2210,10 +2606,10 @@
 "import.passwords.promo.title" = "Şifrelerinizi DuckDuckGo'ya aktarın";
 
 /* Placeholder text for the duck.ai input field */
-"input.field.placeholder.duckai" = "Özel olarak sor";
+"input.field.placeholder.duckai" = "Gizli bir şekilde her şeyi sorabilirsiniz";
 
 /* Placeholder text for the duck.ai input field when a chat is already active */
-"input.field.placeholder.duckai.followup" = "Takip sorusu sor...";
+"input.field.placeholder.duckai.followup" = "Yanıtla...";
 
 /* No comment provided by engineer. */
 "Install Extension" = "Uzantıyı Yükle";
@@ -2269,6 +2665,9 @@
 /* No comment provided by engineer. */
 "keyCommandLocation" = "Adres Ara veya Gir";
 
+/* Discoverability title for the keyboard command that opens a new Fire Tab */
+"keyCommandNewFireTab" = "Yeni Fire Sekmesi";
+
 /* No comment provided by engineer. */
 "keyCommandNewTab" = "Yeni Sekme";
 
@@ -2290,11 +2689,20 @@
 /* No comment provided by engineer. */
 "keyCommandReload" = "Tekrar yükle";
 
+/* Hardware keyboard shortcut label for resetting page text zoom to the default level */
+"keyCommandResetZoom" = "Yakınlaştırmayı Sıfırla";
+
 /* No comment provided by engineer. */
 "keyCommandSelect" = "Seç";
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Tüm Sekmeleri Göster";
+
+/* Hardware keyboard shortcut label for increasing page text zoom */
+"keyCommandZoomIn" = "Yakınlaştır";
+
+/* Hardware keyboard shortcut label for decreasing page text zoom */
+"keyCommandZoomOut" = "Uzaklaştır";
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Son İşlenme: %@";
@@ -2587,6 +2995,12 @@
 /* Title for the data volume section in the VPN status screen */
 "network.protection.vpn.data-volume" = "Veri Hacmi";
 
+/* Footer text for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.footer" = "VPN'i kapatmanız önerilir, böylece tüm trafiğiniz VPN üzerinden geçer. Wi-Fi araması, mesajlaşma veya sesli mesaj gibi özelliklerle ilgili sorun yaşıyorsanız bu özelliği açmayı deneyin.";
+
+/* Title for the Exclude CGNAT setting item. */
+"network.protection.vpn.exclude.cgnat.setting.title" = "Operatör Hizmetlerini Hariç Tut";
+
 /* Footer text for the Exclude Local Networks setting item. */
 "network.protection.vpn.exclude.local.networks.setting.footer" = "Yerel trafiğin VPN'i atlamasını ve yerel ağınızdaki yazıcı gibi cihazlara bağlanmasını sağlayın.";
 
@@ -2635,6 +3049,18 @@
 /* Footer text for the DNS server setting item. */
 "network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGo, DNS sorgularını DNS sunucularımız üzerinden yönlendirir. Böylece internet sağlayıcınız hangi web sitelerini ziyaret ettiğinizi göremez.";
 
+/* Title for the row that copies VPN diagnostic information to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics" = "VPN Tanılamalarını Kopyala";
+
+/* Caption beneath the Copy VPN Diagnostics row, explaining what it does. */
+"network.protection.vpn.settings.copy-diagnostics.caption" = "Bağlantı sorununuzu çözmemize yardımcı olması için Destek Ekibi ile iletişime geçerken bu anonimleştirilmiş VPN tanılamalarının bir kopyasını da ekleyin.";
+
+/* Temporary title for the row after VPN diagnostic information is copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.copied-to-clipboard" = "Panoya kopyalandı";
+
+/* Temporary title for the row when VPN diagnostic information could not be copied to the clipboard. */
+"network.protection.vpn.settings.copy-diagnostics.failed-to-copy-to-clipboard" = "Panoya kopyalanamadı";
+
 /* Title for the FAQ row in the VPN status screen. */
 "network.protection.vpn.settings.faq" = "SSS ve Destek";
 
@@ -2647,6 +3073,12 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Kısayollar";
 
+/* Footer text for the Strict Routing setting item. The 'Learn more' text is a Markdown link. */
+"network.protection.vpn.strict.routing.setting.footer" = "Güvenmediğiniz ağlarda (örneğin otellerde, barlarda vb. halka açık Wi-Fi ağlarında) kullanılması önerilir. CarPlay, AirDrop gibi özelliklerle veya diğer cihazlara bağlanmada sorun yaşıyorsanız, kapatmayı deneyin. [Daha fazla bilgi](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)";
+
+/* Title for the Strict Routing setting item. */
+"network.protection.vpn.strict.routing.setting.title" = "Katı Yönlendirme";
+
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Onayla";
 
@@ -2655,6 +3087,12 @@
 
 /* Not now button for the new address bar picker */
 "new.address.bar.picker.not.now" = "Şimdi Değil";
+
+/* Footer for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.footer" = "Yapay zekâ özellikleri gizli ve isteğe bağlıdır.\nAyarlar > AI Özellikleri'nden değişiklik yapabilirsiniz.";
+
+/* Headline for the refreshed Duck.ai Toggle Prompt */
+"new.address.bar.picker.refresh.headline" = "Adres çubuğundaki özel AI sohbetine kolay erişim ister misiniz?";
 
 /* Option for search and AI in the new address bar picker */
 "new.address.bar.picker.search.and.ai" = "Arama ve Duck.ai";
@@ -2704,6 +3142,12 @@
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
+/* Label for moving the address bar to the bottom of the screen */
+"omnibar.menu.move-to-bottom" = "Adres Çubuğunu Alta Taşı";
+
+/* Label for moving the address bar to the top of the screen */
+"omnibar.menu.move-to-top" = "Adres Çubuğunu Üste Taşı";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Yönetilen Çerezler";
 
@@ -2721,6 +3165,51 @@
 
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Tarayıcınızı Seçin";
+
+/* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
+"onboarding.duckai.addToDock.promo.message" = "Tüm günlük yapay zeka sohbetleri ve internette gezinme için kolay erişilebilir bir yerde olacağım.";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that all user chats sent through Duck.ai are anonymized */
+"onboarding.duckai.ai.features.anonymousChats.title" = "Tüm sohbetler anonimleştirilir";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that no account or sign-up is required to use any of Duck.ai's AI features */
+"onboarding.duckai.ai.features.noAccountsNeeded.title" = "Tüm yapay zeka özelliklerine erişmek için hesap gerekmez";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that user chats sent through Duck.ai are never used to train AI models */
+"onboarding.duckai.ai.features.noTrainingData.title" = "Yapay zekayı eğitmek için sohbetleri asla kullanmaz";
+
+/* One of four features listed in the Duck.ai onboarding AI comparison screen. Highlights that multiple AI models can be accessed from a single place in Duck.ai. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.ai.features.onePlaceAccess.title" = "ChatGPT, Claude ve daha fazlasına tek noktadan erişin";
+
+/* Title of the button (CTA) that continues the Duck.ai onboarding flow from the AI comparison screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.duckai.aiComparison.cta" = "Duck.ai'yi hemen deneyin!";
+
+/* Section header above a list of popular third-party AI chatbots (e.g. ChatGPT, Claude) shown next to Duck.ai for comparison, in the Duck.ai onboarding flow. */
+"onboarding.duckai.aiComparison.subheader" = "Popüler AI'lar";
+
+/* The title of the dialog to show the AI features that DuckDuckGo Duck.ai offers */
+"onboarding.duckai.aiComparison.title" = "AI korumaları etkinleştirildi!";
+
+/* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
+"onboarding.duckai.browser.title" = "DuckDuckGo'yu varsayılan tarayıcınız yapmak ister misiniz?";
+
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Duck.ai ile gizli bir yapay zeka sohbeti başlatın veya korumalı gezinme için Arama moduna geçin.\n\nSohbet simgesini [[chat_icon]] gördüğünüz her yerden Duck.ai kullanabilirsiniz.";
+
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Ayrıca, GPT ve Claude'dan daha yüksek sohbet limitlerine sahip gelişmiş yapay zekâ modelleri, güvenli bir VPN ve daha fazlasını içeren ücretli bir abonelik de sunuyoruz.";
+
+/* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
+"onboarding.duckai.duckAIQuery.title" = "Şimdi, gizli yapay zeka sohbetini deneyin!";
+
+/* The message of the onboarding intro dialog popup for the Duck.ai flow. 'ChatGPT' and 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.intro.message" = "Sizi aktif olarak koruyan bir tarayıcıda ChatGPT, Claude ve diğer AI'larla ücretsiz olarak gizlice sohbet etmeye hazır mısınız?";
+
+/* Title of the button (CTA) shown in the skip-onboarding dialog of the Duck.ai flow that dismisses onboarding and starts an AI chat */
+"onboarding.duckai.skip.cta.confirm" = "Yapay Zeka Sohbeti Başlat";
+
+/* The message of the onboarding skip dialog popup for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.duckai.skip.message" = "Unutmayın: sohbet simgesini [[chat_icon]] gördüğünüz her yerden Duck.ai kullanabilirsiniz";
 
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ayrıca %2$@ ve %3$@ ile kullanılabilen bir %1$@ özelliğine de sahiptir.";
@@ -2766,6 +3255,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Korumalar etkinleştirildi!";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Siteleri aramak ve ziyaret etmek için adres çubuğunu kullanın veya gizli yapay zeka sohbeti için Duck.ai'a geçin.\n\nSohbet simgesini [[chat_icon]] gördüğünüz her yerden Duck.ai kullanabilirsiniz.";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Fire Button ile istediğiniz zaman silebileceğiniz gizli AI sohbetleri. Hemen deneyin! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "İşte Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Gizli bir şekilde her şeyi sorabilirsiniz";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Gizli olarak arama yapın";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Borsa piyasasını 10 yaşında bir çocuğa anlatır gibi açıkla";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Londra'da mükemmel bir gün planla";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Bilim, doğa ve tarihle ilgili 10 büyüleyici gerçek nedir?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Başlamaya hazır mısınız?\nArama yapmayı veya yapay zeka sohbetini deneyin!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "AI'ya sor";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Atla";
@@ -2822,7 +3341,7 @@
 "onboarding.rebranding.first-search-done.title" = "DuckDuckGo Search İşte Bu!";
 
 /* The message of the onboarding dialog popup */
-"onboarding.rebranding.intro.message" = "Sizi koruyan ve yapay zekâyı ne zaman ve nasıl kullanacağınıza karar vermenizi sağlayan daha hızlı bir tarayıcıya hazır mısınız?";
+"onboarding.rebranding.intro.message" = "Kontrolü size verecek daha hızlı bir tarayıcıya hazır mısınız?\n\nYapay zeka her zaman isteğe bağlıdır ve gizlilik koruması her zaman etkindir.";
 
 /* The title of the onboarding intro */
 "onboarding.rebranding.intro.title" = "Merhaba.";
@@ -3077,6 +3596,9 @@
 "preserveLogins.remove.all.ok" = "Tamam";
 
 /* No comment provided by engineer. */
+"Previews" = "Önizlemeler";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Birincil / İlk İşlem";
 
 /* No comment provided by engineer. */
@@ -3109,26 +3631,20 @@
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Başka Bir Uygulamada Açılsın mı?";
 
-/* Button to go back to the previous page after redirect loop */
-"prompt.x-safari-https.go-back" = "Geri dön";
+/* Special error page message for pages that can only be opened in Safari */
+"prompt.general-page-problem.message" = "Dosyayı özel olarak yüklemeyi denedik, ancak görüntülenmiyor.";
 
-/* Alert message when a redirect loop is detected */
-"prompt.x-safari-https.loop.message" = "Bu sayfayı Safari'de açmak ister misiniz?";
+/* Special error page primary button for opening the page in Safari */
+"prompt.general-page-problem.open-in-browser" = "Safari'de aç";
 
-/* Alert title when a redirect loop is detected after staying in DuckDuckGo */
-"prompt.x-safari-https.loop.title" = "Maalesef sayfa yüklenemedi.";
+/* Special error page title for pages that can only be opened in Safari */
+"prompt.general-page-problem.title" = "Bu sayfa yalnızca Safari'de yüklenir";
 
-/* Button to open the page in Safari */
-"prompt.x-safari-https.open-in-safari" = "Safari'de aç";
+/* Default native error page message */
+"prompt.web-page-load-error.message" = "Bu web sitesinin güvenlik sertifikası geçersiz olduğundan siteyi ziyaret etmek güvenli olmayabilir.";
 
-/* Button to stay in DuckDuckGo instead of opening Safari */
-"prompt.x-safari-https.stay" = "DuckDuckGo'da kal";
-
-/* Alert message when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.message" = "Bazı web sitesi özellikleri bu tarayıcıda uyumlu olmayabilir.";
-
-/* Alert title when a site tries to redirect to Safari via x-safari-https scheme */
-"prompt.x-safari-https.try-open.title" = "Bu site Safari'de açılmak istiyor.";
+/* Default native error page title */
+"prompt.web-page-load-error.title" = "DuckDuckGo bu sayfayı yükleyemiyor.";
 
 /* No comment provided by engineer. */
 "Recent Processing Logs" = "Son İşlem Günlükleri";
@@ -3160,6 +3676,12 @@
 /* No comment provided by engineer. */
 "Scanning..." = "Taranıyor...";
 
+/* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
+"scoped.fire.confirmation.alert.fireMode.title" = "Fire Sekmeleri ve verileri silinsin mi?";
+
+/* Title for fire confirmation dialog asking user to delete a single tab and its site data */
+"scoped.fire.confirmation.alert.single.tab.title" = "Sekme ve site verileri silinsin mi?";
+
 /* Title for scoped fire confirmation dialog asking user to delete tabs and site data */
 "scoped.fire.confirmation.alert.title" = "Sekmeleri ve site verilerini silmek mi istiyorsunuz?";
 
@@ -3168,6 +3690,9 @@
 
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Tümünü Sil";
+
+/* Button to delete a single tab and its site data in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.tab.button" = "Sekmeyi Sil";
 
 /* Button to delete only the current chat in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.this.chat.button" = "Bu Sohbeti Sil";
@@ -3260,7 +3785,10 @@
 "settings.address.trackers.animation" = "Adres Çubuğunda Göster";
 
 /* Section footer; %@ is the idle interval (e.g. 5 minutes) */
-"settings.afterInactivity.footer.format" = "%@ boyunca işlem yapılmadığında ne göreceğinizi seçin.";
+"settings.afterInactivity.footer.format" = "%@ hareketsizlikten sonra DuckDuckGo'ya döndüğünüzde ne göreceğinizi seçin.";
+
+/* Section footer when no inactivity timer is set or the Last Used Tab option is selected */
+"settings.afterInactivity.footer.none" = "DuckDuckGo'ya döndüğünüzde ne göreceğinizi seçin.";
 
 /* Idle interval 1 hour for settings footer */
 "settings.afterInactivity.idle.interval.hour" = "1 saat";
@@ -3274,14 +3802,17 @@
 /* Idle interval in minutes for settings footer (plural) */
 "settings.afterInactivity.idle.interval.minutes" = "%d dakika";
 
+/* Idle interval option meaning the New Tab Page is shown every time the user returns (no inactivity threshold) */
+"settings.afterInactivity.idle.interval.none" = "Yok";
+
 /* Idle interval 1 second for settings footer */
 "settings.afterInactivity.idle.interval.second" = "1 saniye";
 
 /* Idle interval in seconds for settings footer (plural) */
 "settings.afterInactivity.idle.interval.seconds" = "%d saniye";
 
-/* Settings picker label for what to show when returning after inactivity */
-"settings.afterInactivity.label" = "Hareketsizlik Sonrası";
+/* Settings picker label for the inactivity duration before showing New Tab */
+"settings.afterInactivity.interval.label" = "Hareketsizlik Zamanlayıcısı";
 
 /* Option: show last used tab when returning after inactivity */
 "settings.afterInactivity.option.lastUsedTab" = "Son Kullanılan Sekme";
@@ -3289,8 +3820,14 @@
 /* Option: show New Tab when returning after inactivity */
 "settings.afterInactivity.option.newTab" = "Yeni Sekme";
 
+/* Settings picker label for what to show when returning after inactivity */
+"settings.afterInactivity.v2.label" = "Hareketsizlik Sonrası";
+
 /* Footer under the AI picker, descriptive sentence without link */
 "settings.ai.new.picker.footer" = "Adres Çubuğunda arama ve Duck.ai arasında geçiş yapmanızı sağlayan yeni seçeneği deneyin.";
+
+/* Settings row that opens Duck.ai in a new tab */
+"settings.aichat.duckai.settings" = "Duck.ai Ayarları";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Duck.ai Kısayollarını Yönet";
@@ -3307,6 +3844,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Ayarları";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Hiçbir zaman";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Sık sık";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "İstek üzerine";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Bazen";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Search Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Sayfa içeriğini otomatik olarak Duck.ai'a gönder";
 
@@ -3316,11 +3868,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Sohbet Önerileri";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "DuckDuckGo'yu Yapay Zeka Olmadan Kullan";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Duck.ai'yi devre dışı bırakır, aramalarda yapay zeka destekli yanıtları gizler ve görsel arama sonuçlarında bilinen yapay zeka spam sitelerini filtreler.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "Tarayıcıda yapay zeka şimdilik devre dışı bırakıldı. Bu yüzden artık yapay zeka destekli yanıtları göremeyecek ve görsel arama sonuçlarında daha az yapay zeka tarafından oluşturulmuş görsel göreceksiniz.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Yapay Zeka Tarafından Oluşturulan Görselleri Gizle";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Görsel arama sonuçlarından yapay zeka tarafından üretilmiş görselleri filtreler";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Kapalı";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Açık";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Görsel arama sonuçlarından bilinen yapay zeka spam sitelerini filtreler. [Daha fazla bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Her Zaman Açık";
@@ -3330,6 +3900,12 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adres Çubuğu Konumu";
+
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Kaydırırken Sekme Çubuğunu Gizle";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Çoğu web sitesinde kullanılabilir. Duck.ai, haritalar ve oyunlar sekme çubuğunun görünür durumda kalmasına neden olabilir.";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Bağlantıları İlişkili Uygulamalarda Aç";
@@ -3437,7 +4013,7 @@
 "settings.cookie.pop-up-protection.protection" = "Çerez Açılır Pencere Engelleyici";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo, sizin için mevcut en gizli ayarları seçmeyi ve bu açılır pencereleri gizlemeyi deneyecektir.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo, sizin için mevcut en gizli ayarları seçmeyi ve bu açılır pencereleri gizlemeyi deneyecektir.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Çerez Açılır Pencerelerini Yönetin";
@@ -4006,6 +4582,12 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Abonelik geri yükleniyor...";
 
+/* Dismiss button on the reinstaller subscription promo. */
+"subscription.promo.reinstaller.buttons.notNow" = "Şimdi Değil";
+
+/* Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations. */
+"subscription.promo.reinstaller.message" = "DuckDuckGo ayrıca güvenli **VPN** ve **gelişmiş, gizli yapay zeka** ile **isteğe bağlı ücretli abonelik** sunuyor.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Bu Cihazdan Kaldır";
 
@@ -4115,10 +4697,25 @@
 "sync.delete.all.confirm.action" = "Sunucu Verilerini Sil";
 
 /* Message for the dialog to confirm deleting Sync server data */
-"sync.delete.all.confirm.message" = "Tüm cihazların bağlantısı kesilecek ve senkronize edilen verileriniz sunucudan silinecektir.";
+"sync.delete.all.confirm.message" = "Yedekleriniz sunucudan silinecektir. Tüm cihazların senkronizasyon bağlantısı kesilecek, ancak hiçbir cihazdan hiçbir şey silinmeyecektir.";
 
 /* Title of the dialog to confirm deleting Sync server data */
 "sync.delete.all.confirm.title" = "Sunucu Verileri Silinsin mi?";
+
+/* Caption for a button to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.action" = "Şimdi Senkronize Et";
+
+/* Message for the dialog to confirm sync setup with another DuckDuckGo device */
+"sync.pairing-v2.confirmation.ddg.message" = "\"%@\" senkronize edilmiş DuckDuckGo şifrelerine, otomatik doldurma verilerine ve Duck.ai sohbetlerine erişebilecek.";
+
+/* Message for the dialog to confirm sync setup with a third-party device */
+"sync.pairing-v2.confirmation.third-party.message" = "\"%@\" senkronize edilmiş Duck.ai sohbetlerinize erişebilecek.";
+
+/* Title of the dialog to confirm sync setup with another device */
+"sync.pairing-v2.confirmation.title" = "Yeni cihaz senkronize edilsin mi?";
+
+/* Fallback device name for confirmation dialogs */
+"sync.pairing-v2.unknown-peer-name" = "diğer cihaz";
 
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "Hesaba gerek yok. Uçtan uca şifreleme, yer işaretlerinizi sizden başka hiç kimsenin, hatta bizim bile göremeyeceğimiz anlamına gelir.";
@@ -4183,14 +4780,26 @@
 /* Title of the dialog to remove device from Sync */
 "sync.remove-device.title" = "Cihaz Kaldırılsın mı?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Kaldır";
+/* Toast message shown after sync is enabled by connecting with another device */
+"sync.simplified.device-synced.toast" = "Cihaz başarıyla senkronize edildi!";
 
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Bu Cihaz artık senkronize edilen verilerinize erişemeyecektir.";
+/* Toast message shown after sync is successfully enabled */
+"sync.simplified.enabled.toast" = "Sync & Backup etkin";
 
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Senkronizasyon kapatılsın mı?";
+/* Toast message shown after copying recovery code to clipboard from settings */
+"sync.simplified.recovery.code.copied.toast" = "Kurtarma Kodu Kopyalandı";
+
+/* Toast message shown when sync setup fails */
+"sync.simplified.setup.failed.toast" = "Sync & Backup etkinleştirilemedi";
+
+/* Alert button to confirm turning off sync */
+"sync.simplified.turn.off.action" = "Kapat";
+
+/* Alert message when turning off sync */
+"sync.simplified.turn.off.message" = "Bu cihazdaki yer işaretleriniz ve şifreleriniz etkilenmeyecektir.";
+
+/* Alert title when turning off sync */
+"sync.simplified.turn.off.title" = "Sync & Backup kapatılsın mı?";
 
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Sync & Backup kurulumu için cihazın kilidini açın";
@@ -4207,14 +4816,32 @@
 /* Accessibility label for the unread indicator on a tab cell */
 "tab.cell.unread.accessibility" = "Sekme Okunmamış";
 
+/* Accessibility label on tab cell */
+"tab.close.closeFireTab" = "Fire sekmesini kapatın";
+
+/* Accessibility label on tab cell */
+"tab.close.closeNewTab" = "Sekmeyi kapat";
+
 /* Accessibility label on remove button */
 "tab.close.home" = "Ana sekmeyi kapat";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.close.with.title.and.address" = "%2$@ adresindeki \"%1$@\" sitesini kapat";
 
+/* Fire tab title */
+"tab.fire.title" = "Fire Sekmesi";
+
+/* New tab title */
+"tab.new.title" = "Yeni Sekme";
+
 /* Accessibility label on tab cell */
 "tab.open.home" = "Ana sekmeyi aç";
+
+/* Accessibility label on tab cell */
+"tab.open.new" = "Yeni sekme açın";
+
+/* Accessibility label on tab cell */
+"tab.open.newFireTab" = "Fire sekmesini açın";
 
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "%2$@ adresindeki \"%1$@\" sitesini aç";
@@ -4299,6 +4926,12 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
+"vcard.add-contact.parse-failure" = "Kişi eklenemedi. Bunun yerine kişi dosyasını İndirilenler klasöründen açmayı deneyin.";
+
+/* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
+"vcard.contact-added" = "Kişi eklendi";
 
 /* No comment provided by engineer. */
 "Version: %@" = "Sürüm: %@";
@@ -4630,14 +5263,59 @@
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Windows için DuckDuckGo'yu edinin!";
 
-/* Explanation text for YouTube Ad Blocking feature */
-"youtube.ad.blocking.explanation" = "DuckDuckGo, YouTube'daki video reklamlarını kaldırarak videoları kesintisiz izlemenizi sağlar.";
+/* Body text of the bottom sheet asking the user to send an anonymous breakage report */
+"youtube.ad.blocking.breakage-report.message" = "DuckDuckGo'ya anonim bir hata raporu gönderin. Reklam engellemeyi herkes için daha iyi hale getirmemize yardımcı olun!";
 
-/* Settings screen title for YouTube Ad Blocking */
-"youtube.ad.blocking.title" = "YouTube'da Reklam Engelleme";
+/* Primary action sending an anonymous YouTube ad-blocking breakage report */
+"youtube.ad.blocking.breakage-report.send" = "Hata Raporu Gönder";
+
+/* Title of the bottom sheet asking the user to send an anonymous breakage report after disabling YouTube ad blocking */
+"youtube.ad.blocking.breakage-report.title" = "YouTube reklam engelleme çalışmıyor mu?";
+
+/* Settings cell subtitle indicating YouTube ad blocking will re-enable on next app launch */
+"youtube.ad.blocking.disabled-until-relaunch" = "Yeniden başlatılana kadar devre dışı bırakıldı";
+
+/* Explanation text for YouTube Ad Blocking feature */
+"youtube.ad.blocking.explanation" = "DuckDuckGo, YouTube'daki video reklamlarını engelleyerek videoları kesintisiz izlemenizi sağlar.";
+
+/* Browsing menu row that turns YouTube ad blocking back on after the user has disabled it */
+"youtube.ad.blocking.menu.enable" = "YouTube'da Reklam Engellemeyi Aç";
+
+/* Browsing menu row that opens the YouTube ad-block mode picker */
+"youtube.ad.blocking.menu.toggle" = "YouTube'da Reklam Engellemeyi Devre Dışı Bırak";
+
+/* Picker option keeping YouTube ad blocking always off */
+"youtube.ad.blocking.mode.always-off" = "Her Zaman Kapalı";
+
+/* Picker option keeping YouTube ad blocking always on */
+"youtube.ad.blocking.mode.always-on" = "Her Zaman Açık";
+
+/* Picker option disabling YouTube ad blocking until the next app launch */
+"youtube.ad.blocking.mode.disable-until-relaunch" = "Yeniden başlatılana kadar devre dışı bırak";
+
+/* Title of the YouTube ad-block mode picker bottom sheet */
+"youtube.ad.blocking.picker.title" = "YouTube'da Reklam Engelleme";
+
+/* Settings screen title for Ad Blocking */
+"youtube.ad.blocking.title" = "Reklam Engelleme";
 
 /* Toggle label for enabling/disabling YouTube ad blocking */
 "youtube.ad.blocking.toggle" = "YouTube'da reklamları engelleyin";
+
+/* Description shown below the YouTube ad blocking toggle */
+"youtube.ad.blocking.toggle.footer" = "Etkinleştirildiğinde, DuckDuckGo herkesin deneyimini iyileştirmek için reklam engelleme müdahalesini veya YouTube hatalarını anonim olarak algılar. DuckDuckGo, hangi videoları izlediğinizi veya kişisel olarak tanımlanabilir bilgileri asla görmez.";
+
+/* Learn More link appended after the YouTube ad blocking toggle description */
+"youtube.ad.blocking.toggle.footer.learn-more" = "Daha Fazla Bilgi";
+
+/* Acknowledgement button on the YouTube ad-blocking unavailable bottom sheet */
+"youtube.ad.blocking.unavailable.got-it" = "Anladım";
+
+/* Body text of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.message" = "YouTube'da yapılan son değişiklikler reklam engelleme özelliğini etkiledi. Bu sorunları çözmeye çalışıyoruz. Anlayışınız için teşekkür ederiz";
+
+/* Title of the bottom sheet shown when YouTube ad blocking has been remotely disabled */
+"youtube.ad.blocking.unavailable.title" = "YouTube'da Reklam Engelleme Kullanılamıyor";
 
 /* Option to select to import bookmarks */
 "zip.content.import.type.bookmarks" = "Yer İmleri";
@@ -4654,3 +5332,52 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "\"%@\" için eşleşme bulunamadı";
+
+
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Sohbetler";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Yakın zamanda sohbet yok";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Duck.ai'ı aç";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Ara";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Sabitlenmiş";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Son";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Eşleşme bulunamadı";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Sohbetler yüklenemedi";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Duck.ai sohbetleriniz yüklenirken bir sorun oluştu. Lütfen daha sonra tekrar deneyin.";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Sohbeti sil";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Sohbeti indir";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Sohbeti sabitle";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Sohbeti sabitlemeyi kaldır";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Sohbetleri sil";
+
+/* Do not translate - stringsdict entry */
+"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";

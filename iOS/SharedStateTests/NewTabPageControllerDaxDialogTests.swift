@@ -28,6 +28,7 @@ import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
 import SubscriptionTestingUtilities
+import Onboarding
 
 @testable import Configuration
 
@@ -41,14 +42,17 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
     var variantManager: CapturingVariantManager!
     var dialogFactory: CapturingNewTabDaxDialogProvider!
-    var specProvider: MockNewTabDialogSpecProvider!
+    var specProvider: MockDaxDialogsManager!
+    var flowProvider: MockOnboardingFlowProvider!
+    var tutorialSettings: MockTutorialSettings!
     var hvc: NewTabPageViewController!
 
     override func setUpWithError() throws {
-        let db = CoreDataDatabase.bookmarksMock
         variantManager = CapturingVariantManager()
         dialogFactory = CapturingNewTabDaxDialogProvider()
-        specProvider = MockNewTabDialogSpecProvider()
+        specProvider = MockDaxDialogsManager()
+        flowProvider = MockOnboardingFlowProvider()
+        tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
 
         let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true })
         hvc = NewTabPageViewController(
@@ -59,13 +63,15 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             homePageMessagesConfiguration: homePageConfiguration,
             newTabDialogFactory: dialogFactory,
             daxDialogsManager: specProvider,
+            onboardingFlowProvider: flowProvider,
             faviconLoader: EmptyFaviconLoading(),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
             appSettings: AppSettingsMock(),
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
-            internalUserCommands: MockURLBasedDebugCommands()
+            internalUserCommands: MockURLBasedDebugCommands(),
+            tutorialSettings: tutorialSettings,
         )
 
         let window = UIWindow(frame: UIScreen.main.bounds)
@@ -87,7 +93,85 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         variantManager = nil
         dialogFactory = nil
         specProvider = nil
+        flowProvider = nil
+        tutorialSettings = nil
         hvc = nil
+    }
+
+    // MARK: - After-idle remote message signal
+
+    /// Builds an NTP the way the focused UTI embedded surface does: a shared messages config and the
+    /// after-idle signal passed in (the embedded surface suppresses its own escape hatch, so the
+    /// signal can't be derived from it).
+    private func makeNewTabPage(openedAfterIdle: Bool,
+                                homePageMessagesConfiguration: HomePageMessagesConfiguration) -> NewTabPageViewController {
+        NewTabPageViewController(
+            isFocussedState: true,
+            openedAfterIdle: openedAfterIdle,
+            dismissKeyboardOnScroll: false,
+            tab: Tab(),
+            interactionModel: MockFavoritesListInteracting(),
+            homePageMessagesConfiguration: homePageMessagesConfiguration,
+            newTabDialogFactory: dialogFactory,
+            daxDialogsManager: specProvider,
+            onboardingFlowProvider: flowProvider,
+            faviconLoader: EmptyFaviconLoading(),
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            appSettings: AppSettingsMock(),
+            faviconsCache: Favicons(),
+            subscriptionManager: SubscriptionManagerMock(),
+            internalUserCommands: MockURLBasedDebugCommands(),
+            tutorialSettings: tutorialSettings)
+    }
+
+    private func makeConfiguration(withScheduledMessage: Bool) -> (HomePageConfiguration, MockRemoteMessagingStore) {
+        let store = MockRemoteMessagingStore()
+        if withScheduledMessage {
+            store.scheduledRemoteMessage = RemoteMessageModel(
+                id: "idle-msg", surfaces: .newTabPage, content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        }
+        let config = HomePageConfiguration(remoteMessagingStore: store,
+                                           subscriptionDataReporter: MockSubscriptionDataReporter(),
+                                           isStillOnboarding: { false })
+        return (config, store)
+    }
+
+    func testWhenOpenedAfterIdleTrueThenMessagesConfigFetchesWithAfterIdleTrigger() {
+        // GIVEN a shared config with a scheduled after-idle message
+        let (config, store) = makeConfiguration(withScheduledMessage: true)
+
+        // WHEN an embedded (hatch-suppressed) NTP is built seeded with the after-idle signal
+        _ = makeNewTabPage(openedAfterIdle: true, homePageMessagesConfiguration: config)
+
+        // THEN its first refresh fetches the after-idle message (not .noTrigger) and keeps it in the
+        // shared config the focused-content gate reads
+        XCTAssertEqual(store.capturedTriggerFilter, .specific(.afterIdle))
+        XCTAssertFalse(config.homeMessages.isEmpty)
+    }
+
+    func testWhenOpenedAfterIdleFalseThenMessagesConfigFetchesWithNoTrigger() {
+        // GIVEN
+        let (config, store) = makeConfiguration(withScheduledMessage: true)
+
+        // WHEN a non-after-idle NTP is built
+        _ = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: config)
+
+        // THEN it fetches the standard (.noTrigger) message, not the after-idle one
+        XCTAssertEqual(store.capturedTriggerFilter, .noTrigger)
+    }
+
+    func testWhenSetOpenedAfterIdleTrueThenMessagesConfigRefetchesWithAfterIdleTrigger() {
+        // GIVEN a cached NTP originally built without the after-idle signal
+        let (config, store) = makeConfiguration(withScheduledMessage: true)
+        let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: config)
+        store.capturedTriggerFilter = nil
+
+        // WHEN a later after-idle session pushes the signal into the cached controller
+        controller.setOpenedAfterIdle(true)
+
+        // THEN it re-fetches with the after-idle trigger
+        XCTAssertEqual(store.capturedTriggerFilter, .specific(.afterIdle))
     }
 
     func testWhenViewDidAppear_CorrectTypePassedToDialogFactory() throws {
@@ -128,6 +212,63 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertTrue(specProvider.nextHomeScreenMessageNewCalled)
     }
 
+    // MARK: - Duck.ai tailored flow router branches
+
+    func testWhenDuckAITailoredFlow_AndOnboardingCompleted_AndNotSkipped_ThenDoesNotPeekRegularSpec() {
+        // GIVEN
+        flowProvider.currentOnboardingFlow = .duckAI
+        tutorialSettings.hasSkippedOnboarding = false
+
+        // WHEN
+        hvc.onboardingCompleted()
+
+        // THEN
+        // Tailored completion routes to `showDuckAIOnboardingCompletionWithActiveAddressBar`, not
+        // through the regular Dax sequence — confirms the tailored branch is taken, not default.
+        XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
+    }
+
+    func testWhenDuckAITailoredFlow_AndOnboardingCompleted_AndSkipped_ThenDoesNotPeekRegularSpec() {
+        // GIVEN
+        flowProvider.currentOnboardingFlow = .duckAI
+        tutorialSettings.hasSkippedOnboarding = true
+
+        // WHEN
+        hvc.onboardingCompleted()
+
+        // THEN
+        // Skip branch only calls `omniBar.beginEditing` for AI chat; no Dax dialog should be peeked.
+        XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
+    }
+
+    func testWhenDuckAITailoredFlow_AndDialogRequested_AndSubscriptionPromoPending_ThenPeeksSpecToRenderPromo() {
+        // GIVEN
+        flowProvider.currentOnboardingFlow = .duckAI
+        specProvider.subscriptionPromotionPending = true
+
+        // WHEN
+        hvc.showNextDaxDialog()
+
+        // THEN
+        // Tailored router only proceeds to showNextDaxDialogNew (which peeks the spec) when the
+        // subscription promo is pending — confirming the gate is read and the promo path is taken.
+        XCTAssertTrue(specProvider.nextHomeScreenMessageNewCalled)
+    }
+
+    func testWhenDuckAITailoredFlow_AndDialogRequested_AndSubscriptionPromoNotPending_ThenDoesNotPeekSpec() {
+        // GIVEN
+        flowProvider.currentOnboardingFlow = .duckAI
+        specProvider.subscriptionPromotionPending = false
+
+        // WHEN
+        hvc.showNextDaxDialog()
+
+        // THEN
+        // Tailored router must NOT enter the regular Dax sequence when there is no promo — otherwise
+        // a stray `.initial`/`.subsequent` dialog could leak into the Duck.ai onboarding completion UX.
+        XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
+    }
+
     private func randomDialogType() -> DaxDialogs.HomeScreenSpec {
         let specs: [DaxDialogs.HomeScreenSpec] = [.initial, .subsequent, .final, .addFavorite]
         return specs.randomElement()!
@@ -157,33 +298,13 @@ class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
         return EmptyView()
     }
 
-    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+    func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         AnyView(EmptyView())
     }
 }
 
-
-class MockNewTabDialogSpecProvider: NewTabDialogSpecProvider, SubscriptionPromotionCoordinating {
-    var nextHomeScreenMessageCalled = false
-    var nextHomeScreenMessageNewCalled = false
-    var dismissCalled = false
-    var specToReturn: DaxDialogs.HomeScreenSpec?
-    var isShowingSubscriptionPromotion = false
-    var subscriptionPromotionDialogSeen = false
-
-    func nextHomeScreenMessage() -> DaxDialogs.HomeScreenSpec? {
-        nextHomeScreenMessageCalled = true
-        return specToReturn
-    }
-
-    func nextHomeScreenMessageNew() -> DaxDialogs.HomeScreenSpec? {
-        nextHomeScreenMessageNewCalled = true
-        return specToReturn
-    }
-
-    func dismiss() {
-        dismissCalled = true
-    }
+final class MockOnboardingFlowProvider: OnboardingFlowProviding {
+    var currentOnboardingFlow: OnboardingFlowType = .default
 }
 
 struct MockVariant: Variant {

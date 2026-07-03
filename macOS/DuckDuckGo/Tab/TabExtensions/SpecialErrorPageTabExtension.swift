@@ -18,8 +18,10 @@
 
 import Combine
 import Common
+import ConcurrencyExtensions
 import ContentScopeScripts
 import Foundation
+import FoundationExtensions
 import MaliciousSiteProtection
 import Navigation
 import os
@@ -211,7 +213,8 @@ extension SpecialErrorPageTabExtension: SpecialErrorPageUserScriptDelegate {
     func leaveSiteAction() {
         guard let errorData, let webView else { return }
         switch errorData {
-        case .maliciousSite:
+        case .maliciousSite(let threatKind, _):
+            PixelKit.fire(MaliciousSiteProtection.Event.leaveSite(category: threatKind))
             closeAndOpenNewTab()
         case .ssl:
             if webView.canGoBack {

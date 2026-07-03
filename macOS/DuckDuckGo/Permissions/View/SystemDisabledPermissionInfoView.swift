@@ -26,6 +26,9 @@ import SwiftUI
 struct SystemDisabledPermissionInfoView: View {
     let domain: String
     let permissionType: PermissionType
+    /// Selects the duck.ai mic-prompt copy (voice chat vs dictation). Only consulted for the
+    /// `.microphone` + duck.ai branch; defaults to voice chat for all other callers.
+    var micPromptSource: DuckAiMicPermissionSource = .voiceChat
 
     private var promptText: String {
         switch permissionType {
@@ -33,6 +36,18 @@ struct SystemDisabledPermissionInfoView: View {
             return String(format: UserText.notificationPermissionAuthorizationFormat, domain)
         case .geolocation:
             return String(format: UserText.locationPermissionAuthorizationFormat, domain)
+        case .microphone:
+            // On duck.ai the only mic uses are voice chat and dictation, so phrase the prompt
+            // around the triggering flow rather than the generic "website would like to…" form.
+            if domain == URL.duckAi.host {
+                switch micPromptSource {
+                case .voiceChat:
+                    return UserText.duckAiVoiceChatMicrophonePrompt
+                case .dictation:
+                    return UserText.duckAiDictationMicrophonePrompt
+                }
+            }
+            return String(format: UserText.microphonePermissionAuthorizationFormat, domain)
         default:
             return ""
         }
@@ -44,6 +59,8 @@ struct SystemDisabledPermissionInfoView: View {
             return UserText.permissionPopoverSystemNotificationDisabledStandalone
         case .geolocation:
             return UserText.permissionSystemLocationDisabled
+        case .microphone:
+            return UserText.permissionSystemMicrophoneDisabled
         default:
             return ""
         }
@@ -55,6 +72,8 @@ struct SystemDisabledPermissionInfoView: View {
             return UserText.permissionCenterSystemSettingsNotifications
         case .geolocation:
             return UserText.permissionSystemSettingsLocation
+        case .microphone:
+            return UserText.permissionSystemSettingsMicrophone
         default:
             return ""
         }
@@ -66,6 +85,8 @@ struct SystemDisabledPermissionInfoView: View {
             return URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
         case .geolocation:
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
+        case .microphone:
+            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
         default:
             return nil
         }
@@ -76,8 +97,8 @@ struct SystemDisabledPermissionInfoView: View {
         switch permissionType {
         case .notification:
             return "\n"
-        case .geolocation:
-            return ""  // Location string already has trailing space
+        case .geolocation, .microphone:
+            return ""  // Strings already have a trailing space
         default:
             return " "
         }

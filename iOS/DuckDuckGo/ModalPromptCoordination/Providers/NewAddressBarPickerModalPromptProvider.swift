@@ -26,17 +26,20 @@ final class NewAddressBarPickerModalPromptProvider: ModalPromptProvider {
     private let store: NewAddressBarPickerStorageWriting
     private let aiChatSettings: AIChatSettingsProvider
     private let isIPad: Bool
+    private let omniBarFocuser: OmniBarFocuserProvider
 
     init(
         validator: NewAddressBarPickerDisplayValidating,
         store: NewAddressBarPickerStorage,
         aiChatSettings: AIChatSettingsProvider,
-        isIPad: Bool
+        isIPad: Bool,
+        omniBarFocuser: OmniBarFocuserProvider
     ) {
         self.validator = validator
         self.store = store
         self.aiChatSettings = aiChatSettings
         self.isIPad = isIPad
+        self.omniBarFocuser = omniBarFocuser
     }
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
@@ -45,7 +48,10 @@ final class NewAddressBarPickerModalPromptProvider: ModalPromptProvider {
             return nil
         }
 
-        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
+        let pickerViewController = NewAddressBarPickerViewController(
+            aiChatSettings: aiChatSettings,
+            omniBarFocuser: omniBarFocuser
+        )
 
         // Configure presentation properties on the view controller
         if #available(iOS 26.0, *), isIPad {

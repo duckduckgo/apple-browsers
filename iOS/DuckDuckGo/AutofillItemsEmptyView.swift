@@ -19,7 +19,9 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 import Core
 
 struct AutofillItemsEmptyView: View {
@@ -28,64 +30,65 @@ struct AutofillItemsEmptyView: View {
     var importViaSyncButtonAction: (() -> Void)?
 
     var body: some View {
-        VStack(spacing: 0) {
-            Image(.passwordsAdd96X96)
+        VStack(spacing: 8) {
+            Image(rebrandable: "Passwords-Add-96x96")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 96, height: 96)
 
-            Text(UserText.autofillEmptyViewTitle)
-                .daxTitle3()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding(.top, 16)
-                .multilineTextAlignment(.center)
-                .lineLimit(nil)
+            VStack(spacing: 4) {
+                Text(UserText.autofillEmptyViewTitle)
+                    .daxTitle3()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil)
 
-            Text(UserText.autofillEmptyViewSubtitle)
-                .daxBodyRegular()
-                .foregroundColor(Color.init(designSystemColor: .textSecondary))
-                .multilineTextAlignment(.center)
-                .padding(.top, 8)
-                .lineLimit(nil)
-
-            if #available(iOS 18.2, *) {
-                Button {
-                    importButtonAction?()
-                } label: {
-                    Text(UserText.autofillEmptyViewImportButtonTitle)
-                        .frame(width: maxButtonWidth())
-                }
-                .buttonStyle(PrimaryButtonStyle(fullWidth: false))
-                .padding(.top, 24)
-                .onFirstAppear {
-                    Pixel.fire(pixel: .autofillImportPasswordsImportButtonShown)
-                }
-
-                Button {
-                    importViaSyncButtonAction?()
-                } label: {
-                    Text(UserText.autofillEmptyViewImportViaSyncButtonTitle)
-                        .frame(width: maxButtonWidth())
-                }
-                .buttonStyle(SecondaryFillButtonStyle(fullWidth: false))
-                .padding(.top, 8)
-            } else {
-                Button {
-                    importViaSyncButtonAction?()
-                } label: {
-                    Text(UserText.autofillEmptyViewImportButtonTitle)
-                }
-                .buttonStyle(PrimaryButtonStyle(fullWidth: false))
-                .padding(.top, 24)
+                Text(UserText.autofillEmptyViewSubtitle)
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil)
             }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 8)
+
+            VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
+                if #available(iOS 18.2, *) {
+                    Button {
+                        importButtonAction?()
+                    } label: {
+                        Text(UserText.autofillEmptyViewImportButtonTitle)
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .onFirstAppear {
+                        if case .hub = DataImportEntryPointHandler().destination(for: .passwords) {
+                            Pixel.fire(pixel: .importHubEntryShown, withAdditionalParameters: DataImportViewModel.ImportScreen.passwords.importHubEntryPointParameters)
+                        } else {
+                            Pixel.fire(pixel: .autofillImportPasswordsImportButtonShown)
+                        }
+                    }
+
+                    Button {
+                        importViaSyncButtonAction?()
+                    } label: {
+                        Text(UserText.autofillEmptyViewImportViaSyncButtonTitle)
+                    }
+                    .buttonStyle(SecondaryFillButtonStyle())
+                } else {
+                    Button {
+                        importViaSyncButtonAction?()
+                    } label: {
+                        Text(UserText.autofillEmptyViewImportButtonTitle)
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                }
+            }
+            // fixedSize sizes both buttons to the wider title's width.
+            .fixedSize(horizontal: true, vertical: false)
+            .padding(8)
         }
         .frame(maxWidth: 300.0)
-        .padding(.top, 16)
-    }
-
-    private func maxButtonWidth() -> CGFloat {
-        let maxWidth = AutofillViews.maxWidthFor(title1: UserText.autofillEmptyViewImportButtonTitle, title2: UserText.autofillEmptyViewImportViaSyncButtonTitle, font: UIFont.boldAppFont(ofSize: 15))
-        return min(maxWidth, 300)
+        .padding(16)
     }
 
 }

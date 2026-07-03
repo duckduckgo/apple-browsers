@@ -23,7 +23,7 @@ import PackageDescription
 let package = Package(
     name: "HistoryView",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
@@ -33,6 +33,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../WebKitExtensions"),
         .package(path: "../UserScriptActionsManager"),
         .package(path: "../Utilities"),

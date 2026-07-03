@@ -21,6 +21,7 @@ import XCTest
 @testable import Core
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Persistence
 import SecureStorage
 
@@ -106,6 +107,16 @@ final class DataImportManagerTests: XCTestCase {
         let summary = try? result?[.bookmarks]?.get()
 
         XCTAssertEqual(summary, expectedSummary)
+    }
+
+    func testWhenImportHtmlFileHasDoubleExtensionThenItIsRejected() async throws {
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("bookmarks.evil.html")
+        try "<html>bookmark data</html>".write(to: tempURL, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let result = try await dataImportManager.importFile(at: tempURL, for: .html)
+
+        XCTAssertNil(result)
     }
 
     // MARK: - JSON Import Tests
@@ -324,17 +335,6 @@ final class DataImportManagerTests: XCTestCase {
 }
 
 // MARK: - Mock Classes
-
-private class MockLoginImporter: LoginImporter {
-    var importedLogins: DataImportSummary?
-
-    func importLogins(_ logins: [BrowserServicesKit.ImportedLoginCredential], reporter: SecureVaultReporting, progressCallback: @escaping (Int) throws -> Void) throws -> DataImport.DataTypeSummary {
-        let summary = DataImport.DataTypeSummary(successful: logins.count, duplicate: 0, failed: 0)
-
-        self.importedLogins = [.passwords: .success(summary)]
-        return summary
-    }
-}
 
 private class MockCreditCardImporter: CreditCardImporter {
     var importedCreditCards: DataImportSummary?

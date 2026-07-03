@@ -22,6 +22,7 @@ import BloomFilterWrapper
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import PrivacyConfig
 import PrivacyConfigTestsUtils

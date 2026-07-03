@@ -45,6 +45,7 @@ actor WideEventService {
         await processCompletion(VPNConnectionWideEventData.self, trigger: trigger)
         await processSubscriptionPurchaseCompletion(trigger: trigger)
         await processCompletion(DataImportWideEventData.self, trigger: trigger)
+        await processCompletion(AuthV2TokenRefreshWideEventData.self, trigger: trigger)
 
         isProcessing = false
     }
@@ -71,7 +72,7 @@ actor WideEventService {
 
     private func checkForCurrentEntitlements() async -> Bool {
         do {
-            let entitlements = try await subscriptionManager.currentSubscriptionFeatures()
+            let entitlements = try await subscriptionManager.currentSubscriptionFeatures(forceRefresh: true)
             return !entitlements.isEmpty
         } catch {
             return false

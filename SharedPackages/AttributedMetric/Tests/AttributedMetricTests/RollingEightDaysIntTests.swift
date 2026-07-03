@@ -500,7 +500,7 @@ final class RollingEightDaysIntTests: XCTestCase {
 
         // First cycle
         var data = try encoder.encode(rollingInt)
-        var decoded = try decoder.decode(RollingEightDaysInt.self, from: data)
+        let decoded = try decoder.decode(RollingEightDaysInt.self, from: data)
         XCTAssertEqual(decoded.lastDay, rollingInt.lastDay)
 
         // Second cycle

@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import LetsMove
 import PrivacyConfig
@@ -104,6 +105,12 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
     override func run() {
         let buildType = StandardApplicationBuildType()
         if !buildType.isAppStoreBuild && !buildType.isDebugBuild {
+            // The prompt is modal and blocks the launch for as long as it stays unanswered,
+            // which would inflate startup timings by arbitrary user think-time. Flag the
+            // measurement as invalid up-front so the startup pixel is discarded for this launch.
+            if PFMoveToApplicationsFolderWillPrompt(/*allowAlertSilencing:*/ true) {
+                Application.appDelegate.startupProfiler.invalidate()
+            }
             PFMoveToApplicationsFolderIfNecessary(/*allowAlertSilencing:*/ true)
         }
 

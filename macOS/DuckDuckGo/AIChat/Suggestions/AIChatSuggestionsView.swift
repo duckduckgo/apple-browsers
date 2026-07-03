@@ -267,6 +267,9 @@ final class AIChatSuggestionsView: NSView {
         let isViewAllSelected = selectedIndex == rowViews.count
         viewAllChatsRowView?.isSelected = isViewAllSelected
         viewAllChatsRowView?.isKeyboardNavigating = isKeyboardNavigating
+        if isKeyboardNavigating {
+            viewAllChatsRowView?.isHovered = false
+        }
     }
 
     /// Binds the view to a view model for automatic updates.

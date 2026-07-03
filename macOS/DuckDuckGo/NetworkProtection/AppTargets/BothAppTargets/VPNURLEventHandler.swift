@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import LetsMove
 import PixelKit
+import Subscription
 import VPNAppLauncher
 
 @MainActor
@@ -33,7 +35,17 @@ final class VPNURLEventHandler {
     /// Handles VPN event URLs
     ///
     func handle(_ url: URL) async {
-        switch url {
+        // Strip query items before matching against command URLs so commands that carry
+        // parameters (e.g. showSubscription's `origin`) still match by path.
+        let strippedURL: URL = {
+            guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+                return url
+            }
+            components.queryItems = nil
+            return components.url ?? url
+        }()
+
+        switch strippedURL {
         case VPNAppLaunchCommand.manageExcludedApps.launchURL:
             windowControllersManager.showVPNAppExclusions()
         case VPNAppLaunchCommand.manageExcludedDomains.launchURL:
@@ -48,8 +60,12 @@ final class VPNURLEventHandler {
             showMainWindow()
         case VPNAppLaunchCommand.showVPNLocations.launchURL:
             showLocations()
-        case VPNAppLaunchCommand.showSubscription.launchURL:
-            showSubscription()
+        case VPNAppLaunchCommand.showSubscription(origin: nil).launchURL:
+            let origin = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?
+                .first(where: { $0.name == VPNAppLaunchCommand.showSubscriptionOriginQueryItem })?
+                .value
+            showSubscription(origin: origin)
         case VPNAppLaunchCommand.moveAppToApplications.launchURL:
             moveAppToApplicationsFolder()
         default:
@@ -73,6 +89,19 @@ final class VPNURLEventHandler {
         windowControllersManager.showShareFeedbackModal(source: .vpn)
     }
 
+    func copySupportInfo() async -> Bool {
+        let collector = DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionManager)
+        let metadata = await collector.collectMetadata()
+
+        guard let supportInfo = metadata.toPrettyPrintedJSON() else {
+            assertionFailure("Failed to encode VPN support info")
+            return false
+        }
+
+        NSPasteboard.general.copy(supportInfo)
+        return true
+    }
+
     func showMainWindow() {
         windowControllersManager.showMainWindow()
     }
@@ -82,11 +111,14 @@ final class VPNURLEventHandler {
         windowControllersManager.showLocationPickerSheet()
     }
 
-    func showSubscription() {
-        let url = Application.appDelegate.subscriptionManager.url(for: .purchase)
-        windowControllersManager.showTab(with: .subscription(url))
+    func showSubscription(origin: String?) {
+        let fallback = Application.appDelegate.subscriptionManager.url(for: .purchase)
+        let url = origin
+            .flatMap { SubscriptionURL.purchaseURLComponentsWithOrigin($0)?.url }
+            ?? fallback
 
-        PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
+        windowControllersManager.showTab(with: .subscription(url))
+        PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression(origin: origin))
     }
 
     func showVPNAppExclusions() {

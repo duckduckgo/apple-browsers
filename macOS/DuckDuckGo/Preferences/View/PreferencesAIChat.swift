@@ -21,6 +21,7 @@ import SwiftUI
 import SwiftUIExtensions
 import PixelKit
 import DesignResourcesKitIcons
+import SERPSettings
 
 extension Preferences {
 
@@ -50,19 +51,94 @@ extension Preferences {
                                                        image: Image(nsImage: DesignSystemImages.Color.Size16.aiChatGradient),
                                                        bottomPadding: 2)
                             TextMenuItemCaption(UserText.aiChatDescription)
-                        }
 
-                        Button(model.isAIFeaturesEnabled ? UserText.aiChatDisableButton : UserText.aiChatEnableButton) {
-                            if model.isAIFeaturesEnabled {
-                                isShowingDisableAIChatDialog = true
-                            } else {
-                                model.isAIFeaturesEnabled = true
-                                PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOn,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
+                            if model.shouldShowDuckAiSettingsLink {
+                                Button {
+                                    model.openDuckAiSettings()
+                                } label: {
+                                    HStack {
+                                        Text(UserText.duckAiSettingsLink)
+                                        Image(.externalAppScheme)
+                                    }
+                                    .foregroundColor(Color.linkBlue)
+                                    .cursor(.pointingHand)
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.top, 6)
+                                .accessibilityIdentifier("Preferences.AIChat.duckAiSettingsLink")
+                                .visibility(model.shouldShowAIFeatures ? .visible : .gone)
                             }
                         }
-                        .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
+
+                        if model.shouldShowNativeAIControls {
+                            // Redesign: Duck.ai is an On/Off dropdown grouped with the pickers below.
+                            Spacer()
+                            Picker("", selection: model.duckAIEnabledBinding) {
+                                Text(UserText.aiChatEnabledOn).tag(true)
+                                Text(UserText.aiChatEnabledOff).tag(false)
+                            }
+                            .pickerStyle(.menu)
+                            .fixedSize()
+                            .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
+                        } else {
+                            Button(aiFeaturesButtonTitle) {
+                                if model.isAIFeaturesEnabled {
+                                    isShowingDisableAIChatDialog = true
+                                } else {
+                                    model.isAIFeaturesEnabled = true
+                                    PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOn,
+                                                  frequency: .dailyAndCount,
+                                                  includeAppVersionParameter: true)
+                                }
+                            }
+                            .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
+                        }
+                    }
+                }
+
+                // Native Search Assist / Hide AI Images controls, grouped with Duck.ai at the top.
+                if model.shouldShowNativeAIControls {
+                    PreferencePaneSection {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                TextAndImageMenuItemHeader(UserText.searchAssistSettings,
+                                                           image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
+                                                           bottomPadding: 2)
+                                TextMenuItemCaption(UserText.searchAssistSettingsDescription)
+                            }
+                            Spacer()
+                            Picker("", selection: model.searchAssistFrequencyBinding) {
+                                ForEach(SearchAssistFrequency.allCases, id: \.self) { frequency in
+                                    Text(frequency.displayName).tag(frequency)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .fixedSize()
+                            .accessibilityIdentifier("Preferences.AIChat.searchAssistPicker")
+                        }
+                    }
+
+                    PreferencePaneSection {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
+                                                           image: Image(nsImage: DesignSystemImages.Color.Size16.hideAIGeneratedImages),
+                                                           bottomPadding: 2)
+                                TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
+                                TextButton(UserText.learnMore) {
+                                    model.openHideAIGeneratedImagesLearnMore()
+                                }
+                            }
+                            Spacer()
+                            Picker("", selection: model.hideAIImagesBinding) {
+                                ForEach(HideAIImagesOption.allCases, id: \.self) { option in
+                                    Text(option.displayName).tag(option)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .fixedSize()
+                            .accessibilityIdentifier("Preferences.AIChat.hideAIGeneratedImagesPicker")
+                        }
                     }
                 }
 
@@ -85,26 +161,9 @@ extension Preferences {
                     }
                     .visibility(model.shouldShowNewTabPageToggle ? .visible : .gone)
 
-                    if model.shouldShowSearchAndDuckAIToggleOption {
-                        ToggleMenuItem(UserText.aiChatShowSearchAndDuckAIToggleLabel,
-                                       isOn: $model.showSearchAndDuckAIToggle)
-                        .accessibilityIdentifier("Preferences.AIChat.showSearchAndDuckAIToggleToggle")
-                    } else {
-                        ToggleMenuItem(UserText.aiChatShowInAddressBarWhenTypingLabel,
-                                       isOn: $model.showShortcutInAddressBarWhenTyping)
-                        .accessibilityIdentifier("Preferences.AIChat.showInAddressBarWhenTypingToggle")
-                        .onChange(of: model.showShortcutInAddressBarWhenTyping) { newValue in
-                            if newValue {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOn,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            } else {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOff,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            }
-                        }
-                    }
+                    ToggleMenuItem(UserText.aiChatShowSearchAndDuckAIToggleLabel,
+                                   isOn: $model.showSearchAndDuckAIToggle)
+                    .accessibilityIdentifier("Preferences.AIChat.showSearchAndDuckAIToggleToggle")
 
                     if model.shouldShowTabBarButtonVisibilityOptions {
                         ToggleMenuItem(UserText.aiChatShowDuckAIButtonInTabBarLabel,
@@ -152,32 +211,48 @@ extension Preferences {
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
-                Divider()
-                    .padding(.bottom, 8)
+                if model.shouldShowNativeAIControls {
+                    // Always shown: the button disables all AI while any is on, then greys out
+                    // once everything is disabled, with the caption reinforcing the no-AI state.
+                    Divider()
+                        .padding(.bottom, 8)
 
-                PreferencePaneSection {
-                    VStack(alignment: .leading) {
-                        TextAndImageMenuItemHeader(UserText.searchAssistSettings,
-                                                   image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
-                                                   bottomPadding: 2)
-
-                        TextMenuItemCaption(UserText.searchAssistSettingsDescription)
-                            .padding(.bottom, 6)
-                        Button {
-                            model.openSearchAssistSettings()
-                        } label: {
-                            HStack {
-                                Text(UserText.searchAssistSettingsLink)
-                                Image(.externalAppScheme)
+                    PreferencePaneSection {
+                        VStack(alignment: .leading) {
+                            Button(UserText.aiFeaturesDisableAllButton) {
+                                model.disableAllAI()
                             }
-                            .foregroundColor(Color.linkBlue)
-                            .cursor(.pointingHand)
+                            .disabled(model.isAllAIDisabled)
+                            .accessibilityIdentifier("Preferences.AIChat.disableAllAIButton")
+                            TextMenuItemCaption(model.isAllAIDisabled ? UserText.aiFeaturesDisableAllFooterDisabled : UserText.aiFeaturesDisableAllFooter)
                         }
-                        .buttonStyle(.plain)
                     }
-                }
+                } else {
+                    Divider()
+                        .padding(.bottom, 8)
 
-                if model.shouldShowHideAIGeneratedImagesSection {
+                    PreferencePaneSection {
+                        VStack(alignment: .leading) {
+                            TextAndImageMenuItemHeader(UserText.searchAssistSettings,
+                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
+                                                       bottomPadding: 2)
+
+                            TextMenuItemCaption(UserText.searchAssistSettingsDescription)
+                                .padding(.bottom, 6)
+                            Button {
+                                model.openSearchAssistSettings()
+                            } label: {
+                                HStack {
+                                    Text(UserText.searchAssistSettingsLink)
+                                    Image(.externalAppScheme)
+                                }
+                                .foregroundColor(Color.linkBlue)
+                                .cursor(.pointingHand)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
                     PreferencePaneSection {
                         VStack(alignment: .leading) {
                             TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
@@ -205,6 +280,12 @@ extension Preferences {
             .sheet(isPresented: $isShowingDisableAIChatDialog) {
                 removeConfirmationDialog
             }
+        }
+
+        // Flag ON disables Duck.ai directly (no "..."); flag OFF keeps the confirmation flow.
+        private var aiFeaturesButtonTitle: String {
+            guard model.isAIFeaturesEnabled else { return UserText.aiChatEnableButton }
+            return model.shouldShowNativeAIControls ? UserText.aiChatDisableButtonImmediate : UserText.aiChatDisableButton
         }
 
         @ViewBuilder
@@ -238,6 +319,38 @@ extension Preferences {
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
             }
             .frame(width: 360)
+        }
+    }
+}
+
+extension SearchAssistFrequency {
+    var displayName: String {
+        switch self {
+        case .never: return UserText.searchAssistNever
+        case .onDemand: return UserText.searchAssistOnDemand
+        case .sometimes: return UserText.searchAssistSometimes
+        case .often: return UserText.searchAssistOften
+        }
+    }
+}
+
+// On/Off picker option for Hide AI-Generated Images (`on` = hidden).
+enum HideAIImagesOption: String, CaseIterable, Hashable {
+    case on
+    case off
+
+    init(hidden: Bool) {
+        self = hidden ? .on : .off
+    }
+
+    var hidden: Bool {
+        self == .on
+    }
+
+    var displayName: String {
+        switch self {
+        case .on: return UserText.hideAIGeneratedImagesOn
+        case .off: return UserText.hideAIGeneratedImagesOff
         }
     }
 }

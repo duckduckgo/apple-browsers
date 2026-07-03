@@ -41,6 +41,12 @@ class DebugScreensViewModel: ObservableObject {
         }
     }
 
+    @Published var isShakeToOpenDebugMenuEnabled = true {
+        didSet {
+            AppUserDefaults().shakeToOpenDebugMenuEnabled = isShakeToOpenDebugMenuEnabled
+        }
+    }
+
     @Published var filter = "" {
         didSet {
             refreshFilter()
@@ -95,6 +101,7 @@ class DebugScreensViewModel: ObservableObject {
     func refreshToggles() {
         self.isInternalUser = dependencies.internalUserDecider.isInternalUser
         self.isInspectibleWebViewsEnabled = AppUserDefaults().inspectableWebViewEnabled
+        self.isShakeToOpenDebugMenuEnabled = AppUserDefaults().shakeToOpenDebugMenuEnabled
     }
 
     func refreshFilter() {

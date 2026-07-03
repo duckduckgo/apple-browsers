@@ -5,6 +5,6 @@
         "owners": ["alessandroboron"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

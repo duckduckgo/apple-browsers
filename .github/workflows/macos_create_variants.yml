@@ -6,28 +6,26 @@ defaults:
 
 on:
   workflow_dispatch:
+    inputs:
+      dmg-url:
+        description: "DMG URL to download (overrides RELEASE_DMG_URL variable when set)"
+        required: false
+        type: string
 
   workflow_call:
+    inputs:
+      dmg-url:
+        description: "DMG URL to download (overrides RELEASE_DMG_URL variable when set)"
+        required: false
+        type: string
     secrets:
-      APPLE_API_KEY_BASE64:
-        required: true
-      APPLE_API_KEY_ID:
-        required: true
-      APPLE_API_KEY_ISSUER:
-        required: true
       ASANA_ACCESS_TOKEN:
         required: true
       AWS_ACCESS_KEY_ID_RELEASE_S3:
         required: true
       AWS_SECRET_ACCESS_KEY_RELEASE_S3:
         required: true
-      MATCH_PASSWORD:
-        required: true
       MM_WEBHOOK_URL:
-        required: true
-      SSH_PRIVATE_KEY_FASTLANE_MATCH:
-        required: true
-      SSH_PRIVATE_KEY_DUCKSANS_FONT:
         required: true
 
 jobs:
@@ -75,8 +73,10 @@ jobs:
             macOS/scripts
 
       - name: Download release app
+        env:
+          DMG_URL: ${{ inputs.dmg-url != '' && inputs.dmg-url || vars.RELEASE_DMG_URL }}
         run: |
-          curl -fLSs "${{ vars.RELEASE_DMG_URL }}" --output duckduckgo.dmg
+          curl -fLSs "${DMG_URL}" --output duckduckgo.dmg
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4

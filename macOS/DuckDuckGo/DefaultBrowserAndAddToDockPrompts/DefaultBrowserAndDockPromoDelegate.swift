@@ -20,7 +20,7 @@ import Combine
 import Foundation
 
 /// PromoDelegate for default browser/dock prompts. One delegate per promo kind (popover, banner, inactive modal).
-final class DefaultBrowserAndDockPromoDelegate: PromoDelegate {
+final class DefaultBrowserAndDockPromoDelegate: InternalPromoDelegate {
 
     private let type: DefaultBrowserAndDockPromptPresentationType
     private let coordinator: DefaultBrowserAndDockPrompt

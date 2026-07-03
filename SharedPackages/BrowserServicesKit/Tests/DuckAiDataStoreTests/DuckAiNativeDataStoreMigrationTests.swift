@@ -57,7 +57,8 @@ final class DuckAiNativeDataStoreMigrationTests: XCTestCase {
         let orphanedFile = filesDirectory.appendingPathComponent("orphaned-file.txt")
         try Data("plaintext data".utf8).write(to: orphanedFile)
 
-        _ = try DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory, key: key)
+        let store = try DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory, key: key)
+        _ = try store.getAllChats() // Force background setup (DB recreate + orphan cleanup) to complete.
 
         let contents = try FileManager.default.contentsOfDirectory(at: filesDirectory, includingPropertiesForKeys: nil)
         XCTAssertTrue(contents.isEmpty, "Orphaned files should be removed when database is recreated")
@@ -70,7 +71,8 @@ final class DuckAiNativeDataStoreMigrationTests: XCTestCase {
             try Data("data \(i)".utf8).write(to: file)
         }
 
-        _ = try DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory, key: key)
+        let store = try DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory, key: key)
+        _ = try store.getAllChats()
 
         let contents = try FileManager.default.contentsOfDirectory(at: filesDirectory, includingPropertiesForKeys: nil)
         XCTAssertTrue(contents.isEmpty)
@@ -85,14 +87,16 @@ final class DuckAiNativeDataStoreMigrationTests: XCTestCase {
         XCTAssertEqual(contentsBefore.count, 1)
 
         // Re-open with the same key — should NOT wipe files
-        _ = try DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory, key: key)
+        let reopened = try DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory, key: key)
+        _ = try reopened.getAllChats()
 
         let contentsAfter = try FileManager.default.contentsOfDirectory(at: filesDirectory, includingPropertiesForKeys: nil)
         XCTAssertEqual(contentsAfter.count, 1, "Files should be preserved when database opens normally")
     }
 
     func testWhenNoDbExistsThenEmptyFilesDirectoryStaysEmpty() throws {
-        _ = try DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory, key: key)
+        let store = try DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory, key: key)
+        _ = try store.getAllChats()
 
         let contents = try FileManager.default.contentsOfDirectory(at: filesDirectory, includingPropertiesForKeys: nil)
         XCTAssertTrue(contents.isEmpty)

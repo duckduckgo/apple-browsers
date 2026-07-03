@@ -18,9 +18,11 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import History
+import Lottie
 import SwiftUI
 import SwiftUIExtensions
 import BrowserServicesKit
@@ -52,6 +54,9 @@ struct FireDialogView: ModalView {
     fileprivate enum Constants {
         static let viewSize = CGSize(width: 440, height: 592)
         static let footerReservedHeight: CGFloat = 52
+        static let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
+        static let bottomPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
+        static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding }
     }
 
     @State private var viewHeight: CGFloat = Constants.viewSize.height
@@ -82,6 +87,7 @@ struct FireDialogView: ModalView {
 
     @ObservedObject var viewModel: FireDialogViewModel
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+    private let style = FireDialogStyle.current
     private let showIndividualSitesLink: Bool
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
@@ -155,7 +161,7 @@ struct FireDialogView: ModalView {
                         individualSitesLink
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Constants.horizontalPadding)
 
                 // Sites Overlay
                 if isShowingSitesOverlay {
@@ -182,7 +188,6 @@ struct FireDialogView: ModalView {
 
             footerView
                 .zIndex(11)
-                .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
                 .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
         }
         .readSize { size in
@@ -197,7 +202,8 @@ struct FireDialogView: ModalView {
 
     private var headerView: some View {
         VStack(spacing: 8) {
-            Image(nsImage: DesignSystemImages.Color.Size72.fire)
+            FirePictogramAnimation()
+                .frame(width: 72, height: 72)
                 .padding(.top, 8)
 
             Text(viewModel.mode.dialogTitle)
@@ -223,6 +229,8 @@ struct FireDialogView: ModalView {
             ],
             containerBackground: Color(designSystemColor: .containerFillPrimary),
             containerBorder: Color(designSystemColor: .containerBorderPrimary),
+            containerCornerRadius: style.segmentedControlCornerRadius,
+            segmentCornerRadius: style.segmentedControlItemCornerRadius,
             selectedForeground: Color(designSystemColor: .accentPrimary),
             unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
             selectedIconBackground: Color(designSystemColor: .accentGlowSecondary),
@@ -248,7 +256,7 @@ struct FireDialogView: ModalView {
                     title: UserText.fireDialogTabsAndWindows,
                     subtitle: tabsSubtitle,
                     isOn: $viewModel.includeTabsAndWindows,
-                    cornerRadius: .top,
+                    roundedCorners: .top,
                     toggleId: "FireDialogView.tabsToggle"
                 )
                 .accessibilityHidden(isShowingSitesOverlay)
@@ -266,7 +274,7 @@ struct FireDialogView: ModalView {
                     viewModel.includeHistory = $0
                 },
                 isEnabled: isIncludeHistoryEnabled,
-                cornerRadius: viewModel.mode.shouldShowCloseTabsToggle ? .none : .top,
+                roundedCorners: viewModel.mode.shouldShowCloseTabsToggle ? .none : .top,
                 toggleId: "FireDialogView.historyToggle"
             )
             .accessibilityHidden(isShowingSitesOverlay)
@@ -283,7 +291,7 @@ struct FireDialogView: ModalView {
                 // grey-out the ℹ button when the toggle is Off
                 infoEnabled: viewModel.includeCookiesAndSiteData,
                 isEnabled: isIncludeCookiesAndSiteDataEnabled,
-                cornerRadius: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
+                roundedCorners: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
                 toggleId: "FireDialogView.cookiesToggle"
             )
             .disabled(!isIncludeCookiesAndSiteDataEnabled)
@@ -311,10 +319,10 @@ struct FireDialogView: ModalView {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 12.0, style: .continuous)
+            RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
                 .fill(Color(designSystemColor: .containerFillPrimary))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12.0, style: .continuous)
+                    RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
                         .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
                 )
         )
@@ -434,8 +442,8 @@ struct FireDialogView: ModalView {
         )
     }
 
-    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, cornerRadius: RowCornerRadius = .none, toggleId: String) -> some View {
-        RowWithPressEffect(cornerRadius: cornerRadius, isEnabled: isEnabled) {
+    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
+        RowWithPressEffect(roundedCorners: roundedCorners, rowCornerRadius: style.rowCornerRadius, isEnabled: isEnabled) {
             guard isEnabled else { return }
             isOn.wrappedValue.toggle()
         } content: {
@@ -478,14 +486,14 @@ struct FireDialogView: ModalView {
 
                 Group {
                     Toggle(isOn: isOn)
-                        .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accentPrimary), knobFill: Color(designSystemColor: .accentContentPrimary)))
+                        .toggleStyle(FireToggleStyle(onFill: style.knobFillColor, knobFill: Color(designSystemColor: .accentContentPrimary)))
                         .accessibilityLabel(title)
                         .accessibilityIdentifier(toggleId)
                 }
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
-            .frame(width: Constants.viewSize.width - 32, alignment: .leading)
+            .frame(width: Constants.sectionRowWidth, alignment: .leading)
         }
     }
 
@@ -497,7 +505,7 @@ struct FireDialogView: ModalView {
     }
 
     private var fireproofSectionView: some View {
-        RowWithPressEffect(cornerRadius: .bottom, isEnabled: true) {
+        RowWithPressEffect(roundedCorners: .bottom, rowCornerRadius: style.rowCornerRadius, isEnabled: true) {
             presentManageFireproof()
         } content: {
             HStack(alignment: .center, spacing: 0) {
@@ -535,12 +543,12 @@ struct FireDialogView: ModalView {
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
-            .frame(width: Constants.viewSize.width - 32, alignment: .leading)
+            .frame(width: Constants.sectionRowWidth, alignment: .leading)
         }
     }
 
     private var individualSitesColor: NSColor {
-        NSColor(designSystemColor: .accentTextPrimary)
+        style.individualSitesColor
     }
 
     private var individualSitesLink: some View {
@@ -574,8 +582,15 @@ struct FireDialogView: ModalView {
                     .frame(maxWidth: .infinity)
                     .frame(height: 32)
                     .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                        Group {
+                            if AppVersion.isLiquidGlassSupported {
+                                Capsule(style: .continuous)
+                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                            } else {
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                            }
+                        }
                     )
             }
             .buttonStyle(.plain)
@@ -607,7 +622,8 @@ struct FireDialogView: ModalView {
                     topPadding: 0,
                     bottomPadding: 0,
                     backgroundColor: Color(designSystemColor: .destructivePrimary),
-                    backgroundPressedColor: Color(designSystemColor: .destructiveSecondary)
+                    backgroundPressedColor: Color(designSystemColor: .destructiveSecondary),
+                    pillShape: true
                 )
             )
             .disabled(!isDeleteEnabled)
@@ -615,9 +631,29 @@ struct FireDialogView: ModalView {
             .keyboardShortcut(.defaultAction)
             .accessibilityIdentifier("FireDialogView.burnButton")
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, Constants.horizontalPadding)
         .padding(.top, 8)
-        .padding(.bottom, 6)
+        .padding(.bottom, Constants.bottomPadding)
+    }
+}
+
+private struct FireDialogStyle {
+    let knobFillColor: Color
+    let individualSitesColor: NSColor
+    let rowCornerRadius: CGFloat
+    let segmentedControlCornerRadius: CGFloat
+    let segmentedControlItemCornerRadius: CGFloat
+
+    private static var `default`: FireDialogStyle {
+        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary), individualSitesColor: NSColor(designSystemColor: .accentTextPrimary), rowCornerRadius: 12, segmentedControlCornerRadius: 12, segmentedControlItemCornerRadius: 10)
+    }
+
+    private static var rebranded: FireDialogStyle {
+        FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent), individualSitesColor: NSColor(designSystemColor: .textPrimary), rowCornerRadius: 16, segmentedControlCornerRadius: 16, segmentedControlItemCornerRadius: 14)
+    }
+
+    static var current: FireDialogStyle {
+        DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
     }
 }
 
@@ -625,31 +661,30 @@ struct FireDialogView: ModalView {
 private enum RowCornerRadius {
     case top
     case bottom
-    case both
     case none
 }
 
 // Modifier to apply corner clipping based on row position
 private struct RowCornerClipModifier: ViewModifier {
-    let cornerRadius: RowCornerRadius
+    let roundedCorners: RowCornerRadius
+    let roundedCornerRadius: CGFloat
 
     func body(content: Content) -> some View {
-        switch cornerRadius {
+        switch roundedCorners {
         case .none:
             content
         case .top:
-            content.clipShape(CustomRoundedCornersShape(tl: 8, tr: 8, bl: 0, br: 0))
+            content.clipShape(CustomRoundedCornersShape(tl: roundedCornerRadius, tr: roundedCornerRadius, bl: 0, br: 0))
         case .bottom:
-            content.clipShape(CustomRoundedCornersShape(tl: 0, tr: 0, bl: 8, br: 8))
-        case .both:
-            content.clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            content.clipShape(CustomRoundedCornersShape(tl: 0, tr: 0, bl: roundedCornerRadius, br: roundedCornerRadius))
         }
     }
 }
 
 // Row with press effect - visual feedback without blocking child interactions
 private struct RowWithPressEffect<Content: View>: View {
-    let cornerRadius: RowCornerRadius
+    let roundedCorners: RowCornerRadius
+    let rowCornerRadius: CGFloat
     let isEnabled: Bool
     let action: () -> Void
     @ViewBuilder let content: () -> Content
@@ -680,27 +715,58 @@ private struct RowWithPressEffect<Content: View>: View {
             }
         }
         .animation(.easeOut(duration: showFeedback ? 0.06 : 0.12), value: showFeedback)
-        .modifier(RowCornerClipModifier(cornerRadius: cornerRadius))
+        .modifier(RowCornerClipModifier(roundedCorners: roundedCorners, roundedCornerRadius: rowCornerRadius))
     }
 
     @ViewBuilder
     private var pressBackground: some View {
         let background = Color.buttonMouseDown
 
-        switch cornerRadius {
+        switch roundedCorners {
         case .top:
-            CustomRoundedCornersShape(tl: 12, tr: 12, bl: 0, br: 0)
+            CustomRoundedCornersShape(tl: rowCornerRadius, tr: rowCornerRadius, bl: 0, br: 0)
                 .fill(background)
         case .bottom:
-            CustomRoundedCornersShape(tl: 0, tr: 0, bl: 12, br: 12)
-                .fill(background)
-        case .both:
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            CustomRoundedCornersShape(tl: 0, tr: 0, bl: rowCornerRadius, br: rowCornerRadius)
                 .fill(background)
         case .none:
             Rectangle()
                 .fill(background)
         }
+    }
+}
+
+// MARK: - Fire Pictogram Lottie
+
+/// Loads the fire pictogram Lottie animation.
+private struct FirePictogramAnimation: NSViewRepresentable {
+
+    private static let assetName = "fire-pictogram"
+
+    func makeNSView(context: Context) -> NSView {
+        let container = NSView()
+        container.wantsLayer = true
+        container.layer?.masksToBounds = true
+        attachAnimation(to: container)
+        return container
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private func attachAnimation(to container: NSView) {
+        guard let animation = LottieAnimation.asset(Self.assetName, bundle: .main) else {
+            return
+        }
+        let view = LottieAnimationView(animation: animation)
+        view.contentMode = .scaleAspectFit
+        view.loopMode = .playOnce
+        view.animationSpeed = 1.0
+        view.wantsLayer = true
+        view.layer?.masksToBounds = true
+        view.autoresizingMask = [.width, .height]
+        view.frame = container.bounds
+        container.addSubview(view)
+        view.play()
     }
 }
 

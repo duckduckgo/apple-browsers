@@ -18,6 +18,7 @@
 
 import Cocoa
 import Combine
+import DesignResourcesKitIcons
 import SwiftUI
 
 protocol DownloadsViewControllerDelegate: AnyObject {
@@ -172,8 +173,8 @@ final class DownloadsViewController: NSViewController {
         ]
 
         NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
-            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
+            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 13),
 
             openDownloadsFolderButton.widthAnchor.constraint(equalToConstant: 32),
             openDownloadsFolderButton.heightAnchor.constraint(equalToConstant: 32),
@@ -183,12 +184,12 @@ final class DownloadsViewController: NSViewController {
             clearDownloadsButton.widthAnchor.constraint(equalToConstant: 32),
             clearDownloadsButton.heightAnchor.constraint(equalToConstant: 32),
             clearDownloadsButton.leadingAnchor.constraint(equalTo: openDownloadsFolderButton.trailingAnchor),
-            view.trailingAnchor.constraint(equalTo: clearDownloadsButton.trailingAnchor, constant: 11),
+            view.trailingAnchor.constraint(equalTo: clearDownloadsButton.trailingAnchor, constant: 16),
             clearDownloadsButton.centerYAnchor.constraint(equalTo: openDownloadsFolderButton.centerYAnchor),
 
             separator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             separator.widthAnchor.constraint(equalTo: view.widthAnchor, constant: -2),
-            separator.topAnchor.constraint(equalTo: view.topAnchor, constant: 43),
+            separator.topAnchor.constraint(equalTo: view.topAnchor, constant: 44),
 
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -278,15 +279,23 @@ final class DownloadsViewController: NSViewController {
     private func setUpContextMenu() -> NSMenu {
         let menu = NSMenu {
             NSMenuItem(title: UserText.downloadsOpenItem, action: #selector(openDownloadAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.open)
             NSMenuItem(title: UserText.downloadsShowInFinderItem, action: #selector(revealDownloadAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.searchFind)
             NSMenuItem.separator()
             NSMenuItem(title: UserText.downloadsCopyLinkItem, action: #selector(copyDownloadLinkAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.copy)
             NSMenuItem(title: UserText.downloadsOpenWebsiteItem, action: #selector(openOriginatingWebsiteAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.globe)
             NSMenuItem.separator()
             NSMenuItem(title: UserText.downloadsRemoveFromListItem, action: #selector(removeDownloadAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.close)
             NSMenuItem(title: UserText.downloadsStopItem, action: #selector(cancelDownloadAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.close)
             NSMenuItem(title: UserText.downloadsRestartItem, action: #selector(restartDownloadAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.reloadSmall)
             NSMenuItem(title: UserText.downloadsClearAllItem, action: #selector(clearDownloadsAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.trash)
         }
         menu.delegate = self
         return menu
@@ -480,6 +489,8 @@ extension DownloadsViewController: NSMenuDelegate {
                 continue
             }
         }
+
+        menu.alignItemTextWithIconsRecursively()
     }
 }
 

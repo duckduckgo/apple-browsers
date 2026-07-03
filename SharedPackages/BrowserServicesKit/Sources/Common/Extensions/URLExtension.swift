@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Network
 import URLPredictor
 
@@ -33,6 +34,11 @@ extension URL {
         let string2 = other.absoluteString
         return string1.droppingHashedSuffix().dropping(suffix: "/").appending(string1.hashedSuffix ?? "")
             == string2.droppingHashedSuffix().dropping(suffix: "/").appending(string2.hashedSuffix ?? "")
+    }
+
+    /// Returns `absoluteString` truncated to at most 1024 characters, with the middle replaced by `"…"` for longer strings.
+    public var shortDescription: String {
+        absoluteString.truncated(to: 1024)
     }
 
     /// URL without the scheme and the '/' suffix of the path.
@@ -351,6 +357,12 @@ extension URL {
     public func replacing(host: String?) -> URL? {
         guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
         components.host = host
+        return components.url
+    }
+
+    public func replacing(scheme: String?) -> URL? {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
+        components.scheme = scheme
         return components.url
     }
 

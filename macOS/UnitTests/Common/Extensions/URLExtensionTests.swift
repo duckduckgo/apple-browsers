@@ -938,7 +938,7 @@ extension URLExtensionTests {
     @Test("DuckDuckGo help pages use correct base", .timeLimit(.minutes(1)))
     func duckDuckGoHelpPagesUseCorrectBase() {
         // Help pages that use duckduckgo.com base
-        #expect(URL.cookieConsentPopUpManagement.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management")
+        #expect(URL.cookieConsentPopUpManagement.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection")
         #expect(URL.privateSearchLearnMore.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/search-privacy/")
         #expect(URL.passwordManagerLearnMore.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/")
         #expect(URL.maliciousSiteProtectionLearnMore.absoluteString == "https://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker")

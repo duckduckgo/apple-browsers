@@ -20,11 +20,14 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 public struct RecoverSyncedDataView: View {
 
     @ObservedObject public var model: SyncSettingsViewModel
     var onCancel: () -> Void
+
+    @State private var bottomSafeArea: CGFloat = 0
 
     public init(model: SyncSettingsViewModel, onCancel: @escaping () -> Void) {
         self.model = model
@@ -41,7 +44,7 @@ public struct RecoverSyncedDataView: View {
                     Spacer()
                 }
                 .frame(height: 56)
-                Image("Sync-Recover-128")
+                Image(rebrandable: "Sync-Recover-128")
                     .padding(20)
 
                 Text(UserText.recoverSyncedDataTitle)
@@ -56,6 +59,7 @@ public struct RecoverSyncedDataView: View {
             .foregroundStyle(Color(designSystemColor: .textPrimary))
         } foregroundContent: {
             Button {
+                model.delegate?.fireSyncSetupPixel(event: .recoveryConfirmedTapped)
                 model.continueRecoverFlow()
             } label: {
                 Text(UserText.recoverSyncedDataButton)
@@ -63,11 +67,17 @@ public struct RecoverSyncedDataView: View {
             .buttonStyle(PrimaryButtonStyle())
             .frame(maxWidth: 360)
             .padding(.horizontal, 30)
-            .padding(.bottom, 8)
+            .padding(.bottom, max(24 - bottomSafeArea, 0))
         }
         .onAppear {
             model.autoRestoreManualRecoveryShown()
         }
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear { bottomSafeArea = geometry.safeAreaInsets.bottom }
+            }
+        )
         .background(Color(designSystemColor: .backgroundSheets))
     }
 }

@@ -27,7 +27,7 @@ import XCTest
 
 @testable import Navigation
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 class DistributedNavigationDelegateTestsBase: XCTestCase {
 
     let standardTimeout: TimeInterval = 15
@@ -98,7 +98,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 extension DistributedNavigationDelegateTestsBase {
 
     static func makeNavigationDelegateProxy() -> NavigationDelegateProxy {

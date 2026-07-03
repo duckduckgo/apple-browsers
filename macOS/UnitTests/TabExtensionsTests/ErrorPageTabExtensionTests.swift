@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import MaliciousSiteProtection
 import Navigation
 import PrivacyConfig

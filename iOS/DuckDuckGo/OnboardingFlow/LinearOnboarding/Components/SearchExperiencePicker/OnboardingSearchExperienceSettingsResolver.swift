@@ -17,31 +17,25 @@
 //  limitations under the License.
 //
 
-import PrivacyConfig
-
 /// Resolves the correct source for AI Chat search input settings during onboarding.
 ///
-/// When the onboarding search experience feature is active and the user has made a choice
-/// but Dax Dialogs are still in progress, this resolver returns the user's onboarding choice
-/// instead of the actual settings. This allows the Settings UI to reflect the user's intent
-/// while the actual activation remains deferred until Dax Dialogs complete.
+/// When the user has made a choice during onboarding but Dax Dialogs are still in progress,
+/// this resolver returns the user's onboarding choice instead of the actual settings. This
+/// allows the Settings UI to reflect the user's intent while the actual activation remains
+/// deferred until Dax Dialogs complete.
 final class OnboardingSearchExperienceSettingsResolver {
-    private let featureFlagger: FeatureFlagger
     private let onboardingProvider: OnboardingSearchExperienceProvider
     private let daxDialogsStatusProvider: ContextualDaxDialogStatusProvider
-    
-    init(featureFlagger: FeatureFlagger,
-         onboardingProvider: OnboardingSearchExperienceProvider,
+
+    init(onboardingProvider: OnboardingSearchExperienceProvider,
          daxDialogsStatusProvider: ContextualDaxDialogStatusProvider) {
-        self.featureFlagger = featureFlagger
         self.onboardingProvider = onboardingProvider
         self.daxDialogsStatusProvider = daxDialogsStatusProvider
     }
-    
-    /// Returns true when the onboarding search experience feature is active and the user's choice
-    /// should be shown in settings while activation remains deferred (until Dax Dialogs complete).
+
+    /// Returns true when the user's onboarding choice should be shown in settings while
+    /// activation remains deferred (until Dax Dialogs complete).
     var shouldUseDeferredOnboardingChoice: Bool {
-        featureFlagger.isFeatureOn(.onboardingSearchExperience) &&
         onboardingProvider.didMakeChoiceDuringOnboarding &&
         !onboardingProvider.didApplyOnboardingChoiceSettings &&
         !daxDialogsStatusProvider.hasSeenOnboarding

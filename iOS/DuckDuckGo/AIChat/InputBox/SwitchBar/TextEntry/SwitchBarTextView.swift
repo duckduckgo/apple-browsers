@@ -34,4 +34,24 @@ final class SwitchBarTextView: UITextView {
         onTouchesBeganHandler?()
     }
 
+    override var canBecomeFirstResponder: Bool {
+        !hasHiddenAncestor && super.canBecomeFirstResponder
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        guard !hasHiddenAncestor else { return false }
+        return super.becomeFirstResponder()
+    }
+
+}
+
+extension UIView {
+    var hasHiddenAncestor: Bool {
+        var view: UIView? = self
+        while let current = view {
+            if current.isHidden { return true }
+            view = current.superview
+        }
+        return false
+    }
 }

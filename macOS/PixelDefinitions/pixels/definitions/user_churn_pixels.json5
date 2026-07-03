@@ -6,6 +6,7 @@
         "parameters": [
             "appVersion",
             "atb",
+            "channel",
             {
                 "key": "newDefault",
                 "type": "string",

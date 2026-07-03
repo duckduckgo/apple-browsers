@@ -25,7 +25,9 @@ import Networking
 import Configuration
 import Persistence
 import WebKit
+#if canImport(DuckSansFont)
 import DuckSansFont
+#endif
 import PrivacyConfig
 
 struct AppConfiguration {
@@ -42,8 +44,10 @@ struct AppConfiguration {
     }
 
     func start(isBookmarksDBFilePresent: Bool?) throws {
+#if canImport(DuckSansFont)
         // Register DuckSans custom font
         DuckSansFont.registerFonts()
+#endif
 
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
 
@@ -207,12 +211,7 @@ struct AppConfiguration {
 
     private func onVariantAssigned(reportingService: ReportingService) {
         onboardingConfiguration.adjustDialogsForUITesting()
-        hideHistoryMessageForNewUsers()
         reportingService.setupStorageForMarketPlacePostback()
-    }
-
-    private func hideHistoryMessageForNewUsers() {
-        HistoryMessageManager().dismiss()
     }
 
 }

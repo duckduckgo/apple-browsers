@@ -19,6 +19,7 @@
 import Foundation
 import AppKit
 import Common
+import FoundationExtensions
 import LoginItems
 import Network
 import NetworkProtectionIPC
@@ -44,7 +45,9 @@ struct VPNMetadata: Encodable {
     }
 
     struct NetworkInfo: Encodable {
-        let currentPath: String
+        let currentPath: NetworkProtectionNetworkPathInfo?
+        let deviceAddressCategories: [NetworkProtectionIPAddressCategory]
+        let routerAddressCategories: [NetworkProtectionIPAddressCategory]
     }
 
     struct VPNState: Encodable {
@@ -55,6 +58,18 @@ struct VPNMetadata: Encodable {
         let lastKnownFailureDescription: String
         let connectedServer: String
         let connectedServerIP: String
+        let dataVolume: NetworkProtectionDataVolumeBuckets?
+    }
+
+    struct DNSSettingsState: Encodable {
+        enum Selection: String, Encodable {
+            case duckDuckGo
+            case custom
+        }
+
+        let selection: Selection
+        let blockRiskyDomainsEnabled: Bool?
+        let customDNSServerAddressCategory: NetworkProtectionIPAddressCategory?
     }
 
     struct VPNSettingsState: Encodable {
@@ -62,11 +77,13 @@ struct VPNMetadata: Encodable {
         let includeAllNetworksEnabled: Bool
         let enforceRoutesEnabled: Bool
         let excludeLocalNetworksEnabled: Bool
+        let excludeCGNATEnabled: Bool
         let notifyStatusChangesEnabled: Bool
         let showInMenuBarEnabled: Bool
         let selectedServer: String
         let selectedEnvironment: String
         let customDNS: Bool
+        let dnsSettings: DNSSettingsState
     }
 
     struct LoginItemState: Encodable {
@@ -75,13 +92,15 @@ struct VPNMetadata: Encodable {
     }
 
     struct SubscriptionInfo: Encodable {
-        let hasSubscriptionAccount: Bool
+        /// Whether the app has authenticated subscription account state.
+        let isSubscriptionAuthenticated: Bool
 
-        // nil means unknown
-        let isVPNFeatureIncludedInSubscription: Bool?
+        /// Whether the user's subscription plan/SKU includes VPN, based on cached plan feature data. `nil` means the lookup failed.
+        let subscriptionPlanIncludesVPN: Bool?
 
-        // nil means unknown
-        let isVPNFeatureEnabled: Bool?
+        /// Whether the subscription account's current access token grants VPN access. This does not guarantee VPN can start on this device.
+        /// `nil` means the token entitlement lookup failed.
+        let accountCanUseVPN: Bool?
     }
 
     let appInfo: AppInfo
@@ -168,7 +187,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
         let networkInfoMetadata = await collectNetworkInformation()
         let vpnState = await collectVPNState()
         let vpnSettingsState = collectVPNSettingsState()
-        let loginItemState = collectLoginItemState()
+        let loginItemState = await collectLoginItemState()
         let subscriptionInfo = await collectSubscriptionInfo()
 
         return VPNMetadata(
@@ -202,13 +221,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     private func collectDeviceInfoMetadata() -> VPNMetadata.DeviceInfo {
         let buildFlavor = AppVersion.isAppStoreBuild ? "appstore" : "dmg"
         let osVersion = AppVersion.shared.osVersionMajorMinorPatch
-        let lowPowerModeEnabled: Bool
-
-        if #available(macOS 12.0, *) {
-            lowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
-        } else {
-            lowPowerModeEnabled = false
-        }
+        let lowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
 
         let architecture = getMachineArchitecture()
 
@@ -240,13 +253,21 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
                 let path = monitor.currentPath
                 monitor.cancel()
 
-                return .init(currentPath: path.anonymousDescription)
+                return .init(
+                    currentPath: path.anonymousPathInfo,
+                    deviceAddressCategories: NetworkProtectionAddressMetadata.deviceAddressCategories(for: path),
+                    routerAddressCategories: NetworkProtectionAddressMetadata.routerAddressCategories(for: path)
+                )
             }
 
             // Wait up to 3 seconds to fetch the path.
             let currentExecutionTime = CFAbsoluteTimeGetCurrent() - startTime
             if currentExecutionTime >= 3.0 {
-                return .init(currentPath: "Timed out fetching path")
+                return .init(
+                    currentPath: nil,
+                    deviceAddressCategories: [.unknown],
+                    routerAddressCategories: [.unknown]
+                )
             }
         }
     }
@@ -269,22 +290,40 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
 
         let errorHistory = VPNOperationErrorHistory(ipcClient: ipcClient, defaults: defaults)
 
-        let connectionState = String(describing: statusReporter.statusObserver.recentValue)
+        let status = statusReporter.statusObserver.recentValue
+        let connectionState = String(describing: status)
         let lastTunnelErrorDescription = await errorHistory.lastTunnelErrorDescription
-        let lastKnownFailureDescription = NetworkProtectionKnownFailureStore().lastKnownFailure?.description ?? "none"
+        let lastKnownFailureDescription = Self.knownFailureDescription(NetworkProtectionKnownFailureStore().lastKnownFailure)
         let connectedServer = statusReporter.serverInfoObserver.recentValue.serverLocation?.serverLocation ?? "none"
         let connectedServerIP = statusReporter.serverInfoObserver.recentValue.serverAddress ?? "none"
+        let dataVolume = status.canReportActiveDataVolume
+            ? NetworkProtectionDataVolumeBuckets(dataVolume: statusReporter.dataVolumeObserver.recentValue)
+            : nil
+
         return .init(onboardingState: onboardingState,
                      connectionState: connectionState,
                      lastStartErrorDescription: errorHistory.lastStartErrorDescription,
                      lastTunnelErrorDescription: lastTunnelErrorDescription,
                      lastKnownFailureDescription: lastKnownFailureDescription,
                      connectedServer: connectedServer,
-                     connectedServerIP: connectedServerIP)
+                     connectedServerIP: connectedServerIP,
+                     dataVolume: dataVolume)
     }
 
-    func collectLoginItemState() -> VPNMetadata.LoginItemState {
-        let vpnMenuState = String(describing: LoginItem.vpnMenu.status)
+    private static func knownFailureDescription(_ knownFailure: KnownFailure?) -> String {
+        guard let knownFailure else {
+            return "none"
+        }
+
+        if let silentError = KnownFailure.SilentError(rawValue: knownFailure.error) {
+            return "KnownFailure error=\(silentError) code=\(knownFailure.error)"
+        }
+
+        return "KnownFailure code=\(knownFailure.error)"
+    }
+
+    func collectLoginItemState() async -> VPNMetadata.LoginItemState {
+        let vpnMenuState = await String(describing: LoginItem.vpnMenu.status())
         let vpnMenuIsRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: LoginItem.vpnMenu.agentBundleID).isEmpty
 
         return .init(
@@ -298,22 +337,41 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             includeAllNetworksEnabled: settings.includeAllNetworks,
             enforceRoutesEnabled: settings.enforceRoutes,
             excludeLocalNetworksEnabled: settings.excludeLocalNetworks,
+            excludeCGNATEnabled: settings.excludeCGNAT,
             notifyStatusChangesEnabled: settings.notifyStatusChanges,
             showInMenuBarEnabled: settings.showInMenuBar,
             selectedServer: settings.selectedServer.stringValue ?? "automatic",
             selectedEnvironment: settings.selectedEnvironment.rawValue,
-            customDNS: settings.dnsSettings.usesCustomDNS
+            customDNS: settings.dnsSettings.usesCustomDNS,
+            dnsSettings: collectDNSSettingsState()
         )
     }
 
+    func collectDNSSettingsState() -> VPNMetadata.DNSSettingsState {
+        switch settings.dnsSettings {
+        case .ddg(let blockRiskyDomains):
+            return .init(
+                selection: .duckDuckGo,
+                blockRiskyDomainsEnabled: blockRiskyDomains,
+                customDNSServerAddressCategory: nil
+            )
+        case .custom(let servers):
+            return .init(
+                selection: .custom,
+                blockRiskyDomainsEnabled: nil,
+                customDNSServerAddressCategory: servers.first.map(NetworkProtectionIPAddressClassifier.classify)
+            )
+        }
+    }
+
     func collectSubscriptionInfo() async -> VPNMetadata.SubscriptionInfo {
-        let isVPNFeatureIncludedInSubscription = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)
-        let isVPNFeatureEnabled = try? await subscriptionManager.isFeatureEnabled(.networkProtection)
+        let subscriptionPlanIncludesVPN = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)
+        let accountCanUseVPN = try? await subscriptionManager.isFeatureEnabled(.networkProtection)
 
         return .init(
-            hasSubscriptionAccount: subscriptionManager.isUserAuthenticated,
-            isVPNFeatureIncludedInSubscription: isVPNFeatureIncludedInSubscription,
-            isVPNFeatureEnabled: isVPNFeatureEnabled)
+            isSubscriptionAuthenticated: subscriptionManager.isUserAuthenticated,
+            subscriptionPlanIncludesVPN: subscriptionPlanIncludesVPN,
+            accountCanUseVPN: accountCanUseVPN)
     }
 
 }
@@ -325,5 +383,16 @@ extension VPNMetadata: UnifiedFeedbackMetadata {}
 extension DefaultVPNMetadataCollector: UnifiedMetadataCollector {
     func collectMetadata() async -> VPNMetadata {
         await collectVPNMetadata()
+    }
+}
+
+private extension ConnectionStatus {
+    var canReportActiveDataVolume: Bool {
+        switch self {
+        case .connected, .reasserting:
+            return true
+        case .notConfigured, .disconnected, .disconnecting, .connecting, .snoozing:
+            return false
+        }
     }
 }

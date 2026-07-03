@@ -22,8 +22,14 @@ import Core
 import Persistence
 import PrivacyConfig
 
+enum IdleReturnTreatment {
+    case ntp
+    case lut
+}
+
 protocol IdleReturnEvaluating {
-    func shouldShowNTPAfterIdle(lastBackgroundDate: Date?) -> Bool
+    func didReturnAfterIdle(lastBackgroundDate: Date?) -> Bool
+    func treatmentForIdleReturn() -> IdleReturnTreatment
 }
 
 /// Key namespace for idle-return NTP debug overrides (typed storage, no dotted keys).
@@ -38,17 +44,27 @@ struct IdleReturnDebugOverridesKeys: StoringKeys {
 
 struct IdleReturnThresholdResolver {
 
+    enum Constants {
+        static let idleThresholdSecondsSettingKey = "idleThresholdSeconds"
+        static let defaultIdleThresholdSeconds = 1800 // 30 minutes
+        static let subfeature: any PrivacySubfeature = iOSBrowserConfigSubfeature.showNTPAfterIdleReturn
+    }
+
     private let debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)?
+    private let userPreferenceStorage: (any ThrowingKeyedStoring<AfterInactivitySettingKeys>)?
     private let privacyConfigurationManager: PrivacyConfigurationManaging
 
     /// When `debugOverridesStorage` is nil, defaults to `UserDefaults.app.keyedStoring()`.
+    /// `userPreferenceStorage`, when provided, is checked before falling back to the privacy config value.
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
-         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil) {
+         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil,
+         userPreferenceStorage: (any ThrowingKeyedStoring<AfterInactivitySettingKeys>)? = nil) {
         if let debugOverridesStorage {
             self.debugOverridesStorage = debugOverridesStorage
         } else {
             self.debugOverridesStorage = UserDefaults.app.keyedStoring()
         }
+        self.userPreferenceStorage = userPreferenceStorage
         self.privacyConfigurationManager = privacyConfigurationManager
     }
 
@@ -56,66 +72,50 @@ struct IdleReturnThresholdResolver {
         if let overrideSeconds: Int = debugOverridesStorage?.thresholdSecondsOverride, overrideSeconds > 0 {
             return overrideSeconds
         }
-        let constants = IdleReturnEvaluator.IdleReturnEvaluatorConstants.self
-        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: constants.subfeature),
+        if let userSeconds = try? userPreferenceStorage?.idleReturnIntervalSeconds,
+           AfterInactivityIdleInterval(rawValue: userSeconds) != nil {
+            return userSeconds
+        }
+        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: Constants.subfeature),
               let jsonData = settings.data(using: .utf8) else {
-            return IdleReturnEvaluator.IdleReturnEvaluatorConstants.defaultIdleThresholdSeconds
+            return Constants.defaultIdleThresholdSeconds
         }
         do {
             if let settingsDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-               let value = settingsDict[IdleReturnEvaluator.IdleReturnEvaluatorConstants.idleThresholdSecondsSettingKey] as? NSNumber,
-               value.intValue >= 0 {
+               let value = settingsDict[Constants.idleThresholdSecondsSettingKey] as? NSNumber,
+               AfterInactivityIdleInterval(rawValue: value.intValue) != nil {
                 return value.intValue
             }
         } catch {
             Logger.general.debug("Idle return NTP idleThresholdSeconds parse failed: \(error.localizedDescription)")
         }
-        return IdleReturnEvaluator.IdleReturnEvaluatorConstants.defaultIdleThresholdSeconds
+        return Constants.defaultIdleThresholdSeconds
     }
 }
 
 final class IdleReturnEvaluator: IdleReturnEvaluating {
 
-    enum IdleReturnEvaluatorConstants {
-        static let idleThresholdSecondsSettingKey = "idleThresholdSeconds"
-        static let defaultIdleThresholdSeconds = 300 // 5 minutes
-        static let subfeature: any PrivacySubfeature = iOSBrowserConfigSubfeature.showNTPAfterIdleReturn
+    private let eligibilityManager: IdleReturnEligibilityManaging
+
+    init(eligibilityManager: IdleReturnEligibilityManaging) {
+        self.eligibilityManager = eligibilityManager
     }
 
-    private let featureFlagger: FeatureFlagger
-    private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let debugOverridesStorage: any KeyedStoring<IdleReturnDebugOverridesKeys>
-    private let idleReturnEligibilityManager: IdleReturnEligibilityManaging?
-
-    init(featureFlagger: FeatureFlagger,
-         privacyConfigurationManager: PrivacyConfigurationManaging,
-         debugOverridesStorage: (any KeyedStoring<IdleReturnDebugOverridesKeys>)? = nil,
-         idleReturnEligibilityManager: IdleReturnEligibilityManaging? = nil) {
-        self.featureFlagger = featureFlagger
-        self.privacyConfigurationManager = privacyConfigurationManager
-        self.debugOverridesStorage = if let debugOverridesStorage { debugOverridesStorage } else { UserDefaults.app.keyedStoring() }
-        self.idleReturnEligibilityManager = idleReturnEligibilityManager
-    }
-
-    func shouldShowNTPAfterIdle(lastBackgroundDate: Date?) -> Bool {
-        guard featureFlagger.isFeatureOn(.showNTPAfterIdleReturn) else {
+    func didReturnAfterIdle(lastBackgroundDate: Date?) -> Bool {
+        guard eligibilityManager.isFeatureAvailable(),
+              let lastBackgroundDate else {
             return false
         }
-        guard let lastBackgroundDate else {
-            return false
-        }
-        guard idleReturnEligibilityManager?.isEligibleForNTPAfterIdle() ?? true else {
-            return false
-        }
-        let thresholdSeconds = idleThresholdSeconds()
+        let thresholdSeconds = eligibilityManager.idleThresholdSeconds()
         return Date().timeIntervalSince(lastBackgroundDate) >= Double(thresholdSeconds)
     }
 
-    private func idleThresholdSeconds() -> Int {
-        let resolver = IdleReturnThresholdResolver(
-            privacyConfigurationManager: privacyConfigurationManager,
-            debugOverridesStorage: debugOverridesStorage
-        )
-        return resolver.thresholdSeconds()
+    func treatmentForIdleReturn() -> IdleReturnTreatment {
+        switch eligibilityManager.effectiveAfterInactivityOption() {
+        case .newTab:
+            return .ntp
+        case .lastUsedTab:
+            return .lut
+        }
     }
 }

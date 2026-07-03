@@ -20,8 +20,10 @@ import AppUpdaterShared
 import BrowserServicesKit
 import Combine
 import Common
+import ConcurrencyExtensions
 import FeatureFlags
 import Foundation
+import FoundationExtensions
 import os.log
 import Persistence
 import PixelKit
@@ -171,6 +173,10 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     public var isAtRestartCheckpoint: Bool { progressState.isAtRestartCheckpoint }
     public var isAtDownloadCheckpoint: Bool { progressState.isAtDownloadCheckpoint }
 
+    public var shouldAutoCheckOnReleaseNotesLoad: Bool {
+        !featureFlagger.isFeatureOn(.skipReleaseNotesUpdateCheck)
+    }
+
     /// Updates Sparkle auto-download settings based on current feature flags and user preference.
     private func updateAutoDownloadSettings() {
         let shouldAutoDownload = resolveAutoDownloadEnabled(userPreference: areAutomaticUpdatesEnabled)
@@ -242,6 +248,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
                 pixelFiring: PixelFiring?,
                 notificationPresenter: UpdateNotificationPresenting,
                 keyValueStore: ThrowingKeyValueStoring,
+                applicationUpdateDetector: ApplicationUpdateDetector,
                 allowCustomUpdateFeed: Bool,
                 isAutoUpdatePaused: @escaping () -> Bool = { false },
                 wideEvent: WideEventManaging,
@@ -259,7 +266,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         self.isOnboardingFinished = isOnboardingFinished
         self.openUpdatesPageAction = openUpdatesPage
         self.settings = keyValueStore.throwingKeyedStoring()
-        self.applicationUpdateDetector = ApplicationUpdateDetector(settings: settings)
+        self.applicationUpdateDetector = applicationUpdateDetector
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
 
         // Capture the current value before initializing updateWideEvent
@@ -494,7 +501,9 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     @objc public func runUpdateFromMenuItem() {
-        openUpdatesPage()
+        if !featureFlagger.isFeatureOn(.skipReleaseNotesUpdateCheck) {
+            openUpdatesPage()
+        }
         runUpdate()
     }
 

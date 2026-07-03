@@ -1,0 +1,48 @@
+// Long press menu on tab switcher button (toolbar), add-tab button (tab switcher), and add-tab button (tabs bar)
+{
+    "m_tab_long_press_menu_displayed": {
+        "description": "The fire/normal tab long-press menu was presented to the user",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Where the menu was triggered from",
+                "enum": ["toolbar", "tab_switcher", "tabs_bar"]
+            }
+        ]
+    },
+    "m_tab_long_press_menu_new_fire_tab": {
+        "description": "User selected 'New Fire Tab' from the long-press menu",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Where the menu was triggered from",
+                "enum": ["toolbar", "tab_switcher", "tabs_bar"]
+            }
+        ]
+    },
+    "m_tab_long_press_menu_new_normal_tab": {
+        "description": "User selected 'New Tab' (normal tab) from the long-press menu",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Where the menu was triggered from",
+                "enum": ["toolbar", "tab_switcher", "tabs_bar"]
+            }
+        ]
+    }
+}

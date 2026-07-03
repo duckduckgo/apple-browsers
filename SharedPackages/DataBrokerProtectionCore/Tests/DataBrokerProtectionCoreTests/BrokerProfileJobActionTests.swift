@@ -29,112 +29,12 @@ final class BrokerProfileJobActionTests: XCTestCase {
     let emailConfirmationDataService = MockEmailConfirmationDataServiceProvider()
     let captchaService = CaptchaServiceMock()
     let pixelHandler = MockDataBrokerProtectionPixelsHandler()
-    let stageCalculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: MockDataBrokerProtectionPixelsHandler(), isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "off", featureFlagger: MockDBPFeatureFlagger())
+    let stageCalculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: MockDataBrokerProtectionPixelsHandler(), isFreeScan: false, vpnConnectionState: "disconnected", vpnBypassStatus: "off")
 
     override func tearDown() async throws {
         webViewHandler.reset()
         emailConfirmationDataService.reset()
         captchaService.reset()
-    }
-
-    func testWhenEmailConfirmationActionSucceeds_thenExtractedLinkIsOpened() async {
-        let emailConfirmationAction = EmailConfirmationAction(id: "", actionType: .emailConfirmation, pollingTime: 1)
-        let step = Step(type: .optOut, actions: [emailConfirmationAction])
-        let extractedProfile = ExtractedProfile(email: "test@duck.com")
-        let sut = BrokerProfileOptOutSubJobWebRunner(
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            prefs: ContentScopeProperties.mock,
-            context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: emailConfirmationDataService,
-            captchaService: captchaService,
-            featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
-            operationAwaitTime: 0,
-            stageCalculator: stageCalculator,
-            pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(),
-            actionsHandlerMode: .optOut,
-            shouldRunNextStep: { true }
-        )
-
-        do {
-            _ = try await sut.run(inputValue: extractedProfile, webViewHandler: webViewHandler)
-            XCTAssertEqual(webViewHandler.wasLoadCalledWithURL?.absoluteString, "https://www.duckduckgo.com")
-            XCTAssertTrue(webViewHandler.wasFinishCalled)
-        } catch {
-            XCTFail("Should not throw")
-        }
-    }
-
-    func testWhenEmailConfirmationActionHasNoEmail_thenNoURLIsLoadedAndWebViewFinishes() async {
-        let emailConfirmationAction = EmailConfirmationAction(id: "", actionType: .emailConfirmation, pollingTime: 1)
-        let step = Step(type: .optOut, actions: [emailConfirmationAction])
-        let noEmailExtractedProfile = ExtractedProfile()
-        let sut = BrokerProfileOptOutSubJobWebRunner(
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            prefs: ContentScopeProperties.mock,
-            context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: emailConfirmationDataService,
-            captchaService: captchaService,
-            featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
-            operationAwaitTime: 0,
-            stageCalculator: stageCalculator,
-            pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(),
-            actionsHandlerMode: .optOut,
-            shouldRunNextStep: { true }
-        )
-
-        do {
-            _ = try await sut.run(inputValue: noEmailExtractedProfile, webViewHandler: webViewHandler)
-            XCTFail("Expected an error to be thrown")
-        } catch {
-            XCTAssertNil(webViewHandler.wasLoadCalledWithURL?.absoluteString)
-            XCTAssertTrue(webViewHandler.wasFinishCalled)
-
-            if let error = error as? DataBrokerProtectionError, case .emailError(.cantFindEmail) = error {
-                return
-            }
-
-            XCTFail("Unexpected error thrown: \(error).")
-        }
-    }
-
-    func testWhenOnEmailConfirmationActionEmailServiceThrows_thenOperationThrows() async {
-        let emailConfirmationAction = EmailConfirmationAction(id: "", actionType: .emailConfirmation, pollingTime: 1)
-        let step = Step(type: .optOut, actions: [emailConfirmationAction])
-        let extractedProfile = ExtractedProfile(email: "test@duck.com")
-        emailConfirmationDataService.shouldThrow = true
-        let sut = BrokerProfileOptOutSubJobWebRunner(
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            prefs: ContentScopeProperties.mock,
-            context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: emailConfirmationDataService,
-            captchaService: captchaService,
-            featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
-            operationAwaitTime: 0,
-            stageCalculator: stageCalculator,
-            pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(),
-            actionsHandlerMode: .optOut,
-            shouldRunNextStep: { true }
-        )
-
-        do {
-            _ = try await sut.run(inputValue: extractedProfile, webViewHandler: webViewHandler)
-            XCTFail("Expected an error to be thrown")
-        } catch {
-            XCTAssertNil(webViewHandler.wasLoadCalledWithURL?.absoluteString)
-            XCTAssertTrue(webViewHandler.wasFinishCalled)
-
-            if let error = error as? DataBrokerProtectionError, case .emailError(nil) = error {
-                return
-            }
-
-            XCTFail("Unexpected error thrown: \(error).")
-        }
     }
 
     func testWhenActionNeedsEmail_thenExtractedProfileEmailIsSet() async {
@@ -147,7 +47,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
@@ -174,7 +74,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
@@ -206,12 +106,11 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(optimizedClickAwaitTimeForOptOut: 0.0,
-                                                      legacyClickAwaitTimeForOptOut: 0.0,
+            executionConfig: BrokerJobExecutionConfig(clickAwaitTimeForOptOut: 0.0,
                                                       clickAwaitTimeForScan: 0.0),
             actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
@@ -232,7 +131,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
@@ -258,7 +157,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
@@ -267,7 +166,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
         sut.actionsHandler?.captchaTransactionId = "transactionId"
 
         await sut.runNextAction(solveCaptchaAction)
@@ -285,7 +184,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
@@ -293,7 +192,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             actionsHandlerMode: .testing,
             shouldRunNextStep: { true }
         )
-        let actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        let actionsHandler = ActionsHandler.forOptOut(step)
         actionsHandler.captchaTransactionId = "transactionId"
         captchaService.shouldThrow = true
 
@@ -319,7 +218,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
@@ -328,7 +227,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         await sut.captchaInformation(captchaInfo: getCaptchaResponse)
 
@@ -346,7 +245,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
@@ -357,7 +256,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         sut.resetRetriesCount()
         captchaService.shouldThrow = true
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         await sut.captchaInformation(captchaInfo: getCaptchaResponse)
 
@@ -374,7 +273,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
@@ -389,114 +288,6 @@ final class BrokerProfileJobActionTests: XCTestCase {
         XCTAssertTrue(webViewHandler.wasExecuteCalledForUserData)
     }
 
-    func testWhenActionHasNoRawJSON_thenTypedFallbackPixelIsFired() async {
-        // Given: a regular opt-out action has no raw JSON payload, so typed fallback is unexpected.
-        pixelHandler.clear()
-
-        let expectationAction = ExpectationAction(id: "1", actionType: .expectation)
-        XCTAssertNil(expectationAction.json)
-        let step = Step(type: .optOut, actions: [expectationAction])
-        let context = BrokerProfileQueryData.mock(with: [step])
-        let sut = BrokerProfileOptOutSubJobWebRunner(
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            prefs: ContentScopeProperties.mock,
-            context: context,
-            emailConfirmationDataService: emailConfirmationDataService,
-            captchaService: captchaService,
-            featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
-            operationAwaitTime: 0,
-            stageCalculator: stageCalculator,
-            pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(),
-            actionsHandlerMode: .optOut,
-            shouldRunNextStep: { true }
-        )
-        sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
-
-        // When: the action is executed and injected into the web view payload.
-        await sut.runNextAction(expectationAction)
-
-        // Then: the unexpected typed-fallback pixel is fired with the current broker context.
-        guard case .actionPayloadTypedFallbackUnexpected(let dataBroker, let version, let actionType, let stepType) = pixelHandler.lastFiredEvent else {
-            return XCTFail("Expected actionPayloadTypedFallbackUnexpected pixel to fire")
-        }
-        XCTAssertEqual(dataBroker, context.dataBroker.url)
-        XCTAssertEqual(version, context.dataBroker.version)
-        XCTAssertEqual(actionType, ActionType.expectation.rawValue)
-        XCTAssertEqual(stepType, .optOut)
-    }
-
-    func testWhenActionHasRawJSON_thenTypedFallbackPixelIsNotFired() async {
-        // Given: a regular opt-out action has a raw JSON payload, so typed fallback should not be used.
-        pixelHandler.clear()
-
-        let rawJSON = Data("{\"id\":\"1\",\"actionType\":\"expectation\",\"selector\":\"#submit\"}".utf8)
-        let expectationAction = ExpectationAction(id: "1", actionType: .expectation, json: rawJSON)
-        XCTAssertNotNil(expectationAction.json)
-        let step = Step(type: .optOut, actions: [expectationAction])
-        let sut = BrokerProfileOptOutSubJobWebRunner(
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            prefs: ContentScopeProperties.mock,
-            context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: emailConfirmationDataService,
-            captchaService: captchaService,
-            featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
-            operationAwaitTime: 0,
-            stageCalculator: stageCalculator,
-            pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(),
-            actionsHandlerMode: .optOut,
-            shouldRunNextStep: { true }
-        )
-        sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
-
-        // When: the action is executed and injected into the web view payload.
-        await sut.runNextAction(expectationAction)
-
-        // Then: no unexpected typed-fallback pixel is fired.
-        XCTAssertNil(pixelHandler.lastFiredEvent)
-    }
-
-    func testWhenActionIsSyntheticEmailConfirmationContinuationNavigate_thenTypedFallbackPixelIsNotFired() async {
-        // Given: continuation mode creates a synthetic navigate action with no raw JSON payload.
-        pixelHandler.clear()
-
-        let emailConfirmationAction = EmailConfirmationAction(id: "email-1", actionType: .emailConfirmation, pollingTime: 1)
-        let step = Step(type: .optOut, actions: [emailConfirmationAction])
-        let actionsHandler = ActionsHandler.forEmailConfirmationContinuation(step, confirmationURL: URL(string: "https://example.com")!)
-        guard let continuationAction = actionsHandler.nextAction() else {
-            return XCTFail("Expected a synthetic continuation action")
-        }
-        XCTAssertNil(continuationAction.json)
-        let sut = BrokerProfileOptOutSubJobWebRunner(
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            prefs: ContentScopeProperties.mock,
-            context: BrokerProfileQueryData.mock(with: [step]),
-            emailConfirmationDataService: emailConfirmationDataService,
-            captchaService: captchaService,
-            featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
-            operationAwaitTime: 0,
-            stageCalculator: stageCalculator,
-            pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(),
-            actionsHandlerMode: .optOut,
-            shouldRunNextStep: { true }
-        )
-        sut.webViewHandler = webViewHandler
-        sut.actionsHandler = actionsHandler
-
-        // When: the synthetic continuation navigate action is executed.
-        await sut.runNextAction(continuationAction)
-
-        // Then: no unexpected typed-fallback pixel is fired for this known synthetic action.
-        XCTAssertNil(pixelHandler.lastFiredEvent)
-    }
-
     func testWhenLoadURLDelegateIsCalled_thenCorrectMethodIsExecutedOnWebViewHandler() async {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
@@ -505,7 +296,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
@@ -530,7 +321,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
@@ -554,7 +345,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
@@ -578,7 +369,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
@@ -602,7 +393,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
@@ -625,7 +416,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             cookieHandler: mockCookieHandler,
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
@@ -651,7 +442,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             cookieHandler: mockCookieHandler,
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
@@ -681,7 +472,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
@@ -690,7 +481,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // Simulate condition success
         await sut.conditionSuccess(actions: [])
@@ -710,7 +501,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
@@ -719,7 +510,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // Execute the condition action to set it as current action
         _ = sut.actionsHandler?.nextAction()
@@ -742,7 +533,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             stageDurationCalculator: mockStageCalculator,
             pixelHandler: MockDataBrokerProtectionPixelsHandler(),
             executionConfig: BrokerJobExecutionConfig(),
@@ -769,7 +560,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
@@ -778,7 +569,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // Execute the expectation action to set it as current action
         _ = sut.actionsHandler?.nextAction()
@@ -804,7 +595,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
@@ -813,7 +604,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // Simulate condition success with follow-up actions
         await sut.conditionSuccess(actions: [followUpAction])
@@ -838,7 +629,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
@@ -847,7 +638,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // First condition succeeds
         await sut.conditionSuccess(actions: [])
@@ -885,7 +676,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
                 emailConfirmationDataService: emailConfirmationDataService,
                 captchaService: captchaService,
                 featureFlagger: MockDBPFeatureFlagger(),
-                applicationNameForUserAgent: nil,
+                applicationNameForUserAgentProvider: { nil },
                 operationAwaitTime: 0,
                 stageCalculator: mockStageCalculator,
                 pixelHandler: pixelHandler,
@@ -894,7 +685,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
                 shouldRunNextStep: { true }
             )
             sut.webViewHandler = webViewHandler
-            sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+            sut.actionsHandler = ActionsHandler.forOptOut(step)
             mockStageCalculator.clear()
 
             // Execute the condition action to set it as current action
@@ -919,7 +710,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
@@ -928,7 +719,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // First call success
         await sut.conditionSuccess(actions: [])
@@ -955,7 +746,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: { nil },
             operationAwaitTime: 0,
             stageCalculator: mockStageCalculator,
             pixelHandler: pixelHandler,
@@ -964,7 +755,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
-        sut.actionsHandler = ActionsHandler.forOptOut(step, haltsAtEmailConfirmation: false)
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
 
         // Execute multiple condition successes
         await sut.conditionSuccess(actions: [])
@@ -985,5 +776,177 @@ final class BrokerProfileJobActionTests: XCTestCase {
 
         XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
         XCTAssertTrue(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+    }
+
+    // MARK: - generateEmail + fillForm fallback
+
+    private func makeOptOutRunner(step: Step, extractedProfileId: Int64? = nil) -> BrokerProfileOptOutSubJobWebRunner {
+        let runner = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            context: BrokerProfileQueryData.mock(with: [step]),
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: MockDBPFeatureFlagger(),
+            applicationNameForUserAgentProvider: { nil },
+            operationAwaitTime: 0,
+            stageCalculator: stageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            actionsHandlerMode: .optOut,
+            shouldRunNextStep: { true }
+        )
+        runner.webViewHandler = webViewHandler
+        runner.extractedProfile = ExtractedProfile(id: extractedProfileId)
+        return runner
+    }
+
+    private func makeScanRunner(step: Step) -> BrokerProfileScanSubJobWebRunner {
+        let runner = BrokerProfileScanSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            context: BrokerProfileQueryData.mock(with: [step]),
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: MockDBPFeatureFlagger(),
+            applicationNameForUserAgentProvider: { nil },
+            operationAwaitTime: 0,
+            stageDurationCalculator: stageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            shouldRunNextStep: { true }
+        )
+        runner.webViewHandler = webViewHandler
+        return runner
+    }
+
+    // Regression guard: the legacy fillForm email-fetch path is unchanged when no prior
+    // generateEmail has run.
+    func testWhenFillFormNeedsEmailAndNoCachedEmail_thenServiceIsCalled() async {
+        let fillFormAction = FillFormAction(id: "1", actionType: .fillForm, elements: [.init(type: "email")])
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [fillFormAction]))
+
+        await sut.runNextAction(fillFormAction)
+
+        XCTAssertEqual(emailConfirmationDataService.getEmailAndSaveCallCount, 1)
+        XCTAssertEqual(sut.extractedProfile?.email, "test@duck.com")
+    }
+
+    func testWhenGenerateEmailActionRunsOnOptOut_thenSaveCapableHelperIsUsedWithExtractedProfileId() async {
+        let generateEmailAction = GenerateEmailAction(id: "1", actionType: .generateEmail)
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [generateEmailAction]),
+                                   extractedProfileId: 42)
+
+        await sut.runNextAction(generateEmailAction)
+
+        XCTAssertEqual(sut.fetchedEmail, "test@duck.com")
+        XCTAssertEqual(emailConfirmationDataService.getEmailAndSaveCallCount, 1)
+        XCTAssertEqual(emailConfirmationDataService.getEmailCallCount, 0)
+        XCTAssertEqual(emailConfirmationDataService.lastExtractedProfileIdPassed, 42)
+    }
+
+    func testWhenGenerateEmailActionRunsOnScan_thenFetchOnlyPathIsUsed() async {
+        let generateEmailAction = GenerateEmailAction(id: "1", actionType: .generateEmail)
+        let sut = makeScanRunner(step: Step(type: .scan, actions: [generateEmailAction]))
+
+        await sut.runNextAction(generateEmailAction)
+
+        // Scan skips the save-capable helper entirely — no store row, no risk of the helper's
+        // missing-ID throw. Only the fetch-only `getEmail` path runs.
+        XCTAssertEqual(sut.fetchedEmail, "test@duck.com")
+        XCTAssertEqual(emailConfirmationDataService.getEmailCallCount, 1)
+        XCTAssertEqual(emailConfirmationDataService.getEmailAndSaveCallCount, 0)
+    }
+
+    func testWhenGenerateEmailServiceThrows_thenFetchedEmailRemainsNil() async {
+        let generateEmailAction = GenerateEmailAction(id: "1", actionType: .generateEmail)
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [generateEmailAction]))
+        emailConfirmationDataService.shouldThrow = true
+
+        await sut.runNextAction(generateEmailAction)
+
+        XCTAssertNil(sut.fetchedEmail)
+    }
+
+    func testWhenGenerateEmailIsFollowedByFillFormWithFetchedEmailDataSource_thenNeedsEmailFallbackIsSkipped() async {
+        let generateEmailAction = GenerateEmailAction(id: "1", actionType: .generateEmail)
+        let fillFormAction = FillFormAction(id: "2",
+                                            actionType: .fillForm,
+                                            dataSource: "fetchedEmail",
+                                            elements: [.init(type: "email")])
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [generateEmailAction, fillFormAction]),
+                                   extractedProfileId: 42)
+
+        await sut.runNextAction(generateEmailAction)
+        await sut.runNextAction(fillFormAction)
+
+        XCTAssertEqual(emailConfirmationDataService.getEmailAndSaveCallCount, 1)
+        XCTAssertEqual(emailConfirmationDataService.getEmailCallCount, 0)
+    }
+
+    func testWhenFillFormHasUserProfileDataSourceWithEmailElement_thenNeedsEmailFallbackStillFires() async {
+        let fillFormAction = FillFormAction(id: "1",
+                                            actionType: .fillForm,
+                                            dataSource: "userProfile",
+                                            elements: [.init(type: "email")])
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [fillFormAction]),
+                                   extractedProfileId: 42)
+
+        await sut.runNextAction(fillFormAction)
+
+        XCTAssertEqual(emailConfirmationDataService.getEmailAndSaveCallCount, 1)
+    }
+
+    // MARK: - getEmailData
+
+    func testWhenGetEmailDataSucceeds_thenEmailDataIsPopulatedAndPassedToService() async {
+        let action = GetEmailDataAction(id: "1", actionType: .getEmailData, pollingTime: 3)
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [action]))
+        sut.fetchedEmail = "polled@duck.com"
+        emailConfirmationDataService.getEmailDataReturnValue = [
+            "verificationCode": "123456",
+            "token": "abc"
+        ]
+
+        await sut.runNextAction(action)
+
+        XCTAssertEqual(emailConfirmationDataService.getEmailDataCallCount, 1)
+        XCTAssertEqual(emailConfirmationDataService.lastGetEmailDataEmail, "polled@duck.com")
+        XCTAssertEqual(emailConfirmationDataService.lastGetEmailDataPollingInterval, 3)
+        XCTAssertEqual(emailConfirmationDataService.lastGetEmailDataTotalTimeout, BrokerJobExecutionConfig.Constants.defaultGetEmailDataTotalTimeout)
+        XCTAssertEqual(sut.emailData, [
+            "verificationCode": "123456",
+            "token": "abc"
+        ])
+    }
+
+    func testWhenGetEmailDataServiceThrows_thenActionIsNotRetried() async {
+        let action = GetEmailDataAction(id: "1", actionType: .getEmailData, pollingTime: 3)
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [action]))
+        sut.fetchedEmail = "polled@duck.com"
+        sut.retriesCountOnError = 3
+        emailConfirmationDataService.getEmailDataThrowError = .linkExtractionTimedOut
+
+        await sut.runNextAction(action)
+
+        XCTAssertEqual(sut.retriesCountOnError, 0)
+        XCTAssertTrue(sut.emailData.isEmpty)
+    }
+
+    func testWhenGetEmailDataCalledTwice_thenKeysMergeWithLastWriteWins() async {
+        let action = GetEmailDataAction(id: "1", actionType: .getEmailData, pollingTime: 1)
+        let sut = makeOptOutRunner(step: Step(type: .optOut, actions: [action]))
+        sut.fetchedEmail = "polled@duck.com"
+
+        emailConfirmationDataService.getEmailDataReturnValue = ["code": "first", "onlyFirst": "a"]
+        await sut.runNextAction(action)
+        emailConfirmationDataService.getEmailDataReturnValue = ["code": "second", "onlySecond": "b"]
+        await sut.runNextAction(action)
+
+        XCTAssertEqual(sut.emailData, [
+            "code": "second",
+            "onlyFirst": "a",
+            "onlySecond": "b"
+        ])
     }
 }

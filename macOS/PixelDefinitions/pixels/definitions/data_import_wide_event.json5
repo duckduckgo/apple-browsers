@@ -16,10 +16,15 @@
             "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",
+            {
+                "key": "feature.data.ext.error.error_description",
+                "type": "string",
+                "description": "Description of the failure when the data import flow ends in error.",
+                "enum": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+            },
             {
                 "key": "meta.type",
                 "type": "string",
@@ -102,7 +107,7 @@
                 "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_error\\.description",
                 "type": "string",
                 "description": "Human-readable error description for each import type failures",
-                "examples": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+                "enum": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
             },
             // Per-type underlying error domains
             {

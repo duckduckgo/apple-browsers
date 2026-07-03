@@ -26,6 +26,7 @@ public extension PixelKit {
         public static let test = "test"
         public static let appVersion = "appVersion"
         public static let pixelSource = "pixelSource"
+        public static let channel = "channel"
         public static let osMajorVersion = "osMajorVersion"
         public static let osUpgradeCapability = "can_update"
         public static let maxSupportedOSVersion = "maxSupportedOS"
@@ -71,6 +72,7 @@ public extension PixelKit {
         public static let vpnBreakageCategory = "breakageCategory"
         public static let vpnBreakageDescription = "breakageDescription"
         public static let vpnBreakageMetadata = "breakageMetadata"
+        public static let vpnStartCancellationStep = "step"
 
         public static let reason = "reason"
 

@@ -1,0 +1,12 @@
+﻿BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DDG Tests//ICSParser//EN
+BEGIN:VEVENT
+UID:bom-prefixed-001@duckduckgo.com
+DTSTAMP:20260501T120000Z
+DTSTART:20260601T140000Z
+DTEND:20260601T150000Z
+SUMMARY:BOM-Prefixed File
+DESCRIPTION:Real-world Windows .ics exports often include a UTF-8 BOM at the start of the file.
+END:VEVENT
+END:VCALENDAR

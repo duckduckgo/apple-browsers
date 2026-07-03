@@ -30,22 +30,9 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
     }
 
-    var isEmailConfirmationDecouplingFeatureOn: Bool {
-        featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
-    }
-
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         // Not relevant to macOS
         return false
-    }
-
-    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
-        // Not relevant to macOS
-        return false
-    }
-
-    var isClickActionDelayReductionOptimizationOn: Bool {
-        featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
     }
 
     var isContinuedProcessingFeatureOn: Bool {
@@ -57,8 +44,8 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
-    var isWideEventPOSTEndpointOn: Bool {
-        featureFlagger.isFeatureOn(.wideEventPostEndpoint)
+    var isOptOutRetryErrorFrequencyExperimentOn: Bool {
+        featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
     init(featureFlagger: FeatureFlagger) {
@@ -83,14 +70,7 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
 extension DBPFeatureFlagger: WideEventFeatureFlagProviding {
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-            let buildType = StandardApplicationBuildType()
-            if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
-                return false
-            } else {
-                return featureFlagger.isFeatureOn(.wideEventPostEndpoint)
-            }
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }

@@ -63,7 +63,9 @@ extension SpecialPagesUserScript {
             startupPreferences: NSApp.delegateTyped.startupPreferences,
             bookmarkManager: NSApp.delegateTyped.bookmarkManager,
             pinningManager: NSApp.delegateTyped.pinningManager,
-            featureFlagger: NSApp.delegateTyped.featureFlagger
+            featureFlagger: NSApp.delegateTyped.featureFlagger,
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: NSApp.delegateTyped.keyValueStore),
+            installDateProvider: { AppDelegate.firstLaunchDate }
         )
     }
 }

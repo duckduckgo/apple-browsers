@@ -16,16 +16,18 @@
 //  limitations under the License.
 //
 
-import Foundation
 import BrowserServicesKit
-import DataBrokerProtectionCore
 import Common
+import ConcurrencyExtensions
 import ContentScopeScripts
-import os.log
+import DataBrokerProtectionCore
+import enum UserScript.UserScriptError
 import FeatureFlags
+import Foundation
+import FoundationExtensions
+import os.log
 import PixelKit
 import PrivacyConfig
-import enum UserScript.UserScriptError
 
 struct ExtractedAddress: Codable {
     let state: String
@@ -194,7 +196,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                      database: nil,
                                      emailServiceV0: emailService,
                                      emailServiceV1: emailServiceV1,
-                                     featureFlagger: featureFlagger,
                                      pixelHandler: pixelHandler,
                                      debugEventHandler: { [weak self] message in
                                         self?.addHistoryDebugEvent(summary: "Email confirmation", details: message)
@@ -211,7 +212,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let contentScopeProperties: ContentScopeProperties
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     let featureFlagger: DBPFeatureFlagging
-    let applicationNameForUserAgent: String?
+    let applicationNameForUserAgentProvider: () -> String?
 
     private var isSyncingAgeFields = false
 
@@ -231,10 +232,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
          featureFlagger: DBPFeatureFlagging,
-         applicationNameForUserAgent: String?) {
+         applicationNameForUserAgentProvider: @escaping () -> String?) {
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
         self.featureFlagger = featureFlagger
-        self.applicationNameForUserAgent = applicationNameForUserAgent
+        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
                                                   credentialsAutofill: false,
@@ -285,9 +286,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                              settings: dbpSettings,
                                              servicePixel: backendServicePixels)
 
-        if #available(macOS 12.0, *) {
-            loadPresets()
-        }
+        loadPresets()
     }
 
     @MainActor
@@ -332,13 +331,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 emailConfirmationDataService: self.emailConfirmationDataService,
                                 captchaService: self.captchaService,
                                 featureFlagger: self.featureFlagger,
-                                applicationNameForUserAgent: self.applicationNameForUserAgent,
+                                applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                                 stageDurationCalculator: stageCalculator,
                                 pixelHandler: fakePixelHandler,
                                 executionConfig: .init(),
                                 shouldRunNextStep: { true }
                             )
-                            let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
+                            let extractedProfiles = try await runner.scan(showWebView: true) { true }
                             let brokerId = DebugHelper.stableId(for: query.dataBroker)
                             let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
                             let assignedProfiles: [ExtractedProfile] = extractedProfiles.map { profile in
@@ -391,7 +390,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let dataBroker: DataBroker
         if let data = jsonString.data(using: .utf8),
            let decoded = try? JSONDecoder().decode(DataBroker.self, from: data) {
-            dataBroker = decoded
+            dataBroker = decoded.with(id: DebugHelper.stableId(for: decoded))
         } else {
             dataBroker = scanResult.dataBroker
         }
@@ -429,7 +428,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     emailConfirmationDataService: self.emailConfirmationDataService,
                     captchaService: self.captchaService,
                     featureFlagger: self.featureFlagger,
-                    applicationNameForUserAgent: self.applicationNameForUserAgent,
+                    applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
                     stageCalculator: stageCalculator,
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),
@@ -437,12 +436,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     shouldRunNextStep: { true }
                 )
 
-                try await runner.optOut(profileQuery: brokerProfileQueryData,
-                                        extractedProfile: scanResult.extractedProfile,
+                try await runner.optOut(extractedProfile: scanResult.extractedProfile,
                                         showWebView: true) { true }
 
-                if self.featureFlagger.isEmailConfirmationDecouplingFeatureOn,
-                   scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
+                if scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
                     addOptOutAwaitingEmailConfirmationEvent(for: scanResult)
                     Task { @MainActor in
                         self.isProgressActive = false
@@ -580,7 +577,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     }
 
     var applicationNameForUserAgentDisplayValue: String {
-        applicationNameForUserAgent ?? "nil"
+        applicationNameForUserAgentProvider() ?? "nil"
     }
 
     func addDebugEvent(kind: DebugEventKind, summary: String, profileQueryLabel: String, details: String, progressText: String) {
@@ -636,19 +633,16 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
 extension DataBrokerRunCustomJSONViewModel {
     func loadPresets() {
-        guard #available(macOS 12.0, *) else { return }
         presetsText = UserDefaults.dbp.string(forKey: ProfilePreset.Constants.presetKey) ?? ""
         presets = parsePresets(from: presetsText)
     }
 
     func savePresets() {
-        guard #available(macOS 12.0, *) else { return }
         UserDefaults.dbp.set(presetsText, forKey: ProfilePreset.Constants.presetKey)
         presets = parsePresets(from: presetsText)
     }
 
     func applyPreset(_ preset: ProfilePreset) {
-        guard #available(macOS 12.0, *) else { return }
         names = Array(preset.names.prefix(Constants.maxNames))
         addresses = Array(preset.addresses.prefix(Constants.maxAddresses))
         if names.isEmpty { names = [NameUI.empty()] }
@@ -658,8 +652,6 @@ extension DataBrokerRunCustomJSONViewModel {
     }
 
     func saveCurrentFormAsPreset() {
-        guard #available(macOS 12.0, *) else { return }
-
         let namesLine = names.compactMap { name in
             guard let components = PersonNameComponents(name: name) else { return nil }
             let formatted = PersonNameComponentsFormatter().string(from: components)
@@ -710,7 +702,6 @@ fileprivate extension String {
 
     func toNames() -> [NameUI] {
         split(by: ProfilePreset.Constants.entrySeparator).compactMap { entry in
-            guard #available(macOS 12.0, *) else { return nil }
             let formatter = PersonNameComponentsFormatter()
             let components = formatter.personNameComponents(from: entry)
             return components.flatMap { NameUI(components: $0) }
@@ -740,8 +731,6 @@ fileprivate extension PersonNameComponents {
         if trimmedFirst.isEmpty && trimmedMiddle.isEmpty && trimmedLast.isEmpty {
             return nil
         }
-
-        guard #available(macOS 12.0, *) else { return nil }
 
         self.init()
         self.givenName = trimmedFirst
@@ -813,6 +802,9 @@ final class FakeStageDurationCalculator: StageDurationCalculator, DebugEventRepo
     }
 
     func fireOptOutEmailConfirm() {
+    }
+
+    func fireOptOutEmailGetData() {
     }
 
     func fireOptOutFillForm() {

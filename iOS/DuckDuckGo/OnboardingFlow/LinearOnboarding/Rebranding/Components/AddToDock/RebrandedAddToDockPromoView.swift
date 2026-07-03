@@ -23,7 +23,7 @@ import SwiftUI
 extension OnboardingRebranding.OnboardingView {
 
     struct AddToDockPromoView: View {
-        private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-promo", withExtension: "mov")
+        private static let videoURL = Bundle.main.url(forResource: "Rebranded-AddToDock-promo", withExtension: "mp4")
 
         private enum Design {
             static let borderWidth: CGFloat = 321

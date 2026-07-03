@@ -37,6 +37,7 @@ public struct ImageSegmentedPickerConfiguration {
     public var outerHeight: CGFloat
     public var innerHeight: CGFloat
     public var innerHorizontalPadding: CGFloat
+    public var textLineLimit: Int?
 
     /// Creates a new configuration for the image segmented picker.
     ///
@@ -44,21 +45,23 @@ public struct ImageSegmentedPickerConfiguration {
     ///   - font: The font for text labels. Defaults to system font with size 16 and medium weight.
     ///   - selectedTextColor: The text color for selected items. Defaults to primary text color.
     ///   - unselectedTextColor: The text color for unselected items. Defaults to primary text color.
-    ///   - backgroundColor: The picker's background color. Defaults to backdrop color.
-    ///   - selectedBackgroundColor: The selected indicator's background color. Defaults to tertiary background color.
+    ///   - backgroundColor: The picker's background color. Defaults to raised backdrop color.
+    ///   - selectedBackgroundColor: The selected indicator's background color. Defaults to raised fill primary color.
     ///   - outerHeight: The total height of the picker. Defaults to 38.
     ///   - innerHeight: The height of the selected indicator pill. Defaults to 34.
     ///   - innerHorizontalPadding: The horizontal padding between the outer edge and the pill. Defaults to 2.
+    ///   - textLineLimit: Maximum number of lines for text labels. Defaults to nil (no limit).
     public init(
         font: Font = .system(size: 14, weight: .medium), /// Color not specified in the design system
         itemContentSpacing: CGFloat = 6,
         selectedTextColor: Color = .init(designSystemColor: .textPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textPrimary),
-        backgroundColor: Color = .init(designSystemColor: .backdrop),
-        selectedBackgroundColor: Color = .init(designSystemColor: .surface),
+        backgroundColor: Color = .init(designSystemColor: .controlsRaisedBackdrop),
+        selectedBackgroundColor: Color = .init(designSystemColor: .controlsRaisedFillPrimary),
         outerHeight: CGFloat = 38,
         innerHeight: CGFloat = 34,
-        innerHorizontalPadding: CGFloat = 2
+        innerHorizontalPadding: CGFloat = 2,
+        textLineLimit: Int? = nil
     ) {
         self.font = font
         self.itemContentSpacing = itemContentSpacing
@@ -69,6 +72,7 @@ public struct ImageSegmentedPickerConfiguration {
         self.outerHeight = outerHeight
         self.innerHeight = innerHeight
         self.innerHorizontalPadding = innerHorizontalPadding
+        self.textLineLimit = textLineLimit
     }
 }
 
@@ -285,6 +289,8 @@ private struct CustomPickerButton: View {
                     Text(text)
                         .font(configuration.font)
                         .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
+                        .lineLimit(configuration.textLineLimit)
+                        .minimumScaleFactor(0.7)
                 }
             }
             .contentShape(Rectangle())

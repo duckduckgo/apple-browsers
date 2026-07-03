@@ -21,10 +21,45 @@ import Foundation
 import Core
 import AIChat
 
+protocol AIChatDeepLinkPresenting: UIViewController {
+    func openAIVoiceChatFromDeepLink()
+    func openAIChat(
+        _ query: String?,
+        autoSend: Bool,
+        payload: Any?,
+        flowType: AIChatOnboardingFlowType,
+        tools: [AIChatRAGTool]?,
+        modelId: String?,
+        reasoningEffort: AIChatReasoningEffort?,
+        images: [AIChatNativePrompt.NativePromptImage]?,
+        files: [AIChatNativePrompt.NativePromptFile]?,
+        fromDeepLink: Bool
+    )
+}
+
+extension AIChatDeepLinkPresenting {
+
+    func openAIChat(fromDeepLink: Bool) {
+        openAIChat(
+            nil,
+            autoSend: false,
+            payload: nil,
+            flowType: .default,
+            tools: nil,
+            modelId: nil,
+            reasoningEffort: nil,
+            images: nil,
+            files: nil,
+            fromDeepLink: fromDeepLink
+        )
+    }
+    
+}
+
 struct AIChatDeepLinkHandler {
 
     /// Handles AI Chat deep links (text and voice), dismissing any presented modal first.
-    func handleDeepLink(_ url: URL, on mainViewController: MainViewController, voiceMode: Bool = false) {
+    func handleDeepLink(_ url: URL, on mainViewController: AIChatDeepLinkPresenting, voiceMode: Bool = false) {
         if voiceMode {
             fireAIVoiceChatPixel(url)
         } else {
@@ -47,7 +82,7 @@ struct AIChatDeepLinkHandler {
     }
 
     /// Checks if the AIChatViewController is already presented
-    private func isAIChatAlreadyPresented(on mainViewController: MainViewController) -> Bool {
+    private func isAIChatAlreadyPresented(on mainViewController: AIChatDeepLinkPresenting) -> Bool {
         if let presentedVC = mainViewController.presentedViewController as? RoundedPageSheetContainerViewController,
            presentedVC.contentViewController is AIChatViewController {
             return true

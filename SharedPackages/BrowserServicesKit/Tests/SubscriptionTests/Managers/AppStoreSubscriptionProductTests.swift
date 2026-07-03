@@ -20,7 +20,7 @@ import XCTest
 import StoreKit
 @testable import Subscription
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 final class AppStoreSubscriptionProductTests: XCTestCase {
 
     func testCreateWithFreeTrialProduct_EligibleUser() async throws {
@@ -259,7 +259,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
 
 // MARK: - Mock Implementations
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 private class MockStoreProduct: StoreProduct {
     let id: String
     let displayName: String

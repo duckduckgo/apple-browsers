@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import CoreData
 import Persistence
 import os.log
@@ -209,10 +210,10 @@ final class FaviconsFetchOperation: Operation, @unchecked Sendable {
         do {
             let (imageData, imageURL) = fetchResult
             if let imageData {
-                Logger.bookmarks.debug("Favicon found for \(url.absoluteString, privacy: .public)")
+                Logger.bookmarks.debug("Favicon found for \(url.shortDescription, privacy: .public)")
                 try await faviconStore.storeFavicon(imageData, with: imageURL, for: url)
             } else {
-                Logger.bookmarks.debug("Favicon not found for \(url.absoluteString, privacy: .public)")
+                Logger.bookmarks.debug("Favicon not found for \(url.shortDescription, privacy: .public)")
             }
 
             try checkCancellation()
@@ -220,7 +221,7 @@ final class FaviconsFetchOperation: Operation, @unchecked Sendable {
             Logger.bookmarks.debug("Favicon fetching cancelled")
             throw CancellationError()
         } catch {
-            Logger.bookmarks.debug("Error storing favicon for \(url.absoluteString, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            Logger.bookmarks.debug("Error storing favicon for \(url.shortDescription, privacy: .public): \(error.localizedDescription, privacy: .public)")
             throw error
         }
     }

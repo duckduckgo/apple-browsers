@@ -19,6 +19,7 @@
 import Combine
 import SwiftUI
 import Common
+import FoundationExtensions
 
 final class ReportProblemFormViewModel: ObservableObject {
 

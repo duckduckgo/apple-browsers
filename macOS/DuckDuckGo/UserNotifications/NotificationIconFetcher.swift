@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import OSLog
 import UserNotifications
@@ -88,7 +89,7 @@ final class NotificationIconFetcher: NotificationIconFetching {
     func fetchIcon(from url: URL, originURL: URL) async -> UNNotificationAttachment? {
         // Validate URL before fetching
         guard validateIconURL(url, originURL: originURL) else {
-            Logger.general.debug("WebNotificationsHandler: Icon fetch blocked - validation failed for \(url.absoluteString)")
+            Logger.general.debug("WebNotificationsHandler: Icon fetch blocked - validation failed for \(url.shortDescription)")
             return nil
         }
 

@@ -42,5 +42,6 @@ final class HomePageSetUpDependencies {
         subscriptionCardPersistor.clear()
         continueSetUpModelPersistor.clear()
         nextStepsCardsPersistor.clear()
+        subscriptionCardVisibilityManager.refreshVisibilityAfterDebugReset()
     }
 }

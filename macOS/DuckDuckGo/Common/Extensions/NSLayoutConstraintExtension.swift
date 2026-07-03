@@ -31,6 +31,13 @@ extension NSLayoutConstraint {
         return self
     }
 
+    /// Sets `isActive` only when it differs from the target value, avoiding redundant layout invalidation.
+    func setActive(_ shouldBeActive: Bool) {
+        if isActive != shouldBeActive {
+            isActive = shouldBeActive
+        }
+    }
+
     @discardableResult
     func autoDeactivatedWhenViewIsHidden(_ view: NSView) -> Self {
         let c = view.publisher(for: \.isHidden).sink { [self /* bind the constraint lifetime to the view */] isHidden in

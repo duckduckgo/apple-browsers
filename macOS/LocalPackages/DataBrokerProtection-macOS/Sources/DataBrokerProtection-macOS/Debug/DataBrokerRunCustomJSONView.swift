@@ -138,8 +138,6 @@ struct DataBrokerRunCustomJSONView: View {
     private var dbpFeatureFlagLines: [(name: String, value: String)] {
         [
             (FeatureFlag.dbpRemoteBrokerDelivery.rawValue, viewModel.featureFlagger.isRemoteBrokerDeliveryFeatureOn.description),
-            (FeatureFlag.dbpEmailConfirmationDecoupling.rawValue, viewModel.featureFlagger.isEmailConfirmationDecouplingFeatureOn.description),
-            (FeatureFlag.dbpClickActionDelayReductionOptimization.rawValue, viewModel.featureFlagger.isClickActionDelayReductionOptimizationOn.description),
             (FeatureFlag.dbpWebViewUserAgent.rawValue, viewModel.featureFlagger.isWebViewUserAgentOn.description),
         ]
     }
@@ -152,41 +150,39 @@ struct DataBrokerRunCustomJSONView: View {
                 Text("Scan")
                     .font(.headline)
                 Spacer()
-                if #available(macOS 12.0, *) {
-                    if viewModel.isEditingPresets {
-                        Button("Save Presets") {
-                            viewModel.savePresets()
-                            viewModel.isEditingPresets = false
-                        }
+                if viewModel.isEditingPresets {
+                    Button("Save Presets") {
+                        viewModel.savePresets()
+                        viewModel.isEditingPresets = false
+                    }
 
-                        Button("Cancel") {
-                            viewModel.loadPresets()
-                            viewModel.isEditingPresets = false
-                        }
-                    } else {
-                        Menu("Load Preset...") {
-                            ForEach(viewModel.presets) { preset in
-                                Button(String(describing: preset)) {
-                                    viewModel.applyPreset(preset)
-                                }
+                    Button("Cancel") {
+                        viewModel.loadPresets()
+                        viewModel.isEditingPresets = false
+                    }
+                } else {
+                    Menu("Load Preset...") {
+                        ForEach(viewModel.presets) { preset in
+                            Button(String(describing: preset)) {
+                                viewModel.applyPreset(preset)
                             }
                         }
-                        .disabled(viewModel.presets.isEmpty)
+                    }
+                    .disabled(viewModel.presets.isEmpty)
 
-                        Button("Edit Presets") {
-                            viewModel.isEditingPresets = true
-                        }
+                    Button("Edit Presets") {
+                        viewModel.isEditingPresets = true
+                    }
 
-                        Button("Save Form as Preset") {
-                            viewModel.saveCurrentFormAsPreset()
-                        }
+                    Button("Save Form as Preset") {
+                        viewModel.saveCurrentFormAsPreset()
                     }
                 }
             }
 
             Divider()
 
-            if #available(macOS 12.0, *), viewModel.isEditingPresets {
+            if viewModel.isEditingPresets {
                 presetForm
             } else {
                 scanForm
@@ -196,7 +192,7 @@ struct DataBrokerRunCustomJSONView: View {
 
             Text("macOS App version: \(viewModel.appVersion())")
             Text("DBP API endpoint: \(viewModel.dbpEndpoint)")
-            Text("Web view applicationNameForUserAgent: \(viewModel.applicationNameForUserAgentDisplayValue)")
+            Text("Web view applicationNameForUserAgentProvider: \(viewModel.applicationNameForUserAgentDisplayValue)")
 
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(dbpFeatureFlagLines, id: \.name) { flag in
@@ -492,10 +488,7 @@ struct DataBrokerRunCustomJSONView: View {
     }()
 
     private var monospacedTextFont: Font {
-        if #available(macOS 12.0, *) {
-            return .system(.body, design: .monospaced)
-        }
-        return .system(.body)
+        return .system(.body, design: .monospaced)
     }
 }
 

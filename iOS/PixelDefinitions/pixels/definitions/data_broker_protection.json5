@@ -1,25 +1,14 @@
 {
     "m_ios_dbp_optout_stage_start": {
         "description": "Fired at the start stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpParentBroker",
-            "dbpAttemptId",
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId"]
     },
     "m_ios_dbp_optout_stage_email-generate": {
         "description": "Fired at the email generation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -36,7 +25,7 @@
     },
     "m_ios_dbp_optout_stage_captcha-parse": {
         "description": "Fired at the captcha parse stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -53,7 +42,7 @@
     },
     "m_ios_dbp_optout_stage_captcha-send": {
         "description": "Fired at the captcha send stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -70,7 +59,7 @@
     },
     "m_ios_dbp_optout_stage_captcha-solve": {
         "description": "Fired at the captcha solve stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -87,7 +76,7 @@
     },
     "m_ios_dbp_optout_stage_submit": {
         "description": "Fired at the submit stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -99,12 +88,7 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId",
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
+            "dbpActionId"
         ]
     },
     "m_ios_dbp_optout_stage_condition-found": {
@@ -126,7 +110,7 @@
     },
     "m_ios_dbp_optout_stage_email-receive": {
         "description": "Fired at the email receive stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -143,7 +127,24 @@
     },
     "m_ios_dbp_optout_stage_email-confirm": {
         "description": "Fired at the email confirmation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
+        ]
+    },
+    "m_ios_dbp_optout_stage_email-get-data": {
+        "description": "Fired at the email get-data stage of an opt-out attempt.",
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -160,7 +161,7 @@
     },
     "m_ios_dbp_optout_stage_validate": {
         "description": "Fired at the validation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -177,7 +178,7 @@
     },
     "m_ios_dbp_optout_stage_fill-form": {
         "description": "Fired at the fill-form stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -194,7 +195,7 @@
     },
     "m_ios_dbp_optout_stage_finish": {
         "description": "Fired at the finish stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -212,7 +213,7 @@
     },
     "m_ios_dbp_optout_process_submit-success": {
         "description": "Fired when an opt-out submission succeeds.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -247,7 +248,7 @@
     },
     "m_ios_dbp_optout_process_success": {
         "description": "Fired when an opt-out attempt completes successfully.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -273,17 +274,12 @@
                 "description": "VPN bypass status when the attempt succeeded",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     },
     "m_ios_dbp_optout_process_failure": {
         "description": "Fired when an opt-out attempt fails.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -294,6 +290,16 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpAttemptDuration",
+            {
+                "key": "error_category",
+                "description": "High-level error classification",
+                "type": "string"
+            },
+            {
+                "key": "error_details",
+                "description": "Error description supplied by the failing stage",
+                "type": "string"
+            },
             {
                 "key": "stage",
                 "description": "The stage where the failure occurred",
@@ -325,11 +331,6 @@
                 "description": "VPN bypass status when the failure happened",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     },
@@ -518,6 +519,50 @@
         "triggers": ["scheduled"],
         "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
     },
+    "m_ios_dbp_interaction_dau": {
+        "description": "Fired daily when a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
+    },
+    "m_ios_dbp_interaction_wau": {
+        "description": "Fired weekly when a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
+    },
+    "m_ios_dbp_interaction_mau": {
+        "description": "Fired monthly when a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
+    },
+    "m_ios_dbp_dashboard_open": {
+        "description": "Fired every time a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
+    },
+    "m_ios_dbp_first_scan_u": {
+        "description": "Fired once when a user starts their first scan",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
+    },
+    "m_ios_dbp_freemium_upsell_u": {
+        "description": "Fired once when a freemium PIR user activates a paid subscription",
+        "owners": ["quanganhdo", "jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_ios_dbp_freemium_pir_maintenance_scan_skipped": {
+        "description": "Temporary telemetry fired when PIR skips at least one maintenance scan job for an unauthenticated freemium user.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"],
+        "expires": "2026-08-31"
+    },
     "m_ios_dbp_weekly_child-broker_orphaned-optouts": {
         "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",
         "owners": ["quanganhdo"],
@@ -636,7 +681,7 @@
                 "key": "error_code",
                 "description": "Backend item error code",
                 "type": "string",
-                "enum": ["server_error", "extraction_error", "request_error"]
+                "enum": ["server_error", "extraction_error", "request_error", "unknown"]
             }
         ]
     },
@@ -1012,7 +1057,7 @@
         "description": "Fired when a scan or opt-out action fails while processing a data broker.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -1044,7 +1089,7 @@
         "description": "Fired when a data broker scan or opt-out operation fails with an HTTP error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -1064,7 +1109,7 @@
         "description": "Fired when a data broker scan or opt-out operation fails with a non-HTTP, non-action error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -1078,25 +1123,6 @@
                 "type": "string"
             },
             "dbpIsFreeScan"
-        ]
-    },
-    "m_ios_dbp_data_broker_action-payload_typed-fallback_unexpected": {
-        "description": "Fired when a broker action is unexpectedly injected using typed fallback payload instead of raw JSON.",
-        "owners": ["quanganhdo"],
-        "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpBrokerVersion",
-            "dbpActionType",
-            {
-                "key": "stepType",
-                "description": "Step type where typed-fallback payload injection occurred",
-                "type": "string",
-                "enum": ["scan", "optOut", "unknown"]
-            }
         ]
     },
     "m_ios_dbp_notification_sent_first_scan_complete": {
@@ -1139,6 +1165,13 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_dbp_freemium_settings_entry_point_clicked": {
+        "description": "Fires when the user taps the freemium Personal Information Removal entry point CTA in Settings.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
     },
     "m_dbp_notification_opened_first_scan_complete": {
@@ -1185,21 +1218,21 @@
     },
     "m_ios_dbp_event_scanning-events_new-match": {
         "description": "Fired when a new matching profile is found during a scan",
-        "owners": ["quanganhdo", "edulpn"],
+        "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
     },
     "m_ios_dbp_event_scanning-events_re-appearance": {
         "description": "Fired when a previously removed profile re-appears on a data broker during a scan",
-        "owners": ["quanganhdo", "edulpn"],
+        "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
     },
     "m_ios_dbp_databroker_custom_stats_optoutsubmit": {
         "description": "Fired daily with per-broker opt-out submission success rate stats.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["scheduled"],
         "suffixes": [],
         "parameters": [
@@ -1210,17 +1243,12 @@
                 "key": "optout_submit_success_rate",
                 "description": "The opt-out submission success rate for this broker",
                 "type": "number"
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     },
     "m_ios_dbp_custom_stats_optoutsubmit": {
         "description": "Fired daily with global opt-out submission success rate stats.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["scheduled"],
         "suffixes": [],
         "parameters": [
@@ -1230,11 +1258,6 @@
                 "key": "optout_submit_success_rate",
                 "description": "The global opt-out submission success rate",
                 "type": "number"
-            },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
             }
         ]
     }

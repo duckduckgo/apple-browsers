@@ -134,49 +134,46 @@ final class ScanWideEventRecorder {
 }
 
 extension ScanWideEventRecorder.Metadata {
-    /// This initializes the metadata for the wide event based on history events
+    /// This initializes the metadata for the wide event based on history events.
     ///
-    /// Look for scan success event (matchesFound, noMatchFound) in the history
-    /// - intervalStart is set to when the first .scanStarted after the most recent success event occurs,
-    ///   falls back to referenceDate otherwise
-    /// - attemptNumber is the number of .scanStarted events after the most recent success event + 1,
-    ///   falls back 1 otherwise
-    /// - attemptType follows OperationPreferredDateCalculator.dateForScanOperation logic:
-    ///   - set to confirmationOptOutScan if the most recent event is optOutRequested
-    ///   - set to maintenanceScan if the most recent event is either optOutConfirmed, noMatchFound, matchesFound, or reAppearence (sic)
-    ///   - set to newScan if there has been no scan success event, maintenanceScan otherwise
-    init(from scanJobData: ScanJobData, referenceDate: Date, isFreeScan: Bool) {
-        let sortedEvents = scanJobData.historyEvents.sorted { $0.date < $1.date }
+    /// attemptNumber / intervalStart are derived from the scan job's history:
+    /// - intervalStart is set to when the first .scanStarted after the most recent scan success event
+    ///   (matchesFound, noMatchFound) occurs, falling back to referenceDate.
+    /// - attemptNumber is the count of .scanStarted events after the most recent scan success event + 1,
+    ///   falling back to 1.
+    ///
+    /// attemptType mirrors the confirmOptOutScan branch of OperationPreferredDateCalculator.dateForScanOperation:
+    /// - confirmOptOutScan if any opt-out job's most recent event is .optOutRequested.
+    /// - maintenanceScan if there has been a prior scan success.
+    /// - newScan otherwise.
+    /// - Parameters:
+    ///   - scanHistoryEvents: Scan job history events, sorted earliest-first.
+    ///   - optOutsHistoryEvents: Each opt-out job's history events, sorted earliest-first within each inner array.
+    init(scanHistoryEvents: [HistoryEvent],
+         optOutsHistoryEvents: [[HistoryEvent]],
+         referenceDate: Date,
+         isFreeScan: Bool) {
+        let lastSuccessDate = scanHistoryEvents.last(where: { $0.isScanSuccessEvent() })?.date
 
-        let lastSuccessDate = sortedEvents.last(where: { $0.isScanSuccessEvent() })?.date
-
-        let eventsAfterLastSuccess = sortedEvents.filter { event in
+        let attemptsInCurrentCycle = scanHistoryEvents.filter { event in
+            guard case .scanStarted = event.type else { return false }
             guard let lastSuccessDate else { return true }
             return event.date > lastSuccessDate
         }
 
-        let attemptsInCurrentCycle = eventsAfterLastSuccess.filter { event in
-            if case .scanStarted = event.type {
-                return true
-            }
-            return false
-        }
-
         let attemptNumber = max(attemptsInCurrentCycle.count + 1, 1)
-        let intervalStart = attemptsInCurrentCycle.map { $0.date }.min() ?? referenceDate
+        let intervalStart = attemptsInCurrentCycle.first?.date ?? referenceDate
 
-        let latestEvent = sortedEvents.last
+        let latestOptOutEvents = optOutsHistoryEvents.compactMap { $0.last }
+        let hasPendingOptOutConfirmation = latestOptOutEvents.contains { $0.type == .optOutRequested }
+
         let attemptType: ScanWideEventData.AttemptType
-        switch latestEvent?.type {
-        case .optOutRequested:
+        if hasPendingOptOutConfirmation {
             attemptType = .confirmOptOutScan
-        case .optOutConfirmed,
-             .noMatchFound,
-             .matchesFound,
-             .reAppearence:
+        } else if lastSuccessDate != nil {
             attemptType = .maintenanceScan
-        default:
-            attemptType = (lastSuccessDate == nil) ? .newScan : .maintenanceScan
+        } else {
+            attemptType = .newScan
         }
 
         self.intervalStart = intervalStart

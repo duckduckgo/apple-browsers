@@ -62,7 +62,8 @@ public extension RemoteMessageResponse.JsonRemoteMessagingConfig {
                 translations: nil,
                 matchingRules: nil,
                 exclusionRules: nil,
-                metrics: nil
+                metrics: nil,
+                displayConditions: nil
             )
         ],
         rules: []

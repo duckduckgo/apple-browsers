@@ -101,11 +101,11 @@ final class PadOmnibarToggleView: UIView {
     }
 
     private func setUpProperties() {
-        backgroundColor = UIColor(designSystemColor: .backdrop)
+        backgroundColor = UIColor(designSystemColor: .controlsRaisedBackdrop)
         layer.cornerRadius = Metrics.outerHeight / 2
         layer.cornerCurve = .continuous
 
-        selectedBackgroundView.backgroundColor = UIColor(designSystemColor: .surface)
+        selectedBackgroundView.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
         selectedBackgroundView.layer.cornerRadius = Metrics.innerHeight / 2
         selectedBackgroundView.layer.cornerCurve = .continuous
         selectedBackgroundView.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
@@ -139,7 +139,7 @@ final class PadOmnibarToggleView: UIView {
         selectedLeadingConstraint.constant = isSearchSelected ? Metrics.selectedLeadingLeft : Metrics.selectedLeadingRight
 
         searchButton.setImage(isSearchSelected
-                              ? DesignSystemImages.Glyphs.Size16.findSearchGradientColor
+                              ? DesignSystemImages.Color.Size16.searchFindToggle
                               : DesignSystemImages.Glyphs.Size16.findSearch,
                               for: .normal)
         aiChatButton.setImage(isSearchSelected

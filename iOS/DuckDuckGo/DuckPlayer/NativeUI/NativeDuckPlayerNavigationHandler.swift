@@ -22,6 +22,7 @@ import ContentScopeScripts
 import WebKit
 import Core
 import Common
+import FoundationExtensions
 import PrivacyConfig
 import DuckPlayer
 import os.log
@@ -178,10 +179,9 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// Used when DuckPlayer requires direct Youtube Navigation
     @MainActor
     private func setupYoutubeNavigationRequestObserver(webView: WKWebView) {
-        weak var weakWebView = webView
         duckPlayerNavigationRequestCancellable = duckPlayer.youtubeNavigationRequest
-            .sink { [weak self] url in
-                guard let self = self, let webView = weakWebView else { return }
+            .sink { [weak self, weak webView] url in
+                guard let self = self, let webView else { return }
                 self.disableDuckPlayerForNextVideo = true
                 let request = URLRequest(url: url)
                 webView.load(request)
@@ -222,11 +222,10 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     // This is a temporary solution until ContentScopeScripts for Media Control is ready
     @MainActor
     private func javascriptPauseVideoStart(webView: WKWebView) async {
-        weak var weakWebView = webView
-        Task { @MainActor [weak self] in
+        Task { @MainActor [weak self, weak webView] in
             let startTime = Date()
             while Date().timeIntervalSince(startTime) < 1.0 {
-                guard let self = self, let webView = weakWebView else { break }
+                guard let self = self, let webView else { break }
                 self.toggleMediaPlayback(webView, pause: true)
                 try? await Task.sleep(nanoseconds: 50_000_000)
             }

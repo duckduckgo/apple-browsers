@@ -114,6 +114,23 @@ class DataImportSummaryViewModelTests: XCTestCase {
         XCTAssertTrue(mockDelegate.completeCalled)
     }
 
+    func testDismissSyncPromo_DismissesDataImportPromoWithUserTappedReasonAndNotifiesDelegate() {
+        let syncPromoManager = MockSyncPromoManager(shouldPresentPromo: true)
+        viewModel = DataImportSummaryViewModel(
+            summary: createSummary(),
+            importScreen: .bookmarks,
+            syncService: mockSyncService,
+            syncPromoManager: syncPromoManager
+        )
+        viewModel.delegate = mockDelegate
+
+        viewModel.dismissSyncPromo()
+
+        XCTAssertEqual(syncPromoManager.dismissedTouchpoint, .dataImport)
+        XCTAssertEqual(syncPromoManager.dismissalReason, .userTapped)
+        XCTAssertTrue(mockDelegate.completeCalled)
+    }
+
     func testInit_WithCreditCardsSummary_SetsCreditCardsProperty() {
         let summary = createSummary(creditCards: true)
         viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
@@ -133,23 +150,206 @@ class DataImportSummaryViewModelTests: XCTestCase {
         XCTAssertNotNil(viewModel.creditCardsSummary)
     }
 
+    func testFooter_WhenNewImportUIAndPasswordsMissing_UsesPasswordsPromoEvenWhenSyncPromoEligible() {
+        let summary = createSummary(creditCards: true)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.dataImportNewUI, .dataImportSummarySyncPromotion])
+        let syncPromoManager = MockSyncPromoManager(shouldPresentPromo: true)
+        mockSyncService.authState = .inactive
+
+        viewModel = DataImportSummaryViewModel(
+            summary: summary,
+            importScreen: .passwords,
+            syncService: mockSyncService,
+            isSafariImportFlow: true,
+            isSupportedOSVersion: { true },
+            syncPromoManager: syncPromoManager,
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertEqual(viewModel.footer, .passwordsPromo)
+    }
+
+    func testFooter_WhenNewImportUIAndPasswordsMissing_UsesPasswordsPromo() {
+        let summary = createSummary(bookmarks: true)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.dataImportNewUI, .dataImportSummarySyncPromotion])
+        let syncPromoManager = MockSyncPromoManager(shouldPresentPromo: false)
+        mockSyncService.authState = .inactive
+
+        viewModel = DataImportSummaryViewModel(
+            summary: summary,
+            importScreen: .passwords,
+            syncService: mockSyncService,
+            isSafariImportFlow: true,
+            isSupportedOSVersion: { true },
+            syncPromoManager: syncPromoManager,
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertEqual(viewModel.footer, .passwordsPromo)
+    }
+
+    func testFooter_WhenNewImportUIAndBookmarksMissing_UsesBookmarksPromo() {
+        let summary = createSummary(passwords: true)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.dataImportNewUI, .dataImportSummarySyncPromotion])
+        let syncPromoManager = MockSyncPromoManager(shouldPresentPromo: false)
+        mockSyncService.authState = .inactive
+
+        viewModel = DataImportSummaryViewModel(
+            summary: summary,
+            importScreen: .passwords,
+            syncService: mockSyncService,
+            isSafariImportFlow: true,
+            isSupportedOSVersion: { true },
+            syncPromoManager: syncPromoManager,
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertEqual(viewModel.footer, .bookmarksPromo)
+    }
+
+    func testFooter_WhenNewImportUIAndBothImported_UsesSyncPromoWhenEligible() {
+        let summary = createSummary(passwords: true, bookmarks: true)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.dataImportNewUI, .dataImportSummarySyncPromotion])
+        let syncPromoManager = MockSyncPromoManager(shouldPresentPromo: true)
+        mockSyncService.authState = .inactive
+
+        viewModel = DataImportSummaryViewModel(
+            summary: summary,
+            importScreen: .passwords,
+            syncService: mockSyncService,
+            isSafariImportFlow: true,
+            isSupportedOSVersion: { true },
+            syncPromoManager: syncPromoManager,
+            featureFlagger: featureFlagger
+        )
+
+        guard case .syncPromo = viewModel.footer else {
+            XCTFail("Expected sync promo footer")
+            return
+        }
+    }
+
+    func testFooter_WhenPasswordsImportedEarlierInSessionAndBookmarksImportedNow_UsesSyncPromo() {
+        let summary = createSummary(bookmarks: true)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.dataImportNewUI, .dataImportSummarySyncPromotion])
+        let syncPromoManager = MockSyncPromoManager(shouldPresentPromo: true)
+        mockSyncService.authState = .inactive
+
+        viewModel = DataImportSummaryViewModel(
+            summary: summary,
+            importScreen: .passwords,
+            syncService: mockSyncService,
+            sessionImportedDataTypes: [.passwords],
+            isSafariImportFlow: true,
+            isSupportedOSVersion: { true },
+            syncPromoManager: syncPromoManager,
+            featureFlagger: featureFlagger
+        )
+
+        guard case .syncPromo = viewModel.footer else {
+            XCTFail("Expected sync promo footer for cross-import session case")
+            return
+        }
+
+        XCTAssertEqual(viewModel.footer?.syncTitle, UserText.syncPromoDataImportTitle)
+    }
+
+    func testFooter_WhenPasswordsPresentWithZeroSuccessAndBookmarksPresent_UsesSyncPromoWhenEligible() {
+        var summary: DataImportSummary = [:]
+        summary[.passwords] = .success(DataImport.DataTypeSummary(successful: 0, duplicate: 1260, failed: 0))
+        summary[.bookmarks] = .success(DataImport.DataTypeSummary(successful: 147, duplicate: 0, failed: 0))
+        summary[.creditCards] = .success(DataImport.DataTypeSummary(successful: 0, duplicate: 0, failed: 0))
+
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.dataImportNewUI, .dataImportSummarySyncPromotion])
+        let syncPromoManager = MockSyncPromoManager(shouldPresentPromo: true)
+        mockSyncService.authState = .inactive
+
+        viewModel = DataImportSummaryViewModel(
+            summary: summary,
+            importScreen: .passwords,
+            syncService: mockSyncService,
+            isSafariImportFlow: true,
+            isSupportedOSVersion: { true },
+            syncPromoManager: syncPromoManager,
+            featureFlagger: featureFlagger
+        )
+
+        guard case .syncPromo = viewModel.footer else {
+            XCTFail("Expected sync promo footer for duplicate-only passwords case")
+            return
+        }
+    }
+
+    func testContinueImportFromSafari_NotifiesDelegate() {
+        viewModel = DataImportSummaryViewModel(summary: createSummary(passwords: true), importScreen: .passwords, syncService: mockSyncService)
+        viewModel.delegate = mockDelegate
+
+        viewModel.continueImportFromSafari()
+
+        XCTAssertTrue(mockDelegate.continueImportCalled)
+        XCTAssertTrue(mockDelegate.verifyContinueImportCalledOnce())
+    }
+
+    func testFooter_WhenNewImportUIEnabledButUnsupportedOS_UsesLegacyStrategy() {
+        let summary = createSummary(bookmarks: true)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.dataImportNewUI])
+        mockSyncService.authState = .inactive
+
+        viewModel = DataImportSummaryViewModel(
+            summary: summary,
+            importScreen: .passwords,
+            syncService: mockSyncService,
+            isSafariImportFlow: true,
+            isSupportedOSVersion: { false },
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertEqual(viewModel.footer?.syncTitle, expectedBookmarksSyncTitle)
+    }
+
+    func testFooter_WhenNotSafariImportFlow_UsesLegacyStrategy() {
+        let summary = createSummary(bookmarks: true)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.dataImportNewUI])
+        mockSyncService.authState = .inactive
+
+        viewModel = DataImportSummaryViewModel(
+            summary: summary,
+            importScreen: .passwords,
+            syncService: mockSyncService,
+            isSafariImportFlow: false,
+            isSupportedOSVersion: { true },
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertEqual(viewModel.footer?.syncTitle, expectedBookmarksSyncTitle)
+    }
+
 }
 
 private class MockDataImportSummaryViewModelDelegate: DataImportSummaryViewModelDelegate {
 
     private(set) var syncRequestCalled = false
+    private(set) var continueImportCalled = false
     private(set) var completeCalled = false
 
     private(set) var syncRequestCallCount = 0
+    private(set) var continueImportCallCount = 0
     private(set) var completeCallCount = 0
 
     let syncRequestExpectation = XCTestExpectation(description: "Sync request made")
+    let continueImportExpectation = XCTestExpectation(description: "Continue import requested")
     let completeExpectation = XCTestExpectation(description: "Complete called")
 
     func dataImportSummaryViewModelDidRequestLaunchSync(_ viewModel: DataImportSummaryViewModel, source: String?) {
         syncRequestCalled = true
         syncRequestCallCount += 1
         syncRequestExpectation.fulfill()
+    }
+
+    func dataImportSummaryViewModelDidRequestContinueImportFromSafari(_ viewModel: DataImportSummaryViewModel) {
+        continueImportCalled = true
+        continueImportCallCount += 1
+        continueImportExpectation.fulfill()
     }
 
     func dataImportSummaryViewModelComplete(_ viewModel: DataImportSummaryViewModel) {
@@ -160,13 +360,15 @@ private class MockDataImportSummaryViewModelDelegate: DataImportSummaryViewModel
 
     func reset() {
         syncRequestCalled = false
+        continueImportCalled = false
         completeCalled = false
         syncRequestCallCount = 0
+        continueImportCallCount = 0
         completeCallCount = 0
     }
 
     func verifyNoInteractions() -> Bool {
-        return syncRequestCallCount == 0 && completeCallCount == 0
+        return syncRequestCallCount == 0 && continueImportCallCount == 0 && completeCallCount == 0
     }
 
     func verifySyncRequestCalledOnce() -> Bool {
@@ -176,6 +378,35 @@ private class MockDataImportSummaryViewModelDelegate: DataImportSummaryViewModel
     func verifyCompleteCalledOnce() -> Bool {
         return completeCallCount == 1
     }
+
+    func verifyContinueImportCalledOnce() -> Bool {
+        return continueImportCallCount == 1
+    }
+}
+
+private final class MockSyncPromoManager: SyncPromoManaging {
+    private let shouldPresentPromo: Bool
+    private(set) var dismissedTouchpoint: SyncPromoManager.Touchpoint?
+    private(set) var dismissalReason: SyncPromoManager.DismissalReason?
+
+    init(shouldPresentPromo: Bool) {
+        self.shouldPresentPromo = shouldPresentPromo
+    }
+
+    func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool {
+        shouldPresentPromo
+    }
+
+    func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason) {
+        dismissedTouchpoint = touchpoint
+        dismissalReason = reason
+    }
+
+    func resetPromos() {}
 }
 
 private extension DataImportSummaryViewModelTests {

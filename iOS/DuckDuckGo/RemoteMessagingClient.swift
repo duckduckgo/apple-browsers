@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Configuration
 import Foundation
 import Core
@@ -65,6 +66,9 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         configurationURLProvider: ConfigurationURLProviding,
         syncService: DDGSyncing,
         winBackOfferService: WinBackOfferService,
+        freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+        idleReturnEligibilityManager: IdleReturnEligibilityManaging,
         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
@@ -74,7 +78,10 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             duckPlayerStorage: duckPlayerStorage,
             syncService: syncService,
             winBackOfferService: winBackOfferService,
-            dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate
+            dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate,
+            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            idleReturnEligibilityManager: idleReturnEligibilityManager
         )
         let configFetcher = RemoteMessagingConfigFetcher(
             configurationFetcher: ConfigurationFetcher(store: configurationStore, urlSession: .session(), configurationURLProvider: configurationURLProvider, eventMapping: nil),

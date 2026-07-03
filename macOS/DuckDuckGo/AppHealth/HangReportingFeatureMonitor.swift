@@ -54,12 +54,10 @@ final class HangReportingFeatureMonitor {
             .sink { [weak self] isEnabled in
                 guard let self = self else { return }
 
-                Task {
-                    if isEnabled {
-                        await self.watchdog.start()
-                    } else {
-                        await self.watchdog.stop()
-                    }
+                if isEnabled {
+                    self.watchdog.start()
+                } else {
+                    self.watchdog.stop()
                 }
             }
     }

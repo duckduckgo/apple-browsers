@@ -21,7 +21,9 @@ import Foundation
 import UIKit
 import SwiftUI
 import Common
+import FoundationExtensions
 import Core
+import MetricBuilder
 
 struct FireConfirmationPresenter {
 
@@ -88,13 +90,14 @@ struct FireConfirmationPresenter {
         if case .duckAIOnboarding = fireContext {
             hostingController.isModalInPresentation = true
         }
-            let presentingWidth = viewController.view.frame.width
-            configurePresentation(for: hostingController,
-                                  source: source,
-                                  sourceRect: sourceRect,
-                                  presentingWidth: presentingWidth)
-            viewController.present(hostingController, animated: true)
-        }
+
+        let presentingWidth = viewController.view.frame.width
+        configurePresentation(for: hostingController,
+                              source: source,
+                              sourceRect: sourceRect,
+                              presentingWidth: presentingWidth)
+        viewController.present(hostingController, animated: true)
+    }
     
     // MARK: - Shared Presentation Helpers
         
@@ -115,7 +118,12 @@ struct FireConfirmationPresenter {
             
             let sheetHeight = calculateSheetHeight(for: hostingController, width: Constants.iPadSheetWidth)
             hostingController.preferredContentSize = CGSize(width: Constants.iPadSheetWidth, height: sheetHeight)
-            
+
+            if #available(iOS 16.4, *) {
+                /// Keyboard Safe Area Insets are interfering may interfere when presented as a popover
+                hostingController.safeAreaRegions = [.container]
+            }
+
             configureSheetDetents(popoverController.adaptiveSheetPresentationController,
                                  hostingController: hostingController,
                                  presentingWidth: presentingWidth)
@@ -152,7 +160,7 @@ struct FireConfirmationPresenter {
         }
         sheet.prefersGrabberVisible = false
         if #unavailable(iOS 26) {
-            sheet.preferredCornerRadius = Constants.sheetCornerRadius
+            sheet.preferredCornerRadius = MainActor.assumeIsolated { SheetMetrics.cornerRadius }
         }
     }
     
@@ -185,7 +193,6 @@ private extension FireConfirmationPresenter {
     enum Constants {
         static let iPadSheetWidth: CGFloat = 375
         static let iPadSheetDefaultHeight: CGFloat = 520
-        static let sheetCornerRadius: CGFloat = 24
         static let maxHeightRatio: CGFloat = 0.9
     }
 }

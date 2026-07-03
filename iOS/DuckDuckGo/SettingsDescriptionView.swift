@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIComponents
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
@@ -28,7 +29,7 @@ struct SettingsDescription {
     let explanation: String?
 
     init(imageName: String, title: String, status: StatusIndicator?, explanation: String?) {
-        self.image = Image(imageName)
+        self.image = Image(rebrandable: imageName)
         self.title = title
         self.status = status
         self.explanation = explanation
@@ -69,7 +70,7 @@ struct SettingsDescriptionView: View {
                     .daxBodyRegular()
                     .multilineTextAlignment(.center)
                     .foregroundColor(.init(designSystemColor: .textSecondary))
-                    .tintIfAvailable(Color(designSystemColor: .accent))
+                    .tintIfAvailable(Color(designSystemColor: .accentPrimary))
                     .padding(.horizontal, 32)
                     .padding(.top, 8)
             }

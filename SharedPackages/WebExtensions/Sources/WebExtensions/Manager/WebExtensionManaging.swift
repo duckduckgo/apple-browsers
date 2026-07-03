@@ -26,6 +26,10 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }
 
+    /// The set of embedded extension types currently loaded into the controller.
+    @available(macOS 15.4, iOS 18.4, *)
+    var loadedEmbeddedExtensionTypes: Set<DuckDuckGoWebExtensionType> { get }
+
     /// The identifiers of installed web extensions.
     @available(macOS 15.4, iOS 18.4, *)
     var webExtensionIdentifiers: [String] { get }
@@ -50,6 +54,15 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func loadInstalledExtensions() async
+
+    /// Reloads the extensions removed by the most recent `unloadAllExtensions()` using the parsed
+    /// extensions captured at unload time, skipping the disk re-parsing, installed-store reads and
+    /// orphaned-file cleanup performed by `loadInstalledExtensions()`. Falls back to
+    /// `loadInstalledExtensions()` when nothing is cached. Intended for the data-clearing (fire)
+    /// flow, where the installed set is unchanged.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func reloadInstalledExtensions() async
 
     /// Installs an extension from a source URL, copying it to platform storage.
     /// - Parameter sourceURL: The source URL of the extension (e.g., from document picker).
@@ -136,6 +149,17 @@ public struct ScriptletDebugInfo: Identifiable {
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionManaging {
+
+    /// Whether the embedded autoconsent web extension is loaded and active.
+    var isAutoconsentExtensionLoaded: Bool {
+        loadedExtensions.contains { $0.duckDuckGoWebExtensionType == .embedded }
+    }
+
+    /// Default: derive the loaded embedded types from the loaded contexts.
+    @available(macOS 15.4, iOS 18.4, *)
+    var loadedEmbeddedExtensionTypes: Set<DuckDuckGoWebExtensionType> {
+        Set(loadedExtensions.compactMap(\.duckDuckGoWebExtensionType))
+    }
 
     /// Returns a comma-separated string of short labels for all currently installed embedded extensions,
     /// or `nil` if none are installed.

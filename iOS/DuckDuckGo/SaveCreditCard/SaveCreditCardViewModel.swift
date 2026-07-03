@@ -32,9 +32,9 @@ final class SaveCreditCardViewModel {
     
     weak var delegate: SaveCreditCardViewModelDelegate?
     
-    var minHeight: CGFloat = AutofillViews.saveLoginMinHeight
+    var minHeight: CGFloat = AutofillViews.saveCreditCardMinHeight
     
-    var contentHeight: CGFloat = AutofillViews.saveLoginMinHeight {
+    var contentHeight: CGFloat = AutofillViews.saveCreditCardMinHeight {
         didSet {
             guard contentHeight != oldValue else { return }
             delegate?.saveCreditCardViewModelDidResizeContent(self, contentHeight: max(contentHeight, minHeight))

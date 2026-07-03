@@ -21,28 +21,40 @@ import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import Core
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import Networking
+import Subscription
 
 final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
+    public let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     public var dbpIOSPublicInterface: DBPIOSInterface.PublicInterface? {
         return dbpIOSManager
     }
 
-    init(appDependencies: DependencyProvider, contentBlocking: ContentBlocking) {
+    init(appDependencies: DependencyProvider,
+         contentBlocking: ContentBlocking,
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
+        let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            runTypeProvider: appDependencies.dbpSettings)
+        let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
+        let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies,
+                                               freemiumPIRDebugSettings: freemiumPIRDebugSettings)
+        let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(
+            userDefaults: .dbp,
+            isUserAuthenticated: { [authManager] in await authManager.isUserAuthenticated },
+            isFreemiumEnabled: { [featureFlagger] in featureFlagger.isFreemiumPIREnabled }
+        )
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
             self.dbpIOSManager = nil
             super.init()
             return
         }
-
-        let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-            runTypeProvider: appDependencies.dbpSettings)
-        let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
-        let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
 
         if let pixelKit = PixelKit.shared {
             let notificationPixelHandler = DataBrokerProtectionNotificationPixelHandler(pixelKit: pixelKit)
@@ -50,13 +62,18 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 pixelHandler: notificationPixelHandler
             )
-            let eventsHandler = BrokerProfileJobEventsHandler(userNotificationService: notificationService)
+            let eventsHandler = BrokerProfileJobEventsHandler(
+                userNotificationService: notificationService,
+                freemiumUserStateManager: freemiumDBPUserStateManager
+            )
 
             #if DEBUG
             let isWebViewInspectable = true
             #else
             let isWebViewInspectable = AppUserDefaults().inspectableWebViewEnabled
             #endif
+
+            let dbpContentBlocking = DBPIOSContentBlocking(contentBlockingManager: contentBlocking.contentBlockingManager)
 
             self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
                 authenticationManager: authManager,
@@ -67,6 +84,15 @@ final class DBPService: NSObject {
                 wideEvent: appDependencies.wideEvent,
                 subscriptionManager: dbpSubscriptionManager,
                 quickLinkOpenURLHandler: { url in
+                    if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                       SubscriptionPurchaseFlowPath.contains(components.path) {
+                        let urlInterceptor = TabURLInterceptorDefault(featureFlagger: appDependencies.featureFlagger) {
+                            appDependencies.subscriptionManager.isSubscriptionPurchaseEligible
+                        }
+
+                        guard urlInterceptor.allowsNavigatingTo(url: url) else { return }
+                    }
+
                     guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(url.absoluteString)) else { return }
                     UIApplication.shared.open(quickLinkURL)
                 },
@@ -82,8 +108,11 @@ final class DBPService: NSObject {
                     return view
                 },
                 eventsHandler: eventsHandler,
+                applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
+                freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                 isWebViewInspectable: isWebViewInspectable,
-                freeTrialConversionService: appDependencies.freeTrialConversionService)
+                freeTrialConversionService: appDependencies.freeTrialConversionService,
+                contentBlocking: dbpContentBlocking)
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
@@ -102,28 +131,17 @@ final class DBPService: NSObject {
     }
 }
 
-final class DBPFeatureFlagger: DBPFeatureFlagging {
+final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     
     private let appDependencies: DependencyProvider
+    private let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
     }
 
-    var isEmailConfirmationDecouplingFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
-    }
-
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
-    }
-
-    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
-    }
-
-    var isClickActionDelayReductionOptimizationOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
     }
 
     var isContinuedProcessingFeatureOn: Bool {
@@ -131,10 +149,21 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
     }
 
     var isWebViewUserAgentOn: Bool {
-        false
+        appDependencies.featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
-    init(appDependencies: DependencyProvider) {
+    var isOptOutRetryErrorFrequencyExperimentOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
+    }
+
+    var isFreemiumPIREnabled: Bool {
+        freemiumPIRDebugSettings.isEligibilityForced
+            || appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)
+    }
+
+    init(appDependencies: DependencyProvider,
+         freemiumPIRDebugSettings: FreemiumPIRDebugSettings) {
         self.appDependencies = appDependencies
+        self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
     }
 }

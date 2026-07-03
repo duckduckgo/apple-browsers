@@ -165,7 +165,7 @@ final class TabPreviewViewController: NSViewController {
     }
 
     private func getHeight(for image: NSImage?) -> CGFloat {
-        guard let image else { return 0 }
+        guard let image, image.size.width > 0, image.size.height > 0 else { return 0 }
 
         let aspectRatio = image.size.width / image.size.height
         let width = TabPreviewWindowController.width

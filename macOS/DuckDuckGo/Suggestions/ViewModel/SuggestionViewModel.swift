@@ -18,6 +18,7 @@
 
 import Cocoa
 import Common
+import FoundationExtensions
 import Suggestions
 import PrivacyConfig
 
@@ -147,19 +148,13 @@ struct SuggestionViewModel {
     }
 
     var suffix: String? {
-        let isAIChatToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && featureFlagger.isFeatureOn(.aiChatOmnibarCluster)
-
         switch suggestion {
         // for punycoded urls display real url as a suffix
         case .website(url: let url) where url.toString(forUserInput: userStringValue, decodePunycode: false) != self.string:
             return url.toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: true)
 
-        case .website(url: let url):
-            guard isAIChatToggleEnabled,
-                  let host = url.root?.toString(decodePunycode: true, dropScheme: true, dropTrailingSlash: true) else {
-                return nil
-            }
-            return "\(UserText.addressBarVisitSuffix) \(host)"
+        case .website:
+            return nil
 
         case .phrase, .unknown, .askAIChat:
             return nil

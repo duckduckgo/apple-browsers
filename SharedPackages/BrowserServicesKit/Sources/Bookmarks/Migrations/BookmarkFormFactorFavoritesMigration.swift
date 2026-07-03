@@ -20,6 +20,7 @@ import Foundation
 import CoreData
 import Persistence
 import Common
+import FoundationExtensions
 
 public protocol BookmarkFormFactorFavoritesMigrating {
 

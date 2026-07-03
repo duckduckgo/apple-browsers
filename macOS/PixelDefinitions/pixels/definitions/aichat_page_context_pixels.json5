@@ -13,7 +13,8 @@
                 "description": "Whether the automatic page context collection is enabled in AI Features settings",
                 "type": "string",
                 "enum": ["true", "false"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_aichat_page_context_removed": {
@@ -29,7 +30,8 @@
                 "description": "Whether the automatic page context collection is enabled in AI Features settings",
                 "type": "string",
                 "enum": ["true", "false"]
-            }
+            },
+            "channel"
         ]
     }
 }

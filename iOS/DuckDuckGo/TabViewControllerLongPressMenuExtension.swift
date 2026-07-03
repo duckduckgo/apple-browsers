@@ -23,6 +23,7 @@ import SafariServices
 import WebKit
 import History
 import Common
+import FoundationExtensions
 import Combine
 import DesignResourcesKitIcons
 
@@ -30,6 +31,8 @@ extension TabViewController {
 
     func buildLinkPreviewMenu(for url: URL, withProvided providedElements: [UIMenuElement]) -> UIMenu {
         let isFireTab = tabModel.fireTab
+        let browsingModeParam = [PixelParameters.browsingMode: tabModel.pixelParamValue]
+        Pixel.fire(pixel: .linkLongPressMenuShown, withAdditionalParameters: browsingModeParam)
 
         var sections = [UIMenuElement]()
         var tabActions = [UIMenuElement]()
@@ -74,6 +77,9 @@ extension TabViewController {
     }
 
     private func onNewTabAction(url: URL) {
+        Pixel.fire(pixel: .linkLongPressNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: tabModel.pixelParamValue
+        ])
         delegate?.tab(self,
                       didRequestNewTabForUrl: url,
                       openedByPage: false,
@@ -81,12 +87,16 @@ extension TabViewController {
     }
 
     private func onFireTabAction(url: URL) {
+        Pixel.fire(pixel: .linkLongPressFireTab)
         delegate?.tab(self,
                       didRequestNewFireTabForUrl: url,
                       inheritingAttribution: adClickAttributionLogic.state)
     }
 
     private func onBackgroundTabAction(url: URL) {
+        Pixel.fire(pixel: .linkLongPressBackgroundTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: tabModel.pixelParamValue
+        ])
         delegate?.tab(self, didRequestNewBackgroundTabForUrl: url, inheritingAttribution: adClickAttributionLogic.state)
     }
     
@@ -159,7 +169,8 @@ extension TabViewController {
             privacyStats: privacyStats,
             voiceSearchHelper: voiceSearchHelper,
             darkReaderFeatureSettings: darkReaderFeatureSettings,
-            autoplaySettings: autoplaySettings)
+            autoplaySettings: autoplaySettings,
+            adBlockingAvailability: adBlockingAvailability)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

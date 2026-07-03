@@ -18,23 +18,18 @@
 
 import Foundation
 
-public typealias DBPFeatureFlagging = RemoteBrokerDeliveryFeatureFlagging & EmailConfirmationDecouplingFeatureFlagging & ForegroundRunningFeatureFlagging & ClickActionDelayReductionOptimizationFeatureFlagging & ContinuedProcessingFeatureFlagging & WebViewUserAgentFeatureFlagging
+public typealias DBPFeatureFlagging = RemoteBrokerDeliveryFeatureFlagging
+    & ForegroundRunningFeatureFlagging
+    & ContinuedProcessingFeatureFlagging
+    & WebViewUserAgentFeatureFlagging
+    & OptOutRetryErrorFeatureFlagging
 
 public protocol RemoteBrokerDeliveryFeatureFlagging {
     var isRemoteBrokerDeliveryFeatureOn: Bool { get }
 }
 
-public protocol EmailConfirmationDecouplingFeatureFlagging {
-    var isEmailConfirmationDecouplingFeatureOn: Bool { get }
-}
-
 public protocol ForegroundRunningFeatureFlagging {
     var isForegroundRunningOnAppActiveFeatureOn: Bool { get }
-    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool { get }
-}
-
-public protocol ClickActionDelayReductionOptimizationFeatureFlagging {
-    var isClickActionDelayReductionOptimizationOn: Bool { get }
 }
 
 public protocol ContinuedProcessingFeatureFlagging {
@@ -43,4 +38,18 @@ public protocol ContinuedProcessingFeatureFlagging {
 
 public protocol WebViewUserAgentFeatureFlagging {
     var isWebViewUserAgentOn: Bool { get }
+}
+
+public protocol OptOutRetryErrorFeatureFlagging {
+    var isOptOutRetryErrorFrequencyExperimentOn: Bool { get }
+}
+
+public struct DisabledOptOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFlagging {
+    public let isOptOutRetryErrorFrequencyExperimentOn = false
+
+    public init() {}
+}
+
+public protocol FreemiumPIRFeatureFlagging {
+    var isFreemiumPIREnabled: Bool { get }
 }

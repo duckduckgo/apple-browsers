@@ -112,6 +112,10 @@ public extension OnboardingTheme.ContextualOnboardingMetrics {
         public let interItemSpacing: CGFloat?
         /// Horizontal spacing between icon and text within a row.
         public let innerContentHorizontalSpacing: CGFloat?
+        /// Vertical padding inside each option list row.
+        public let verticalPadding: CGFloat
+        /// Horizontal padding inside each option list row.
+        public let horizontalPadding: CGFloat
 
         public init(
             cornerRadius: CGFloat,
@@ -121,7 +125,9 @@ public extension OnboardingTheme.ContextualOnboardingMetrics {
             itemMinHeight: CGFloat,
             itemMaxWidth: CGFloat? = .infinity,
             interItemSpacing: CGFloat? = nil,
-            innerContentHorizontalSpacing: CGFloat? = nil
+            innerContentHorizontalSpacing: CGFloat? = nil,
+            verticalPadding: CGFloat = 12,
+            horizontalPadding: CGFloat = 16
         ) {
             self.cornerRadius = cornerRadius
             self.borderWidth = borderWidth
@@ -131,6 +137,8 @@ public extension OnboardingTheme.ContextualOnboardingMetrics {
             self.itemMaxWidth = itemMaxWidth
             self.interItemSpacing = interItemSpacing
             self.innerContentHorizontalSpacing = innerContentHorizontalSpacing
+            self.verticalPadding = verticalPadding
+            self.horizontalPadding = horizontalPadding
         }
     }
 

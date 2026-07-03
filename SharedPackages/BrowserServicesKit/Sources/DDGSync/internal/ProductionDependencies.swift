@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import Persistence
 import PrivacyConfig
@@ -26,6 +27,7 @@ struct ProductionDependencies: SyncDependencies {
     let fileStorageUrl: URL
     let endpoints: Endpoints
     let account: AccountManaging
+    let scopedAccess: ScopedAccessCredentialManaging
     let api: RemoteAPIRequestCreating
     let payloadCompressor: SyncPayloadCompressing
     var keyValueStore: ThrowingKeyValueStoring
@@ -36,12 +38,14 @@ struct ProductionDependencies: SyncDependencies {
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let errorEvents: EventMapping<SyncError>
     let shouldPreserveAccountWhenSyncDisabled: () -> Bool
+    let syncFeatureFlags: any SyncFeatureFlagProviding
 
     init(
         serverEnvironment: ServerEnvironment,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         keyValueStore: ThrowingKeyValueStoring,
         errorEvents: EventMapping<SyncError>,
+        syncFeatureFlags: any SyncFeatureFlagProviding,
         shouldPreserveAccountWhenSyncDisabled: @escaping () -> Bool = { false }
     ) {
         self.init(fileStorageUrl: FileManager.default.applicationSupportDirectoryForComponent(named: "Sync"),
@@ -51,6 +55,7 @@ struct ProductionDependencies: SyncDependencies {
                   secureStore: SecureStorage(),
                   privacyConfigurationManager: privacyConfigurationManager,
                   errorEvents: errorEvents,
+                  syncFeatureFlags: syncFeatureFlags,
                   shouldPreserveAccountWhenSyncDisabled: shouldPreserveAccountWhenSyncDisabled)
     }
 
@@ -62,6 +67,7 @@ struct ProductionDependencies: SyncDependencies {
         secureStore: SecureStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         errorEvents: EventMapping<SyncError>,
+        syncFeatureFlags: any SyncFeatureFlagProviding,
         shouldPreserveAccountWhenSyncDisabled: @escaping () -> Bool
     ) {
         self.fileStorageUrl = fileStorageUrl
@@ -72,12 +78,23 @@ struct ProductionDependencies: SyncDependencies {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.errorEvents = errorEvents
         self.shouldPreserveAccountWhenSyncDisabled = shouldPreserveAccountWhenSyncDisabled
+        self.syncFeatureFlags = syncFeatureFlags
 
         api = RemoteAPIRequestCreator()
         payloadCompressor = SyncGzipPayloadCompressor()
 
         crypter = Crypter(secureStore: secureStore)
-        account = AccountManager(endpoints: endpoints, api: api, crypter: crypter)
+        let scopedAccess = ScopedAccessCredentialManager(endpoints: endpoints, api: api, crypter: crypter)
+        let registeredDeviceMapper = RegisteredDeviceMapper(crypter: crypter,
+                                                            scopedAccess: scopedAccess,
+                                                            cachedScopedPassword: secureStore.scopedPassword,
+                                                            isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() })
+        account = AccountManager(endpoints: endpoints,
+                                 api: api,
+                                 crypter: crypter,
+                                 registeredDeviceMapper: registeredDeviceMapper,
+                                 isScopedAccessCredentialsEnabled: { syncFeatureFlags.isScopedAccessCredentialsEnabled() })
+        self.scopedAccess = scopedAccess
         scheduler = SyncScheduler()
     }
 
@@ -112,6 +129,18 @@ struct ProductionDependencies: SyncDependencies {
 
     func createExchangeRecoveryKeyTransmitter(exchangeMessage: ExchangeMessage) throws -> any ExchangeRecoveryKeyTransmitting {
         return ExchangeRecoveryKeyTransmitter(endpoints: endpoints, api: api, crypter: crypter, storage: secureStore, exchangeMessage: exchangeMessage)
+    }
+
+    func createPairingV2MessageExchanger() -> PairingV2MessageExchanging {
+        PairingV2MessageExchanger(endpoints: endpoints, api: api)
+    }
+
+    func createThirdPartyAccountUpgradeCoordinator() -> ThirdPartyAccountUpgradeCoordinating {
+        ThirdPartyAccountUpgradeCoordinator(endpoints: endpoints,
+                                            api: api,
+                                            crypter: crypter,
+                                            scopedAccess: scopedAccess,
+                                            account: account)
     }
 
     func createTokenRescope() -> TokenRescoping {

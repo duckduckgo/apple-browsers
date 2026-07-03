@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Core
 import DesignResourcesKitIcons
 
 final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
@@ -25,6 +26,7 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
     private let tabSwitcherView = TabSwitcherStaticView()
     private var longPressRecognizer: UILongPressGestureRecognizer!
     weak var delegate: TabSwitcherButtonDelegate?
+
     var showMenuOnLongPress: Bool {
         didSet {
             configureLongPressBehavior()
@@ -76,19 +78,8 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
 
     var tabCount: Int = 0 {
         didSet {
-            refresh()
+            tabSwitcherView.updateCount(tabCount)
         }
-    }
-
-    private func refresh() {
-        if tabCount == 0 {
-            tabSwitcherView.updateCount(nil, isSymbol: false)
-            return
-        }
-
-        let useSymbol = tabCount >= Constants.maxTextTabs
-        let text = useSymbol ? "∞" : "\(tabCount)"
-        tabSwitcherView.updateCount(text, isSymbol: useSymbol)
     }
 
     var hasUnread: Bool {
@@ -145,18 +136,31 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
     private func setLongPressMenu() {
         removeGestureRecognizer(longPressRecognizer)
         let menu = UIMenu(children: [
-            UIAction(title: UserText.actionNewFireTab,
-                     image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                         guard let self else { return }
-                         delegate?.launchNewFireTab(self)
-                     },
-            UIAction(title: UserText.actionNewTab,
-                     image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                         guard let self else { return }
-                         delegate?.launchNewNormalTab(self)
-                     }
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
+                    PixelParameters.source: "toolbar"
+                ])
+                completion([
+                    UIAction(title: UserText.actionNewFireTab,
+                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
+                                 guard let self else { return }
+                                 Pixel.fire(pixel: .tabLongPressMenuNewFireTab, withAdditionalParameters: [
+                                     PixelParameters.source: "toolbar"
+                                 ])
+                                 delegate?.launchNewFireTab(self)
+                             },
+                    UIAction(title: UserText.actionNewTab,
+                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
+                                 guard let self else { return }
+                                 Pixel.fire(pixel: .tabLongPressMenuNewNormalTab, withAdditionalParameters: [
+                                     PixelParameters.source: "toolbar"
+                                 ])
+                                 delegate?.launchNewNormalTab(self)
+                             }
+                ])
+            }
         ])
-        
+
         self.menu = menu
     }
     
@@ -170,10 +174,6 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
 
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         delegate?.launchNewTabWithCurrentMode(self)
-    }
-
-    private struct Constants {
-        static let maxTextTabs = 100
     }
 }
 

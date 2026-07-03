@@ -27,13 +27,17 @@ final class UIInteractionManager {
     private let authenticationService: AuthenticationServiceProtocol
     private let autoClearService: AutoClearServiceProtocol
     private let launchActionHandler: LaunchActionHandling
+    private let onboardingPresenter: OnboardingPresenting
 
     init(authenticationService: AuthenticationServiceProtocol,
          autoClearService: AutoClearServiceProtocol,
-         launchActionHandler: LaunchActionHandling) {
+         launchActionHandler: LaunchActionHandling,
+         onboardingPresenter: OnboardingPresenting
+    ) {
         self.authenticationService = authenticationService
         self.autoClearService = autoClearService
         self.launchActionHandler = launchActionHandler
+        self.onboardingPresenter = onboardingPresenter
     }
 
     /// This method orchestrates the following operations:
@@ -55,6 +59,10 @@ final class UIInteractionManager {
                 }
                 group.addTask {
                     await self.autoClearService.waitForDataCleared()
+
+                    // Present Onboarding Flow if needed
+                    await self.onboardingPresenter.startOnboardingFlowIfNotSeenBefore(url: launchAction.url)
+
                     // Handle URL, shortcut item, and user activities after data clearing, so UI is ready when auth is dismissed.
                     switch launchAction {
                     case .openURL, .handleShortcutItem, .handleUserActivity:

@@ -1,33 +1,23 @@
 {
-    "m_webview_external-scheme-navigation_x-safari-https_stay": {
-        "description": "Fires when the user taps Stay in DuckDuckGo on the x-safari-https redirect alert",
-        "owners": ["dus7"],
-        "triggers": ["other"],
-        "suffixes": ["daily", "platform", "form_factor"],
-        "parameters": ["appVersion"],
-        "expires": "2026-04-20"
-    },
-    "m_webview_external-scheme-navigation_x-safari-https_open-in-safari": {
-        "description": "Fires when the user taps Open in Safari on the x-safari-https redirect alert",
-        "owners": ["dus7"],
-        "triggers": ["other"],
-        "suffixes": ["daily", "platform", "form_factor"],
-        "parameters": ["appVersion"],
-        "expires": "2026-04-20"
-    },
-    "m_webview_external-scheme-navigation_x-safari-https_loop-detected": {
-        "description": "Fires when a redirect loop is detected after user chose to stay in DuckDuckGo",
-        "owners": ["dus7"],
+    "m_webview_external-scheme-navigation_safari-redirect_load-url-requested": {
+        "description": "Fires when a converted Safari redirect URL load is requested in the web view",
+        "owners": ["dus7", "brindy"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_webview_external-scheme-navigation_x-safari-https_loop-open-in-safari": {
-        "description": "Fires when the user taps Open in Safari on the redirect loop alert",
-        "owners": ["dus7"],
+    "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown": {
+        "description": "Fires showing the error page for the redirect loop (detection doesn't always mean we show this page)",
+        "owners": ["dus7", "brindy"],
         "triggers": ["other"],
-        "suffixes": ["daily", "platform", "form_factor"],
-        "parameters": ["appVersion"],
-        "expires": "2026-04-20"
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site": {
+        "description": "Fires when the Report Broken Site button is tapped on the Safari redirect loop error page",
+        "owners": ["dus7", "brindy"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

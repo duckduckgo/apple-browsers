@@ -254,8 +254,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         largeSizeSpacingConstraint?.isActive = showButtons
 
         let isExpandedPhone = newMode == .expandedPhone
-        leadingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
-        trailingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : 0
+        leadingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : Metrics.iPadButtonSpacing
+        trailingButtonsContainer.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeButtonSpacing : Metrics.iPadButtonSpacing
         stackView.spacing = isExpandedPhone ? Metrics.expandedPhoneSizeSpacing : Metrics.expandedPadSizeSpacing
         stackViewLeadingConstraint?.constant = isExpandedPhone ? Metrics.expandedPhoneSizeMargins.leading : Metrics.textAreaHorizontalPadding
         stackViewTrailingConstraint?.constant = isExpandedPhone ? -Metrics.expandedPhoneSizeMargins.trailing : -Metrics.textAreaHorizontalPadding
@@ -309,6 +309,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     /// Callback fired when the omnibar branding area is tapped while in AI Chat mode
     var onAIChatBrandingPressed: (() -> Void)?
+    var longPressMenuProvider: (() -> UIMenu?)? {
+        didSet {
+            refreshLongPressMenuAvailability()
+        }
+    }
+    var onLongPressMenuDisplayed: (() -> Void)?
 
     // MARK: - Properties
 
@@ -358,6 +364,155 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var onAIChatSendPressed: (() -> Void)?
     var isAIVoiceChatEnabled: Bool = false
 
+    let modelPickerButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        config.image = UIImage(systemName: "chevron.down")?.withConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+        )
+        config.imagePlacement = .trailing
+        config.imagePadding = Metrics.modelPickerChipSpacing
+        config.titleLineBreakMode = .byTruncatingTail
+        config.contentInsets = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: Metrics.modelPickerChipHorizontalPadding,
+            bottom: 0,
+            trailing: Metrics.modelPickerChipHorizontalPadding
+        )
+        config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+            var updated = attributes
+            updated.font = .daxSubheadRegular()
+            return updated
+        }
+        config.background.strokeColor = UIColor(designSystemColor: .lines)
+        config.background.strokeWidth = 1
+        config.cornerStyle = .capsule
+
+        let button = UIButton(configuration: config)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityIdentifier = "AIChat.Omnibar.iPad.ModelPicker"
+        button.isHidden = true
+        // High (not required) hugging so the leading `>=` constraint wins and the title
+        // truncates rather than producing an unsatisfiable layout for long model names.
+        button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        button.titleLabel?.lineBreakMode = .byTruncatingTail
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
+
+    /// Enables the model picker chip (driven by the `iPadDuckAIBarControls` flag).
+    var isModelPickerEnabled: Bool = false {
+        didSet { refreshModelPickerVisibility() }
+    }
+
+    /// The short name shown on the model picker chip. The chip stays hidden while this is empty.
+    var aiChatModelName: String? {
+        didSet {
+            modelPickerButton.configuration?.title = aiChatModelName
+            refreshModelPickerVisibility()
+        }
+    }
+
+    /// The pull-down menu listing selectable models. Setting it enables the chip's primary action.
+    var aiChatModelPickerMenu: UIMenu? {
+        get { modelPickerButton.menu }
+        set {
+            modelPickerButton.menu = newValue
+            modelPickerButton.showsMenuAsPrimaryAction = (newValue != nil)
+        }
+    }
+
+    private var canShowModelPicker: Bool {
+        isModelPickerEnabled && !(aiChatModelName?.isEmpty ?? true)
+    }
+
+    let reasoningPickerButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityIdentifier = "AIChat.Omnibar.iPad.ReasoningPicker"
+        button.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        button.isHidden = true
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
+
+    /// Enables the reasoning picker chip (driven by the `iPadDuckAIBarControls` flag).
+    var isReasoningPickerEnabled: Bool = false {
+        didSet { refreshReasoningPickerVisibility() }
+    }
+
+    /// The glyph for the selected reasoning mode. The chip stays hidden while this is nil —
+    /// i.e. when the selected model doesn't support a reasoning picker.
+    var aiChatReasoningIcon: UIImage? {
+        didSet {
+            reasoningPickerButton.setImage(aiChatReasoningIcon, for: .normal)
+            refreshReasoningPickerVisibility()
+        }
+    }
+
+    /// The pull-down menu listing reasoning modes. Setting it enables the chip's primary action.
+    var aiChatReasoningPickerMenu: UIMenu? {
+        get { reasoningPickerButton.menu }
+        set {
+            reasoningPickerButton.menu = newValue
+            reasoningPickerButton.showsMenuAsPrimaryAction = (newValue != nil)
+        }
+    }
+
+    private var canShowReasoningPicker: Bool {
+        isReasoningPickerEnabled && aiChatReasoningIcon != nil
+    }
+
+    let toolPickerButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityIdentifier = "AIChat.Omnibar.iPad.ToolPicker"
+        button.accessibilityLabel = UserText.aiChatToolbarToolsButtonAccessibilityLabel
+        button.setImage(DesignSystemImages.Glyphs.Size24.options, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        button.isHidden = true
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        if #available(iOS 16.0, *) {
+            button.preferredMenuElementOrder = .fixed
+        }
+        return button
+    }()
+
+    /// Enables the tool picker chip (driven by the `iPadDuckAIBarControls` flag).
+    var isToolPickerEnabled: Bool = false {
+        didSet { refreshToolPickerVisibility() }
+    }
+
+    /// The pull-down menu listing selectable tools. Setting it enables the chip's primary action;
+    /// setting it nil hides the chip — i.e. when the selected model offers no tools.
+    var aiChatToolPickerMenu: UIMenu? {
+        get { toolPickerButton.menu }
+        set {
+            toolPickerButton.menu = newValue
+            toolPickerButton.showsMenuAsPrimaryAction = (newValue != nil)
+            refreshToolPickerVisibility()
+        }
+    }
+
+    /// Whether a tool is currently selected — tints the chip to signal the active state.
+    var isToolSelected: Bool = false {
+        didSet {
+            toolPickerButton.tintColor = UIColor(designSystemColor: isToolSelected ? .accentPrimary : .iconsSecondary)
+        }
+    }
+
+    private var canShowToolPicker: Bool {
+        isToolPickerEnabled && toolPickerButton.menu != nil
+    }
+
     let aiChatTextView: UITextView = {
         let textView = UITextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
@@ -399,6 +554,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private let searchAreaView = DefaultOmniBarSearchView()
     private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
+    private let floatingGlassContentHostView = UIView()
+    private var omniBarLongPressInteraction: UIContextMenuInteraction?
+    private let defaultBackgroundColor = UIColor(designSystemColor: .background)
+    private let isFloatingUIEnabled: Bool
+    fileprivate var savedBarChromeBackgroundColor: UIColor?
+    fileprivate var savedBarViewBackgroundColor: UIColor?
 
     /// Spans to available width of the omni bar and allows the input field to center horizontally
     private let searchAreaAlignmentView = UIView()
@@ -409,11 +570,45 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private let stackView = UIStackView()
 
-    static func create() -> Self {
-        Self.init()
+    private let glassEffect: UIVisualEffectView = {
+        let view: UIVisualEffectView
+        if #available(iOS 26.0, *) {
+            view = UIVisualEffectView(effect: UIGlassEffect())
+            view.cornerConfiguration = .capsule()
+        } else {
+            view = UIVisualEffectView()
+        }
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        return view
+    }()
+    private var floatingHostToContainerConstraints: [NSLayoutConstraint] = []
+    private var floatingHostToGlassContentConstraints: [NSLayoutConstraint] = []
+    private var chromeContentContainerView: UIView {
+        isFloatingUIEnabled ? floatingGlassContentHostView : searchAreaContainerView
     }
 
-    init() {
+    private let opaqueEffect: UIVisualEffectView = {
+        let view: UIVisualEffectView
+        if #available(iOS 26.0, *) {
+            view = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+            view.cornerConfiguration = .capsule()
+        } else {
+            view = UIVisualEffectView()
+        }
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        return view
+    }()
+
+    static func create(isFloatingUIEnabled: Bool) -> Self {
+        Self.init(isFloatingUIEnabled: isFloatingUIEnabled)
+    }
+
+    static func create() -> Self {
+        Self.init(isFloatingUIEnabled: false)
+    }
+
+    init(isFloatingUIEnabled: Bool) {
+        self.isFloatingUIEnabled = isFloatingUIEnabled
         super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
 
         setUpSubviews()
@@ -430,6 +625,38 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    func makeGlass() {
+        guard isFloatingUIEnabled else {
+            makeOpaque()
+            return
+        }
+        glassEffect.removeFromSuperview()
+        opaqueEffect.removeFromSuperview()
+        glassEffect.frame = searchAreaContainerView.bounds
+        searchAreaContainerView.insertSubview(glassEffect, at: 0)
+        if floatingGlassContentHostView.superview !== glassEffect.contentView {
+            floatingHostToContainerConstraints.forEach { $0.isActive = false }
+            floatingGlassContentHostView.removeFromSuperview()
+            glassEffect.contentView.addSubview(floatingGlassContentHostView)
+            floatingHostToGlassContentConstraints.forEach { $0.isActive = true }
+        }
+        searchAreaContainerView.backgroundColor = .clear
+    }
+
+    func makeOpaque() {
+        if isFloatingUIEnabled, floatingGlassContentHostView.superview !== searchAreaContainerView {
+            floatingHostToGlassContentConstraints.forEach { $0.isActive = false }
+            floatingGlassContentHostView.removeFromSuperview()
+            searchAreaContainerView.addSubview(floatingGlassContentHostView)
+            floatingHostToContainerConstraints.forEach { $0.isActive = true }
+        }
+        glassEffect.removeFromSuperview()
+        opaqueEffect.removeFromSuperview()
+        searchAreaContainerView.backgroundColor = isFloatingUIEnabled
+            ? UIColor(designSystemColor: .backgroundTertiary)
+            : UIColor(designSystemColor: .urlBar)
     }
 
     private func setUpSubviews() {
@@ -449,8 +676,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         searchAreaStackView.addArrangedSubview(searchAreaContainerView)
 
-        searchAreaContainerView.addSubview(searchAreaView)
-        searchAreaContainerView.addSubview(omniBarProgressView)
+        if isFloatingUIEnabled {
+            floatingGlassContentHostView.translatesAutoresizingMaskIntoConstraints = false
+            searchAreaContainerView.addSubview(floatingGlassContentHostView)
+        }
+
+        let chromeContentContainerView = self.chromeContentContainerView
+        chromeContentContainerView.addSubview(searchAreaView)
+        chromeContentContainerView.addSubview(omniBarProgressView)
 
         trailingButtonsContainer.addArrangedSubview(fireButtonView)
         trailingButtonsContainer.addArrangedSubview(tabSwitcherContainerView)
@@ -458,9 +691,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
-        searchAreaContainerView.addSubview(aiChatTextView)
-        searchAreaContainerView.addSubview(aiChatSendButton)
-        searchAreaContainerView.addSubview(aiChatLeftButton)
+        chromeContentContainerView.addSubview(aiChatTextView)
+        chromeContentContainerView.addSubview(aiChatSendButton)
+        chromeContentContainerView.addSubview(modelPickerButton)
+        chromeContentContainerView.addSubview(reasoningPickerButton)
+        chromeContentContainerView.addSubview(toolPickerButton)
+        chromeContentContainerView.addSubview(aiChatLeftButton)
 
         addSubview(activeOutlineView)
         addLayoutGuide(fieldContainerLayoutGuide)
@@ -471,7 +707,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private func addAIChatFullModeBrandingView() {
         let brandingView = AIChatFullModeOmniBrandingView()
         brandingView.translatesAutoresizingMaskIntoConstraints = false
-        searchAreaContainerView.addSubview(brandingView)
+        chromeContentContainerView.addSubview(brandingView)
 
         aiChatBrandingView = brandingView
 
@@ -504,6 +740,25 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         let trailingConstraint = stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
         stackViewLeadingConstraint = leadingConstraint
         stackViewTrailingConstraint = trailingConstraint
+        if isFloatingUIEnabled {
+            floatingHostToContainerConstraints = [
+                floatingGlassContentHostView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
+                floatingGlassContentHostView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+                floatingGlassContentHostView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+                floatingGlassContentHostView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
+            ]
+            floatingHostToGlassContentConstraints = [
+                floatingGlassContentHostView.topAnchor.constraint(equalTo: glassEffect.contentView.topAnchor),
+                floatingGlassContentHostView.leadingAnchor.constraint(equalTo: glassEffect.contentView.leadingAnchor),
+                floatingGlassContentHostView.trailingAnchor.constraint(equalTo: glassEffect.contentView.trailingAnchor),
+                floatingGlassContentHostView.bottomAnchor.constraint(equalTo: glassEffect.contentView.bottomAnchor)
+            ]
+            NSLayoutConstraint.activate(floatingHostToContainerConstraints)
+        } else {
+            floatingHostToContainerConstraints = []
+            floatingHostToGlassContentConstraints = []
+        }
+        let chromeContentContainerView = self.chromeContentContainerView
 
         NSLayoutConstraint.activate([
             leadingConstraint,
@@ -511,23 +766,22 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             textAreaTopPaddingConstraint,
             textAreaBottomPaddingConstraint,
 
-            searchAreaView.topAnchor.constraint(greaterThanOrEqualTo: searchAreaContainerView.topAnchor),
-            searchAreaView.bottomAnchor.constraint(lessThanOrEqualTo: searchAreaContainerView.bottomAnchor),
-            searchAreaView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-            searchAreaView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            searchAreaView.topAnchor.constraint(greaterThanOrEqualTo: chromeContentContainerView.topAnchor),
+            searchAreaView.bottomAnchor.constraint(lessThanOrEqualTo: chromeContentContainerView.bottomAnchor),
+            searchAreaView.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
+            searchAreaView.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
 
             searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            readableSearchAreaWidth,
 
             activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -Metrics.activeBorderWidth),
             activeOutlineView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: Metrics.activeBorderWidth),
             activeOutlineView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor, constant: -Metrics.activeBorderWidth),
             activeOutlineView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: Metrics.activeBorderWidth),
 
-            omniBarProgressView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
-            omniBarProgressView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-            omniBarProgressView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-            omniBarProgressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor),
+            omniBarProgressView.topAnchor.constraint(equalTo: chromeContentContainerView.topAnchor),
+            omniBarProgressView.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
+            omniBarProgressView.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
+            omniBarProgressView.bottomAnchor.constraint(equalTo: chromeContentContainerView.bottomAnchor),
 
             searchAreaStackView.topAnchor.constraint(equalTo: searchAreaAlignmentView.topAnchor),
             searchAreaStackView.leadingAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.leadingAnchor),
@@ -536,10 +790,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             // We want searchAreaStackView to grow as much as it's possible
             searchAreaStackView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),
 
-            fieldContainerLayoutGuide.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-            fieldContainerLayoutGuide.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-            fieldContainerLayoutGuide.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
-            fieldContainerLayoutGuide.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
+            fieldContainerLayoutGuide.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
+            fieldContainerLayoutGuide.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
+            fieldContainerLayoutGuide.topAnchor.constraint(equalTo: chromeContentContainerView.topAnchor),
+            fieldContainerLayoutGuide.bottomAnchor.constraint(equalTo: chromeContentContainerView.bottomAnchor)
         ])
 
         DefaultOmniBarView.activateItemSizeConstraints(for: backButtonView)
@@ -556,7 +810,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         aiChatLeftButton.translatesAutoresizingMaskIntoConstraints = false
 
         let aiChatButtonConstraints = [
-            aiChatLeftButton.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+            aiChatLeftButton.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
             aiChatLeftButton.centerYAnchor.constraint(equalTo: centerYAnchor),
         ]
         NSLayoutConstraint.activate(aiChatButtonConstraints)
@@ -566,10 +820,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         // AI Chat mode constraints (inactive by default, activated only in AI Chat mode)
         if let brandingView = aiChatBrandingView {
             aiChatModeConstraints = [
-                brandingView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-                brandingView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-                brandingView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
-                searchAreaContainerView.widthAnchor.constraint(equalTo: searchAreaAlignmentView.widthAnchor).withPriority(.defaultHigh)
+                brandingView.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
+                brandingView.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
+                brandingView.centerYAnchor.constraint(equalTo: chromeContentContainerView.centerYAnchor),
+                chromeContentContainerView.widthAnchor.constraint(equalTo: searchAreaAlignmentView.widthAnchor).withPriority(.defaultHigh)
             ]
         }
 
@@ -581,7 +835,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        backgroundColor = UIColor(designSystemColor: .background)
+        backgroundColor = isFloatingUIEnabled ? .clear : defaultBackgroundColor
 
         searchAreaAlignmentView.setContentHuggingPriority(.defaultLow, for: .horizontal)
         searchAreaAlignmentView.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -591,7 +845,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaContainerView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
         searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
 
-        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
+        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
         searchAreaContainerView.layer.cornerCurve = .continuous
 
@@ -600,7 +854,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         activeOutlineView.isUserInteractionEnabled = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
-        activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
+        activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accentPrimary).cgColor
         activeOutlineView.layer.borderWidth = Metrics.activeBorderWidth
         activeOutlineView.layer.cornerRadius = Metrics.activeBorderRadius
         activeOutlineView.layer.cornerCurve = .continuous
@@ -665,6 +919,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         updateShadows()
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        applyOmnibarCornerStyle()
+    }
+
     private func setUpCallbacks() {
         searchAreaView.dismissButtonView.addTarget(self, action: #selector(dismissButtonTap), for: .touchUpInside)
         searchAreaView.voiceSearchButton.addTarget(self, action: #selector(voiceSearchButtonTap), for: .touchUpInside)
@@ -703,12 +962,19 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func updateFireModeAppearance() {
-        if fireMode {
-            searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeBackground)
-            activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
+        if shouldUseFloatingTopGlass {
+            makeGlass()
+            activeOutlineView.layer.borderColor = fireMode
+                ? UIColor(singleUseColor: .fireModeAccent).cgColor
+                : UIColor(designSystemColor: .accentPrimary).cgColor
         } else {
-            searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
-            activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
+            if fireMode {
+                searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeCardBackground)
+                activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
+            } else {
+                searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+                activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accentPrimary).cgColor
+            }
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
@@ -808,8 +1074,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func updateActiveState() {
         // This is needed so progress bar is clipped properly
-        omniBarProgressView.layer.cornerRadius = Metrics.cornerRadius
-        searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
+        applyOmnibarCornerStyle()
         updateShadows()
     }
 
@@ -818,11 +1083,40 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
     }
 
-    /// Returns the expanded-area subview (text view or send button) at the given point.
-    /// When expanded, these views overflow beyond this view's bounds so we must claim them explicitly.
+    func refreshLongPressMenuAvailability() {
+        guard longPressMenuProvider != nil else {
+            removeOmniBarLongPressInteraction()
+            return
+        }
+
+        addOmniBarLongPressInteractionIfNeeded()
+    }
+
+    func prepareForMoveTransition() {
+        backgroundColor = .clear
+    }
+
+    func moveTransitionCompleted() {
+        backgroundColor = isFloatingUIEnabled ? .clear : defaultBackgroundColor
+    }
+
+    private func addOmniBarLongPressInteractionIfNeeded() {
+        guard omniBarLongPressInteraction == nil else { return }
+
+        let interaction = UIContextMenuInteraction(delegate: self)
+        searchContainer.addInteraction(interaction)
+        omniBarLongPressInteraction = interaction
+    }
+
+    private func removeOmniBarLongPressInteraction() {
+        guard let omniBarLongPressInteraction else { return }
+        searchContainer.removeInteraction(omniBarLongPressInteraction)
+        self.omniBarLongPressInteraction = nil
+    }
+
     private func overflowTarget(at point: CGPoint, with event: UIEvent?) -> UIView? {
         guard isSearchAreaExpanded else { return nil }
-        let candidates: [UIView] = [aiChatSendButton, aiChatTextView]
+        let candidates: [UIView] = [aiChatSendButton, modelPickerButton, reasoningPickerButton, toolPickerButton, aiChatTextView]
         return candidates.first { candidate in
             guard !candidate.isHidden else { return false }
             let localPoint = candidate.convert(point, from: self)
@@ -838,6 +1132,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         if let target = overflowTarget(at: point, with: event) {
             let localPoint = target.convert(point, from: self)
             return target.hitTest(localPoint, with: event) ?? target
+        }
+        if shouldUseFloatingTopGlass {
+            let localPoint = floatingGlassContentHostView.convert(point, from: self)
+            if let target = floatingGlassContentHostView.hitTest(localPoint, with: event) {
+                return target
+            }
         }
         return super.hitTest(point, with: event)
     }
@@ -954,10 +1254,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private struct Metrics {
         static let itemSize: CGFloat = 44
         static let height: CGFloat = 60
+        static var cornerRadius: CGFloat { OmniBarMetrics.cornerRadius }
 
-        static let cornerRadius: CGFloat = 16
-
-        static let activeBorderRadius: CGFloat = 18
+        /// Sits 2pt outside `cornerRadius` so the active outline stays concentric with the field.
+        static var activeBorderRadius: CGFloat { OmniBarMetrics.cornerRadius + 2 }
         static let activeBorderWidth: CGFloat = 2
 
         static let textAreaHorizontalPadding: CGFloat = 16
@@ -975,6 +1275,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         static let sendButtonSize: CGFloat = 40.0
         static let expansionAnimationDuration: TimeInterval = 0.25
 
+        // Duck.ai model picker chip (iPad), styled to match the iPhone model chip.
+        static let modelPickerChipHeight: CGFloat = 40.0
+        static let modelPickerChipHorizontalPadding: CGFloat = 16.0
+        static let modelPickerChipSpacing: CGFloat = 4.0
+        static let modelPickerToSendButtonSpacing: CGFloat = 8.0
+
+        // Duck.ai reasoning picker chip (iPad), icon-only, sits to the left of the model chip.
+        static let reasoningPickerChipSize: CGFloat = 40.0
+        static let reasoningToModelPickerSpacing: CGFloat = 4.0
+        static let toolPickerChipSize: CGFloat = 40.0
+
         static let expandedPadSizeSpacing: CGFloat = 24.0
         static let expandedPadSizeMargins = NSDirectionalEdgeInsets(
             top: 0,
@@ -983,6 +1294,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             trailing: expandedPadSizeSpacing
         )
 
+        static let iPadButtonSpacing: CGFloat = 12.0
         static let expandedPhoneSizeSpacing: CGFloat = 16.0
         static let expandedPhoneSizeButtonSpacing: CGFloat = 10.0
         static let expandedPhoneSizeMargins = NSDirectionalEdgeInsets(
@@ -995,6 +1307,89 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private struct Constant {
         static let accessibilityPrefix = "Browser.OmniBar"
+    }
+
+    private func applyOmnibarCornerStyle() {
+        let cornerRadius: CGFloat
+        if isFloatingUIEnabled && isUsingSmallTopSpacing {
+            cornerRadius = searchAreaContainerView.bounds.height / 2
+        } else {
+            cornerRadius = Metrics.cornerRadius
+        }
+
+        omniBarProgressView.layer.cornerRadius = cornerRadius
+        searchAreaContainerView.layer.cornerRadius = cornerRadius
+        searchAreaView.layer.cornerRadius = cornerRadius
+        activeOutlineView.layer.cornerRadius = cornerRadius + Metrics.activeBorderWidth
+    }
+}
+
+private extension DefaultOmniBarView {
+    /// Bottom omnibar uses small top spacing. Top position keeps regular spacing.
+    var shouldUseFloatingTopGlass: Bool {
+        isFloatingUIEnabled && !isUsingSmallTopSpacing
+    }
+}
+
+extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        guard let menu = longPressMenuProvider?() else { return nil }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: { [weak self] in
+            self?.makeLongPressMenuPreviewController()
+        }) { _ in
+            menu
+        }
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                willDisplayMenuFor configuration: UIContextMenuConfiguration,
+                                animator: UIContextMenuInteractionAnimating?) {
+        onLongPressMenuDisplayed?()
+    }
+
+    private func makeLongPressMenuPreviewController() -> UIViewController? {
+        OmniBarLongPressPreviewViewController(sourceView: searchContainer)
+    }
+}
+
+private final class OmniBarLongPressPreviewViewController: UIViewController {
+
+    private let sourceView: UIView
+
+    init(sourceView: UIView) {
+        self.sourceView = sourceView
+        super.init(nibName: nil, bundle: nil)
+        preferredContentSize = sourceView.bounds.size
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        let containerView = UIView(frame: CGRect(origin: .zero, size: preferredContentSize))
+        containerView.backgroundColor = .clear
+        containerView.clipsToBounds = false
+        view = containerView
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        guard let snapshotView = sourceView.snapshotView(afterScreenUpdates: false) else { return }
+
+        snapshotView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(snapshotView)
+
+        NSLayoutConstraint.activate([
+            snapshotView.topAnchor.constraint(equalTo: view.topAnchor),
+            snapshotView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            snapshotView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            snapshotView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
     }
 }
 
@@ -1053,6 +1448,34 @@ extension DefaultOmniBarView {
         searchAreaView.revealButtons()
     }
 
+    func setIconContainersAlpha(_ alpha: CGFloat) { searchAreaView.setIconContainersAlpha(alpha) }
+
+    func hideBarChrome() {
+        if savedBarChromeBackgroundColor == nil {
+            savedBarChromeBackgroundColor = searchAreaContainerView.backgroundColor
+        }
+        if savedBarViewBackgroundColor == nil {
+            savedBarViewBackgroundColor = backgroundColor
+        }
+        searchAreaContainerView.backgroundColor = .clear
+        searchAreaContainerView.applyShadowOpacityMultiplier(0)
+        backgroundColor = .clear
+        textField.alpha = 0
+    }
+
+    func restoreBarChrome() {
+        if let saved = savedBarChromeBackgroundColor {
+            searchAreaContainerView.backgroundColor = saved
+            savedBarChromeBackgroundColor = nil
+        }
+        if let saved = savedBarViewBackgroundColor {
+            backgroundColor = saved
+            savedBarViewBackgroundColor = nil
+        }
+        searchAreaContainerView.applyShadowOpacityMultiplier(1)
+        textField.alpha = 1
+    }
+
     /// Configures the omnibar UI for AI Chat mode. Shows AI Chat buttons, hides search elements.
     private func showAIChatOmnibar() {
         aiChatBrandingView?.isHidden = false
@@ -1060,7 +1483,7 @@ extension DefaultOmniBarView {
         aiChatLeftButton.isHidden = false
         aiChatLeftButton.alpha = 1.0
         NSLayoutConstraint.activate(aiChatModeConstraints)
-        searchAreaContainerView.bringSubviewToFront(aiChatLeftButton)
+        chromeContentContainerView.bringSubviewToFront(aiChatLeftButton)
 
         setNeedsLayout()
     }
@@ -1135,6 +1558,22 @@ extension DefaultOmniBarView {
             aiChatSendButton.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
             aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
             aiChatSendButton.heightAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
+
+            modelPickerButton.trailingAnchor.constraint(equalTo: aiChatSendButton.leadingAnchor, constant: -Metrics.modelPickerToSendButtonSpacing),
+            modelPickerButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
+            modelPickerButton.heightAnchor.constraint(equalToConstant: Metrics.modelPickerChipHeight),
+            modelPickerButton.leadingAnchor.constraint(greaterThanOrEqualTo: aiChatTextView.leadingAnchor),
+
+            reasoningPickerButton.trailingAnchor.constraint(equalTo: modelPickerButton.leadingAnchor, constant: -Metrics.reasoningToModelPickerSpacing),
+            reasoningPickerButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
+            reasoningPickerButton.widthAnchor.constraint(equalToConstant: Metrics.reasoningPickerChipSize),
+            reasoningPickerButton.heightAnchor.constraint(equalToConstant: Metrics.reasoningPickerChipSize),
+            reasoningPickerButton.leadingAnchor.constraint(greaterThanOrEqualTo: aiChatTextView.leadingAnchor),
+
+            toolPickerButton.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: Metrics.duckAITextViewBottomPadding),
+            toolPickerButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
+            toolPickerButton.widthAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),
+            toolPickerButton.heightAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),
         ])
 
         let bottomEqual = searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
@@ -1161,7 +1600,7 @@ extension DefaultOmniBarView {
     func setUpExpandedTextViewProperties() {
         aiChatTextView.font = UIFont.daxBodyRegular()
         aiChatTextView.textColor = UIColor(designSystemColor: .textPrimary)
-        aiChatTextView.tintColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+        aiChatTextView.tintColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         aiChatTextView.autocapitalizationType = .none
         aiChatTextView.autocorrectionType = .no
         aiChatTextView.spellCheckingType = .no
@@ -1171,21 +1610,35 @@ extension DefaultOmniBarView {
 
     func updateSearchAreaExpansion(animated: Bool) {
         applyTextViewVisibility()
-        onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
 
         guard animated else {
             searchAreaContainerView.applyShadowOpacityMultiplier(1)
             aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
+            modelPickerButton.alpha = (isSearchAreaExpanded && canShowModelPicker) ? 1 : 0
+            reasoningPickerButton.alpha = (isSearchAreaExpanded && canShowReasoningPicker) ? 1 : 0
+            toolPickerButton.alpha = (isSearchAreaExpanded && canShowToolPicker) ? 1 : 0
             if !isSearchAreaExpanded {
                 aiChatSendButton.isHidden = true
+                modelPickerButton.isHidden = true
+                reasoningPickerButton.isHidden = true
+                toolPickerButton.isHidden = true
             }
             applyExpansionConstraints()
             applyExpansionClipping()
             layoutIfNeeded()
+            // After layout so observers (the popover) anchor against the final frame.
+            onSearchAreaExpandedStateChanged?(isSearchAreaExpanded)
             if isSearchAreaExpanded, !aiChatTextView.isFirstResponder {
                 aiChatTextView.becomeFirstResponder()
             }
             return
+        }
+
+        // Collapsing: notify now so the popover hides as the bar shrinks. Expanding: notify on completion
+        // (below), once the expanded frame is laid out, so the popover anchors at the right Y instead of
+        // sliding from the collapsed position.
+        if !isSearchAreaExpanded {
+            onSearchAreaExpandedStateChanged?(false)
         }
 
         layoutIfNeeded()
@@ -1201,9 +1654,15 @@ extension DefaultOmniBarView {
             if self.isSearchAreaExpanded {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.alpha = 1
+                self.modelPickerButton.alpha = self.canShowModelPicker ? 1 : 0
+                self.reasoningPickerButton.alpha = self.canShowReasoningPicker ? 1 : 0
+                self.toolPickerButton.alpha = self.canShowToolPicker ? 1 : 0
             } else {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
                 self.aiChatSendButton.alpha = 0
+                self.modelPickerButton.alpha = 0
+                self.reasoningPickerButton.alpha = 0
+                self.toolPickerButton.alpha = 0
             }
             self.layoutIfNeeded()
         } completion: { _ in
@@ -1211,10 +1670,14 @@ extension DefaultOmniBarView {
                 self.applyExpansionClipping()
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.isHidden = true
+                self.modelPickerButton.isHidden = true
+                self.reasoningPickerButton.isHidden = true
+                self.toolPickerButton.isHidden = true
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
             } else {
                 self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.onSearchAreaExpandedStateChanged?(true)
             }
             if self.isSearchAreaExpanded {
                 self.aiChatTextView.becomeFirstResponder()
@@ -1230,12 +1693,28 @@ extension DefaultOmniBarView {
 
             aiChatTextView.text = currentText
             aiChatTextView.isHidden = false
-            searchAreaContainerView.bringSubviewToFront(aiChatTextView)
+            chromeContentContainerView.bringSubviewToFront(aiChatTextView)
 
             aiChatSendButton.isHidden = false
             aiChatSendButton.alpha = 0
-            searchAreaContainerView.bringSubviewToFront(aiChatSendButton)
+            chromeContentContainerView.bringSubviewToFront(aiChatSendButton)
             updateAIChatSendButton(hasText: !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+            if canShowModelPicker {
+                prepareModelPickerButtonForDisplay()
+            }
+
+            if canShowReasoningPicker {
+                reasoningPickerButton.isHidden = false
+                reasoningPickerButton.alpha = 0
+                searchAreaContainerView.bringSubviewToFront(reasoningPickerButton)
+            }
+
+            if canShowToolPicker {
+                toolPickerButton.isHidden = false
+                toolPickerButton.alpha = 0
+                searchAreaContainerView.bringSubviewToFront(toolPickerButton)
+            }
         } else {
             let currentText = aiChatTextView.text ?? ""
             aiChatTextView.isHidden = true
@@ -1243,6 +1722,52 @@ extension DefaultOmniBarView {
 
             textField.text = currentText
             textField.alpha = 1
+        }
+    }
+
+    private func refreshModelPickerVisibility() {
+        guard isSearchAreaExpanded, canShowModelPicker else {
+            modelPickerButton.isHidden = true
+            return
+        }
+        guard modelPickerButton.isHidden else { return }
+        prepareModelPickerButtonForDisplay()
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
+            self.modelPickerButton.alpha = 1
+        }
+    }
+
+    private func prepareModelPickerButtonForDisplay() {
+        modelPickerButton.isHidden = false
+        modelPickerButton.alpha = 0
+        chromeContentContainerView.bringSubviewToFront(modelPickerButton)
+    }
+
+    private func refreshReasoningPickerVisibility() {
+        guard isSearchAreaExpanded, canShowReasoningPicker else {
+            reasoningPickerButton.isHidden = true
+            return
+        }
+        guard reasoningPickerButton.isHidden else { return }
+        reasoningPickerButton.isHidden = false
+        reasoningPickerButton.alpha = 0
+        searchAreaContainerView.bringSubviewToFront(reasoningPickerButton)
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
+            self.reasoningPickerButton.alpha = 1
+        }
+    }
+
+    private func refreshToolPickerVisibility() {
+        guard isSearchAreaExpanded, canShowToolPicker else {
+            toolPickerButton.isHidden = true
+            return
+        }
+        guard toolPickerButton.isHidden else { return }
+        toolPickerButton.isHidden = false
+        toolPickerButton.alpha = 0
+        searchAreaContainerView.bringSubviewToFront(toolPickerButton)
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
+            self.toolPickerButton.alpha = 1
         }
     }
 
@@ -1254,7 +1779,7 @@ extension DefaultOmniBarView {
     }
 
     func updateAIChatSendButton(hasText: Bool) {
-        let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accent)
+        let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         if hasText {
             aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
             aiChatSendButton.backgroundColor = accentColor
@@ -1315,3 +1840,63 @@ extension DefaultOmniBarView {
         }
     }
 }
+
+#if DEBUG
+final class RebrandPreviewOverride: ObservableObject {
+    private let isRebranded: Bool
+    private let previousAppRebrand: () -> Bool
+    private let previousDesignSystemRebrand: () -> Bool
+    private let previousPalette: ColorPalette
+
+    init(isRebranded: Bool) {
+        self.isRebranded = isRebranded
+        previousAppRebrand = AppRebrand.isAppRebranded
+        previousDesignSystemRebrand = DesignSystemRebrand.isAppRebranded
+        previousPalette = DesignSystemPalette.current
+        apply()
+    }
+
+    func apply() {
+        AppRebrand.isAppRebranded = { [isRebranded] in isRebranded }
+        DesignSystemRebrand.isAppRebranded = { [isRebranded] in isRebranded }
+        DesignSystemPalette.current = isRebranded ? .rebranded : .default
+    }
+
+    deinit {
+        AppRebrand.isAppRebranded = previousAppRebrand
+        DesignSystemRebrand.isAppRebranded = previousDesignSystemRebrand
+        DesignSystemPalette.current = previousPalette
+    }
+}
+
+/// Bridges the UIKit ``DefaultOmniBarView`` into SwiftUI so it can be shown in a `#Preview`.
+private struct DefaultOmniBarViewRepresentable: UIViewRepresentable {
+    let omniBarView: DefaultOmniBarView
+
+    func makeUIView(context: Context) -> DefaultOmniBarView { omniBarView }
+    func updateUIView(_ uiView: DefaultOmniBarView, context: Context) {}
+}
+
+private struct DefaultOmniBarViewGallery: View {
+    @StateObject private var rebrandOverride: RebrandPreviewOverride
+
+    init(isRebranded: Bool) {
+        _rebrandOverride = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
+    }
+
+    var body: some View {
+        rebrandOverride.apply()
+        return DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView(isFloatingUIEnabled: false))
+            .frame(width: 360, height: 60)
+            .padding()
+    }
+}
+
+#Preview("Address bar / Legacy") {
+    DefaultOmniBarViewGallery(isRebranded: false)
+}
+
+#Preview("Address bar / Rebranded") {
+    DefaultOmniBarViewGallery(isRebranded: true)
+}
+#endif

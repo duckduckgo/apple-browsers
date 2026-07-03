@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct RemoveDeviceView: View {
 
@@ -30,7 +31,7 @@ struct RemoveDeviceView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
-                Image(model.imageName)
+                Image(rebrandable: model.imageName)
 
                 Text(UserText.removeDeviceTitle)
                     .daxTitle1()

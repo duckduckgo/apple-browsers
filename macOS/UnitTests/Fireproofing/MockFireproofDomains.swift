@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 @testable import DuckDuckGo_Privacy_Browser
 
 class MockFireproofDomains: FireproofDomains {

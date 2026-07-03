@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Persistence
 import SwiftUI
 @testable import DataBrokerProtection_iOS
@@ -30,17 +31,21 @@ struct IOSManagerTestDependencies {
     let database: MockDatabase
     let eventsHandler: MockOperationEventsHandler
     let continuedProcessingCoordinator: MockContinuedProcessingCoordinator
+    let authenticationManager: MockAuthenticationManager
+    let freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager
 }
 
 @MainActor
 enum DBPContinuedProcessingTestUtils {
     static func makeTestIOSManager(
         featureFlagger: MockDBPFeatureFlagger = MockDBPFeatureFlagger(),
-        continuedProcessingCoordinator: MockContinuedProcessingCoordinator = MockContinuedProcessingCoordinator()
+        continuedProcessingCoordinator: MockContinuedProcessingCoordinator = MockContinuedProcessingCoordinator(),
+        freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil
     ) -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
         return IOSManagerTestDependenciesStore().makeTestIOSManager(
             featureFlagger: featureFlagger,
-            continuedProcessingCoordinator: continuedProcessingCoordinator
+            continuedProcessingCoordinator: continuedProcessingCoordinator,
+            freemiumDBPUserStateManagerOverride: freemiumDBPUserStateManagerOverride
         )
     }
 
@@ -77,6 +82,7 @@ enum DBPContinuedProcessingTestUtils {
         let queueManager: MockJobQueueManager
         let jobDependencies = MockBrokerProfileJobDependencies()
         let authenticationManager = MockAuthenticationManager()
+        let freemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
         let eventsHandler = MockOperationEventsHandler()
 
         init() {
@@ -91,11 +97,13 @@ enum DBPContinuedProcessingTestUtils {
 
         func makeTestIOSManager(
             featureFlagger: MockDBPFeatureFlagger,
-            continuedProcessingCoordinator: MockContinuedProcessingCoordinator
+            continuedProcessingCoordinator: MockContinuedProcessingCoordinator,
+            freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil
         ) -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
             let manager = makeManager(
                 featureFlagger: featureFlagger,
-                continuedProcessingCoordinator: continuedProcessingCoordinator
+                continuedProcessingCoordinator: continuedProcessingCoordinator,
+                freemiumDBPUserStateManagerOverride: freemiumDBPUserStateManagerOverride
             )
             reset(manager: manager)
 
@@ -106,14 +114,17 @@ enum DBPContinuedProcessingTestUtils {
                     queueManager: queueManager,
                     database: database,
                     eventsHandler: eventsHandler,
-                    continuedProcessingCoordinator: continuedProcessingCoordinator
+                    continuedProcessingCoordinator: continuedProcessingCoordinator,
+                    authenticationManager: authenticationManager,
+                    freemiumDBPUserStateManager: freemiumDBPUserStateManager
                 )
             )
         }
 
         private func makeManager(
             featureFlagger: MockDBPFeatureFlagger,
-            continuedProcessingCoordinator: MockContinuedProcessingCoordinator
+            continuedProcessingCoordinator: MockContinuedProcessingCoordinator,
+            freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil
         ) -> DataBrokerProtectionIOSManager {
             jobDependencies.database = database
 
@@ -135,6 +146,7 @@ enum DBPContinuedProcessingTestUtils {
                 wideEvent: nil,
                 eventsHandler: eventsHandler,
                 engagementPixelsRepository: MockDataBrokerProtectionEngagementPixelsRepository(),
+                freemiumDBPUserStateManager: (freemiumDBPUserStateManagerOverride ?? freemiumDBPUserStateManager),
                 continuedProcessingCoordinator: continuedProcessingCoordinator,
                 shouldRegisterBackgroundTaskHandler: false
             )
@@ -147,6 +159,7 @@ enum DBPContinuedProcessingTestUtils {
             jobDependencies.database = database
             authenticationManager.reset()
             eventsHandler.reset()
+            freemiumDBPUserStateManager.didActivate = false
         }
     }
 }

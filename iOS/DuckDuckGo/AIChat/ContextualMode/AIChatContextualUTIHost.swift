@@ -37,23 +37,22 @@ final class AIChatContextualUTIHost {
     private weak var contextualChatViewController: AIChatContextualWebViewController?
     private var pendingChipAttachCancellable: AnyCancellable?
     private var suppressExternalContextUntilNextAttach = false
+    /// URL of the context last confirmed delivered in a prompt — an auto-update for this same URL must not reopen the chip.
+    private var lastDeliveredContextURL: URL?
     private var isBoundToUserScript = false
-    /// True for the immediate-UTI fresh-chat host: the coordinator stays unbound until the first
-    /// submit so that prompt takes the unbound → web-VC-queue path (a bound first submit would skip
-    /// the frontend-state flip → invisible chat). Restored/legacy hosts bind immediately.
+    /// Immediate-UTI fresh chat: keep the coordinator unbound until first submit so that prompt takes the unbound path.
     private let startsPreSubmit: Bool
     /// Set once the first UTI prompt is delivered; gates rapid re-submit and flips a deferred bind to immediate.
     private var hasDeliveredFirstPrompt = false
     /// User script stashed at `bindToUserScript` while pre-submit; bound after the first submit.
     private weak var pendingUserScriptToBind: AIChatUserScript?
-    /// The web view's user script, remembered across binds so a New-Chat reset can re-arm the
-    /// deferred bind against the same (still-alive) script without waiting for a fresh install.
+    /// The web view's user script, remembered across binds so a New-Chat reset can re-arm the deferred bind.
     private weak var lastKnownUserScript: AIChatUserScript?
-    /// Flips the session into an active chat (native→web swap + expand) on the first UTI submit and
-    /// returns the page context frozen at flip time. Wired by the sheet coordinator, which owns session state.
-    var onFirstPromptSubmitted: (() -> AIChatPageContextData?)?
-    /// Fired when the queued first prompt can no longer be delivered (page load failed) so the sheet
-    /// can recover to a clean pre-submit state for retry. Wired by the sheet coordinator.
+    /// Flip-only (native→web swap + expand); the host freezes the chip context itself, so this returns nothing.
+    var onFirstPromptSubmitted: (() -> Void)?
+    /// Fired whenever the chip's effective attachment changes, so `sessionState` can recompute its view state.
+    var onAttachedContextChanged: (() -> Void)?
+    /// Recover to a clean pre-submit sheet when the queued first prompt can't be delivered (page load failed).
     var onFirstPromptFailed: (() -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
@@ -89,8 +88,7 @@ final class AIChatContextualUTIHost {
             duckAIWideEventInstrumentation: wideEventInstrumentation,
             duckAIWideEventFlowScope: duckAIWideEventFlowScope
         )
-        // Immediate pre-submit: a carried-over attachment hasn't been delivered yet (it rides the
-        // first prompt), so seed the chip as pending → visible, matching the legacy native chip.
+        // Immediate pre-submit: a carried-over attachment rides the first prompt, so seed it pending → visible.
         let seedDeliveryState: PageContextAttachmentDeliveryState =
             (contextualStartsPreSubmit && initialAttachedContext != nil) ? .pendingSubmit : initialAttachmentDeliveryState
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
@@ -108,7 +106,7 @@ final class AIChatContextualUTIHost {
             self?.handleChipRemoveRequest()
         }
 
-        // Page context is attached via the "Ask About Page" attach-menu item (no placeholder chip).
+        // Page context is attached via the "Ask About Page" attach-menu item.
         coordinator.canAttachPageContext = { [weak self] in
             self?.chipViewModel.canAttachPageContext ?? false
         }
@@ -118,6 +116,12 @@ final class AIChatContextualUTIHost {
         chipViewModel.$canAttachPageContext
             .removeDuplicates()
             .sink { [weak self] _ in self?.coordinator.refreshAttachmentMenu() }
+            .store(in: &cancellables)
+
+        // Lets `sessionState` recompute its view state whenever the chip's effective attachment changes.
+        chipViewModel.$state
+            .dropFirst()
+            .sink { [weak self] _ in self?.onAttachedContextChanged?() }
             .store(in: &cancellables)
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
@@ -141,17 +145,16 @@ final class AIChatContextualUTIHost {
                 guard context != self.chipViewModel.attachedContext else { return }
                 Logger.contextualUTI.debug("UTIHost contextPublisher emission → \(context != nil ? "context" : "nil", privacy: .public) — syncing chip")
                 if let context {
-                    self.chipViewModel.setAttached(context, deliveryState: self.externalContextDeliveryState)
+                    // The same page continuing to load/settle after its context was already delivered must not reopen the chip — only a genuine navigation (handled by the didFinish listener below) should.
+                    let alreadyDeliveredThisPage = URL(string: context.contextData.url) != nil && URL(string: context.contextData.url) == self.lastDeliveredContextURL
+                    self.chipViewModel.setAttached(context, deliveryState: alreadyDeliveredThisPage ? .delivered : self.externalContextDeliveryState)
                 } else {
                     self.chipViewModel.clearAttached()
                 }
             }
             .store(in: &cancellables)
 
-        // didFinish (not didCommit) so the new DOM is ready when JS reads it. `dropFirst`
-        // skips the synchronous replay of the URL the half-sheet was opened on — the
-        // half-sheet is the user's attach/skip decision point. Only subsequent in-chat
-        // navigations should trigger auto-attach.
+        // `didFinish` (not `didCommit`) so the new page's DOM is ready when JS reads it — collecting at didCommit reads the outgoing page (off-by-one). `dropFirst` skips the sheet-open replay (the half-sheet is the attach/skip decision point); only subsequent navigations re-collect.
         didFinishURLPublisher
             .dropFirst()
             .removeDuplicates()
@@ -163,19 +166,22 @@ final class AIChatContextualUTIHost {
                     Logger.contextualUTI.debug("UTIHost didFinish skip — auto disabled")
                     return
                 }
+                // The user explicitly removed context this chat — respect that across navigation (don't silently re-attach); cleared by an explicit re-attach or a new chat.
+                guard !self.suppressExternalContextUntilNextAttach else {
+                    Logger.contextualUTI.debug("UTIHost didFinish skip — user removed context; not re-attaching on nav")
+                    return
+                }
                 if let attached = self.chipViewModel.attachedContext,
                    URL(string: attached.contextData.url) == url {
                     Logger.contextualUTI.debug("UTIHost didFinish skip — already attached to same URL")
                     return
                 }
-                Logger.contextualUTI.info("Auto-attach on page load — triggering for \(url.shortDescription, privacy: .private)")
+                Logger.contextualUTI.info("Auto-attach on navigation — triggering for \(url.shortDescription, privacy: .private)")
                 self.handleChipAttachRequest(originatingURL: url)
             }
             .store(in: &cancellables)
 
-        // The host receives the first (unbound) UTI submit through the coordinator delegate; once
-        // bound, subsequent prompts go direct. Legacy/restored hosts bind immediately, so the
-        // delegate submit path never fires for them.
+        // The host receives the first (unbound) UTI submit through the coordinator delegate; bound prompts go direct.
         coordinator.delegate = self
     }
 
@@ -220,18 +226,15 @@ final class AIChatContextualUTIHost {
     /// the chip says is currently attached — no duplicate state, single source of truth.
     func bindToUserScript(_ userScript: AIChatUserScript) {
         lastKnownUserScript = userScript
-        // Wire the page-context provider + submission callback right away — safe pre-submit, and
-        // subsequent (bound) prompts pull their context from the provider.
+        // Wire the provider + submission callback right away — safe pre-submit; bound prompts read context from it.
         userScript.attachedPageContextProvider = { [weak self] in
             self?.chipViewModel.pendingAttachedContextData
         }
         userScript.onPromptSubmitted = { [weak self] in
-            self?.chipViewModel.markPromptSubmitted()
+            self?.recordDeliveryAndMarkSubmitted()
         }
 
-        // Immediate-UTI fresh chat: defer the coordinator bind until the first submit so that first
-        // prompt takes the unbound → web-VC-queue path (a bound first submit would skip the
-        // frontend-state flip → invisible chat). Legacy/restored hosts bind immediately.
+        // Immediate-UTI fresh chat: defer the bind until first submit so that prompt takes the unbound path.
         guard startsPreSubmit, !hasDeliveredFirstPrompt else {
             commitBind(to: userScript)
             return
@@ -250,33 +253,28 @@ final class AIChatContextualUTIHost {
         }
     }
 
-    /// Binds the user script stashed during the pre-submit window (called right after the first submit).
-    /// No-op if the web view hasn't installed its user script yet — a later `bindToUserScript` will
-    /// bind immediately because `hasDeliveredFirstPrompt` is now set.
+    /// Binds the user script stashed during the pre-submit window, called right after the first submit.
     private func commitDeferredBindIfNeeded() {
         guard let userScript = pendingUserScriptToBind else { return }
         pendingUserScriptToBind = nil
         commitBind(to: userScript)
     }
 
-    /// Returns the persistent host to a clean pre-submit state for a new chat (New-Chat / session
-    /// timeout), reusing the same sheet + web view. Unbinds the coordinator so the next first prompt
-    /// takes the unbound → flip path (a bound first submit would skip the frontend-state flip and the
-    /// chat would never become visible), re-arms the deferred bind against the still-alive user
-    /// script, resets the chip, and restores the expanded pre-submit bar (keyboard down).
+    /// Resets the reused host to a clean pre-submit state for a new chat: unbind, re-arm the deferred bind, reset chip, re-expand.
     func prepareForNewChat() {
         coordinator.unbind()
         isBoundToUserScript = false
         hasDeliveredFirstPrompt = false
         pendingUserScriptToBind = lastKnownUserScript
+        // A new chat is a fresh start — clear any post-remove suppression from the prior chat so the new chat's auto-attach isn't silently dropped.
+        suppressExternalContextUntilNextAttach = false
+        lastDeliveredContextURL = nil
         chipViewModel.clearAttached()
         coordinator.showExpanded(activatesInput: false)
         Logger.contextualUTI.info("Host reset for new chat — unbound, re-armed deferred bind")
     }
 
-    /// Called when the web view fails to load while a first prompt is queued for delivery. The web
-    /// VC queue is the sole first-prompt buffer, so a failed load would strand it — recover to a
-    /// clean pre-submit state (via the sheet) so the user can retry.
+    /// Web view failed to load while a first prompt was queued (the sole buffer) — recover to pre-submit for retry.
     func firstPromptDeliveryFailed() {
         Logger.contextualUTI.error("First prompt delivery failed (page load) — recovering to pre-submit")
         onFirstPromptFailed?()
@@ -286,15 +284,33 @@ final class AIChatContextualUTIHost {
         coordinator.observeChatUpdates(publisher)
     }
 
+    /// Raises the keyboard / focuses the sheet-mounted UTI (mounted keyboard-down); used when a quick action attaches context and should hand off to typing.
+    func activateInput() {
+        coordinator.activateInput()
+    }
+
+    /// Clears the post-remove context suppression so a fresh externally-triggered attach reaches the chip. The sheet's "Ask about page" quick action collects via the page-context handler (not the chip's own attach path, which clears this itself), so without this the out-of-band listener would drop the re-collected context and the chip would never reappear.
+    func clearExternalContextSuppression() {
+        suppressExternalContextUntilNextAttach = false
+    }
+
     func markPromptSubmitted() {
+        recordDeliveryAndMarkSubmitted()
+    }
+
+    /// Records which page's context was just delivered, then marks the chip's attachment delivered.
+    private func recordDeliveryAndMarkSubmitted() {
+        lastDeliveredContextURL = chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
         chipViewModel.markPromptSubmitted()
     }
 
+    /// Routes a quick-action prompt through the same submit funnel as a typed UTI prompt, so it can't strand the coordinator unbound.
+    func submitQuickActionPrompt(_ prompt: String) {
+        coordinator.submitProgrammatic(text: prompt)
+    }
+
     private var externalContextDeliveryState: PageContextAttachmentDeliveryState {
-        // Immediate pre-submit: context collected on sheet open (via the external publisher) rides
-        // the first prompt, so show the chip as pending — parity with the legacy native chip and the
-        // manual-attach / post-nav paths, which are already pending. Without this, the sheet-open
-        // auto-attach would arrive `.delivered` and the chip would be silently hidden pre-submit.
+        // Immediate pre-submit: sheet-open context rides the first prompt, so show it pending (parity with manual/post-nav), not silently delivered.
         if startsPreSubmit && !hasDeliveredFirstPrompt {
             return .pendingSubmit
         }
@@ -327,10 +343,7 @@ final class AIChatContextualUTIHost {
         Logger.contextualUTI.info("Installed at bottom of contextual chat")
     }
 
-    /// Immediate-UTI path: mounts the persistent UTI at the sheet level so it outlives the
-    /// presubmission→postsubmission content swap. Returns the UTI view so the sheet can anchor its
-    /// content above it. Mounted expanded but keyboard-down (parity); the chat web view is set later
-    /// via `setContextualChatViewController`, and binding is deferred until the first submit.
+    /// Immediate-UTI: mounts the persistent UTI at sheet level (expanded, keyboard-down) so it outlives the content swap; returns its view to anchor content above.
     @discardableResult
     func mountAtSheetLevel(in sheetViewController: UIViewController) -> UIView {
         coordinator.attachmentPresentingViewController = sheetViewController
@@ -352,8 +365,7 @@ final class AIChatContextualUTIHost {
         return coordinator.viewController.view
     }
 
-    /// Sets the chat web view the host pushes page context into / binds to, without mounting the UTI
-    /// inside it (sheet-level mount path).
+    /// Sets the chat web view the host pushes context into / binds to, without mounting the UTI inside it.
     func setContextualChatViewController(_ webViewController: AIChatContextualWebViewController) {
         self.contextualChatViewController = webViewController
     }
@@ -401,26 +413,24 @@ extension AIChatContextualUTIHost {
 
 extension AIChatContextualUTIHost: UnifiedToggleInputDelegate {
 
-    /// The first (unbound) UTI prompt lands here; subsequent prompts go direct via the bound user
-    /// script. Flips the session into an active chat, freezes the attached page context, delivers
-    /// the rich payload into the web view's readiness queue, then binds so later prompts skip this.
+    /// The first (unbound) UTI prompt: flip the session, freeze the chip context, deliver the rich payload to the web-VC queue, then bind.
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String,
                                            modelId: String?,
                                            tools: [AIChatRAGTool]?,
                                            reasoningEffort: AIChatReasoningEffort?,
                                            images: [AIChatNativePrompt.NativePromptImage]?,
                                            files: [AIChatNativePrompt.NativePromptFile]?) {
-        // Gate a rapid re-submit during the loading/bind window — the web view queue holds one
-        // prompt, so a second would overwrite the first. Once bound, prompts skip this path entirely.
+        // Gate a rapid re-submit during the loading/bind window — the web-VC queue holds only one prompt.
         guard !hasDeliveredFirstPrompt else {
             Logger.contextualUTI.info("Ignoring UTI re-submit before first prompt delivered")
             return
         }
         hasDeliveredFirstPrompt = true
 
-        // Flip session state (native→web swap + expand) and freeze the page context attached at
-        // flip time — the chip can change during the async swap.
-        let frozenContext = onFirstPromptSubmitted?() ?? nil
+        // Freeze the context from the chip (authoritative — matches the chip + bound prompts), before delivery marks it delivered.
+        let frozenContext = chipViewModel.pendingAttachedContextData
+        // Flip session state (native→web swap + expand).
+        onFirstPromptSubmitted?()
         Logger.contextualUTI.info("Delivering first UTI prompt — hasContext=\(frozenContext != nil, privacy: .public) model=\(modelId ?? "nil", privacy: .public)")
 
         contextualChatViewController?.submitPrompt(
@@ -437,10 +447,7 @@ extension AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidChangeHeight() {
-        // The sheet-level mount is bottom-anchored to the keyboard guide and the content above
-        // re-anchors to the UTI's top, so height changes are resolved by constraints — no explicit
-        // container-height recompute (that's an omnibar concern). Kept a no-op to leave the legacy
-        // embedded host byte-for-byte unchanged.
+        // No-op: the sheet-level mount is constraint-driven, so height changes need no explicit recompute (an omnibar concern).
     }
 
     // Remaining actions are omnibar-only surfaces; the contextual sheet never presents them.
@@ -453,9 +460,7 @@ extension AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidRequestAppMenu() {}
 }
 
-/// Live view of the contextual chat's submission phase for the coordinator's model-chip logic.
-/// Reads `hasActiveChat` on each access so it reflects the current phase even after a user-script
-/// rebind (which resets `hasSubmittedPrompt` but not the chat's active state).
+/// Live submission-phase view for the coordinator's model-chip logic; reads `hasActiveChat` each access so it survives a rebind.
 private final class ContextualChatHostAdapter: UnifiedToggleInputHostAdapter {
     private let hasActiveChat: () -> Bool
 

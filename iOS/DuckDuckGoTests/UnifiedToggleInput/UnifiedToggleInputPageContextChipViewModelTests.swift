@@ -80,9 +80,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
     }
 
     func test_autoAttachOff_navigationAway_invokesRemoveCallback() {
-        // A delivered attachment (default) cleared on nav-away must propagate through
-        // onRemoveActionRequested so the host clears the FE-side cached page context — otherwise
-        // the next prompt on the new page would ship the previous page's already-sent context.
+        // A delivered attachment cleared on nav-away must propagate via onRemoveActionRequested so stale context isn't kept.
         let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: attachedUrl))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl))
@@ -164,8 +162,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
     // MARK: - Visibility (manual mode)
 
     func test_visibility_manual_coldStart_noCarryOver_hiddenOffersAttach() {
-        // 1. Open chat fresh on page X with no carry-over → chip hidden; attach is offered
-        // through the "Ask About Page" menu item.
+        // Fresh chat, no carry-over → chip hidden; attach offered via the "Ask About Page" menu item.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
@@ -198,8 +195,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
     }
 
     func test_visibility_manual_pendingAttachment_navigateAway_isRemoved() {
-        // Manual mode: navigating away removes the attachment (chip + context), even when it was
-        // pending and unsent. The chip hides and the clear propagates so stale context isn't kept.
+        // Manual mode: navigating away removes the attachment even when pending/unsent, and the clear propagates.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url), initialAttachmentDeliveryState: .pendingSubmit)
@@ -253,8 +249,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
     }
 
     func test_visibility_manual_userDetachesViaX_hiddenOffersAttach() {
-        // 5. After X-tap (host calls clearAttached()) → no attachment → chip hidden; attach
-        // offered so the user can re-attach if they change their mind.
+        // After X-tap (clearAttached) → no attachment → chip hidden; attach still offered.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
@@ -268,8 +263,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
     // MARK: - Visibility (auto mode)
 
     func test_visibility_auto_optedOutInHalfSheet_hiddenOffersAttach() {
-        // Auto mode + user opted out at the half-sheet (no carry-over) → chip hidden; attach
-        // offered via the "Ask About Page" menu item.
+        // Auto mode + opted out at the half-sheet (no carry-over) → chip hidden; attach offered.
         autoAttachEnabled = true
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
@@ -333,8 +327,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
     }
 
     func test_visibility_auto_userDetachesViaX_hiddenOffersAttach() {
-        // Auto mode + user X-taps after at least one attachment in the session → chip hidden;
-        // attach offered so they can re-attach manually.
+        // Auto mode + X-tap after an attachment → chip hidden; attach offered to re-attach.
         autoAttachEnabled = true
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
@@ -346,8 +339,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
     }
 
     func test_visibility_auto_attachThenSubmitThenDetach_hiddenOffersAttach() {
-        // After auto-attach lands and the user submits, then X-taps, the chip stays hidden and
-        // attach is offered so they can re-attach manually.
+        // After auto-attach + submit + X-tap, the chip stays hidden and attach is offered.
         autoAttachEnabled = true
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
@@ -440,8 +432,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
     }
 
     func test_canAttachPageContext_whileAttached_isTrue() {
-        // Always available in the contextual scenario — tapping re-collects and replaces the
-        // attachment with the latest page content.
+        // Always available in the contextual scenario — tapping re-collects + replaces with the latest.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))

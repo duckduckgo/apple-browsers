@@ -33,8 +33,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
     var onAttachmentsChanged: (() -> Void)?
 
-    /// The page-context chip, pinned as the leading item of the row when present. Owned by the
-    /// caller; the strip only positions it. Hidden chips collapse automatically in the stack.
+    /// The caller-owned page-context chip, pinned as the leading item of the row (hidden chips collapse in the stack).
     private weak var contextChipView: UIView?
 
     private let scrollView: UIScrollView = {
@@ -65,8 +64,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Pins the given page-context chip as the leading item of the row. Idempotent. Toggle the
-    /// chip's `isHidden` to show/hide it — a hidden arranged subview collapses in the stack.
+    /// Pins the page-context chip as the leading item (idempotent); toggle its `isHidden` to show/hide.
     func setContextChip(_ chip: UIView) {
         guard contextChipView !== chip else { return }
         contextChipView?.removeFromSuperview()
@@ -172,9 +170,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         }
     }
 
-    /// Reveals the leading item (the page-context chip lives there). Called when the chip becomes
-    /// visible while the strip is scrolled to the trailing edge, so its remove/confirm control
-    /// isn't left off-screen. Mirrors `scheduleScrollToTrailingEdge`.
+    /// Reveals the leading item (the page-context chip) so its remove control isn't off-screen when it appears mid-scroll.
     func scheduleScrollToLeadingEdge() {
         setNeedsLayout()
         DispatchQueue.main.async { [weak self] in

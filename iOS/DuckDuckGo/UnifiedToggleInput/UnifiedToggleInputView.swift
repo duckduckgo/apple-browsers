@@ -383,14 +383,12 @@ final class UnifiedToggleInputView: UIView {
     private var isPageContextChipPresent: Bool = false {
         didSet {
             guard oldValue != isPageContextChipPresent else { return }
-            // The chip lives inside the attachments strip's horizontal stack; hiding it collapses
-            // it there. Re-evaluate strip visibility so the row shows when the chip is its only item.
+            // The chip lives in the attachments strip's stack; re-evaluate strip visibility so the row shows when it's the only item.
             pageContextChip.isHidden = !isPageContextChipPresent
             updateAttachmentsStripLayout()
             layoutIfNeeded()
             onNeedsHierarchyLayout?()
-            // The chip inserts at the leading edge; if the strip was scrolled to the trailing edge
-            // (a couple of attachments in), reveal it so its remove control isn't off-screen.
+            // Reveal the leading edge so the chip's remove control isn't off-screen if the strip was scrolled away.
             if isPageContextChipPresent {
                 attachmentsStrip.scheduleScrollToLeadingEdge()
             }

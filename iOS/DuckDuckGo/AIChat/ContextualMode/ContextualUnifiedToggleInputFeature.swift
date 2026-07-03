@@ -22,14 +22,11 @@ import Core
 import PrivacyConfig
 
 protocol ContextualUnifiedToggleInputFeatureProviding {
-    /// True when the presubmission contextual sheet should show the unified toggle input in place of
-    /// the basic native input.
+    /// True when the presubmission contextual sheet should show the UTI in place of the basic native input.
     var isAvailable: Bool { get }
 }
 
-/// Gates the presubmission contextual UTI. AND-gates the contextual feature flag on top of the
-/// unified toggle input's own availability (iPhone-only + grant-gated, via `UnifiedToggleInputFeature`),
-/// so turning the flag off restores today's native input while the UTI stays available elsewhere.
+/// Gates the presubmission contextual UTI: the contextual flag AND-gated on top of `UnifiedToggleInputFeature` availability (iPhone-only + grant-gated).
 struct ContextualUnifiedToggleInputFeature: ContextualUnifiedToggleInputFeatureProviding {
 
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding

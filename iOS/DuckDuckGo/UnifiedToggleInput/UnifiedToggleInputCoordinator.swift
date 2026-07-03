@@ -242,16 +242,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var floatingReturnKeyViewController: UnifiedToggleInputFloatingReturnKeyViewController
     weak var delegate: UnifiedToggleInputDelegate?
 
-    /// Live view of the contextual host's submission phase, used to keep the model chip correct across
-    /// a user-script rebind (which resets `hasSubmittedPrompt` but not the phase). Held weak; the host owns it.
+    /// Live contextual submission-phase view, used to keep the model chip correct across a rebind. Held weak; the host owns it.
     weak var hostAdapter: UnifiedToggleInputHostAdapter?
 
     private(set) var host: UnifiedToggleInputHost
     private(set) var isToggleEnabled: Bool
 
-    /// Contextual-host hooks for the "Ask About Page" attach-menu item. Set by `AIChatContextualUTIHost`.
-    /// `canAttachPageContext` decides whether the item is offered; `onAttachPageContextRequested`
-    /// triggers the attach. Both nil on the omnibar host (no page context there).
+    /// Contextual-host hooks for the "Ask About Page" attach-menu item (set by the host; nil on omnibar).
     var canAttachPageContext: (() -> Bool)?
     var onAttachPageContextRequested: (() -> Void)?
     /// Snapshot of `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab` at init.
@@ -486,9 +483,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         // Contextual chat boots in expanded form; no collapsed/inactive states are reachable.
-        // Legacy/restored contextual installs post-submit and forces `hasSubmittedPrompt`; the
-        // pre-submit immediate-UTI sheet leaves it false so the normal first-submit flow flips it
-        // (drives follow-up placeholder + model chip). The boot decision is a static caller arg.
+        // Legacy/restored installs post-submit (forces `hasSubmittedPrompt`); the pre-submit immediate-UTI sheet leaves it false. Static caller arg.
         if host == .contextualChat {
             displayState = .aiTab(.expanded)
             if !contextualStartsPreSubmit {
@@ -787,8 +782,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         DispatchQueue.main.async { [weak self] in
             guard let self, case .aiTab(.expanded) = self.displayState else { return }
             guard !self.isOnboardingLocked else { return }
-            // Immediate-UTI mounts expanded but keyboard-down (parity with the native box): the caller
-            // passes activatesInput: false, so we skip raising the keyboard until the user taps in.
+            // Immediate-UTI mounts expanded but keyboard-down (parity): `activatesInput: false` skips raising the keyboard until the user taps in.
             if activatesInput {
                 self.viewController.activateInput()
                 if !self.viewController.isInputFirstResponder {
@@ -1899,6 +1893,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         insertNewlineFromFloatingReturnKey()
     }
 
+    /// Submits text through the real UTI text-submit path (pixels, wide-event, tools reset, bound/unbound delivery) without the user having typed it, e.g. a quick action.
+    func submitProgrammatic(text: String) {
+        unifiedToggleInputVC(viewController, didSubmitText: text, mode: .aiChat)
+    }
+
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
         commitCurrentToggleState()
 
@@ -1940,8 +1939,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             )
 
             let configuration = promptSubmissionConfiguration
-            // The contextual sheet's unbound first prompt is delivered into the web view's queue
-            // (via the host), not a URL autosubmit — record that path so the wide event is accurate.
+            // The contextual unbound first prompt goes to the web-VC queue (via the host), not URL autosubmit — record that path.
             let unboundDeliveryPath: DuckAIPromptWideEventData.FrontendDeliveryPath =
                 host == .contextualChat ? .contextualNativeInput : .urlAutoSubmit
             recordDuckAISubmissionStarted(
@@ -1960,6 +1958,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             let files = selectedModelSupportsFileUpload
                 ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
                 : nil
+
+            if host == .contextualChat {
+                Logger.contextualUTI.debug("Submit encode → attachments=\(self.viewController.currentAttachments.count, privacy: .public) supportsImageUpload=\(self.selectedModelSupportsImageUpload, privacy: .public) images=\(images?.count ?? 0, privacy: .public) files=\(files?.count ?? 0, privacy: .public) model=\(self.modelStore.selectedModel?.id ?? "nil", privacy: .public) bound=\(self.boundUserScript != nil, privacy: .public)")
+            }
 
             resetToolsSelection()
             clearStoreEntryAfterSubmission()
@@ -1981,9 +1983,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
             } else {
                 delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
-                // The contextual host delivers via the web view's queue, which records the real
-                // delivery (queued/bridge) itself — firing here too would double-count. Omnibar's
-                // URL-autosubmit handoff has no such signal, so it still records delivery here.
+                // The contextual host's web-VC queue records the real delivery itself; firing here too would double-count (omnibar has no such signal).
                 if host != .contextualChat {
                     recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
                 }
@@ -2079,14 +2079,12 @@ extension UnifiedToggleInputCoordinator {
         viewController.insertNewlineAtCursor()
     }
 
-    /// Re-derive model-chip visibility after a host-driven phase change (first submit / rebind).
-    /// Reads `hostAdapter` for the live phase, so the chip is correct even after a user-script rebind.
+    /// Test seam exposing the fileprivate `updateModelChipVisibility()` so coordinator tests can re-derive model-chip visibility after simulating a host phase change (e.g. a rebind).
     func refreshModelChipVisibility() {
         updateModelChipVisibility()
     }
 
-    /// Rebuilds the attach button/menu so the contextual "Ask About Page" item appears or
-    /// disappears as the page-context attach state changes. Called by `AIChatContextualUTIHost`.
+    /// Rebuilds the attach button/menu so the contextual "Ask About Page" item tracks the page-context attach state.
     func refreshAttachmentMenu() {
         updateAttachButtonPresentation()
     }
@@ -2316,8 +2314,7 @@ private extension UnifiedToggleInputCoordinator {
         )
     }
 
-    /// "Ask About Page" — the contextual-host way to attach page content (replaces the old
-    /// dotted placeholder chip). Offered only when the host can attach context right now.
+    /// "Ask About Page" — the contextual-host way to attach page content; offered only when the host can attach right now.
     private func makePageContextMenuAction() -> UIAction? {
         guard host == .contextualChat,
               !viewController.isGenerating,
@@ -2410,16 +2407,15 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func updateModelChipVisibility() {
-        // Legacy contextual chat picks the model upstream (in the half-sheet) so its chip stays hidden;
-        // the pre-submit immediate-UTI sheet picks the model in the bar, so the chip shows until the
-        // first prompt. `hostAdapter` is the live phase source and survives a user-script rebind that
-        // resets `hasSubmittedPrompt`; before it is wired (during init) we fall back to `!hasSubmittedPrompt`.
-        // Image generation has no model picker either — when active, the chip is hidden until deselected.
+        // Contextual chip shows pre-submit (model picked in the bar) and hides once active; `hostAdapter` gives the live phase (rebind-proof), falling back to `!hasSubmittedPrompt` before it's wired. Image-gen has no picker, so it hides the chip too.
         let isImageGenActive = toolsController.selectedTool == .imageGeneration
         let contextualIsPreSubmit = hostAdapter?.isPreSubmitPhase ?? !hasSubmittedPrompt
         let contextualHidesModelChip = host == .contextualChat && !contextualIsPreSubmit
         let shouldHideModelChip = contextualHidesModelChip || isImageGenActive || (hasSubmittedPrompt && !isModelPickerForcedVisible)
         viewController.isModelChipHidden = shouldHideModelChip
+        if host == .contextualChat {
+            Logger.contextualUTI.debug("Model chip visibility → hidden=\(shouldHideModelChip, privacy: .public) preSubmit=\(contextualIsPreSubmit, privacy: .public) hasSubmitted=\(self.hasSubmittedPrompt, privacy: .public) imageGen=\(isImageGenActive, privacy: .public) forced=\(self.isModelPickerForcedVisible, privacy: .public)")
+        }
         updateReasoningPicker()
     }
 
@@ -2489,9 +2485,13 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func refreshToolsPresentation() {
+        // Contextual sheet hides Customize Responses pre-submit (no chat to customize yet); `hostAdapter` gives the live phase, falling back to `!hasSubmittedPrompt` before it's wired.
+        let contextualIsPreSubmit = hostAdapter?.isPreSubmitPhase ?? !hasSubmittedPrompt
+        let includesCustomizeResponses = !(host == .contextualChat && contextualIsPreSubmit)
         let presentation = toolsController.presentation(
             displayState: displayState,
-            modelStore: modelStore
+            modelStore: modelStore,
+            includesCustomizeResponses: includesCustomizeResponses
         )
         let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
             self?.toolsMenuFactory.makeMenu(menu) { identifier in

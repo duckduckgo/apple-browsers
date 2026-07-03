@@ -208,9 +208,7 @@ final class UnifiedToggleInputToolbarView: UIView {
             accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
             action: nil
         )
-        // Keep the attach menu in its declared order (Take Photo / Add Image / Add File / Ask
-        // About Page) instead of letting iOS reverse it when the menu opens upward — matches the
-        // reasoning and model-chip buttons.
+        // Keep the attach menu in declared order (not reversed when it opens upward) — matches the reasoning/model buttons.
         if #available(iOS 16.0, *) {
             button.preferredMenuElementOrder = .fixed
         }

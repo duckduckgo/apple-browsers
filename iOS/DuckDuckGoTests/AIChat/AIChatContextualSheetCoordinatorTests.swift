@@ -348,7 +348,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         sut.aiChatContextualSheetViewControllerDidRequestRemoveChip(sut.sheetViewController!)
 
-        XCTAssertEqual(sut.sessionState.chipState, .placeholder)
+        XCTAssertEqual(sut.sessionState.chipState, .noContext)
         XCTAssertEqual(mockPageContextHandler.clearAttachedContextCallCount, 1)
     }
 

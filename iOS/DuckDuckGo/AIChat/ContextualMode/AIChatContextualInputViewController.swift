@@ -32,6 +32,34 @@ protocol AIChatContextualInputViewControllerDelegate: AnyObject {
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController)
 }
 
+// MARK: - Input Surface
+
+/// The subset of the native input the contextual container drives, so the immediate-UTI variant can substitute a no-op surface instead of guarding every call on `showsNativeInput`.
+protocol AIChatContextualInputSurface {
+    @discardableResult func becomeFirstResponder() -> Bool
+    @discardableResult func resignFirstResponder() -> Bool
+    var isContextChipVisible: Bool { get }
+    func setText(_ text: String)
+    func appendText(_ text: String)
+    func showContextChip(_ chipView: UIView)
+    func hideContextChip()
+    func updateContextChipState(_ state: AIChatContextChipView.State)
+    func setChipTapCallback(_ callback: @escaping () -> Void)
+}
+
+/// No-op input surface for the immediate-UTI sheet, where the sheet-level UTI is the input.
+struct NoContextualInputSurface: AIChatContextualInputSurface {
+    var isContextChipVisible: Bool { false }
+    func becomeFirstResponder() -> Bool { false }
+    func resignFirstResponder() -> Bool { false }
+    func setText(_ text: String) {}
+    func appendText(_ text: String) {}
+    func showContextChip(_ chipView: UIView) {}
+    func hideContextChip() {}
+    func updateContextChipState(_ state: AIChatContextChipView.State) {}
+    func setChipTapCallback(_ callback: @escaping () -> Void) {}
+}
+
 // MARK: - View Controller
 
 /// Container view controller that hosts the native input and handles keyboard adjustments.
@@ -50,12 +78,13 @@ final class AIChatContextualInputViewController: UIViewController {
 
     weak var delegate: AIChatContextualInputViewControllerDelegate?
 
-    private let isContextualSheetImprovementsEnabled: Bool
-    /// When false (immediate-UTI sheet), the native input box is omitted — the sheet-level UTI is the
-    /// input — and only the hero + quick actions are shown.
+    /// When false (immediate-UTI sheet), the native input box is omitted (the sheet-level UTI is the input) — only hero + quick actions show.
     private let showsNativeInput: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private lazy var nativeInputViewController = AIChatNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
+
+    /// Drives the input; the native VC when present, otherwise a no-op surface (immediate-UTI sheet).
+    private lazy var inputSurface: AIChatContextualInputSurface = showsNativeInput ? nativeInputViewController : NoContextualInputSurface()
 
     private lazy var quickActionsScrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -85,8 +114,7 @@ final class AIChatContextualInputViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol, isContextualSheetImprovementsEnabled: Bool = false, showsNativeInput: Bool = true) {
-        self.isContextualSheetImprovementsEnabled = isContextualSheetImprovementsEnabled
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, showsNativeInput: Bool = true) {
         self.showsNativeInput = showsNativeInput
         self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
@@ -133,49 +161,40 @@ final class AIChatContextualInputViewController: UIViewController {
 
     @discardableResult
     override func becomeFirstResponder() -> Bool {
-        guard showsNativeInput else { return false }
-        return nativeInputViewController.becomeFirstResponder()
+        inputSurface.becomeFirstResponder()
     }
 
     @discardableResult
     override func resignFirstResponder() -> Bool {
-        guard showsNativeInput else { return false }
-        return nativeInputViewController.resignFirstResponder()
+        inputSurface.resignFirstResponder()
     }
 
     var isContextChipVisible: Bool {
-        guard showsNativeInput else { return false }
-        return nativeInputViewController.isContextChipVisible
+        inputSurface.isContextChipVisible
     }
 
     func setText(_ text: String) {
-        guard showsNativeInput else { return }
-        nativeInputViewController.setText(text)
+        inputSurface.setText(text)
     }
 
     func appendText(_ text: String) {
-        guard showsNativeInput else { return }
-        nativeInputViewController.appendText(text)
+        inputSurface.appendText(text)
     }
 
     func showContextChip(_ chipView: UIView) {
-        guard showsNativeInput else { return }
-        nativeInputViewController.showContextChip(chipView)
+        inputSurface.showContextChip(chipView)
     }
 
     func hideContextChip() {
-        guard showsNativeInput else { return }
-        nativeInputViewController.hideContextChip()
+        inputSurface.hideContextChip()
     }
 
     func updateContextChipState(_ state: AIChatContextChipView.State) {
-        guard showsNativeInput else { return }
-        nativeInputViewController.updateContextChipState(state)
+        inputSurface.updateContextChipState(state)
     }
 
     func setChipTapCallback(_ callback: @escaping () -> Void) {
-        guard showsNativeInput else { return }
-        nativeInputViewController.setChipTapCallback(callback)
+        inputSurface.setChipTapCallback(callback)
     }
 
     func updateQuickActions(with actions: [AIChatContextualQuickAction]) {
@@ -192,38 +211,9 @@ private extension AIChatContextualInputViewController {
 
         if !showsNativeInput {
             setupImmediateUTIUI()
-        } else if isContextualSheetImprovementsEnabled {
-            setupImprovedUI()
         } else {
-            setupOriginalUI()
+            setupImprovedUI()
         }
-    }
-
-    func setupOriginalUI() {
-        view.addSubview(quickActionsScrollView)
-        quickActionsScrollView.addSubview(quickActionsView)
-        embedNativeInputViewController()
-
-        bottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
-
-        NSLayoutConstraint.activate([
-            quickActionsScrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
-            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
-            quickActionsScrollView.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
-
-            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
-            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
-            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
-            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
-            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
-            quickActionsView.heightAnchor.constraint(greaterThanOrEqualTo: quickActionsScrollView.frameLayoutGuide.heightAnchor),
-
-            nativeInputViewController.view.topAnchor.constraint(greaterThanOrEqualTo: quickActionsView.bottomAnchor, constant: Constants.quickActionsBottomSpacing),
-            nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
-            nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
-            bottomConstraint!,
-        ])
     }
 
     func setupImprovedUI() {
@@ -264,8 +254,7 @@ private extension AIChatContextualInputViewController {
         ])
     }
 
-    /// Immediate-UTI layout: hero + quick-actions only. The input itself is the sheet-level UTI, so
-    /// there is no native box here; quick actions pin to the bottom of the content area above the UTI.
+    /// Immediate-UTI layout: hero + quick-actions only (no native box — the sheet-level UTI is the input).
     func setupImmediateUTIUI() {
         view.addSubview(quickActionsScrollView)
         quickActionsScrollView.addSubview(quickActionsView)
@@ -346,7 +335,6 @@ private extension AIChatContextualInputViewController {
     }
 
     func updateWelcomeLabelCentering() {
-        guard isContextualSheetImprovementsEnabled || !showsNativeInput else { return }
         let scrollViewTop = quickActionsScrollView.frame.minY
         guard scrollViewTop > 0 else { return }
         welcomeCenterYConstraint?.constant = scrollViewTop / 2
@@ -414,3 +402,7 @@ extension AIChatContextualInputViewController: AIChatNativeInputViewControllerDe
         scrollQuickActionsToBottom()
     }
 }
+
+// MARK: - AIChatContextualInputSurface
+
+extension AIChatNativeInputViewController: AIChatContextualInputSurface {}

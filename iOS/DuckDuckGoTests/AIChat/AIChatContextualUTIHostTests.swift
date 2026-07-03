@@ -116,6 +116,22 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
     }
 
+    func test_attachThenRemove_firesOnAttachedContextChanged() {
+        // sessionState reads through the chip VM now, so it needs to know when to recompute.
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        var changeCount = 0
+        sut.onAttachedContextChanged = { changeCount += 1 }
+
+        sut.chipViewModel.tapToAttach()
+        pageContextHandler.sendContext(makeContext(title: "Page A", url: url.absoluteString))
+        XCTAssertEqual(changeCount, 1)
+
+        sut.chipViewModel.tapToRemove()
+        XCTAssertGreaterThan(changeCount, 1)
+    }
+
     func test_chipRemove_whileCollectionPending_lateResultDoesNotOverwriteClear() {
         // Regression: user taps attach (kicks off async collection) then quickly taps X. The
         // pending collection result must NOT land after the clear and re-attach the chip.
@@ -133,7 +149,9 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertNil(sut.chipViewModel.attachedContext)
     }
 
-    func test_chipRemove_lateResultIgnoredUntilNextAutoAttachRequest() {
+    func test_chipRemove_thenNavigation_doesNotReattach() {
+        // Explicit removal opts out of auto-attach for the rest of the chat: neither a late
+        // collection result nor a subsequent navigation may silently re-attach context.
         autoAttachEnabled = true
         let urlA = URL(string: "https://example.com/a")!
         let urlB = URL(string: "https://example.com/b")!
@@ -147,11 +165,13 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
         XCTAssertNil(sut.chipViewModel.attachedContext)
 
+        // Navigating to a new page must NOT re-attach after an explicit removal.
         originatingURL.send(urlB)
         didFinishURL.send(urlB)
         pageContextHandler.sendContext(makeContext(title: "Page B", url: urlB.absoluteString))
 
-        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page B", favicon: nil))
+        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.attachedContext)
     }
 
     func test_chipRemove_attachRequestFails_keepsIgnoringLateExternalContext() {
@@ -398,7 +418,6 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         sut.onFirstPromptSubmitted = { [weak self] in
             flipCount += 1
             self?.hasActiveChat = true
-            return nil
         }
 
         sut.unifiedToggleInputDidSubmitPrompt("Hello", modelId: "m", tools: nil, reasoningEffort: nil, images: nil, files: nil)
@@ -411,7 +430,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
     func test_rapidSecondUTISubmit_beforeDelivery_isGated() {
         makeSUT(contextualStartsPreSubmit: true)
         var flipCount = 0
-        sut.onFirstPromptSubmitted = { flipCount += 1; return nil }
+        sut.onFirstPromptSubmitted = { flipCount += 1 }
 
         sut.unifiedToggleInputDidSubmitPrompt("First", modelId: nil, tools: nil, reasoningEffort: nil, images: nil, files: nil)
         sut.unifiedToggleInputDidSubmitPrompt("Second", modelId: nil, tools: nil, reasoningEffort: nil, images: nil, files: nil)
@@ -421,16 +440,81 @@ final class AIChatContextualUTIHostTests: XCTestCase {
     }
 
     func test_bindAfterFirstSubmit_bindsImmediately() {
-        // If the web view installs its user script AFTER the first submit, the bind is no longer
-        // deferred — it commits immediately.
+        // A user script installed AFTER the first submit binds immediately (no longer deferred).
         makeSUT(contextualStartsPreSubmit: true)
-        sut.onFirstPromptSubmitted = { [weak self] in self?.hasActiveChat = true; return nil }
+        sut.onFirstPromptSubmitted = { [weak self] in self?.hasActiveChat = true }
         sut.unifiedToggleInputDidSubmitPrompt("Hello", modelId: nil, tools: nil, reasoningEffort: nil, images: nil, files: nil)
 
         let userScript = makeTestUserScript()
         sut.bindToUserScript(userScript)
 
         XCTAssertNotNil(userScript.inputBoxHandler)
+    }
+
+    // MARK: - Quick-action submission funnel
+
+    func test_submitQuickActionPrompt_routesThroughRealFunnel_firesFlipAndBinds() {
+        // A quick action must go through the same funnel as a typed submit, not bypass the flip/bind.
+        makeSUT(contextualStartsPreSubmit: true)
+        let userScript = makeTestUserScript()
+        sut.bindToUserScript(userScript)
+        XCTAssertNil(userScript.inputBoxHandler)
+
+        var flipCount = 0
+        sut.onFirstPromptSubmitted = { [weak self] in
+            flipCount += 1
+            self?.hasActiveChat = true
+        }
+
+        sut.submitQuickActionPrompt("Summarize this page")
+
+        XCTAssertEqual(flipCount, 1)
+        XCTAssertNotNil(userScript.inputBoxHandler)
+    }
+
+    func test_firstUTISubmit_thenSamePageContextUpdate_doesNotReopenChip() {
+        // Regression: the same page continuing to load/settle after its context was already
+        // delivered must not reopen the chip (only a real navigation should).
+        autoAttachEnabled = true
+        let url = URL(string: "https://example.com/a")!
+        makeSUT(contextualStartsPreSubmit: true)
+        originatingURL.send(url)
+        pageContextHandler.sendContext(makeContext(title: "Page A", url: url.absoluteString))
+        XCTAssertTrue(sut.chipViewModel.isVisible)
+
+        let userScript = makeTestUserScript()
+        sut.bindToUserScript(userScript)
+        sut.onFirstPromptSubmitted = { [weak self] in self?.hasActiveChat = true }
+        sut.unifiedToggleInputDidSubmitPrompt("Hello", modelId: nil, tools: nil, reasoningEffort: nil, images: nil, files: nil)
+        sut.markPromptSubmitted()
+        XCTAssertFalse(sut.chipViewModel.isVisible)
+
+        // The same page's context is re-collected (e.g. lazy-loaded content finishing) — must stay hidden.
+        pageContextHandler.sendContext(makeContext(title: "Page A (updated)", url: url.absoluteString))
+
+        XCTAssertFalse(sut.chipViewModel.isVisible)
+    }
+
+    func test_firstUTISubmit_thenDifferentPageContext_stillShowsPending() {
+        // A genuinely different page's auto-collected context must still show as pending (unaffected by the fix above).
+        autoAttachEnabled = true
+        let urlA = URL(string: "https://example.com/a")!
+        let urlB = URL(string: "https://example.com/b")!
+        makeSUT(contextualStartsPreSubmit: true)
+        originatingURL.send(urlA)
+        pageContextHandler.sendContext(makeContext(title: "Page A", url: urlA.absoluteString))
+
+        let userScript = makeTestUserScript()
+        sut.bindToUserScript(userScript)
+        sut.onFirstPromptSubmitted = { [weak self] in self?.hasActiveChat = true }
+        sut.unifiedToggleInputDidSubmitPrompt("Hello", modelId: nil, tools: nil, reasoningEffort: nil, images: nil, files: nil)
+        sut.markPromptSubmitted()
+        XCTAssertFalse(sut.chipViewModel.isVisible)
+
+        originatingURL.send(urlB)
+        pageContextHandler.sendContext(makeContext(title: "Page B", url: urlB.absoluteString))
+
+        XCTAssertTrue(sut.chipViewModel.isVisible)
     }
 
     // MARK: - New-chat reset (slice 6)
@@ -444,7 +528,6 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         sut.onFirstPromptSubmitted = { [weak self] in
             flipCount += 1
             self?.hasActiveChat = true
-            return nil
         }
 
         // First chat: submit flips + binds.
@@ -478,9 +561,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
     // MARK: - Pre-submit chip visibility (slice 5)
 
     func test_preSubmit_sheetOpenAutoAttach_showsChipAsPendingNotSilentlyDelivered() {
-        // On sheet open the initial context arrives via the external publisher (the didFinish path
-        // is dropped for the opening URL). Pre-submit it must show as pending (visible) — it rides
-        // the first prompt — matching the legacy native chip, not silently delivered/hidden.
+        // Sheet-open context (external publisher; the opening URL's replay is dropped) must show pending/visible, not silently delivered.
         autoAttachEnabled = true
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
@@ -494,8 +575,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
     }
 
     func test_preSubmit_carriedOverAttachment_seedsChipVisible() {
-        // A carried-over attachment (seeded at construction as .delivered on the legacy path) must
-        // show pre-submit on the immediate UTI, since it hasn't been delivered in this chat yet.
+        // A carried-over attachment (seeded `.delivered`) must show pre-submit on the immediate UTI — not yet delivered in this chat.
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
         makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString),
@@ -507,8 +587,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
     }
 
     func test_activeChat_sheetOpenContext_staysDelivered_notForcedPending() {
-        // Regression: the pre-submit override must NOT leak into restored/active hosts — their
-        // carried-over context stays silent (delivered) as before.
+        // Regression: the pre-submit override must NOT leak into restored/active hosts (context stays silent/delivered).
         hasActiveChat = true
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)

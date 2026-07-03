@@ -29,10 +29,7 @@ enum UnifiedToggleInputHost: Equatable {
     case contextualChat
 }
 
-/// A live, host-owned view of the contextual chat's submission phase, consulted by
-/// `UnifiedToggleInputCoordinator` to keep the model chip correct across a user-script rebind
-/// (which resets `hasSubmittedPrompt` but not the underlying phase). Held `weak` by the coordinator;
-/// the host retains it.
+/// Host-owned live view of the contextual chat's submission phase; consulted by the coordinator to keep the model chip correct across a rebind. Held `weak` there.
 protocol UnifiedToggleInputHostAdapter: AnyObject {
     /// True while the contextual chat is pre-submit (no active chat yet) — the model chip should show.
     var isPreSubmitPhase: Bool { get }

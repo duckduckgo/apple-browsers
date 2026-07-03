@@ -47,12 +47,12 @@ enum FrontendChatState: CustomStringConvertible {
 
 /// Manages the current state of the context chip
 enum ChipState: CustomStringConvertible, Equatable {
-    case placeholder
+    case noContext
     case attached(AIChatPageContext)
 
     var description: String {
         switch self {
-        case .placeholder: return "placeholder"
+        case .noContext: return "noContext"
         case .attached: return "attached"
         }
     }
@@ -93,7 +93,7 @@ final class AIChatContextualChatSessionState {
     // MARK: - Core State (private(set) - mutations happen via methods)
 
     private(set) var frontendState: FrontendChatState = .noChat
-    private(set) var chipState: ChipState = .placeholder
+    private(set) var chipState: ChipState = .noContext
     private(set) var contextualChatURL: URL?
     private(set) var latestContext: AIChatPageContext?
 
@@ -101,7 +101,7 @@ final class AIChatContextualChatSessionState {
         content: .nativeInput,
         isExpandButtonEnabled: true,
         shouldShowNewChatButton: false,
-        chipState: .placeholder,
+        chipState: .noContext,
         quickActions: [.summarize]
     )
 
@@ -159,9 +159,15 @@ final class AIChatContextualChatSessionState {
         latestContext != nil
     }
 
+    /// When set (immediate UTI active), overrides `chipState` as the source of "what's attached".
+    var attachedContextOverrideProvider: (() -> AIChatPageContext?)?
+
     /// User-attached context (nil if opted out / never attached). Unlike `latestContext`,
     /// this respects X-tap downgrades — `latestContext` keeps the last collected payload regardless.
     var intendedAttachedContext: AIChatPageContext? {
+        if let attachedContextOverrideProvider {
+            return attachedContextOverrideProvider()
+        }
         if case .attached(let context) = chipState { return context }
         return nil
     }
@@ -187,12 +193,7 @@ final class AIChatContextualChatSessionState {
         emit(.submitPrompt(prompt: prompt, context: contextData))
     }
 
-    /// Flips the frontend into an active chat for a UTI-driven first submit **without** emitting
-    /// `.submitPrompt`. The immediate-UTI host delivers its own rich payload straight into the web
-    /// view's readiness queue, so emitting here would double-send. This is the flip half of
-    /// `handlePromptSubmission` (native→web swap, submission pixel, chip-hide via `hasActiveChat`);
-    /// it returns the page context that was attached at flip time so the caller can freeze it into
-    /// the delivered prompt. No-op (returns nil) while a chat is already restored/active.
+    /// Flip half of `handlePromptSubmission` for a UTI first submit: flips frontend state without emitting `.submitPrompt` (the host delivers); returns the attached context, no-op if restored/active.
     @discardableResult
     func beginChatForUTISubmission(url: URL? = nil) -> AIChatPageContextData? {
         guard frontendState != .restoredChat else {
@@ -201,12 +202,11 @@ final class AIChatContextualChatSessionState {
         }
 
         let contextData = intendedAttachedContext?.contextData
-        switch chipState {
-        case .attached:
+        if intendedAttachedContext != nil {
             frontendState = .chatWithInitialContext
             pixelHandler.firePromptSubmittedWithContext()
             Logger.aiChat.debug("[SessionState] Chat started WITH initial context (chip was attached)")
-        case .placeholder:
+        } else {
             frontendState = .chatWithoutInitialContext
             pixelHandler.firePromptSubmittedWithoutContext()
             Logger.aiChat.debug("[SessionState] Chat started WITHOUT initial context (chip was placeholder)")
@@ -223,7 +223,7 @@ final class AIChatContextualChatSessionState {
     /// Call when starting a new chat (resetting frontend)
     func resetToNoChat() {
         frontendState = .noChat
-        chipState = .placeholder
+        chipState = .noContext
         contextualChatURL = nil
         userDowngradedToPlaceholder = false
         isManualAttachInProgress = false
@@ -260,7 +260,7 @@ final class AIChatContextualChatSessionState {
     func handleChipRemoval() -> Bool {
         guard case .attached = chipState else { return false }
 
-        chipState = .placeholder
+        chipState = .noContext
         userDowngradedToPlaceholder = true
         pixelHandler.firePageContextRemovedNative()
         rebuildViewState()
@@ -271,7 +271,7 @@ final class AIChatContextualChatSessionState {
     /// Downgrades an attached chip to placeholder state.
     func downgradeToPlaceholder() {
         guard case .attached = chipState else { return }
-        chipState = .placeholder
+        chipState = .noContext
         userDowngradedToPlaceholder = true
         pixelHandler.firePageContextRemovedNative()
         rebuildViewState()
@@ -325,7 +325,7 @@ final class AIChatContextualChatSessionState {
         guard let context = context else {
             Logger.aiChat.debug("[SessionState] Context collection returned nil - clearing context and downgrading to placeholder")
             latestContext = nil
-            chipState = .placeholder
+            chipState = .noContext
             cleanupFlags()
             rebuildViewState()
             return
@@ -363,6 +363,24 @@ final class AIChatContextualChatSessionState {
     func requestWebViewReload() {
         emit(.reloadWebView)
     }
+
+    func rebuildViewState() {
+        let content: SheetViewState.ContentMode
+        switch frontendState {
+        case .noChat:
+            content = .nativeInput
+        case .chatWithInitialContext, .chatWithoutInitialContext, .restoredChat:
+            content = .webView(restoreURL: contextualChatURL)
+        }
+
+        viewState = SheetViewState(
+            content: content,
+            isExpandButtonEnabled: frontendState == .noChat || contextualChatURL != nil,
+            shouldShowNewChatButton: frontendState != .noChat,
+            chipState: chipState,
+            quickActions: resolveQuickActions()
+        )
+    }
 }
 
 // MARK: - Private
@@ -394,7 +412,7 @@ private extension AIChatContextualChatSessionState {
     func handleAutoAttach(_ context: AIChatPageContext) {
         if isShowingNativeInput {
             switch chipState {
-            case .placeholder:
+            case .noContext:
                 if shouldAllowAutomaticUpgrade() {
                     chipState = .attached(context)
                     userDowngradedToPlaceholder = false
@@ -453,31 +471,7 @@ private extension AIChatContextualChatSessionState {
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
-        guard featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) else {
-            return [.summarize]
-        }
-        switch chipState {
-        case .placeholder: return [.askAboutPage]
-        case .attached: return [.summarizePage]
-        }
-    }
-
-    func rebuildViewState() {
-        let content: SheetViewState.ContentMode
-        switch frontendState {
-        case .noChat:
-            content = .nativeInput
-        case .chatWithInitialContext, .chatWithoutInitialContext, .restoredChat:
-            content = .webView(restoreURL: contextualChatURL)
-        }
-
-        viewState = SheetViewState(
-            content: content,
-            isExpandButtonEnabled: frontendState == .noChat || contextualChatURL != nil,
-            shouldShowNewChatButton: frontendState != .noChat,
-            chipState: chipState,
-            quickActions: resolveQuickActions()
-        )
+        intendedAttachedContext != nil ? [.summarizePage] : [.askAboutPage]
     }
 
     func emit(_ effect: SheetEffect) {

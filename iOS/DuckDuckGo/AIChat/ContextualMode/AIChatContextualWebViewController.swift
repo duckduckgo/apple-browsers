@@ -24,6 +24,8 @@ import Common
 import FoundationExtensions
 import Core
 import os.log
+import os.log
+import os.log
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -56,6 +58,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let debugSettings: AIChatDebugSettingsHandling
     private let userAgentManager: UserAgentManaging
     private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
+    /// The contextual UTI host driving delivery for this web view. Immediate-UTI on: aliases the sheet coordinator's persistent, sheet-mounted host; off (legacy): a host mounted at the bottom of this web view.
     private var utiHost: AIChatContextualUTIHost?
     private var webViewBottomConstraint: NSLayoutConstraint?
 
@@ -67,9 +70,7 @@ final class AIChatContextualWebViewController: UIViewController {
         set { aiChatContentHandler.delegate = newValue }
     }
 
-    /// A prompt submission buffered until the web view + content handler are ready. Carries the
-    /// full unified-toggle-input payload when the prompt came from the UTI (`payload != nil`), or
-    /// just text + context for the legacy native-input path (`payload == nil`).
+    /// A buffered prompt submission: rich UTI payload when `payload != nil`, else text + context (legacy native path).
     private struct PendingPromptSubmission {
         let prompt: String
         let pageContext: AIChatPageContextData?
@@ -218,9 +219,7 @@ final class AIChatContextualWebViewController: UIViewController {
         submit(PendingPromptSubmission(prompt: prompt, pageContext: pageContext, payload: nil))
     }
 
-    /// Queues or submits a prompt carrying the full unified-toggle-input payload. Used for the
-    /// immediate-UTI sheet's first prompt, which the host delivers directly (bypassing the native
-    /// `.submitPrompt` effect) with a frozen page-context snapshot.
+    /// Queues or submits a prompt with the full UTI payload — the immediate-UTI first prompt, delivered directly by the host with a frozen context.
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]?,
@@ -247,8 +246,7 @@ final class AIChatContextualWebViewController: UIViewController {
         }
     }
 
-    /// Dispatches a ready prompt to the content handler, routing rich payloads through the widened
-    /// overload and native ones through the text+context overload (unchanged for the legacy path).
+    /// Dispatches a ready prompt: rich payloads via the widened overload, native ones via the text+context overload (unchanged).
     private func deliver(_ pending: PendingPromptSubmission, wasQueued: Bool?) {
         let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
         if let payload = pending.payload {
@@ -509,8 +507,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
         let nsError = error as NSError
         guard nsError.code != NSURLErrorCancelled || nsError.domain != NSURLErrorDomain else { return }
 
-        // The readiness queue is the sole first-prompt buffer; a failed load means it will never
-        // flush, so drain the stuck prompt and let the host recover to a clean pre-submit for retry.
+        // The readiness queue is the sole first-prompt buffer; a failed load strands it, so drain it and let the host recover.
         if pendingPrompt != nil {
             pendingPrompt = nil
             utiHost?.firstPromptDeliveryFailed()

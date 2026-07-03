@@ -57,7 +57,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     func testInitialState() {
         XCTAssertEqual(sessionState.frontendState, .noChat)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertEqual(sessionState.chipState, .noContext)
         XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
         XCTAssertTrue(sessionState.isShowingNativeInput)
         XCTAssertNil(sessionState.contextualChatURL)
@@ -68,7 +68,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         let viewState = sessionState.viewState
         XCTAssertTrue(viewState.isExpandButtonEnabled)
         XCTAssertFalse(viewState.shouldShowNewChatButton)
-        XCTAssertEqual(viewState.chipState, .placeholder)
+        XCTAssertEqual(viewState.chipState, .noContext)
         if case .nativeInput = viewState.content {
             // Expected
         } else {
@@ -132,8 +132,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     // MARK: - beginChatForUTISubmission (immediate-UTI flip-only path)
 
     func testBeginChatForUTISubmissionFlipsWithoutEmittingSubmitEffect() {
-        // Given - the immediate-UTI host delivers its own rich payload, so the flip must NOT
-        // emit `.submitPrompt` (that would double-send).
+        // The immediate-UTI host delivers its own payload, so the flip must NOT emit `.submitPrompt` (double-send).
         var receivedEffects: [SheetEffect] = []
         sessionState.effects
             .sink { receivedEffects.append($0) }
@@ -184,9 +183,37 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.frontendState, .restoredChat)
     }
 
+    // MARK: - attachedContextOverrideProvider (chip VM as source of truth)
+
+    func testIntendedAttachedContextUsesOverrideWhenSet() {
+        sessionState.attachedContextOverrideProvider = { self.makeTestContext(title: "Overridden") }
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Overridden")
+    }
+
+    func testIntendedAttachedContextFallsBackToChipStateWhenOverrideNil() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext())
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Test Page")
+    }
+
+    func testBeginChatForUTISubmissionClassifiesUsingOverrideNotRawChipState() {
+        // chipState itself is still .noContext, but the override says something is attached — classification must follow the override.
+        sessionState.attachedContextOverrideProvider = { self.makeTestContext(title: "Overridden") }
+        let frozenContext = sessionState.beginChatForUTISubmission()
+        XCTAssertEqual(sessionState.chipState, .noContext)
+        XCTAssertEqual(sessionState.frontendState, .chatWithInitialContext)
+        XCTAssertEqual(frozenContext?.title, "Overridden")
+        XCTAssertTrue(mockPixelHandler.promptSubmittedWithContextFired)
+    }
+
+    func testResolveQuickActionsUsesOverrideNotRawChipState() {
+        sessionState.attachedContextOverrideProvider = { self.makeTestContext(title: "Overridden") }
+        sessionState.updateContextualChatURL(nil) // forces a rebuildViewState() without touching chipState
+        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
+    }
+
     func testHandlePromptSubmissionStillEmitsSubmitEffectAfterSplit() {
-        // Regression: the native-input path must keep emitting `.submitPrompt` even though the flip
-        // was extracted into `beginChatForUTISubmission`.
+        // Regression: the native-input path must still emit `.submitPrompt` after the flip was extracted.
         var receivedEffects: [SheetEffect] = []
         sessionState.effects
             .sink { receivedEffects.append($0) }
@@ -211,7 +238,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sessionState.frontendState, .noChat)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertEqual(sessionState.chipState, .noContext)
         XCTAssertNil(sessionState.contextualChatURL)
         XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
         XCTAssertTrue(sessionState.isShowingNativeInput)
@@ -241,7 +268,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertTrue(result)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertEqual(sessionState.chipState, .noContext)
         XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
         XCTAssertTrue(mockPixelHandler.pageContextRemovedNativeFired)
     }
@@ -254,7 +281,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertFalse(result)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertEqual(sessionState.chipState, .noContext)
         XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
     }
 
@@ -268,7 +295,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.downgradeToPlaceholder()
 
         // Then
-        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertEqual(sessionState.chipState, .noContext)
         XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
     }
 
@@ -302,7 +329,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sessionState.latestContext?.title, context.title)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertEqual(sessionState.chipState, .noContext)
         XCTAssertFalse(mockPixelHandler.pageContextAutoAttachedFired)
     }
 
@@ -316,7 +343,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertNil(sessionState.latestContext)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertEqual(sessionState.chipState, .noContext)
     }
 
     func testUpdateContextDoesNotAutoAttachWhenUserDowngraded() {
@@ -333,7 +360,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sessionState.latestContext?.title, "Page 2")
-        XCTAssertEqual(sessionState.chipState, .placeholder) // Still placeholder
+        XCTAssertEqual(sessionState.chipState, .noContext) // Still placeholder
         XCTAssertFalse(mockPixelHandler.pageContextAutoAttachedFired)
     }
 
@@ -702,7 +729,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         // User removes chip
         let shouldShowPlaceholder = sessionState.handleChipRemoval()
         XCTAssertTrue(shouldShowPlaceholder)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertEqual(sessionState.chipState, .noContext)
         XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
 
         // Navigation clears downgrade flag
@@ -729,7 +756,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sessionState.frontendState, .noChat)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertEqual(sessionState.chipState, .noContext)
         XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
         XCTAssertTrue(sessionState.isShowingNativeInput)
     }
@@ -893,75 +920,32 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     // MARK: - Quick Actions Tests
 
-    func testQuickActionsDefaultsToSummarizeWhenFFOff() {
-        // Feature flag is off by default in MockFeatureFlagger
-        XCTAssertEqual(sessionState.viewState.quickActions, [.summarize])
-    }
-
-    func testQuickActionsIsAskAboutPageWhenFFOnAndPlaceholder() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger
-        )
-
-        // Then
+    func testQuickActionsIsAskAboutPageWhenNoContext() {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
-    func testQuickActionsIsSummarizePageWhenFFOnAndAttached() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
+    func testQuickActionsIsSummarizePageWhenAttached() {
         mockSettings.isAutomaticContextAttachmentEnabled = true
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger
-        )
-
-        // When
         sessionState.updateContext(makeTestContext())
-
-        // Then
         XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
     }
 
     func testQuickActionsTransitionsOnAttach() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
         mockSettings.isAutomaticContextAttachmentEnabled = true
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger
-        )
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
 
-        // When
         sessionState.updateContext(makeTestContext())
 
-        // Then
         XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
     }
 
     func testQuickActionsTransitionsOnChipRemoval() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements]
         mockSettings.isAutomaticContextAttachmentEnabled = true
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger
-        )
         sessionState.updateContext(makeTestContext())
         XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
 
-        // When
         sessionState.downgradeToPlaceholder()
 
-        // Then
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 

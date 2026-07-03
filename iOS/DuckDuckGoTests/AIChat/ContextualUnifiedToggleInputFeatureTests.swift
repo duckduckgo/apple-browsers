@@ -23,8 +23,7 @@ import Core
 
 final class ContextualUnifiedToggleInputFeatureTests: XCTestCase {
 
-    // The presubmission contextual UTI is available only when BOTH the UTI itself is available
-    // (iPhone + grant-gated) AND the contextual feature flag is on. Exercise the full 2x2.
+    // Available only when BOTH the UTI (iPhone + grant-gated) AND the contextual flag are on — exercise the 2x2.
 
     func test_isAvailable_trueOnlyWhenUTIAvailableAndFlagOn() {
         XCTAssertTrue(makeFeature(utiAvailable: true, flagOn: true).isAvailable)

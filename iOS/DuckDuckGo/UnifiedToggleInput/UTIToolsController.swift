@@ -66,9 +66,10 @@ final class UTIToolsController {
 
     func presentation(
         displayState: UnifiedToggleInputDisplayState,
-        modelStore: UTIModelStore
+        modelStore: UTIModelStore,
+        includesCustomizeResponses: Bool = true
     ) -> Presentation {
-        let toolsMenu = buildToolsMenu(displayState: displayState, modelStore: modelStore)
+        let toolsMenu = buildToolsMenu(displayState: displayState, modelStore: modelStore, includesCustomizeResponses: includesCustomizeResponses)
         guard canShowTools(displayState: displayState),
               hasActionableMenuItem(modelStore: modelStore, toolsMenu: toolsMenu) else {
             return .hidden
@@ -101,12 +102,13 @@ private extension UTIToolsController {
 
     func buildToolsMenu(
         displayState: UnifiedToggleInputDisplayState,
-        modelStore: UTIModelStore
+        modelStore: UTIModelStore,
+        includesCustomizeResponses: Bool
     ) -> UTIToolsMenu {
         var items: [UTIToolsMenu.Item] = []
 
-        // Customize Responses is an AI-tab-only action; it has no model-tool gating.
-        if case .aiTab = displayState {
+        // Customize Responses is an AI-tab-only action (no model-tool gating), suppressed pre-submit on the contextual sheet where there's no chat to customize yet.
+        if case .aiTab = displayState, includesCustomizeResponses {
             items.append(.customizeResponses)
         }
 

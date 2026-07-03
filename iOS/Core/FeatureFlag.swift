@@ -311,9 +311,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1213651297612976?focus=true
     case aiChatNativeChatHistory
 
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1213651262338059
-    case aiChatContextualSheetImprovements
-
     /// Shows the unified toggle input on the presubmission contextual sheet in place of the basic native input.
     case aiChatContextualUnifiedToggleInput
 
@@ -742,8 +739,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled))
         case .aiChatNativeChatHistory:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.nativeChatHistory))
-        case .aiChatContextualSheetImprovements:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualSheetImprovements))
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
         case .showWhatsNewPromptOnDemand:

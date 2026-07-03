@@ -99,9 +99,7 @@ protocol AIChatContentHandling: AnyObject {
     /// Submits a prompt to the AI Chat with optional page context.
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
 
-    /// Submits a prompt carrying the full unified-toggle-input payload (model, tools, reasoning,
-    /// attachments) plus a frozen page-context snapshot. Used for the contextual sheet's first
-    /// UTI-driven prompt, which is delivered through the web view's readiness queue.
+    /// Submits a prompt with the full UTI payload + a frozen page-context snapshot (the contextual sheet's first prompt).
     func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, modelId: String?, tools: [AIChatRAGTool]?, pageContext: AIChatPageContextData?, reasoningEffort: AIChatReasoningEffort?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.

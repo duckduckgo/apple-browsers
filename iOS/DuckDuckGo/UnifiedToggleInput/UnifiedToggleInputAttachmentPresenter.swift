@@ -91,9 +91,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             )
         }
 
-        // Appended last so they sit at the bottom of the menu, below the photo/file options.
-        // The attach button sets `preferredMenuElementOrder = .fixed`, so this array order is
-        // preserved top-to-bottom regardless of whether the menu opens up or down.
+        // Appended last (bottom of the menu); the attach button's `.fixed` order preserves this regardless of open direction.
         actions.append(contentsOf: additionalActions)
 
         guard !actions.isEmpty else { return nil }

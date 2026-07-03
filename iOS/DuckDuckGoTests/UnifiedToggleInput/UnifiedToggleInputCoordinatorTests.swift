@@ -86,8 +86,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_contextualChat_modelChipStaysHidden_whenAdapterReportsActive_evenIfPromptFlagReset() {
-        // Regression lock: a user-script rebind resets `hasSubmittedPrompt` to false while the chat is
-        // still active. The live host adapter must keep the model chip hidden despite the stale flag.
+        // Regression lock: a rebind resets `hasSubmittedPrompt`, but the live host adapter must keep the model chip hidden.
         let coordinator = makeContextualCoordinator(preSubmit: true)
         XCTAssertFalse(coordinator.viewController.isModelChipHidden, "pre-submit shows the model chip")
 
@@ -570,6 +569,21 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
         XCTAssertEqual(sut.displayState, .aiTab(.collapsed))
+    }
+
+    // MARK: - submitProgrammatic (quick-action submission funnel)
+
+    func test_submitProgrammatic_noBoundScript_callsDelegatePromptMethod() {
+        sut.submitProgrammatic(text: "Summarize this page")
+        XCTAssertEqual(mockDelegate.submittedPrompt, "Summarize this page")
+    }
+
+    func test_submitProgrammatic_withBoundScript_doesNotCallDelegatePromptMethod() {
+        let userScript = makeTestUserScript()
+        sut.bindToTab(userScript)
+
+        sut.submitProgrammatic(text: "Summarize this page")
+        XCTAssertNil(mockDelegate.submittedPrompt)
     }
 
     // MARK: - Omnibar Editing Lifecycle

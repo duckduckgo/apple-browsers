@@ -122,8 +122,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
     private let suggestionsReader: AIChatSuggestionsReading?
-    /// Immediate-UTI: a persistent UTI owned at the sheet level, mounted once and spanning the
-    /// presubmission→postsubmission swap. Nil on the legacy path (the web VC mounts its own UTI).
+    /// Immediate-UTI: a sheet-level UTI mounted once, spanning the content swap. Nil on the legacy path (web VC mounts its own).
     private let persistentUTIHost: AIChatContextualUTIHost?
     private var recentChatsPopup: AIChatRecentChatsPopupViewController?
     private var popupWindow: UIWindow?
@@ -131,7 +130,6 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
-        isContextualSheetImprovementsEnabled: featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements),
         showsNativeInput: persistentUTIHost == nil
     )
     private var cancellables = Set<AnyCancellable>()
@@ -139,8 +137,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// The single web view controller for this sheet, created once and reused
     private var webViewController: AIChatContextualWebViewController?
 
-    /// Content area bottom. Pinned to the sheet bottom on the legacy path; re-anchored to the
-    /// persistent UTI's top on the immediate-UTI path so the content sits above the stationary input.
+    /// Content-area bottom: pinned to the sheet bottom (legacy) or re-anchored to the persistent UTI's top (immediate-UTI).
     private var contentContainerBottomConstraint: NSLayoutConstraint?
 
     /// Whether the web view is currently visible (vs native input being visible)
@@ -320,8 +317,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         bindViewModel()
     }
 
-    /// Immediate-UTI: mount the persistent UTI once at the sheet level and re-anchor the content
-    /// area above it, so the input stays put across the presubmission→postsubmission content swap.
+    /// Immediate-UTI: mount the persistent UTI at sheet level + re-anchor content above it, so the input stays put across the swap.
     private func mountPersistentUTIHostIfNeeded() {
         guard let persistentUTIHost else { return }
         let utiView = persistentUTIHost.mountAtSheetLevel(in: self)
@@ -479,9 +475,7 @@ private extension AIChatContextualSheetViewController {
 
     func removeCurrentChildViewController() {
         children.forEach { child in
-            // Only the swappable content (input / web VC) lives in `contentContainerView`. The
-            // immediate-UTI bar is mounted directly on the sheet and must survive the swap —
-            // removing it would also drop the content's `bottom == UTI.top` anchor and collapse it.
+            // Only the swappable content (input / web VC) lives here; the sheet-level immediate-UTI bar must survive the swap.
             guard child.view.superview === contentContainerView else { return }
             child.willMove(toParent: nil)
             child.view.removeFromSuperview()
@@ -583,33 +577,9 @@ private extension AIChatContextualSheetViewController {
 
     func updateChipUI(chipState: ChipState) {
         switch chipState {
-        case .placeholder:
-            if featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) {
-                if contextualInputViewController.isContextChipVisible {
-                    contextualInputViewController.hideContextChip()
-                }
-            } else {
-                if contextualInputViewController.isContextChipVisible {
-                    contextualInputViewController.updateContextChipState(.placeholder)
-                    contextualInputViewController.setChipTapCallback { [weak self] in
-                        guard let self else { return }
-                        self.pixelHandler.firePageContextPlaceholderTapped()
-                        self.delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
-                    }
-                } else {
-                    let chipView = createPlaceholderChipView(
-                        onTapToAttach: { [weak self] in
-                            guard let self else { return }
-                            self.pixelHandler.firePageContextPlaceholderTapped()
-                            self.delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
-                        },
-                        onRemove: { [weak self] in
-                            self?.handleChipRemoved()
-                        }
-                    )
-                    contextualInputViewController.showContextChip(chipView)
-                    pixelHandler.firePageContextPlaceholderShown()
-                }
+        case .noContext:
+            if contextualInputViewController.isContextChipVisible {
+                contextualInputViewController.hideContextChip()
             }
         case .attached(let context):
             if contextualInputViewController.isContextChipVisible {
@@ -621,14 +591,6 @@ private extension AIChatContextualSheetViewController {
                 contextualInputViewController.showContextChip(chipView)
             }
         }
-    }
-
-    func createPlaceholderChipView(onTapToAttach: @escaping () -> Void, onRemove: @escaping () -> Void) -> AIChatContextChipView {
-        let chipView = AIChatContextChipView()
-        chipView.configure(state: .placeholder)
-        chipView.onTapToAttach = onTapToAttach
-        chipView.onRemove = onRemove
-        return chipView
     }
 
     func createContextChipView(context: AIChatPageContext, onRemove: @escaping () -> Void) -> AIChatContextChipView {
@@ -783,7 +745,13 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         case .askAboutPage:
             pixelHandler.fireQuickActionAskAboutPageSelected()
             delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
-            contextualInputViewController.becomeFirstResponder()
+            // Immediate-UTI: focus the sheet-mounted UTI (the native input is a no-op surface) and grow the sheet so the keyboard has room; native path just raises its own keyboard.
+            if let persistentUTIHost {
+                persistentUTIHost.activateInput()
+                expandToLargeDetent()
+            } else {
+                contextualInputViewController.becomeFirstResponder()
+            }
         case .summarize:
             pixelHandler.fireQuickActionSummarizeSelected()
             delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
@@ -792,7 +760,12 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             }
         case .summarizePage:
             pixelHandler.fireQuickActionSummarizeSelected()
-            delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: action.prompt)
+            // Immediate-UTI: route through the real submit funnel so it can't strand the coordinator unbound; native path is unaffected.
+            if let persistentUTIHost {
+                persistentUTIHost.submitQuickActionPrompt(action.prompt)
+            } else {
+                delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: action.prompt)
+            }
         }
     }
 
@@ -1152,9 +1125,7 @@ extension AIChatContextualSheetViewController {
         webViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
     }
 
-    /// Immediate-UTI: expand the sheet to the large detent on the first UTI submit. Mirrors the
-    /// `expandToLargeDetent()` that the native `.submitPrompt` effect drives via `showWebViewWithPrompt`,
-    /// which the UTI path bypasses (the host delivers the prompt directly).
+    /// Immediate-UTI: expand to the large detent on first submit (the native `.submitPrompt` path does this via `showWebViewWithPrompt`).
     func expandForUTISubmission() {
         expandToLargeDetent()
     }

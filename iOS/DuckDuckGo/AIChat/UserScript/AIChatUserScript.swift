@@ -333,10 +333,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, tools: [AIChatRAGTool]?, pageContext: AIChatPageContextData? = nil, reasoningEffort: AIChatReasoningEffort? = nil) {
-        // `attachedPageContextProvider` returns the single current-page form on iOS; wrap it
-        // in the `.single` variant of the union the schema now accepts. An explicit `pageContext`
-        // (the contextual sheet's frozen first-prompt snapshot) takes precedence over the live
-        // provider; omnibar/full-tab callers pass nil and fall back to the provider, unchanged.
+        // Explicit `pageContext` (contextual frozen snapshot) takes precedence, else the live provider (omnibar passes nil); wrapped in `.single`.
         let resolvedPageContext = pageContext ?? attachedPageContextProvider?()
         let promptPayload = AIChatNativePrompt.queryPrompt(
             prompt,

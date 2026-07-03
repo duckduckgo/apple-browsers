@@ -101547,7 +101547,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Also let DuckDuckGo save you a click and accept cookies for you in pop-ups that don't let you opt out."
+            "value" : "Also let DuckDuckGo save you a click by accepting cookies on your behalf to close pop-ups that don’t let you opt out."
           }
         }
       }

@@ -3860,7 +3860,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.cookie.popups" = "Manage Cookie Pop-ups";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Also let DuckDuckGo save you a click and accept cookies for you in pop-ups that don't let you opt out.";
+"settings.cookie.popups-without-opt-outs.explanation" = "Also let DuckDuckGo save you a click by accepting cookies on your behalf to close pop-ups that don’t let you opt out.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.title" = "Pop-Ups Without Opt-Outs";

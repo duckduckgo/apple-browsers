@@ -492,9 +492,7 @@ private extension AIChatContextualChatSessionState {
                     lastDeliveredContextURL = nil
                     didUpdateAttachment = true
                     Logger.aiChat.debug("[SessionState] Auto-attached context (setting ON)")
-                    if isShowingNativeInput {
-                        pixelHandler.firePageContextAutoAttached()
-                    }
+                    pixelHandler.firePageContextAutoAttached()
                 }
 
             case .attached:

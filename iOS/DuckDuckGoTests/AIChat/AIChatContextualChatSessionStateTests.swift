@@ -222,6 +222,25 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(mockPixelHandler.pageContextAutoAttachedFired)
     }
 
+    func testUpdateContextWithUnifiedToggleInputAutoAttachEnabledFiresPixel() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        let context = makeTestContext()
+
+        // When
+        sessionState.updateContext(context)
+
+        // Then
+        XCTAssertEqual(sessionState.latestContext?.title, context.title)
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, context.title)
+        } else {
+            XCTFail("Expected attached chip state")
+        }
+        XCTAssertTrue(mockPixelHandler.pageContextAutoAttachedFired)
+    }
+
     func testUpdateContextWithAutoAttachDisabled() {
         // Given
         mockSettings.isAutomaticContextAttachmentEnabled = false

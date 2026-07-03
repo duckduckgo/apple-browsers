@@ -128,8 +128,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
-        isContextualSheetImprovementsEnabled: featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements),
-        isSuggestionsSurfaceEnabled: featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+        isContextualSheetImprovementsEnabled: featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements)
     )
     private var cancellables = Set<AnyCancellable>()
 
@@ -433,18 +432,6 @@ private extension AIChatContextualSheetViewController {
     func showContextualInput() {
         contextualInputViewController.delegate = self
         embedChildViewController(contextualInputViewController)
-        embedSuggestionsWebViewIfNeeded()
-    }
-
-    func embedSuggestionsWebViewIfNeeded() {
-        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), let webVC = webViewController else { return }
-        guard webVC.parent !== contextualInputViewController else { return }
-        if webVC.parent != nil {
-            webVC.willMove(toParent: nil)
-            webVC.view.removeFromSuperview()
-            webVC.removeFromParent()
-        }
-        contextualInputViewController.embedSuggestionsContent(webVC)
     }
 
     func showNativeInputUI() {

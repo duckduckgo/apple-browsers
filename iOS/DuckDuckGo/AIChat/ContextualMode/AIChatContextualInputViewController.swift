@@ -51,16 +51,8 @@ final class AIChatContextualInputViewController: UIViewController {
     weak var delegate: AIChatContextualInputViewControllerDelegate?
 
     private let isContextualSheetImprovementsEnabled: Bool
-    private let isSuggestionsSurfaceEnabled: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private lazy var nativeInputViewController = AIChatNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
-
-    /// Container in the content region that hosts the FE WebView when `isSuggestionsSurfaceEnabled`.
-    private lazy var suggestionsContentView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
 
     private lazy var quickActionsScrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -91,10 +83,8 @@ final class AIChatContextualInputViewController: UIViewController {
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
-         isContextualSheetImprovementsEnabled: Bool = false,
-         isSuggestionsSurfaceEnabled: Bool = false) {
+         isContextualSheetImprovementsEnabled: Bool = false) {
         self.isContextualSheetImprovementsEnabled = isContextualSheetImprovementsEnabled
-        self.isSuggestionsSurfaceEnabled = isSuggestionsSurfaceEnabled
         self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
     }
@@ -182,18 +172,6 @@ final class AIChatContextualInputViewController: UIViewController {
         quickActionsView.setLoading(isLoading)
     }
 
-    func embedSuggestionsContent(_ childViewController: UIViewController) {
-        addChild(childViewController)
-        childViewController.view.translatesAutoresizingMaskIntoConstraints = false
-        suggestionsContentView.addSubview(childViewController.view)
-        NSLayoutConstraint.activate([
-            childViewController.view.topAnchor.constraint(equalTo: suggestionsContentView.topAnchor),
-            childViewController.view.leadingAnchor.constraint(equalTo: suggestionsContentView.leadingAnchor),
-            childViewController.view.trailingAnchor.constraint(equalTo: suggestionsContentView.trailingAnchor),
-            childViewController.view.bottomAnchor.constraint(equalTo: suggestionsContentView.bottomAnchor),
-        ])
-        childViewController.didMove(toParent: self)
-    }
 }
 
 // MARK: - Private Setup
@@ -203,40 +181,11 @@ private extension AIChatContextualInputViewController {
     func setupUI() {
         view.backgroundColor = .clear
 
-        if isSuggestionsSurfaceEnabled {
-            setupSuggestionsUI()
-        } else if isContextualSheetImprovementsEnabled {
+        if isContextualSheetImprovementsEnabled {
             setupImprovedUI()
         } else {
             setupOriginalUI()
         }
-    }
-
-    func setupSuggestionsUI() {
-        view.addSubview(quickActionsScrollView)
-        quickActionsScrollView.addSubview(quickActionsView)
-        embedNativeInputViewController()
-
-        bottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
-
-        NSLayoutConstraint.activate([
-            quickActionsScrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
-            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
-            quickActionsScrollView.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
-
-            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
-            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
-            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
-            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
-            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
-            quickActionsView.heightAnchor.constraint(greaterThanOrEqualTo: quickActionsScrollView.frameLayoutGuide.heightAnchor),
-
-            nativeInputViewController.view.topAnchor.constraint(greaterThanOrEqualTo: quickActionsView.bottomAnchor, constant: Constants.quickActionsBottomSpacing),
-            nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
-            nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
-            bottomConstraint!,
-        ])
     }
 
     func setupOriginalUI() {

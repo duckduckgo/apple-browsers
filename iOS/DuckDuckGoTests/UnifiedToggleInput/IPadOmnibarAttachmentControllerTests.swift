@@ -40,7 +40,7 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
             preferences: preferences,
             subscriptionManager: SubscriptionManagerMock()
         )
-        strip = UnifiedToggleInputAttachmentsStripView(sizing: .iPadOmnibar)
+        strip = UnifiedToggleInputAttachmentsStripView()
         sut = IPadOmnibarAttachmentController(store: store)
         sut.attachmentsStripView = strip
     }

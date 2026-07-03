@@ -551,10 +551,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     /// The strip of pending attachments shown above the toolbar row when attachments are present.
     let attachmentsStripView: UnifiedToggleInputAttachmentsStripView = {
-        let strip = UnifiedToggleInputAttachmentsStripView(
-            sizing: .iPadOmnibar,
-            horizontalPadding: Metrics.duckAITextViewBottomPadding
-        )
+        let strip = UnifiedToggleInputAttachmentsStripView()
         strip.translatesAutoresizingMaskIntoConstraints = false
         strip.isHidden = true
         return strip
@@ -1955,7 +1952,7 @@ extension DefaultOmniBarView {
     @discardableResult
     private func applyAttachmentsConstraints() -> Bool {
         let showStrip = isSearchAreaExpanded && !attachmentsStripView.attachments.isEmpty
-        let stripHeight = showStrip ? attachmentsStripView.contentHeight : 0
+        let stripHeight = showStrip ? UnifiedToggleInputAttachmentsStripView.Constants.stripHeight : 0
         let growth = showStrip
             ? stripHeight + Metrics.attachmentsStripToButtonRowSpacing + Metrics.attachmentsStripToTextViewSpacing
             : 0

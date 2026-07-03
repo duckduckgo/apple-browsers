@@ -524,7 +524,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let source = SearchSuggestionsSource(
             loader: loader,
-            query: { [weak self] in self?.switchBarHandler.currentText ?? "" },
+            // Empty when "Search Suggestions" is off, else `effectiveTopHits` falls back to a phrase row.
+            query: { [weak self] in self?.appSettings.autocomplete == true ? (self?.switchBarHandler.currentText ?? "") : "" },
             showAskAIChat: aiChatSettings.isAIChatEnabled
         )
 
@@ -604,7 +605,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             switchBarHandler.toggleStatePublisher,
             switchBarHandler.currentTextPublisher)
             .filter { mode, _ in mode == .search }
-            .map { _, text in text }
+            .map { [weak self] _, text in self?.appSettings.autocomplete == true ? text : "" }
             .removeDuplicates()
             .eraseToAnyPublisher()
 

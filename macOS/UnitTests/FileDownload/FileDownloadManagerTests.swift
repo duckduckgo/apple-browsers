@@ -333,12 +333,12 @@ final class FileDownloadManagerTests: XCTestCase {
         let downloadsURL = fm.temporaryDirectory
         preferences.selectedDownloadLocation = downloadsURL
 
-        // Pre-create "file.pdf" so withNonExistentUrl skips it and tries "file 2.pdf".
+        // Pre-create "file.pdf" so withNonExistentUrl skips it and tries "file 1.pdf".
         let takenURL = downloadsURL.appendingPathComponent("file.pdf")
         try Data().write(to: takenURL)
         defer {
             try? FileManager.default.removeItem(at: takenURL)
-            try? FileManager.default.removeItem(at: downloadsURL.appendingPathComponent("file 2.pdf"))
+            try? FileManager.default.removeItem(at: downloadsURL.appendingPathComponent("file 1.pdf"))
         }
 
         let download = WKDownloadMock(url: .duckDuckGo)

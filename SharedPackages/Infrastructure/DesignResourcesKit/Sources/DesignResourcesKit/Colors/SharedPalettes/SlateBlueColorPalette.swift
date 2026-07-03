@@ -87,6 +87,7 @@ struct SlateBlueColorPalette: SharedColorPaletteDefinition {
     static let controlsSubtleBorderPrimary = DynamicColor(lightHex: 0x215883, lightOpacityHex: 0x1e, darkHex: 0x82aac9, darkOpacityHex: 0x1e)
     static let controlsSubtleBorderSecondary = DynamicColor(lightHex: 0x215883, lightOpacityHex: 0x2d, darkHex: 0x82aac9, darkOpacityHex: 0x2d)
     static let controlsSubtleBorderTertiary = DynamicColor(lightHex: 0x215883, lightOpacityHex: 0x5b, darkHex: 0x82aac9, darkOpacityHex: 0x5b)
+    static let controlsSubtleFillSecondary = DynamicColor(lightHex: 0x215883, lightOpacity: 0.06, darkHex: 0x82AAC9, darkOpacity: 0.18)
     static let destructiveContentPrimary = DynamicColor(lightHex: 0xffffff, darkHex: 0x000000)
     static let destructiveContentSecondary = DynamicColor(lightHex: 0xffffff, lightOpacityHex: 0xe5, darkHex: 0x000000, darkOpacityHex: 0xe5)
     static let destructiveContentTertiary = DynamicColor(lightHex: 0xffffff, lightOpacityHex: 0x99, darkHex: 0x000000, darkOpacityHex: 0x99)

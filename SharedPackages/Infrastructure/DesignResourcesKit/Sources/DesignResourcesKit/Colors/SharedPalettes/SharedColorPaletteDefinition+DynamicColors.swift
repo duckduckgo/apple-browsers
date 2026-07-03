@@ -146,6 +146,8 @@ extension SharedColorPaletteDefinition {
             return controlsRaisedBackdrop
         case .controlsRaisedFillPrimary:
             return controlsRaisedFillPrimary
+        case .controlsSubtleFillSecondary:
+            return controlsSubtleFillSecondary
 
         /// Destructive Colors
         case .destructiveContentPrimary:

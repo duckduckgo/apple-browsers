@@ -330,6 +330,46 @@ final class ModalPromptCoordinationManagerTests {
         #expect(cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
     }
 
+    @available(iOS 16, *)
+    @Test("Check Session Flag Is Set After Successful Presentation", .timeLimit(.minutes(1)))
+    func whenModalIsPresentedThenSessionFlagIsSet() {
+        // GIVEN
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider()
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            modalPromptScheduling: schedulerMock
+        )
+        #expect(!sut.didPresentModalPromptThisSession)
+
+        // WHEN
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        // THEN
+        #expect(sut.didPresentModalPromptThisSession)
+    }
+
+    @available(iOS 16, *)
+    @Test("Check Session Flag Is Not Set When No Modal Is Presented", .timeLimit(.minutes(1)))
+    func whenNoModalIsPresentedThenSessionFlagIsNotSet() {
+        // GIVEN
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let provider = MockModalPromptProvider(shouldReturnPrompt: false)
+        sut = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: cooldownManagerMock,
+            modalPromptScheduling: schedulerMock
+        )
+
+        // WHEN
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        schedulerMock.executeScheduledBlock()
+
+        // THEN
+        #expect(!sut.didPresentModalPromptThisSession)
+    }
+
     @Test("Check Cooldown Is Not Recorded When No Modal Is Presented")
     func whenNoModalIsPresentedThenCooldownIsNotRecorded() {
         // GIVEN

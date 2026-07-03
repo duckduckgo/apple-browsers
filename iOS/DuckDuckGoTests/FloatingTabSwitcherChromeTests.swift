@@ -131,4 +131,25 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
         XCTAssertTrue(actions.contains { $0.title == UserText.tabSwitcherGridViewMenuTitle && $0.state == .on })
         XCTAssertTrue(actions.contains { $0.title == UserText.tabSwitcherListViewMenuTitle && $0.state == .off })
     }
+
+    func testWhenLayoutIsAppliedMultipleTimesThenPreviousConstraintsAreDeactivated() {
+        let chrome = FloatingTabSwitcherChrome()
+        let host = UIView()
+        let content = UIView()
+        chrome.install(in: host, contentView: content)
+
+        chrome.layout(addressBarPosition: .top, interfaceMode: .regularSize)
+        let firstHostConstraintCount = host.constraints.count
+        let firstContentConstraints = host.constraints.filter { $0.firstItem === content || $0.secondItem === content }
+
+        chrome.layout(addressBarPosition: .top, interfaceMode: .regularSize)
+        let secondHostConstraintCount = host.constraints.count
+        let secondContentConstraints = host.constraints.filter { $0.firstItem === content || $0.secondItem === content }
+
+        XCTAssertEqual(firstHostConstraintCount, secondHostConstraintCount)
+        XCTAssertEqual(firstContentConstraints.count, 4)
+        XCTAssertEqual(secondContentConstraints.count, 4)
+        XCTAssertTrue(firstContentConstraints.allSatisfy { !$0.isActive })
+        XCTAssertTrue(secondContentConstraints.allSatisfy(\.isActive))
+    }
 }

@@ -1,6 +1,5 @@
 //
 //  StatusIndicatorView.swift
-//  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -17,14 +16,33 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
+
 import SwiftUI
 import DesignResourcesKit
 
-struct StatusIndicatorView: View {
-    var status: StatusIndicator
-    var isDotHidden = false
+/// The state a `StatusIndicatorView` reflects. Drives only the dot colour; the accompanying
+/// label text is supplied by the caller so each feature keeps its own localized copy.
+public enum StatusIndicator: Equatable {
+    case alwaysOn
+    case on
+    case off
+}
 
-    var body: some View {
+/// A small on/off status pill: a coloured dot plus a caller-supplied label. Green when on
+/// (or always-on), muted when off. Callers pass `text` so the copy stays in their own module.
+public struct StatusIndicatorView: View {
+    private let status: StatusIndicator
+    private let text: String
+    private let isDotHidden: Bool
+
+    public init(status: StatusIndicator, text: String, isDotHidden: Bool = false) {
+        self.status = status
+        self.text = text
+        self.isDotHidden = isDotHidden
+    }
+
+    public var body: some View {
         HStack(spacing: 6) {
             if !isDotHidden {
                 Circle()
@@ -33,7 +51,7 @@ struct StatusIndicatorView: View {
                     .animation(.easeInOut(duration: 0.3), value: status)
             }
 
-            Text(status.text)
+            Text(text)
                 .daxBodyRegular()
                 .lineLimit(1)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -55,11 +73,12 @@ struct StatusIndicatorView: View {
 
 #Preview {
     VStack {
-        StatusIndicatorView(status: .on, isDotHidden: false)
-        StatusIndicatorView(status: .off, isDotHidden: false)
-        StatusIndicatorView(status: .alwaysOn, isDotHidden: false)
-        StatusIndicatorView(status: .on, isDotHidden: true)
-        StatusIndicatorView(status: .off, isDotHidden: true)
-        StatusIndicatorView(status: .alwaysOn, isDotHidden: true)
+        StatusIndicatorView(status: .on, text: "On")
+        StatusIndicatorView(status: .off, text: "Off")
+        StatusIndicatorView(status: .alwaysOn, text: "Always On")
+        StatusIndicatorView(status: .on, text: "On", isDotHidden: true)
+        StatusIndicatorView(status: .off, text: "Off", isDotHidden: true)
     }
 }
+
+#endif

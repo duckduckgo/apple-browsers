@@ -20,6 +20,7 @@ import Cocoa
 import Combine
 import AIChat
 import PixelKit
+import PrivacyConfig
 
 final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening, NSTextViewDelegate {
 
@@ -30,6 +31,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         static let dividerLeadingOffset: CGFloat = -9.0
         static let dividerTrailingOffset: CGFloat = 77.0
         static let dividerTopOffset: CGFloat = -10.0
+        static let placeholderLeadingOffset: CGFloat = 10
+        static let placeholderLegacyLeadingOffset: CGFloat = 9
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -64,6 +67,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     /// position — otherwise e.g. a tab-switch cleanup that clears `currentText` would also wipe
     /// the saved selection with `(0, 0)` before we get a chance to restore it.
     private var isUpdatingProgrammatically = false
+
+    private let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
@@ -76,9 +81,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     /// Used by the orchestrating layer to re-focus into duck.ai mode when the user clicks the prompt while unfocused.
     var onTextViewDidBecomeFirstResponder: (() -> Void)?
 
-    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
+    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.omnibarController = omnibarController
         self.themeManager = themeManager
+        self.featureFlagger = featureFlagger
 
         textStorage.addLayoutManager(layoutManager)
         textContainer.widthTracksTextView = true
@@ -191,6 +197,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         placeholderLabel.hitTestForwardingTarget = textView
         containerView.addSubview(placeholderLabel)
 
+        let placeholderLeadingConstant = featureFlagger.isFeatureOn(.appRebranding) ? Constants.placeholderLeadingOffset : Constants.placeholderLegacyLeadingOffset
+
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -213,7 +221,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             dividerView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: Constants.dividerTopOffset),
             dividerView.heightAnchor.constraint(equalToConstant: 1),
 
-            placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 9),
+            placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: placeholderLeadingConstant),
             placeholderLabel.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 9),
         ])
     }

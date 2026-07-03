@@ -18,8 +18,41 @@
 
 import Foundation
 import FoundationExtensions
+import WebKit
 
 extension URLComponents {
+
+    /// Parses a WebKit-origin `URL` into components using the original URL string.
+    ///
+    /// WebKit uses `WTF::URL` internally; delegate callbacks receive an `NSURL` conversion of it.
+    /// Swift's `URL` (a re-implementation) correctly decomposes opaque URLs (about:, data:, …)
+    /// into path/query/fragment, but NSURL does not: `.path` is always `""` for opaque URLs,
+    /// so `URLComponents(url:)` ends up with empty path and query regardless of URL content.
+    ///
+    /// The private `_web_originalDataAsString` property — present on NSURL-backed values that
+    /// came through WebKit — holds the original byte string. Parsing *that* with
+    /// `URLComponents(string:)` bypasses the NSURL opaque URL limitation entirely.
+    ///
+    /// Falls back to `URLComponents(url:resolvingAgainstBaseURL:)` when the property is absent
+    /// (`URL(string:)`-created values, all hierarchical URLs).
+    init?(webKitUrl: URL) {
+#if DEBUG && _ORIGINAL_DATA_AS_STRING_ENABLED
+        // Ensure WebKit Framework is linked to test targets to make `_web_originalDataAsString` available.
+        _=type(of: WKWebView.self)
+#endif
+
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
+        guard webKitUrl.isOpaque,
+              let originalString = webKitUrl.originalWebKitString,
+              let swiftNativeURLComponents = URLComponents(string: originalString) else {
+            self.init(url: webKitUrl, resolvingAgainstBaseURL: false)
+            return
+        }
+        self = swiftNativeURLComponents
+#else
+        self.init(url: webKitUrl, resolvingAgainstBaseURL: false)
+#endif
+    }
 
     public func eTLDplus1(tld: TLD) -> String? {
         return tld.eTLDplus1(self.host?.lowercased())

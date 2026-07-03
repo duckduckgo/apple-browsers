@@ -47,6 +47,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     private weak var contentView: UIView?
     private weak var centerView: UIView?
     private var glassCenterContainer: UIVisualEffectView?
+    private var layoutConstraints: [NSLayoutConstraint] = []
     private var title: String?
     private var isFireModeEnabled = false
 
@@ -308,6 +309,9 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
+        NSLayoutConstraint.deactivate(layoutConstraints)
+        layoutConstraints = []
+
         [navigationBar, toolbar, contentView].forEach { $0.removeFromSuperview() }
 
         // Content sits behind the glass bars so it scrolls under them.
@@ -315,7 +319,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         hostView.addSubview(toolbar)
         hostView.addSubview(navigationBar)
 
-        NSLayoutConstraint.activate([
+        let constraints = [
             navigationBar.topAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.topAnchor),
             navigationBar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
             navigationBar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
@@ -328,7 +332,9 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             toolbar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
             toolbar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
             toolbar.bottomAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.bottomAnchor),
-        ])
+        ]
+        NSLayoutConstraint.activate(constraints)
+        layoutConstraints = constraints
     }
 
     // MARK: - Private

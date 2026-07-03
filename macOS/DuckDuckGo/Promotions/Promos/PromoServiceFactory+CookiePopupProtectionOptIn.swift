@@ -26,7 +26,7 @@ extension PromoServiceFactory {
     static func cookiePopupProtectionOptIn() -> Promo {
         InternalPromo(
             id: cookiePopupProtectionOptInPromoID,
-            triggers: [.appLaunched, .windowBecameKey],
+            triggers: [.appLaunched],
             initiated: .app,
             promoType: PromoType(.appModal),
             context: .global,

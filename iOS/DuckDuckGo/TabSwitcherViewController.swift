@@ -488,7 +488,7 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func showFireButtonPulseIfNeeded() {
-        guard // daxDialogsManager.isShowingFireDialog,
+        guard daxDialogsManager.isShowingFireDialog,
               let window = view.window else { return }
 
         if let view = chrome.fireButton.customView {

@@ -267,6 +267,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
+    private var textAreaVerticalPadding: CGFloat {
+        isFloatingUIEnabled ? Metrics.floatingTextAreaVerticalPaddingRegularSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
+    }
+
     var isShowingSeparator: Bool = false {
         didSet {
             searchAreaView.separatorView.isHidden = !isShowingSeparator
@@ -748,10 +752,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         readableSearchAreaWidth.priority = .init(999)
         readableSearchAreaWidth.isActive = false
 
-        let stackViewTop = isFloatingUIEnabled ? Metrics.textAreaVerticalPaddingRegularSpacing : Metrics.floatingTextAreaVerticalPaddingRegularSpacing
+        let stackViewTop = textAreaVerticalPadding
         let textAreaTopPaddingConstraint = stackView.topAnchor.constraint(equalTo: topAnchor, constant: stackViewTop)
 
-        let stackViewBottom = isFloatingUIEnabled ? Metrics.textAreaVerticalPaddingRegularSpacing : Metrics.floatingTextAreaVerticalPaddingRegularSpacing
+        let stackViewBottom = textAreaVerticalPadding
         let textAreaBottomPaddingConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -stackViewBottom)
 
         readableSearchAreaWidthConstraint = readableSearchAreaWidth
@@ -1107,8 +1111,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func updateVerticalSpacing() {
-        textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
-        textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
+        textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : textAreaVerticalPadding
+        textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : textAreaVerticalPadding)
         // The bottom floating field's resting fill differs from the top; refresh when the position
         // (small-top-spacing) flips, unless fire mode owns the appearance.
         if isFloatingUIEnabled, !fireMode {

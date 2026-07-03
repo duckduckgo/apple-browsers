@@ -82,14 +82,14 @@ extension TabURLInterceptorDefault {
     }
     
     private func normalizeScheme(_ rawUrl: String) -> URLComponents? {
-        if !rawUrl.starts(with: URL.URLProtocol.https.scheme) &&
-           !rawUrl.starts(with: URL.URLProtocol.http.scheme) &&
+        if !rawUrl.starts(with: URL.NavigationalScheme.https.separated()) &&
+           !rawUrl.starts(with: URL.NavigationalScheme.http.separated()) &&
            rawUrl.contains("://") {
             return nil
         }
-        let noScheme = rawUrl.dropping(prefix: URL.URLProtocol.https.scheme).dropping(prefix: URL.URLProtocol.http.scheme)
-        
-        return URLComponents(string: "\(URL.URLProtocol.https.scheme)\(noScheme)")
+        let noScheme = rawUrl.dropping(prefix: URL.NavigationalScheme.https.separated()).dropping(prefix: URL.NavigationalScheme.http.separated())
+
+        return URLComponents(string: "\(URL.NavigationalScheme.https.separated())\(noScheme)")
     }
 
     private func handleURLInterception(interceptedURLType: InterceptedURLType, interceptedURLComponents: URLComponents? = nil, interceptedURL: URL? = nil) -> Bool {

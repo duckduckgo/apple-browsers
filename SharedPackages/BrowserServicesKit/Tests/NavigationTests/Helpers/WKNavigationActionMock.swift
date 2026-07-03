@@ -39,6 +39,8 @@ class WKNavigationActionMock: NSObject {
 
     @objc var isUserInitiated: Bool
 
+    @objc var isRedirect: Bool = false
+
     @objc var mainFrameNavigation: Any?
 
     var navigationAction: WKNavigationAction {

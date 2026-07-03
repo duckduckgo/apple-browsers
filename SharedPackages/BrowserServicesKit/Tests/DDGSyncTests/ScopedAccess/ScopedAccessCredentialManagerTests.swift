@@ -278,7 +278,7 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
         ])
     }
 
-    func testWhenDefaultCredentialProtectedKeyIsDirectJWEThenThrowsInvalidDataInResponse() async throws {
+    func testWhenDefaultCredentialProtectedKeyIsDirectJWEThenThrowsAccountExtendFailed() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         var crypter = CryptingMock()
@@ -305,8 +305,7 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
                                                                  purpose: "ai_chats",
                                                                  cachedScopedPassword: { scopedPassword })
             XCTFail("Expected direct-JWE ddg source key to be rejected")
-        } catch SyncError.invalidDataInResponse(let message) {
-            XCTAssertTrue(message.contains("encrypted_private_key"))
+        } catch ScopedAccessCredentialError.accountExtendFailed {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -500,9 +499,8 @@ final class ScopedAccessCredentialManagerTests: XCTestCase {
             _ = try await manager.ensureThirdPartyScopedPassword(for: account,
                                                                  purpose: "ai_chats",
                                                                  cachedScopedPassword: { Data((32..<64).map(UInt8.init)) })
-            XCTFail("Expected fetchProtectedKeys failure to be propagated")
-        } catch SyncError.unexpectedStatusCode(let statusCode) {
-            XCTAssertEqual(statusCode, 500)
+            XCTFail("Expected fetchProtectedKeys failure to become account extend failure")
+        } catch ScopedAccessCredentialError.accountExtendFailed {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

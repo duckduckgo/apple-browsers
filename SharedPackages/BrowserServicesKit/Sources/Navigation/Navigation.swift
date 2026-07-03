@@ -241,13 +241,13 @@ extension Navigation {
             willPerformServerRedirect(with: navigationAction)
 
         case .navigationActionReceived, .approved, .responseReceived, .finished, .failed, .willPerformClientRedirect, .redirected:
-            assertionFailure("unexpected state \(self.state)")
+            assertionFailure("unexpected state: `.\(self.state)`")
         }
     }
 
-    func willStart() {
-        guard case .navigationActionReceived = self.state else {
-            assertionFailure("unexpected state \(self.state)")
+    func willStart(isSameDocument: Bool = false) {
+        guard state == .navigationActionReceived || isSameDocument else {
+            assertionFailure("unexpected state: `.\(self.state)`")
             return
         }
         self.state = .approved
@@ -257,7 +257,7 @@ extension Navigation {
         self.resolve(with: navigation)
 
         guard case .approved = self.state else {
-            assertionFailure("unexpected state \(self.state)")
+            assertionFailure("unexpected state: `.\(self.state)`")
             return
         }
 
@@ -303,7 +303,7 @@ extension Navigation {
         case .approved where navigationAction.navigationType.isBackForward:
             self.state = .finished
         case .expected, .navigationActionReceived, .approved, .finished, .failed:
-            assertionFailure("unexpected state \(self.state)")
+            assertionFailure("unexpected state: `.\(self.state)`")
         }
     }
 
@@ -329,7 +329,7 @@ extension Navigation {
             self.state = .redirected(.server)
             self.navigationActions.append(navigationAction)
         case .expected, .navigationActionReceived, .approved, .responseReceived, .finished, .failed, .willPerformClientRedirect, .redirected:
-            assertionFailure("unexpected state \(self.state)")
+            assertionFailure("unexpected state: `.\(self.state)`")
         }
     }
 
@@ -352,13 +352,13 @@ extension Navigation {
         case .started, .responseReceived:
             self.state = .willPerformClientRedirect(delay: delay)
         case .expected, .navigationActionReceived, .approved, .finished, .failed, .willPerformClientRedirect, .redirected:
-            assertionFailure("unexpected state \(self.state)")
+            assertionFailure("unexpected state: `.\(self.state)`")
         }
     }
 
     func didPerformClientRedirect(with navigationAction: NavigationAction) {
         guard case .willPerformClientRedirect(delay: let delay) = state else {
-            assertionFailure("unexpected didPerformClientRedirect")
+            assertionFailure("unexpected didPerformClientRedirect for state `.\(self.state)`")
             return
         }
 
@@ -370,7 +370,7 @@ extension Navigation {
 
     func didSendDidPerformClientRedirectToResponders(with error: WKError? = nil) {
         guard case .redirected(.client) = state else {
-            assertionFailure("unexpected didPerformClientRedirect")
+            assertionFailure("unexpected didSendDidPerformClientRedirectToResponders for state `.\(self.state)`")
             return
         }
         if let error {
@@ -382,7 +382,7 @@ extension Navigation {
 
     func didCancelClientRedirect() {
         guard case .willPerformClientRedirect = state else {
-            assertionFailure("unexpected didPerformClientRedirect")
+            assertionFailure("unexpected didCancelClientRedirect for state `.\(self.state)`")
             return
         }
         self.state = .responseReceived

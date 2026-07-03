@@ -140,10 +140,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
     }
 
-    var isEmailConfirmationDecouplingFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
-    }
-
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
     }

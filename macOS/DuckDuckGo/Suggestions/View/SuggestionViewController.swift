@@ -34,6 +34,8 @@ final class SuggestionViewController: NSViewController {
 
     weak var delegate: SuggestionViewControllerDelegate?
 
+    @IBOutlet weak var shadowView: ShadowView!
+
     @IBOutlet weak var backgroundView: ColorView!
     @IBOutlet weak var innerBorderView: ColorView!
     @IBOutlet weak var innerBorderViewTopConstraint: NSLayoutConstraint!
@@ -92,16 +94,15 @@ final class SuggestionViewController: NSViewController {
         addTrackingArea()
         subscribeToSuggestionResult()
         subscribeToSelectionSync()
+        setupRoundedCorners()
         subscribeToThemeChanges()
         applyThemeStyle()
 
-        if Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            topSeparatorView?.isHidden = true
-        }
+        topSeparatorView?.isHidden = true
     }
 
     private func updateAIChatToggleFlag() {
-        let isToggleFeatureEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatPreferencesStorage.isAIFeaturesEnabled
+        let isToggleFeatureEnabled = aiChatPreferencesStorage.isAIFeaturesEnabled
         isAIChatToggleBeingDisplayed = isToggleFeatureEnabled && aiChatPreferencesStorage.showSearchAndDuckAIToggle
     }
 
@@ -135,6 +136,16 @@ final class SuggestionViewController: NSViewController {
     private func setupTableView() {
         tableView.style = .plain
         tableView.setAccessibilityIdentifier("SuggestionViewController.tableView")
+    }
+
+    private func setupRoundedCorners() {
+        guard featureFlagger.isFeatureOn(.appRebranding) else {
+            return
+        }
+
+        let roundedCorners: RoundedCorners = [.bottomLeft, .bottomRight]
+        backgroundView.roundedCorners = roundedCorners
+        innerBorderView.roundedCorners = roundedCorners
     }
 
     private func addTrackingArea() {
@@ -338,8 +349,9 @@ extension SuggestionViewController: ThemeUpdateListening {
         let colorsProvider = theme.colorsProvider
 
         backgroundViewTopConstraint.constant = barStyleProvider.topSpaceForSuggestionWindow
-        backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
-        innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadius)
+        backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
+        innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
+        shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
         backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
 
         tableView.reloadData()

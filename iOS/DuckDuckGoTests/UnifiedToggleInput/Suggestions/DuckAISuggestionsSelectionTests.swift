@@ -84,6 +84,63 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
         let source = makeSource(query: "")
         XCTAssertNil(source.selection(forRowID: "does-not-exist"))
     }
+
+    // MARK: - Search Suggestions gating
+
+    func test_urlHits_areSuppressed_whenSearchSuggestionsDisabled() async {
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource())
+        let chatViewModel = AIChatSuggestionsViewModel()
+        let chatManager = AIChatHistoryManager(
+            suggestionsReader: NilSuggestionsReader(),
+            aiChatSettings: MockAIChatSettingsProvider(),
+            aiChatDeleter: StubAIChatDeleter(),
+            viewModel: chatViewModel,
+            isFireTab: false
+        )
+        let source = DuckAISuggestionsSource(
+            chatViewModel: chatViewModel,
+            urlLoader: urlLoader,
+            chatManager: chatManager,
+            query: { "hotmail" },
+            searchSuggestionsEnabled: { false }
+        )
+        let textSubject = PassthroughSubject<String, Never>()
+        source.start(textPublisher: textSubject.eraseToAnyPublisher())
+        textSubject.send("hotmail")
+
+        let predicate = NSPredicate { _, _ in urlLoader.lastCompletedFetchQuery != nil }
+        await fulfillment(of: [expectation(for: predicate, evaluatedWith: nil)], timeout: 5.0)
+
+        XCTAssertEqual(urlLoader.lastCompletedFetchQuery, "")
+        XCTAssertTrue(urlLoader.topURLs.isEmpty)
+    }
+
+    func test_urlHits_fetch_whenSearchSuggestionsEnabled() async {
+        let urlLoader = DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource())
+        let chatViewModel = AIChatSuggestionsViewModel()
+        let chatManager = AIChatHistoryManager(
+            suggestionsReader: NilSuggestionsReader(),
+            aiChatSettings: MockAIChatSettingsProvider(),
+            aiChatDeleter: StubAIChatDeleter(),
+            viewModel: chatViewModel,
+            isFireTab: false
+        )
+        let source = DuckAISuggestionsSource(
+            chatViewModel: chatViewModel,
+            urlLoader: urlLoader,
+            chatManager: chatManager,
+            query: { "hotmail" },
+            searchSuggestionsEnabled: { true }
+        )
+        let textSubject = PassthroughSubject<String, Never>()
+        source.start(textPublisher: textSubject.eraseToAnyPublisher())
+        textSubject.send("hotmail")
+
+        let predicate = NSPredicate { _, _ in urlLoader.lastCompletedFetchQuery != nil }
+        await fulfillment(of: [expectation(for: predicate, evaluatedWith: nil)], timeout: 5.0)
+
+        XCTAssertEqual(urlLoader.lastCompletedFetchQuery, "hotmail")
+    }
 }
 
 // MARK: - Stubs
@@ -97,7 +154,10 @@ private final class StubSuggestionLoadingDataSource: SuggestionLoadingDataSource
     func suggestionLoading(_ suggestionLoading: SuggestionLoading,
                            suggestionDataFromUrl url: URL,
                            withParameters parameters: [String: String],
-                           completion: @escaping (Data?, Error?) -> Void) {}
+                           completion: @escaping (Data?, Error?) -> Void) {
+        // Must call completion or SuggestionLoader's DispatchGroup never leaves and getSuggestions hangs forever.
+        completion(nil, nil)
+    }
 }
 
 @MainActor

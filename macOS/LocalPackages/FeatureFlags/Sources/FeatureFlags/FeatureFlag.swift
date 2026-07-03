@@ -35,6 +35,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Onboarding rebranding feature flag
     case onboardingRebranding
 
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1216081727196784
+    case appRebranding
+
     /// Option to install Chrome extension during onboarding (DMG only)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216010708822357
     case onboardingChromeExtension
@@ -111,9 +114,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717886474
     case dbpRemoteBrokerDelivery
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616923544
-    case dbpEmailConfirmationDecoupling
-
     /// https://app.asana.com/1/137249556945/project/1206873150423133/task/1213344522599586
     case dbpWebViewUserAgent
 
@@ -143,9 +143,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617328244
     case aiChatKeepSession
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212016242789291
-    case aiChatOmnibarToggle
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
@@ -489,6 +486,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(ContextualOnboardingSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .onboardingRebranding:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingRebranding))
+        case .appRebranding:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension))
         case .unknownUsernameCategorization:
@@ -535,8 +534,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DelayedWebviewPresentationSubfeature.featureEnabled))
         case .dbpRemoteBrokerDelivery:
             Config(source: .remoteReleasable(DBPSubfeature.remoteBrokerDelivery), category: .dbp)
-        case .dbpEmailConfirmationDecoupling:
-            Config(source: .remoteReleasable(DBPSubfeature.emailConfirmationDecoupling), category: .dbp)
         case .dbpWebViewUserAgent:
             Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true, category: .dbp)
         case .dbpOptOutRetryError96Hours:
@@ -557,8 +554,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.selectionContext), category: .duckAI)
         case .aiChatKeepSession:
             Config(source: .remoteReleasable(AIChatSubfeature.keepSession), category: .duckAI)
-        case .aiChatOmnibarToggle:
-            Config(source: .remoteReleasable(AIChatSubfeature.omnibarToggle), category: .duckAI)
         case .aiChatSuggestions:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled), category: .duckAI)
         case .aiChatOmnibarTools:

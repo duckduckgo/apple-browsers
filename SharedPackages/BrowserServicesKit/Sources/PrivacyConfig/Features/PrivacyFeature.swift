@@ -114,6 +114,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Hang reporting feature flag
     case hangReporting
 
+    /// App rebranding feature flag
+    case appRebranding
+
     /// Remote kill switch for native unsupported-OS messaging (launch alert, About/Feedback info box).
     /// Enabled by default; set to `disabled` in privacy config to suppress the messaging.
     case osSupportWarning
@@ -366,7 +369,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlistBetaActive
     case freemium
     case remoteBrokerDelivery
-    case emailConfirmationDecoupling
     case foregroundRunningOnAppActive
     case continuedProcessing
     case pirRollout
@@ -439,9 +441,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables Duck.ai query experiment with tracker-blocking demo during onboarding
     case onboardingDuckAIQueryTrackersDemoExperiment
-
-    /// Enables the omnibar toggle for AI Chat
-    case omnibarToggle
 
     /// Enables the omnibar onboarding for AI Chat
     case omnibarOnboarding

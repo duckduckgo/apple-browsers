@@ -630,7 +630,8 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
                 isSpeechRecognizerAvailable: true,
                 voiceSearchEnabled: true
             )
-        )
+        ),
+        isFloatingUIEnabled: false
     )
 
     var tabBarContainer: UIView = UIView()

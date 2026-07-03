@@ -32,6 +32,7 @@ class SwipeTabsCoordinator: NSObject {
     weak var tabPreviewsSource: TabPreviewsSource!
     weak var appSettings: AppSettings!
     private let omnibarDependencies: OmnibarDependencyProvider
+    private let floatingUIManager: FloatingUIManaging
 
     let selectTab: (Tab) -> Void
     let newTab: () -> Void
@@ -61,6 +62,7 @@ class SwipeTabsCoordinator: NSObject {
          tabPreviewsSource: TabPreviewsSource,
          appSettings: AppSettings,
          omnibarDependencies: OmnibarDependencyProvider,
+         floatingUIManager: FloatingUIManaging,
          selectTab: @escaping (Tab) -> Void,
          newTab: @escaping () -> Void,
          onSwipeStarted: @escaping () -> Void) {
@@ -69,6 +71,7 @@ class SwipeTabsCoordinator: NSObject {
         self.tabPreviewsSource = tabPreviewsSource
         self.appSettings = appSettings
         self.omnibarDependencies = omnibarDependencies
+        self.floatingUIManager = floatingUIManager
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
@@ -179,7 +182,8 @@ class SwipeTabsCoordinator: NSObject {
 
     private func updateLayout() {
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
-        layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: omniBarHeight)
+        let collectionWidth = collectionView.bounds.width > 0 ? collectionView.bounds.width : coordinator.superview.frame.size.width
+        layout?.itemSize = CGSize(width: collectionWidth, height: omniBarHeight)
         layout?.minimumLineSpacing = 0
         layout?.minimumInteritemSpacing = 0
         layout?.scrollDirection = .horizontal
@@ -828,6 +832,9 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as? OmniBarCell else {
             fatalError("Not \(OmniBarCell.self)")
         }
+        cell.isFloatingUIEnabledProvider = { [weak self] in
+            self?.floatingUIManager.isFloatingUIEnabled ?? false
+        }
 
         if isCurrentTab {
             cell.omniBar = coordinator.omniBar
@@ -836,7 +843,10 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             let tab = tabsModel?.get(tabAt: indexPath.row)
             let url = tab?.link?.url
 
-            let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+            let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(
+                with: omnibarDependencies,
+                isFloatingUIEnabled: floatingUIManager.isFloatingUIEnabled
+            )
 
             coordinator.parentController?.addChild(controller)
 
@@ -877,6 +887,7 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var coordinator: MainViewCoordinator?
     var controller: OmniBarViewController?
+    var isFloatingUIEnabledProvider: (() -> Bool)?
 
     override var safeAreaInsets: UIEdgeInsets {
         guard let collectionView = superview as? UICollectionView else {
@@ -887,11 +898,23 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var omniBar: OmniBar? {
         willSet {
-            (omniBar?.barView as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
-            omniBar?.barView.removeFromSuperview()
+            let isFloatingUIEnabled = isFloatingUIEnabledProvider?() ?? false
+            if isFloatingUIEnabled {
+                guard let currentBarView = omniBar?.barView, currentBarView.superview === self else { return }
+                (currentBarView as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
+                currentBarView.removeFromSuperview()
+            } else {
+                (omniBar?.barView as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
+                omniBar?.barView.removeFromSuperview()
+            }
         }
         didSet {
             guard let omniBarView = omniBar?.barView else { return }
+            let isFloatingUIEnabled = isFloatingUIEnabledProvider?() ?? false
+            if isFloatingUIEnabled {
+                guard coordinator?.isOmnibarInToolbar != true else { return }
+                guard omniBarView.superview == nil || omniBarView.superview === self else { return }
+            }
 
             omniBarView.translatesAutoresizingMaskIntoConstraints = false
             (omniBarView as? DefaultOmniBarView)?.safeAreaManagedByContainer = true

@@ -70,7 +70,7 @@ struct CookiePopupProtectionOptInView: View {
     let onConfirm: (CookiePopupProtectionOptInOption) -> Void
     @State private var selectedOption: CookiePopupProtectionOptInOption = .optIn
 
-    /// Footer with the "Settings > Cookie Pop-Up Protection" span rendered bold (via markdown in the string).
+    /// Footer with "Settings" and "Cookie Pop-Up Protection" rendered bold (via markdown in the string).
     private var footerText: AttributedString {
         (try? AttributedString(markdown: UserText.cookiePopupProtectionOptInFooter))
             ?? AttributedString(UserText.cookiePopupProtectionOptInFooter)

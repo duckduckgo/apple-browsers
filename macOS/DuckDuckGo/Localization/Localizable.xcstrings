@@ -22743,7 +22743,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "We'll aim to only select the most-private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you."
+            "value" : "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you."
           }
         }
       }
@@ -22839,7 +22839,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You can always adjust later in **Settings > Cookie Pop-Up Protection**."
+            "value" : "You can always adjust later in: **Settings** > **Cookie Pop-Up Protection**."
           }
         }
       }

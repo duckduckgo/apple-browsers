@@ -154,7 +154,10 @@ private final class StubSuggestionLoadingDataSource: SuggestionLoadingDataSource
     func suggestionLoading(_ suggestionLoading: SuggestionLoading,
                            suggestionDataFromUrl url: URL,
                            withParameters parameters: [String: String],
-                           completion: @escaping (Data?, Error?) -> Void) {}
+                           completion: @escaping (Data?, Error?) -> Void) {
+        // Must call completion or SuggestionLoader's DispatchGroup never leaves and getSuggestions hangs forever.
+        completion(nil, nil)
+    }
 }
 
 @MainActor

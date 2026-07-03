@@ -22743,7 +22743,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "We'll aim to only select the most-private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you."
+            "value" : "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you."
           }
         }
       }
@@ -22833,13 +22833,13 @@
       }
     },
     "cookie-popup-protection.opt-in.footer" : {
-      "comment" : "Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold.",
+      "comment" : "Footer text in the Cookie Pop-up Protection opt-in dialog, shown across two lines. The text between ** ** is rendered bold; \\n is an explicit line break.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You can always adjust later in **Settings > Cookie Pop-Up Protection**."
+            "value" : "You can always adjust later in:\n**Settings** > **Cookie Pop-Up Protection**."
           }
         }
       }
@@ -22852,18 +22852,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Cookie Pop-up Protection"
-          }
-        }
-      }
-    },
-    "cookie-popup-protection.opt-in.preference-caption" : {
-      "comment" : "Caption above the option list in the Cookie Pop-up Protection opt-in dialog",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Set your preference:"
           }
         }
       }

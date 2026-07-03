@@ -33,6 +33,8 @@ extension SharedColorPaletteDefinition {
             return accentContentSecondary
         case .accentContentTertiary:
             return accentContentTertiary
+        case .accentFirePrimary:
+            return accentFirePrimary
         case .accentGlowPrimary:
             return accentGlowPrimary
         case .accentGlowSecondary:
@@ -180,6 +182,12 @@ extension SharedColorPaletteDefinition {
             return iconsSecondary
         case .iconsTertiary:
             return iconsTertiary
+
+        /// Input
+        case .inputActive:
+            return inputActive
+        case .inputResting:
+            return inputResting
 
         /// System
         case .lines:

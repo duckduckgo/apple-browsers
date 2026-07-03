@@ -29,6 +29,7 @@ public enum SharedDesignSystemColor {
     case accentContentPrimary
     case accentContentSecondary
     case accentContentTertiary
+    case accentFirePrimary
     case accentGlowPrimary
     case accentGlowSecondary
     case accentPrimary
@@ -114,6 +115,10 @@ public enum SharedDesignSystemColor {
     case iconsPrimary
     case iconsSecondary
     case iconsTertiary
+
+    // Input
+    case inputActive
+    case inputResting
 
     // System
     case lines

@@ -35,6 +35,7 @@ struct ThemeColors {
     let accentContentSecondary: NSColor
     let accentContentTertiary: NSColor
     let accentGlowPrimary: NSColor
+    let accentFirePrimary: NSColor
     let accentPrimary: NSColor
     let accentSecondary: NSColor
     let accentTertiary: NSColor
@@ -62,6 +63,8 @@ struct ThemeColors {
     let iconsPrimary: NSColor
     let iconsSecondary: NSColor
     let iconsTertiary: NSColor
+    let inputActive: NSColor
+    let inputResting: NSColor
     let shadowPrimary: NSColor
     let shadowSecondary: NSColor
     let shadowTertiary: NSColor
@@ -95,6 +98,7 @@ extension ThemeColors {
         accentAltTextSecondary = NSColor(designSystemColor: .accentAltTextSecondary, palette: palette)
         accentAltTextTertiary = NSColor(designSystemColor: .accentAltTextTertiary, palette: palette)
         accentContentPrimary = NSColor(designSystemColor: .accentContentPrimary, palette: palette)
+        accentFirePrimary = NSColor(designSystemColor: .accentFirePrimary, palette: palette)
         accentContentSecondary = NSColor(designSystemColor: .accentContentSecondary, palette: palette)
         accentContentTertiary = NSColor(designSystemColor: .accentContentTertiary, palette: palette)
         accentGlowPrimary = NSColor(designSystemColor: .accentGlowPrimary, palette: palette)
@@ -125,6 +129,8 @@ extension ThemeColors {
         iconsPrimary = NSColor(designSystemColor: .iconsPrimary, palette: palette)
         iconsSecondary = NSColor(designSystemColor: .iconsSecondary, palette: palette)
         iconsTertiary = NSColor(designSystemColor: .iconsTertiary, palette: palette)
+        inputActive = NSColor(designSystemColor: .inputActive, palette: palette)
+        inputResting = NSColor(designSystemColor: .inputResting, palette: palette)
         shadowPrimary = NSColor(designSystemColor: .shadowPrimary, palette: palette)
         shadowSecondary = NSColor(designSystemColor: .shadowSecondary, palette: palette)
         shadowTertiary = NSColor(designSystemColor: .shadowTertiary, palette: palette)

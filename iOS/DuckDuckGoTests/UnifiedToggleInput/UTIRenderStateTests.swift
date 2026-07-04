@@ -293,6 +293,12 @@ final class UTIRenderStateTests: XCTestCase {
         let state = sut.computeRenderState()
         XCTAssertFalse(state.cardLayout.showsToggle)
         XCTAssertTrue(state.cardLayout.showsToolbar)
+        XCTAssertTrue(state.isExpanded)
+        XCTAssertTrue(state.isInputVisible)
+        XCTAssertFalse(state.isContentVisible)
+        XCTAssertFalse(state.isAITab)
+        XCTAssertTrue(state.isInlineDismissHidden)
+        XCTAssertFalse(sut.isAITabState)
     }
 
     func test_omnibarHost_aiTabExpanded_aiChat_toggleDisabled_stillShowsToolbar() {

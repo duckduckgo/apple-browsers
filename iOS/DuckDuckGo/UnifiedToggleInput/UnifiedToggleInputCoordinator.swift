@@ -37,6 +37,7 @@ enum InputTextState {
 
 enum UnifiedToggleInputDisplayState: Equatable {
     case hidden
+    case contextualChat
     case aiTab(AITabState)
     case omnibar(OmnibarState)
 
@@ -304,18 +305,22 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState == .aiTab(.expanded)
     }
 
+    var isContextualChatState: Bool {
+        displayState == .contextualChat
+    }
+
     /// True when the current display state corresponds to the expanded card layout.
     /// Synchronous (driven by `displayState`) so it's safe to read before the deferred
     /// `applyCardLayout` runs from the intent handler.
     var isInputPaneExpanded: Bool {
         switch displayState {
-        case .aiTab(.expanded), .omnibar(.active): return true
+        case .contextualChat, .aiTab(.expanded), .omnibar(.active): return true
         default: return false
         }
     }
 
     var isInputEditing: Bool {
-        isOmnibarSession || isAITabExpanded
+        isOmnibarSession || isAITabExpanded || isContextualChatState
     }
 
     var isActive: Bool {
@@ -433,7 +438,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         super.init()
         viewController.delegate = self
         attachmentPresenter.onExpandIfNeeded = { [weak self] in
-            self?.expandIfOnAITab()
+            self?.expandIfOnExpandedInputHost()
         }
         attachmentPresenter.onImagePicked = { [weak self] image, fileName in
             self?.addImageAttachment(image: image, fileName: fileName)
@@ -483,7 +488,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // The chat is already post-submit by the time the contextual UTI installs, so
         // `hasSubmittedPrompt` should reflect that — drives follow-up placeholder + model chip hide.
         if host == .contextualChat {
-            displayState = .aiTab(.expanded)
+            displayState = .contextualChat
             hasSubmittedPrompt = !contextualStartsPreSubmit
             syncHasSubmittedPromptToHandler()
             updateModelChipVisibility()
@@ -754,7 +759,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
         let previousDisplayState = displayState
-        displayState = .aiTab(.expanded)
+        displayState = host == .contextualChat ? .contextualChat : .aiTab(.expanded)
         // Pixels fire only on a real transition into expanded — header re-entries (Plus → New Chat) call this too but don't actually show either UI.
         if host == .omnibar, previousDisplayState != .aiTab(.expanded) {
             DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
@@ -778,12 +783,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard activatesInput else { return }
 
         DispatchQueue.main.async { [weak self] in
-            guard let self, case .aiTab(.expanded) = self.displayState else { return }
+            guard let self, self.isInputPaneExpanded else { return }
             guard !self.isOnboardingLocked else { return }
             self.viewController.activateInput()
             if !self.viewController.isInputFirstResponder {
                 DispatchQueue.main.async { [weak self] in
-                    guard let self, case .aiTab(.expanded) = self.displayState else { return }
+                    guard let self, self.isInputPaneExpanded else { return }
                     guard !self.isOnboardingLocked else { return }
                     self.viewController.activateInput()
                 }
@@ -947,6 +952,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func effectiveInputMode(for requestedMode: TextEntryMode) -> TextEntryMode {
         guard !isToggleVisible else { return requestedMode }
         if isOmnibarSession { return .search }
+        if isContextualChatState { return .aiChat }
         if isAITabState { return .aiChat }
         return requestedMode
     }
@@ -1101,7 +1107,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func dismissOmnibarKeyboard() {
         switch displayState {
-        case .omnibar(.active), .aiTab(.expanded):
+        case .contextualChat, .omnibar(.active), .aiTab(.expanded):
             viewController.deactivateInput()
         default:
             return
@@ -1228,6 +1234,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         switch displayState {
         case .omnibar:
             deactivateToOmnibar()
+        case .contextualChat:
+            resetToolsSelection()
+            clearAttachments()
         case .aiTab:
             switch type {
             case .query: hide()
@@ -1292,6 +1301,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isContentVisible = false
             inactiveAppearance = false
 
+        case .contextualChat:
+            isExpanded = true
+            isInputVisible = true
+            isContentVisible = false
+            inactiveAppearance = false
+
         case .aiTab(.collapsed):
             isExpanded = false
             isInputVisible = true
@@ -1339,6 +1354,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isFloatingReturnKeyVisible: canShowFloatingReturnKey,
             contentInputMode: inputMode,
             inputMode: inputMode,
+            isInlineDismissHidden: isAITabState || isContextualChatState,
             isAITab: isAITabState
         )
     }
@@ -1825,6 +1841,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             clearStoreEntryAfterSubmission()
             if case .aiTab = displayState {
                 hide()
+            } else if isContextualChatState {
+                hide()
             } else if isOmnibarSession {
                 deactivateToOmnibar()
             }
@@ -2025,8 +2043,10 @@ private extension UnifiedToggleInputCoordinator {
         attachmentPolicy.canAttachFiles && !allowedFileUTTypes.isEmpty
     }
 
-    func expandIfOnAITab() {
+    func expandIfOnExpandedInputHost() {
         if case .aiTab = displayState {
+            showExpanded()
+        } else if isContextualChatState {
             showExpanded()
         }
     }

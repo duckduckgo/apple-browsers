@@ -42,6 +42,7 @@ final class KeyboardShortcutView: NSView {
         return stack
     }()
 
+    private var themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     private var keyCapViews: [KeyCapView] = []
 
     var isHighlighted: Bool = false {
@@ -87,8 +88,17 @@ final class KeyboardShortcutView: NSView {
     }
 
     private func updateAppearance() {
-        let bgColor = isHighlighted ? Constants.selectedBackgroundColor : Constants.normalBackgroundColor
-        let textColor = isHighlighted ? Constants.selectedTextColor : Constants.normalTextColor
+        let palette = themeManager.theme.palette
+        let bgColor: NSColor
+        let textColor: NSColor
+
+        if themeManager.isAppRebranded {
+            bgColor = isHighlighted ? palette.controlsFillSecondary : palette.controlsFillPrimary
+            textColor = isHighlighted ? palette.accentTextPrimary : palette.textPrimary
+        } else {
+            bgColor = isHighlighted ? Constants.selectedBackgroundColor : Constants.normalBackgroundColor
+            textColor = isHighlighted ? Constants.selectedTextColor : Constants.normalTextColor
+        }
 
         keyCapViews.forEach { keyCapView in
             keyCapView.backgroundColor = bgColor

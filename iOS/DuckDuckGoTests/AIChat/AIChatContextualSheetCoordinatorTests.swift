@@ -109,6 +109,12 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestDeleteChatWithID chatID: String) {
             deletedChatIDs.append(chatID)
         }
+
+        var newVoiceChatCallCount = 0
+
+        func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator) {
+            newVoiceChatCallCount += 1
+        }
     }
 
     private final class MockPresentingViewController: UIViewController {

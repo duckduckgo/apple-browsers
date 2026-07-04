@@ -79,6 +79,16 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(attachCallCount, 1)
     }
 
+    func test_aiVoiceChatRequest_firesVoiceCallback() {
+        var voiceCallCount = 0
+        makeSUT()
+        sut.onAIVoiceChatRequested = { voiceCallCount += 1 }
+
+        sut.unifiedToggleInputDidRequestAIVoiceChat()
+
+        XCTAssertEqual(voiceCallCount, 1)
+    }
+
     func test_chipRemoveAction_firesRemoveCallbackOnly() {
         let url = URL(string: "https://example.com/a")!
         var removeCallCount = 0

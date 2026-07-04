@@ -65,6 +65,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the user confirmed deletion of the contextual chat, providing the chat ID to delete server-side.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestDeleteChatWithID chatID: String)
+
+    /// Called when the user requests a new Duck.ai voice chat.
+    func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator)
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -376,6 +379,16 @@ private extension AIChatContextualSheetCoordinator {
             guard let self else { return }
             self.sessionState.beginChatForUTISubmission()
             self.sheetViewController?.handleFirstUTISubmission()
+        }
+        host.onPromptContextDelivered = { [weak self] url in
+            self?.sessionState.markPageContextDeliveredInPrompt(url)
+        }
+        host.onAIVoiceChatRequested = { [weak self] in
+            guard let self else { return }
+            self.sheetViewController?.dismiss(animated: true) { [weak self] in
+                guard let self else { return }
+                self.delegate?.aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(self)
+            }
         }
         self.persistentUTIHost = host
         return host

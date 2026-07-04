@@ -42,6 +42,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     var onAttachRequested: (() -> Void)?
     var onRemoveRequested: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
+    var onPromptContextDelivered: ((URL?) -> Void)?
+    var onAIVoiceChatRequested: (() -> Void)?
 
     var attachedContextURL: URL? {
         chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
@@ -55,6 +57,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         isAutoAttachEnabled: @escaping () -> Bool,
         isFireTab: Bool,
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
+        voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         startsPreSubmit: Bool = false
     ) {
         self.hasActiveChat = hasActiveChat
@@ -80,6 +83,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
             isAutoAttachEnabled: isAutoAttachEnabled
         )
         coordinator.delegate = self
+        coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
         chipViewModel.onAttachActionRequested = { [weak self] in
             self?.onAttachRequested?()
@@ -240,6 +244,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     }
 
     private func handlePromptSubmittedFromUserScript() {
+        onPromptContextDelivered?(attachedContextURL)
         if !hasDeliveredFirstPrompt {
             hasDeliveredFirstPrompt = true
             onPromptSubmitted?()
@@ -257,6 +262,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         guard !hasDeliveredFirstPrompt else { return }
         hasDeliveredFirstPrompt = true
         onPromptSubmitted?()
+        onPromptContextDelivered?(attachedContextURL)
         contextualChatViewController?.submitPrompt(prompt,
                                                    images: images,
                                                    files: files,
@@ -270,7 +276,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}
     func unifiedToggleInputDidRequestVoiceSearch() {}
-    func unifiedToggleInputDidRequestAIVoiceChat() {}
+    func unifiedToggleInputDidRequestAIVoiceChat() {
+        onAIVoiceChatRequested?()
+    }
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}
     func unifiedToggleInputDidChangeHeight() {}
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}

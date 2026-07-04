@@ -8,7 +8,8 @@ name: test_contextual_immediate_uti_pre_submit_context
 
 # With the immediate contextual UTI flag on, the first sheet show uses UTI before
 # submit. Removing pre-submit context clears the current chip, and a real navigation
-# with auto-attach enabled attaches the current page again.
+# with auto-attach enabled attaches the current page again. After first submit,
+# dismissed-sheet navigation also auto-attaches the current page when reopened.
 
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
@@ -59,6 +60,38 @@ name: test_contextual_immediate_uti_pre_submit_context
 - inputText: "https://privacy-test-pages.site/security/address-bar-spoofing/index.html"
 - pressKey: Enter
 - assertVisible: ".*Address Bar Spoofing.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "First contextual UTI prompt"
+- tapOn:
+    id: "AIChat.Toolbar.Button.Submit"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+- extendedWaitUntil:
+    visible: "Address Bar Spoofing.*"
+    timeout: 30000
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/privacy-protections/geolocation/"
+- pressKey: Enter
+- assertVisible: ".*Geolocation.*"
 
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"

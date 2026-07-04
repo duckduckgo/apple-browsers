@@ -325,16 +325,6 @@ class TabViewController: UIViewController {
         urlSubject.eraseToAnyPublisher()
     }
 
-    /// Emits the URL of the underlying tab each time a navigation finishes loading. Unlike
-    /// `urlPublisher` (which fires at didCommit, before the new DOM is ready), this is the
-    /// reliable signal for "the new page's content is available to query." Replays the last
-    /// finished URL on subscribe so late subscribers (e.g. a contextual chat opened after
-    /// the page already loaded) still see the current page.
-    private let didFinishURLSubject = CurrentValueSubject<URL?, Never>(nil)
-    var didFinishURLPublisher: AnyPublisher<URL?, Never> {
-        didFinishURLSubject.eraseToAnyPublisher()
-    }
-
     public var url: URL? {
         willSet {
             if newValue != url {
@@ -615,7 +605,7 @@ class TabViewController: UIViewController {
             featureFlagger: featureFlagger,
             unifiedToggleInputFeature: unifiedToggleInputFeature,
             pageContextHandler: pageContextHandler,
-            tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
+            tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher),
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler
@@ -2113,7 +2103,6 @@ extension TabViewController: WKNavigationDelegate {
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
-        didFinishURLSubject.send(webView.url)
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
         adClickExternalOpenDetector.finishNavigation()

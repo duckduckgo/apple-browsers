@@ -29,11 +29,8 @@ import UIKit
 import WebKit
 
 /// Underlying-tab URL publishers the contextual chat needs.
-/// `originating` fires at didCommit (drives chip display state); `didFinish` fires when the new
-/// page is actually loaded (drives auto-attach context collection so JS sees fresh DOM).
 struct AIChatTabURLPublishers {
     let originating: AnyPublisher<URL?, Never>
-    let didFinish: AnyPublisher<URL?, Never>
 }
 
 private struct ContextualUnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
@@ -92,7 +89,6 @@ final class AIChatContextualSheetCoordinator {
     let pageContextHandler: AIChatPageContextHandling
     private let tabURLPublishers: AIChatTabURLPublishers
     private var contextUpdateCancellable: AnyCancellable?
-    private var utiNavigationCancellable: AnyCancellable?
     private var sessionEffectCancellable: AnyCancellable?
     private var persistentUTIHost: AIChatContextualUTIHost?
 
@@ -231,8 +227,6 @@ final class AIChatContextualSheetCoordinator {
     /// Called by TabViewController when the page navigates to a new URL.
     func notifyPageChanged() async {
         guard hasActiveSheet else { return }
-        // Native UTI handles nav via the didFinish publisher subscription.
-        if isImmediateContextualUTIEnabled { return }
         sessionState.notifyPageChanged()
 
         if sessionState.shouldTriggerAutoCollect() {
@@ -366,40 +360,15 @@ private extension AIChatContextualSheetCoordinator {
                 self?.handleContextDataUpdate(contextData)
             }
 
-        startObservingUTINavigationIfNeeded()
     }
 
     func stopObservingContextUpdates() {
         contextUpdateCancellable?.cancel()
         contextUpdateCancellable = nil
-        utiNavigationCancellable?.cancel()
-        utiNavigationCancellable = nil
     }
 
     func handleContextDataUpdate(_ context: AIChatPageContext?) {
         sessionState.updateContext(context)
-    }
-
-    func startObservingUTINavigationIfNeeded() {
-        guard isImmediateContextualUTIEnabled, utiNavigationCancellable == nil else { return }
-
-        utiNavigationCancellable = tabURLPublishers.didFinish
-            .dropFirst()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] url in
-                guard let self, self.hasActiveSheet else { return }
-                guard let url else { return }
-
-                self.sessionState.notifyPageChanged(pageURL: url)
-                if self.sessionState.shouldTriggerAutoCollect(for: url) {
-                    let didTrigger = self.pageContextHandler.triggerContextCollection()
-                    if !didTrigger {
-                        self.sessionState.clearProcessingNavigationFlag()
-                    }
-                } else {
-                    self.sessionState.clearProcessingNavigationFlag()
-                }
-            }
     }
 
     func deliverPageContext(_ context: AIChatPageContextData?, targets: PageContextDeliveryTargets) {

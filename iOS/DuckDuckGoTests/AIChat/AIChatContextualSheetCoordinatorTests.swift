@@ -135,7 +135,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
     private var originatingTabURLSubject: CurrentValueSubject<URL?, Never>!
-    private var didFinishTabURLSubject: CurrentValueSubject<URL?, Never>!
     private var cancellables: Set<AnyCancellable>!
 
     // MARK: - Setup
@@ -149,7 +148,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockPageContextHandler = MockPageContextHandler()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
         originatingTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
-        didFinishTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
         sut = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
             aiChatSettings: mockSettings,
@@ -160,8 +158,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
             pageContextHandler: mockPageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(
-                originating: originatingTabURLSubject.eraseToAnyPublisher(),
-                didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
+                originating: originatingTabURLSubject.eraseToAnyPublisher()
             )
         )
         mockDelegate = MockDelegate()
@@ -181,7 +178,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockPageContextHandler = nil
         contentBlockingSubject = nil
         originatingTabURLSubject = nil
-        didFinishTabURLSubject = nil
         cancellables = nil
         super.tearDown()
     }
@@ -488,38 +484,29 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testUTINavigationUsesDidFinishAndSkipsColdStartReplay() async {
+    func testImmediateUTINavigationUsesNotifyPageChangedPath() async {
         mockUnifiedToggleInputFeature.isAvailable = true
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         sut.sessionState.updateUnifiedToggleInputActive(true)
         mockSettings.isAutomaticContextAttachmentEnabled = true
 
-        didFinishTabURLSubject.send(URL(string: "https://example.com/initial"))
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
         originatingTabURLSubject.send(URL(string: "https://example.com/did-commit"))
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
 
-        let collectionTriggered = expectation(description: "didFinish triggers context collection")
-        mockPageContextHandler.onTriggerContextCollection = {
-            collectionTriggered.fulfill()
-        }
-
-        didFinishTabURLSubject.send(URL(string: "https://example.com/finished"))
-        await fulfillment(of: [collectionTriggered], timeout: 1)
-
+        await sut.notifyPageChanged()
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
     @MainActor
-    func testUTINavigationDoesNotAutoCollectSamePageReplayAfterPreSubmitOptOut() async {
+    func testImmediateUTIDoesNotAutoCollectBeforeNavigationAfterPreSubmitOptOut() async {
         mockUnifiedToggleInputFeature.isAvailable = true
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = true
         let pageURL = URL(string: "https://example.com")!
 
-        didFinishTabURLSubject.send(pageURL)
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
         sut.sessionState.downgradeToPlaceholder()
@@ -531,56 +518,57 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testUTINavigationAutoCollectsDifferentPageAfterPreSubmitOptOut() async {
+    func testImmediateUTIAutoCollectsOnNavigationAfterPreSubmitOptOut() async {
         mockUnifiedToggleInputFeature.isAvailable = true
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = true
         let pageURL = URL(string: "https://example.com")!
-        let newPageURL = URL(string: "https://example.com/new")!
 
-        didFinishTabURLSubject.send(pageURL)
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
         sut.sessionState.downgradeToPlaceholder()
         mockPageContextHandler.clearCallCount = 0
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
-        let collectionTriggered = expectation(description: "new page didFinish triggers context collection")
-        mockPageContextHandler.onTriggerContextCollection = {
-            collectionTriggered.fulfill()
-        }
-
-        didFinishTabURLSubject.send(newPageURL)
-        await fulfillment(of: [collectionTriggered], timeout: 1)
-
+        await sut.notifyPageChanged()
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
         XCTAssertEqual(mockPageContextHandler.clearCallCount, 0)
     }
 
     @MainActor
-    func testUTINavigationAutoCollectsSamePageReloadAfterPreSubmitOptOut() async {
+    func testImmediateUTIAutoCollectsOnReloadAfterPreSubmitOptOut() async {
         mockUnifiedToggleInputFeature.isAvailable = true
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = true
         let pageURL = URL(string: "https://example.com")!
 
-        didFinishTabURLSubject.send(pageURL)
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
         sut.sessionState.downgradeToPlaceholder()
         mockPageContextHandler.clearCallCount = 0
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
-        let collectionTriggered = expectation(description: "reload didFinish triggers context collection")
-        mockPageContextHandler.onTriggerContextCollection = {
-            collectionTriggered.fulfill()
-        }
-
-        didFinishTabURLSubject.send(pageURL)
-        await fulfillment(of: [collectionTriggered], timeout: 1)
-
+        await sut.notifyPageChanged()
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
         XCTAssertEqual(mockPageContextHandler.clearCallCount, 0)
+    }
+
+    @MainActor
+    func testNotifyPageChangedAutoCollectsWhenImmediateUTISheetIsDismissed() async {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.beginChatForUTISubmission()
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        sut.aiChatContextualSheetViewControllerDidDismiss(sut.sheetViewController!)
+        XCTAssertTrue(sut.hasActiveSheet)
+        XCTAssertFalse(sut.isSheetPresented)
+
+        await sut.notifyPageChanged()
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
     @MainActor
@@ -591,7 +579,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
-        didFinishTabURLSubject.send(URL(string: "https://example.com/finished"))
+        originatingTabURLSubject.send(URL(string: "https://example.com/finished"))
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
 
         await sut.notifyPageChanged()

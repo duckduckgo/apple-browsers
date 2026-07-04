@@ -333,18 +333,10 @@ private extension AIChatContextualSheetCoordinator {
             self.sessionState.downgradeToPlaceholder()
             self.pageContextHandler.clear()
         }
-        host.onNavigationAwayDetachRequested = { [weak self] in
-            guard let self else { return }
-            self.sessionState.detachFromNavigationAway()
-            self.pageContextHandler.clear()
-        }
         host.onPromptSubmitted = { [weak self] in
             guard let self else { return }
             self.sessionState.beginChatForUTISubmission()
             self.sheetViewController?.handleFirstUTISubmission()
-        }
-        host.onPromptContextDelivered = { [weak self] url in
-            self?.sessionState.markPageContextDeliveredInPrompt(url)
         }
         self.persistentUTIHost = host
         return host
@@ -376,6 +368,10 @@ private extension AIChatContextualSheetCoordinator {
             deliverToUTIChip(context, host: host)
         }
 
+        if let host = persistentUTIHost, targets.contains(.utiAttachAffordance) {
+            host.showAttachAffordance()
+        }
+
         if targets.contains(.frontendBridge) {
             sheetViewController?.pushPageContext(context)
         }
@@ -387,12 +383,11 @@ private extension AIChatContextualSheetCoordinator {
             return
         }
 
-        let deliveryState: PageContextAttachmentDeliveryState = sessionState.hasDeliveredPageContext(context) ? .delivered : .pendingSubmit
         let pageContext = sessionState.latestContext?.contextData == context
             ? sessionState.latestContext
             : AIChatPageContext(contextData: context, favicon: nil)
         if let pageContext {
-            host.setAttachedContext(pageContext, deliveryState: deliveryState)
+            host.setAttachedContext(pageContext, deliveryState: .pendingSubmit)
         }
     }
 

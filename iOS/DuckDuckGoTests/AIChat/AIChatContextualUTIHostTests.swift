@@ -82,16 +82,13 @@ final class AIChatContextualUTIHostTests: XCTestCase {
     func test_chipRemoveAction_firesRemoveCallbackOnly() {
         let url = URL(string: "https://example.com/a")!
         var removeCallCount = 0
-        var navigationDetachCallCount = 0
         originatingURL.send(url)
         makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString))
         sut.onRemoveRequested = { removeCallCount += 1 }
-        sut.onNavigationAwayDetachRequested = { navigationDetachCallCount += 1 }
 
         sut.chipViewModel.tapToRemove()
 
         XCTAssertEqual(removeCallCount, 1)
-        XCTAssertEqual(navigationDetachCallCount, 0)
     }
 
     func test_setAttachedContext_updatesChipPresentation() {
@@ -116,6 +113,34 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertNil(sut.attachedContextURL)
     }
 
+    func test_showAttachAffordanceShowsPlaceholderWithoutClearingDeliveredAttachment() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .delivered)
+
+        sut.showAttachAffordance()
+
+        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertTrue(sut.chipViewModel.isVisible)
+        XCTAssertEqual(sut.attachedContextURL, url)
+        XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
+    }
+
+    func test_setAttachedContextAfterPromptSubmittedWithSameURL_makesContextPendingAgain() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        let context = makeContext(title: "Page A", url: url.absoluteString)
+        makeSUT(initialAttachedContext: context, initialAttachmentDeliveryState: .pendingSubmit)
+
+        sut.markPromptSubmitted()
+        XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
+
+        sut.setAttachedContext(context)
+
+        XCTAssertEqual(sut.chipViewModel.pendingAttachedContextData?.url, url.absoluteString)
+        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
+    }
+
     func test_prepareForNewChat_clearsAttachedContextPresentation() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
@@ -138,20 +163,19 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertFalse(didRequestAttach)
     }
 
-    func test_autoAttachOff_navigationAwayFiresNavigationDetachCallbackOnly() {
+    func test_autoAttachOff_navigationAwayKeepsManualAttachmentSticky() {
         let pageAURL = URL(string: "https://example.com/a")!
         let pageBURL = URL(string: "https://example.com/b")!
         var removeCallCount = 0
-        var navigationDetachCallCount = 0
         originatingURL.send(pageAURL)
-        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: pageAURL.absoluteString))
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: pageAURL.absoluteString), initialAttachmentDeliveryState: .pendingSubmit)
         sut.onRemoveRequested = { removeCallCount += 1 }
-        sut.onNavigationAwayDetachRequested = { navigationDetachCallCount += 1 }
 
         originatingURL.send(pageBURL)
 
         XCTAssertEqual(removeCallCount, 0)
-        XCTAssertEqual(navigationDetachCallCount, 1)
+        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
+        XCTAssertEqual(sut.attachedContextURL, pageAURL)
     }
 
     private func makeContext(title: String, url: String) -> AIChatPageContext {

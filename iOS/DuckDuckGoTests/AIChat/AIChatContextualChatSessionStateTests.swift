@@ -341,7 +341,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     // MARK: - Navigation Tests
 
-    func testNotifyPageChangedPreservesUserDowngradeFlag() {
+    func testNotifyPageChangedClearsTemporaryUserDowngradeWhenAutoAttachIsOn() {
         // Given
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext())
@@ -352,7 +352,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.notifyPageChanged()
 
         // Then
-        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
+        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
     }
 
     func testUpdateContextAfterNavigationFiresPixel() {
@@ -912,19 +912,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertFalse(sessionState.shouldDeliverToFrontendBridge(context))
     }
 
-    func testDeliveredPageContextTrackingResetsOnNewChat() {
-        let pageURL = URL(string: "https://example.com")!
-        let context = makeTestContext(url: pageURL.absoluteString).contextData
-
-        sessionState.markPageContextDeliveredInPrompt(pageURL)
-        XCTAssertTrue(sessionState.hasDeliveredPageContext(context))
-
-        sessionState.resetToNoChat()
-
-        XCTAssertFalse(sessionState.hasDeliveredPageContext(context))
-    }
-
-    func testNotifyFrontendOfNavigationEmitsFrontendOnlyNullContextWhenFlagEnabled() {
+    func testNotifyFrontendOfNavigationEmitsFrontendOnlyNullContextWhenUTIInactive() {
         // Given - chat with initial context, flag ON
         // Note: auto-attach ON is only needed to reach .chatWithInitialContext state.
         // In production, notifyFrontendOfMultiContextNavigation() is called when auto-collect is OFF.
@@ -954,6 +942,44 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         if case .deliverPageContext(let contextData, let targets) = receivedEffect {
             XCTAssertNil(contextData)
             XCTAssertEqual(targets, .frontendBridge)
+            XCTAssertFalse(targets.contains(.utiChip))
+            XCTAssertFalse(targets.contains(.utiAttachAffordance))
+        } else {
+            XCTFail("Expected deliverPageContext effect with nil")
+        }
+    }
+
+    func testNotifyFrontendOfNavigationEmitsUTIAttachAffordanceWhenUTIActive() {
+        // Given - chat with initial context, multi-context ON, UTI active
+        mockFeatureFlagger.enabledFeatureFlags = [.multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+        sessionState.handlePromptSubmission("Hello")
+
+        let expectation = expectation(description: "Null context pushed")
+        var receivedEffect: SheetEffect?
+
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext = effect {
+                    receivedEffect = effect
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.notifyFrontendOfMultiContextNavigation()
+
+        waitForExpectations(timeout: 1.0)
+
+        // Then - nil is a multi-context navigation affordance, not a detach
+        if case .deliverPageContext(let contextData, let targets) = receivedEffect {
+            XCTAssertNil(contextData)
+            XCTAssertTrue(targets.contains(.frontendBridge))
+            XCTAssertTrue(targets.contains(.utiAttachAffordance))
             XCTAssertFalse(targets.contains(.utiChip))
         } else {
             XCTFail("Expected deliverPageContext effect with nil")

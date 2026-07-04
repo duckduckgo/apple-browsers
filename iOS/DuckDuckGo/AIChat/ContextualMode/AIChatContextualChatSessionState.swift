@@ -83,6 +83,7 @@ struct PageContextDeliveryTargets: OptionSet {
 
     static let utiChip = PageContextDeliveryTargets(rawValue: 1 << 0)
     static let frontendBridge = PageContextDeliveryTargets(rawValue: 1 << 1)
+    static let utiAttachAffordance = PageContextDeliveryTargets(rawValue: 1 << 2)
 }
 
 // MARK: - Session State
@@ -118,7 +119,6 @@ final class AIChatContextualChatSessionState {
     private(set) var userDowngradedToPlaceholder = false
     private var wasAutoAttachEnabled: Bool
     private var isUnifiedToggleInputActive = false
-    private var lastDeliveredContextURL: URL?
 
     // MARK: - Internal Flags
 
@@ -250,7 +250,6 @@ final class AIChatContextualChatSessionState {
         frontendState = .noChat
         chipState = .placeholder
         contextualChatURL = nil
-        lastDeliveredContextURL = nil
         userDowngradedToPlaceholder = false
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
@@ -295,22 +294,10 @@ final class AIChatContextualChatSessionState {
         guard case .attached = chipState else { return }
         chipState = .placeholder
         userDowngradedToPlaceholder = true
-        lastDeliveredContextURL = nil
         pixelHandler.firePageContextRemovedNative()
         rebuildViewState()
         emitDeliveryIfNeeded(nil)
         Logger.aiChat.debug("[SessionState] Chip downgraded to placeholder via coordinator")
-    }
-
-    /// Detaches context because the visible page moved away while auto-attach is off.
-    /// This is not a user opt-out and should not fire user-removal pixels.
-    func detachFromNavigationAway() {
-        guard case .attached = chipState else { return }
-        chipState = .placeholder
-        lastDeliveredContextURL = nil
-        rebuildViewState()
-        emitDeliveryIfNeeded(nil)
-        Logger.aiChat.debug("[SessionState] Chip detached because page navigated away")
     }
 
     // MARK: - Context Management
@@ -349,13 +336,23 @@ final class AIChatContextualChatSessionState {
         return false
     }
 
-    /// Sends a null context to the frontend as a navigation signal.
+    /// Sends a null context as a navigation signal.
     /// Used when auto-collect is OFF but multiple contexts are supported,
     /// so the FE can show the "Add page content" button for the new page.
     func notifyFrontendOfMultiContextNavigation() {
-        guard supportsMultipleContexts, shouldDeliverToFrontendBridge(nil) else { return }
-        emit(.deliverPageContext(nil, targets: .frontendBridge))
-        Logger.aiChat.debug("[SessionState] Sent null context navigation signal to frontend")
+        guard supportsMultipleContexts else { return }
+
+        var targets: PageContextDeliveryTargets = []
+        if shouldDeliverToFrontendBridge(nil) {
+            targets.insert(.frontendBridge)
+        }
+        if shouldShowUTIAttachAffordanceForMultiContextNavigation() {
+            targets.insert(.utiAttachAffordance)
+        }
+
+        guard !targets.isEmpty else { return }
+        emit(.deliverPageContext(nil, targets: targets))
+        Logger.aiChat.debug("[SessionState] Sent null context navigation signal")
     }
 
     /// Clear the navigation processing flag (called when collection can't start)
@@ -443,17 +440,10 @@ final class AIChatContextualChatSessionState {
         return shouldDeliver
     }
 
-    func markPageContextDeliveredInPrompt(_ url: URL?) {
-        lastDeliveredContextURL = url
+    func shouldShowUTIAttachAffordanceForMultiContextNavigation() -> Bool {
+        isUnifiedToggleInputActive && hasActiveChat && !shouldAutoCollectContext
     }
 
-    func hasDeliveredPageContext(_ context: AIChatPageContextData) -> Bool {
-        guard let url = URL(string: context.url),
-              let lastDeliveredContextURL else {
-            return false
-        }
-        return url == lastDeliveredContextURL
-    }
 }
 
 // MARK: - Private
@@ -464,7 +454,6 @@ private extension AIChatContextualChatSessionState {
         if isShowingNativeInput || isUnifiedToggleInputActive {
             chipState = .attached(context)
             userDowngradedToPlaceholder = false
-            lastDeliveredContextURL = nil
             Logger.aiChat.debug("[SessionState] Manually attached context")
         }
 
@@ -490,7 +479,6 @@ private extension AIChatContextualChatSessionState {
                 if shouldAllowAutomaticUpgrade() {
                     chipState = .attached(context)
                     userDowngradedToPlaceholder = false
-                    lastDeliveredContextURL = nil
                     didUpdateAttachment = true
                     Logger.aiChat.debug("[SessionState] Auto-attached context (setting ON)")
                     pixelHandler.firePageContextAutoAttached()

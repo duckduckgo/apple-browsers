@@ -41,9 +41,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
 
     var onAttachRequested: (() -> Void)?
     var onRemoveRequested: (() -> Void)?
-    var onNavigationAwayDetachRequested: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
-    var onPromptContextDelivered: ((URL?) -> Void)?
 
     var attachedContextURL: URL? {
         chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
@@ -89,9 +87,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         chipViewModel.onRemoveActionRequested = { [weak self] in
             self?.onRemoveRequested?()
         }
-        chipViewModel.onNavigationAwayDetachRequested = { [weak self] in
-            self?.onNavigationAwayDetachRequested?()
-        }
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
 
@@ -108,6 +103,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
 
     func clearAttachedContext() {
         chipViewModel.clearAttached()
+    }
+
+    func showAttachAffordance() {
+        chipViewModel.showAttachAffordance()
     }
 
     /// Routes UTI-submitted prompts through the contextual chat's JS message channel (same as the FE).
@@ -239,7 +238,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     }
 
     private func handlePromptSubmittedFromUserScript() {
-        onPromptContextDelivered?(attachedContextURL)
         if !hasDeliveredFirstPrompt {
             hasDeliveredFirstPrompt = true
             onPromptSubmitted?()
@@ -257,7 +255,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         guard !hasDeliveredFirstPrompt else { return }
         hasDeliveredFirstPrompt = true
         onPromptSubmitted?()
-        onPromptContextDelivered?(attachedContextURL)
         contextualChatViewController?.submitPrompt(prompt,
                                                    images: images,
                                                    files: files,

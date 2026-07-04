@@ -36,11 +36,9 @@ enum PageContextAttachmentDeliveryState {
 /// `.delivered`, so the chat opens silent.
 ///
 /// Visibility:
-///   - attached + URL matches + delivered → hidden (FE silently uses it).
-///   - attached + URL matches + pending → `.attached` feedback until the user submits.
-///   - attached + URL doesn't match + auto ON → `.attached` only if pending; if delivered,
-///     stay hidden until the new page's context lands (otherwise a silent old chip briefly
-///     reappears during nav transition).
+///   - attach affordance command → placeholder.
+///   - attached + pending → `.attached` feedback until the user submits.
+///   - attached + delivered → hidden (already submitted).
 ///   - no attachment → placeholder. The half-sheet is the user's attach/skip gate; once
 ///     they're in the chat, an empty state always offers a tap target.
 @MainActor
@@ -55,10 +53,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     /// Invoked when the user taps the X on the attached chip.
     var onRemoveActionRequested: (() -> Void)?
 
-    /// Invoked when the attached chip is cleared because the tab navigated away while
-    /// auto-attach is off. This is not a user removal.
-    var onNavigationAwayDetachRequested: (() -> Void)?
-
     private let isAutoAttachEnabled: () -> Bool
     private(set) var attachedContext: AIChatPageContext?
     private var attachedURL: URL?
@@ -66,6 +60,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     /// Whether the current attachment is waiting to be included in a prompt or has already
     /// been delivered. `markPromptSubmitted()` flips pending attachments to delivered.
     private var attachmentDeliveryState: PageContextAttachmentDeliveryState = .pendingSubmit
+    private var isShowingAttachAffordance = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -84,7 +79,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
                 guard let self else { return }
                 Logger.contextualUTI.debug("ChipViewModel originatingURL changed → \(url?.shortDescription ?? "nil", privacy: .private)")
                 self.originatingURL = url
-                if self.shouldClearOnNavigationAway { self.clearAttachedDueToNavigationAway() }
                 self.recompute()
             }
             .store(in: &cancellables)
@@ -92,14 +86,22 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     }
 
     func setAttached(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
+        isShowingAttachAffordance = false
         updateAttachment(context, deliveryState: deliveryState)
         Logger.contextualUTI.debug("PageContextChip attached")
         recompute()
     }
 
     func clearAttached() {
+        isShowingAttachAffordance = false
         clearAttachmentState()
         Logger.contextualUTI.debug("PageContextChip detached")
+        recompute()
+    }
+
+    func showAttachAffordance() {
+        isShowingAttachAffordance = true
+        Logger.contextualUTI.debug("PageContextChip showing attach affordance")
         recompute()
     }
 
@@ -131,19 +133,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         recompute()
     }
 
-    private var shouldClearOnNavigationAway: Bool {
-        guard let attachedURL, attachedURL != originatingURL else { return false }
-        return !isAutoAttachEnabled()
-    }
-
-    private func clearAttachedDueToNavigationAway() {
-        Logger.contextualUTI.debug("PageContextChip clearing attachment — tab navigated away (auto-attach OFF)")
-        clearAttachmentState()
-        // Propagate through the host so it also clears the page-context handler — otherwise
-        // its cached context survives and the next prompt would carry stale context.
-        onNavigationAwayDetachRequested?()
-    }
-
     private func updateAttachment(_ context: AIChatPageContext?, deliveryState: PageContextAttachmentDeliveryState) {
         attachedContext = context
         attachedURL = Self.url(of: context)
@@ -164,16 +153,14 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
         let isMatching = attachedURL != nil && attachedURL == originatingURL
         let branch: String
 
-        if isMatching, let ctx = attachedContext {
+        if isShowingAttachAffordance {
+            state = .placeholder
+            isVisible = true
+            branch = "attachAffordance"
+        } else if let ctx = attachedContext {
             state = .attached(title: ctx.title, favicon: ctx.favicon)
             isVisible = attachmentDeliveryState == .pendingSubmit
-            branch = "matching(deliveryState=\(attachmentDeliveryState))"
-        } else if let ctx = attachedContext, isAutoAttachEnabled() {
-            // Auto-mode nav transition: keep showing the attached site only if it was
-            // pending feedback; if delivered, stay hidden so we don't briefly resurrect it.
-            state = .attached(title: ctx.title, favicon: ctx.favicon)
-            isVisible = attachmentDeliveryState == .pendingSubmit
-            branch = "autoTransition(deliveryState=\(attachmentDeliveryState))"
+            branch = "attached(matching=\(isMatching), deliveryState=\(attachmentDeliveryState))"
         } else {
             state = .placeholder
             isVisible = true

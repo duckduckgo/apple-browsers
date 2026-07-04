@@ -519,35 +519,67 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockSettings.isAutomaticContextAttachmentEnabled = true
         let pageURL = URL(string: "https://example.com")!
 
+        didFinishTabURLSubject.send(pageURL)
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
         sut.sessionState.downgradeToPlaceholder()
         mockPageContextHandler.clearCallCount = 0
         mockPageContextHandler.triggerContextCollectionCallCount = 0
-
-        didFinishTabURLSubject.send(pageURL)
 
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
         XCTAssertEqual(mockPageContextHandler.clearCallCount, 0)
     }
 
     @MainActor
-    func testUTINavigationDoesNotAutoCollectDifferentPageAfterPreSubmitOptOut() async {
+    func testUTINavigationAutoCollectsDifferentPageAfterPreSubmitOptOut() async {
         mockUnifiedToggleInputFeature.isAvailable = true
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         mockSettings.isAutomaticContextAttachmentEnabled = true
         let pageURL = URL(string: "https://example.com")!
         let newPageURL = URL(string: "https://example.com/new")!
 
+        didFinishTabURLSubject.send(pageURL)
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
         sut.sessionState.downgradeToPlaceholder()
         mockPageContextHandler.clearCallCount = 0
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
-        didFinishTabURLSubject.send(newPageURL)
+        let collectionTriggered = expectation(description: "new page didFinish triggers context collection")
+        mockPageContextHandler.onTriggerContextCollection = {
+            collectionTriggered.fulfill()
+        }
 
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        didFinishTabURLSubject.send(newPageURL)
+        await fulfillment(of: [collectionTriggered], timeout: 1)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.clearCallCount, 0)
+    }
+
+    @MainActor
+    func testUTINavigationAutoCollectsSamePageReloadAfterPreSubmitOptOut() async {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        let pageURL = URL(string: "https://example.com")!
+
+        didFinishTabURLSubject.send(pageURL)
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
+        sut.sessionState.downgradeToPlaceholder()
+        mockPageContextHandler.clearCallCount = 0
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        let collectionTriggered = expectation(description: "reload didFinish triggers context collection")
+        mockPageContextHandler.onTriggerContextCollection = {
+            collectionTriggered.fulfill()
+        }
+
+        didFinishTabURLSubject.send(pageURL)
+        await fulfillment(of: [collectionTriggered], timeout: 1)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
         XCTAssertEqual(mockPageContextHandler.clearCallCount, 0)
     }
 

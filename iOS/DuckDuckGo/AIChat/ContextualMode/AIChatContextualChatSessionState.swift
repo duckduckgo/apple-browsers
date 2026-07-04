@@ -327,6 +327,10 @@ final class AIChatContextualChatSessionState {
     func notifyPageChanged(pageURL: URL? = nil) {
         Logger.aiChat.debug("[SessionState] Page navigation detected")
         isProcessingNavigation = true
+        if shouldAutoCollectContext, userDowngradedToPlaceholder {
+            userDowngradedToPlaceholder = false
+            Logger.aiChat.debug("[SessionState] Page navigation cleared temporary context removal")
+        }
     }
 
     func updateUnifiedToggleInputActive(_ isActive: Bool, isImmediateContextual _: Bool = false) {
@@ -335,8 +339,8 @@ final class AIChatContextualChatSessionState {
     }
 
     func shouldTriggerAutoCollect(for pageURL: URL? = nil) -> Bool {
-        guard !hasUserOptedOutOfContext else { return false }
         guard shouldAutoCollectContext else { return false }
+        guard !hasUserOptedOutOfContext else { return false }
         guard let pageURL else { return true }
         guard let attachedContext = intendedAttachedContext,
               URL(string: attachedContext.contextData.url) == pageURL else {

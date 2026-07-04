@@ -7,8 +7,8 @@ name: test_contextual_immediate_uti_pre_submit_context
 ---
 
 # With the immediate contextual UTI flag on, the first sheet show uses UTI before
-# submit. Removing pre-submit context keeps the placeholder across navigation, and
-# tapping the placeholder manually attaches again.
+# submit. Removing pre-submit context clears the current chip, and a real navigation
+# with auto-attach enabled attaches the current page again.
 
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
@@ -64,13 +64,6 @@ name: test_contextual_immediate_uti_pre_submit_context
     id: "Browser.OmniBar.Button.AIChat"
 - assertVisible:
     id: "AIChat.ContextualSheet"
-- assertVisible:
-    id: "AIChat.ContextChip.Placeholder"
-- assertNotVisible:
-    id: "AIChat.ContextChip.AttachedTitle"
-
-- tapOn:
-    id: "AIChat.ContextChip.Placeholder"
 - extendedWaitUntil:
     visible:
         id: "AIChat.ContextChip.AttachedTitle"

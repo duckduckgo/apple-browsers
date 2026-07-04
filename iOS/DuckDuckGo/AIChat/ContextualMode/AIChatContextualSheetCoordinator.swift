@@ -385,7 +385,6 @@ private extension AIChatContextualSheetCoordinator {
 
         utiNavigationCancellable = tabURLPublishers.didFinish
             .dropFirst()
-            .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] url in
                 guard let self, self.hasActiveSheet else { return }

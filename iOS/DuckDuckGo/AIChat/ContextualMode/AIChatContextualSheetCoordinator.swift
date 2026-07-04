@@ -90,6 +90,8 @@ final class AIChatContextualSheetCoordinator {
     private let tabURLPublishers: AIChatTabURLPublishers
     private var contextUpdateCancellable: AnyCancellable?
     private var sessionEffectCancellable: AnyCancellable?
+    private var currentPageURLCancellable: AnyCancellable?
+    private var currentPageURL: URL?
     private var persistentUTIHost: AIChatContextualUTIHost?
 
     /// Handles all pixel firing for contextual mode.
@@ -168,6 +170,10 @@ final class AIChatContextualSheetCoordinator {
                 guard case .deliverPageContext(let context, let targets) = effect else { return }
                 self?.deliverPageContext(context, targets: targets)
             }
+        self.currentPageURLCancellable = tabURLPublishers.originating
+            .sink { [weak self] url in
+                self?.currentPageURL = url
+            }
     }
 
     // MARK: - Public Methods
@@ -180,7 +186,7 @@ final class AIChatContextualSheetCoordinator {
 
         startObservingContextUpdates()
 
-        if sessionState.shouldAutoCollectContext {
+        if sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
             pageContextHandler.triggerContextCollection()
         }
 

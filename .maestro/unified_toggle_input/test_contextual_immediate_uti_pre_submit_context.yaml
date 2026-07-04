@@ -9,8 +9,9 @@ name: test_contextual_immediate_uti_pre_submit_context
 
 # With the immediate contextual UTI flag on, the first sheet show uses UTI before
 # submit. Removing pre-submit context clears the current chip, and a real navigation
-# with auto-attach enabled attaches the current page again. After first submit,
-# dismissed-sheet navigation also auto-attaches the current page when reopened.
+# with auto-attach enabled attaches the current page again. After first submit, a
+# same-page reopen does not reattach; dismissed-sheet navigation still auto-attaches
+# the current page when reopened.
 
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
@@ -79,6 +80,18 @@ name: test_contextual_immediate_uti_pre_submit_context
 
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertNotVisible:
+    id: "AIChat.ContextChip.AttachedTitle"
 
 - tapOn:
     id: "AIChat.ContextualSheet.CloseButton"

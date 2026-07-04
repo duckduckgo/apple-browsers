@@ -266,6 +266,40 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
+    @MainActor
+    func testPresentExistingSheetDoesNotCollectSameAttachedURLAfterSubmit() async {
+        let pageURL = URL(string: "https://example.com/page-a")!
+        originatingTabURLSubject.send(pageURL)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageURL.absoluteString))
+        sut.sessionState.beginChatForUTISubmission()
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        sut.aiChatContextualSheetViewControllerDidDismiss(sut.sheetViewController!)
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+    }
+
+    @MainActor
+    func testNotifyPageChangedStillCollectsSameURLAfterSubmit() async {
+        let pageURL = URL(string: "https://example.com/page-a")!
+        originatingTabURLSubject.send(pageURL)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageURL.absoluteString))
+        sut.sessionState.beginChatForUTISubmission()
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        sut.aiChatContextualSheetViewControllerDidDismiss(sut.sheetViewController!)
+        await sut.notifyPageChanged()
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
     // MARK: - Delegate Forwarding Tests
 
     @MainActor

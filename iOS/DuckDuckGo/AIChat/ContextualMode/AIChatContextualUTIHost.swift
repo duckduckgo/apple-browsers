@@ -140,11 +140,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
 
     func setContextualChatViewController(_ contextualChatViewController: AIChatContextualWebViewController) {
         self.contextualChatViewController = contextualChatViewController
-        coordinator.attachmentPresentingViewController = contextualChatViewController
     }
 
     func installInWebView(_ contextualChatViewController: AIChatContextualWebViewController) {
         setContextualChatViewController(contextualChatViewController)
+        coordinator.attachmentPresentingViewController = contextualChatViewController
 
         let viewController = coordinator.viewController
         guard viewController.parent !== contextualChatViewController else {
@@ -170,6 +170,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     }
 
     func mountAtSheetLevel(in sheetViewController: UIViewController) -> UIView {
+        coordinator.attachmentPresentingViewController = sheetViewController
+
         let viewController = coordinator.viewController
         guard viewController.parent !== sheetViewController else {
             return viewController.view

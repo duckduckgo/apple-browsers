@@ -2310,12 +2310,14 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func updateModelChipVisibility() {
-        // Contextual chat picks the model upstream (in the half-sheet); the model chip is permanently hidden here.
+        // Contextual chat only picks the model upstream after the first prompt reaches the web chat.
+        // Before that first submit, the sheet-level UTI owns prompt composition and should expose the picker.
         // Image generation has no model picker either — when active, the chip is hidden until the tool is deselected.
         let isImageGenActive = toolsController.selectedTool == .imageGeneration
-        // `isModelPickerForcedVisible` only relaxes the `hasSubmittedPrompt` hide reason — contextual
-        // chat and image generation stay hidden regardless.
-        let shouldHideModelChip = host == .contextualChat || isImageGenActive || (hasSubmittedPrompt && !isModelPickerForcedVisible)
+        let isContextualPostSubmit = host == .contextualChat && hasSubmittedPrompt
+        // `isModelPickerForcedVisible` only relaxes the generic `hasSubmittedPrompt` hide reason —
+        // contextual post-submit and image generation stay hidden regardless.
+        let shouldHideModelChip = isContextualPostSubmit || isImageGenActive || (hasSubmittedPrompt && !isModelPickerForcedVisible)
         viewController.isModelChipHidden = shouldHideModelChip
         updateReasoningPicker()
     }

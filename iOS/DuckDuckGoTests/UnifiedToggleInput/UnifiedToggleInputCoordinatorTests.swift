@@ -1936,7 +1936,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_modelChip_hiddenAfterPreparingExternalPromptSubmission() {
-        sut.prepareExternalPromptSubmission()
+        _ = sut.prepareExternalPromptSubmission()
         XCTAssertTrue(sut.hasSubmittedPrompt)
         XCTAssertTrue(sut.viewController.isModelChipHidden)
     }
@@ -1975,6 +1975,34 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isModelChipHidden)
         sut.startNewChat()
         XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_contextualChatPreSubmit_modelChipVisible() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_contextualChatPostSubmit_modelChipHidden() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+
+        sut.prepareExternalPromptSubmission()
+
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
     }
 
     func test_modelChip_notAffectedBySearchSubmit() {

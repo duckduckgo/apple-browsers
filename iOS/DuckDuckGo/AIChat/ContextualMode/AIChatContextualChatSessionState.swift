@@ -374,6 +374,10 @@ final class AIChatContextualChatSessionState {
     /// Updates the latest page context and determines attach behavior based on internal state.
     func updateContext(_ context: AIChatPageContext?) {
         guard let context = context else {
+            guard shouldProcessNilContextUpdate else {
+                Logger.aiChat.debug("[SessionState] Ignoring nil context update without active collection")
+                return
+            }
             Logger.aiChat.debug("[SessionState] Context collection returned nil - clearing context and downgrading to placeholder")
             latestContext = nil
             chipState = .placeholder
@@ -512,6 +516,10 @@ private extension AIChatContextualChatSessionState {
 
     func shouldAllowAutomaticUpgrade() -> Bool {
         return !userDowngradedToPlaceholder
+    }
+
+    var shouldProcessNilContextUpdate: Bool {
+        shouldAutoCollectContext || isManualAttachInProgress || isProcessingNavigation
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {

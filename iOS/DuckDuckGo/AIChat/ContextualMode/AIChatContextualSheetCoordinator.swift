@@ -234,7 +234,7 @@ final class AIChatContextualSheetCoordinator {
             if !didTrigger {
                 sessionState.clearProcessingNavigationFlag()
             }
-        } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && isActivelyObservingContext {
+        } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             sessionState.notifyFrontendOfMultiContextNavigation()
             sessionState.clearProcessingNavigationFlag()
         } else {

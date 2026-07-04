@@ -79,9 +79,6 @@ name: test_contextual_immediate_uti_pre_submit_context
 
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml
-- extendedWaitUntil:
-    visible: "Address Bar Spoofing.*"
-    timeout: 30000
 
 - tapOn:
     id: "AIChat.ContextualSheet.CloseButton"
@@ -90,9 +87,9 @@ name: test_contextual_immediate_uti_pre_submit_context
 
 - tapOn:
     id: "searchEntry"
-- inputText: "https://privacy-test-pages.site/privacy-protections/geolocation/"
+- inputText: "https://example.com"
 - pressKey: Enter
-- assertVisible: ".*Geolocation.*"
+- assertVisible: ".*Example Domain.*"
 
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"

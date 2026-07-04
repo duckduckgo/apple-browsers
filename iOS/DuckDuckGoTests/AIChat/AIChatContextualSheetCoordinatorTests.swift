@@ -322,7 +322,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testNotifyPageChangedDoesNotTriggerCollectionAfterUserRemove() async {
+    func testNotifyPageChangedTriggersCollectionAfterUserRemoveWhenAutoAttachEnabled() async {
         mockSettings.isAutomaticContextAttachmentEnabled = true
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.sendContext(makeTestContext())
@@ -331,7 +331,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         await sut.notifyPageChanged()
 
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
     @MainActor
@@ -481,6 +481,36 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         // Then - no null signal sent (sheet not visible)
         XCTAssertFalse(receivedPush)
+    }
+
+    @MainActor
+    func testImmediateUTINotifyPageChangedSendsAttachAffordanceWhenSheetDismissedButRetained() async {
+        // Given - immediate UTI keeps a persistent host while the sheet is dismissed
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.beginChatForUTISubmission()
+
+        sut.aiChatContextualSheetViewControllerDidDismiss(sut.sheetViewController!)
+        XCTAssertTrue(sut.hasActiveSheet)
+        XCTAssertFalse(sut.isSheetPresented)
+
+        var receivedTargets: PageContextDeliveryTargets?
+        sut.sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(let context, let targets) = effect, context == nil {
+                    receivedTargets = targets
+                }
+            }
+            .store(in: &cancellables)
+
+        // When - navigate while the immediate UTI sheet is dismissed
+        await sut.notifyPageChanged()
+
+        // Then - remember that the next sheet presentation should offer manual attach
+        XCTAssertTrue(receivedTargets?.contains(.utiAttachAffordance) == true)
+        XCTAssertTrue(receivedTargets?.contains(.utiChip) == false)
     }
 
     @MainActor

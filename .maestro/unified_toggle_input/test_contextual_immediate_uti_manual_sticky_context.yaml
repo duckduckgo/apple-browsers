@@ -7,9 +7,10 @@ name: test_contextual_immediate_uti_manual_sticky_context
 
 ---
 
-# With the immediate contextual UTI flag on and automatic attachment off, the first
-# sheet show uses UTI before submit. Manually attached pre-submit context is sticky
-# across navigation and does not auto-update or clear.
+# With the immediate contextual UTI flag on and automatic attachment off, manual
+# context is sticky across navigation before and after the first prompt. Post-submit
+# navigation with no pending chip shows the add affordance; navigation with a pending
+# manually attached chip keeps that chip attached.
 
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
@@ -59,6 +60,64 @@ name: test_contextual_immediate_uti_manual_sticky_context
 - inputText: "https://privacy-test-pages.site/security/address-bar-spoofing/index.html"
 - pressKey: Enter
 - assertVisible: ".*Address Bar Spoofing.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible:
+    id: "AIChat.ContextChip.AttachedTitle"
+- assertNotVisible:
+    id: "AIChat.ContextChip.Placeholder"
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "First contextual UTI prompt"
+- tapOn:
+    id: "AIChat.Toolbar.Button.Submit"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+- extendedWaitUntil:
+    notVisible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 30000
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://example.com"
+- pressKey: Enter
+- assertVisible: ".*Example Domain.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible:
+    id: "AIChat.ContextChip.Placeholder"
+
+- tapOn:
+    id: "AIChat.ContextChip.Placeholder"
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://example.org"
+- pressKey: Enter
+- assertVisible: ".*Example Domain.*"
 
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"

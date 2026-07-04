@@ -268,6 +268,22 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.chipState, .placeholder)
     }
 
+    func testUpdateContextWithIdleNilDoesNotClearManualAttachmentWhenAutoAttachDisabled() {
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        let context = makeTestContext(title: "Manually Attached Page")
+        sessionState.beginManualAttach()
+        sessionState.updateContext(context)
+
+        sessionState.updateContext(nil)
+
+        XCTAssertEqual(sessionState.latestContext?.title, context.title)
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, context.title)
+        } else {
+            XCTFail("Expected manually attached chip to survive idle nil replay")
+        }
+    }
+
     func testUpdateContextDoesNotAutoAttachWhenUserDowngraded() {
         // Given
         mockSettings.isAutomaticContextAttachmentEnabled = true
@@ -462,6 +478,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testHasContext() {
         XCTAssertFalse(sessionState.hasContext)
 
+        mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext())
         XCTAssertTrue(sessionState.hasContext)
 

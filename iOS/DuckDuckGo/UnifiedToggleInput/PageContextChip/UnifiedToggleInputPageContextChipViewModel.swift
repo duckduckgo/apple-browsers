@@ -100,6 +100,10 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     }
 
     func showAttachAffordance() {
+        guard pendingAttachedContextData == nil else {
+            Logger.contextualUTI.debug("PageContextChip keeping pending attachment instead of showing attach affordance")
+            return
+        }
         isShowingAttachAffordance = true
         Logger.contextualUTI.debug("PageContextChip showing attach affordance")
         recompute()

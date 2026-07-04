@@ -126,6 +126,19 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
     }
 
+    func test_showAttachAffordanceDoesNotOverridePendingAttachment() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .pendingSubmit)
+
+        sut.showAttachAffordance()
+
+        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
+        XCTAssertTrue(sut.chipViewModel.isVisible)
+        XCTAssertEqual(sut.attachedContextURL, url)
+        XCTAssertEqual(sut.chipViewModel.pendingAttachedContextData?.url, url.absoluteString)
+    }
+
     func test_setAttachedContextAfterPromptSubmittedWithSameURL_makesContextPendingAgain() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)

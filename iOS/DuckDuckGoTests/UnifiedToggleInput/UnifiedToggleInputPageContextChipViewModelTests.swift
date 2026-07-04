@@ -124,6 +124,18 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqual(sut.pendingAttachedContextData?.url, "https://en.wikipedia.org/wiki/Dog")
     }
 
+    func test_showAttachAffordance_doesNotOverridePendingAttachment() {
+        let attachedUrl = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: attachedUrl))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: attachedUrl), initialAttachmentDeliveryState: .pendingSubmit)
+
+        sut.showAttachAffordance()
+
+        XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertEqual(sut.pendingAttachedContextData?.url, attachedUrl)
+    }
+
     func test_autoAttachOn_navigationAway_preservesAttachment() {
         autoAttachEnabled = true
         let attachedUrl = "https://en.wikipedia.org/wiki/Cat"

@@ -201,14 +201,14 @@ final class AIChatViewAllChatsRowView: NSView {
                 titleLabel.textColor = tintColor
                 openDuckAILabel.textColor = themeProvider.suffixSelectedTextColor
                 iconImageView.contentTintColor = tintColor
-                arrowImageView.contentTintColor = tintColor
+                arrowImageView.contentTintColor = themeProvider.suffixSelectedTextColor
                 keyboardShortcutView.isHighlighted = true
             } else {
                 backgroundLayer.backgroundColor = NSColor.clear.cgColor
                 titleLabel.textColor = Constants.textColor
                 openDuckAILabel.textColor = themeProvider.suffixTextColor
                 iconImageView.contentTintColor = Constants.iconColor
-                arrowImageView.contentTintColor = themeProvider.accentPrimaryColor
+                arrowImageView.contentTintColor = themeProvider.suffixTextColor
                 keyboardShortcutView.isHighlighted = false
             }
         }

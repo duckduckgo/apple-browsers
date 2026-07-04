@@ -273,7 +273,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockSettings.isAutomaticContextAttachmentEnabled = true
 
         await sut.presentSheet(from: mockPresentingVC)
-        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageURL.absoluteString))
+        sut.sessionState.updateContext(makeTestContext(title: "Page A", url: pageURL.absoluteString))
         sut.sessionState.beginChatForUTISubmission()
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
@@ -290,7 +290,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockSettings.isAutomaticContextAttachmentEnabled = true
 
         await sut.presentSheet(from: mockPresentingVC)
-        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageURL.absoluteString))
+        sut.sessionState.updateContext(makeTestContext(title: "Page A", url: pageURL.absoluteString))
         sut.sessionState.beginChatForUTISubmission()
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 

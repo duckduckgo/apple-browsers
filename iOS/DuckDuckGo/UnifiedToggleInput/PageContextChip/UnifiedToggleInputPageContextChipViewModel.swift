@@ -114,6 +114,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
     func tapToRemove() {
         Logger.contextualUTI.info("PageContextChip remove tapped — detaching")
+        clearAttached()
         onRemoveActionRequested?()
     }
 

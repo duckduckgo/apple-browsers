@@ -157,9 +157,15 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqual(attachCalls, 1)
     }
 
-    func test_tapToRemove_callsOnRemove() {
-        makeSUT()
+    func test_tapToRemove_clearsChipAndCallsOnRemove() {
+        let url = "https://en.wikipedia.org/wiki/Cat"
+        originatingURL.send(URL(string: url))
+        makeSUT(initialAttachedContext: makeContext(title: "Cat", url: url))
         sut.tapToRemove()
+
+        XCTAssertEqualState(sut.state, .placeholder)
+        XCTAssertTrue(sut.isVisible)
+        XCTAssertNil(sut.pendingAttachedContextData)
         XCTAssertEqual(removeCalls, 1)
     }
 

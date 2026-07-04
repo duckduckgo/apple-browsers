@@ -135,7 +135,9 @@ private final class KeyCapView: NSView {
 
     var backgroundColor: NSColor = .clear {
         didSet {
-            layer?.backgroundColor = backgroundColor.cgColor
+            NSAppearance.withAppAppearance {
+                layer?.backgroundColor = backgroundColor.cgColor
+            }
         }
     }
 

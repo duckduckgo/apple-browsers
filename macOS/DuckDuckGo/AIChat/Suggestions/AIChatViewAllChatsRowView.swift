@@ -199,14 +199,14 @@ final class AIChatViewAllChatsRowView: NSView {
                 let tintColor = themeProvider.selectedTintColor
                 backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
                 titleLabel.textColor = tintColor
-                openDuckAILabel.textColor = tintColor
+                openDuckAILabel.textColor = themeProvider.suffixSelectedTextColor
                 iconImageView.contentTintColor = tintColor
                 arrowImageView.contentTintColor = tintColor
                 keyboardShortcutView.isHighlighted = true
             } else {
                 backgroundLayer.backgroundColor = NSColor.clear.cgColor
                 titleLabel.textColor = Constants.textColor
-                openDuckAILabel.textColor = themeProvider.accentPrimaryColor
+                openDuckAILabel.textColor = themeProvider.suffixTextColor
                 iconImageView.contentTintColor = Constants.iconColor
                 arrowImageView.contentTintColor = themeProvider.accentPrimaryColor
                 keyboardShortcutView.isHighlighted = false

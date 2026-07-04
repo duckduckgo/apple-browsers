@@ -29,6 +29,8 @@ protocol SuggestionRowThemeProviding {
     var accentPrimaryColor: NSColor { get }
     var selectedTintColor: NSColor { get }
     var suggestionHighlightCornerRadius: CGFloat { get }
+    var suffixTextColor: NSColor { get }
+    var suffixSelectedTextColor: NSColor { get }
 }
 
 /// Default implementation that uses the app's theme manager.
@@ -45,6 +47,25 @@ struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
 
     var suggestionHighlightCornerRadius: CGFloat {
         themeManager.theme.addressBarStyleProvider.suggestionHighlightCornerRadius
+    }
+
+    var suffixTextColor: NSColor {
+        guard themeManager.isAppRebranded else {
+            return accentPrimaryColor
+        }
+
+        let provider = themeManager.theme.colorsProvider
+        return provider.suggestionsSuffixColor
+    }
+
+    var suffixSelectedTextColor: NSColor {
+        guard themeManager.isAppRebranded else {
+            return selectedTintColor
+        }
+
+        let provider = themeManager.theme.colorsProvider
+        return provider.suggestionsHighlightSuffixColor
+
     }
 }
 

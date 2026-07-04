@@ -690,10 +690,9 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         triggerNewTabPageView(on: testProvider)
 
-        XCTAssertEqual(
-            testProvider.cards,
-            [.personalizeBrowser, .sync, .emailProtection]
-        )
+        XCTAssertEqual(testProvider.cards, [.personalizeBrowser, .emailProtection, .defaultApp])
+        XCTAssertEqual(persistor.dailyVisibleStack, [.personalizeBrowser, .emailProtection, .defaultApp])
+        XCTAssertEqual(persistor.visibleStackDayIdentifier, 1)
     }
 
     @MainActor
@@ -706,48 +705,46 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         )
         triggerNewTabPageView(on: testProvider)
 
-        XCTAssertEqual(testProvider.cards, [.personalizeBrowser, .sync, .emailProtection])
+        XCTAssertEqual(testProvider.cards, [.personalizeBrowser, .emailProtection, .defaultApp])
 
         testProvider.dismiss(.personalizeBrowser)
 
-        XCTAssertEqual(testProvider.cards, [.sync, .emailProtection])
+        XCTAssertEqual(testProvider.cards, [.emailProtection, .defaultApp])
+        XCTAssertEqual(persistor.dailyVisibleStack, [.emailProtection, .defaultApp])
     }
 
     @MainActor
-    func testWhenAdvancedOrderingEnabledThenTopCardRotatesWithinVisibleStack() {
+    func testWhenAdvancedOrderingEnabledThenTopCardRotatesToBackOfFullListAndPullsNextCard() {
         featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
-        persistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection]
+        persistor.orderedCardIDs = [.personalizeBrowser, .sync, .emailProtection, .defaultApp, .addAppToDockMac]
         persistor.setTimesShown(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown, for: .personalizeBrowser)
-        let testProvider = createProvider()
+        let testProvider = createProvider(defaultBrowserIsDefault: false, isAppStoreBuild: false)
 
         triggerNewTabPageView(on: testProvider)
 
-        XCTAssertEqual(testProvider.cards, [.sync, .emailProtection, .personalizeBrowser])
-        XCTAssertEqual(
-            persistor.orderedCardIDs,
-            [.sync, .emailProtection, .personalizeBrowser]
-        )
+        XCTAssertEqual(testProvider.cards, [.sync, .emailProtection, .defaultApp])
+        XCTAssertEqual(persistor.orderedCardIDs, [.sync, .emailProtection, .defaultApp, .addAppToDockMac, .personalizeBrowser])
+        XCTAssertEqual(persistor.dailyVisibleStack, [.sync, .emailProtection, .defaultApp])
     }
 
     @MainActor
-    func testWhenAdvancedOrderingEnabledThenTwoCardStackRotatesInPlace() {
+    func testWhenAdvancedOrderingEnabledThenTwoCardStackRotationPullsFromBacklog() {
         featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
-        persistor.orderedCardIDs = [.sync, .emailProtection, .personalizeBrowser]
+        persistor.orderedCardIDs = [.sync, .emailProtection, .personalizeBrowser, .defaultApp]
+        persistor.dailyVisibleStack = [.sync, .emailProtection]
+        persistor.visibleStackDayIdentifier = 1
         persistor.setTimesDismissed(1, for: .personalizeBrowser)
         persistor.setTimesShown(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown, for: .sync)
-        let testProvider = createProvider()
+        let testProvider = createProvider(defaultBrowserIsDefault: false)
 
         triggerNewTabPageView(on: testProvider)
 
-        XCTAssertEqual(testProvider.cards, [.emailProtection, .sync])
-        XCTAssertEqual(
-            persistor.orderedCardIDs,
-            [.emailProtection, .sync, .personalizeBrowser]
-        )
+        XCTAssertEqual(testProvider.cards, [.emailProtection, .defaultApp])
+        XCTAssertEqual(persistor.orderedCardIDs, [.emailProtection, .defaultApp, .personalizeBrowser, .sync])
     }
 
     @MainActor
-    func testWhenAdvancedOrderingEnabledThenNTPLoadRefillsToThreeCards() {
+    func testWhenAdvancedOrderingEnabledThenSameDayNTPRevisitDoesNotRefillDismissedSlots() {
         featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
         persistor.orderedCardIDs = nil
         let testProvider = createProvider(
@@ -758,11 +755,45 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         triggerNewTabPageView(on: testProvider)
         testProvider.dismiss(.personalizeBrowser)
 
-        XCTAssertEqual(testProvider.cards, [.sync, .emailProtection])
+        XCTAssertEqual(testProvider.cards, [.emailProtection, .defaultApp])
 
         triggerNewTabPageView(on: testProvider)
 
-        XCTAssertEqual(testProvider.cards, [.sync, .emailProtection, .defaultApp])
+        XCTAssertEqual(testProvider.cards, [.emailProtection, .defaultApp])
+    }
+
+    @MainActor
+    func testWhenAdvancedOrderingEnabledThenNewActiveUsageDayRefillsToThreeCards() {
+        featureFlagger.enabledFeatureFlags = [.nextStepsListAdvancedCardOrdering]
+        persistor.orderedCardIDs = nil
+        persistor.firstCardLevel = .level2
+        let mockAppearancePersistor = MockAppearancePreferencesPersistor(
+            continueSetUpCardsLastDemonstrated: Date(),
+            continueSetUpCardsNumberOfDaysDemonstrated: 2
+        )
+        let testAppearancePreferences = AppearancePreferences(
+            persistor: mockAppearancePersistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            dateTimeProvider: { Date() },
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
+        )
+        let testProvider = createProvider(
+            defaultBrowserIsDefault: false,
+            appearancePreferences: testAppearancePreferences,
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true),
+            isAppStoreBuild: false
+        )
+        triggerNewTabPageView(on: testProvider)
+        testProvider.dismiss(.personalizeBrowser)
+
+        XCTAssertEqual(testProvider.cards, [.emailProtection, .defaultApp])
+
+        mockAppearancePersistor.continueSetUpCardsNumberOfDaysDemonstrated = 3
+        triggerNewTabPageView(on: testProvider)
+
+        XCTAssertEqual(testProvider.cards, [.emailProtection, .defaultApp, .youtubeAdBlocking])
+        XCTAssertEqual(persistor.visibleStackDayIdentifier, 3)
     }
 
     @MainActor
@@ -775,8 +806,8 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         )
         triggerNewTabPageView(on: testProvider)
         testProvider.dismiss(.personalizeBrowser)
-        testProvider.dismiss(.sync)
         testProvider.dismiss(.emailProtection)
+        testProvider.dismiss(.defaultApp)
 
         XCTAssertTrue(testProvider.cards.isEmpty)
         XCTAssertFalse(appearancePreferences.continueSetUpCardsClosed)
@@ -811,7 +842,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             isAppStoreBuild: false
         )
         triggerNewTabPageView(on: testProvider)
-        let expectedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection]
+        let expectedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .emailProtection, .defaultApp]
 
         XCTAssertEqual(testProvider.cards, expectedCards)
     }
@@ -824,7 +855,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             isAppStoreBuild: true
         )
         triggerNewTabPageView(on: testProvider)
-        let expectedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection]
+        let expectedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .emailProtection, .defaultApp]
 
         XCTAssertEqual(testProvider.cards, expectedCards)
     }
@@ -862,7 +893,7 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
-        XCTAssertEqual(cards, [.personalizeBrowser, .sync, .emailProtection])
+        XCTAssertEqual(cards, [.personalizeBrowser, .emailProtection, .defaultApp])
     }
 
     func testWhenFirstCardLevelIsLevel1AndDaysGreaterThanOrEqualToMaxDays_WithAdvancedOrderingEnabled_ThenLevel2CardsFirst() throws {
@@ -872,12 +903,14 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testProvider = createProvider(
             defaultBrowserIsDefault: false,
             appearancePreferences: testAppearancePrefs,
-            adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true)
+            adBlockingAvailability: MockAdBlockingAvailability(isFeatureSupported: true, isEnabledByUser: true),
+            isAppStoreBuild: false
         )
         triggerNewTabPageView(on: testProvider)
 
-        XCTAssertEqual(testProvider.cards.first, .defaultApp)
-        XCTAssertEqual(persistor.firstCardLevel, .level2, "firstCardLevel should be updated when swap occurs")
+        XCTAssertEqual(testProvider.cards, [.defaultApp, .youtubeAdBlocking, .addAppToDockMac])
+        XCTAssertEqual(persistor.dailyVisibleStack, [.defaultApp, .youtubeAdBlocking, .addAppToDockMac])
+        XCTAssertEqual(persistor.firstCardLevel, .level2)
     }
 
     func testWhenLevelOrderSwaps_WithAdvancedOrderingEnabled_ThenOrderIsPersisted() {
@@ -892,9 +925,10 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
         triggerNewTabPageView(on: testProvider)
 
-        let expectedCards: [NewTabPageDataModel.CardID] = [.defaultApp, .addAppToDockMac, .youtubeAdBlocking, .bringStuff, .subscription, .personalizeBrowser, .sync, .emailProtection]
+        let expectedCards: [NewTabPageDataModel.CardID] = [.defaultApp, .youtubeAdBlocking, .addAppToDockMac, .bringStuff, .subscription, .personalizeBrowser, .emailProtection, .sync]
 
         XCTAssertEqual(persistor.orderedCardIDs, expectedCards, "Order should be persisted after swap")
+        XCTAssertEqual(testProvider.cards, [.defaultApp, .youtubeAdBlocking, .addAppToDockMac])
     }
 
     func testWhenDefaultOrderIsUsed_WithAdvancedOrderingEnabled_ThenOrderIsPersisted() {
@@ -1211,5 +1245,5 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 extension NewTabPageNextStepsSingleCardProvider {
     static let defaultStandardCards: [NewTabPageDataModel.CardID] = [.emailProtection, .defaultApp, .addAppToDockMac, .bringStuff, .subscription, .personalizeBrowser, .sync]
 
-    static let defaultAdvancedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .sync, .emailProtection, .defaultApp, .addAppToDockMac, .youtubeAdBlocking, .bringStuff, .subscription]
+    static let defaultAdvancedCards: [NewTabPageDataModel.CardID] = [.personalizeBrowser, .emailProtection, .defaultApp, .youtubeAdBlocking, .addAppToDockMac, .bringStuff, .sync, .subscription]
 }

@@ -1,6 +1,7 @@
 appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
+    - release
     - unified_toggle_input
 name: test_contextual_immediate_uti_pre_submit_context
 

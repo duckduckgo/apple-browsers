@@ -49,6 +49,9 @@ protocol ColorsProviding {
 
     // MARK: - Suggestions
     var suggestionsBackgroundColor: NSColor { get }
+    var suggestionsTextColor: NSColor { get }
+    var suggestionsSuffixColor: NSColor { get }
+    var suggestionsHighlightSuffixColor: NSColor { get }
     var suggestionsHighlightBackroundColor: NSColor { get }
     var suggestionsHighlightTextColor: NSColor { get }
 
@@ -114,6 +117,9 @@ final class LegacyColorsProviding: ColorsProviding {
     var activeAddressBarBackgroundColor: NSColor { palette.surfaceTertiary }
     var inactiveAddressBarBackgroundColor: NSColor { palette.surfaceTertiary }
     var suggestionsBackgroundColor: NSColor { palette.surfaceTertiary }
+    var suggestionsTextColor: NSColor { addressBarTextFieldColor }
+    var suggestionsSuffixColor: NSColor { palette.accentPrimary }
+    var suggestionsHighlightSuffixColor: NSColor { palette.accentContentSecondary }
     var suggestionsHighlightBackroundColor: NSColor { palette.accentPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.accentContentPrimary }
     var bannerBackgroundColor: NSColor { palette.surfacePrimary }
@@ -156,6 +162,9 @@ final class CurrentColorsProviding: ColorsProviding {
 
     // MARK: - Suggestions
     var suggestionsBackgroundColor: NSColor { palette.inputActive }
+    var suggestionsTextColor: NSColor { palette.textPrimary }
+    var suggestionsSuffixColor: NSColor { palette.accentTextPrimary }
+    var suggestionsHighlightSuffixColor: NSColor { palette.accentTextPrimary }
     var suggestionsHighlightBackroundColor: NSColor { palette.controlsFillPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.textPrimary }
 

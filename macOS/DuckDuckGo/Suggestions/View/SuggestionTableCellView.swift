@@ -35,18 +35,11 @@ final class SuggestionTableCellView: NSTableCellView {
     }
 
     private enum Constants {
-        static let textColor: NSColor = .suggestionText
-        static let suffixColor: NSColor = NSColor(designSystemColor: .accentTextPrimary)
-        static let burnerSuffixColor: NSColor = .burnerAccent
-        static let iconColor: NSColor = .suggestionIcon
-        static let selectedTintColor: NSColor = NSColor(designSystemColor: .accentContentPrimary)
-
         static let switchToTabExtraSpace: CGFloat = 12 + 6 + 9 + 12
         static let switchToTabSuffixPadding: CGFloat = 8
 
         static let trailingSpace: CGFloat = 8
         static let iconImageViewLeadingSpace: CGFloat = 13
-        static let suggestionTextFieldLeadingSpace: CGFloat = 7
     }
 
     @IBOutlet var iconImageView: NSImageView!
@@ -72,7 +65,7 @@ final class SuggestionTableCellView: NSTableCellView {
 
     private var labelLeadingToShortcutsConstraint: NSLayoutConstraint?
 
-    var theme: ThemeStyleProviding?
+    var theme: ThemeStyleProviding = NSApp.delegateTyped.themeManager.theme
     var suggestion: Suggestion?
     var isAIChatToggleBeingDisplayed: Bool = false
     private(set) var cellStyle: CellStyle = .default
@@ -145,7 +138,9 @@ final class SuggestionTableCellView: NSTableCellView {
     }
 
     override func awakeFromNib() {
-        suffixTextField.textColor = Constants.suffixColor
+        let colorsProvider = theme.colorsProvider
+
+        suffixTextField.textColor = colorsProvider.suggestionsTextColor
         removeButton.toolTip = UserText.removeSuggestionTooltip
         switchToTabLabel.attributedStringValue = Self.switchToTabAttributedString
     }
@@ -249,32 +244,31 @@ final class SuggestionTableCellView: NSTableCellView {
             usesTransparentBox = true
         }
 
+        let colorsProvider = theme.colorsProvider
+        let textColor = isSelected ? colorsProvider.suggestionsHighlightTextColor : colorsProvider.suggestionsTextColor
+        let suffixColor = isSelected ? colorsProvider.suggestionsHighlightSuffixColor : colorsProvider.suggestionsSuffixColor
+
+        textField?.attributedStringValue = attributedString
+        textField?.textColor = textColor
+        suffixTextField.textColor = suffixColor
+        switchToTabLabel.textColor = suffixColor
+        switchToTabArrowView.contentTintColor = suffixColor
+
         if isSelected {
-            textField?.attributedStringValue = attributedString
-            textField?.textColor = Constants.selectedTintColor
-            suffixTextField.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
-            switchToTabLabel.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
-            switchToTabArrowView.contentTintColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
             switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .white.withAlphaComponent(0.09)
         } else {
-            textField?.attributedStringValue = attributedString
-            textField?.textColor = theme?.colorsProvider.addressBarTextFieldColor ?? Constants.textColor
-            switchToTabLabel.textColor = theme?.palette.accentPrimary ?? Constants.textColor
-            switchToTabArrowView.contentTintColor = theme?.palette.accentPrimary ?? Constants.textColor
             switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .buttonMouseOver
-            if isBurner {
-                suffixTextField.textColor = Constants.burnerSuffixColor
-            } else {
-                suffixTextField.textColor = theme?.palette.accentPrimary ?? Constants.suffixColor
-            }
         }
 
         updateKeyboardShortcutVisibility()
     }
 
     private func updateImageViews() {
-        iconImageView.contentTintColor = isSelected ? Constants.selectedTintColor : Constants.iconColor
-        removeButton.contentTintColor = isSelected ? Constants.selectedTintColor : Constants.iconColor
+        let colorsProvider = theme.colorsProvider
+        let tintColor = isSelected ? colorsProvider.suggestionsHighlightTextColor : colorsProvider.suggestionsTextColor
+
+        iconImageView.contentTintColor = tintColor
+        removeButton.contentTintColor = tintColor
     }
 
     func updateDeleteImageViewVisibility() {
@@ -347,12 +341,12 @@ final class SuggestionTableCellView: NSTableCellView {
             }
         }
 
-        var iconLeadingPadding = theme?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
+        var iconLeadingPadding = theme.addressBarStyleProvider.suggestionIconViewLeadingPadding
         if isAIChatToggleBeingDisplayed {
             iconLeadingPadding += 8
         }
         iconImageViewLeadingConstraint.constant = iconLeadingPadding
-        searchSuggestionTextFieldLeadingConstraint.constant = theme?.addressBarStyleProvider.suggestionTextFieldLeadingPadding ?? Constants.suggestionTextFieldLeadingSpace
+        searchSuggestionTextFieldLeadingConstraint.constant = theme.addressBarStyleProvider.suggestionTextFieldLeadingPadding
 
         super.layout()
     }

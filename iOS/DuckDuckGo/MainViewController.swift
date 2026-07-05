@@ -1081,7 +1081,7 @@ class MainViewController: UIViewController {
         Task {
             if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
                canShowVPNInUI {
-                segueToVPN(scrollToStrictRouting: scrollToStrictRouting)
+                segueToVPN(source: .init(subscriptionFunnelOrigin: origin), scrollToStrictRouting: scrollToStrictRouting)
             } else {
                 segueToDuckDuckGoSubscription(origin: origin.rawValue)
             }
@@ -6136,7 +6136,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestSettingsToVPN(_ tab: TabViewController) {
-        segueToVPN()
+        segueToVPN(source: .browserMenu)
     }
 
     func tabDidRequestSettingsToAIChat(_ tab: TabViewController) {

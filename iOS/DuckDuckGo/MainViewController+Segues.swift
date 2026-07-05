@@ -29,6 +29,7 @@ import Subscription
 import DDGSync
 import os.log
 import DataBrokerProtection_iOS
+import VPN
 
 extension MainViewController {
 
@@ -287,12 +288,12 @@ extension MainViewController {
         }, deepLinkTarget: .subscriptionWelcome)
     }
 
-    func segueToVPN(scrollToStrictRouting: Bool = false) {
+    func segueToVPN(source: VPNConnectionWideEventData.ScreenSource = .appSettings, scrollToStrictRouting: Bool = false) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .netP(scrollToStrictRouting: scrollToStrictRouting))
-        }, deepLinkTarget: .netP(scrollToStrictRouting: scrollToStrictRouting))
+            $0.triggerDeepLinkNavigation(to: .netP(source: source, scrollToStrictRouting: scrollToStrictRouting))
+        }, deepLinkTarget: .netP(source: source, scrollToStrictRouting: scrollToStrictRouting))
     }
 
     func segueToDataBrokerProtection() {

@@ -26,7 +26,7 @@ public class VPNConnectionWideEventData: WideEventData {
         featureName: "vpn-connection",
         mobileMetaType: "ios-vpn-connection",
         desktopMetaType: "macos-vpn-connection",
-        version: "1.2.0"
+        version: "1.3.0"
     )
 
     public static let connectionTimeout: TimeInterval = .minutes(15)
@@ -40,6 +40,8 @@ public class VPNConnectionWideEventData: WideEventData {
     public var startupMethod: StartupMethod
     public var isSetup: SetupState
     public var onboardingStatus: MacOSOnboardingStatus?
+    public var accountStatus: AccountStatus?
+    public var screenSource: ScreenSource?
 
     // Overall duration
     public var overallDuration: WideEvent.MeasuredInterval?
@@ -62,6 +64,8 @@ public class VPNConnectionWideEventData: WideEventData {
                 startupMethod: StartupMethod,
                 isSetup: SetupState = .unknown,
                 onboardingStatus: MacOSOnboardingStatus? = nil,
+                accountStatus: AccountStatus? = nil,
+                screenSource: ScreenSource? = nil,
                 overallDuration: WideEvent.MeasuredInterval? = nil,
                 browserStartDuration: WideEvent.MeasuredInterval? = nil,
                 controllerStartDuration: WideEvent.MeasuredInterval? = nil,
@@ -79,6 +83,8 @@ public class VPNConnectionWideEventData: WideEventData {
         self.startupMethod = startupMethod
         self.isSetup = isSetup
         self.onboardingStatus = onboardingStatus
+        self.accountStatus = accountStatus
+        self.screenSource = screenSource
         self.overallDuration = overallDuration
 
         // Per-step latencies
@@ -148,6 +154,37 @@ extension VPNConnectionWideEventData {
         case unknown
     }
 
+    public enum AccountState: String, Codable, CaseIterable {
+        case yes
+        case no
+        case unknown
+    }
+
+    public struct AccountStatus: Codable, Equatable {
+        public let isSignedIn: AccountState
+        public let hasVPNEntitlement: AccountState
+
+        public init(isSignedIn: AccountState, hasVPNEntitlement: AccountState) {
+            self.isSignedIn = isSignedIn
+            self.hasVPNEntitlement = hasVPNEntitlement
+        }
+    }
+
+    public enum ScreenSource: String, Codable, CaseIterable, Equatable {
+        case appSettings = "app_settings"
+        case subscriptionSettings = "subscription_settings"
+        case subscriptionEmail = "subscription_email"
+        case subscriptionFlow = "subscription_flow"
+        case browserMenu = "browser_menu"
+        case toolbar
+        case addressBar = "address_bar"
+        case widget
+        case shortcut
+        case notification
+        case vpnAccessRevokedAlert = "vpn_access_revoked_alert"
+        case unknown
+    }
+
     public enum StatusReason: String, Codable, CaseIterable {
         case partialData = "partial_data"
         case timeout
@@ -185,6 +222,9 @@ extension VPNConnectionWideEventData {
             (WideEventParameter.VPNConnectionFeature.startupMethod, startupMethod.rawValue),
             (WideEventParameter.VPNConnectionFeature.isSetup, isSetup.rawValue),
             (WideEventParameter.VPNConnectionFeature.onboardingStatus, onboardingStatus?.rawValue),
+            (WideEventParameter.VPNConnectionFeature.accountIsSignedIn, accountStatus?.isSignedIn.rawValue),
+            (WideEventParameter.VPNConnectionFeature.accountHasVPNEntitlement, accountStatus?.hasVPNEntitlement.rawValue),
+            (WideEventParameter.VPNConnectionFeature.screenSource, screenSource?.rawValue),
             (WideEventParameter.VPNConnectionFeature.latency, overallDuration?.intValue(.noBucketing)),
         ])
 
@@ -249,6 +289,9 @@ extension WideEventParameter {
         static let startupMethod = "feature.data.ext.startup_method"
         static let onboardingStatus = "feature.data.ext.onboarding_status"
         static let isSetup = "feature.data.ext.is_setup"
+        static let accountIsSignedIn = "feature.data.ext.account_is_signed_in"
+        static let accountHasVPNEntitlement = "feature.data.ext.account_has_vpn_entitlement"
+        static let screenSource = "feature.data.ext.vpn_screen_source"
         static let latency = "feature.data.ext.latency_ms"
 
         static func latency(at step: VPNConnectionWideEventData.Step) -> String {

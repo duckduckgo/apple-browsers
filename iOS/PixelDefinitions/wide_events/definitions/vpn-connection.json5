@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "ios-vpn-connection",
-            "version": "2.0"
+            "version": "3.0"
         },
         "feature": {
             "name": "vpn-connection",
@@ -35,6 +35,34 @@
                         "type": "string",
                         "description": "VPN onboarding state at connection time (macOS). `needs_to_allow_extension` and `needs_to_allow_vpn_configuration` mean onboarding was still incomplete; `completed` means onboarding had finished; `unknown` if it could not be determined.",
                         "enum": ["needs_to_allow_extension", "needs_to_allow_vpn_configuration", "completed", "unknown"]
+                    },
+                    "account_is_signed_in": {
+                        "type": "string",
+                        "description": "Whether the user is signed into a Privacy Pro account when the VPN connection flow starts.",
+                        "enum": ["yes", "no", "unknown"]
+                    },
+                    "account_has_vpn_entitlement": {
+                        "type": "string",
+                        "description": "Whether the account has the VPN entitlement when the VPN connection flow starts.",
+                        "enum": ["yes", "no", "unknown"]
+                    },
+                    "vpn_screen_source": {
+                        "type": "string",
+                        "description": "The app surface that opened the VPN screen before the connection flow.",
+                        "enum": [
+                            "app_settings",
+                            "subscription_settings",
+                            "subscription_email",
+                            "subscription_flow",
+                            "browser_menu",
+                            "toolbar",
+                            "address_bar",
+                            "widget",
+                            "shortcut",
+                            "notification",
+                            "vpn_access_revoked_alert",
+                            "unknown"
+                        ]
                     },
                     "latency_ms": {
                         "type": "integer",

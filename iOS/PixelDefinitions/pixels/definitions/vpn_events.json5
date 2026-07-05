@@ -112,6 +112,37 @@
                 "description": "Is the current flow setup or reconnection",
                 "enum": ["yes", "no", "unknown", "true", "false"]
             },
+            {
+                "key": "feature.data.ext.account_is_signed_in",
+                "type": "string",
+                "description": "Whether the user is signed into a Privacy Pro account when the VPN connection flow starts",
+                "enum": ["yes", "no", "unknown"]
+            },
+            {
+                "key": "feature.data.ext.account_has_vpn_entitlement",
+                "type": "string",
+                "description": "Whether the account has the VPN entitlement when the VPN connection flow starts",
+                "enum": ["yes", "no", "unknown"]
+            },
+            {
+                "key": "feature.data.ext.vpn_screen_source",
+                "type": "string",
+                "description": "The app surface that opened the VPN screen before the connection flow",
+                "enum": [
+                    "app_settings",
+                    "subscription_settings",
+                    "subscription_email",
+                    "subscription_flow",
+                    "browser_menu",
+                    "toolbar",
+                    "address_bar",
+                    "widget",
+                    "shortcut",
+                    "notification",
+                    "vpn_access_revoked_alert",
+                    "unknown"
+                ]
+            },
             // Overall latency
             {
                 "key": "feature.data.ext.latency_ms",

@@ -7,10 +7,11 @@ name: test_contextual_immediate_uti_manual_sticky_context
 
 ---
 
-# With the immediate contextual UTI flag on and automatic attachment off, manual
-# context is sticky across navigation before and after the first prompt. Post-submit
-# navigation with no pending chip shows the add affordance; navigation with a pending
-# manually attached chip keeps that chip attached.
+# With the immediate contextual UTI flag on and automatic attachment off, empty
+# context, removed context, and manual context are sticky across navigation before
+# and after the first prompt. Post-submit navigation with no pending chip shows the
+# add affordance; navigation with a pending manually attached chip keeps that chip
+# attached.
 
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
@@ -51,6 +52,11 @@ name: test_contextual_immediate_uti_manual_sticky_context
     timeout: 10000
 
 - tapOn:
+    id: "AIChat.ContextChip.RemoveButton"
+- assertVisible:
+    id: "AIChat.ContextChip.Placeholder"
+
+- tapOn:
     id: "AIChat.ContextualSheet.CloseButton"
 - waitForAnimationToEnd:
     timeout: 3000
@@ -60,6 +66,31 @@ name: test_contextual_immediate_uti_manual_sticky_context
 - inputText: "https://privacy-test-pages.site/security/address-bar-spoofing/index.html"
 - pressKey: Enter
 - assertVisible: ".*Address Bar Spoofing.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible:
+    id: "AIChat.ContextChip.Placeholder"
+
+- tapOn:
+    id: "AIChat.ContextChip.Placeholder"
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/privacy-protections/geolocation/"
+- pressKey: Enter
+- assertVisible: ".*Geolocation.*"
 
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"

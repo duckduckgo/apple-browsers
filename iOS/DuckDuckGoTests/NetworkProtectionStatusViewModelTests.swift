@@ -220,13 +220,33 @@ import Subscription
         XCTAssertNil(viewModel.error)
     }
 
+    func testControllerError_isNotClearedBySessionErrorObserverEmittingNil() async {
+        let controllerErrorSubject = CurrentValueSubject<String?, Never>(nil)
+        let errorObserver = MockConnectionErrorObserver()
+        let viewModel = makeViewModel(controllerErrorPublisher: controllerErrorSubject.eraseToAnyPublisher(),
+                                      errorObserver: errorObserver)
+
+        controllerErrorSubject.send(UserText.vpnErrorAuthenticationFailed)
+        await waitFor(condition: viewModel.error != nil)
+
+        // A session status change that resolves to no error must not clear a live controller start failure.
+        errorObserver.subject.send(nil)
+
+        // Give the sink a chance to run, then confirm the controller error is still showing.
+        await waitFor(condition: viewModel.error?.message == UserText.vpnErrorAuthenticationFailed)
+        XCTAssertEqual(viewModel.error?.title, UserText.netPStatusViewErrorConnectionFailedTitle)
+        XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
+    }
+
     // MARK: - Helpers
 
-    private func makeViewModel(controllerErrorPublisher: AnyPublisher<String?, Never>) -> NetworkProtectionStatusViewModel {
+    private func makeViewModel(controllerErrorPublisher: AnyPublisher<String?, Never>,
+                               errorObserver: ConnectionErrorObserver = MockConnectionErrorObserver()) -> NetworkProtectionStatusViewModel {
         NetworkProtectionStatusViewModel(tunnelController: tunnelController,
                                          settings: VPNSettings(defaults: .networkProtectionGroupDefaults),
                                          statusObserver: statusObserver,
                                          serverInfoObserver: serverInfoObserver,
+                                         errorObserver: errorObserver,
                                          controllerErrorPublisher: controllerErrorPublisher,
                                          locationListRepository: MockNetworkProtectionLocationListRepository(),
                                          enablesUnifiedFeedbackForm: false)

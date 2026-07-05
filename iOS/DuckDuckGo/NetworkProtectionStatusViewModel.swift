@@ -123,6 +123,12 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     @Published public var shouldShowError: Bool = false
     private var errorTask: Task<Void, Never>?
 
+    // The banner shows a single error, but two independent sources feed it: controller (pre-session)
+    // start failures and session errors. We track each separately so a session update that resolves to
+    // no error can't clear a live start failure. See `refreshErrorBanner()` for the precedence rule.
+    private var controllerErrorMessage: String?
+    private var sessionErrorItem: ErrorItem?
+
     // MARK: Header
 
     @Published public var statusImageID: String
@@ -250,6 +256,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 case .connected:
                     self?.isNetPEnabled = true
                     self?.errorTask?.cancel()
+                    self?.controllerErrorMessage = nil
+                    self?.sessionErrorItem = nil
                     self?.error = nil
                 case .connecting:
                     self?.isNetPEnabled = true
@@ -394,7 +402,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 guard let self else { return }
 
                 guard let errorMessage else {
-                    self.error = nil
+                    self.sessionErrorItem = nil
+                    self.refreshErrorBanner()
                     return
                 }
 
@@ -403,7 +412,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                     let errorItem = await self.createErrorItem(fallbackMessage: errorMessage)
                     guard !Task.isCancelled else { return }
                     await MainActor.run {
-                        self.error = errorItem
+                        self.sessionErrorItem = errorItem
+                        self.refreshErrorBanner()
                     }
                 }
             }
@@ -414,7 +424,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     ///
     /// These failures abort before a tunnel session exists, so `errorObserver` (which reads errors
     /// through the session) never sees them. The controller maps them to the existing VPN error copy;
-    /// here we only wrap the message in an `ErrorItem`, or clear it when the controller reports `nil`.
+    /// here we store the message and recompute the banner, or clear it when the controller reports `nil`.
     private func setUpControllerErrorPublisher() {
         controllerErrorPublisher
             .receive(on: DispatchQueue.main)
@@ -422,13 +432,29 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 guard let self else { return }
 
                 guard let message else {
-                    self.error = nil
+                    // A nil controller message signals a fresh connection attempt; clear any stale error
+                    // from a previous attempt (session errors included) so the banner starts clean.
+                    self.controllerErrorMessage = nil
+                    self.sessionErrorItem = nil
+                    self.refreshErrorBanner()
                     return
                 }
 
-                self.error = ErrorItem(title: UserText.netPStatusViewErrorConnectionFailedTitle, message: message)
+                self.controllerErrorMessage = message
+                self.refreshErrorBanner()
             }
             .store(in: &cancellables)
+    }
+
+    /// Recomputes the single banner error from the two independent sources. Controller (pre-session)
+    /// start failures take precedence: only when there is no controller error do we fall back to the
+    /// session error, so a session update resolving to no error can't clear a live start failure.
+    private func refreshErrorBanner() {
+        if let controllerErrorMessage {
+            error = ErrorItem(title: UserText.netPStatusViewErrorConnectionFailedTitle, message: controllerErrorMessage)
+        } else {
+            error = sessionErrorItem
+        }
     }
 
     private func createErrorItem(fallbackMessage: String) async -> ErrorItem? {

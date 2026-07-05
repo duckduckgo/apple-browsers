@@ -64,3 +64,46 @@ final class FloatingUIManagerTests: XCTestCase {
         XCTAssertFalse(manager.isFloatingUIEnabled)
     }
 }
+
+final class FloatingUILayoutPolicyTests: XCTestCase {
+
+    func testWhenTopAddressBarThenAdditionalSafeAreaInsetsApplyOmniBarHeightToTop() {
+        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
+            addressBarPosition: .top,
+            isUnifiedToggleInputAffectingLayout: false,
+            omniBarHeight: 52,
+            toolbarHeight: 44
+        )
+
+        XCTAssertEqual(insets, UIEdgeInsets(top: 52, left: 0, bottom: 0, right: 0))
+    }
+
+    func testWhenBottomAddressBarThenAdditionalSafeAreaInsetsApplyToolbarHeightToBottom() {
+        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
+            addressBarPosition: .bottom,
+            isUnifiedToggleInputAffectingLayout: false,
+            omniBarHeight: 52,
+            toolbarHeight: 44
+        )
+
+        XCTAssertEqual(insets, UIEdgeInsets(top: 0, left: 0, bottom: 44, right: 0))
+    }
+
+    func testWhenUnifiedToggleInputAffectsLayoutThenInsetsAreZero() {
+        let topInsets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
+            addressBarPosition: .top,
+            isUnifiedToggleInputAffectingLayout: true,
+            omniBarHeight: 52,
+            toolbarHeight: 44
+        )
+        XCTAssertEqual(topInsets, .zero)
+
+        let bottomInsets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
+            addressBarPosition: .bottom,
+            isUnifiedToggleInputAffectingLayout: true,
+            omniBarHeight: 52,
+            toolbarHeight: 44
+        )
+        XCTAssertEqual(bottomInsets, .zero)
+    }
+}

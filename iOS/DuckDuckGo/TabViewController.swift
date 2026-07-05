@@ -903,34 +903,31 @@ class TabViewController: UIViewController {
             borderView.isHidden = true
             borderView.isTopVisible = false
             borderView.isBottomVisible = false
-            updateFloatingTopContentInset(for: barsVisibilityPercent)
+            updateFloatingUISafeAreaInsets()
         } else {
             borderView.isHidden = false
             borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         }
     }
 
-    /// In floating top mode the web content spans the full height behind the glass omnibar. Inset
-    /// the scroll view so content rests below the bar at rest and underflows it on scroll. The inset
-    /// scales with `barsVisibilityPercent` so it collapses to zero in lock-step as the bar hides.
-    private func updateFloatingTopContentInset(for barsVisibilityPercent: CGFloat) {
-        let topInset: CGFloat
-        // AI tabs with the unified toggle input manage their own top layout (the content container
-        // stays anchored below the chrome), so adding a top inset there would double-offset.
-        let isUnifiedToggleInputAffectingTopLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        if FloatingUILayoutPolicy.shouldApplyFloatingTopContentInset(
-            isFloatingUIEnabled: true,
+    /// In floating UI mode the web view spans full-screen behind the glass chrome. Communicate the
+    /// chrome-obscured region to WebKit via `additionalSafeAreaInsets` so scrollable content rests
+    /// below the omnibar / above the toolbar and, crucially, so page `position: fixed` elements are
+    /// laid out within the unobscured region instead of behind the chrome. The inset is held constant
+    /// so that when the bars hide on scroll their space is retained and the floating domain capsule
+    /// occupies it (matching Safari), rather than the content jumping up behind the capsule.
+    private func updateFloatingUISafeAreaInsets() {
+        // AI tabs with the unified toggle input manage their own top/bottom layout (the content
+        // container stays anchored to the chrome), so adding insets there would double-offset.
+        let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
+        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
             addressBarPosition: appSettings.currentAddressBarPosition,
-            isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingTopLayout
-        ) {
-            let omniBarHeight = chromeDelegate?.omniBar.barView.expectedHeight ?? 0
-            topInset = omniBarHeight * barsVisibilityPercent
-        } else {
-            topInset = 0
-        }
-        guard webView.scrollView.contentInset.top != topInset else { return }
-        webView.scrollView.contentInset.top = topInset
-        webView.scrollView.verticalScrollIndicatorInsets.top = topInset
+            isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingLayout,
+            omniBarHeight: chromeDelegate?.omniBar.barView.expectedHeight ?? 0,
+            toolbarHeight: chromeDelegate?.toolbarHeight ?? 0
+        )
+        guard additionalSafeAreaInsets != insets else { return }
+        additionalSafeAreaInsets = insets
     }
 
     private func observeNetPConnectionStatusChanges() {

@@ -18,6 +18,7 @@
 //
 
 import Core
+import UIKit
 
 enum FloatingUILayoutPolicy {
 
@@ -25,6 +26,29 @@ enum FloatingUILayoutPolicy {
                                                    addressBarPosition: AddressBarPosition,
                                                    isUnifiedToggleInputAffectingLayout: Bool) -> Bool {
         isFloatingUIEnabled && addressBarPosition == .top && !isUnifiedToggleInputAffectingLayout
+    }
+
+    /// Additional safe-area insets applied to the web view's controller in floating UI mode so WebKit
+    /// treats the region covered by the glass chrome as obscured. This lays out page `position: fixed`
+    /// elements below the top omnibar / above the bottom toolbar (matching Safari) and offsets
+    /// scrollable content to match.
+    ///
+    /// The inset is held constant regardless of chrome visibility: when the bars hide on scroll their
+    /// space is retained and the floating domain capsule occupies it (matching Safari), so page content
+    /// stays put instead of jumping. Keeping it constant also avoids re-laying-out fixed elements on
+    /// every scroll frame. Returns `.zero` while the unified toggle input owns the layout, since the
+    /// content is anchored to the chrome there.
+    static func webViewAdditionalSafeAreaInsets(addressBarPosition: AddressBarPosition,
+                                                isUnifiedToggleInputAffectingLayout: Bool,
+                                                omniBarHeight: CGFloat,
+                                                toolbarHeight: CGFloat) -> UIEdgeInsets {
+        guard !isUnifiedToggleInputAffectingLayout else { return .zero }
+        switch addressBarPosition {
+        case .top:
+            return UIEdgeInsets(top: omniBarHeight, left: 0, bottom: 0, right: 0)
+        case .bottom:
+            return UIEdgeInsets(top: 0, left: 0, bottom: toolbarHeight, right: 0)
+        }
     }
 
     static func shouldHostOmnibarInFloatingToolbar(isFloatingUIEnabled: Bool,

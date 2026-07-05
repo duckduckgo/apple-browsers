@@ -101,8 +101,15 @@ extension TabViewController {
         rootView.addSubview(containerStackView)
 
         let safeArea = rootView.safeAreaLayoutGuide
+        // In floating UI mode the web view spans full-screen and underflows the glass chrome, so its
+        // top is pinned to the screen edge rather than the safe area. The chrome-obscured region is
+        // instead communicated to WebKit via `additionalSafeAreaInsets` (see updateFloatingUISafeAreaInsets)
+        // so that page `position: fixed` elements rest below the omnibar / above the toolbar.
+        let containerStackViewTop = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+            ? containerStackView.topAnchor.constraint(equalTo: rootView.topAnchor)
+            : containerStackView.topAnchor.constraint(equalTo: safeArea.topAnchor)
         NSLayoutConstraint.activate([
-            containerStackView.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            containerStackViewTop,
             containerStackView.leadingAnchor.constraint(equalTo: rootView.leadingAnchor),
             containerStackView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor),
             containerStackView.bottomAnchor.constraint(equalTo: rootView.bottomAnchor)

@@ -45,7 +45,7 @@ final class FloatingDomainCapsuleController {
     private var widthConstraint: NSLayoutConstraint?
     private var heightConstraint: NSLayoutConstraint?
 
-    private lazy var button: UIButton = {
+    lazy var button: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isHidden = true

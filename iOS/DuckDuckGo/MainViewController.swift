@@ -792,6 +792,8 @@ class MainViewController: UIViewController {
         if #available(iOS 26, *), isPad {
             view.setNeedsUpdateConstraints()
         }
+
+        updateScrollInteractionIfNeeded()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -2347,6 +2349,26 @@ class MainViewController: UIViewController {
         }
 
         refreshControls()
+    }
+
+    var bottomBarInteraction: UIInteraction?
+    var topBarInteraction: UIInteraction?
+    var topCapsuleInteraction: UIInteraction?
+
+    @available(iOS 26, *)
+    func attachScrollViewInteractionToView(_ view: UIView,
+                                           onEdge edge: UIRectEdge,
+                                           removingExistingInteraction existingInteraction: UIInteraction?) -> UIInteraction? {
+        if let existingInteraction {
+            view.removeInteraction(existingInteraction)
+        }
+
+        let interaction = UIScrollEdgeElementContainerInteraction()
+        interaction.scrollView = currentTab?.webView?.scrollView
+        assert(interaction.scrollView != nil)
+        interaction.edge = edge
+        view.addInteraction(interaction)
+        return interaction
     }
 
     private func addToContentContainer(controller: UIViewController) {
@@ -4523,7 +4545,29 @@ extension MainViewController: OmniBarDelegate {
     private func toggleAddressBarLocation() {
         let current = appSettings.currentAddressBarPosition
         appSettings.currentAddressBarPosition = current == .top ? .bottom : .top
+
+        updateScrollInteractionIfNeeded()
+
         self.view.layoutIfNeeded()
+    }
+
+    private func updateScrollInteractionIfNeeded() {
+        guard #available(iOS 26, *) else { return }
+        guard floatingUIManager.isFloatingUIEnabled else { return }
+
+        bottomBarInteraction = attachScrollViewInteractionToView(viewCoordinator.toolbar, onEdge: .bottom, removingExistingInteraction: bottomBarInteraction)
+        
+        if appSettings.currentAddressBarPosition == .top {
+            topBarInteraction = attachScrollViewInteractionToView(omniBar.barView, onEdge: .top, removingExistingInteraction: topBarInteraction)
+            topCapsuleInteraction = attachScrollViewInteractionToView(floatingDomainCapsuleController.button, onEdge: .top, removingExistingInteraction: topCapsuleInteraction)
+        } else {
+            if let topBarInteraction {
+                omniBar.barView.removeInteraction(topBarInteraction)
+            }
+            if let topCapsuleInteraction {
+                floatingDomainCapsuleController.button.removeInteraction(topCapsuleInteraction)
+            }
+        }
     }
 
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {

@@ -202,17 +202,11 @@ final class UnifiedToggleInputToolbarView: UIView {
         action: nil
     )
 
-    private(set) lazy var imageButton: UIButton = {
-        let button = makeToolButton(
-            image: DesignSystemImages.Glyphs.Size24.attach,
-            accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
-            action: nil
-        )
-        if #available(iOS 16.0, *) {
-            button.preferredMenuElementOrder = .fixed
-        }
-        return button
-    }()
+    private(set) lazy var imageButton: UIButton = makeToolButton(
+        image: DesignSystemImages.Glyphs.Size24.attach,
+        accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel,
+        action: nil
+    )
 
     private lazy var reasoningButton: UIButton = {
         let button = makeToolButton(

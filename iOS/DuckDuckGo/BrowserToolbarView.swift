@@ -23,7 +23,6 @@ import UIKit
 final class BrowserToolbarView: UIView {
 
     static let extendedHitWidth: CGFloat = 45
-    static let buttonsHeight: CGFloat = 56
     static let floatingButtonsHeight: CGFloat = 62
 
     /// Non-floating (legacy) buttons-only bar height, matching the original `UIToolbar` on `main`.
@@ -115,7 +114,7 @@ final class BrowserToolbarView: UIView {
     }()
     
     private lazy var omnibarHeightConstraint = omnibarContainer.heightAnchor.constraint(equalToConstant: 0)
-    private lazy var buttonsHeightConstraint = materialBackgroundView.heightAnchor.constraint(equalToConstant: Self.buttonsHeight)
+    private lazy var buttonsHeightConstraint = materialBackgroundView.heightAnchor.constraint(equalToConstant: Self.legacyButtonsHeight)
     private lazy var expandedContentHeightConstraint = expandedContentContainer.heightAnchor.constraint(equalToConstant: 0)
     private lazy var materialBackgroundTopConstraint = materialBackgroundView.topAnchor.constraint(equalTo: topAnchor, constant: Self.barOuterInsets.top)
     private lazy var contentStackBottomConstraint = contentStack.bottomAnchor.constraint(equalTo: materialBackgroundView.contentView.bottomAnchor, constant: -Self.verticalContentPadding)
@@ -182,10 +181,6 @@ final class BrowserToolbarView: UIView {
         materialBackgroundLeadingConstraint = materialBackgroundView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.legacyBarOuterInsets.left)
         materialBackgroundTrailingConstraint = materialBackgroundView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.legacyBarOuterInsets.right)
         materialBackgroundBottomConstraint = materialBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Self.legacyBarOuterInsets.bottom)
-
-        if isFloatingStyleEnabled {
-            buttonsHeightConstraint.constant = Self.floatingButtonsHeight
-        }
 
         NSLayoutConstraint.activate([
             materialBackgroundLeadingConstraint,

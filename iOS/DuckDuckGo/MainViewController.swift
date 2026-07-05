@@ -221,6 +221,10 @@ class MainViewController: UIViewController {
     private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
         self?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
     }
+    /// The last true chrome-visibility fraction requested (1 = fully shown, 0 = hidden). Tracked
+    /// separately from container alpha because the floating capsule morph drives chrome alpha with a
+    /// non-linear handoff ramp, so alpha is no longer a reliable source for the real percent.
+    private var lastChromeVisibilityPercent: CGFloat = 1
     private var lastForegroundEntryDate = Date.distantPast
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
     private var currentNTPEscapeHatch: EscapeHatchModel?
@@ -1318,7 +1322,7 @@ class MainViewController: UIViewController {
         omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
-        updateFloatingDomainCapsuleVisibility(for: currentBarsVisibility)
+        updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
     }
 
     private func currentFloatingDomainText() -> String? {
@@ -1337,7 +1341,47 @@ class MainViewController: UIViewController {
                                                isMinimalChromeLayout: isInMinimalChromeLayout,
                                                domain: currentFloatingDomainText(),
                                                barsVisibilityPercent: barsVisibilityPercent,
+                                               expandedFrame: floatingBarExpandedFrame(),
+                                               reduceMotion: UIAccessibility.isReduceMotionEnabled,
                                                in: view)
+    }
+
+    /// True when the floating domain capsule morph is driving the chrome transition (floating UI on,
+    /// not minimal chrome / unified toggle input / AI tab).
+    private var isFloatingCapsuleActive: Bool {
+        FloatingUILayoutPolicy.shouldShowFloatingDomainCapsule(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            isUnifiedToggleInputActive: unifiedToggleInputCoordinator?.isActive == true,
+            isAITab: currentTab?.isAITab == true,
+            isMinimalChromeLayout: isInMinimalChromeLayout
+        )
+    }
+
+    /// The bar's stable resting rect (in `view` coordinates) that the floating domain capsule morphs
+    /// from/to. Computed from layout metrics rather than the live bar frame so it stays fixed while
+    /// the bar slides off-screen during the transition.
+    private func floatingBarExpandedFrame() -> CGRect {
+        let expectedHeight = viewCoordinator.omniBar.barView.expectedHeight
+        let width = viewCoordinator.omniBar.barView.frame.width
+        let centerX = view.bounds.midX
+        let centerY: CGFloat
+        switch appSettings.currentAddressBarPosition {
+        case .top:
+            centerY = view.safeAreaInsets.top + expectedHeight / 2
+        case .bottom:
+            centerY = view.bounds.maxY - view.safeAreaInsets.bottom - expectedHeight / 2
+        }
+        return CGRect(x: centerX - width / 2, y: centerY - expectedHeight / 2, width: width, height: expectedHeight)
+    }
+
+    /// Alpha for the real chrome (nav bar / tabs / toolbar) during a bars transition. In the floating
+    /// capsule morph the chrome stays hidden through the resize band and only fades in over
+    /// `[handoffStart, 1]`, so the morph pill owns the visible transition. Everywhere else it tracks
+    /// `percent` linearly (unchanged behaviour).
+    private func chromeAlpha(for percent: CGFloat) -> CGFloat {
+        guard isFloatingCapsuleActive, !UIAccessibility.isReduceMotionEnabled else { return percent }
+        let handoffStart = FloatingDomainCapsuleController.handoffStart
+        return max(0, min(1, (percent - handoffStart) / (1 - handoffStart)))
     }
 
     private func shouldResetNavBarContainerBottomForTopPosition() -> Bool {
@@ -2425,7 +2469,7 @@ class MainViewController: UIViewController {
                 viewCoordinator.hideAITabChrome()
                 applyUnifiedInputChromeBackground(.standardChrome)
             }
-            updateFloatingDomainCapsuleVisibility(for: currentBarsVisibility)
+            updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
             return
         }
 
@@ -2459,7 +2503,7 @@ class MainViewController: UIViewController {
         }
 
         updateBrowsingMenuHeaderDataSource()
-        updateFloatingDomainCapsuleVisibility(for: currentBarsVisibility)
+        updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
     }
 
     private func updateBrowsingMenuHeaderDataSource() {
@@ -3739,6 +3783,8 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
+        lastChromeVisibilityPercent = percent
+
         if percent < 1 {
             if omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true {
                 dismissOmniBar()
@@ -3758,9 +3804,10 @@ extension MainViewController: BrowserChromeDelegate {
             self.currentTab?.updateWebViewBottomAnchor(for: percent)
             self.updateFloatingTopNewTabPageInset(for: percent)
 
-            self.viewCoordinator.navigationBarContainer.alpha = percent
-            self.viewCoordinator.tabBarContainer.alpha = percent
-            self.viewCoordinator.toolbar.alpha = percent
+            let chromeAlpha = self.chromeAlpha(for: percent)
+            self.viewCoordinator.navigationBarContainer.alpha = chromeAlpha
+            self.viewCoordinator.tabBarContainer.alpha = chromeAlpha
+            self.viewCoordinator.toolbar.alpha = chromeAlpha
             self.updateFloatingDomainCapsuleVisibility(for: percent)
             
             // Post notification only when bars are fully shown or hidden
@@ -3792,6 +3839,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func setNavigationBarHidden(_ hidden: Bool) {
+        lastChromeVisibilityPercent = hidden ? 0 : 1
         if hidden { hideKeyboard() }
         if isFloatingUIEnabled {
             viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()

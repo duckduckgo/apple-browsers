@@ -267,10 +267,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
-    private var textAreaVerticalPadding: CGFloat {
-        isFloatingUIEnabled ? Metrics.floatingTextAreaVerticalPaddingRegularSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
-    }
-
     var isShowingSeparator: Bool = false {
         didSet {
             searchAreaView.separatorView.isHidden = !isShowingSeparator
@@ -557,7 +553,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private(set) var leadingButtonsContainer = LeadingButtonsContainer()
 
     final class TrailingButtonsContainer: UIStackView { }
-    private(set) var trailingButtonsContainer = UIStackView()
+    private(set) var trailingButtonsContainer = TrailingButtonsContainer()
 
     private let searchAreaView = DefaultOmniBarSearchView()
     private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
@@ -737,11 +733,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         readableSearchAreaWidth.priority = .init(999)
         readableSearchAreaWidth.isActive = false
 
-        let stackViewTop = textAreaVerticalPadding
-        let textAreaTopPaddingConstraint = stackView.topAnchor.constraint(equalTo: topAnchor, constant: stackViewTop)
-
-        let stackViewBottom = textAreaVerticalPadding
-        let textAreaBottomPaddingConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -stackViewBottom)
+        let textAreaTopPaddingConstraint = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.textAreaVerticalPaddingRegularSpacing)
+        let textAreaBottomPaddingConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.textAreaVerticalPaddingRegularSpacing)
 
         readableSearchAreaWidthConstraint = readableSearchAreaWidth
         self.textAreaTopPaddingConstraint = textAreaTopPaddingConstraint
@@ -1096,8 +1089,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func updateVerticalSpacing() {
-        textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : textAreaVerticalPadding
-        textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : textAreaVerticalPadding)
+        textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
+        textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
         // The bottom floating field's resting fill differs from the top; refresh when the position
         // (small-top-spacing) flips, unless fire mode owns the appearance.
         if isFloatingUIEnabled, !fireMode {
@@ -1291,7 +1284,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         static let textAreaBottomPaddingAdjustedSpacing: CGFloat = 6
 
         static let textAreaVerticalPaddingRegularSpacing: CGFloat = 8
-        static let floatingTextAreaVerticalPaddingRegularSpacing: CGFloat = 4
 
         static let expandedSearchAreaHeight: CGFloat = 120.0
         static let duckAITextViewBottomPadding: CGFloat = 8.0

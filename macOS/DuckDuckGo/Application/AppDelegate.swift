@@ -1430,7 +1430,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
                 sessionRestoreCoordinator: sessionRestorePromptCoordinator,
-                subscriptionPromoDelegate: subscriptionPromoDelegate
+                subscriptionPromoDelegate: subscriptionPromoDelegate,
+                featureFlagger: featureFlagger,
+                cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                windowControllersManager: windowControllersManager
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

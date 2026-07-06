@@ -31,8 +31,9 @@ extension PromoServiceFactory {
             promoType: PromoType(.appModal),
             context: .global,
             delegate: CookiePopupProtectionOptInPromoDelegate(
-                featureFlagger: Application.appDelegate.featureFlagger,
-                cookiePopupProtectionPreferences: Application.appDelegate.cookiePopupProtectionPreferences,
+                featureFlagger: dependencies.featureFlagger,
+                cookiePopupProtectionPreferences: dependencies.cookiePopupProtectionPreferences,
+                windowControllersManager: dependencies.windowControllersManager,
                 store: CookiePopupProtectionOptInPromptStore(keyValueStore: dependencies.keyValueStore)
             )
         )

@@ -60,6 +60,7 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
 
     private let featureFlagger: FeatureFlagger
     private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
+    private let windowControllersManager: WindowControllersManager
     private let store: CookiePopupProtectionOptInPromptStore
 
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
@@ -68,9 +69,11 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
 
     init(featureFlagger: FeatureFlagger,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
+         windowControllersManager: WindowControllersManager,
          store: CookiePopupProtectionOptInPromptStore) {
         self.featureFlagger = featureFlagger
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
+        self.windowControllersManager = windowControllersManager
         self.store = store
         refreshEligibility()
     }
@@ -98,7 +101,7 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
-        guard let browserTabViewController = Application.appDelegate.windowControllersManager
+        guard let browserTabViewController = windowControllersManager
             .lastKeyMainWindowController?.mainViewController.browserTabViewController else {
             return .noChange
         }
@@ -126,7 +129,7 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func hide() {
-        Application.appDelegate.windowControllersManager
+        windowControllersManager
             .lastKeyMainWindowController?.mainViewController.browserTabViewController
             .dismissCookiePopupProtectionOptInDialog()
         resume(with: .noChange)

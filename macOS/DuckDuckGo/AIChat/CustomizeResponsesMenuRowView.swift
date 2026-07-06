@@ -28,10 +28,14 @@ final class CustomizeResponsesMenuRowView: NSView {
     private enum Layout {
         static let width: CGFloat = 300
         static let height: CGFloat = 44
-        static let leadingPadding: CGFloat = 14
+        static let leadingPadding: CGFloat = 8
         static let trailingPadding: CGFloat = 14
+        /// Reserved (never drawn) leading state-column gutter, so the icon + text line up with the
+        /// standard `NSMenuItem` rows above it, which reserve the same slot for a checkmark/state.
+        static let stateColumnWidth: CGFloat = 12
+        static let spacingAfterStateColumn: CGFloat = 6
         static let iconSize: CGFloat = 16
-        static let spacingAfterIcon: CGFloat = 8
+        static let spacingAfterIcon: CGFloat = 4
         static let switchSpacing: CGFloat = 8
         static let lineGap: CGFloat = 2
     }
@@ -69,8 +73,9 @@ final class CustomizeResponsesMenuRowView: NSView {
         super.init(frame: NSRect(x: 0, y: 0, width: Layout.width, height: Layout.height))
         autoresizesSubviews = true
 
+        let iconX = Layout.leadingPadding + Layout.stateColumnWidth + Layout.spacingAfterStateColumn
         let iconY = (Layout.height - Layout.iconSize) / 2
-        iconView.frame = NSRect(x: Layout.leadingPadding, y: iconY, width: Layout.iconSize, height: Layout.iconSize)
+        iconView.frame = NSRect(x: iconX, y: iconY, width: Layout.iconSize, height: Layout.iconSize)
         icon?.isTemplate = true
         iconView.image = icon
         iconView.imageScaling = .scaleProportionallyUpOrDown
@@ -92,7 +97,7 @@ final class CustomizeResponsesMenuRowView: NSView {
         let block = titleHeight + Layout.lineGap + subtitleHeight
         let blockBottom = (Layout.height - block) / 2
 
-        let textX = Layout.leadingPadding + Layout.iconSize + Layout.spacingAfterIcon
+        let textX = iconX + Layout.iconSize + Layout.spacingAfterIcon
         let textRight = showsToggle ? switchX - Layout.switchSpacing : Layout.width - Layout.trailingPadding
         let textWidth = max(0, textRight - textX)
 

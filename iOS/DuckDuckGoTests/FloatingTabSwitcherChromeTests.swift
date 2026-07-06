@@ -27,7 +27,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
     private func makeInstalledChrome() -> FloatingTabSwitcherChrome {
         let chrome = FloatingTabSwitcherChrome()
         let host = UIView()
-        let content = UIView()
+        let content = UIScrollView()
         chrome.install(in: host, contentView: content)
         return chrome
     }
@@ -135,7 +135,7 @@ final class FloatingTabSwitcherChromeTests: XCTestCase {
     func testWhenLayoutIsAppliedMultipleTimesThenPreviousConstraintsAreDeactivated() {
         let chrome = FloatingTabSwitcherChrome()
         let host = UIView()
-        let content = UIView()
+        let content = UIScrollView()
         chrome.install(in: host, contentView: content)
 
         chrome.layout(addressBarPosition: .top, interfaceMode: .regularSize)

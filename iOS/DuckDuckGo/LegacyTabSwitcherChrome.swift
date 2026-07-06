@@ -39,7 +39,7 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
     private var barsHandler: TabSwitcherBarsStateHandling
 
     private weak var hostView: UIView?
-    private weak var contentView: UIView?
+    private weak var contentView: UIScrollView?
     private weak var centerView: UIView?
 
     var actions = TabSwitcherChromeActions() {
@@ -58,7 +58,7 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
         self.barsHandler = barsHandler
     }
 
-    func install(in view: UIView, contentView: UIView) {
+    func install(in view: UIView, contentView: UIScrollView) {
         self.hostView = view
         self.contentView = contentView
     }

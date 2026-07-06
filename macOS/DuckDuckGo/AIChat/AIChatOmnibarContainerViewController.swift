@@ -1137,7 +1137,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             let rowView = CustomizeResponsesMenuRowView(
                 title: UserText.aiChatCustomizeResponsesButtonLabel,
                 subtitle: subtitle,
-                icon: DesignSystemImages.Glyphs.Size16.wand,
+                icon: DesignSystemImages.Glyphs.Size16.glasses,
                 showsToggle: state.hasCustomization,
                 isActive: state.isActive,
                 // No-op until the customize modal lands (follow-up PR); the row only reflects state for now.

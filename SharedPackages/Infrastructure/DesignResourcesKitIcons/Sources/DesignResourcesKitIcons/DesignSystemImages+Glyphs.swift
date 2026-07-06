@@ -254,6 +254,7 @@ public extension DesignSystemImages {
             public static var folderMove: DesignSystemImage { .init(resource: .folderMove16) }
             public static var folderNew: DesignSystemImage { .init(resource: .folderNew16) }
             public static var gift: DesignSystemImage { .init(resource: .gift16) }
+            public static var glasses: DesignSystemImage { .init(resource: .glasses16) }
             public static var globe: DesignSystemImage { .init(resource: .globe16) }
             public static var globeBlocked: DesignSystemImage { .init(resource: .globeBlocked16) }
             public static var goBackCircle: DesignSystemImage { .init(resource: .goBackCircle16) }

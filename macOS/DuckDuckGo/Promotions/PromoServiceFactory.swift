@@ -68,7 +68,7 @@ struct PromoServiceFactory {
             defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockInactiveModal(service: dependencies.defaultBrowserAndDockPromptService),
-            cookiePopupProtectionOptIn()
+            cookiePopupProtectionOptIn(dependencies: dependencies)
         ]
 
         if includeTestPromos {

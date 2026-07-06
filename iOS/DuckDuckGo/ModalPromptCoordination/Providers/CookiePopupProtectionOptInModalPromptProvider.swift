@@ -25,7 +25,7 @@ import UIKit
 import WebExtensions
 import PrivacyConfig
 
-/// Persisted state for the Cookie Pop-up Protection opt-in dialog.
+/// Persisted state for the Cookie Pop-up Protection opt-in dialog (for telemetry + showing conditions + debug reset).
 struct CookiePopupProtectionOptInPromptStore {
     private static let shownCountKey = "com.duckduckgo.cookiePopupProtection.optIn.shownCount"
     private static let firstShownDateKey = "com.duckduckgo.cookiePopupProtection.optIn.firstShownDate"

@@ -791,6 +791,8 @@
 		3706FC21293F65D500E42796 /* UserText+PasswordManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858A797E26A79EAA00A75A42 /* UserText+PasswordManager.swift */; };
 		3706FC23293F65D500E42796 /* StatisticsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B69B50362726A12000758A2B /* StatisticsStore.swift */; };
 		3706FC25293F65D500E42796 /* ColorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B693954626F04BEA0015B914 /* ColorView.swift */; };
+		D1D1D1D100000000000000E1 /* MouseEventInterceptingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D1D1D100000000000000E0 /* MouseEventInterceptingView.swift */; };
+		D1D1D1D100000000000000E2 /* MouseEventInterceptingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D1D1D100000000000000E0 /* MouseEventInterceptingView.swift */; };
 		3706FC26293F65D500E42796 /* RecentlyClosedCacheItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5C1DD2285A217F0089850C /* RecentlyClosedCacheItem.swift */; };
 		3706FC27293F65D500E42796 /* PopupBlockedPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6BBF17327475B15004F850E /* PopupBlockedPopover.swift */; };
 		3706FC28293F65D500E42796 /* SaveCredentialsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85890639267BCD8E00D23B0D /* SaveCredentialsPopover.swift */; };
@@ -6401,6 +6403,7 @@
 		B693954426F04BE90015B914 /* LongPressButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LongPressButton.swift; sourceTree = "<group>"; };
 		B693954526F04BEA0015B914 /* WindowDraggingView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WindowDraggingView.swift; sourceTree = "<group>"; };
 		B693954626F04BEA0015B914 /* ColorView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ColorView.swift; sourceTree = "<group>"; };
+		D1D1D1D100000000000000E0 /* MouseEventInterceptingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseEventInterceptingView.swift; sourceTree = "<group>"; };
 		B693954726F04BEA0015B914 /* NSSavePanelExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSSavePanelExtension.swift; sourceTree = "<group>"; };
 		B693954926F04BEB0015B914 /* MouseOverButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MouseOverButton.swift; sourceTree = "<group>"; };
 		B693955C26F19CD70015B914 /* DownloadListStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadListStoreTests.swift; sourceTree = "<group>"; };
@@ -7774,7 +7777,6 @@
 				1E75FA3C2FED2BE30036D3C8 /* CookiePopupProtectionOptInView.swift */,
 				C0DE0071E018E1FE00000000 /* CookiePopupProtectionOptInPixel.swift */,
 				0DE0001CB1E0041EDE1E6A00 /* CookiePopupProtectionOptInPromoDelegate.swift */,
-				D1D1D1D100000000000000F0 /* WindowDimmingBlockingView.swift */,
 			);
 			path = OptInDialog;
 			sourceTree = "<group>";
@@ -7796,7 +7798,6 @@
 				BBC2779A2FBF000100756A85 /* DuckAiVoiceChatLegacyConsentCleanup.swift */,
 				BBD7A1CF2F97F0FF00D6AF54 /* AIChatReasoningEffort.swift */,
 				31224EF02F9F9922008E0118 /* BurnerDuckAiStorageRegistry.swift */,
-				31BFDB6C2ECA423900ADFABD /* MouseBlockingBackgroundView.swift */,
 				31BFDB692ECA420E00ADFABD /* AIChatOmnibarContainerViewController.swift */,
 				31BFDB782ECA5FCD00ADFABD /* AIChatOmnibarController.swift */,
 				31BFDB6F2ECA46DD00ADFABD /* AIChatOmnibarTextContainerViewController.swift */,
@@ -10129,6 +10130,9 @@
 				85774B022A71CDD000DE0561 /* BlockMenuItem.swift */,
 				B65E6B9D26D9EC0800095F96 /* CircularProgressView.swift */,
 				B693954626F04BEA0015B914 /* ColorView.swift */,
+				D1D1D1D100000000000000E0 /* MouseEventInterceptingView.swift */,
+				31BFDB6C2ECA423900ADFABD /* MouseBlockingBackgroundView.swift */,
+				D1D1D1D100000000000000F0 /* WindowDimmingBlockingView.swift */,
 				84A03D2A2DBBE06700A3685B /* DraggingDestinationView.swift */,
 				4B379C2327BDE1B0008A968E /* FlatButton.swift */,
 				C172E72E2C9329D300521D9A /* FlippedView.swift */,
@@ -15898,6 +15902,7 @@
 				84E9D4BD2E6B07D400E7CC5B /* FireproofDomainCellView.swift in Sources */,
 				1DDD3EBD2B84DCB9004CBF2B /* WebTrackingProtectionPreferences.swift in Sources */,
 				3706FC25293F65D500E42796 /* ColorView.swift in Sources */,
+				D1D1D1D100000000000000E1 /* MouseEventInterceptingView.swift in Sources */,
 				B52B61802E94331B008888E3 /* ThemeUpdateListening.swift in Sources */,
 				E2BC1B242E210AF300F58D61 /* NewTabPageOmnibarConfigProvider.swift in Sources */,
 				D1A7B0010000000000000003 /* NewTabPageOmnibarTabsProvider.swift in Sources */,
@@ -18192,6 +18197,7 @@
 				859F30642A72A7BB00C20372 /* BookmarksBarPromptPopover.swift in Sources */,
 				7B6545ED2C0778BB00115BEA /* VPNControllerUDSClient+ConvenienceInitializers.swift in Sources */,
 				B693955426F04BEC0015B914 /* ColorView.swift in Sources */,
+				D1D1D1D100000000000000E2 /* MouseEventInterceptingView.swift in Sources */,
 				AA5C1DD3285A217F0089850C /* RecentlyClosedCacheItem.swift in Sources */,
 				B6BBF17427475B15004F850E /* PopupBlockedPopover.swift in Sources */,
 				84A74E1D2EF5383B006A5B61 /* FaviconDownloader.swift in Sources */,

@@ -1500,7 +1500,7 @@ extension MainViewController {
 
     @objc func debugResetCookiePopupProtectionOptInLaunchFlag(_ sender: Any?) {
         NSApp.delegateTyped.promoService?.undismiss(promoId: PromoServiceFactory.cookiePopupProtectionOptInPromoID, clearHistory: true)
-        CookiePopupProtectionOptInPromptStore().reset()
+        CookiePopupProtectionOptInPromptStore(keyValueStore: Application.appDelegate.keyValueStore).reset()
     }
 
     @objc func showHistory(_ sender: Any?) {

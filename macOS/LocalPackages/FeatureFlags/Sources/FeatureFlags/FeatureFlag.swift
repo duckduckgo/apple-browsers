@@ -407,6 +407,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
 
+    /// Gates the macOS "Customize Responses" native UI (omnibar + New Tab Page entry points).
+    /// Internal-only while in development.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1216299435808476
+    case aiChatCustomizeResponses
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215798415697847
     /// Replaces the web-link Search Assist and Hide AI-Generated Images rows on the AI Features
     /// settings screen with native controls, regroups the main AI settings at the top, and adds the
@@ -710,6 +715,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage), category: .duckAI)
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess), category: .duckAI)
+        case .aiChatCustomizeResponses:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.customizeResponses), category: .duckAI)
         case .aiFeaturesNativeControls:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.aiFeaturesNativeControls), category: .duckAI)
         case .aiChatNativeVoicePermissionFlow:

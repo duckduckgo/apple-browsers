@@ -22712,6 +22712,150 @@
         }
       }
     },
+    "cookie-popup-protection.opt-in.badge" : {
+      "comment" : "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.confirm" : {
+      "comment" : "Confirm button in the Cookie Pop-up Protection opt-in dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Confirm"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.disabled.body" : {
+      "comment" : "Body of the opt-in dialog when cookie pop-up protection is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you."
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.disabled.primary-option" : {
+      "comment" : "Primary option when cookie pop-up protection is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage or accept cookies for me"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.disabled.secondary-option" : {
+      "comment" : "Secondary option when cookie pop-up protection is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I'll keep handling them myself"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.disabled.title" : {
+      "comment" : "Title of the opt-in dialog when cookie pop-up protection is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tired of cookie pop-ups that won't leave you alone?"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.enabled.body" : {
+      "comment" : "Body of the opt-in dialog when cookie pop-up protection is already enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We can save you a click and accept these cookies for you."
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.enabled.primary-option" : {
+      "comment" : "Primary option when cookie pop-up protection is already enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Accept no-opt-out cookies for me"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.enabled.secondary-option" : {
+      "comment" : "Secondary option when cookie pop-up protection is already enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I'll keep handling them myself"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.enabled.title" : {
+      "comment" : "Title of the opt-in dialog when cookie pop-up protection is already enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tired of cookie pop-ups that don't let you opt out?"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.footer" : {
+      "comment" : "Footer text in the Cookie Pop-up Protection opt-in dialog, shown across two lines. The text between ** ** is rendered bold; \\n is an explicit line break.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can always adjust later in:\n**Settings** > **Cookie Pop-Up Protection**."
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.header" : {
+      "comment" : "Header of the Cookie Pop-up Protection opt-in dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cookie Pop-up Protection"
+          }
+        }
+      }
+    },
     "cookie.popup.preference.block-all" : {
       "comment" : "Cookie pop-up preference option",
       "extractionState" : "extracted_with_value",

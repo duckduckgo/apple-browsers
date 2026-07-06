@@ -60,7 +60,7 @@ final class SuggestionTableRowView: NSTableRowView {
 
         let fillColor: NSColor = {
             if isAppRebranded {
-                return colorsProvider.suggestionsHighlightBackroundColor
+                return colorsProvider.suggestionsHighlightBackgroundColor
             }
 
             return isBurner ? .burnerAccent : theme.palette.accentPrimary

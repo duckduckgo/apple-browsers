@@ -52,7 +52,7 @@ protocol ColorsProviding {
     var suggestionsTextColor: NSColor { get }
     var suggestionsSuffixColor: NSColor { get }
     var suggestionsHighlightSuffixColor: NSColor { get }
-    var suggestionsHighlightBackroundColor: NSColor { get }
+    var suggestionsHighlightBackgroundColor: NSColor { get }
     var suggestionsHighlightTextColor: NSColor { get }
 
     // MARK: - Semantic
@@ -120,7 +120,7 @@ final class LegacyColorsProviding: ColorsProviding {
     var suggestionsTextColor: NSColor { addressBarTextFieldColor }
     var suggestionsSuffixColor: NSColor { palette.accentPrimary }
     var suggestionsHighlightSuffixColor: NSColor { palette.accentContentSecondary }
-    var suggestionsHighlightBackroundColor: NSColor { palette.accentPrimary }
+    var suggestionsHighlightBackgroundColor: NSColor { palette.accentPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.accentContentPrimary }
     var bannerBackgroundColor: NSColor { palette.surfacePrimary }
     var popoverBackgroundColor: NSColor { palette.surfaceSecondary }
@@ -165,7 +165,7 @@ final class CurrentColorsProviding: ColorsProviding {
     var suggestionsTextColor: NSColor { palette.textPrimary }
     var suggestionsSuffixColor: NSColor { palette.accentTextPrimary }
     var suggestionsHighlightSuffixColor: NSColor { palette.accentTextPrimary }
-    var suggestionsHighlightBackroundColor: NSColor { palette.controlsFillPrimary }
+    var suggestionsHighlightBackgroundColor: NSColor { palette.controlsFillPrimary }
     var suggestionsHighlightTextColor: NSColor { palette.textPrimary }
 
     // MARK: - Semantic

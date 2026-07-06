@@ -38,7 +38,7 @@ struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
     let themeManager: ThemeManaging
 
     var accentPrimaryColor: NSColor {
-        themeManager.theme.colorsProvider.suggestionsHighlightBackroundColor
+        themeManager.theme.colorsProvider.suggestionsHighlightBackgroundColor
     }
 
     var selectedTintColor: NSColor {

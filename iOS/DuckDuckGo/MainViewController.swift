@@ -887,27 +887,6 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.swipeOverlayView = overlay
     }
 
-    func captureCurrentTabScreenSnapshotIfPossible(tabUID: String) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self else { return }
-            guard (self.tabSwipeOverlayView?.alpha ?? 0) == 0 else {
-                return
-            }
-            guard let currentTab = self.tabManager.currentTabsModel.currentTab,
-                  currentTab.uid == tabUID else {
-                return
-            }
-            guard self.view.window != nil,
-                  self.view.bounds.width > 0,
-                  self.view.bounds.height > 0 else { return }
-            let renderer = UIGraphicsImageRenderer(size: self.view.bounds.size)
-            let image = renderer.image { _ in
-                self.view.drawHierarchy(in: self.view.bounds, afterScreenUpdates: false)
-            }
-            self.previewsSource.updateFullScreenSnapshot(image, forTab: currentTab)
-        }
-    }
-
     func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
         assert(Thread.isMainThread)
         

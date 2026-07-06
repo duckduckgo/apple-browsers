@@ -45,11 +45,9 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
     private weak var hostView: UIView?
     private weak var contentView: UIScrollView?
-
     /// The scroll view whose edges drive the system liquid glass effect. This is the active page's
     /// collection view (which scrolls vertically), not the horizontally-paging `contentView`.
     private weak var scrollEdgeScrollView: UIScrollView?
-
     private weak var centerView: UIView?
     private var glassCenterContainer: UIVisualEffectView?
     private var layoutConstraints: [NSLayoutConstraint] = []

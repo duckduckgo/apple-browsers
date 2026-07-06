@@ -1662,6 +1662,13 @@ extension SettingsViewModel {
                 return .navigationLink
             }
         }
+
+        // A subscription purchase flow launched from onboarding (carries the onboarding funnel origin).
+        var isOnboardingSubscriptionFlow: Bool {
+            guard case .subscriptionFlow(let redirectURLComponents) = self else { return false }
+            let origin = redirectURLComponents?.queryItems?.first { $0.name == AttributionParameter.origin }?.value
+            return origin == SubscriptionFunnelOrigin.onboarding.rawValue
+        }
     }
 
     // Define DeepLinkType outside the enum if not already defined

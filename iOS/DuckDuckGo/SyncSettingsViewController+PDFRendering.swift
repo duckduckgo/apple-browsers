@@ -22,6 +22,7 @@ import Combine
 import SyncUI_iOS
 import DDGSync
 import Core
+import UniformTypeIdentifiers
 
 extension SyncSettingsViewController {
 
@@ -97,6 +98,11 @@ extension SyncSettingsViewController {
 
 private class RecoveryCodeItem: NSObject, UIActivityItemSource {
 
+    private enum Constants {
+        static let saveToFilesActivityType = "com.apple.DocumentManagerUICore.SaveToFiles"
+        static let suggestedFileName = "Sync Data Recovery - DuckDuckGo.pdf"
+    }
+
     let data: Data
 
     init(data: Data) {
@@ -105,11 +111,21 @@ private class RecoveryCodeItem: NSObject, UIActivityItemSource {
     }
 
     func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
-        return URL(fileURLWithPath: "Sync Data Recovery - DuckDuckGo.pdf")
+        return URL(fileURLWithPath: Constants.suggestedFileName)
     }
 
     func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
-        data
+        if activityType?.rawValue == Constants.saveToFilesActivityType {
+            let itemProvider = NSItemProvider(item: data as NSData, typeIdentifier: UTType.pdf.identifier)
+            itemProvider.suggestedName = Constants.suggestedFileName
+            return itemProvider
+        }
+        return data
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController,
+                                dataTypeIdentifierForActivityType activityType: UIActivity.ActivityType?) -> String {
+        UTType.pdf.identifier
     }
 
 }

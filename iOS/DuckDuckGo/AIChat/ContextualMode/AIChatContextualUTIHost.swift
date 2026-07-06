@@ -260,6 +260,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
                                                    files: files,
                                                    modelId: modelId,
                                                    tools: tools,
+                                                   pageContext: chipViewModel.pendingAttachedContextData,
                                                    reasoningEffort: reasoningEffort)
         commitDeferredBindIfNeeded()
         chipViewModel.markPromptSubmitted()

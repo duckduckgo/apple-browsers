@@ -44,6 +44,7 @@ protocol AIChatUserScriptProviding: AnyObject {
                       files: [AIChatNativePrompt.NativePromptFile]?,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?)
     func submitStartChatAction()
     func submitOpenSettingsAction()
@@ -110,6 +111,7 @@ protocol AIChatContentHandling: AnyObject {
                       files: [AIChatNativePrompt.NativePromptFile]?,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
@@ -280,8 +282,9 @@ final class AIChatContentHandler: AIChatContentHandling {
                       files: [AIChatNativePrompt.NativePromptFile]?,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?) {
-        userScript?.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools, reasoningEffort: reasoningEffort)
+        userScript?.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools, pageContext: pageContext, reasoningEffort: reasoningEffort)
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.

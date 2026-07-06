@@ -45,6 +45,7 @@ final class AIChatContextualWebViewController: UIViewController {
         let files: [AIChatNativePrompt.NativePromptFile]?
         let modelId: String?
         let tools: [AIChatRAGTool]?
+        let pageContext: AIChatPageContextData?
         let reasoningEffort: AIChatReasoningEffort?
     }
 
@@ -231,11 +232,12 @@ final class AIChatContextualWebViewController: UIViewController {
                       files: [AIChatNativePrompt.NativePromptFile]?,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData? = nil,
                       reasoningEffort: AIChatReasoningEffort?) {
         Logger.aiChat.debug("[ContextualWebVC] submit rich prompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         if isPageReady && isContentHandlerReady {
             let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
-            aiChatContentHandler.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools, reasoningEffort: reasoningEffort)
+            aiChatContentHandler.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools, pageContext: pageContext, reasoningEffort: reasoningEffort)
             utiHost?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
         } else {
             utiHost?.promptDeliveryUpdated(wasQueued: true, didSendBridgeMessage: nil)
@@ -244,6 +246,7 @@ final class AIChatContextualWebViewController: UIViewController {
                                                   files: files,
                                                   modelId: modelId,
                                                   tools: tools,
+                                                  pageContext: pageContext,
                                                   reasoningEffort: reasoningEffort)
             pendingPrompt = nil
             pendingPageContext = nil
@@ -413,6 +416,7 @@ final class AIChatContextualWebViewController: UIViewController {
                                          files: richPrompt.files,
                                          modelId: richPrompt.modelId,
                                          tools: richPrompt.tools,
+                                         pageContext: richPrompt.pageContext,
                                          reasoningEffort: richPrompt.reasoningEffort)
         utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: didSendBridgeMessage)
     }

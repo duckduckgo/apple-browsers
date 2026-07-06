@@ -1937,11 +1937,6 @@ extension TabViewController: WKNavigationDelegate {
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
 
-        if aiChatContextualSheetCoordinator.hasActiveSheet {
-            Task { [weak self] in
-                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
-            }
-        }
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -2114,6 +2109,12 @@ extension TabViewController: WKNavigationDelegate {
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
+
+        if aiChatContextualSheetCoordinator.hasActiveSheet {
+            Task { [weak self] in
+                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
+            }
+        }
 
         fireProductTelemetry(for: webView)
         

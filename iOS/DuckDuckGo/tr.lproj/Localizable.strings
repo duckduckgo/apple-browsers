@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Sunucuya bağlanılamıyor.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Başka bir cihazla senkronize edilemiyor.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Senkronizasyon ve Yedekleme kapatılamıyor.";

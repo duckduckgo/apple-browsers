@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Det gick inte att ansluta till servern.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Det gick inte att synkronisera med en annan enhet.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Det gick inte att stänga av synkronisering och säkerhetskopiering.";

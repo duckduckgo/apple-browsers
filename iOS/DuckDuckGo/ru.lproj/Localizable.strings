@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Не удалось подключиться к серверу.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Не удалось выполнить синхронизацию с другим устройством.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Не удалось отключить синхронизацию и резервное копирование.";

@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Yhteyden muodostaminen palvelimeen ei onnistu.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Synkronointi toisen laitteen kanssa ei onnistu.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Synkronointia ja varmuuskopiointia ei voida poistaa käytöstä.";

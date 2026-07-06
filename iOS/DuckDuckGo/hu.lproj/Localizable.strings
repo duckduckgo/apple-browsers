@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Nem sikerült csatlakozni a szerverhez.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Nem sikerült a másik eszközzel szinkronizálni.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nem sikerült kikapcsolni a Szinkronizálás és biztonsági mentés funkciót.";

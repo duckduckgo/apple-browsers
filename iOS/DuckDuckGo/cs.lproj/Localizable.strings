@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Nejde se připojit k serveru.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Synchronizaci s jiným zařízením nejde provést.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Synchronizaci a zálohování nejde vypnout.";

@@ -1739,66 +1739,6 @@
         }
       }
     },
-    "alert.unable-to-sync-with-another-device-description" : {
-      "comment" : "Description for unable to sync with another device error",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Synchronisierung mit einem anderen Gerät nicht möglich."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Unable to Sync with another device."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se puede sincronizar con otro dispositivo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de synchroniser avec un autre appareil."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossibile sincronizzare con un altro dispositivo."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Er kan niet worden gesynchroniseerd met een ander apparaat."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie można zsynchronizować z innym urządzeniem."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não foi possível sincronizar com outro dispositivo."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось выполнить синхронизацию с другим устройством."
-          }
-        }
-      }
-    },
     "alert.unable-to-turn-sync-off-description" : {
       "comment" : "Description for unable to turn sync off error",
       "extractionState" : "extracted_with_value",

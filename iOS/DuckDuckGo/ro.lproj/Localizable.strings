@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Nu se poate conecta la server.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Nu se poate sincroniza cu un alt dispozitiv.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nu se pot opri Sincronizare și backup.";

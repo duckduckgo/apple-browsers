@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Δεν είναι δυνατή η σύνδεση με τον διακομιστή.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Δεν είναι δυνατός ο συγχρονισμός με άλλη συσκευή.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Δεν είναι δυνατή η απενεργοποίηση της λειτουργίας Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας.";

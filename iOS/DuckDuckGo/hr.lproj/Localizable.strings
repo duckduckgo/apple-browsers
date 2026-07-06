@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Nije moguće spojiti se na poslužitelj.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Nije moguće sinkronizirati s drugim uređajem.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nije moguće isključiti Sinkronizaciju i sigurnosno kopiranje.";

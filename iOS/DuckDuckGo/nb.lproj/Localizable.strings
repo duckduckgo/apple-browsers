@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Kan ikke koble til serveren.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Kan ikke synkronisere med en annen enhet.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Kan ikke slå av Synkronisering og sikkerhetskopiering.";

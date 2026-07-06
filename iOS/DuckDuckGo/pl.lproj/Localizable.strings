@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Nie można połączyć się z serwerem.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Nie można zsynchronizować z innym urządzeniem.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nie można wyłączyć synchronizacji i kopii zapasowych.";

@@ -542,7 +542,6 @@
 "alert.unable-to-sync-to-server-description" = "Er kan geen verbinding worden gemaakt met de server.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Er kan niet worden gesynchroniseerd met een ander apparaat.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "'Synchronisatie en back-up' kan niet worden uitgeschakeld.";

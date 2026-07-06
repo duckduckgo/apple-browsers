@@ -64,7 +64,7 @@
                 "description": "Tracker data set ETag"
             },
             {
-                "key": "remote_config_version",
+                "key": "remoteConfigVersion",
                 "type": "string",
                 "description": "Privacy remote config version"
             },
@@ -444,7 +444,7 @@
                 "description": "Tracker data set ETag"
             },
             {
-                "key": "remote_config_version",
+                "key": "remoteConfigVersion",
                 "type": "string",
                 "description": "Privacy remote config version"
             },

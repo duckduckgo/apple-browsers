@@ -22,38 +22,44 @@ import Combine
 import UIKit
 import os.log
 
-/// Owns a `UnifiedToggleInputCoordinator` configured for the contextual chat surface and
-/// embeds its view controller as a child of `AIChatContextualWebViewController`.
+/// Owns a `UnifiedToggleInputCoordinator` configured for the contextual chat surface.
 @MainActor
-final class AIChatContextualUTIHost {
+final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
 
     private let coordinator: UnifiedToggleInputCoordinator
-    private let pageContextHandler: AIChatPageContextHandling
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
-    private let isAutoAttachEnabled: () -> Bool
     private let hasActiveChat: () -> Bool
     private weak var contextualChatViewController: AIChatContextualWebViewController?
-    private var pendingChipAttachCancellable: AnyCancellable?
-    private var suppressExternalContextUntilNextAttach = false
+    private weak var currentUserScript: AIChatUserScript?
+    private weak var pendingUserScriptToBind: AIChatUserScript?
     private var isBoundToUserScript = false
+    private var hasDeliveredFirstPrompt = false
+    private let startsPreSubmit: Bool
     private var cancellables = Set<AnyCancellable>()
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
 
+    var onAttachRequested: (() -> Void)?
+    var onRemoveRequested: (() -> Void)?
+    var onPromptSubmitted: (() -> Void)?
+
+    var attachedContextURL: URL? {
+        chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
+    }
+
     init(
         originatingURLPublisher: AnyPublisher<URL?, Never>,
-        didFinishURLPublisher: AnyPublisher<URL?, Never>,
         initialAttachedContext: AIChatPageContext?,
         initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
         hasActiveChat: @escaping () -> Bool,
         isAutoAttachEnabled: @escaping () -> Bool,
-        pageContextHandler: AIChatPageContextHandling,
         isFireTab: Bool,
-        lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil
+        lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
+        startsPreSubmit: Bool = false
     ) {
-        self.pageContextHandler = pageContextHandler
-        self.isAutoAttachEnabled = isAutoAttachEnabled
         self.hasActiveChat = hasActiveChat
+        self.startsPreSubmit = startsPreSubmit
+        self.hasDeliveredFirstPrompt = !startsPreSubmit
         let wideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent
         )
@@ -64,7 +70,8 @@ final class AIChatContextualUTIHost {
             isFireTab: isFireTab,
             lastUsedModelProvider: lastUsedModelProvider,
             duckAIWideEventInstrumentation: wideEventInstrumentation,
-            duckAIWideEventFlowScope: duckAIWideEventFlowScope
+            duckAIWideEventFlowScope: duckAIWideEventFlowScope,
+            contextualStartsPreSubmit: startsPreSubmit
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
@@ -72,12 +79,13 @@ final class AIChatContextualUTIHost {
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             isAutoAttachEnabled: isAutoAttachEnabled
         )
+        coordinator.delegate = self
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
-        chipViewModel.onAttachActionRequested = { [weak self] url in
-            self?.handleChipAttachRequest(originatingURL: url)
+        chipViewModel.onAttachActionRequested = { [weak self] in
+            self?.onAttachRequested?()
         }
         chipViewModel.onRemoveActionRequested = { [weak self] in
-            self?.handleChipRemoveRequest()
+            self?.onRemoveRequested?()
         }
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
@@ -87,87 +95,18 @@ final class AIChatContextualUTIHost {
                 self?.applyCurrentRenderState()
             }
             .store(in: &cancellables)
-
-        // Out-of-band context (BEFORECHAT manual attach, FE-driven flows) reaches the chip
-        // here; pick a delivery state from session timing — pre-chat = silent, active-chat =
-        // pending. `dropFirst` skips the cold-start replay. We step aside while a UTI-driven
-        // attach is in flight; that path has its own one-shot subscriber in `handleChipAttachRequest`.
-        pageContextHandler.contextPublisher
-            .dropFirst()
-            .sink { [weak self] context in
-                guard let self else { return }
-                guard self.pendingChipAttachCancellable == nil else { return }
-                guard context == nil || !self.suppressExternalContextUntilNextAttach else { return }
-                guard context != self.chipViewModel.attachedContext else { return }
-                Logger.contextualUTI.debug("UTIHost contextPublisher emission → \(context != nil ? "context" : "nil", privacy: .public) — syncing chip")
-                if let context {
-                    self.chipViewModel.setAttached(context, deliveryState: self.externalContextDeliveryState)
-                } else {
-                    self.chipViewModel.clearAttached()
-                }
-            }
-            .store(in: &cancellables)
-
-        // didFinish (not didCommit) so the new DOM is ready when JS reads it. `dropFirst`
-        // skips the synchronous replay of the URL the half-sheet was opened on — the
-        // half-sheet is the user's attach/skip decision point. Only subsequent in-chat
-        // navigations should trigger auto-attach.
-        didFinishURLPublisher
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] url in
-                guard let self else { return }
-                Logger.contextualUTI.debug("UTIHost didFinish (post-replay) → \(url?.shortDescription ?? "nil", privacy: .private)")
-                guard let url else { return }
-                guard self.isAutoAttachEnabled() else {
-                    Logger.contextualUTI.debug("UTIHost didFinish skip — auto disabled")
-                    return
-                }
-                if let attached = self.chipViewModel.attachedContext,
-                   URL(string: attached.contextData.url) == url {
-                    Logger.contextualUTI.debug("UTIHost didFinish skip — already attached to same URL")
-                    return
-                }
-                Logger.contextualUTI.info("Auto-attach on page load — triggering for \(url.shortDescription, privacy: .private)")
-                self.handleChipAttachRequest(originatingURL: url)
-            }
-            .store(in: &cancellables)
     }
 
-    private func handleChipAttachRequest(originatingURL: URL) {
-        Logger.contextualUTI.info("Chip onAttach — triggering context collection")
-        guard pageContextHandler.triggerContextCollection() else {
-            Logger.contextualUTI.error("triggerContextCollection returned false")
-            return
-        }
-        suppressExternalContextUntilNextAttach = false
-        pendingChipAttachCancellable = pageContextHandler.contextPublisher
-            .dropFirst()
-            .prefix(1)
-            .sink { [weak self] context in
-                guard let self else { return }
-                self.pendingChipAttachCancellable = nil
-                guard let context else {
-                    Logger.contextualUTI.error("Collection completed with nil context")
-                    return
-                }
-                Logger.contextualUTI.info("Pushing collected context to contextual chat for FE delivery")
-                self.contextualChatViewController?.pushPageContext(context.contextData)
-                self.chipViewModel.setAttached(context)
-            }
+    func setAttachedContext(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
+        chipViewModel.setAttached(context, deliveryState: deliveryState)
     }
 
-    private func handleChipRemoveRequest() {
-        Logger.contextualUTI.info("Chip onRemove — clearing attached context")
-        // Cancel any in-flight collection so a late-arriving result doesn't overwrite the clear.
-        pendingChipAttachCancellable = nil
-        suppressExternalContextUntilNextAttach = true
-        // Use `clear()` rather than `clearAttachedContext()` here because CHAT detach must also
-        // cancel the handler's active JS subscription; otherwise a late collection can still
-        // flow through the coordinator and re-push stale context to the frontend.
-        pageContextHandler.clear()
-        contextualChatViewController?.pushPageContext(nil)
+    func clearAttachedContext() {
         chipViewModel.clearAttached()
+    }
+
+    func showAttachAffordance() {
+        chipViewModel.showAttachAffordance()
     }
 
     /// Routes UTI-submitted prompts through the contextual chat's JS message channel (same as the FE).
@@ -175,18 +114,20 @@ final class AIChatContextualUTIHost {
     /// the chip says is currently attached — no duplicate state, single source of truth.
     func bindToUserScript(_ userScript: AIChatUserScript) {
         Logger.contextualUTI.info("Binding coordinator to AIChatUserScript")
-        isBoundToUserScript = true
-        let chatID = userScript.webView?.url?.duckAIChatID
-        coordinator.bindToTab(userScript, hasExistingChat: hasActiveChat() || chatID != nil)
-        if let chatID {
-            coordinator.restoreLastUsedModel(forChatID: chatID)
-        }
+        currentUserScript = userScript
         userScript.attachedPageContextProvider = { [weak self] in
             self?.chipViewModel.pendingAttachedContextData
         }
         userScript.onPromptSubmitted = { [weak self] in
-            self?.chipViewModel.markPromptSubmitted()
+            self?.handlePromptSubmittedFromUserScript()
         }
+
+        if startsPreSubmit, !hasDeliveredFirstPrompt {
+            pendingUserScriptToBind = userScript
+            return
+        }
+
+        bindCoordinator(to: userScript)
     }
 
     func observeChatUpdates(_ publisher: AnyPublisher<String, Never>) {
@@ -197,40 +138,142 @@ final class AIChatContextualUTIHost {
         chipViewModel.markPromptSubmitted()
     }
 
-    private var externalContextDeliveryState: PageContextAttachmentDeliveryState {
-        // These states can differ during preload/restore: the user script may be bound before
-        // `sessionState` records an active chat, while restored chats may be active before bind.
-        isBoundToUserScript || hasActiveChat() ? .pendingSubmit : .delivered
-    }
-
-    func install(in contextualChatViewController: AIChatContextualWebViewController) {
+    func setContextualChatViewController(_ contextualChatViewController: AIChatContextualWebViewController) {
         self.contextualChatViewController = contextualChatViewController
         coordinator.attachmentPresentingViewController = contextualChatViewController
-        // Install + lay out without animation. Otherwise the half-sheet's slide-up animation
-        // captures the UTI's first layout pass and interpolates from a zero-frame at (0,0),
-        // making the bar fly in from the top-left.
+    }
+
+    func installInWebView(_ contextualChatViewController: AIChatContextualWebViewController) {
+        setContextualChatViewController(contextualChatViewController)
+
+        let viewController = coordinator.viewController
+        guard viewController.parent !== contextualChatViewController else {
+            return
+        }
+
         UIView.performWithoutAnimation {
-            contextualChatViewController.addChild(coordinator.viewController)
-            contextualChatViewController.view.addSubview(coordinator.viewController.view)
-            coordinator.viewController.view.translatesAutoresizingMaskIntoConstraints = false
+            contextualChatViewController.addChild(viewController)
+            contextualChatViewController.view.addSubview(viewController.view)
+            viewController.view.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                coordinator.viewController.view.leadingAnchor.constraint(equalTo: contextualChatViewController.view.leadingAnchor),
-                coordinator.viewController.view.trailingAnchor.constraint(equalTo: contextualChatViewController.view.trailingAnchor),
-                coordinator.viewController.view.bottomAnchor.constraint(equalTo: contextualChatViewController.view.keyboardLayoutGuide.topAnchor),
+                viewController.view.leadingAnchor.constraint(equalTo: contextualChatViewController.view.leadingAnchor),
+                viewController.view.trailingAnchor.constraint(equalTo: contextualChatViewController.view.trailingAnchor),
+                viewController.view.bottomAnchor.constraint(equalTo: contextualChatViewController.view.keyboardLayoutGuide.topAnchor),
             ])
-            contextualChatViewController.anchorWebViewBottom(to: coordinator.viewController.view.topAnchor)
-            coordinator.viewController.didMove(toParent: contextualChatViewController)
+            contextualChatViewController.anchorWebViewBottom(to: viewController.view.topAnchor)
+            viewController.didMove(toParent: contextualChatViewController)
             coordinator.showExpanded()
             applyCurrentRenderState()
             contextualChatViewController.view.layoutIfNeeded()
         }
-        Logger.contextualUTI.info("Installed at bottom of contextual chat")
+        Logger.contextualUTI.info("Installed at bottom of contextual web chat")
+    }
+
+    func mountAtSheetLevel(in sheetViewController: UIViewController) -> UIView {
+        let viewController = coordinator.viewController
+        guard viewController.parent !== sheetViewController else {
+            return viewController.view
+        }
+
+        // Install + lay out without animation. Otherwise the half-sheet's slide-up animation
+        // captures the UTI's first layout pass and interpolates from a zero-frame at (0,0),
+        // making the bar fly in from the top-left.
+        UIView.performWithoutAnimation {
+            sheetViewController.addChild(viewController)
+            sheetViewController.view.addSubview(viewController.view)
+            viewController.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                viewController.view.leadingAnchor.constraint(equalTo: sheetViewController.view.leadingAnchor),
+                viewController.view.trailingAnchor.constraint(equalTo: sheetViewController.view.trailingAnchor),
+                viewController.view.bottomAnchor.constraint(equalTo: sheetViewController.view.keyboardLayoutGuide.topAnchor),
+            ])
+            viewController.didMove(toParent: sheetViewController)
+            coordinator.showExpanded(activatesInput: false)
+            applyCurrentRenderState()
+            sheetViewController.view.layoutIfNeeded()
+        }
+        Logger.contextualUTI.info("Mounted at bottom of contextual sheet")
+        return viewController.view
+    }
+
+    func activateInput() {
+        coordinator.showExpanded()
+    }
+
+    func submitQuickActionPrompt(_ prompt: String) {
+        coordinator.submitProgrammatic(text: prompt)
+    }
+
+    func prepareForNewChat() {
+        hasDeliveredFirstPrompt = !startsPreSubmit
+        clearAttachedContext()
+        if startsPreSubmit, let currentUserScript {
+            coordinator.unbind()
+            isBoundToUserScript = false
+            pendingUserScriptToBind = currentUserScript
+        }
+        coordinator.startNewChat()
+        coordinator.showExpanded(activatesInput: false)
+        applyCurrentRenderState()
     }
 
     private func applyCurrentRenderState() {
         coordinator.viewController.apply(coordinator.computeRenderState().viewConfig, animated: false)
         contextualChatViewController?.view.layoutIfNeeded()
     }
+
+    private func bindCoordinator(to userScript: AIChatUserScript) {
+        isBoundToUserScript = true
+        let chatID = userScript.webView?.url?.duckAIChatID
+        coordinator.bindToTab(userScript, hasExistingChat: hasActiveChat() || chatID != nil)
+        if let chatID {
+            coordinator.restoreLastUsedModel(forChatID: chatID)
+        }
+    }
+
+    private func commitDeferredBindIfNeeded() {
+        guard !isBoundToUserScript, let pendingUserScriptToBind else { return }
+        self.pendingUserScriptToBind = nil
+        bindCoordinator(to: pendingUserScriptToBind)
+    }
+
+    private func handlePromptSubmittedFromUserScript() {
+        if !hasDeliveredFirstPrompt {
+            hasDeliveredFirstPrompt = true
+            onPromptSubmitted?()
+            commitDeferredBindIfNeeded()
+        }
+        chipViewModel.markPromptSubmitted()
+    }
+
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String,
+                                           modelId: String?,
+                                           tools: [AIChatRAGTool]?,
+                                           reasoningEffort: AIChatReasoningEffort?,
+                                           images: [AIChatNativePrompt.NativePromptImage]?,
+                                           files: [AIChatNativePrompt.NativePromptFile]?) {
+        guard !hasDeliveredFirstPrompt else { return }
+        hasDeliveredFirstPrompt = true
+        onPromptSubmitted?()
+        contextualChatViewController?.submitPrompt(prompt,
+                                                   images: images,
+                                                   files: files,
+                                                   modelId: modelId,
+                                                   tools: tools,
+                                                   pageContext: chipViewModel.pendingAttachedContextData,
+                                                   reasoningEffort: reasoningEffort)
+        commitDeferredBindIfNeeded()
+        chipViewModel.markPromptSubmitted()
+    }
+
+    func unifiedToggleInputDidSubmitQuery(_ query: String) {}
+    func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestAIVoiceChat() {}
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}
+    func unifiedToggleInputDidChangeHeight() {}
+    func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
+    func unifiedToggleInputDidRequestFire() {}
+    func unifiedToggleInputDidRequestAppMenu() {}
 }
 
 // MARK: - Duck.ai Wide Event

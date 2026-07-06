@@ -235,6 +235,7 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             subscriptionDaysSinceSubscribed: 5,
             subscriptionDaysUntilExpiry: 25,
             subscriptionPurchasePlatform: "apple",
+            subscriptionTier: "pro",
             isSubscriptionActive: true,
             isSubscriptionExpiring: false,
             isSubscriptionExpired: false,

@@ -539,8 +539,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var searchAreaCenterYConstraint: NSLayoutConstraint?
     private var searchAreaTopPinConstraint: NSLayoutConstraint?
     private var expandedHeightConstraint: NSLayoutConstraint?
-    private var searchStackBottomEqualConstraint: NSLayoutConstraint?
-    private var searchStackBottomGTEConstraint: NSLayoutConstraint?
+    private var searchFieldBottomEqualConstraint: NSLayoutConstraint?
+    private var searchFieldBottomGTEConstraint: NSLayoutConstraint?
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
@@ -549,12 +549,27 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let omniBarProgressView = OmniBarProgressView()
     var progressView: ProgressView? { omniBarProgressView.progressView }
 
-    private(set) var leadingButtonsContainer = UIStackView()
-    private(set) var trailingButtonsContainer = UIStackView()
+    final class LeadingButtonsContainer: UIStackView { }
+    private(set) var leadingButtonsContainer = LeadingButtonsContainer()
+
+    final class TrailingButtonsContainer: UIStackView { }
+    private(set) var trailingButtonsContainer = TrailingButtonsContainer()
 
     private let searchAreaView = DefaultOmniBarSearchView()
-    private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
-    private let floatingGlassContentHostView = UIView()
+
+    final class SearchAreaContainerView: UIView { }
+
+    // Leaving this as UIView because it could be SearchAreaContainerView or CompositeShadowView
+    private let searchAreaContainerView: UIView
+
+    /// Non-nil only when floating UI is disabled; owns the resting pill's composite drop shadow.
+    /// When floating UI is enabled the pill background/shadow is provided by the glass (top) or
+    /// toolbar capsule (bottom), so no `CompositeShadowView` is added to the hierarchy.
+    private let searchAreaShadowView: CompositeShadowView?
+
+    final class FloatingGlassContentHostView: UIView { }
+    private let floatingGlassContentHostView = FloatingGlassContentHostView()
+
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
     private let isFloatingUIEnabled: Bool
@@ -562,13 +577,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     fileprivate var savedBarViewBackgroundColor: UIColor?
 
     /// Spans to available width of the omni bar and allows the input field to center horizontally
-    private let searchAreaAlignmentView = UIView()
-    private let searchAreaStackView = UIStackView()
+    final class SearchAreaAlignmentView: UIView { }
+    private let searchAreaAlignmentView = SearchAreaAlignmentView()
 
-    /// Currently unused - should be removed if unlikely to return
-    private let activeOutlineView = UIView()
+    final class ActiveOutlineView: UIView { }
+    private let activeOutlineView = ActiveOutlineView()
 
-    private let stackView = UIStackView()
+    final class TopLevelStackView: UIStackView { }
+    private let stackView = TopLevelStackView()
 
     private let glassEffect: UIVisualEffectView = {
         let view: UIVisualEffectView
@@ -609,6 +625,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     init(isFloatingUIEnabled: Bool) {
         self.isFloatingUIEnabled = isFloatingUIEnabled
+        if isFloatingUIEnabled {
+            // Floating UI supplies its own background and shadow (top: glass capsule, bottom:
+            // toolbar capsule), so the pill must not carry a CompositeShadowView.
+            self.searchAreaContainerView = SearchAreaContainerView()
+            self.searchAreaContainerView.backgroundColor = .clear
+            self.searchAreaShadowView = nil
+        } else {
+            let shadowView = CompositeShadowView.defaultShadowView()
+            self.searchAreaContainerView = shadowView
+            self.searchAreaShadowView = shadowView
+        }
         super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
 
         setUpSubviews()
@@ -655,7 +682,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         glassEffect.removeFromSuperview()
         opaqueEffect.removeFromSuperview()
         searchAreaContainerView.backgroundColor = isFloatingUIEnabled
-            ? UIColor(designSystemColor: .backgroundTertiary)
+            ? restingFieldBackgroundColor
             : UIColor(designSystemColor: .urlBar)
     }
 
@@ -672,9 +699,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         leadingButtonsContainer.addArrangedSubview(leadingBookmarksButtonView)
         leadingButtonsContainer.addArrangedSubview(passwordsButtonView)
 
-        searchAreaAlignmentView.addSubview(searchAreaStackView)
-
-        searchAreaStackView.addArrangedSubview(searchAreaContainerView)
+        searchAreaAlignmentView.addSubview(searchAreaContainerView)
 
         if isFloatingUIEnabled {
             floatingGlassContentHostView.translatesAutoresizingMaskIntoConstraints = false
@@ -734,7 +759,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
         searchAreaView.translatesAutoresizingMaskIntoConstraints = false
         stackView.translatesAutoresizingMaskIntoConstraints = false
-        searchAreaStackView.translatesAutoresizingMaskIntoConstraints = false
+        searchAreaContainerView.translatesAutoresizingMaskIntoConstraints = false
 
         let leadingConstraint = stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding)
         let trailingConstraint = stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
@@ -783,12 +808,13 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             omniBarProgressView.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
             omniBarProgressView.bottomAnchor.constraint(equalTo: chromeContentContainerView.bottomAnchor),
 
-            searchAreaStackView.topAnchor.constraint(equalTo: searchAreaAlignmentView.topAnchor),
-            searchAreaStackView.leadingAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.leadingAnchor),
-            searchAreaStackView.trailingAnchor.constraint(lessThanOrEqualTo: searchAreaAlignmentView.trailingAnchor),
+            searchAreaContainerView.topAnchor.constraint(equalTo: searchAreaAlignmentView.topAnchor),
+            searchAreaContainerView.leadingAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.leadingAnchor),
+            searchAreaContainerView.trailingAnchor.constraint(lessThanOrEqualTo: searchAreaAlignmentView.trailingAnchor),
 
-            // We want searchAreaStackView to grow as much as it's possible
-            searchAreaStackView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),
+            // Grow the field as wide as possible; the leading/trailing bounds above plus the
+            // centerX constraint below keep it centered within the available width.
+            searchAreaContainerView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),
 
             fieldContainerLayoutGuide.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
             fieldContainerLayoutGuide.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
@@ -866,8 +892,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         stackView.alignment = .fill
         stackView.distribution = .fill
         stackView.spacing = Metrics.expandedPadSizeSpacing
-
-        searchAreaStackView.spacing = Metrics.expandedPadSizeSpacing
 
         trailingButtonsContainer.isHidden = true
 
@@ -972,7 +996,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeCardBackground)
                 activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
             } else {
-                searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
+                searchAreaContainerView.backgroundColor = restingFieldBackgroundColor
                 activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accentPrimary).cgColor
             }
         }
@@ -982,10 +1006,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private func updateShadows() {
+        guard let searchAreaShadowView else { return }
         if isActiveState {
-            searchAreaContainerView.applyActiveShadow()
+            searchAreaShadowView.applyActiveShadow()
         } else {
-            searchAreaContainerView.applyDefaultShadow()
+            searchAreaShadowView.applyDefaultShadow()
         }
     }
 
@@ -1081,6 +1106,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private func updateVerticalSpacing() {
         textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
         textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
+        // The bottom floating field's resting fill differs from the top; refresh when the position
+        // (small-top-spacing) flips, unless fire mode owns the appearance.
+        if isFloatingUIEnabled, !fireMode {
+            // Don't clobber the top glass with an opaque fill. `makeGlass()` keeps the container
+            // clear so the glass effect (behind the content) shows through; only the bottom field
+            // takes an opaque resting fill.
+            if shouldUseFloatingTopGlass {
+                makeGlass()
+            } else {
+                searchAreaContainerView.backgroundColor = restingFieldBackgroundColor
+            }
+        }
     }
 
     func refreshLongPressMenuAvailability() {
@@ -1329,6 +1366,21 @@ private extension DefaultOmniBarView {
     var shouldUseFloatingTopGlass: Bool {
         isFloatingUIEnabled && !isUsingSmallTopSpacing
     }
+
+    /// The floating omnibar field when hosted at the bottom (embedded in the toolbar's glass
+    /// capsule). Unlike the top position it isn't a glass surface itself, so it takes an explicit
+    /// resting fill rather than `.backgroundTertiary`.
+    var isBottomFloatingField: Bool {
+        isFloatingUIEnabled && isUsingSmallTopSpacing
+    }
+
+    /// Resting field fill: the bottom floating field is `T-Input/Resting` so it reads clearly
+    /// against the toolbar's Liquid Glass capsule (no shadow needed); otherwise the default fill.
+    var restingFieldBackgroundColor: UIColor {
+        isBottomFloatingField
+            ? UIColor(singleUseColor: .floatingAddressBarBackground)
+            : UIColor(designSystemColor: .backgroundTertiary)
+    }
 }
 
 extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
@@ -1458,7 +1510,7 @@ extension DefaultOmniBarView {
             savedBarViewBackgroundColor = backgroundColor
         }
         searchAreaContainerView.backgroundColor = .clear
-        searchAreaContainerView.applyShadowOpacityMultiplier(0)
+        searchAreaShadowView?.applyShadowOpacityMultiplier(0)
         backgroundColor = .clear
         textField.alpha = 0
     }
@@ -1472,7 +1524,7 @@ extension DefaultOmniBarView {
             backgroundColor = saved
             savedBarViewBackgroundColor = nil
         }
-        searchAreaContainerView.applyShadowOpacityMultiplier(1)
+        searchAreaShadowView?.applyShadowOpacityMultiplier(1)
         textField.alpha = 1
     }
 
@@ -1576,13 +1628,13 @@ extension DefaultOmniBarView {
             toolPickerButton.heightAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),
         ])
 
-        let bottomEqual = searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
+        let bottomEqual = searchAreaContainerView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
         bottomEqual.isActive = true
-        searchStackBottomEqualConstraint = bottomEqual
+        searchFieldBottomEqualConstraint = bottomEqual
 
-        let bottomGTE = searchAreaStackView.bottomAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.bottomAnchor)
+        let bottomGTE = searchAreaContainerView.bottomAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.bottomAnchor)
         bottomGTE.isActive = false
-        searchStackBottomGTEConstraint = bottomGTE
+        searchFieldBottomGTEConstraint = bottomGTE
 
         let centerY = searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor)
         centerY.isActive = true
@@ -1612,7 +1664,7 @@ extension DefaultOmniBarView {
         applyTextViewVisibility()
 
         guard animated else {
-            searchAreaContainerView.applyShadowOpacityMultiplier(1)
+            searchAreaShadowView?.applyShadowOpacityMultiplier(1)
             aiChatSendButton.alpha = isSearchAreaExpanded ? 1 : 0
             modelPickerButton.alpha = (isSearchAreaExpanded && canShowModelPicker) ? 1 : 0
             reasoningPickerButton.alpha = (isSearchAreaExpanded && canShowReasoningPicker) ? 1 : 0
@@ -1644,7 +1696,7 @@ extension DefaultOmniBarView {
         layoutIfNeeded()
 
         if isSearchAreaExpanded {
-            searchAreaContainerView.applyShadowOpacityMultiplier(0)
+            searchAreaShadowView?.applyShadowOpacityMultiplier(0)
             applyExpansionClipping()
         }
 
@@ -1652,13 +1704,13 @@ extension DefaultOmniBarView {
 
         UIView.animate(withDuration: Metrics.expansionAnimationDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
             if self.isSearchAreaExpanded {
-                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.alpha = 1
                 self.modelPickerButton.alpha = self.canShowModelPicker ? 1 : 0
                 self.reasoningPickerButton.alpha = self.canShowReasoningPicker ? 1 : 0
                 self.toolPickerButton.alpha = self.canShowToolPicker ? 1 : 0
             } else {
-                self.searchAreaContainerView.applyShadowOpacityMultiplier(0)
+                self.searchAreaShadowView?.applyShadowOpacityMultiplier(0)
                 self.aiChatSendButton.alpha = 0
                 self.modelPickerButton.alpha = 0
                 self.reasoningPickerButton.alpha = 0
@@ -1668,7 +1720,7 @@ extension DefaultOmniBarView {
         } completion: { _ in
             if !self.isSearchAreaExpanded {
                 self.applyExpansionClipping()
-                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
                 self.aiChatSendButton.isHidden = true
                 self.modelPickerButton.isHidden = true
                 self.reasoningPickerButton.isHidden = true
@@ -1676,7 +1728,7 @@ extension DefaultOmniBarView {
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
             } else {
-                self.searchAreaContainerView.applyShadowOpacityMultiplier(1)
+                self.searchAreaShadowView?.applyShadowOpacityMultiplier(1)
                 self.onSearchAreaExpandedStateChanged?(true)
             }
             if self.isSearchAreaExpanded {
@@ -1813,16 +1865,16 @@ extension DefaultOmniBarView {
 
     private func applyExpansionConstraints() {
         if isSearchAreaExpanded {
-            searchStackBottomEqualConstraint?.isActive = false
+            searchFieldBottomEqualConstraint?.isActive = false
             searchAreaCenterYConstraint?.isActive = false
-            searchStackBottomGTEConstraint?.isActive = true
+            searchFieldBottomGTEConstraint?.isActive = true
             expandedHeightConstraint?.isActive = true
             searchAreaTopPinConstraint?.isActive = true
         } else {
             expandedHeightConstraint?.isActive = false
             searchAreaTopPinConstraint?.isActive = false
-            searchStackBottomGTEConstraint?.isActive = false
-            searchStackBottomEqualConstraint?.isActive = true
+            searchFieldBottomGTEConstraint?.isActive = false
+            searchFieldBottomEqualConstraint?.isActive = true
             searchAreaCenterYConstraint?.isActive = true
         }
     }
@@ -1830,7 +1882,7 @@ extension DefaultOmniBarView {
     private func applyExpansionClipping() {
         let allowOverflow = isSearchAreaExpanded
 
-        let clippingViews: [UIView] = [self, stackView, searchAreaAlignmentView, searchAreaStackView, searchAreaContainerView]
+        let clippingViews: [UIView] = [self, stackView, searchAreaAlignmentView, searchAreaContainerView]
         clippingViews.forEach { $0.clipsToBounds = !allowOverflow }
 
         if allowOverflow {

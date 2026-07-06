@@ -29,11 +29,14 @@ import UIKit
 import WebKit
 
 /// Underlying-tab URL publishers the contextual chat needs.
-/// `originating` fires at didCommit (drives chip display state); `didFinish` fires when the new
-/// page is actually loaded (drives auto-attach context collection so JS sees fresh DOM).
 struct AIChatTabURLPublishers {
     let originating: AnyPublisher<URL?, Never>
     let didFinish: AnyPublisher<URL?, Never>
+}
+
+private struct ContextualUnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
+    let isAvailable: Bool
+    let isToggleHiddenOnDuckAITab: Bool
 }
 
 /// Delegate protocol for coordinating actions that require interaction with the browser.
@@ -87,6 +90,11 @@ final class AIChatContextualSheetCoordinator {
     let pageContextHandler: AIChatPageContextHandling
     private let tabURLPublishers: AIChatTabURLPublishers
     private var contextUpdateCancellable: AnyCancellable?
+    private var sessionEffectCancellable: AnyCancellable?
+    private var currentPageURLCancellable: AnyCancellable?
+    private var didFinishURLCancellable: AnyCancellable?
+    private var currentPageURL: URL?
+    private var persistentUTIHost: AIChatContextualUTIHost?
 
     /// Handles all pixel firing for contextual mode.
     let pixelHandler: AIChatContextualModePixelFiring
@@ -108,6 +116,14 @@ final class AIChatContextualSheetCoordinator {
     /// Whether the sheet is presented and actively observing page context updates.
     private var isActivelyObservingContext: Bool {
         contextUpdateCancellable != nil
+    }
+
+    private var isWebUTIEnabled: Bool {
+        unifiedToggleInputFeature.isAvailable
+    }
+
+    private var isImmediateContextualUTIEnabled: Bool {
+        isWebUTIEnabled && featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput)
     }
 
     /// Publishes the URL of the page that originated the contextual chat session, with replay of the last value.
@@ -150,6 +166,23 @@ final class AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler,
             featureFlagger: featureFlagger
         )
+        self.sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
+        self.sessionEffectCancellable = self.sessionState.effects
+            .sink { [weak self] effect in
+                guard case .deliverPageContext(let context, let targets) = effect else { return }
+                self?.deliverPageContext(context, targets: targets)
+            }
+        self.currentPageURLCancellable = tabURLPublishers.originating
+            .sink { [weak self] url in
+                self?.currentPageURL = url
+            }
+        self.didFinishURLCancellable = tabURLPublishers.didFinish
+            .dropFirst()
+            .sink { [weak self] _ in
+                Task { [weak self] in
+                    await self?.notifyPageChanged()
+                }
+            }
     }
 
     // MARK: - Public Methods
@@ -158,10 +191,11 @@ final class AIChatContextualSheetCoordinator {
     func presentSheet(from presentingViewController: UIViewController,
                       restoreURL: URL? = nil) async {
         sessionState.refreshAutoAttachSetting()
+        sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
 
         startObservingContextUpdates()
 
-        if sessionState.shouldAutoCollectContext {
+        if sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
             pageContextHandler.triggerContextCollection()
         }
 
@@ -194,6 +228,7 @@ final class AIChatContextualSheetCoordinator {
         sheetViewController?.notifySheetDismissed()
         isSheetPresented = false
         sheetViewController = nil
+        persistentUTIHost = nil
         stopObservingContextUpdates()
         pageContextHandler.clear()
         sessionState.resetToNoChat()
@@ -207,16 +242,14 @@ final class AIChatContextualSheetCoordinator {
     /// Called by TabViewController when the page navigates to a new URL.
     func notifyPageChanged() async {
         guard hasActiveSheet else { return }
-        // Native UTI handles nav via the chip view-model's `originatingURLPublisher` subscription.
-        if unifiedToggleInputFeature.isAvailable { return }
         sessionState.notifyPageChanged()
 
-        if sessionState.shouldAutoCollectContext {
+        if sessionState.shouldTriggerAutoCollect() {
             let didTrigger = pageContextHandler.triggerContextCollection()
             if !didTrigger {
                 sessionState.clearProcessingNavigationFlag()
             }
-        } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && isActivelyObservingContext {
+        } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             sessionState.notifyFrontendOfMultiContextNavigation()
             sessionState.clearProcessingNavigationFlag()
         } else {
@@ -252,6 +285,9 @@ private extension AIChatContextualSheetCoordinator {
         }
 
         let suggestionsReader = makeSuggestionsReaderIfEnabled()
+        let persistentUTIHost = isImmediateContextualUTIEnabled
+            ? makePersistentUTIHostIfNeeded(startsPreSubmit: !sessionState.hasActiveChat)
+            : nil
 
         let sheetVC = AIChatContextualSheetViewController(
             sessionState: sessionState,
@@ -263,6 +299,7 @@ private extension AIChatContextualSheetCoordinator {
             },
             pixelHandler: pixelHandler,
             featureFlagger: featureFlagger,
+            persistentUTIHost: persistentUTIHost,
             suggestionsReader: suggestionsReader
         )
         sheetVC.delegate = self
@@ -273,7 +310,6 @@ private extension AIChatContextualSheetCoordinator {
     }
 
     func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
-        guard featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) else { return nil }
         let reader = SuggestionsReader(
             featureFlagger: featureFlagger,
             privacyConfig: privacyConfigurationManager,
@@ -282,6 +318,43 @@ private extension AIChatContextualSheetCoordinator {
         )
         let settings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
         return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: settings)
+    }
+
+    func makePersistentUTIHostIfNeeded(startsPreSubmit: Bool) -> AIChatContextualUTIHost? {
+        guard isWebUTIEnabled else { return nil }
+        if let persistentUTIHost { return persistentUTIHost }
+
+        let initialUTIAttachment = self.initialUTIAttachment
+        let host = AIChatContextualUTIHost(
+            originatingURLPublisher: originatingURLPublisher,
+            initialAttachedContext: initialUTIAttachment.context,
+            initialAttachmentDeliveryState: initialUTIAttachment.deliveryState,
+            hasActiveChat: { [weak self] in self?.sessionState.hasActiveChat ?? false },
+            isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
+            isFireTab: isFireTab,
+            lastUsedModelProvider: duckAiLastUsedModelProvider,
+            startsPreSubmit: startsPreSubmit
+        )
+        host.onAttachRequested = { [weak self] in
+            guard let self else { return }
+            self.sessionState.beginManualAttach()
+            let didTrigger = self.pageContextHandler.triggerContextCollection()
+            if !didTrigger {
+                self.sessionState.cancelManualAttach()
+            }
+        }
+        host.onRemoveRequested = { [weak self] in
+            guard let self else { return }
+            self.sessionState.downgradeToPlaceholder()
+            self.pageContextHandler.clear()
+        }
+        host.onPromptSubmitted = { [weak self] in
+            guard let self else { return }
+            self.sessionState.beginChatForUTISubmission()
+            self.sheetViewController?.handleFirstUTISubmission()
+        }
+        self.persistentUTIHost = host
+        return host
     }
 
     func startObservingContextUpdates() {
@@ -293,6 +366,7 @@ private extension AIChatContextualSheetCoordinator {
             .sink { [weak self] contextData in
                 self?.handleContextDataUpdate(contextData)
             }
+
     }
 
     func stopObservingContextUpdates() {
@@ -304,11 +378,44 @@ private extension AIChatContextualSheetCoordinator {
         sessionState.updateContext(context)
     }
 
+    func deliverPageContext(_ context: AIChatPageContextData?, targets: PageContextDeliveryTargets) {
+        if let host = persistentUTIHost, targets.contains(.utiChip) {
+            deliverToUTIChip(context, host: host)
+        }
+
+        if let host = persistentUTIHost, targets.contains(.utiAttachAffordance) {
+            host.showAttachAffordance()
+        }
+
+        if targets.contains(.frontendBridge) {
+            sheetViewController?.pushPageContext(context)
+        }
+    }
+
+    func deliverToUTIChip(_ context: AIChatPageContextData?, host: AIChatContextualUTIHost) {
+        guard let context else {
+            host.clearAttachedContext()
+            return
+        }
+
+        let pageContext = sessionState.latestContext?.contextData == context
+            ? sessionState.latestContext
+            : AIChatPageContext(contextData: context, favicon: nil)
+        if let pageContext {
+            host.setAttachedContext(pageContext, deliveryState: .pendingSubmit)
+        }
+    }
+
     /// Factory method for creating web view controllers, avoids prop drilling through the Sheet VC.
     func makeWebViewController() -> AIChatContextualWebViewController {
         let downloadsDirectoryHandler = DownloadsDirectoryHandler()
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
         let downloadHandler = makeDownloadHandler(downloadsPath: downloadsDirectoryHandler.downloadsDirectory)
+
+        let contextualUTIFeature = ContextualUnifiedToggleInputFeature(
+            isAvailable: isWebUTIEnabled,
+            isToggleHiddenOnDuckAITab: unifiedToggleInputFeature.isToggleHiddenOnDuckAITab
+        )
 
         let webVC = AIChatContextualWebViewController(
             aiChatSettings: aiChatSettings,
@@ -316,7 +423,7 @@ private extension AIChatContextualSheetCoordinator {
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
-            unifiedToggleInputFeature: unifiedToggleInputFeature,
+            unifiedToggleInputFeature: contextualUTIFeature,
             isFireTab: isFireTab,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             downloadHandler: downloadHandler,
@@ -333,19 +440,12 @@ private extension AIChatContextualSheetCoordinator {
             pixelHandler: pixelHandler,
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
-                let initialUTIAttachment = self.initialUTIAttachment
-                let host = AIChatContextualUTIHost(
-                    originatingURLPublisher: self.originatingURLPublisher,
-                    didFinishURLPublisher: self.tabURLPublishers.didFinish,
-                    initialAttachedContext: initialUTIAttachment.context,
-                    initialAttachmentDeliveryState: initialUTIAttachment.deliveryState,
-                    hasActiveChat: { [weak self] in self?.sessionState.hasActiveChat ?? false },
-                    isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
-                    pageContextHandler: self.pageContextHandler,
-                    isFireTab: self.isFireTab,
-                    lastUsedModelProvider: self.duckAiLastUsedModelProvider
-                )
-                host.install(in: contextualChatViewController)
+                guard self.isWebUTIEnabled else { return nil }
+                let host = self.makePersistentUTIHostIfNeeded(startsPreSubmit: self.isImmediateContextualUTIEnabled && !self.sessionState.hasActiveChat)
+                host?.setContextualChatViewController(contextualChatViewController)
+                if !self.isImmediateContextualUTIEnabled {
+                    host?.installInWebView(contextualChatViewController)
+                }
                 return host
             }
         )
@@ -355,6 +455,9 @@ private extension AIChatContextualSheetCoordinator {
 
     var initialUTIAttachment: (context: AIChatPageContext?, deliveryState: PageContextAttachmentDeliveryState) {
         if let context = sessionState.intendedAttachedContext {
+            if isImmediateContextualUTIEnabled, !sessionState.hasActiveChat {
+                return (context, .pendingSubmit)
+            }
             return (context, .delivered)
         }
         if sessionState.hasActiveChat, let context = sessionState.latestContext {
@@ -406,6 +509,7 @@ private extension AIChatContextualSheetCoordinator {
         Logger.aiChat.debug("[Contextual] Resetting to native input")
 
         sessionState.resetToNoChat()
+        persistentUTIHost?.prepareForNewChat()
 
         Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
         pageContextHandler.triggerContextCollection()
@@ -465,7 +569,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewControllerDidRequestRemoveChip(_ viewController: AIChatContextualSheetViewController) {
         sessionState.downgradeToPlaceholder()
-        pageContextHandler.clearAttachedContext()
+        pageContextHandler.clear()
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didUpdateContextualChatURL url: URL?) {

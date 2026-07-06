@@ -550,7 +550,7 @@ extension MainViewFactory {
         coordinator.constraints.toolbarBottom = toolbar.constrainView(superview.safeAreaLayoutGuide, by: .bottom)
         // Match the toolbar's internal buttons-only height for the current style so the initial
         // constraint doesn't conflict before `updateToolbarLayoutForAddressBarPosition` runs.
-        let initialToolbarHeight = isFloatingUIEnabled ? BrowserToolbarView.totalHeight(withOmnibarHeight: 0) : BrowserToolbarView.legacyButtonsHeight
+        let initialToolbarHeight = isFloatingUIEnabled ? BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled) : BrowserToolbarView.legacyButtonsHeight
         coordinator.constraints.toolbarHeight = toolbar.constrainAttribute(.height, to: initialToolbarHeight)
         NSLayoutConstraint.activate([
             toolbar.constrainView(superview, by: .width, constant: toolbarWidthMod),

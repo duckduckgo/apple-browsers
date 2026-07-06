@@ -151,6 +151,16 @@ extension Pixel {
         case settingsAutoconsentOn
         case settingsAutoconsentOff
 
+        case autoconsentSettingsShown
+        case autoconsentSettingsOn
+        case autoconsentSettingsOff
+        case autoconsentSettingsDefault
+        case autoconsentSettingsMax
+
+        case cookiePopupOptInShownFirst
+        case cookiePopupOptInShownRepeat
+        case cookiePopupOptInOptionConfirmed
+
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuOpenedError
@@ -2133,6 +2143,16 @@ extension Pixel.Event {
         case .settingsAutoconsentShown: return "m_settings_autoconsent_shown"
         case .settingsAutoconsentOn: return "m_settings_autoconsent_on"
         case .settingsAutoconsentOff: return "m_settings_autoconsent_off"
+
+        case .autoconsentSettingsShown: return "autoconsent_settings_shown"
+        case .autoconsentSettingsOn: return "autoconsent_settings_on"
+        case .autoconsentSettingsOff: return "autoconsent_settings_off"
+        case .autoconsentSettingsDefault: return "autoconsent_settings_default"
+        case .autoconsentSettingsMax: return "autoconsent_settings_max"
+
+        case .cookiePopupOptInShownFirst: return "cookie_popup_opt_in_shown_first"
+        case .cookiePopupOptInShownRepeat: return "cookie_popup_opt_in_shown_repeat"
+        case .cookiePopupOptInOptionConfirmed: return "cookie_popup_opt_in_option_confirmed"
 
         case .settingsPrivateSearchOpen: return "m_settings_private_search_open"
         case .settingsEmailProtectionOpen: return "m_settings_email_protection_open"

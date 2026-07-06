@@ -395,7 +395,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
         sessionStateMetrics: SessionStateMetricsProviding = SessionStateMetrics(storage: UserDefaults.standard),
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
-        duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil
+        duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil,
+        contextualStartsPreSubmit: Bool = false
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
@@ -483,7 +484,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // `hasSubmittedPrompt` should reflect that — drives follow-up placeholder + model chip hide.
         if host == .contextualChat {
             displayState = .aiTab(.expanded)
-            hasSubmittedPrompt = true
+            hasSubmittedPrompt = !contextualStartsPreSubmit
             syncHasSubmittedPromptToHandler()
             updateModelChipVisibility()
         }
@@ -748,7 +749,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.send(.showCollapsed(from: previousDisplayState))
     }
 
-    func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
+    func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat, activatesInput: Bool = true) {
         guard !isOnboardingLocked else { return }
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
@@ -774,6 +775,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateFloatingReturnKeyState()
 
         intentSubject.send(.showExpanded(from: previousDisplayState))
+        guard activatesInput else { return }
+
         DispatchQueue.main.async { [weak self] in
             guard let self, case .aiTab(.expanded) = self.displayState else { return }
             guard !self.isOnboardingLocked else { return }
@@ -789,6 +792,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 self.viewController.selectAllText()
             }
         }
+    }
+
+    func submitProgrammatic(text: String) {
+        unifiedToggleInputVC(viewController, didSubmitText: text, mode: .aiChat)
     }
 
     func hide() {

@@ -458,7 +458,7 @@
 "alert.sync-failed-description" = "Моля, опитайте отново.";
 
 /* Title for generic Sync setup failure alerts */
-"alert.sync-failed-title" = "Синхронизирането е успешно.";
+"alert.sync-failed-title" = "Синхронизацията не бе успешна.";
 
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Моля, синхронизирайте това устройство от вече свързан браузър DuckDuckGo на друго устройство.";

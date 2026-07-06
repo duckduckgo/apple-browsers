@@ -30,6 +30,7 @@ public enum RemoteMessagingSurveyActionParameter: String, CaseIterable {
     case subscriptionStatus = "ppro_status"
     case subscriptionPlatform = "ppro_platform"
     case subscriptionBilling = "ppro_billing"
+    case subscriptionTier = "ppro_tier"
     case subscriptionDaysSincePurchase = "ppro_days_since_purchase"
     case subscriptionDaysUntilExpiry = "ppro_days_until_exp"
     case subscriptionTrialActive = "ppro_trial_active"

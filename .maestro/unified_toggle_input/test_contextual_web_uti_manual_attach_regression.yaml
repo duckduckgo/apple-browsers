@@ -1,0 +1,97 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_contextual_web_uti_manual_attach_regression
+
+---
+
+# With the immediate contextual UTI flag off, contextual chat still starts with the
+# basic native input, then shows the web UTI after the first prompt. In manual mode,
+# placeholder and manually attached context stay sticky across navigation.
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.unifiedToggleInput: "true"
+        ff.contextualDuckAIMode: "true"
+        ff.aiChatContextualUnifiedToggleInput: "false"
+        ff.aiChatAutoAttachContextByDefault: "false"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertVisible: ".*Privacy Test Pages.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible:
+    id: "AIChatNativeInputView.submitButton"
+
+- tapOn:
+    id: "AIChatNativeInputView.textView"
+- inputText: "First contextual prompt"
+- tapOn:
+    id: "AIChatNativeInputView.submitButton"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+- extendedWaitUntil:
+    visible:
+        text: "Attach Page Content"
+    timeout: 30000
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/security/address-bar-spoofing/index.html"
+- pressKey: Enter
+- assertVisible: ".*Address Bar Spoofing.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible:
+    text: "Attach Page Content"
+
+- tapOn:
+    text: "Attach Page Content"
+- extendedWaitUntil:
+    notVisible: "Attach Page Content"
+    timeout: 10000
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/privacy-protections/geolocation/"
+- pressKey: Enter
+- assertVisible: ".*Geolocation.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- extendedWaitUntil:
+    notVisible: "Attach Page Content"
+    timeout: 10000

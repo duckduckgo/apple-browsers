@@ -91,6 +91,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private let syncService: DDGSyncing?
     private let syncPromoManager: SyncPromoManaging?
     private let aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting
+    private let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
 
     // MARK: - Manager Components
 
@@ -118,7 +119,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var searchDataSource: AutocompleteSuggestionsDataSource?
     /// Duck.ai sync-promo presenter; nil when there's no sync service.
     private lazy var aiChatSyncPromoViewModel: AIChatSyncPromoViewModel? =
-        syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0) }
+        syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0,
+                                                        recentModalPromptStatusProvider: recentModalPromptStatusProvider) }
     /// Built once and rebound into the pinned chrome by `updatePinnedChrome`; its show/hide rides
     /// `isSyncPromoCardVisible`, so there's no need to reconstruct it each time.
     private lazy var syncPromoView = AnyView(AIChatSyncPromoView(
@@ -155,6 +157,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          syncService: DDGSyncing? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
+         recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
          aiChatSyncIntroSheetPresenter: AIChatSyncIntroSheetPresenting = AIChatSyncIntroSheetPresenter()) {
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
@@ -168,6 +171,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                                                                   featureFlagger: featureFlagger,
                                                                   privacyConfigurationManager: privacyConfigurationManager) }
         self.aiChatSyncIntroSheetPresenter = aiChatSyncIntroSheetPresenter
+        self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -256,7 +260,19 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             // Re-resolve now (synchronously, before the host is shown) so the prior session's stale
             // content isn't flashed. Runs after `prepareForActivation` clears the dismiss freeze.
             activationResolveTrigger.send(())
+            syncDuckAISurfaceWithSettings()
             duckAISurface?.refreshRecents()
+        }
+    }
+
+    /// Re-checks the Chat Suggestions gate on every focus: this VC is built once per browser session
+    /// (`viewWillAppear` only fires once), so without this, toggling the setting wouldn't take effect
+    /// until the app restarts.
+    private func syncDuckAISurfaceWithSettings() {
+        if featureFlagger.isFeatureOn(.aiChatSuggestions) && aiChatSettings.isChatSuggestionsEnabled {
+            attachDuckAISurfaceIfNeeded()
+        } else {
+            detachDuckAISurfaceFromSingleHost()
         }
     }
 
@@ -526,7 +542,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let source = SearchSuggestionsSource(
             loader: loader,
-            query: { [weak self] in self?.switchBarHandler.currentText ?? "" },
+            // Empty when "Search Suggestions" is off, else `effectiveTopHits` falls back to a phrase row.
+            query: { [weak self] in self?.appSettings.autocomplete == true ? (self?.switchBarHandler.currentText ?? "") : "" },
             showAskAIChat: aiChatSettings.isAIChatEnabled
         )
 
@@ -606,7 +623,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             switchBarHandler.toggleStatePublisher,
             switchBarHandler.currentTextPublisher)
             .filter { mode, _ in mode == .search }
-            .map { _, text in text }
+            .map { [weak self] _, text in self?.appSettings.autocomplete == true ? text : "" }
             .removeDuplicates()
             .eraseToAnyPublisher()
 

@@ -556,6 +556,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Unlock DuckDuckGo.";
 
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Tap anywhere to unlock";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Sign In";
 
@@ -1384,20 +1387,41 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Tap **Add a Control** at the bottom of the screen";
 
-/* Cookie pop-up preference option */
-"cookie.popup.preference.block-all" = "Reject, Hide, or Accept";
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "New";
 
-/* Cookie pop-up preference option */
-"cookie.popup.preference.block-standard" = "Reject or Hide";
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Confirm";
 
-/* Cookie pop-up preference option */
-"cookie.popup.preference.do-not-block" = "Off";
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you.";
 
-/* Explanation below cookie pop-up preference picker in settings */
-"cookie.popup.preference.explanation" = "Some cookie pop-ups don't have a 'reject' option. By default, we won't block them. Choose **Reject, Hide, or Accept** to let us handle these — we may need to accept some cookies when necessary.";
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Manage or accept cookies for me";
 
-/* Title for cookie pop-up preference picker in settings */
-"cookie.popup.preference.title" = "Pop-up Setting";
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "I'll keep handling them myself";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Tired of cookie pop-ups that won't leave you alone?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "We can save you a click and accept these cookies for you.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Accept no-opt-out cookies for me";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "I'll keep handling them myself";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Tired of cookie pop-ups that don't let you opt out?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "You can always adjust later in\n**Settings** > **Cookie Pop-Up Protection**.";
+
+/* Header of the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.header" = "Cookie Pop-up Protection";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Always Send Crash Reports";
@@ -3826,14 +3850,26 @@ Take back control of your personal information with the browser designed for dat
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Complete Your Setup";
 
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "We'll aim to only select the most private cookie options available for you, then close these pop-ups.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Auto-Manage Cookie Pop-Ups";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Cookie Pop-Up Protection";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo will try to select the most private settings available and hide these pop-ups for you.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie preferences to maximize privacy, minimize cookies, and close these pop-ups.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Manage Cookie Pop-ups";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Also let DuckDuckGo save you a click by accepting cookies on your behalf to close pop-ups that don’t let you opt out.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Pop-Ups Without Opt-Outs";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Delete Tabs and Data";

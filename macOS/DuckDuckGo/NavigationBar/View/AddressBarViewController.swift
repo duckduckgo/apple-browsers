@@ -106,6 +106,7 @@ final class AddressBarViewController: NSViewController {
     @IBOutlet var activeBackgroundView: ColorView!
     @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
     @IBOutlet var innerBorderView: ColorView!
+    @IBOutlet var bottomSeparatorView: ColorView!
     @IBOutlet var buttonsContainerView: NSView!
     @IBOutlet var switchToTabBox: ColorView!
     @IBOutlet var switchToTabLabel: NSTextField!
@@ -780,7 +781,7 @@ final class AddressBarViewController: NSViewController {
         inactiveBackgroundView.cornerRadius = styleProvider.addressBarInactiveBackgroundViewRadius
         innerBorderView.cornerRadius = styleProvider.addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: isSuggestionsWindowVisible)
 
-        if featureFlagger.isFeatureOn(.appRebranding) {
+        if themeManager.isAppRebranded {
             let roundedCorners: RoundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
 
             innerBorderView.roundedCorners = roundedCorners
@@ -916,8 +917,7 @@ final class AddressBarViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
 
         /// Keep the suggestions shadow aligned with the panel by applying the same vertical offset.
-        let isOmnibarEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        let offset = AddressBarTextField.SuggestionWindowSizes.verticalOffset(isAppRebranded: themeManager.isAppRebranded, aiChatOmnibarToggleEnabled: isOmnibarEnabled)
+        let offset = AddressBarTextField.SuggestionWindowSizes.verticalOffset(isAppRebranded: themeManager.isAppRebranded)
         frame.origin.y += offset
         frame.size.height -= offset
 
@@ -966,6 +966,7 @@ final class AddressBarViewController: NSViewController {
         }
 
         addressBarTextField.refreshStyle()
+        bottomSeparatorView.isHidden = !themeManager.isAppRebranded
 
         let navigationBarBackgroundColor = theme.colorsProvider.navigationBackgroundColor
 
@@ -1020,7 +1021,7 @@ final class AddressBarViewController: NSViewController {
         /// When the toggle feature is on, all editing states have no left icon, so we pin the text at a constant
         /// padding that matches the Duck.ai prompt panel's leading inset. When the buttons container is wider
         /// (e.g. browsing with the privacy dashboard showing), we respect that width so the text clears the button.
-        let isToggleFeatureEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        let isToggleFeatureEnabled = aiChatSettings.isAIFeaturesEnabled
         let isToggleVisible = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
 
         let styleProvider = theme.addressBarStyleProvider
@@ -1040,9 +1041,8 @@ final class AddressBarViewController: NSViewController {
         /// The negative offset compensates for the leading padding of the search icon so the typed text sits
         /// flush against it (the buttons side sets a matching positive pad on the privacy-shield constraint —
         /// see `AddressBarButtonsViewController.IconLeadingTuning`). With the redesign, editing states
-        /// (`.text`, `.url`, `.openTabSuggestion`, `.aiChat`) no longer render a leading icon regardless of
-        /// the `aiChatOmnibarToggle` flag — skip the offset so the text isn't pushed past the (now-narrower)
-        /// buttons container's left edge on that path.
+        /// (`.text`, `.url`, `.openTabSuggestion`, `.aiChat`) no longer render a leading icon — skip the
+        /// offset so the text isn't pushed past the (now-narrower) buttons container's left edge on that path.
         if styleProvider.shouldShowNewSearchIcon && !self.mode.isEditing {
             let pullback = isAddressBarFocused
                 ? AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.focused
@@ -1123,8 +1123,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func fireAddressBarActivatedPixelIfNeeded() {
-        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
-              aiChatSettings.isAIFeaturesEnabled else {
+        guard aiChatSettings.isAIFeaturesEnabled else {
             return
         }
 

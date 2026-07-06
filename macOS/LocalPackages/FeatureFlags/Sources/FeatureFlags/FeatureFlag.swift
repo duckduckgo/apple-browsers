@@ -144,9 +144,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617328244
     case aiChatKeepSession
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212016242789291
-    case aiChatOmnibarToggle
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
     case aiChatSuggestions
 
@@ -291,6 +288,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Cookie Pop-up Preference picker in settings
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215960699028461?focus=true
     case cookiePopupPreferenceSetting
+
+    /// Cookie Pop-up Protection opt-in dialog
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
+    case cookiePopupOptInDialog
 
     /// Enables advanced card ordering for the Next Steps List widget
     /// This flag is disabled by default to allow testing the new widget design with current ordering logic
@@ -557,8 +558,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.selectionContext), category: .duckAI)
         case .aiChatKeepSession:
             Config(source: .remoteReleasable(AIChatSubfeature.keepSession), category: .duckAI)
-        case .aiChatOmnibarToggle:
-            Config(source: .remoteReleasable(AIChatSubfeature.omnibarToggle), category: .duckAI)
         case .aiChatSuggestions:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled), category: .duckAI)
         case .aiChatOmnibarTools:
@@ -643,6 +642,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
         case .cookiePopupPreferenceSetting:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupPreferenceSetting), category: .popupBlocking)
+        case .cookiePopupOptInDialog:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
         case .nextStepsListAdvancedCardOrdering:
             Config(source: .disabled)
         case .crashCollectionLimitCallStackTreeDepth:

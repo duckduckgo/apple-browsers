@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Persistence
 import PrivacyConfig
 import SwiftUI
+import UIComponents
 import Common
 import FoundationExtensions
 import Combine
@@ -537,13 +538,17 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var cookiePopupPreferenceBinding: Binding<CookiePopupPreference> {
-        Binding<CookiePopupPreference>(
-            get: { self.state.cookiePopupPreference },
+    var isCookiePopupPreferenceSettingEnabled: Bool {
+        featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting)
+    }
+
+    var autoconsentBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.autoconsentEnabled },
             set: {
-                self.appSettings.cookiePopupPreference = $0
-                self.state.cookiePopupPreference = $0
-                if $0.isBlockingEnabled {
+                self.appSettings.autoconsentEnabled = $0
+                self.state.autoconsentEnabled = $0
+                if $0 {
                     Pixel.fire(pixel: .settingsAutoconsentOn)
                 } else {
                     Pixel.fire(pixel: .settingsAutoconsentOff)
@@ -552,19 +557,36 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var autoconsentBinding: Binding<Bool> {
+    var autoManageCookiePopupsBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.state.cookiePopupPreference.isBlockingEnabled },
-            set: {
-                self.appSettings.autoconsentEnabled = $0
-                self.state.cookiePopupPreference = self.appSettings.cookiePopupPreference
-                if $0 {
-                    Pixel.fire(pixel: .settingsAutoconsentOn)
-                } else {
-                    Pixel.fire(pixel: .settingsAutoconsentOff)
-                }
+            get: { self.state.cookiePopupPreference.isAutoManageCookiePopupsEnabled },
+            set: { isEnabled in
+                let popUpsWithoutOptOuts = isEnabled ? self.state.cookiePopupPreference.isPopUpsWithoutOptOutsEnabled : false
+                self.setCookiePopupPreference(.preference(
+                    autoManageEnabled: isEnabled,
+                    popUpsWithoutOptOutsEnabled: popUpsWithoutOptOuts
+                ))
+                Pixel.fire(pixel: isEnabled ? .autoconsentSettingsOn : .autoconsentSettingsOff)
             }
         )
+    }
+
+    var popUpsWithoutOptOutsBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.cookiePopupPreference.isPopUpsWithoutOptOutsEnabled },
+            set: { isEnabled in
+                self.setCookiePopupPreference(.preference(
+                    autoManageEnabled: true,
+                    popUpsWithoutOptOutsEnabled: isEnabled
+                ))
+                Pixel.fire(pixel: isEnabled ? .autoconsentSettingsMax : .autoconsentSettingsDefault)
+            }
+        )
+    }
+
+    private func setCookiePopupPreference(_ preference: CookiePopupPreference) {
+        appSettings.cookiePopupPreference = preference
+        state.cookiePopupPreference = preference
     }
 
     var voiceSearchEnabledBinding: Binding<Bool> {
@@ -1660,6 +1682,13 @@ extension SettingsViewModel {
             case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general:
                 return .navigationLink
             }
+        }
+
+        // A subscription purchase flow launched from onboarding (carries the onboarding funnel origin).
+        var isOnboardingSubscriptionFlow: Bool {
+            guard case .subscriptionFlow(let redirectURLComponents) = self else { return false }
+            let origin = redirectURLComponents?.queryItems?.first { $0.name == AttributionParameter.origin }?.value
+            return origin == SubscriptionFunnelOrigin.onboarding.rawValue
         }
     }
 

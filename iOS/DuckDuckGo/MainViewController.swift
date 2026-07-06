@@ -327,6 +327,7 @@ class MainViewController: UIViewController {
 
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
+    let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
     var adBlockingAvailability: AdBlockingAvailabilityProviding { tabManager.adBlockingAvailability }
@@ -461,7 +462,8 @@ class MainViewController: UIViewController {
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
         toggleModeStorage: ToggleModeStoring = ToggleModeStorage(),
         onboardingResumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil,
-        onboardingManager: OnboardingManaging
+        onboardingManager: OnboardingManaging,
+        recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.remoteMessagingImageLoader = remoteMessagingImageLoader
@@ -516,6 +518,7 @@ class MainViewController: UIViewController {
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.keyValueStore = keyValueStore
+        self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
         self.onboardingResumeStepStore = if let onboardingResumeStepStore { onboardingResumeStepStore } else { UserDefaults.app.keyedStoring() }
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
@@ -882,27 +885,6 @@ class MainViewController: UIViewController {
         view.addSubview(overlay)
         tabSwipeOverlayView = overlay
         swipeTabsCoordinator?.swipeOverlayView = overlay
-    }
-
-    func captureCurrentTabScreenSnapshotIfPossible(tabUID: String) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self else { return }
-            guard (self.tabSwipeOverlayView?.alpha ?? 0) == 0 else {
-                return
-            }
-            guard let currentTab = self.tabManager.currentTabsModel.currentTab,
-                  currentTab.uid == tabUID else {
-                return
-            }
-            guard self.view.window != nil,
-                  self.view.bounds.width > 0,
-                  self.view.bounds.height > 0 else { return }
-            let renderer = UIGraphicsImageRenderer(size: self.view.bounds.size)
-            let image = renderer.image { _ in
-                self.view.drawHierarchy(in: self.view.bounds, afterScreenUpdates: false)
-            }
-            self.previewsSource.updateFullScreenSnapshot(image, forTab: currentTab)
-        }
     }
 
     func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
@@ -4948,6 +4930,12 @@ extension MainViewController: PopoverSuggestionsHosting {
     }
 
     func showPopoverDuckAIList(query: String) {
+        let isDuckAIInputExpanded = (viewCoordinator.omniBar as? OmniBarViewController)?
+            .expandableBarView?.isSearchAreaExpanded ?? false
+        guard isDuckAIInputExpanded else {
+            hidePopover()
+            return
+        }
         suggestionTrayController?.setAdditionalTopInset(duckAIPopoverTopInset(), animated: isPopoverVisible)
         tryToShowSuggestionTray(.duckAISuggestions(query: query))
     }

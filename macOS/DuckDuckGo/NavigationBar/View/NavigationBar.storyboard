@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24765" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="o2v-eH-jTI">
     <dependencies>
+        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24765"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -536,11 +537,25 @@
                                             </userDefinedRuntimeAttribute>
                                         </userDefinedRuntimeAttributes>
                                     </customView>
+                                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="trY-hj-5gU" userLabel="Bottom Separator View" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="1" y="12" width="653" height="1"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="1" id="a2Q-Ia-0KV"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
+                                                <color key="value" name="AddressBarSeparatorColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                    </customView>
                                 </subviews>
                                 <constraints>
                                     <constraint firstItem="INL-zs-eEh" firstAttribute="leading" secondItem="Ij9-fc-CLI" secondAttribute="leading" constant="1" id="4kW-oy-mTm"/>
                                     <constraint firstAttribute="trailing" secondItem="INL-zs-eEh" secondAttribute="trailing" constant="1" id="5Xn-fr-BZ1"/>
+                                    <constraint firstItem="trY-hj-5gU" firstAttribute="top" secondItem="Ij9-fc-CLI" secondAttribute="top" constant="47" id="W67-aW-AsK"/>
                                     <constraint firstItem="INL-zs-eEh" firstAttribute="top" secondItem="Ij9-fc-CLI" secondAttribute="top" constant="1" id="X7U-Sj-ZgA"/>
+                                    <constraint firstItem="trY-hj-5gU" firstAttribute="leading" secondItem="Ij9-fc-CLI" secondAttribute="leading" constant="1" id="hRq-4F-ToA"/>
+                                    <constraint firstAttribute="trailing" secondItem="trY-hj-5gU" secondAttribute="trailing" constant="1" id="oeP-iN-J7F"/>
                                     <constraint firstAttribute="bottom" secondItem="INL-zs-eEh" secondAttribute="bottom" constant="1" id="scf-1X-Mb0"/>
                                     <constraint firstAttribute="height" constant="60" id="yqE-CB-eEx"/>
                                 </constraints>
@@ -707,6 +722,7 @@
                         <outlet property="activeTextFieldMinXConstraint" destination="bY3-LA-cuF" id="Sln-8O-mrq"/>
                         <outlet property="addressBarTextField" destination="zaX-wZ-E3D" id="pfO-d4-i46"/>
                         <outlet property="addressBarTextTrailingConstraint" destination="3qw-n4-evE" id="Hgt-4m-g06"/>
+                        <outlet property="bottomSeparatorView" destination="trY-hj-5gU" id="mW3-bY-W28"/>
                         <outlet property="buttonsContainerView" destination="bOl-8Z-hTh" id="UHc-27-JaK"/>
                         <outlet property="buttonsContainerViewLeadingConstraint" destination="OSv-yy-Yz5" id="bC1-ld-Ng1"/>
                         <outlet property="buttonsContainerViewTrailingConstraint" destination="VD0-WJ-LdG" id="bC2-tr-Ng2"/>
@@ -1155,6 +1171,9 @@
         </namedColor>
         <namedColor name="AddressBarInnerBorderColor">
             <color red="1" green="1" blue="1" alpha="0.0" colorSpace="custom" customColorSpace="displayP3"/>
+        </namedColor>
+        <namedColor name="AddressBarSeparatorColor">
+            <color red="0.0" green="0.0" blue="0.0" alpha="0.11999999729999999" colorSpace="custom" customColorSpace="displayP3"/>
         </namedColor>
         <namedColor name="AddressBarShadowColor">
             <color red="0.0" green="0.0" blue="0.0" alpha="0.15000000596046448" colorSpace="custom" customColorSpace="displayP3"/>

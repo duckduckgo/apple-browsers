@@ -363,7 +363,7 @@ final class AddEditBookmarkDialogViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testReturnIsDefaultActionButtonDisabledTrueWhenBookmarkNameIsEmptyAndModeIsAdd() {
+    func testReturnIsDefaultActionButtonDisabledFalseWhenBookmarkNameIsEmptyAndModeIsAdd() {
         // GIVEN
         let sut = AddEditBookmarkDialogViewModel(mode: .add(), bookmarkManager: bookmarkManager)
         sut.bookmarkName = ""
@@ -373,11 +373,11 @@ final class AddEditBookmarkDialogViewModelTests: XCTestCase {
         let result = sut.isDefaultActionDisabled
 
         // THEN
-        XCTAssertTrue(result)
+        XCTAssertFalse(result)
     }
 
     @MainActor
-    func testReturnIsDefaultActionButtonDisabledTrueWhenBookmarkNameIsEmptyAndModeIsEdit() {
+    func testReturnIsDefaultActionButtonDisabledFalseWhenBookmarkNameIsEmptyAndModeIsEdit() {
         // GIVEN
         let sut = AddEditBookmarkDialogViewModel(mode: .edit(bookmark: .mock), bookmarkManager: bookmarkManager)
         sut.bookmarkName = ""
@@ -387,7 +387,7 @@ final class AddEditBookmarkDialogViewModelTests: XCTestCase {
         let result = sut.isDefaultActionDisabled
 
         // THEN
-        XCTAssertTrue(result)
+        XCTAssertFalse(result)
     }
 
     @MainActor

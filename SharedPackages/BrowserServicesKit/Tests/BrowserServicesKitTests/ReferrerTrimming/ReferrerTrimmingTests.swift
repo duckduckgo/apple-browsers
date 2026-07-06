@@ -47,9 +47,9 @@ struct ReferrerTests: Codable {
 class ReferrerTrimmingTests: XCTestCase {
 
     private enum Resource {
-        static let config = "Resources/privacy-reference-tests/referrer-trimming/config_reference.json"
-        static let tds = "Resources/privacy-reference-tests/referrer-trimming/tracker_radar_reference.json"
-        static let tests = "Resources/privacy-reference-tests/referrer-trimming/tests.json"
+        static let config = "Res/privacy-reference-tests/referrer-trimming/config_reference.json"
+        static let tds = "Res/privacy-reference-tests/referrer-trimming/tracker_radar_reference.json"
+        static let tests = "Res/privacy-reference-tests/referrer-trimming/tests.json"
     }
 
     private static let data = JsonTestDataLoader()

@@ -99,6 +99,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var subscriptionDaysSinceSubscribed: Int = -1
         var subscriptionDaysUntilExpiry: Int = -1
         var subscriptionPurchasePlatform: String?
+        var subscriptionTier: String?
         var isSubscriptionActive: Bool = false
         var isSubscriptionExpiring: Bool = false
         var isSubscriptionExpired: Bool = false
@@ -133,6 +134,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             subscriptionPurchasePlatform = subscription.platform.rawValue
+            subscriptionTier = subscription.tier?.rawValue
             subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
             switch subscription.status {
@@ -183,6 +185,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
                                                        subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
                                                        subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+                                                       subscriptionTier: subscriptionTier,
                                                        isSubscriptionActive: isSubscriptionActive,
                                                        isSubscriptionExpiring: isSubscriptionExpiring,
                                                        isSubscriptionExpired: isSubscriptionExpired,
@@ -217,6 +220,10 @@ extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
 
     public var subscriptionBilling: String? {
         return billingPeriod.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionTier: String? {
+        return tier?.rawValue
     }
 
     public var subscriptionStartDate: Date? {

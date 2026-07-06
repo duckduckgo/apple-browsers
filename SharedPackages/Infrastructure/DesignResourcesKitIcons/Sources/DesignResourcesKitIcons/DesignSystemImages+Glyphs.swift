@@ -311,6 +311,7 @@ public extension DesignSystemImages {
             public static var screenShare: DesignSystemImage { .init(resource: .screenShare16) }
             public static var screenShareBlocked: DesignSystemImage { .init(resource: .screenShareBlocked16) }
             public static var screenShareSolid: DesignSystemImage { .init(resource: .screenShareSolid16) }
+            public static var searchFind: DesignSystemImage { .init(resource: .searchFind16) }
             public static var searchGlobe: DesignSystemImage { .init(resource: .searchGlobe16) }
             public static var searchSite: DesignSystemImage { .init(resource: .searchSite16) }
             public static var sendPlane: DesignSystemImage { .init(resource: .sendPlane16) }

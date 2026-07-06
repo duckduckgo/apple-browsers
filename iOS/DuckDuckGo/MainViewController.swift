@@ -4930,6 +4930,12 @@ extension MainViewController: PopoverSuggestionsHosting {
     }
 
     func showPopoverDuckAIList(query: String) {
+        let isDuckAIInputExpanded = (viewCoordinator.omniBar as? OmniBarViewController)?
+            .expandableBarView?.isSearchAreaExpanded ?? false
+        guard isDuckAIInputExpanded else {
+            hidePopover()
+            return
+        }
         suggestionTrayController?.setAdditionalTopInset(duckAIPopoverTopInset(), animated: isPopoverVisible)
         tryToShowSuggestionTray(.duckAISuggestions(query: query))
     }

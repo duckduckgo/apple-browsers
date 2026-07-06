@@ -524,13 +524,6 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var cookiePopupPreferenceBinding: Binding<CookiePopupPreference> {
-        Binding<CookiePopupPreference>(
-            get: { self.state.cookiePopupPreference },
-            set: { self.setCookiePopupPreference($0) }
-        )
-    }
-
     var isCookiePopupPreferenceSettingEnabled: Bool {
         featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting)
     }

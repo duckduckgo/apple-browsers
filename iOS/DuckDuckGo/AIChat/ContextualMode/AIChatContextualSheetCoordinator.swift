@@ -31,6 +31,7 @@ import WebKit
 /// Underlying-tab URL publishers the contextual chat needs.
 struct AIChatTabURLPublishers {
     let originating: AnyPublisher<URL?, Never>
+    let didFinish: AnyPublisher<URL?, Never>
 }
 
 private struct ContextualUnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
@@ -91,6 +92,7 @@ final class AIChatContextualSheetCoordinator {
     private var contextUpdateCancellable: AnyCancellable?
     private var sessionEffectCancellable: AnyCancellable?
     private var currentPageURLCancellable: AnyCancellable?
+    private var didFinishURLCancellable: AnyCancellable?
     private var currentPageURL: URL?
     private var persistentUTIHost: AIChatContextualUTIHost?
 
@@ -173,6 +175,13 @@ final class AIChatContextualSheetCoordinator {
         self.currentPageURLCancellable = tabURLPublishers.originating
             .sink { [weak self] url in
                 self?.currentPageURL = url
+            }
+        self.didFinishURLCancellable = tabURLPublishers.didFinish
+            .dropFirst()
+            .sink { [weak self] _ in
+                Task { [weak self] in
+                    await self?.notifyPageChanged()
+                }
             }
     }
 

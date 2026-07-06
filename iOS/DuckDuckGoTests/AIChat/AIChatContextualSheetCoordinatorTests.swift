@@ -135,6 +135,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
     private var originatingTabURLSubject: CurrentValueSubject<URL?, Never>!
+    private var didFinishTabURLSubject: CurrentValueSubject<URL?, Never>!
     private var cancellables: Set<AnyCancellable>!
 
     // MARK: - Setup
@@ -148,6 +149,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockPageContextHandler = MockPageContextHandler()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
         originatingTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
+        didFinishTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
         sut = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
             aiChatSettings: mockSettings,
@@ -158,7 +160,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
             pageContextHandler: mockPageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(
-                originating: originatingTabURLSubject.eraseToAnyPublisher()
+                originating: originatingTabURLSubject.eraseToAnyPublisher(),
+                didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
             )
         )
         mockDelegate = MockDelegate()
@@ -178,6 +181,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockPageContextHandler = nil
         contentBlockingSubject = nil
         originatingTabURLSubject = nil
+        didFinishTabURLSubject = nil
         cancellables = nil
         super.tearDown()
     }
@@ -351,6 +355,46 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
         await sut.notifyPageChanged()
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    @MainActor
+    func testDidFinishURLPublisherTriggersCollectionWhenAutoAttachEnabled() async {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        didFinishTabURLSubject.send(URL(string: "https://example.com/page-b")!)
+        await Task.yield()
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    @MainActor
+    func testDidFinishURLPublisherInitialReplayDoesNotDuplicateCollectionWhenSheetOpens() async {
+        sut = nil
+        mockPageContextHandler = MockPageContextHandler()
+        originatingTabURLSubject = CurrentValueSubject<URL?, Never>(URL(string: "https://example.com/page-a")!)
+        didFinishTabURLSubject = CurrentValueSubject<URL?, Never>(URL(string: "https://example.com/page-a")!)
+        sut = AIChatContextualSheetCoordinator(
+            voiceSearchHelper: MockVoiceSearchHelper(),
+            aiChatSettings: mockSettings,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: mockFeatureFlagger,
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            pageContextHandler: mockPageContextHandler,
+            tabURLPublishers: AIChatTabURLPublishers(
+                originating: originatingTabURLSubject.eraseToAnyPublisher(),
+                didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
+            )
+        )
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        await sut.presentSheet(from: mockPresentingVC)
+        await Task.yield()
 
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
     }

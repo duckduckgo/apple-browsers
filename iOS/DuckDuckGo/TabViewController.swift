@@ -324,6 +324,10 @@ class TabViewController: UIViewController {
     var urlPublisher: AnyPublisher<URL?, Never> {
         urlSubject.eraseToAnyPublisher()
     }
+    private let didFinishURLSubject = CurrentValueSubject<URL?, Never>(nil)
+    var didFinishURLPublisher: AnyPublisher<URL?, Never> {
+        didFinishURLSubject.eraseToAnyPublisher()
+    }
 
     public var url: URL? {
         willSet {
@@ -605,7 +609,7 @@ class TabViewController: UIViewController {
             featureFlagger: featureFlagger,
             unifiedToggleInputFeature: unifiedToggleInputFeature,
             pageContextHandler: pageContextHandler,
-            tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher),
+            tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler
@@ -2098,6 +2102,7 @@ extension TabViewController: WKNavigationDelegate {
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
+        didFinishURLSubject.send(webView.url)
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
         adClickExternalOpenDetector.finishNavigation()
@@ -2109,12 +2114,6 @@ extension TabViewController: WKNavigationDelegate {
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
-
-        if aiChatContextualSheetCoordinator.hasActiveSheet {
-            Task { [weak self] in
-                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
-            }
-        }
 
         fireProductTelemetry(for: webView)
         

@@ -829,6 +829,11 @@ final class AddressBarViewController: NSViewController {
 
     private func refreshConstraints() {
         let styleProvider = theme.addressBarStyleProvider
+
+        activeBackgroundViewTopConstraint.constant = styleProvider.addressBarActiveBackgroundViewVerticalPadding
+        activeBackgroundViewBottomConstraint.constant = styleProvider.addressBarActiveBackgroundViewVerticalPadding
+        inactiveBackgroundViewTopConstraint.constant = styleProvider.addressBarInactiveBackgroundViewVerticalPadding
+        inactiveBackgroundViewBottomConstraint.constant = styleProvider.addressBarInactiveBackgroundViewVerticalPadding
         inactiveBackgroundViewLeadingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewLeadingPadding
         inactiveBackgroundViewTrailingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewTrailingPadding
         buttonsContainerViewLeadingConstraint.constant = styleProvider.addressBarButtonsContainerViewLeadingPadding

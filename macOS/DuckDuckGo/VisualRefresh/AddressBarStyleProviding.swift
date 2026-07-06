@@ -48,10 +48,12 @@ protocol AddressBarStyleProviding {
     // MARK: - Metrics
     var addressBarActiveBackgroundViewRadius: CGFloat { get }
     var addressBarActiveBackgroundViewRadiusWithSuggestions: CGFloat { get }
+    var addressBarActiveBackgroundViewVerticalPadding: CGFloat { get }
     var addressBarActiveOuterBorderViewRadius: CGFloat { get }
     var addressBarActiveOuterBorderSize: CGFloat { get }
     var addressBarButtonSize: CGFloat { get }
     var addressBarButtonsCornerRadius: CGFloat { get }
+    var addressBarInactiveBackgroundViewVerticalPadding: CGFloat { get }
     var addressBarInactiveBackgroundViewLeadingPadding: CGFloat { get }
     var addressBarInactiveBackgroundViewTrailingPadding: CGFloat { get }
     var addressBarButtonsContainerViewLeadingPadding: CGFloat { get }
@@ -122,6 +124,7 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     let defaultAddressBarFontSize: CGFloat = 13
     let newTabOrHomePageAddressBarFontSize: CGFloat = 13
     let addressBarButtonsCornerRadius: CGFloat = 9
+    let addressBarInactiveBackgroundViewVerticalPadding: CGFloat = 2 // Not used in Legacy Mode
     let shouldShowNewSearchIcon: Bool = true
     let shouldAddPaddingToAddressBarButtons: Bool = true
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = CurrentPrivacyShieldAddressBarStyleProvider()
@@ -131,6 +134,7 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     let addTabButtonPadding: CGFloat = 32 // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
     let addressBarActiveBackgroundViewRadius: CGFloat = 15
     let addressBarActiveBackgroundViewRadiusWithSuggestions: CGFloat = 15
+    let addressBarActiveBackgroundViewVerticalPadding: CGFloat = 0 // Not used in Legacy Mode
     let addressBarInactiveBackgroundViewRadius: CGFloat = 12
     let addressBarInnerBorderViewRadius: CGFloat = 15
     let addressBarTextFieldLeadingPadding: CGFloat = 20
@@ -251,10 +255,12 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
 
     let addressBarActiveBackgroundViewRadius: CGFloat = 19
     let addressBarActiveBackgroundViewRadiusWithSuggestions: CGFloat = 24
+    let addressBarActiveBackgroundViewVerticalPadding: CGFloat = 5
     let addressBarActiveOuterBorderViewRadius: CGFloat = 0      // Deprecated
     let addressBarActiveOuterBorderSize: CGFloat = 0            // Deprecated
     let addressBarButtonSize: CGFloat = 28
     let addressBarButtonsCornerRadius: CGFloat = 14
+    let addressBarInactiveBackgroundViewVerticalPadding: CGFloat = 7
     let addressBarInactiveBackgroundViewRadius: CGFloat = 17
     let addressBarInactiveBackgroundViewLeadingPadding: CGFloat = 6
     let addressBarInactiveBackgroundViewTrailingPadding: CGFloat = 6
@@ -298,6 +304,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
         }
     }
 
+    /// Deprecated: Remove once `.appRebranding` Ships
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
         case .default, .homePage:
@@ -307,6 +314,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
         }
     }
 
+    /// Deprecated: Remove once `.appRebranding` Ships
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
         case .default, .homePage:

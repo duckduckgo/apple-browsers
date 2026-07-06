@@ -327,11 +327,15 @@ jobs:
       working-directory: macOS
       run: |
         test_id="${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ' / internal' || '' }})"
-        file="${test_id}.xml"
+        # The report filename must not contain '/', which is a path separator: the internal-mode
+        # suffix (' / internal') would otherwise make xcbeautify write to a non-existent directory.
+        # Sanitize the filename while keeping '/' in test_id for the human-readable suite name below.
+        file="${test_id//\//-}.xml"
         echo "file=$file" >> $GITHUB_OUTPUT
         xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
-        # Replace the default test suite name with the test id for better grouping in the test report
-        sed -i '' "s/Selected tests/${test_id}/" "$file"
+        # Replace the default test suite name with the test id for better grouping in the test report.
+        # Use '#' as the sed delimiter since test_id may contain '/'.
+        sed -i '' "s#Selected tests#${test_id}#" "$file"
 
     # Upload test report as artifact for the test-report job
     # that publishes a combined report for all test cases

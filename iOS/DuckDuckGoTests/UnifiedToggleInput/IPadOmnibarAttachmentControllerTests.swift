@@ -40,6 +40,10 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
             preferences: preferences,
             subscriptionManager: SubscriptionManagerMock()
         )
+        // In production the models fetch also returns attachment limits; without them the validator
+        // treats the per-turn image allowance as 0, so `canAttachImages` (and the attach menu) is
+        // suppressed. Seed limits so availability tests mirror a real, limit-bearing response.
+        store.attachmentLimits = makeLimits()
         strip = UnifiedToggleInputAttachmentsStripView()
         sut = IPadOmnibarAttachmentController(store: store)
         sut.attachmentsStripView = strip
@@ -155,6 +159,13 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func makeLimits() -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
+        )
+    }
 
     private func makeModel(id: String, supportsImageUpload: Bool, supportedFileTypes: [String] = []) -> AIChatModel {
         AIChatModel(

@@ -111,11 +111,11 @@ jobs:
       test: ${{ steps.list-tests.outputs.test }}
       all-os-versions: ${{ steps.define-runners.outputs.all-os-versions }}
       start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-      # The UI Tests matrix runs each user mode as a separate leg (ui-tests-1 / ui-tests-2) so that
-      # a single matrix never exceeds GitHub's 256-configuration limit. user-mode-2 is empty when
-      # only one mode should run, in which case the ui-tests-2 leg is skipped.
-      user-mode-1: ${{ steps.define-user-modes.outputs.user-mode-1 }}
-      user-mode-2: ${{ steps.define-user-modes.outputs.user-mode-2 }}
+      # The UI Tests matrix runs each user mode as a separate job (ui-tests-production /
+      # ui-tests-internal) so that a single matrix never exceeds GitHub's 256-configuration limit.
+      # Each flag says whether that mode was requested; the matching job is skipped when it is false.
+      run-production: ${{ steps.define-user-modes.outputs.run-production }}
+      run-internal: ${{ steps.define-user-modes.outputs.run-internal }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -170,14 +170,15 @@ jobs:
               user_modes='["production"]'
               ;;
           esac
-          # Emit one user mode per leg. Two modes in a single matrix would produce
-          # 3 runners x ~55 tests x 2 modes = 330 configs, over GitHub's 256 limit, so each mode
-          # runs as its own leg (ui-tests-1 / ui-tests-2). user-mode-2 is empty for a single mode.
-          mode1=$(jq -r '.[0]' <<< "$user_modes")
-          mode2=$(jq -r '.[1] // ""' <<< "$user_modes")
-          echo "user-mode-1=${mode1}" >> $GITHUB_OUTPUT
-          echo "user-mode-2=${mode2}" >> $GITHUB_OUTPUT
-          echo "Resolved user modes: leg 1='${mode1}', leg 2='${mode2:-<none>}'"
+          # Each user mode runs as its own job (ui-tests-production / ui-tests-internal). Running
+          # both in a single matrix would produce 3 runners x ~55 tests x 2 modes = 330 configs,
+          # over GitHub's 256 limit, so they are split; each job is gated on whether its mode was
+          # requested.
+          run_production=$(jq -r 'any(.[]; . == "production")' <<< "$user_modes")
+          run_internal=$(jq -r 'any(.[]; . == "internal")' <<< "$user_modes")
+          echo "run-production=${run_production}" >> $GITHUB_OUTPUT
+          echo "run-internal=${run_internal}" >> $GITHUB_OUTPUT
+          echo "Resolved user modes: ${user_modes} (production=${run_production}, internal=${run_internal})"
 
       - name: List tests
         id: list-tests
@@ -219,15 +220,16 @@ jobs:
 
           echo "test=${test}" >> $GITHUB_OUTPUT
 
-  # UI Tests run as two legs, one per user mode, each calling the reusable macos_run_ui_test.yml
-  # helper once per (runner x test) combination. Two modes in a single matrix would exceed GitHub's
-  # 256-configuration limit; splitting by user mode keeps each leg at 3 runners x ~55 tests = 165.
-  # Leg 1 always runs; leg 2 only runs when a second user mode was requested (e.g. user_modes=both
-  # or the scheduled run). Internal-mode failures stay non-gating via continue-on-error inside the
-  # helper's job.
-  ui-tests-1:
+  # UI Tests run as two jobs, one per user mode, each calling the reusable macos_run_ui_test.yml
+  # helper once per (runner x test) combination. Both modes in a single matrix would exceed GitHub's
+  # 256-configuration limit; splitting by user mode keeps each job at 3 runners x ~55 tests = 165.
+  # Each job runs only when its mode was requested (production by default; internal for
+  # user_modes=internal/both and the scheduled run). Internal-mode failures stay non-gating via
+  # continue-on-error inside the helper's job.
+  ui-tests-production:
     name: UI Tests
     needs: [create-notarized-app, setup-tests]
+    if: needs.setup-tests.outputs.run-production == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -240,15 +242,15 @@ jobs:
       os-version: ${{ matrix.os-version }}
       xcode-version: ${{ matrix.xcode-version }}
       test: ${{ matrix.test }}
-      user-mode: ${{ needs.setup-tests.outputs.user-mode-1 }}
+      user-mode: production
       build-type: ${{ inputs.build-type || 'dmg' }}
       branch: ${{ inputs.branch || github.sha }}
     secrets: inherit
 
-  ui-tests-2:
+  ui-tests-internal:
     name: UI Tests
     needs: [create-notarized-app, setup-tests]
-    if: needs.setup-tests.outputs.user-mode-2 != ''
+    if: needs.setup-tests.outputs.run-internal == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -261,7 +263,7 @@ jobs:
       os-version: ${{ matrix.os-version }}
       xcode-version: ${{ matrix.xcode-version }}
       test: ${{ matrix.test }}
-      user-mode: ${{ needs.setup-tests.outputs.user-mode-2 }}
+      user-mode: internal
       build-type: ${{ inputs.build-type || 'dmg' }}
       branch: ${{ inputs.branch || github.sha }}
     secrets: inherit
@@ -269,7 +271,7 @@ jobs:
   test-report:
     name: Report test results
     if: always() && needs.should-run-checks.outputs.should_run == 'true'
-    needs: [should-run-checks, setup-tests, ui-tests-1, ui-tests-2]
+    needs: [should-run-checks, setup-tests, ui-tests-production, ui-tests-internal]
     runs-on: ubuntu-latest
 
     steps:
@@ -309,7 +311,7 @@ jobs:
   notify-failure:
     name: Notify on failure
     if: ${{ always() && github.event_name == 'schedule' }}
-    needs: [ui-tests-1, ui-tests-2]
+    needs: [ui-tests-production, ui-tests-internal]
     runs-on: ubuntu-latest
 
     steps:

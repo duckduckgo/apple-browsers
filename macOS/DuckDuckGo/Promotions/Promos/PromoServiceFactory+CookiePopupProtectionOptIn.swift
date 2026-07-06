@@ -23,14 +23,18 @@ extension PromoServiceFactory {
     static let cookiePopupProtectionOptInPromoID = "cookie-popup-protection-opt-in"
 
     @MainActor
-    static func cookiePopupProtectionOptIn() -> Promo {
+    static func cookiePopupProtectionOptIn(dependencies: PromoDependencies) -> Promo {
         InternalPromo(
             id: cookiePopupProtectionOptInPromoID,
             triggers: [.appLaunched],
             initiated: .app,
             promoType: PromoType(.appModal),
             context: .global,
-            delegate: CookiePopupProtectionOptInPromoDelegate()
+            delegate: CookiePopupProtectionOptInPromoDelegate(
+                featureFlagger: Application.appDelegate.featureFlagger,
+                cookiePopupProtectionPreferences: Application.appDelegate.cookiePopupProtectionPreferences,
+                store: CookiePopupProtectionOptInPromptStore(keyValueStore: dependencies.keyValueStore)
+            )
         )
     }
 }

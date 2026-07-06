@@ -590,6 +590,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var textViewBottomToContainerConstraint: NSLayoutConstraint?
     /// Active when attachments are present: the text view stops above the attachments strip.
     private var textViewBottomToStripConstraint: NSLayoutConstraint?
+    /// Active when the attach button is shown: the tool picker sits to its trailing edge.
+    private var toolPickerLeadingToAttachConstraint: NSLayoutConstraint?
+    /// Active when the attach button is hidden: the tool picker aligns to the leading edge instead of
+    /// leaving the (hidden) attach button's reserved gap.
+    private var toolPickerLeadingToContainerConstraint: NSLayoutConstraint?
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
@@ -1705,7 +1710,6 @@ extension DefaultOmniBarView {
             attachButton.widthAnchor.constraint(equalToConstant: Metrics.attachButtonSize),
             attachButton.heightAnchor.constraint(equalToConstant: Metrics.attachButtonSize),
 
-            toolPickerButton.leadingAnchor.constraint(equalTo: attachButton.trailingAnchor, constant: Metrics.attachToToolPickerSpacing),
             toolPickerButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
             toolPickerButton.widthAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),
             toolPickerButton.heightAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),
@@ -1715,6 +1719,24 @@ extension DefaultOmniBarView {
             attachmentsStripView.bottomAnchor.constraint(equalTo: aiChatSendButton.topAnchor, constant: -Metrics.attachmentsStripToButtonRowSpacing),
             stripHeight,
         ])
+
+        // The tool picker normally sits to the trailing edge of the attach button, but when the model
+        // accepts no attachments the attach button is hidden while keeping its (constraint-reserved)
+        // slot. Toggle between anchoring to the attach button and the leading edge so the tool chip
+        // doesn't sit inset behind a hidden button. Kept in sync by `updateToolPickerLeadingConstraint`.
+        let toolPickerLeadingToAttach = toolPickerButton.leadingAnchor.constraint(
+            equalTo: attachButton.trailingAnchor,
+            constant: Metrics.attachToToolPickerSpacing
+        )
+        toolPickerLeadingToAttachConstraint = toolPickerLeadingToAttach
+
+        let toolPickerLeadingToContainer = toolPickerButton.leadingAnchor.constraint(
+            equalTo: searchAreaContainerView.leadingAnchor,
+            constant: Metrics.duckAITextViewBottomPadding
+        )
+        toolPickerLeadingToContainerConstraint = toolPickerLeadingToContainer
+
+        updateToolPickerLeadingConstraint()
 
         let bottomEqual = searchAreaContainerView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor)
         bottomEqual.isActive = true
@@ -1933,6 +1955,9 @@ extension DefaultOmniBarView {
     }
 
     private func refreshAttachButtonVisibility() {
+        // Attach availability drives where the tool picker anchors, so re-evaluate it on every call
+        // (including the early-return paths below).
+        updateToolPickerLeadingConstraint()
         guard isSearchAreaExpanded, canShowAttachButton else {
             attachButton.isHidden = true
             return
@@ -1944,6 +1969,17 @@ extension DefaultOmniBarView {
         UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
             self.attachButton.alpha = 1
         }
+    }
+
+    /// Anchors the tool picker to the attach button's trailing edge when the attach button is shown,
+    /// or to the leading edge when it is hidden (so the hidden button's reserved slot doesn't push
+    /// the tool chip inward). No-op until `setUpExpandedSearchAreaConstraints` creates the constraints.
+    private func updateToolPickerLeadingConstraint() {
+        guard let toAttach = toolPickerLeadingToAttachConstraint,
+              let toContainer = toolPickerLeadingToContainerConstraint else { return }
+        let attachVisible = canShowAttachButton
+        toAttach.isActive = attachVisible
+        toContainer.isActive = !attachVisible
     }
 
     /// Sets the strip height, text-view bottom anchor, and expanded-area growth for the current
@@ -2002,13 +2038,20 @@ extension DefaultOmniBarView {
     }
 
     func updateAIChatSendButton(hasText: Bool) {
+        // Mirror the iPhone unified toggle rule: submit is available with text or a valid attachment,
+        // and blocked while any attachment is invalid. Voice only stands in when the input is truly
+        // empty (no text and no attachments).
+        let attachments = attachmentsStripView.attachments
+        let hasValidAttachment = attachments.contains { !$0.isInvalid }
+        let hasInvalidAttachment = attachments.contains(where: \.isInvalid)
+        let canSubmit = !hasInvalidAttachment && (hasText || hasValidAttachment)
         let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
-        if hasText {
+        if canSubmit {
             aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
-        } else if isAIVoiceChatEnabled {
+        } else if !hasText && attachments.isEmpty && isAIVoiceChatEnabled {
             aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.voice, for: .normal)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)

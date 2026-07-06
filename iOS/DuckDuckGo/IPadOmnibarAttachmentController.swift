@@ -102,6 +102,18 @@ final class IPadOmnibarAttachmentController {
         !currentAttachments.isEmpty
     }
 
+    /// Whether at least one pending attachment is valid (submittable). Mirrors the iPhone unified
+    /// toggle rule that lets a valid attachment stand in for prompt text.
+    var hasValidAttachment: Bool {
+        currentAttachments.contains { !$0.isInvalid }
+    }
+
+    /// Whether any pending attachment failed validation. The iPhone flow blocks submission while
+    /// this is true; the iPad send path mirrors that.
+    var hasInvalidAttachment: Bool {
+        currentAttachments.contains(where: \.isInvalid)
+    }
+
     var encodedImages: [AIChatNativePrompt.NativePromptImage]? {
         UnifiedToggleInputImageEncoder.encode(currentAttachments)
     }

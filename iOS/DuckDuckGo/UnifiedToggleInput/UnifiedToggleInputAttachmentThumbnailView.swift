@@ -24,85 +24,6 @@ import UIKit
 
 final class UnifiedToggleInputAttachmentThumbnailView: UIView {
 
-    /// How an image attachment is laid out inside its chip.
-    /// - `inline`: the thumbnail sits beside the remove button on a single row (iPhone).
-    /// - `filled`: the image fills a square chip and the remove button overhangs the top-right
-    ///   corner as a circular badge (iPad, matching macOS).
-    enum ImageLayout {
-        case inline
-        case filled
-    }
-
-    /// The metrics driving the chip's layout. Callers inject a `Sizing` so the same view can render
-    /// the compact iPhone chips and the larger square iPad thumbnails; the default matches iPhone so
-    /// existing call sites are unaffected.
-    struct Sizing {
-        var chipHeight: CGFloat
-        var imageChipWidth: CGFloat
-        var fileChipWidth: CGFloat
-        var chipCornerRadius: CGFloat
-        var thumbnailSize: CGFloat
-        var thumbnailCornerRadius: CGFloat
-        var documentIconSize: CGFloat
-        var removeButtonSize: CGFloat
-        var horizontalPadding: CGFloat
-        var iconTextSpacing: CGFloat
-        var textRemoveSpacing: CGFloat
-        var borderWidth: CGFloat
-        var imageLayout: ImageLayout
-        /// Side length of the square image chip when `imageLayout == .filled`.
-        var imageChipSide: CGFloat
-
-        /// Margin reserved around a `.filled` image chip so the corner remove button stays inside the
-        /// view's bounds (keeping its tap target hittable). Derived from the remove button size.
-        var removeButtonCornerOverflow: CGFloat {
-            (removeButtonSize / 2).rounded(.up)
-        }
-
-        /// The height a single row of thumbnails occupies for this sizing — the taller of the file
-        /// chip and the (possibly overhanging) image chip.
-        var thumbnailRowHeight: CGFloat {
-            let imageHeight = imageLayout == .filled ? imageChipSide + removeButtonCornerOverflow : chipHeight
-            return max(imageHeight, chipHeight)
-        }
-
-        static let iPhone = Sizing(
-            chipHeight: Constants.chipHeight,
-            imageChipWidth: Constants.imageChipWidth,
-            fileChipWidth: Constants.fileChipWidth,
-            chipCornerRadius: Constants.chipCornerRadius,
-            thumbnailSize: Constants.thumbnailSize,
-            thumbnailCornerRadius: Constants.thumbnailCornerRadius,
-            documentIconSize: Constants.documentIconSize,
-            removeButtonSize: Constants.removeButtonSize,
-            horizontalPadding: Constants.horizontalPadding,
-            iconTextSpacing: Constants.iconTextSpacing,
-            textRemoveSpacing: Constants.textRemoveSpacing,
-            borderWidth: Constants.borderWidth,
-            imageLayout: .inline,
-            imageChipSide: Constants.imageChipWidth
-        )
-
-        /// The iPad expanded-omnibar chips: square 42×42 image thumbnails with an overhanging remove
-        /// badge (matching macOS), and compact file chips.
-        static let iPadOmnibar = Sizing(
-            chipHeight: 42,
-            imageChipWidth: 82,
-            fileChipWidth: 196,
-            chipCornerRadius: 10,
-            thumbnailSize: 28,
-            thumbnailCornerRadius: 6,
-            documentIconSize: 24,
-            removeButtonSize: 20,
-            horizontalPadding: 10,
-            iconTextSpacing: 8,
-            textRemoveSpacing: 6,
-            borderWidth: 1,
-            imageLayout: .filled,
-            imageChipSide: 42
-        )
-    }
-
     enum Constants {
         static let chipHeight: CGFloat = 44
         static let imageChipWidth: CGFloat = 82
@@ -121,27 +42,21 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     let attachmentId: UUID
     var onRemove: ((UUID) -> Void)?
     private let attachment: UnifiedToggleInputAttachment
-    private let sizing: Sizing
 
-    /// True when this chip renders an image using the square, overhanging-badge layout.
-    private var usesFilledImageLayout: Bool {
-        attachment.isImage && sizing.imageLayout == .filled
-    }
-
-    private lazy var chipView: UIView = {
+    private let chipView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.clipsToBounds = true
-        view.layer.cornerRadius = sizing.chipCornerRadius
-        view.layer.borderWidth = sizing.borderWidth
+        view.layer.cornerRadius = Constants.chipCornerRadius
+        view.layer.borderWidth = Constants.borderWidth
         return view
     }()
 
-    private lazy var imageView: UIImageView = {
+    private let imageView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
-        iv.layer.cornerRadius = usesFilledImageLayout ? 0 : sizing.thumbnailCornerRadius
+        iv.layer.cornerRadius = Constants.thumbnailCornerRadius
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
     }()
@@ -173,10 +88,9 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         return button
     }()
 
-    init(attachment: UnifiedToggleInputAttachment, sizing: Sizing = .iPhone) {
+    init(attachment: UnifiedToggleInputAttachment) {
         self.attachment = attachment
         self.attachmentId = attachment.id
-        self.sizing = sizing
         super.init(frame: .zero)
         setupUI()
         configure()
@@ -188,12 +102,8 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     }
 
     override var intrinsicContentSize: CGSize {
-        if usesFilledImageLayout {
-            let side = sizing.imageChipSide + sizing.removeButtonCornerOverflow
-            return CGSize(width: side, height: side)
-        }
-        let width = attachment.isImage ? sizing.imageChipWidth : sizing.fileChipWidth
-        return CGSize(width: width, height: sizing.chipHeight)
+        let width = attachment.isImage ? Constants.imageChipWidth : Constants.fileChipWidth
+        return CGSize(width: width, height: Constants.chipHeight)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -220,15 +130,6 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
 
     func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
-        if usesFilledImageLayout {
-            setupFilledImageLayout()
-        } else {
-            setupInlineLayout()
-        }
-    }
-
-    /// iPhone chip: thumbnail (or file icon + name) on a single row beside the remove button.
-    func setupInlineLayout() {
         addSubview(chipView)
         chipView.addSubview(imageView)
         chipView.addSubview(fileIconView)
@@ -244,65 +145,27 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
             chipView.trailingAnchor.constraint(equalTo: trailingAnchor),
             chipView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            imageView.leadingAnchor.constraint(equalTo: chipView.leadingAnchor, constant: sizing.horizontalPadding),
+            imageView.leadingAnchor.constraint(equalTo: chipView.leadingAnchor, constant: Constants.horizontalPadding),
             imageView.centerYAnchor.constraint(equalTo: chipView.centerYAnchor),
-            imageView.widthAnchor.constraint(equalToConstant: sizing.thumbnailSize),
-            imageView.heightAnchor.constraint(equalToConstant: sizing.thumbnailSize),
+            imageView.widthAnchor.constraint(equalToConstant: Constants.thumbnailSize),
+            imageView.heightAnchor.constraint(equalToConstant: Constants.thumbnailSize),
 
-            fileIconView.leadingAnchor.constraint(equalTo: chipView.leadingAnchor, constant: sizing.horizontalPadding),
+            fileIconView.leadingAnchor.constraint(equalTo: chipView.leadingAnchor, constant: Constants.horizontalPadding),
             fileIconView.centerYAnchor.constraint(equalTo: chipView.centerYAnchor),
-            fileIconView.widthAnchor.constraint(equalToConstant: sizing.documentIconSize),
-            fileIconView.heightAnchor.constraint(equalToConstant: sizing.documentIconSize),
+            fileIconView.widthAnchor.constraint(equalToConstant: Constants.documentIconSize),
+            fileIconView.heightAnchor.constraint(equalToConstant: Constants.documentIconSize),
 
-            fileNameLabel.leadingAnchor.constraint(equalTo: fileIconView.trailingAnchor, constant: sizing.iconTextSpacing),
-            fileNameLabel.trailingAnchor.constraint(equalTo: removeButton.leadingAnchor, constant: -sizing.textRemoveSpacing),
+            fileNameLabel.leadingAnchor.constraint(equalTo: fileIconView.trailingAnchor, constant: Constants.iconTextSpacing),
+            fileNameLabel.trailingAnchor.constraint(equalTo: removeButton.leadingAnchor, constant: -Constants.textRemoveSpacing),
             fileNameLabel.centerYAnchor.constraint(equalTo: chipView.centerYAnchor),
 
-            removeButton.widthAnchor.constraint(equalToConstant: sizing.removeButtonSize),
-            removeButton.heightAnchor.constraint(equalToConstant: sizing.removeButtonSize),
-            removeButton.trailingAnchor.constraint(equalTo: chipView.trailingAnchor, constant: -sizing.horizontalPadding),
+            removeButton.widthAnchor.constraint(equalToConstant: Constants.removeButtonSize),
+            removeButton.heightAnchor.constraint(equalToConstant: Constants.removeButtonSize),
+            removeButton.trailingAnchor.constraint(equalTo: chipView.trailingAnchor, constant: -Constants.horizontalPadding),
             removeButton.centerYAnchor.constraint(equalTo: chipView.centerYAnchor),
 
             widthAnchor.constraint(equalToConstant: intrinsicContentSize.width),
-            heightAnchor.constraint(equalToConstant: sizing.chipHeight),
-        ])
-    }
-
-    /// iPad image chip: a square image with the circular remove button overhanging the top-right
-    /// corner. The chip is pinned to the bottom-leading so the overhang stays inside the view's
-    /// bounds (keeping the remove button hittable).
-    func setupFilledImageLayout() {
-        addSubview(chipView)
-        chipView.addSubview(imageView)
-        addSubview(removeButton)
-
-        let overhang = sizing.removeButtonCornerOverflow
-
-        removeButton.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-        removeButton.layer.cornerRadius = sizing.removeButtonSize / 2
-        removeButton.layer.borderWidth = 1
-        removeButton.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
-        removeButton.tintColor = UIColor(designSystemColor: .textPrimary)
-        removeButton.clipsToBounds = true
-
-        NSLayoutConstraint.activate([
-            chipView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            chipView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            chipView.widthAnchor.constraint(equalToConstant: sizing.imageChipSide),
-            chipView.heightAnchor.constraint(equalToConstant: sizing.imageChipSide),
-
-            imageView.topAnchor.constraint(equalTo: chipView.topAnchor),
-            imageView.leadingAnchor.constraint(equalTo: chipView.leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: chipView.trailingAnchor),
-            imageView.bottomAnchor.constraint(equalTo: chipView.bottomAnchor),
-
-            removeButton.widthAnchor.constraint(equalToConstant: sizing.removeButtonSize),
-            removeButton.heightAnchor.constraint(equalToConstant: sizing.removeButtonSize),
-            removeButton.centerXAnchor.constraint(equalTo: chipView.trailingAnchor),
-            removeButton.centerYAnchor.constraint(equalTo: chipView.topAnchor),
-
-            widthAnchor.constraint(equalToConstant: sizing.imageChipSide + overhang),
-            heightAnchor.constraint(equalToConstant: sizing.imageChipSide + overhang),
+            heightAnchor.constraint(equalToConstant: Constants.chipHeight),
         ])
     }
 
@@ -338,13 +201,7 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         chipView.backgroundColor = chipBackgroundColor
         chipView.layer.borderColor = borderColor.cgColor
         fileNameLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        if usesFilledImageLayout {
-            removeButton.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-            removeButton.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
-            removeButton.tintColor = UIColor(designSystemColor: .textPrimary)
-        } else {
-            removeButton.tintColor = UIColor(designSystemColor: .textPrimary)
-        }
+        removeButton.tintColor = UIColor(designSystemColor: .textPrimary)
     }
 
     @objc func removeTapped() {

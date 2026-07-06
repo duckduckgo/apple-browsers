@@ -148,7 +148,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     override func onAIChatSendPressed() {
         let text = omniBarView.aiChatTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if text.isEmpty && omniBarView.isAIVoiceChatEnabled {
+        let hasAttachments = attachmentController?.hasAttachments ?? false
+        // Voice only stands in for an empty prompt; pending attachments are a submittable input.
+        if text.isEmpty && !hasAttachments && omniBarView.isAIVoiceChatEnabled {
             omniDelegate?.onDuckAIVoiceModeRequested()
             return
         }
@@ -474,7 +476,11 @@ extension DefaultOmniBarViewController {
 
     fileprivate func submitIPadDuckAIText(from textView: UITextView) {
         let query = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !query.isEmpty else { return }
+        let hasValidAttachment = attachmentController?.hasValidAttachment ?? false
+        let hasInvalidAttachment = attachmentController?.hasInvalidAttachment ?? false
+        // Mirror the iPhone unified toggle rule: submit needs text or a valid attachment, and is
+        // blocked while any attachment is invalid.
+        guard !hasInvalidAttachment, !query.isEmpty || hasValidAttachment else { return }
 
         if selectedTextEntryMode == .aiChat {
             textView.text = ""
@@ -712,6 +718,9 @@ extension DefaultOmniBarViewController {
     private func handleAttachmentsChanged() {
         refreshAttachButton()
         omniBarView.updateAttachmentsLayout(animated: true)
+        // Adding / removing / clearing attachments changes whether the input is submittable, so the
+        // send button (enabled / voice / disabled) must be re-evaluated.
+        omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
         omniDelegate?.onOmniBarExpandedContentSizeChanged()
     }
 }

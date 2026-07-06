@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "DuckDuckGo downloaden op andere apparaten";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Apparaat gesynchroniseerd!";
+"device.synced.sheet.title" = "Nieuw apparaat toegevoegd!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Klaar";
@@ -391,8 +391,8 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Er wordt verbinding gemaakt ...";
 
-/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Houd 'Sync & Backup'open op beide apparaten";
+/* Instruction shown during sync setup flow. */
+"sync.simplified.scan-or-view-code.connecting.title" = "End-to-end versleuteld op al je apparaten.";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Ga terug naar dit apparaat nadat je de code hebt geplakt.";

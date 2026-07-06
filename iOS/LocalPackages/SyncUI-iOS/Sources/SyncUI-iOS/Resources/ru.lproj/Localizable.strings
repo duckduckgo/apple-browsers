@@ -110,7 +110,7 @@
 "device.synced.sheet.button.get.other.devices" = "Скачать DuckDuckGo на другие устройства";
 
 /* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Устройство синхронизировано!";
+"device.synced.sheet.title" = "Добавлено новое устройство!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Готово";
@@ -391,8 +391,8 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Выполняется подключение...";
 
-/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Держите приложения «Sync & Backup» открытыми на обоих устройствах";
+/* Instruction shown during sync setup flow. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Защищено сквозным шифрованием на всех ваших устройствах.";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "После вставки кода вернитесь к этому устройству.";

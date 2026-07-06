@@ -193,6 +193,7 @@ private extension AIChatContextChipView {
         switch state {
         case .placeholder:
             titleLabel.text = UserText.attachPageContent
+            titleLabel.accessibilityIdentifier = "AIChat.ContextChip.Placeholder"
             titleLabel.textColor = UIColor(designSystemColor: .textPlaceholder)
             faviconView.image = DesignSystemImages.Glyphs.Size24.pageContentAttach.withRenderingMode(.alwaysTemplate)
             faviconView.tintColor = UIColor(designSystemColor: .textTertiary)
@@ -208,6 +209,7 @@ private extension AIChatContextChipView {
 
         case .attached(let title, let favicon):
             titleLabel.text = title
+            titleLabel.accessibilityIdentifier = "AIChat.ContextChip.AttachedTitle"
             titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
             removeButton.isHidden = false
             faviconView.image = favicon ?? placeholderFavicon()
@@ -291,6 +293,7 @@ private extension AIChatContextChipView {
     func setupAccessibility() {
         isAccessibilityElement = false
         removeButton.accessibilityLabel = "Remove"
+        removeButton.accessibilityIdentifier = "AIChat.ContextChip.RemoveButton"
         removeButton.accessibilityTraits = .button
     }
 

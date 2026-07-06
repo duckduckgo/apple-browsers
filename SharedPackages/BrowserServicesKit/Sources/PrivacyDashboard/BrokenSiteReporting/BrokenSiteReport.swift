@@ -285,7 +285,7 @@ public struct BrokenSiteReport {
             "siteUrl": siteUrl.trimmingQueryItemsAndFragment().absoluteString,
             "upgradedHttps": upgradedHttps.description,
             "tds": tdsETag?.trimmingCharacters(in: CharacterSet(charactersIn: "\"")) ?? "",
-            "remote_config_version": configVersion ?? "",
+            "remoteConfigVersion": configVersion ?? "",
             "blockedTrackers": blockedTrackerDomains.joined(separator: ","),
             "surrogates": installedSurrogates.joined(separator: ","),
             "gpc": isGPCEnabled.description,

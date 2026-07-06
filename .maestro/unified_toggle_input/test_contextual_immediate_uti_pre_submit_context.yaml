@@ -1,0 +1,114 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_contextual_immediate_uti_pre_submit_context
+
+---
+
+# With the immediate contextual UTI flag on, the first sheet show uses UTI before
+# submit. Removing pre-submit context clears the current chip, and a real navigation
+# with auto-attach enabled attaches the current page again. After first submit, a
+# same-page reopen does not reattach; dismissed-sheet navigation still auto-attaches
+# the current page when reopened.
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.unifiedToggleInput: "true"
+        ff.contextualDuckAIMode: "true"
+        ff.aiChatContextualUnifiedToggleInput: "true"
+        ff.aiChatAutoAttachContextByDefault: "true"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertVisible: ".*Privacy Test Pages.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible: "Summarize page"
+- assertNotVisible:
+    id: "AIChatNativeInputView.submitButton"
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+
+- tapOn:
+    id: "AIChat.ContextChip.RemoveButton"
+- assertVisible:
+    id: "AIChat.ContextChip.Placeholder"
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/security/address-bar-spoofing/index.html"
+- pressKey: Enter
+- assertVisible: ".*Address Bar Spoofing.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "First contextual UTI prompt"
+- tapOn:
+    id: "AIChat.Toolbar.Button.Submit"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertNotVisible:
+    id: "AIChat.ContextChip.AttachedTitle"
+
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://example.com"
+- pressKey: Enter
+- assertVisible: ".*Example Domain.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000

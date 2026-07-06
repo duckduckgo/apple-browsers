@@ -3676,20 +3676,172 @@ extension TabViewController: GeolocationUserScriptDelegate {
         }
     }
 
-    /// Trivial placeholder allow/deny prompt (no design — spike only).
+    /// Allow/deny prompt styled to match the Figma permission dialog (glass card
+    /// + location icon). Options intentionally unchanged (Allow / Don't Allow).
     private func presentGeolocationPrompt(origin: String, completion: @escaping (Bool) -> Void) {
-        let alert = UIAlertController(title: "Location access",
-                                      message: "\(origin) wants to use your location.",
-                                      preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Don't Allow", style: .cancel) { _ in completion(false) })
-        alert.addAction(UIAlertAction(title: "Allow", style: .default) { _ in completion(true) })
+        let host = URL(string: origin)?.host ?? origin
+        let alert = GeolocationPermissionAlertView(host: host, onDecision: completion)
+        alert.present(in: view.window ?? view)
+    }
+}
 
-        // Present from the top-most controller so we don't collide with any other modal.
-        var presenter: UIViewController = self
-        while let presented = presenter.presentedViewController, !(presented is UIAlertController) {
-            presenter = presented
+// MARK: - GEOLOCATION SPIKE — custom permission dialog (matches Figma design)
+//
+// Approximates the "Liquid Glass" permission alert from Figma: dimmed backdrop,
+// rounded glass card, a location icon in a rounded tile, a semibold title, and
+// stacked pill buttons. Buttons kept at Allow / Don't Allow per the spike scope.
+private final class GeolocationPermissionAlertView: UIView {
+
+    private let onDecision: (Bool) -> Void
+    private var didDecide = false
+    private let cardShadow = UIView()
+    private let card = UIVisualEffectView(effect: UIBlurEffect(style: .systemThickMaterial))
+
+    init(host: String, onDecision: @escaping (Bool) -> Void) {
+        self.onDecision = onDecision
+        super.init(frame: .zero)
+        buildUI(host: host)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func present(in host: UIView) {
+        translatesAutoresizingMaskIntoConstraints = false
+        host.addSubview(self)
+        NSLayoutConstraint.activate([
+            leadingAnchor.constraint(equalTo: host.leadingAnchor),
+            trailingAnchor.constraint(equalTo: host.trailingAnchor),
+            topAnchor.constraint(equalTo: host.topAnchor),
+            bottomAnchor.constraint(equalTo: host.bottomAnchor)
+        ])
+        alpha = 0
+        cardShadow.transform = CGAffineTransform(scaleX: 1.12, y: 1.12)
+        UIView.animate(withDuration: 0.22, delay: 0, options: .curveEaseOut) {
+            self.alpha = 1
+            self.cardShadow.transform = .identity
         }
-        presenter.present(alert, animated: true)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        cardShadow.layer.shadowPath = UIBezierPath(roundedRect: cardShadow.bounds, cornerRadius: 34).cgPath
+    }
+
+    private func buildUI(host: String) {
+        backgroundColor = UIColor.black.withAlphaComponent(0.24)
+
+        // Shadow container (unclipped) wrapping the clipped, rounded glass card.
+        cardShadow.translatesAutoresizingMaskIntoConstraints = false
+        cardShadow.layer.shadowColor = UIColor.black.cgColor
+        cardShadow.layer.shadowOpacity = 0.16
+        cardShadow.layer.shadowRadius = 32
+        cardShadow.layer.shadowOffset = CGSize(width: 0, height: 8)
+        addSubview(cardShadow)
+
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.layer.cornerRadius = 34
+        card.layer.cornerCurve = .continuous
+        card.clipsToBounds = true
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor(white: 0.72, alpha: 0.71).cgColor
+        cardShadow.addSubview(card)
+
+        // Location icon in a rounded tile, left-aligned.
+        let iconTile = UIView()
+        iconTile.translatesAutoresizingMaskIntoConstraints = false
+        iconTile.backgroundColor = UIColor.label.withAlphaComponent(0.06)
+        iconTile.layer.cornerRadius = 16
+        iconTile.layer.cornerCurve = .continuous
+
+        let icon = UIImageView(image: UIImage(systemName: "location"))
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.tintColor = .label
+        icon.contentMode = .scaleAspectFit
+        icon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
+        iconTile.addSubview(icon)
+
+        let iconRow = UIView()
+        iconRow.translatesAutoresizingMaskIntoConstraints = false
+        iconRow.addSubview(iconTile)
+
+        // Title.
+        let title = UILabel()
+        title.translatesAutoresizingMaskIntoConstraints = false
+        title.text = "\u{201C}\(host)\u{201D} website wants to access your location"
+        title.font = .systemFont(ofSize: 17, weight: .semibold)
+        title.textColor = .label
+        title.numberOfLines = 0
+
+        // Buttons — options unchanged (Allow / Don't Allow).
+        let allow = Self.pillButton(title: "Allow",
+                                    background: UIColor.label.withAlphaComponent(0.09))
+        allow.addTarget(self, action: #selector(allowTapped), for: .touchUpInside)
+        let deny = Self.pillButton(title: "Don't Allow",
+                                   background: UIColor(red: 120 / 255, green: 120 / 255, blue: 128 / 255, alpha: 0.16))
+        deny.addTarget(self, action: #selector(denyTapped), for: .touchUpInside)
+
+        let stack = UIStackView(arrangedSubviews: [iconRow, title, allow, deny])
+        stack.axis = .vertical
+        stack.alignment = .fill
+        stack.spacing = 10
+        stack.setCustomSpacing(18, after: iconRow)
+        stack.setCustomSpacing(28, after: title)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        card.contentView.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            cardShadow.centerXAnchor.constraint(equalTo: centerXAnchor),
+            cardShadow.centerYAnchor.constraint(equalTo: centerYAnchor),
+            cardShadow.widthAnchor.constraint(equalToConstant: 300),
+
+            card.leadingAnchor.constraint(equalTo: cardShadow.leadingAnchor),
+            card.trailingAnchor.constraint(equalTo: cardShadow.trailingAnchor),
+            card.topAnchor.constraint(equalTo: cardShadow.topAnchor),
+            card.bottomAnchor.constraint(equalTo: cardShadow.bottomAnchor),
+
+            stack.leadingAnchor.constraint(equalTo: card.contentView.leadingAnchor, constant: 14),
+            stack.trailingAnchor.constraint(equalTo: card.contentView.trailingAnchor, constant: -14),
+            stack.topAnchor.constraint(equalTo: card.contentView.topAnchor, constant: 14),
+            stack.bottomAnchor.constraint(equalTo: card.contentView.bottomAnchor, constant: -14),
+
+            iconTile.leadingAnchor.constraint(equalTo: iconRow.leadingAnchor),
+            iconTile.topAnchor.constraint(equalTo: iconRow.topAnchor),
+            iconTile.bottomAnchor.constraint(equalTo: iconRow.bottomAnchor),
+            iconTile.widthAnchor.constraint(equalToConstant: 48),
+            iconTile.heightAnchor.constraint(equalToConstant: 48),
+
+            icon.centerXAnchor.constraint(equalTo: iconTile.centerXAnchor),
+            icon.centerYAnchor.constraint(equalTo: iconTile.centerYAnchor),
+            icon.widthAnchor.constraint(equalToConstant: 24),
+            icon.heightAnchor.constraint(equalToConstant: 24)
+        ])
+    }
+
+    private static func pillButton(title: String, background: UIColor) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle(title, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .medium)
+        button.setTitleColor(.label, for: .normal)
+        button.backgroundColor = background
+        button.layer.cornerRadius = 24
+        button.layer.cornerCurve = .continuous
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.heightAnchor.constraint(equalToConstant: 48).isActive = true
+        return button
+    }
+
+    @objc private func allowTapped() { finish(true) }
+    @objc private func denyTapped() { finish(false) }
+
+    private func finish(_ allowed: Bool) {
+        guard !didDecide else { return }
+        didDecide = true
+        UIView.animate(withDuration: 0.18, animations: {
+            self.alpha = 0
+        }, completion: { _ in
+            self.removeFromSuperview()
+        })
+        onDecision(allowed)
     }
 }
 

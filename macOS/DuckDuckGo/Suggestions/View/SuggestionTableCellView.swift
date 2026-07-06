@@ -65,7 +65,7 @@ final class SuggestionTableCellView: NSTableCellView {
 
     private var labelLeadingToShortcutsConstraint: NSLayoutConstraint?
 
-    var theme: ThemeStyleProviding = NSApp.delegateTyped.themeManager.theme
+    var theme: ThemeStyleProviding?
     var suggestion: Suggestion?
     var isAIChatToggleBeingDisplayed: Bool = false
     private(set) var cellStyle: CellStyle = .default
@@ -138,9 +138,9 @@ final class SuggestionTableCellView: NSTableCellView {
     }
 
     override func awakeFromNib() {
-        let colorsProvider = theme.colorsProvider
+        let colorsProvider = theme?.colorsProvider
 
-        suffixTextField.textColor = colorsProvider.suggestionsSuffixColor
+        suffixTextField.textColor = colorsProvider?.suggestionsSuffixColor
         removeButton.toolTip = UserText.removeSuggestionTooltip
         switchToTabLabel.attributedStringValue = Self.switchToTabAttributedString
     }
@@ -237,6 +237,11 @@ final class SuggestionTableCellView: NSTableCellView {
             return
         }
 
+        guard let theme else {
+            assertionFailure()
+            return
+        }
+
         let usesTransparentBox: Bool
         if case .default = cellStyle {
             usesTransparentBox = false
@@ -264,6 +269,11 @@ final class SuggestionTableCellView: NSTableCellView {
     }
 
     private func updateImageViews() {
+        guard let theme else {
+            assertionFailure()
+            return
+        }
+
         let colorsProvider = theme.colorsProvider
         let tintColor = isSelected ? colorsProvider.suggestionsHighlightTextColor : colorsProvider.suggestionsTextColor
 
@@ -341,12 +351,17 @@ final class SuggestionTableCellView: NSTableCellView {
             }
         }
 
-        var iconLeadingPadding = theme.addressBarStyleProvider.suggestionIconViewLeadingPadding
+        guard let styleProvider = theme?.addressBarStyleProvider else {
+            assertionFailure()
+            return
+        }
+
+        var iconLeadingPadding = styleProvider.suggestionIconViewLeadingPadding
         if isAIChatToggleBeingDisplayed {
             iconLeadingPadding += 8
         }
         iconImageViewLeadingConstraint.constant = iconLeadingPadding
-        searchSuggestionTextFieldLeadingConstraint.constant = theme.addressBarStyleProvider.suggestionTextFieldLeadingPadding
+        searchSuggestionTextFieldLeadingConstraint.constant = styleProvider.suggestionTextFieldLeadingPadding
 
         super.layout()
     }

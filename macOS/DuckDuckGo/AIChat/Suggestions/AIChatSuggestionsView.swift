@@ -62,6 +62,7 @@ final class AIChatSuggestionsView: NSView {
 
     // MARK: - Properties
 
+    /// Remove `themeManager` once `.appRebranding` ships
     private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     private var rowViews: [AIChatSuggestionRowView] = []
     private var cancellables = Set<AnyCancellable>()

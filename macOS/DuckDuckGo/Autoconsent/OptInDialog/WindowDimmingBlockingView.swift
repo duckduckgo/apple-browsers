@@ -76,70 +76,79 @@ final class WindowDimmingBlockingView: ColorView {
         // A LOCAL monitor intercepts ALL mouse events and manually dispatches to our subviews, so events
         // never reach the views behind us (e.g. the web view / toolbar / tab bar).
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp, .otherMouseDown, .otherMouseUp, .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged, .scrollWheel]) { [weak self] event -> NSEvent? in
-            guard let self = self else { return event }
+            guard let self else { return event }
+            return self.handleMonitoredEvent(event)
+        }
+    }
 
-            guard !self.isHidden else { return event }
+    /// Handles one intercepted mouse event. Returns `nil` to consume it (so it never reaches the views
+    /// behind the overlay), or the original event to let it pass through.
+    private func handleMonitoredEvent(_ event: NSEvent) -> NSEvent? {
+        guard !isHidden else { return event }
 
-            guard let window = self.window, event.window === window, window.isKeyWindow || window.isMainWindow else { return event }
-            let locationInWindow = event.locationInWindow
-            let locationInView = self.convert(locationInWindow, from: nil)
+        guard let window, event.window === window, window.isKeyWindow || window.isMainWindow else { return event }
+        let locationInWindow = event.locationInWindow
+        let locationInView = convert(locationInWindow, from: nil)
 
-            guard self.bounds.contains(locationInView) else { return event }
+        guard bounds.contains(locationInView) else { return event }
 
-            // Top strip: a left mouse-down starts a window drag (so the window stays movable by its titlebar)
-            // while the click itself is still consumed — a plain click moves nothing and doesn't reach the
-            // tab bar, a drag moves the window.
-            if event.type == .leftMouseDown, self.topDraggableHeight > 0,
-               locationInView.y > self.bounds.height - self.topDraggableHeight {
-                window.performDrag(with: event)
-                return nil
-            }
-
-            // Resolve the top-most view against our SUPERVIEW (the window frame view when mounted there),
-            // not the contentView — this is what lets the overlay span the whole window. If something
-            // legitimately sits above us (e.g. the dialog card, a sibling), let the event flow normally.
-            if let root = self.superview {
-                let locationInRoot = root.convert(locationInWindow, from: nil)
-                if let topHitView = root.hitTest(locationInRoot), topHitView != self, !topHitView.isDescendant(of: self) {
-                    return event
-                }
-            }
-
-            let hitView = self.hitTest(locationInView)
-
-            if let hitView = hitView, hitView != self {
-                switch event.type {
-                case .leftMouseDown:
-                    if hitView.acceptsFirstResponder {
-                        window.makeFirstResponder(hitView)
-                    }
-                    hitView.mouseDown(with: event)
-                case .leftMouseUp:
-                    hitView.mouseUp(with: event)
-                case .rightMouseDown:
-                    hitView.rightMouseDown(with: event)
-                case .rightMouseUp:
-                    hitView.rightMouseUp(with: event)
-                case .otherMouseDown:
-                    hitView.otherMouseDown(with: event)
-                case .otherMouseUp:
-                    hitView.otherMouseUp(with: event)
-                case .mouseMoved:
-                    hitView.mouseMoved(with: event)
-                case .leftMouseDragged:
-                    hitView.mouseDragged(with: event)
-                case .rightMouseDragged:
-                    hitView.rightMouseDragged(with: event)
-                case .otherMouseDragged:
-                    hitView.otherMouseDragged(with: event)
-                case .scrollWheel:
-                    hitView.scrollWheel(with: event)
-                default:
-                    break
-                }
-            }
-
+        // Top strip: a left mouse-down starts a window drag (so the window stays movable by its titlebar)
+        // while the click itself is still consumed — a plain click moves nothing and doesn't reach the
+        // tab bar, a drag moves the window.
+        if event.type == .leftMouseDown, topDraggableHeight > 0,
+           locationInView.y > bounds.height - topDraggableHeight {
+            window.performDrag(with: event)
             return nil
+        }
+
+        // Resolve the top-most view against our SUPERVIEW (the window frame view when mounted there),
+        // not the contentView — this is what lets the overlay span the whole window. If something
+        // legitimately sits above us (e.g. the dialog card, a sibling), let the event flow normally.
+        if let root = superview {
+            let locationInRoot = root.convert(locationInWindow, from: nil)
+            if let topHitView = root.hitTest(locationInRoot), topHitView != self, !topHitView.isDescendant(of: self) {
+                return event
+            }
+        }
+
+        if let hitView = hitTest(locationInView), hitView != self {
+            forward(event, to: hitView, in: window)
+        }
+
+        return nil
+    }
+
+    /// Forwards an intercepted event to the resolved subview, mirroring the responder call the system
+    /// would have made if the overlay weren't intercepting.
+    private func forward(_ event: NSEvent, to hitView: NSView, in window: NSWindow) {
+        switch event.type {
+        case .leftMouseDown:
+            if hitView.acceptsFirstResponder {
+                window.makeFirstResponder(hitView)
+            }
+            hitView.mouseDown(with: event)
+        case .leftMouseUp:
+            hitView.mouseUp(with: event)
+        case .rightMouseDown:
+            hitView.rightMouseDown(with: event)
+        case .rightMouseUp:
+            hitView.rightMouseUp(with: event)
+        case .otherMouseDown:
+            hitView.otherMouseDown(with: event)
+        case .otherMouseUp:
+            hitView.otherMouseUp(with: event)
+        case .mouseMoved:
+            hitView.mouseMoved(with: event)
+        case .leftMouseDragged:
+            hitView.mouseDragged(with: event)
+        case .rightMouseDragged:
+            hitView.rightMouseDragged(with: event)
+        case .otherMouseDragged:
+            hitView.otherMouseDragged(with: event)
+        case .scrollWheel:
+            hitView.scrollWheel(with: event)
+        default:
+            break
         }
     }
 

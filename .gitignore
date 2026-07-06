@@ -96,3 +96,6 @@ content-scope-scripts/
 privacy-configuration/
 .xcodebuildmcp/config.yaml
 .claude/worktrees
+
+# Snapshot references live in the SnapshotReferences submodule (see tech design)
+**/__Snapshots__/

@@ -711,7 +711,9 @@
                     </view>
                     <connections>
                         <outlet property="activeBackgroundView" destination="e0p-7S-Gan" id="2FB-uy-8tO"/>
+                        <outlet property="activeBackgroundViewBottomConstraint" destination="nuB-My-vJR" id="U8l-ks-YjY"/>
                         <outlet property="activeBackgroundViewLeadingConstraint" destination="E5D-iA-uu3" id="Pre-0L-gHd"/>
+                        <outlet property="activeBackgroundViewTopConstraint" destination="QK2-Pt-rY4" id="VPv-Mm-7Md"/>
                         <outlet property="activeBackgroundViewTrailingConstraint" destination="V8Z-LH-nT9" id="q7O-8M-oCC"/>
                         <outlet property="activeBackgroundViewWithSuggestions" destination="Ij9-fc-CLI" id="JWC-g2-hrM"/>
                         <outlet property="activeOuterBorderBottomConstraint" destination="ic3-He-fz0" id="pRh-g4-1mm"/>
@@ -727,7 +729,9 @@
                         <outlet property="buttonsContainerViewLeadingConstraint" destination="OSv-yy-Yz5" id="bC1-ld-Ng1"/>
                         <outlet property="buttonsContainerViewTrailingConstraint" destination="VD0-WJ-LdG" id="bC2-tr-Ng2"/>
                         <outlet property="inactiveBackgroundView" destination="ENV-0H-Fcc" id="OV5-2s-Ggq"/>
+                        <outlet property="inactiveBackgroundViewBottomConstraint" destination="jNf-6E-eDn" id="QOW-bV-9OI"/>
                         <outlet property="inactiveBackgroundViewLeadingConstraint" destination="WGn-g2-wT7" id="iB1-ld-Ng3"/>
+                        <outlet property="inactiveBackgroundViewTopConstraint" destination="HfA-Q8-0Uz" id="iZb-IX-dAp"/>
                         <outlet property="inactiveBackgroundViewTrailingConstraint" destination="Cig-ek-031" id="iB2-tr-Ng4"/>
                         <outlet property="innerBorderView" destination="INL-zs-eEh" id="7aF-qt-wCX"/>
                         <outlet property="passiveTextField" destination="le0-Hn-ZAC" id="npL-R1-gmH"/>

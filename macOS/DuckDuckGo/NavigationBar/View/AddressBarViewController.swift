@@ -112,8 +112,12 @@ final class AddressBarViewController: NSViewController {
     @IBOutlet var switchToTabLabel: NSTextField!
     @IBOutlet var shadowView: ShadowView!
 
+    @IBOutlet var activeBackgroundViewTopConstraint: NSLayoutConstraint!
+    @IBOutlet var activeBackgroundViewBottomConstraint: NSLayoutConstraint!
     @IBOutlet var activeBackgroundViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var activeBackgroundViewTrailingConstraint: NSLayoutConstraint!
+    @IBOutlet var inactiveBackgroundViewTopConstraint: NSLayoutConstraint!
+    @IBOutlet var inactiveBackgroundViewBottomConstraint: NSLayoutConstraint!
     @IBOutlet var inactiveBackgroundViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var inactiveBackgroundViewTrailingConstraint: NSLayoutConstraint!
     @IBOutlet var buttonsContainerViewLeadingConstraint: NSLayoutConstraint!

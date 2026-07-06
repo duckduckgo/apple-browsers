@@ -1086,11 +1086,11 @@ public struct UserText {
             "settings.about.text.template",
             value: """
     DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.
-    
-    We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. 
-    
-    %@ 
-    
+
+    We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data.
+
+    %@
+
     Take back control of your personal information with the browser designed for data protection, not data collection.
     """,
             comment: "About page template with placeholder for subscription sentence"
@@ -2197,6 +2197,7 @@ public struct UserText {
     public static let aiChatAttachmentOptionAttachPhoto = NSLocalizedString("aichat.attachment.option.attach.photo", value: "Add Image", comment: "Top-level attachment menu option to add an image to an AI chat message")
     public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Add File", comment: "Top-level attachment menu option to add a file to an AI chat message")
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take Photo", comment: "Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message")
+    public static let aiChatAttachmentOptionAskAboutPage = NSLocalizedString("aichat.attachment.option.ask.about.page", value: "Ask About Page", comment: "Top-level attachment menu option to attach the current page content to an AI chat message")
     public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
         let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.")
         return message.format(arguments: maxFileSizeMB)

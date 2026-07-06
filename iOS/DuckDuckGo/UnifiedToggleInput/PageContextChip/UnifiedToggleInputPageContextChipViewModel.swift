@@ -36,18 +36,17 @@ enum PageContextAttachmentDeliveryState {
 /// `.delivered`, so the chat opens silent.
 ///
 /// Visibility:
-///   - attach affordance command → placeholder.
+///   - attach affordance command → hidden placeholder.
 ///   - attached + pending → `.attached` feedback until the user submits.
 ///   - attached + delivered → hidden (already submitted).
-///   - no attachment → placeholder. The half-sheet is the user's attach/skip gate; once
-///     they're in the chat, an empty state always offers a tap target.
+///   - no attachment → hidden placeholder. Context attach is offered from the attachment menu.
 @MainActor
 final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
     @Published private(set) var state: AIChatContextChipView.State = .placeholder
     @Published private(set) var isVisible: Bool = false
 
-    /// Invoked when the user taps the placeholder chip.
+    /// Invoked when the user requests page-context attachment from the attachment menu.
     var onAttachActionRequested: (() -> Void)?
 
     /// Invoked when the user taps the X on the attached chip.
@@ -111,9 +110,9 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
     func tapToAttach() {
         if let url = originatingURL {
-            Logger.contextualUTI.info("PageContextChip placeholder tapped — attaching \(url.shortDescription, privacy: .private)")
+            Logger.contextualUTI.info("PageContext attach requested — attaching \(url.shortDescription, privacy: .private)")
         } else {
-            Logger.contextualUTI.info("PageContextChip placeholder tapped — attaching without originating URL")
+            Logger.contextualUTI.info("PageContext attach requested — attaching without originating URL")
         }
         onAttachActionRequested?()
     }
@@ -159,7 +158,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
 
         if isShowingAttachAffordance {
             state = .placeholder
-            isVisible = true
+            isVisible = false
             branch = "attachAffordance"
         } else if let ctx = attachedContext {
             state = .attached(title: ctx.title, favicon: ctx.favicon)
@@ -167,7 +166,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
             branch = "attached(matching=\(isMatching), deliveryState=\(attachmentDeliveryState))"
         } else {
             state = .placeholder
-            isVisible = true
+            isVisible = false
             branch = "noAttachment"
         }
 

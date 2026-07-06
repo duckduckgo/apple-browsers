@@ -2618,6 +2618,17 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         }
     }
 
+    func test_attachmentButton_usesFixedMenuElementOrder() {
+        let sut = UnifiedToggleInputToolbarView()
+
+        let attachmentButton = findButton(accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel, in: sut)
+
+        XCTAssertNotNil(attachmentButton)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(attachmentButton?.preferredMenuElementOrder, .fixed)
+        }
+    }
+
     private func findButton(accessibilityLabel: String, in view: UIView) -> UIButton? {
         for subview in view.subviews {
             if let button = subview as? UIButton, button.accessibilityLabel == accessibilityLabel {

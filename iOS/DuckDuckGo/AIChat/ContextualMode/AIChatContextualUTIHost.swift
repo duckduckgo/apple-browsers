@@ -84,6 +84,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         )
         coordinator.delegate = self
         coordinator.updateAIVoiceChatAvailability(voiceShortcutFeature.isAvailable)
+        coordinator.onPageContextAttachRequested = { [weak chipViewModel] in
+            chipViewModel?.tapToAttach()
+        }
+        coordinator.updateImageButtonVisibility()
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
         chipViewModel.onAttachActionRequested = { [weak self] in
             self?.onAttachRequested?()

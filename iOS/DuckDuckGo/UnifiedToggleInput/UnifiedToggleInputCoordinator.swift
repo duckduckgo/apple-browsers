@@ -1689,6 +1689,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Hosts that embed the UTI inside another presented stack (e.g. the contextual chat half-sheet)
     /// must set this so the picker presents from the correct level.
     weak var attachmentPresentingViewController: UIViewController?
+    var onPageContextAttachRequested: (() -> Void)?
 
     var allowedFileUTTypes: [UTType] {
         selectedModelSupportedFileTypes.compactMap(Self.contentType(for:))
@@ -2231,13 +2232,16 @@ private extension UnifiedToggleInputCoordinator {
             },
             photoSelectionLimit: attachmentPolicy.canAttachImages ? remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,
-            allowedFileTypes: allowedFileUTTypes
+            allowedFileTypes: allowedFileUTTypes,
+            pageContextActionHandler: onPageContextAttachRequested
         )
     }
 
     func updateAttachButtonPresentation() {
-        let supportsAttachments = selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty
-        let canAttachMore = (attachmentPolicy.canAttachImages || canPresentFilePicker) && !viewController.isGenerating
+        let supportsPageContextAttachment = onPageContextAttachRequested != nil
+        let supportsAttachments = selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment
+        let hasAvailableAttachmentAction = attachmentPolicy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment
+        let canAttachMore = hasAvailableAttachmentAction && !viewController.isGenerating
         viewController.isImageButtonHidden = !supportsAttachments
         viewController.isImageButtonEnabled = canAttachMore
         viewController.attachmentMenu = supportsAttachments && canAttachMore ? makeAttachmentMenu() : nil

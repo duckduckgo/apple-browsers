@@ -48,48 +48,48 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         presenterProvider: @escaping () -> UIViewController?,
         photoSelectionLimit: Int,
         canAttachFile: Bool,
-        allowedFileTypes: [UTType]
+        allowedFileTypes: [UTType],
+        pageContextActionHandler: (() -> Void)? = nil
     ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
-        guard canAttachPhoto || canAttachFile else { return nil }
+        let canTakePhoto = canAttachPhoto && UIImagePickerController.isSourceTypeAvailable(.camera)
+        let canAttachAllowedFile = canAttachFile && !allowedFileTypes.isEmpty
+        let canAttachPageContext = pageContextActionHandler != nil
+        guard canTakePhoto || canAttachPhoto || canAttachAllowedFile || canAttachPageContext else { return nil }
 
-        var actions = [UIAction]()
-
-        if canAttachPhoto {
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                actions.append(
-                    UIAction(
-                        title: UserText.aiChatAttachmentOptionTakePhoto,
-                        image: DesignSystemImages.Glyphs.Size24.camera
-                    ) { [weak self] _ in
-                        guard let presenter = presenterProvider() else { return }
-                        self?.presentCamera(from: presenter)
-                    }
-                )
+        let actions = [
+            UIAction(
+                title: UserText.aiChatAttachmentOptionTakePhoto,
+                image: DesignSystemImages.Glyphs.Size24.camera,
+                attributes: canTakePhoto ? [] : .hidden
+            ) { [weak self] _ in
+                guard let presenter = presenterProvider() else { return }
+                self?.presentCamera(from: presenter)
+            },
+            UIAction(
+                title: UserText.aiChatAttachmentOptionAttachPhoto,
+                image: DesignSystemImages.Glyphs.Size24.image,
+                attributes: canAttachPhoto ? [] : .hidden
+            ) { [weak self] _ in
+                guard let presenter = presenterProvider() else { return }
+                self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
+            },
+            UIAction(
+                title: UserText.aiChatAttachmentOptionAttachFile,
+                image: DesignSystemImages.Glyphs.Size24.folder,
+                attributes: canAttachAllowedFile ? [] : .hidden
+            ) { [weak self] _ in
+                guard let presenter = presenterProvider() else { return }
+                self?.presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
+            },
+            UIAction(
+                title: UserText.aiChatAttachmentOptionAskAboutPage,
+                image: DesignSystemImages.Glyphs.Size24.documentNew,
+                attributes: canAttachPageContext ? [] : .hidden
+            ) { _ in
+                pageContextActionHandler?()
             }
-
-            actions.append(
-                UIAction(
-                    title: UserText.aiChatAttachmentOptionAttachPhoto,
-                    image: DesignSystemImages.Glyphs.Size24.image
-                ) { [weak self] _ in
-                    guard let presenter = presenterProvider() else { return }
-                    self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
-                }
-            )
-        }
-
-        if canAttachFile, !allowedFileTypes.isEmpty {
-            actions.append(
-                UIAction(
-                    title: UserText.aiChatAttachmentOptionAttachFile,
-                    image: DesignSystemImages.Glyphs.Size24.folder
-                ) { [weak self] _ in
-                    guard let presenter = presenterProvider() else { return }
-                    self?.presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
-                }
-            )
-        }
+        ]
 
         return UIMenu(children: actions)
     }

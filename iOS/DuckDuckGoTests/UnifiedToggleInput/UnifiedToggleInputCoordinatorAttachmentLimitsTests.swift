@@ -237,6 +237,56 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertTrue(menuTitles.contains(UserText.aiChatAttachmentOptionAttachFile))
     }
 
+    func testWhenPageContextActionAvailableThenAttachmentMenuShowsAskAboutPageAction() {
+        let sut = makeCoordinator()
+        var attachCallCount = 0
+        sut.onPageContextAttachRequested = { attachCallCount += 1 }
+        sut.updateImageButtonVisibility()
+
+        let menuTitles = attachmentMenuTitles(for: sut)
+        XCTAssertEqual(menuTitles, [UserText.aiChatAttachmentOptionAskAboutPage])
+
+        let action = visibleAttachmentMenuActions(for: sut).first
+        if #available(iOS 16.0, *) {
+            action?.performWithSender(nil, target: nil)
+        }
+
+        XCTAssertFalse(sut.viewController.isImageButtonHidden)
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(attachCallCount, 1)
+        }
+    }
+
+    func testWhenPageContextActionAvailableThenAttachmentMenuKeepsFixedRawOrder() {
+        let sut = makeCoordinator()
+        sut.onPageContextAttachRequested = {}
+        sut.updateImageButtonVisibility()
+
+        let rawTitles = attachmentMenuActions(for: sut).map(\.title)
+
+        XCTAssertEqual(rawTitles, [
+            UserText.aiChatAttachmentOptionTakePhoto,
+            UserText.aiChatAttachmentOptionAttachPhoto,
+            UserText.aiChatAttachmentOptionAttachFile,
+            UserText.aiChatAttachmentOptionAskAboutPage
+        ])
+    }
+
+    func testWhenPageContextAndOtherAttachmentsAvailableThenAskAboutPageIsLast() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.onPageContextAttachRequested = {}
+        sut.updateImageButtonVisibility()
+
+        let menuTitles = attachmentMenuTitles(for: sut)
+        XCTAssertTrue(menuTitles.contains(UserText.aiChatAttachmentOptionAttachPhoto))
+        XCTAssertTrue(menuTitles.contains(UserText.aiChatAttachmentOptionAttachFile))
+        XCTAssertEqual(menuTitles.last, UserText.aiChatAttachmentOptionAskAboutPage)
+    }
+
     func testWhenSubmittingMixedAttachmentsThenImagesAndFilesAreSubmitted() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"
@@ -671,7 +721,16 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
     }
 
     private func attachmentMenuTitles(for coordinator: UnifiedToggleInputCoordinator) -> [String] {
-        coordinator.viewController.attachmentMenu?.children.map(\.title) ?? []
+        visibleAttachmentMenuActions(for: coordinator).map(\.title)
+    }
+
+    private func visibleAttachmentMenuActions(for coordinator: UnifiedToggleInputCoordinator) -> [UIAction] {
+        attachmentMenuActions(for: coordinator)
+            .filter { !$0.attributes.contains(.hidden) }
+    }
+
+    private func attachmentMenuActions(for coordinator: UnifiedToggleInputCoordinator) -> [UIAction] {
+        coordinator.viewController.attachmentMenu?.children.compactMap { $0 as? UIAction } ?? []
     }
 
     private func flushMainQueue() {

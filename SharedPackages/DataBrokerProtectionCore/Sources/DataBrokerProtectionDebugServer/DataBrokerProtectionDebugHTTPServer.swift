@@ -41,6 +41,15 @@ public final class DataBrokerProtectionDebugHTTPServer {
         return false
     }
 
+    public var isStartingOrRunning: Bool {
+        switch server.state {
+        case .starting, .running:
+            return true
+        case .stopped, .failed:
+            return false
+        }
+    }
+
     public init(provider: DataBrokerProtectionDebugReadProviding,
                 logReader: DebugLogReading? = nil,
                 port: UInt16 = defaultPort) {

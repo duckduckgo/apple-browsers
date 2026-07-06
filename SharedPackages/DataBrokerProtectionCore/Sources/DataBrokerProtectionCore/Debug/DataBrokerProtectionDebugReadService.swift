@@ -131,14 +131,14 @@ public struct DataBrokerProtectionDebugReadService {
                 let extractedProfileId = (job as? OptOutJobData)?.extractedProfile.id
                 for event in job.historyEvents {
                     if let since, event.date <= since { continue }
-                    let dto = historyEvent(event)
+                    let debugEvent = historyEvent(event)
                     events.append(DebugBrokerEvent(broker: broker,
                                              profileQueryId: event.profileQueryId,
                                              extractedProfileId: extractedProfileId,
-                                             type: dto.type,
-                                             date: dto.date,
-                                             matchCount: dto.matchCount,
-                                             error: dto.error))
+                                             type: debugEvent.type,
+                                             date: debugEvent.date,
+                                             matchCount: debugEvent.matchCount,
+                                             error: debugEvent.error))
                 }
             }
         }
@@ -207,8 +207,8 @@ public struct DataBrokerProtectionDebugReadService {
         case .matchesFound(let count):
             return DebugHistoryEvent(type: eventTypeName(event.type), date: event.date, matchCount: count, error: nil)
         case .error(let error):
-            let dto = DebugError(name: error.name, code: error.errorCode, description: error.errorDescription ?? error.name)
-            return DebugHistoryEvent(type: eventTypeName(event.type), date: event.date, matchCount: nil, error: dto)
+            let debugError = DebugError(name: error.name, code: error.errorCode, description: error.errorDescription ?? error.name)
+            return DebugHistoryEvent(type: eventTypeName(event.type), date: event.date, matchCount: nil, error: debugError)
         default:
             return DebugHistoryEvent(type: eventTypeName(event.type), date: event.date, matchCount: nil, error: nil)
         }

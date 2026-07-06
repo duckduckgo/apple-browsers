@@ -652,8 +652,13 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         }
 
         if let debugServer {
-            return debugServer.isRunning
+            if debugServer.isStartingOrRunning {
+                return true
+            }
+            debugServer.stop()
+            self.debugServer = nil
         }
+
         let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionIOSLogReader())
         do {
             try server.start()
@@ -670,7 +675,13 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
         debugServer = nil
     }
 
-    public var debugServerPort: UInt16? { debugServer?.port }
+    public var debugServerPort: UInt16? {
+        guard let debugServer, debugServer.isStartingOrRunning else {
+            return nil
+        }
+
+        return debugServer.port
+    }
 }
 
 // MARK: - Debug HTTP server read access

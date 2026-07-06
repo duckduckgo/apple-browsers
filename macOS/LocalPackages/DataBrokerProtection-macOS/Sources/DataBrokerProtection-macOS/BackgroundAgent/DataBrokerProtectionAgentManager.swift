@@ -576,7 +576,11 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
         }
 
         if let debugServer {
-            return debugServer.isRunning
+            if debugServer.isStartingOrRunning {
+                return true
+            }
+            debugServer.stop()
+            self.debugServer = nil
         }
 
         let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionOSLogReader())

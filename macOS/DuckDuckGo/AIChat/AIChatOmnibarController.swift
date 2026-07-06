@@ -135,6 +135,11 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatOmnibarWebSearch)
     }
 
+    /// Whether the Customize Responses tool is available in the omnibar tools menu.
+    var isCustomizeResponsesEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatCustomizeResponses)
+    }
+
     /// Whether the reasoning effort picker is available.
     var isReasoningEffortEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarReasoningEffort)

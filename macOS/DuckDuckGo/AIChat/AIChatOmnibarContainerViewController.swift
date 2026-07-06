@@ -483,7 +483,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     // MARK: - Tool Button Visibility
 
     private var shouldShowToolsButton: Bool {
-        omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible)
+        omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible || isCustomizeResponsesItemVisible)
     }
 
     private var isImageGenerationItemVisible: Bool {
@@ -492,6 +492,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private var isWebSearchItemVisible: Bool {
         omnibarController.isWebSearchEnabled && omnibarController.selectedModelSupportsWebSearch
+    }
+
+    private var isCustomizeResponsesItemVisible: Bool {
+        omnibarController.isCustomizeResponsesEnabled
     }
 
     private var shouldShowWebSearchChip: Bool {
@@ -1120,6 +1124,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 webSearchItem.state = .on
             }
             menu.addItem(webSearchItem)
+        }
+
+        if isCustomizeResponsesItemVisible {
+            let snapshot = CustomizeResponsesStore.currentSnapshot(clarifiesLabel: UserText.aiChatCustomizeResponsesClarifies)
+            let subtitle = (snapshot.hasCustomization ? snapshot.subLabel : nil) ?? UserText.aiChatCustomizeResponsesToolSubtitle
+            let rowView = CustomizeResponsesMenuRowView(
+                title: UserText.aiChatCustomizeResponsesButtonLabel,
+                subtitle: subtitle,
+                icon: DesignSystemImages.Glyphs.Size16.wand,
+                showsToggle: snapshot.hasCustomization,
+                isActive: snapshot.isActive,
+                // No-op until the customize modal lands (follow-up PR); the row only reflects state for now.
+                onOpen: {},
+                onToggle: { active in CustomizeResponsesStore.setActive(active) }
+            )
+            let customizeItem = NSMenuItem()
+            customizeItem.view = rowView
+            menu.addItem(customizeItem)
         }
 
         return menu
@@ -2015,5 +2037,297 @@ private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
     /// user actually picked or removed something during this session.
     func markDidMutate() {
         didMutateDuringSession = true
+    }
+}
+
+// MARK: - Customize Responses state (native storage bridge)
+
+/// Reads/writes the Duck.ai Customize Responses state via the shared `duckAiNativeStorage` bridge
+/// and derives the omnibar menu row's sub-label. Mirrors the Windows `CustomizeResponsesState` /
+/// `CustomizeResponsesSubLabel`.
+enum CustomizeResponsesStore {
+
+    /// Wire keys owned by the Duck.ai frontend; must stay in lockstep with it.
+    static let customizationKey = "duckaiCustomization"
+    static let activeKey = "duckaiCustomizationActive"
+
+    struct Snapshot {
+        let hasCustomization: Bool
+        let subLabel: String?
+        let isActive: Bool
+        static let none = Snapshot(hasCustomization: false, subLabel: nil, isActive: false)
+    }
+
+    static func currentSnapshot(clarifiesLabel: String) -> Snapshot {
+        guard let handler = NSApp.delegateTyped.duckAiNativeStorageHandler else { return .none }
+        let rawCustomization = (try? handler.getEntry(key: customizationKey)) ?? nil
+        let rawActive = (try? handler.getEntry(key: activeKey)) ?? nil
+
+        let info = parse(customizationValue: rawCustomization, clarifiesLabel: clarifiesLabel)
+        let isActive: Bool
+        switch rawActive {
+        case let flag as Bool: isActive = flag
+        case let text as String: isActive = text.lowercased() == "true"
+        default: isActive = false
+        }
+        return Snapshot(hasCustomization: info.isCustomized, subLabel: info.subLabel, isActive: isActive)
+    }
+
+    /// Writes the enabled flag without touching the stored customization, so turning it off
+    /// ignores customizations without resetting them (mirrors Windows `SetActive`).
+    static func setActive(_ active: Bool) {
+        try? NSApp.delegateTyped.duckAiNativeStorageHandler?.putEntry(key: activeKey, value: active ? "true" : "false")
+    }
+
+    // MARK: - Sub-label parsing (mirrors Windows CustomizeResponsesSubLabel)
+
+    private static let maxSubLabelLength = 15
+    private static let defaultValue = "Default"
+
+    /// Payload shape: `{"version":"1","data":{ assistantName, assistantRole, userName, userRole,
+    /// tone, length, shouldSeekClarity, additionalInstructions }}`, values already human-readable.
+    /// The native-storage bridge keeps the value as whatever type the FE sent, so accept either a
+    /// JSON string or an already-decoded object.
+    static func parse(customizationValue: Any?, clarifiesLabel: String) -> (isCustomized: Bool, subLabel: String?) {
+        let root: [String: Any]?
+        switch customizationValue {
+        case let json as String:
+            guard !json.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  let data = json.data(using: .utf8) else { return (false, nil) }
+            root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        case let object as [String: Any]:
+            root = object
+        default:
+            return (false, nil)
+        }
+        guard let payload = root?["data"] as? [String: Any] else { return (false, nil) }
+        return (!isEmpty(payload), buildSubLabel(payload, clarifiesLabel: clarifiesLabel))
+    }
+
+    private static func isEmpty(_ data: [String: Any]) -> Bool {
+        !hasText(data, "assistantName")
+            && !hasText(data, "userName")
+            && !hasText(data, "additionalInstructions")
+            && !hasText(data, "assistantRole")
+            && !hasText(data, "userRole")
+            && !isSetAndNotDefault(data, "tone")
+            && !isSetAndNotDefault(data, "length")
+            && !isClarifyingActive(data)
+    }
+
+    private static func buildSubLabel(_ data: [String: Any], clarifiesLabel: String) -> String? {
+        var parts: [String] = []
+        addIfSetAndNotDefault(&parts, data, "tone")
+        addIfSetAndNotDefault(&parts, data, "length")
+        addIfSetAndNotDefault(&parts, data, "assistantRole")
+        addIfSetAndNotDefault(&parts, data, "userRole")
+        if isClarifyingActive(data) { parts.append(clarifiesLabel) }
+        addIfHasText(&parts, data, "assistantName")
+        addIfHasText(&parts, data, "userName")
+        return parts.isEmpty ? nil : truncateByWord(parts.joined(separator: ", "), maxLength: maxSubLabelLength)
+    }
+
+    private static func addIfSetAndNotDefault(_ parts: inout [String], _ data: [String: Any], _ key: String) {
+        if isSetAndNotDefault(data, key) { parts.append(string(data, key)!.trimmingCharacters(in: .whitespaces)) }
+    }
+
+    private static func addIfHasText(_ parts: inout [String], _ data: [String: Any], _ key: String) {
+        if hasText(data, key) { parts.append(string(data, key)!.trimmingCharacters(in: .whitespaces)) }
+    }
+
+    private static func isSetAndNotDefault(_ data: [String: Any], _ key: String) -> Bool {
+        hasText(data, key) && string(data, key)!.trimmingCharacters(in: .whitespaces) != defaultValue
+    }
+
+    private static func hasText(_ data: [String: Any], _ key: String) -> Bool {
+        !(string(data, key)?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+    }
+
+    private static func string(_ data: [String: Any], _ key: String) -> String? {
+        data[key] as? String
+    }
+
+    private static func isClarifyingActive(_ data: [String: Any]) -> Bool {
+        (data["shouldSeekClarity"] as? Bool) == true
+    }
+
+    /// Mirrors the frontend `truncateByWord`: keeps whole words up to `maxLength`, drops a trailing
+    /// comma, and appends an ellipsis when truncated unless it already ends with a period.
+    private static func truncateByWord(_ text: String, maxLength: Int) -> String {
+        if text.count <= maxLength { return text }
+        var result = ""
+        for word in text.split(separator: " ", omittingEmptySubsequences: false) {
+            let candidate = result.isEmpty ? String(word) : result + " " + word
+            if candidate.count > maxLength { break }
+            result = candidate
+        }
+        if result.isEmpty { result = String(text.prefix(maxLength)) }
+        if result.hasSuffix(",") { result = String(result.dropLast()) }
+        return result.hasSuffix(".") ? result : result + "…"
+    }
+}
+
+// MARK: - Customize Responses menu row (custom NSMenuItem.view)
+
+/// Custom Tools-menu row for "Customize Responses": icon + title + dynamic sub-label, plus a
+/// right-aligned `NSSwitch` shown only once responses have been customized. Clicking the row runs
+/// `onOpen` and dismisses the menu; toggling the switch region flips the apply/ignore state and
+/// keeps the menu open. Mirrors the Windows omnibar row; hover/click handling follows the same
+/// `NSMenuItem.view` idiom as `AIChatTabPickerMenuRowView`.
+final class CustomizeResponsesMenuRowView: NSView {
+
+    private enum Layout {
+        static let width: CGFloat = 300
+        static let height: CGFloat = 44
+        static let leadingPadding: CGFloat = 14
+        static let trailingPadding: CGFloat = 14
+        static let iconSize: CGFloat = 16
+        static let spacingAfterIcon: CGFloat = 8
+        static let switchSpacing: CGFloat = 8
+        static let lineGap: CGFloat = 2
+    }
+
+    private let iconView = NSImageView()
+    private let titleLabel = NSTextField(labelWithString: "")
+    private let subtitleLabel = NSTextField(labelWithString: "")
+    private let switchControl = NSSwitch()
+    private var trackingArea: NSTrackingArea?
+
+    private let showsToggle: Bool
+    private let onOpen: () -> Void
+    private let onToggle: (Bool) -> Void
+
+    private var isHovering = false {
+        didSet {
+            guard oldValue != isHovering else { return }
+            updateColors()
+            needsDisplay = true
+        }
+    }
+
+    override var intrinsicContentSize: NSSize { NSSize(width: Layout.width, height: Layout.height) }
+
+    init(title: String,
+         subtitle: String,
+         icon: NSImage?,
+         showsToggle: Bool,
+         isActive: Bool,
+         onOpen: @escaping () -> Void,
+         onToggle: @escaping (Bool) -> Void) {
+        self.showsToggle = showsToggle
+        self.onOpen = onOpen
+        self.onToggle = onToggle
+        super.init(frame: NSRect(x: 0, y: 0, width: Layout.width, height: Layout.height))
+        autoresizesSubviews = true
+
+        let iconY = (Layout.height - Layout.iconSize) / 2
+        iconView.frame = NSRect(x: Layout.leadingPadding, y: iconY, width: Layout.iconSize, height: Layout.iconSize)
+        icon?.isTemplate = true
+        iconView.image = icon
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+        iconView.autoresizingMask = []
+        addSubview(iconView)
+
+        switchControl.state = isActive ? .on : .off
+        switchControl.isHidden = !showsToggle
+        let switchSize = switchControl.intrinsicContentSize
+        let switchX = Layout.width - Layout.trailingPadding - switchSize.width
+        switchControl.frame = NSRect(x: switchX, y: (Layout.height - switchSize.height) / 2, width: switchSize.width, height: switchSize.height)
+        switchControl.autoresizingMask = [.minXMargin]
+        addSubview(switchControl)
+
+        let titleFont = NSFont.systemFont(ofSize: 13)
+        let subtitleFont = NSFont.systemFont(ofSize: 11)
+        let titleHeight = ceil(titleFont.ascender - titleFont.descender)
+        let subtitleHeight = ceil(subtitleFont.ascender - subtitleFont.descender)
+        let block = titleHeight + Layout.lineGap + subtitleHeight
+        let blockBottom = (Layout.height - block) / 2
+
+        let textX = Layout.leadingPadding + Layout.iconSize + Layout.spacingAfterIcon
+        let textRight = showsToggle ? switchX - Layout.switchSpacing : Layout.width - Layout.trailingPadding
+        let textWidth = max(0, textRight - textX)
+
+        titleLabel.font = titleFont
+        titleLabel.lineBreakMode = .byTruncatingTail
+        titleLabel.usesSingleLineMode = true
+        titleLabel.maximumNumberOfLines = 1
+        titleLabel.stringValue = title
+        titleLabel.frame = NSRect(x: textX, y: blockBottom + subtitleHeight + Layout.lineGap, width: textWidth, height: titleHeight)
+        titleLabel.autoresizingMask = [.width]
+        addSubview(titleLabel)
+
+        subtitleLabel.font = subtitleFont
+        subtitleLabel.textColor = .secondaryLabelColor
+        subtitleLabel.lineBreakMode = .byTruncatingTail
+        subtitleLabel.usesSingleLineMode = true
+        subtitleLabel.maximumNumberOfLines = 1
+        subtitleLabel.stringValue = subtitle
+        subtitleLabel.frame = NSRect(x: textX, y: blockBottom, width: textWidth, height: subtitleHeight)
+        subtitleLabel.autoresizingMask = [.width]
+        addSubview(subtitleLabel)
+
+        updateColors()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func updateColors() {
+        let foreground: NSColor = isHovering ? .alternateSelectedControlTextColor : .labelColor
+        titleLabel.textColor = foreground
+        iconView.contentTintColor = foreground
+        subtitleLabel.textColor = isHovering
+            ? .alternateSelectedControlTextColor.withAlphaComponent(0.85)
+            : .secondaryLabelColor
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let existing = trackingArea { removeTrackingArea(existing) }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) { isHovering = true }
+    override func mouseExited(with event: NSEvent) { isHovering = false }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        if isHovering {
+            let selectionRect = bounds.insetBy(dx: 5, dy: 0)
+            NSColor.selectedContentBackgroundColor.setFill()
+            NSBezierPath(roundedRect: selectionRect, xRadius: 5, yRadius: 5).fill()
+        }
+    }
+
+    /// Route every click to the row itself so the embedded `NSSwitch` stays visual-only — we decide
+    /// toggle-vs-open by hit region in `mouseUp`, which is more reliable inside `NSMenu` tracking
+    /// than relying on the control to receive the event.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let local = convert(point, from: superview)
+        return bounds.contains(local) ? self : nil
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        // Swallow the press; act on mouseUp (keeps NSMenu from treating it as an item activation).
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        guard bounds.contains(point) else { return }
+
+        if showsToggle, switchControl.frame.insetBy(dx: -6, dy: -6).contains(point) {
+            let newActive = switchControl.state != .on
+            switchControl.state = newActive ? .on : .off
+            onToggle(newActive)
+            return
+        }
+
+        // Dismiss the menu, then run onOpen on the next runloop tick.
+        enclosingMenuItem?.menu?.cancelTracking()
+        let open = onOpen
+        DispatchQueue.main.async { open() }
     }
 }

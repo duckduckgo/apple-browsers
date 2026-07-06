@@ -79,6 +79,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215960699028461?focus=true
     case cookiePopupPreferenceSetting
 
+    /// Cookie Pop-up Protection opt-in dialog
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654865?focus=true
+    case cookiePopupOptInDialog
+
     // Duckplayer 'Web based' UI
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609457246
     case duckPlayer
@@ -566,6 +570,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction))
         case .cookiePopupPreferenceSetting:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupPreferenceSetting))
+        case .cookiePopupOptInDialog:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog))
         case .duckPlayer:
             Config(source: .remoteReleasable(DuckPlayerSubfeature.enableDuckPlayer), supportsLocalOverriding: false)
         case .duckPlayerOpenInNewTab:

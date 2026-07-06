@@ -87,6 +87,9 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let cookiePopupPreference = "cookie_popup_preference"
+    public static let autoconsentEnabled = "autoconsent_enabled"
+    public static let timeSinceShown = "time_since_shown"
     public static let shortcut = "shortcut"
     public static let browsingMode = "browsing_mode"
     public static let tabState = "tab_state"

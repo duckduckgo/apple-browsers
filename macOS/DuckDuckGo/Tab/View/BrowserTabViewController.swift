@@ -77,6 +77,8 @@ final class BrowserTabViewController: NSViewController {
     private weak var webViewContainer: NSView?
     @Published private var webViewSnapshot: NSView?
     private var containerStackView: NSStackView
+    private var cookiePopupOptInHostingController: NSHostingController<CookiePopupProtectionOptInView>?
+    private var cookiePopupOptInBackdrop: WindowDimmingBlockingView?
 
     weak var delegate: BrowserTabViewControllerDelegate?
     private(set) var tabViewModel: TabViewModel?
@@ -95,7 +97,7 @@ final class BrowserTabViewController: NSViewController {
     private let searchPreferences: SearchPreferences
     private let tabsPreferences: TabsPreferences
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
-    private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
+    let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     private let aiChatPreferences: AIChatPreferences
     private let aboutPreferences: AboutPreferences
     private let dockPreferences: DockPreferencesModel
@@ -670,6 +672,101 @@ final class BrowserTabViewController: NSViewController {
             $0.removeFromSuperview()
         }
         presentedContextualOnboardingDialogType = nil
+    }
+
+    /// Presents the Cookie Pop-up Protection opt-in dialog centered over the window.
+    /// `onConfirm` fires when the user taps Confirm, reporting the resulting Cookie Pop-up Protection preference.
+    /// the dim/backdrop is a WindowDimmingBlockingView mounted on the window frame view
+    /// (contentView.superview) so it covers the WHOLE window — titlebar / tab bar included — and its local
+    /// event monitor blocks mouse/scroll from reaching anything behind it. The card is a sibling above the
+    /// backdrop so it receives events normally (no manual forwarding).
+    @discardableResult
+    func showCookiePopupProtectionOptInDialog(onConfirm: ((CookiePopupPreference) -> Void)? = nil) -> Bool {
+        guard cookiePopupOptInHostingController == nil else { return false }
+        guard let frameView = view.window?.contentView?.superview else { return false }
+
+        // Autoresizing (not Auto Layout): the frame view is the private NSThemeFrame, which doesn't run the
+        // Auto Layout engine for views we add, so constraints against it never resolve. ColorView's init also
+        // sets translatesAutoresizingMaskIntoConstraints = false, so we flip it back on for frame-based layout.
+        let backdrop = WindowDimmingBlockingView()
+        backdrop.translatesAutoresizingMaskIntoConstraints = true
+        backdrop.backgroundColor = NSColor.black.withAlphaComponent(0.18)
+        backdrop.frame = frameView.bounds
+        backdrop.autoresizingMask = [.width, .height]
+        // Keep the window draggable by its titlebar / tab-bar strip while the overlay is up, but lock resizing.
+        if let window = view.window {
+            backdrop.topDraggableHeight = window.frame.height - window.contentLayoutRect.height
+        }
+        backdrop.locksWindowResizing = true
+
+        let variant: CookiePopupProtectionOptInVariant = cookiePopupProtectionPreferences.isAutoconsentEnabled ? .whenEnabled : .whenDisabled
+
+        let hostingController = NSHostingController(rootView: CookiePopupProtectionOptInView(variant: variant, onConfirm: { [weak self] selectedOption in
+            let preference = self?.applyCookiePopupProtectionOptInSelection(selectedOption)
+            self?.dismissCookiePopupProtectionOptInDialog()
+            if let preference {
+                onConfirm?(preference)
+            }
+        }))
+        let cardSize = hostingController.view.fittingSize
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = true
+        hostingController.view.frame = NSRect(
+            x: ((frameView.bounds.width - cardSize.width) / 2).rounded(),
+            y: ((frameView.bounds.height - cardSize.height) / 2).rounded(),
+            width: cardSize.width,
+            height: cardSize.height
+        )
+        // Flexible margins on every side keep the card centered as the window resizes.
+        hostingController.view.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin, .maxYMargin]
+
+        // Start hidden so we can fade in.
+        backdrop.alphaValue = 0
+        hostingController.view.alphaValue = 0
+
+        addChild(hostingController)
+        frameView.addSubview(backdrop, positioned: .above, relativeTo: nil)
+        frameView.addSubview(hostingController.view, positioned: .above, relativeTo: backdrop)
+        cookiePopupOptInBackdrop = backdrop
+        cookiePopupOptInHostingController = hostingController
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            backdrop.animator().alphaValue = 1
+            hostingController.view.animator().alphaValue = 1
+        }
+
+        // Clear keyboard focus from whatever field was active (e.g. the address bar / search box).
+        view.window?.makeFirstResponder(nil)
+
+        return true
+    }
+
+    func dismissCookiePopupProtectionOptInDialog() {
+        guard let backdrop = cookiePopupOptInBackdrop, let hostingController = cookiePopupOptInHostingController else { return }
+        // Detach the references now so a re-trigger during the fade-out starts a fresh dialog.
+        cookiePopupOptInBackdrop = nil
+        cookiePopupOptInHostingController = nil
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.15
+            backdrop.animator().alphaValue = 0
+            hostingController.view.animator().alphaValue = 0
+        } completionHandler: {
+            backdrop.stopListening()
+            backdrop.removeFromSuperview()
+            hostingController.view.removeFromSuperview()
+            hostingController.removeFromParent()
+        }
+    }
+
+    /// The top option turns on Cookie Pop-up Protection with the most-private handling; the bottom keeps the current setting.
+    /// Returns the resulting preference (for telemetry).
+    @discardableResult
+    private func applyCookiePopupProtectionOptInSelection(_ option: CookiePopupProtectionOptInOption) -> CookiePopupPreference {
+        if option == .optIn {
+            cookiePopupProtectionPreferences.cookiePopupPreference = .max
+        }
+        return cookiePopupProtectionPreferences.cookiePopupPreference
     }
 
     private func presentContextualOnboarding(showLastDialog: Bool = false) {

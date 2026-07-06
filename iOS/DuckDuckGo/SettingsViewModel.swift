@@ -537,11 +537,15 @@ final class SettingsViewModel: ObservableObject {
 
     var autoconsentBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.state.cookiePopupPreference.isBlockingEnabled },
-            set: { isEnabled in
-                self.appSettings.autoconsentEnabled = isEnabled
-                self.state.cookiePopupPreference = self.appSettings.cookiePopupPreference
-                Pixel.fire(pixel: isEnabled ? .settingsAutoconsentOn : .settingsAutoconsentOff)
+            get: { self.state.autoconsentEnabled },
+            set: {
+                self.appSettings.autoconsentEnabled = $0
+                self.state.autoconsentEnabled = $0
+                if $0 {
+                    Pixel.fire(pixel: .settingsAutoconsentOn)
+                } else {
+                    Pixel.fire(pixel: .settingsAutoconsentOff)
+                }
             }
         )
     }

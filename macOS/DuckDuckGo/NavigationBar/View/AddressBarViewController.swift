@@ -1002,7 +1002,6 @@ final class AddressBarViewController: NSViewController {
                 activeBackgroundView.backgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
-
                 /// Important: `activeOuterBorderView` is hidden when `isAppRedesign` evaluates as true
                 activeOuterBorderView.isHidden = isToggleFocused || !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) || selectionState == .activeWithAIChat
                 activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow

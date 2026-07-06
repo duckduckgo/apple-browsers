@@ -618,6 +618,21 @@ class StatisticsLoaderTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
     }
 
+    func testWhenDuckAIPromptSubmitted_ThenSearchExperimentPixelsFired() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchRetentionAtb"
+        mockStatisticsStore.duckAIRetentionAtb = "duckAIRetentionAtb"
+        loadSuccessfulUpdateAtbStub()
+
+        let expect = expectation(description: "DuckAI prompt submission fires search experiment pixels")
+        testee.refreshRetentionAtbOnDuckAiPromptSubmition {
+            XCTAssertTrue(self.fireSearchExperimentPixelsCalled)
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
     func testWhenDuckAIRefreshCalledWhileAnotherIsInProgressThenSecondCallIsIgnored() {
         mockStatisticsStore.atb = "atb"
         mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"

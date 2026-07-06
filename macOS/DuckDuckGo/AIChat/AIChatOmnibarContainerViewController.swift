@@ -1127,14 +1127,14 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
 
         if isCustomizeResponsesItemVisible {
-            let snapshot = CustomizeResponsesStore.currentSnapshot(clarifiesLabel: UserText.aiChatCustomizeResponsesClarifies)
-            let subtitle = (snapshot.hasCustomization ? snapshot.subLabel : nil) ?? UserText.aiChatCustomizeResponsesToolSubtitle
+            let state = CustomizeResponsesStore.currentState(clarifiesLabel: UserText.aiChatCustomizeResponsesClarifies)
+            let subtitle = (state.hasCustomization ? state.subLabel : nil) ?? UserText.aiChatCustomizeResponsesToolSubtitle
             let rowView = CustomizeResponsesMenuRowView(
                 title: UserText.aiChatCustomizeResponsesButtonLabel,
                 subtitle: subtitle,
                 icon: DesignSystemImages.Glyphs.Size16.wand,
-                showsToggle: snapshot.hasCustomization,
-                isActive: snapshot.isActive,
+                showsToggle: state.hasCustomization,
+                isActive: state.isActive,
                 // No-op until the customize modal lands (follow-up PR); the row only reflects state for now.
                 onOpen: {},
                 onToggle: { active in CustomizeResponsesStore.setActive(active) }
@@ -2042,128 +2042,22 @@ private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
 
 // MARK: - Customize Responses state (native storage bridge)
 
-/// Reads/writes the Duck.ai Customize Responses state via the shared `duckAiNativeStorage` bridge
-/// and derives the omnibar menu row's sub-label. Mirrors the Windows `CustomizeResponsesState` /
-/// `CustomizeResponsesSubLabel`.
+/// Thin macOS reader over the `duckAiNativeStorage` bridge: pulls the Customize Responses entries
+/// off the app's storage handler and hands them to the shared `CustomizeResponsesState` deriver.
+/// The parsing / sub-label logic lives in the AIChat package (`CustomizeResponsesState`).
 enum CustomizeResponsesStore {
 
-    /// Wire keys owned by the Duck.ai frontend; must stay in lockstep with it.
-    static let customizationKey = "duckaiCustomization"
-    static let activeKey = "duckaiCustomizationActive"
-
-    struct Snapshot {
-        let hasCustomization: Bool
-        let subLabel: String?
-        let isActive: Bool
-        static let none = Snapshot(hasCustomization: false, subLabel: nil, isActive: false)
-    }
-
-    static func currentSnapshot(clarifiesLabel: String) -> Snapshot {
+    static func currentState(clarifiesLabel: String) -> CustomizeResponsesState {
         guard let handler = NSApp.delegateTyped.duckAiNativeStorageHandler else { return .none }
-        let rawCustomization = (try? handler.getEntry(key: customizationKey)) ?? nil
-        let rawActive = (try? handler.getEntry(key: activeKey)) ?? nil
-
-        let info = parse(customizationValue: rawCustomization, clarifiesLabel: clarifiesLabel)
-        let isActive: Bool
-        switch rawActive {
-        case let flag as Bool: isActive = flag
-        case let text as String: isActive = text.lowercased() == "true"
-        default: isActive = false
-        }
-        return Snapshot(hasCustomization: info.isCustomized, subLabel: info.subLabel, isActive: isActive)
+        let customization = (try? handler.getEntry(key: CustomizeResponsesStorageKey.customization)) ?? nil
+        let active = (try? handler.getEntry(key: CustomizeResponsesStorageKey.active)) ?? nil
+        return CustomizeResponsesState.make(customizationValue: customization, activeValue: active, clarifiesLabel: clarifiesLabel)
     }
 
     /// Writes the enabled flag without touching the stored customization, so turning it off
     /// ignores customizations without resetting them (mirrors Windows `SetActive`).
     static func setActive(_ active: Bool) {
-        try? NSApp.delegateTyped.duckAiNativeStorageHandler?.putEntry(key: activeKey, value: active ? "true" : "false")
-    }
-
-    // MARK: - Sub-label parsing (mirrors Windows CustomizeResponsesSubLabel)
-
-    private static let maxSubLabelLength = 15
-    private static let defaultValue = "Default"
-
-    /// Payload shape: `{"version":"1","data":{ assistantName, assistantRole, userName, userRole,
-    /// tone, length, shouldSeekClarity, additionalInstructions }}`, values already human-readable.
-    /// The native-storage bridge keeps the value as whatever type the FE sent, so accept either a
-    /// JSON string or an already-decoded object.
-    static func parse(customizationValue: Any?, clarifiesLabel: String) -> (isCustomized: Bool, subLabel: String?) {
-        let root: [String: Any]?
-        switch customizationValue {
-        case let json as String:
-            guard !json.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  let data = json.data(using: .utf8) else { return (false, nil) }
-            root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
-        case let object as [String: Any]:
-            root = object
-        default:
-            return (false, nil)
-        }
-        guard let payload = root?["data"] as? [String: Any] else { return (false, nil) }
-        return (!isEmpty(payload), buildSubLabel(payload, clarifiesLabel: clarifiesLabel))
-    }
-
-    private static func isEmpty(_ data: [String: Any]) -> Bool {
-        !hasText(data, "assistantName")
-            && !hasText(data, "userName")
-            && !hasText(data, "additionalInstructions")
-            && !hasText(data, "assistantRole")
-            && !hasText(data, "userRole")
-            && !isSetAndNotDefault(data, "tone")
-            && !isSetAndNotDefault(data, "length")
-            && !isClarifyingActive(data)
-    }
-
-    private static func buildSubLabel(_ data: [String: Any], clarifiesLabel: String) -> String? {
-        var parts: [String] = []
-        addIfSetAndNotDefault(&parts, data, "tone")
-        addIfSetAndNotDefault(&parts, data, "length")
-        addIfSetAndNotDefault(&parts, data, "assistantRole")
-        addIfSetAndNotDefault(&parts, data, "userRole")
-        if isClarifyingActive(data) { parts.append(clarifiesLabel) }
-        addIfHasText(&parts, data, "assistantName")
-        addIfHasText(&parts, data, "userName")
-        return parts.isEmpty ? nil : truncateByWord(parts.joined(separator: ", "), maxLength: maxSubLabelLength)
-    }
-
-    private static func addIfSetAndNotDefault(_ parts: inout [String], _ data: [String: Any], _ key: String) {
-        if isSetAndNotDefault(data, key) { parts.append(string(data, key)!.trimmingCharacters(in: .whitespaces)) }
-    }
-
-    private static func addIfHasText(_ parts: inout [String], _ data: [String: Any], _ key: String) {
-        if hasText(data, key) { parts.append(string(data, key)!.trimmingCharacters(in: .whitespaces)) }
-    }
-
-    private static func isSetAndNotDefault(_ data: [String: Any], _ key: String) -> Bool {
-        hasText(data, key) && string(data, key)!.trimmingCharacters(in: .whitespaces) != defaultValue
-    }
-
-    private static func hasText(_ data: [String: Any], _ key: String) -> Bool {
-        !(string(data, key)?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
-    }
-
-    private static func string(_ data: [String: Any], _ key: String) -> String? {
-        data[key] as? String
-    }
-
-    private static func isClarifyingActive(_ data: [String: Any]) -> Bool {
-        (data["shouldSeekClarity"] as? Bool) == true
-    }
-
-    /// Mirrors the frontend `truncateByWord`: keeps whole words up to `maxLength`, drops a trailing
-    /// comma, and appends an ellipsis when truncated unless it already ends with a period.
-    private static func truncateByWord(_ text: String, maxLength: Int) -> String {
-        if text.count <= maxLength { return text }
-        var result = ""
-        for word in text.split(separator: " ", omittingEmptySubsequences: false) {
-            let candidate = result.isEmpty ? String(word) : result + " " + word
-            if candidate.count > maxLength { break }
-            result = candidate
-        }
-        if result.isEmpty { result = String(text.prefix(maxLength)) }
-        if result.hasSuffix(",") { result = String(result.dropLast()) }
-        return result.hasSuffix(".") ? result : result + "…"
+        try? NSApp.delegateTyped.duckAiNativeStorageHandler?.putEntry(key: CustomizeResponsesStorageKey.active, value: active ? "true" : "false")
     }
 }
 

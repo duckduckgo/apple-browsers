@@ -335,7 +335,7 @@ final class SyncDialogController {
         guard authenticationResult.authenticated else {
             if authenticationResult == .noAuthAvailable {
                 presentDialog(for: .empty)
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
+                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice)
             }
             coordinationDelegate?.didEndFlow()
             return false

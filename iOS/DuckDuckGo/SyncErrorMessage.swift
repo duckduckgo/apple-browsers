@@ -55,7 +55,7 @@ enum SyncErrorMessage {
         }
     }
 
-    var description: String {
+    var description: String? {
         switch self {
         case .unknownError:
             return UserText.unknownErrorTryAgainMessage
@@ -78,7 +78,7 @@ enum SyncErrorMessage {
         case .unableToRecognizeCode:
             return UserText.unableToRecognizeCode
         case .updateRequired:
-            return UserText.syncUpdateRequiredDescription
+            return nil
         case .unsupportedThirdPartyRecoveryCode:
             return UserText.syncUnsupportedThirdPartyRecoveryCodeDescription
         case .thirdPartyAccountAlreadyUpgraded:

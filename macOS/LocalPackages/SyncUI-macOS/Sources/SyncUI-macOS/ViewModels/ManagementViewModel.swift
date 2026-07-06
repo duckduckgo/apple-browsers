@@ -121,7 +121,7 @@ public enum SyncErrorType {
         }
     }
 
-    var description: String {
+    var description: String? {
         switch self {
         case .unableToSyncToServer:
             return UserText.unableToSyncToServerDescription
@@ -146,7 +146,7 @@ public enum SyncErrorType {
         case .unableToRecognizeCode:
             return UserText.unableToRecognizeCode
         case .updateRequired:
-            return UserText.syncUpdateRequiredDescription
+            return nil
         case .unsupportedThirdPartyRecoveryCode:
             return UserText.syncUnsupportedThirdPartyRecoveryCodeDescription
         case .thirdPartyAccountAlreadyUpgraded:
@@ -186,7 +186,7 @@ public enum SyncErrorType {
 
 public struct SyncErrorMessage {
     var type: SyncErrorType
-    var errorDescription: String
+    var errorDescription: String?
 
     public init(type: SyncErrorType, description: String? = nil) {
         self.type = type

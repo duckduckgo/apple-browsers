@@ -51,7 +51,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private enum Constants {
         static let clipMaskBottomOffset: CGFloat = 14
-        static let shadowOverlapHeight: CGFloat = 11
+        static let shadowOverlapHeight: CGFloat = -4
+        static let legacyShadowOverlapHeight: CGFloat = 11
         static let submitButtonSize: CGFloat = 28
         static let submitButtonCornerRadius: CGFloat = 14
         static let submitButtonTrailingInset: CGFloat = 8
@@ -1059,7 +1060,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
 
         /// Do not overlap shadow of main address bar
-        frame.size.height -= Constants.shadowOverlapHeight
+        frame.size.height -= themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
 
         shadowView.frame = frame
     }

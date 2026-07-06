@@ -77,6 +77,15 @@ protocol TabSwitcherChrome: AnyObject {
 
     /// Applies the appropriate content insets so collection content clears the bars.
     func applyCollectionContentInset(to collectionView: UICollectionView)
+
+    /// Points the system scroll-edge glass effect at the scroll view the user actually scrolls
+    /// (the active page's collection view), so the effect tracks vertical tab scrolling rather
+    /// than the horizontally-paging container.
+    func trackScrollEdge(of scrollView: UIScrollView)
+}
+
+extension TabSwitcherChrome {
+    func trackScrollEdge(of scrollView: UIScrollView) {}
 }
 
 /// Selects the chrome implementation based on whether floating UI is enabled.

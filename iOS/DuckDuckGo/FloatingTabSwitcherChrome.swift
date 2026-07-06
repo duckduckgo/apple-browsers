@@ -45,6 +45,11 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
     private weak var hostView: UIView?
     private weak var contentView: UIScrollView?
+
+    /// The scroll view whose edges drive the system liquid glass effect. This is the active page's
+    /// collection view (which scrolls vertically), not the horizontally-paging `contentView`.
+    private weak var scrollEdgeScrollView: UIScrollView?
+
     private weak var centerView: UIView?
     private var glassCenterContainer: UIVisualEffectView?
     private var layoutConstraints: [NSLayoutConstraint] = []
@@ -169,8 +174,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         }
 
         let interaction = UIScrollEdgeElementContainerInteraction()
-        interaction.scrollView = contentView
-        assert(interaction.scrollView != nil)
+        interaction.scrollView = scrollEdgeScrollView
         interaction.edge = edge
         view.addInteraction(interaction)
         return interaction
@@ -184,6 +188,14 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     func attachBottomScrollViewInteraction() {
         guard #available(iOS 26, *) else { return }
         scrollViewBottomInteraction = attachScrollViewInteractionToView(toolbar, onEdge: .bottom, removingExistingInteraction: scrollViewBottomInteraction)
+    }
+
+    func trackScrollEdge(of scrollView: UIScrollView) {
+        guard scrollEdgeScrollView !== scrollView else { return }
+        scrollEdgeScrollView = scrollView
+        guard #available(iOS 26, *) else { return }
+        (scrollViewTopInteraction as? UIScrollEdgeElementContainerInteraction)?.scrollView = scrollView
+        (scrollViewBottomInteraction as? UIScrollEdgeElementContainerInteraction)?.scrollView = scrollView
     }
 
     func setCenterView(_ view: UIView?) {

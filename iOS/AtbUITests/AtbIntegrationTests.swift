@@ -120,17 +120,21 @@ class AtbIntegrationTests: XCTestCase {
     ///
     /// `hasKeyboardFocus` is intentionally not asserted: the omnibar's search field
     /// never reports keyboard focus to XCUITest even while it is actively being
-    /// edited, so gating on it makes `focus` fail every time. Instead we retry the
-    /// tap itself — the element can briefly drop out of the accessibility hierarchy
-    /// as the omnibar lays out — and let the subsequent `typeText` surface any real
-    /// focus failure.
+    /// edited (the real first responder is a separate overlaid text view), so gating
+    /// on it makes `focus` fail every time. We also can't gate on existence alone —
+    /// the identifier appears before the omnibar finishes laying out, so the element
+    /// can exist while it is not yet tappable. Wait for it to become *hittable* (the
+    /// predicate re-evaluates over time, and also covers existence) before tapping,
+    /// and let the subsequent `typeText` surface any real focus failure.
     private func focus(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        let isHittable = NSPredicate(format: "isHittable == true")
+
         for _ in 0..<3 {
-            guard element.waitForExistence(timeout: Constants.defaultTimeout), element.isHittable else {
-                continue
+            let hittableExpectation = XCTNSPredicateExpectation(predicate: isHittable, object: element)
+            if XCTWaiter.wait(for: [hittableExpectation], timeout: Constants.defaultTimeout) == .completed {
+                element.tap()
+                return
             }
-            element.tap()
-            return
         }
 
         XCTFail("Could not focus \(element)", file: file, line: line)

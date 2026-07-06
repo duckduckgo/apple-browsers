@@ -932,7 +932,7 @@ final class AddressBarViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
 
         /// Keep the suggestions shadow aligned with the panel by applying the same vertical offset.
-        let offset = AddressBarTextField.SuggestionWindowSizes.verticalOffset(isAppRebranded: themeManager.isAppRebranded)
+        let offset = AddressBarTextField.SuggestionWindowSizes.shadowOffset(isAppRebranded: themeManager.isAppRebranded)
         frame.origin.y += offset
         frame.size.height -= offset
 

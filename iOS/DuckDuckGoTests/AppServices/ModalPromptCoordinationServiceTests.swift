@@ -236,7 +236,8 @@ final class ModalPromptCoordinationServiceTests {
             .subscriptionPromo,
             .newAddressBarPicker,
             .defaultBrowser,
-            .whatsNew
+            .whatsNew,
+            .cookiePopupProtectionOptIn
         ]
     )
     func whenHigherPriorityProvidersReturnNilThenCorrectProviderIsUsed(priority: ProviderPriority) throws {
@@ -250,6 +251,7 @@ final class ModalPromptCoordinationServiceTests {
             winBackOffer: MockModalPromptProvider(shouldReturnPrompt: priority == .winBackOffer),
             subscriptionPromo: MockModalPromptProvider(shouldReturnPrompt: priority == .subscriptionPromo),
             whatsNew: MockModalPromptProvider(shouldReturnPrompt: priority == .whatsNew),
+            cookiePopupProtectionOptIn: MockModalPromptProvider(shouldReturnPrompt: priority == .cookiePopupProtectionOptIn),
         )
 
         launchSourceManagerMock.source = .standard
@@ -289,9 +291,10 @@ extension ModalPromptProviders {
         case .defaultBrowser: return defaultBrowser
         case .newAddressBarPicker: return newAddressBarPicker
         case .whatsNew: return whatsNew
+        case .cookiePopupProtectionOptIn: return cookiePopupProtectionOptIn
         }
     }
-    
+
 }
 
 enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
@@ -300,6 +303,7 @@ enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
     case newAddressBarPicker = 2
     case defaultBrowser = 3
     case whatsNew = 4
+    case cookiePopupProtectionOptIn = 5
 
     var index: Int { rawValue }
 
@@ -310,6 +314,7 @@ enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
         case .newAddressBarPicker: return "NewAddressBarPicker"
         case .defaultBrowser: return "DefaultBrowser"
         case .whatsNew: return "WhatsNew"
+        case .cookiePopupProtectionOptIn: return "CookiePopupProtectionOptIn"
         }
     }
 }

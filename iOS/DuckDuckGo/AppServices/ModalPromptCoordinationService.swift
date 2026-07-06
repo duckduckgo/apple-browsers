@@ -40,6 +40,7 @@ struct ModalPromptProviders {
     let winBackOffer: ModalPromptProvider
     let subscriptionPromo: ModalPromptProvider
     let whatsNew: ModalPromptProvider
+    let cookiePopupProtectionOptIn: ModalPromptProvider
 }
 
 @MainActor
@@ -65,12 +66,14 @@ final class ModalPromptCoordinationService {
         //  4.1 Re-activation Prompt
         //  4.2 Default Browser Prompt
         // 5. What's New
+        // 6. Cookie Pop-up Protection opt-in
         let providers: [ModalPromptProvider] = [
             providers.winBackOffer,
             providers.subscriptionPromo,
             providers.newAddressBarPicker,
             providers.defaultBrowser,
             providers.whatsNew,
+            providers.cookiePopupProtectionOptIn,
         ]
         
         let presentationStore = PromptCooldownKeyValueFilesStore(keyValueStore: keyValueStore, eventMapper: PromptCooldownStorePixelReporter())

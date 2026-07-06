@@ -694,7 +694,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             NSLayoutConstraint.activate(floatingHostToGlassContentConstraints)
         }
 
-        searchAreaContainerView.backgroundColor = .clear
+        // Don't apply a colour here, that will get set later when animations and such have finished.
     }
 
     func makeOpaque() {
@@ -709,9 +709,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         glassEffect.removeFromSuperview()
         opaqueEffect.removeFromSuperview()
 
-        searchAreaContainerView.backgroundColor = isFloatingUIEnabled
+        setFieldBackgroundColor(isFloatingUIEnabled
             ? opaqueFieldBackgroundColor
-            : UIColor(designSystemColor: .urlBar)
+            : UIColor(designSystemColor: .urlBar))
+    }
+
+    /// Applies the field fill without animation. The address-bar move animation only animates the
+    /// bar's position; the fill must snap so it never cross-fades through an intermediate colour
+    /// (e.g. the stale-position fill computed before `isUsingSmallTopSpacing` is updated).
+    private func setFieldBackgroundColor(_ color: UIColor?) {
+        UIView.performWithoutAnimation {
+            searchAreaContainerView.backgroundColor = color
+        }
     }
 
     private func setUpSubviews() {
@@ -1017,7 +1026,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
         } else {
-            searchAreaContainerView.backgroundColor = opaqueFieldBackgroundColor
+            setFieldBackgroundColor(opaqueFieldBackgroundColor)
             activeOutlineView.layer.borderColor = fireMode
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
@@ -1144,7 +1153,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             if shouldUseFloatingTopGlass {
                 makeGlass()
             } else {
-                searchAreaContainerView.backgroundColor = opaqueFieldBackgroundColor
+                setFieldBackgroundColor(opaqueFieldBackgroundColor)
             }
         }
         updateFireModeAppearance()

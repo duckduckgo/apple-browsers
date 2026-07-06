@@ -226,11 +226,9 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     private let navigationBarHeightForDefault: CGFloat = 52
     private let navigationBarHeightForHomePage: CGFloat = 52
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
-    private let addressBarTopPaddingForDefault: CGFloat = 7
-    private let addressBarTopPaddingForDefaultFocused: CGFloat = 2
+    private let addressBarTopPaddingForDefault: CGFloat = 2
     private let addressBarTopPaddingForPopUpWindow: CGFloat = 7
-    private let addressBarBottomPaddingForDefault: CGFloat = 7
-    private let addressBarBottomPaddingForDefaultFocused: CGFloat = 2
+    private let addressBarBottomPaddingForDefault: CGFloat = 2
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
     private let addressBarHorizontalPaddingExtended: CGFloat = 1
     private let addressBarHorizontalPaddingIDLE: CGFloat = 4
@@ -303,7 +301,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
         case .default, .homePage:
-            return focused ? addressBarTopPaddingForDefaultFocused : addressBarTopPaddingForDefault
+            return addressBarTopPaddingForDefault
         case .popUpWindow:
             return addressBarTopPaddingForPopUpWindow
         }
@@ -312,7 +310,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
         case .default, .homePage:
-            return focused ? addressBarBottomPaddingForDefaultFocused : addressBarBottomPaddingForDefault
+            return addressBarBottomPaddingForDefault
         case .popUpWindow:
             return addressBarBottomPaddingForPopUpWindow
         }

@@ -1939,6 +1939,7 @@
 		C13EBC4F2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC4E2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift */; };
 		C13EBC512EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */; };
 		C13EBC532EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */; };
+		C13EBC552EF62A0100CE5A4B /* AIChatContextualInputViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EBC542EF62A0100CE5A4B /* AIChatContextualInputViewControllerTests.swift */; };
 		C13EEA1E2D64CFCA001D5DC3 /* DataImportViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */; };
 		C13EEA202D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */; };
 		C13EEA222D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA212D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift */; };
@@ -4640,6 +4641,7 @@
 		C13EBC4E2EE9CCE700CE5A4B /* AIChatContextualModeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualModeFeature.swift; sourceTree = "<group>"; };
 		C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualModeFeatureTests.swift; sourceTree = "<group>"; };
 		C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualSheetCoordinatorTests.swift; sourceTree = "<group>"; };
+		C13EBC542EF62A0100CE5A4B /* AIChatContextualInputViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatContextualInputViewControllerTests.swift; sourceTree = "<group>"; };
 		C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportViewModelTests.swift; sourceTree = "<group>"; };
 		C13EEA1F2D64E59A001D5DC3 /* ZipContentSelectionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZipContentSelectionViewModelTests.swift; sourceTree = "<group>"; };
 		C13EEA212D64F6DB001D5DC3 /* DataImportSummaryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryViewModelTests.swift; sourceTree = "<group>"; };
@@ -6026,6 +6028,7 @@
 				C16670E32EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift */,
 				C13EBC502EE9CD2F00CE5A4B /* AIChatContextualModeFeatureTests.swift */,
 				C13EBC522EF62A0000CE5A4B /* AIChatContextualSheetCoordinatorTests.swift */,
+				C13EBC542EF62A0100CE5A4B /* AIChatContextualInputViewControllerTests.swift */,
 				F0E6B4C53D4E5F6A70819203 /* AIChatRecentChatsPopupViewModelTests.swift */,
 				E7971E90992B46FABF42A908 /* AIChatContextualWebViewControllerTests.swift */,
 				C1AITEST2F2E000400E35AD5 /* AIChatPageContextHandlerTests.swift */,
@@ -14499,6 +14502,7 @@
 				6AC98419288055C1005FA9CA /* BarsAnimatorTests.swift in Sources */,
 				8536A1CA209AF6490050739E /* HomeRowReminderTests.swift in Sources */,
 				CB6D17AA2FA4B57900ECD5AE /* AIChatContextualUTIHostTests.swift in Sources */,
+				C13EBC552EF62A0100CE5A4B /* AIChatContextualInputViewControllerTests.swift in Sources */,
 				9FA0AF1E2EB4894A00713387 /* RemoteMessagingPixelReporterTests.swift in Sources */,
 				5650E36F2D3E8E5900D41ECF /* PageRefreshMonitorExtensionTests.swift in Sources */,
 				9FE59CDD2E31AD9D00C4B65D /* DefaultBrowserPiPTutorialURLProviderTests.swift in Sources */,

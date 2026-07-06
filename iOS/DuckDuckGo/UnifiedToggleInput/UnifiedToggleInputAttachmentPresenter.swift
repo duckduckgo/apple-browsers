@@ -61,32 +61,36 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             UIAction(
                 title: UserText.aiChatAttachmentOptionTakePhoto,
                 image: DesignSystemImages.Glyphs.Size24.camera,
-                attributes: canTakePhoto ? [] : .hidden
+                attributes: canTakePhoto ? [] : .disabled
             ) { [weak self] _ in
+                guard canTakePhoto else { return }
                 guard let presenter = presenterProvider() else { return }
                 self?.presentCamera(from: presenter)
             },
             UIAction(
                 title: UserText.aiChatAttachmentOptionAttachPhoto,
                 image: DesignSystemImages.Glyphs.Size24.image,
-                attributes: canAttachPhoto ? [] : .hidden
+                attributes: canAttachPhoto ? [] : .disabled
             ) { [weak self] _ in
+                guard canAttachPhoto else { return }
                 guard let presenter = presenterProvider() else { return }
                 self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
             },
             UIAction(
                 title: UserText.aiChatAttachmentOptionAttachFile,
                 image: DesignSystemImages.Glyphs.Size24.folder,
-                attributes: canAttachAllowedFile ? [] : .hidden
+                attributes: canAttachAllowedFile ? [] : .disabled
             ) { [weak self] _ in
+                guard canAttachAllowedFile else { return }
                 guard let presenter = presenterProvider() else { return }
                 self?.presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
             },
             UIAction(
                 title: UserText.aiChatAttachmentOptionAskAboutPage,
                 image: DesignSystemImages.Glyphs.Size24.documentNew,
-                attributes: canAttachPageContext ? [] : .hidden
+                attributes: canAttachPageContext ? [] : .disabled
             ) { _ in
+                guard canAttachPageContext else { return }
                 pageContextActionHandler?()
             }
         ]

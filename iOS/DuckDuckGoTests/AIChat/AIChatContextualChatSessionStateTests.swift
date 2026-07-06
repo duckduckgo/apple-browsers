@@ -411,6 +411,19 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.contextualChatURL, url)
     }
 
+    func testBeginChatForUTISubmissionDoesNotStorePageContextURLAsChatURL() {
+        // Given
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
+
+        // When
+        sessionState.beginChatForUTISubmission()
+
+        // Then
+        XCTAssertEqual(sessionState.frontendState, .chatWithInitialContext)
+        XCTAssertNil(sessionState.contextualChatURL)
+    }
+
     func testClearContextualChatURL() {
         // Given
         sessionState.updateContextualChatURL(URL(string: "https://duck.ai/chat/456")!)

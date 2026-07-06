@@ -185,7 +185,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isImageButtonEnabled)
     }
 
-    func testWhenImageLimitReachedButFilesRemainThenAttachmentMenuOnlyShowsFileAction() {
+    func testWhenImageLimitReachedButFilesRemainThenAttachmentMenuKeepsImageActionsDisabled() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"
         let sut = makeCoordinator(preferences: prefs)
@@ -195,8 +195,9 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.addImageAttachment(image: image, fileName: "b.jpg")
         sut.addImageAttachment(image: image, fileName: "c.jpg")
 
-        let menuTitles = attachmentMenuTitles(for: sut)
-        XCTAssertEqual(menuTitles, [UserText.aiChatAttachmentOptionAttachFile])
+        let actions = attachmentMenuActionsByTitle(for: sut)
+        XCTAssertTrue(actions[UserText.aiChatAttachmentOptionAttachPhoto]?.attributes.contains(.disabled) == true)
+        XCTAssertFalse(actions[UserText.aiChatAttachmentOptionAttachFile]?.attributes.contains(.disabled) == true)
     }
 
     func testWhenFileLimitReachedButImagesRemainThenAttachmentButtonIsEnabled() {
@@ -220,9 +221,9 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.addFileAttachment(makeFileAttachment(fileName: "b.pdf"))
         sut.addFileAttachment(makeFileAttachment(fileName: "c.pdf"))
 
-        let menuTitles = attachmentMenuTitles(for: sut)
-        XCTAssertTrue(menuTitles.contains(UserText.aiChatAttachmentOptionAttachPhoto))
-        XCTAssertFalse(menuTitles.contains(UserText.aiChatAttachmentOptionAttachFile))
+        let actions = attachmentMenuActionsByTitle(for: sut)
+        XCTAssertFalse(actions[UserText.aiChatAttachmentOptionAttachPhoto]?.attributes.contains(.disabled) == true)
+        XCTAssertTrue(actions[UserText.aiChatAttachmentOptionAttachFile]?.attributes.contains(.disabled) == true)
     }
 
     func testWhenImageAndFileAvailableThenAttachmentMenuShowsPhotoAndFileActions() {
@@ -243,10 +244,12 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.onPageContextAttachRequested = { attachCallCount += 1 }
         sut.updateImageButtonVisibility()
 
-        let menuTitles = attachmentMenuTitles(for: sut)
-        XCTAssertEqual(menuTitles, [UserText.aiChatAttachmentOptionAskAboutPage])
+        let actions = attachmentMenuActionsByTitle(for: sut)
+        XCTAssertTrue(actions[UserText.aiChatAttachmentOptionAttachPhoto]?.attributes.contains(.disabled) == true)
+        XCTAssertTrue(actions[UserText.aiChatAttachmentOptionAttachFile]?.attributes.contains(.disabled) == true)
+        XCTAssertFalse(actions[UserText.aiChatAttachmentOptionAskAboutPage]?.attributes.contains(.disabled) == true)
 
-        let action = visibleAttachmentMenuActions(for: sut).first
+        let action = actions[UserText.aiChatAttachmentOptionAskAboutPage]
         if #available(iOS 16.0, *) {
             action?.performWithSender(nil, target: nil)
         }
@@ -731,6 +734,10 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
     private func attachmentMenuActions(for coordinator: UnifiedToggleInputCoordinator) -> [UIAction] {
         coordinator.viewController.attachmentMenu?.children.compactMap { $0 as? UIAction } ?? []
+    }
+
+    private func attachmentMenuActionsByTitle(for coordinator: UnifiedToggleInputCoordinator) -> [String: UIAction] {
+        Dictionary(uniqueKeysWithValues: attachmentMenuActions(for: coordinator).map { ($0.title, $0) })
     }
 
     private func flushMainQueue() {

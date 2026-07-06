@@ -375,9 +375,9 @@ private extension AIChatContextualSheetCoordinator {
             self.sessionState.downgradeToPlaceholder()
             self.pageContextHandler.clear()
         }
-        host.onPromptSubmitted = { [weak self] url in
+        host.onPromptSubmitted = { [weak self] in
             guard let self else { return }
-            self.sessionState.beginChatForUTISubmission(url: url)
+            self.sessionState.beginChatForUTISubmission()
             self.sheetViewController?.handleFirstUTISubmission()
         }
         host.onAIVoiceChatRequested = { [weak self] in

@@ -1263,6 +1263,38 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
     }
 
+    func test_toolsMenu_doesNotContainCustomizeResponsesAction_contextualPreSubmit() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+
+        let actionTitles = toolsMenuActions().map(\.title)
+
+        XCTAssertFalse(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+    }
+
+    func test_toolsMenu_containsCustomizeResponsesAction_contextualPostSubmit() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+
+        _ = sut.prepareExternalPromptSubmission()
+
+        let actionTitles = toolsMenuActions().map(\.title)
+
+        XCTAssertTrue(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+    }
+
     // MARK: - Web Search Tools
 
     func test_toolsButton_visibleOnAITabWhenModelSupportsTools() {
@@ -1999,7 +2031,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             contextualStartsPreSubmit: true
         )
 
-        sut.prepareExternalPromptSubmission()
+        _ = sut.prepareExternalPromptSubmission()
 
         XCTAssertTrue(sut.hasSubmittedPrompt)
         XCTAssertTrue(sut.viewController.isModelChipHidden)

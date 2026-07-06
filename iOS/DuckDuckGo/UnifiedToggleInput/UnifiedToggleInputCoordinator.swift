@@ -2340,6 +2340,7 @@ private extension UnifiedToggleInputCoordinator {
         isModelPickerForcedVisible = false
         persistModelPickerPinClearedAfterHideIfNeeded()
         updateModelChipVisibility()
+        refreshToolsPresentation()
         syncHasSubmittedPromptToHandler()
         if wasInRecoveryPickerSession {
             UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPromptSentPixel()
@@ -2394,7 +2395,8 @@ private extension UnifiedToggleInputCoordinator {
     func refreshToolsPresentation() {
         let presentation = toolsController.presentation(
             displayState: displayState,
-            modelStore: modelStore
+            modelStore: modelStore,
+            canShowCustomizeResponses: canShowCustomizeResponsesMenuItem
         )
         let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
             self?.toolsMenuFactory.makeMenu(menu) { identifier in
@@ -2414,6 +2416,17 @@ private extension UnifiedToggleInputCoordinator {
     func resetToolsSelection() {
         toolsController.clearSelection()
         refreshToolsPresentation()
+    }
+
+    var canShowCustomizeResponsesMenuItem: Bool {
+        switch displayState {
+        case .aiTab:
+            return true
+        case .contextualChat:
+            return hasSubmittedPrompt
+        case .hidden, .omnibar:
+            return false
+        }
     }
 
     func updateImageButtonEnabledState() {

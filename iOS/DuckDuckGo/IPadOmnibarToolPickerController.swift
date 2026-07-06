@@ -92,7 +92,11 @@ final class IPadOmnibarToolPickerController {
     // MARK: - Private
 
     private var presentation: UTIToolsController.Presentation {
-        toolsController.presentation(displayState: displayState, modelStore: store)
+        toolsController.presentation(
+            displayState: displayState,
+            modelStore: store,
+            canShowCustomizeResponses: false
+        )
     }
 
     private func fireToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {

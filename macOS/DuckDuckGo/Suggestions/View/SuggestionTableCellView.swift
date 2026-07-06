@@ -140,7 +140,7 @@ final class SuggestionTableCellView: NSTableCellView {
     override func awakeFromNib() {
         let colorsProvider = theme.colorsProvider
 
-        suffixTextField.textColor = colorsProvider.suggestionsTextColor
+        suffixTextField.textColor = colorsProvider.suggestionsSuffixColor
         removeButton.toolTip = UserText.removeSuggestionTooltip
         switchToTabLabel.attributedStringValue = Self.switchToTabAttributedString
     }

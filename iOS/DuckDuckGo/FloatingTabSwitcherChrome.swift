@@ -44,7 +44,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     let toolbar = UIToolbar()
 
     private weak var hostView: UIView?
-    private weak var contentView: UIView?
+    private weak var contentView: UIScrollView?
     private weak var centerView: UIView?
     private var glassCenterContainer: UIVisualEffectView?
     private var layoutConstraints: [NSLayoutConstraint] = []
@@ -135,7 +135,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
     // MARK: - TabSwitcherChrome
 
-    func install(in view: UIView, contentView: UIView) {
+    func install(in view: UIView, contentView: UIScrollView) {
         hostView = view
         self.contentView = contentView
 
@@ -149,8 +149,41 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         fireItem.accessibilityLabel = "Close all tabs and clear data"
         fireItem.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
         plusItem.accessibilityLabel = UserText.keyCommandNewTab
+        duckChatItem.accessibilityIdentifier = "TabSwitcher.Button.DuckChat"
         duckChatItem.accessibilityLabel = UserText.duckAiFeatureName
         tabsStyleItem.accessibilityLabel = UserText.tabSwitcherGridViewMenuTitle
+
+        attachTopScrollViewInteraction()
+        attachBottomScrollViewInteraction()
+    }
+
+    var scrollViewTopInteraction: UIInteraction?
+    var scrollViewBottomInteraction: UIInteraction?
+
+    @available(iOS 26, *)
+    func attachScrollViewInteractionToView(_ view: UIView,
+                                           onEdge edge: UIRectEdge,
+                                           removingExistingInteraction existingInteraction: UIInteraction?) -> UIInteraction? {
+        if let existingInteraction {
+            view.removeInteraction(existingInteraction)
+        }
+
+        let interaction = UIScrollEdgeElementContainerInteraction()
+        interaction.scrollView = contentView
+        assert(interaction.scrollView != nil)
+        interaction.edge = edge
+        view.addInteraction(interaction)
+        return interaction
+    }
+
+    func attachTopScrollViewInteraction() {
+        guard #available(iOS 26, *) else { return }
+        scrollViewTopInteraction = attachScrollViewInteractionToView(navigationBar, onEdge: .top, removingExistingInteraction: scrollViewTopInteraction)
+    }
+
+    func attachBottomScrollViewInteraction() {
+        guard #available(iOS 26, *) else { return }
+        scrollViewBottomInteraction = attachScrollViewInteractionToView(toolbar, onEdge: .bottom, removingExistingInteraction: scrollViewBottomInteraction)
     }
 
     func setCenterView(_ view: UIView?) {

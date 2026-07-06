@@ -11949,6 +11949,7 @@
 			name = PerformanceTests;
 			packageProductDependencies = (
 				F11595D02E854C7400CC0481 /* AttributedMetric */,
+				85BA55DB2FFBA17B00271125 /* AIChat */,
 			);
 			productName = IntegrationTests;
 			productReference = 9825F9D7293F2DE900F220F2 /* PerformanceTests.xctest */;
@@ -18648,6 +18649,10 @@
 		857074D12E2A57F800099511 /* WKAbstractions */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WKAbstractions;
+		};
+		85BA55DB2FFBA17B00271125 /* AIChat */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AIChat;
 		};
 		984249C02CED4F430071C7DB /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;

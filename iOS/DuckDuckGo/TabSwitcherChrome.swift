@@ -53,7 +53,7 @@ protocol TabSwitcherChrome: AnyObject {
     var fireButton: UIBarButtonItem { get }
 
     /// Adds the chrome's bars and the provided content view to the host view.
-    func install(in view: UIView, contentView: UIView)
+    func install(in view: UIView, contentView: UIScrollView)
 
     /// (Re)applies the layout constraints for the current address bar position and interface mode.
     func layout(addressBarPosition: AddressBarPosition,

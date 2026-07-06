@@ -41,9 +41,6 @@ extension MainViewController {
     }
 
     @objc func handleUnifiedInputSwipeTabsPan(_ gesture: UnifiedInputSwipeTabsPanGestureRecognizer) {
-        if featureFlagger.isFeatureOn(.webScrollFreezeObservability) {
-            interactionIntegrityMonitor.noteGestureState(gesture, label: "swipe_tabs")
-        }
         swipeTabsCoordinator?.handleExternalPan(gesture)
     }
 

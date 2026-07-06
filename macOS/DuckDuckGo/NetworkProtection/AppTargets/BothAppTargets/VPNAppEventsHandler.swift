@@ -105,12 +105,15 @@ final class VPNAppEventsHandler {
     ///
     @MainActor
     private func loginItemsControlCheckpoint(canRestart: Bool, loginItemsManager: LoginItemsManaging) async {
-        switch try? await featureGatekeeper.canStartVPN() {
-        case .some(true) where loginItemsManager.isAnyEnabled(LoginItemsManager.vpnLoginItems):
+        let canStartVPN = try? await featureGatekeeper.canStartVPN()
+        let isAnyEnabled = await loginItemsManager.isAnyEnabled(LoginItemsManager.vpnLoginItems)
+        let isAnyInstalled = await loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems)
+        switch canStartVPN {
+        case .some(true) where isAnyEnabled:
             if canRestart {
-                restartLoginItem(using: loginItemsManager)
+                await restartLoginItem(using: loginItemsManager)
             }
-        case .some(false) where loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems):
+        case .some(false) where isAnyInstalled:
             await withCheckedContinuation { continuation in
                 ipcClient.stop { error in
                     if let error {
@@ -123,7 +126,7 @@ final class VPNAppEventsHandler {
                         } catch {
                             // no-op: just want to catch task cancellation to make sure resume is called
                         }
-                        self.disableLoginItem(using: loginItemsManager)
+                        await self.disableLoginItem(using: loginItemsManager)
                         continuation.resume()
                     }
                 }
@@ -135,12 +138,12 @@ final class VPNAppEventsHandler {
 
     // MARK: - Managing the VPN Login Items
 
-    private func disableLoginItem(using loginItemsManager: LoginItemsManaging) {
-        loginItemsManager.disableLoginItems(LoginItemsManager.vpnLoginItems)
+    private func disableLoginItem(using loginItemsManager: LoginItemsManaging) async {
+        await loginItemsManager.disableLoginItems(LoginItemsManager.vpnLoginItems)
     }
 
-    private func restartLoginItem(using loginItemsManager: LoginItemsManaging) {
-        loginItemsManager.restartLoginItems(LoginItemsManager.vpnLoginItems)
+    private func restartLoginItem(using loginItemsManager: LoginItemsManaging) async {
+        await loginItemsManager.restartLoginItems(LoginItemsManager.vpnLoginItems)
     }
 
     // MARK: - Feature Flag Overriding

@@ -46,8 +46,10 @@ enum ThirdPartyAccountUpgradeError: Error, Equatable {
     case nativeCredentialCreationRequestFailed
     case nativeCredentialCreationFailed(statusCode: Int)
     case invalidTemporaryLoginResponse
+    case invalidCredentials
     case finalNativeLoginFailed
     case invalidFinalNativeLoginResponse
+    case localStorageFailed
 }
 
 /// Performs the third-party-to-native account upgrade: temporary 3party login, native credential creation, then final native login.
@@ -240,7 +242,12 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
                                                scope: LoginScope.thirdPartyAccountManagement)
         let requestJson = try JSONEncoder.snakeCaseKeys.encode(params)
         let request = api.createUnauthenticatedJSONRequest(url: endpoints.login, method: .post, json: requestJson)
-        let result = try await request.execute()
+        let result: HTTPResult
+        do {
+            result = try await request.execute()
+        } catch SyncError.unexpectedStatusCode(let statusCode) where statusCode == 401 {
+            throw ThirdPartyAccountUpgradeError.invalidCredentials
+        }
         guard let body = result.data else {
             throw ThirdPartyAccountUpgradeError.invalidTemporaryLoginResponse
         }
@@ -270,6 +277,8 @@ struct ThirdPartyAccountUpgradeCoordinator: ThirdPartyAccountUpgradeCoordinating
                 return try await loginDefaultCredential(userId: userId, accountKeys: accountKeys, deviceName: deviceName, deviceType: deviceType)
             } catch let error as ThirdPartyAccountUpgradeError {
                 throw error
+            } catch SyncError.unexpectedStatusCode(let statusCode) where statusCode == 401 {
+                throw ThirdPartyAccountUpgradeError.invalidCredentials
             } catch {
                 guard shouldRetryFinalNativeLogin(after: error), !retryDelays.isEmpty else {
                     throw ThirdPartyAccountUpgradeError.finalNativeLoginFailed

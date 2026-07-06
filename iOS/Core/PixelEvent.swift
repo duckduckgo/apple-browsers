@@ -977,12 +977,6 @@ extension Pixel {
 
         case debugWebViewInVisibleTabHidden
 
-        case debugInteractionRepeatedFailedScroll
-        case debugInteractionWedgedRecognizer
-
-        case debugInteractionRecoveryAttempted
-        case debugInteractionRecoveryOutcome
-
         case debugPromptCoordinationFailedToSaveLastPresentationDate
         case debugPromptCoordinationFailedToRetrieveLastPresentationDate
 
@@ -1433,6 +1427,8 @@ extension Pixel {
         case settingsMoreSearchSettings
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
+        case settingsHideTabBarWhileScrollingOn
+        case settingsHideTabBarWhileScrollingOff
         case settingsWhatsNewOpen
         case settingsAutoplayOpen
         case settingsAutoplayChanged
@@ -1778,6 +1774,9 @@ extension Pixel {
         case aiChatHistoryDownloadStarted
         case aiChatHistoryEditModeEntered
         case aiChatHistoryNewChatTapped
+        case aiChatHistoryLoadFailed
+        case aiChatHistoryPinToggleFailed
+        case aiChatHistoryDownloadFailed
 
         // MARK: AI Chat Recent Chats
         case aiChatRecentChatSelectedPinned
@@ -2019,11 +2018,6 @@ extension Pixel {
         case webExtensionAdBlockingDetectedBufferingDaily
 
         // MARK: - Fire Mode
-        case fireModeNTPPromotionShown
-        case fireModeNTPPromotionDismissed
-        case fireModeNTPPromotionEngaged
-        case fireModeMenuPromotionShown
-        case fireModeMenuPromotionEngaged
         case browsingModeSwitched
         case tabSwitcherModeToggled
         case fireModeBurnExecuted
@@ -2170,6 +2164,8 @@ extension Pixel.Event {
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
+        case .settingsHideTabBarWhileScrollingOn: return "settings_hide_tab_bar_while_scrolling_on"
+        case .settingsHideTabBarWhileScrollingOff: return "settings_hide_tab_bar_while_scrolling_off"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
         case .settingsAutoplayOpen: return "m_settings_autoplay_open"
         case .settingsAutoplayChanged: return "m_settings_autoplay_changed"
@@ -2988,11 +2984,6 @@ extension Pixel.Event {
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
 
-        case .debugInteractionRepeatedFailedScroll: return "m_debug_interaction_repeated_failed_scroll"
-        case .debugInteractionWedgedRecognizer: return "m_debug_interaction_wedged_recognizer"
-        case .debugInteractionRecoveryAttempted: return "m_debug_interaction_recovery_attempted"
-        case .debugInteractionRecoveryOutcome: return "m_debug_interaction_recovery_outcome"
-
             // MARK: - Debug Prompt Coordination
 
         case .debugPromptCoordinationFailedToSaveLastPresentationDate: return "m_debug_prompt-coordination_failed-to-save_last-presentation-date"
@@ -3677,6 +3668,9 @@ extension Pixel.Event {
         case .aiChatHistoryDownloadStarted: return "aichat_history_download_started"
         case .aiChatHistoryEditModeEntered: return "aichat_history_edit_mode_entered"
         case .aiChatHistoryNewChatTapped: return "aichat_history_new_chat_tapped"
+        case .aiChatHistoryLoadFailed: return "aichat_history_load_failed"
+        case .aiChatHistoryPinToggleFailed: return "aichat_history_pin_toggle_failed"
+        case .aiChatHistoryDownloadFailed: return "aichat_history_download_failed"
 
         // MARK: AI Chat Recent Chats
         case .aiChatRecentChatSelectedPinned: return "m_aichat_recent_chat_selected_pinned"
@@ -3977,11 +3971,6 @@ extension Pixel.Event {
         case .webExtensionAdBlockingDetectedBufferingDaily: return "m_web_extension_adblocking_detected_buffering_daily"
 
         // MARK: - Fire Mode
-        case .fireModeNTPPromotionShown: return "m_fire-mode_ntp-promotion_shown"
-        case .fireModeNTPPromotionDismissed: return "m_fire-mode_ntp-promotion_dismissed"
-        case .fireModeNTPPromotionEngaged: return "m_fire-mode_ntp-promotion_engaged"
-        case .fireModeMenuPromotionShown: return "m_fire-mode_menu-promotion_shown"
-        case .fireModeMenuPromotionEngaged: return "m_fire-mode_menu-promotion_engaged"
         case .browsingModeSwitched: return "m_browsing-mode_switched"
         case .tabSwitcherModeToggled: return "m_tab-switcher_mode-toggled"
         case .fireModeBurnExecuted: return "m_fire-mode_burn_executed"

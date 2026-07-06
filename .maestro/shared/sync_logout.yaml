@@ -1,8 +1,15 @@
 appId: com.duckduckgo.mobile.ios
+# Turns off Sync (without deleting server data) via the simplified UI: toggling
+# the "Sync & Backup" switch (id "SyncToggle") off and confirming the alert.
 ---
 
 - assertVisible: Sync & Backup
-- tapOn: Turn Off Sync & Backup...
-- assertVisible: Turn Off Sync?
-- tapOn: Remove
-- assertVisible: Begin Syncing
+- scrollUntilVisible:
+    element:
+      id: "SyncToggle"
+    direction: UP
+- tapOn:
+    id: "SyncToggle"
+- assertVisible: Turn Off Sync & Backup?
+- tapOn: Turn Off
+- assertVisible: Use Recovery Code

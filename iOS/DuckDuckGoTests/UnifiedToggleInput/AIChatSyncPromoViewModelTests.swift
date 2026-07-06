@@ -59,6 +59,33 @@ final class AIChatSyncPromoViewModelTests {
 
     @available(iOS 16, *)
     @Test(.timeLimit(.minutes(1)))
+    func shouldShowPromo_whenModalPromptRecentlyPresented_returnsFalseWithoutAskingManager() {
+        let manager = MockSyncPromoManager()
+        manager.shouldPresentForTouchpoint[.aiChat] = true
+        let viewModel = AIChatSyncPromoViewModel(
+            syncPromoManager: manager,
+            recentModalPromptStatusProvider: MockRecentModalPromptStatusProvider(wasModalPromptRecentlyPresented: true))
+
+        #expect(!viewModel.shouldShowPromo(isQueryActive: false, chatCount: 2))
+        #expect(manager.shouldPresentRequests.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test(.timeLimit(.minutes(1)))
+    func shouldShowPromo_whenModalPromptNotRecentlyPresented_usesManager() {
+        let manager = MockSyncPromoManager()
+        manager.shouldPresentForTouchpoint[.aiChat] = true
+        let viewModel = AIChatSyncPromoViewModel(
+            syncPromoManager: manager,
+            recentModalPromptStatusProvider: MockRecentModalPromptStatusProvider(wasModalPromptRecentlyPresented: false))
+
+        #expect(viewModel.shouldShowPromo(isQueryActive: false, chatCount: 2))
+        #expect(manager.shouldPresentRequests.count == 1)
+        #expect(manager.shouldPresentRequests.first?.touchpoint == .aiChat)
+    }
+
+    @available(iOS 16, *)
+    @Test(.timeLimit(.minutes(1)))
     func recordImpressionIfNeeded_whenVisibleAndPromoVisible_firesDisplayedPixelAndRecordsImpression() {
         let manager = MockSyncPromoManager()
         let viewModel = AIChatSyncPromoViewModel(syncPromoManager: manager, pixelFiring: PixelFiringMock.self)
@@ -152,4 +179,13 @@ private final class MockSyncPromoManager: SyncPromoManaging {
     }
 
     func resetPromos() {}
+}
+
+@MainActor
+private final class MockRecentModalPromptStatusProvider: RecentModalPromptStatusProviding {
+    var wasModalPromptRecentlyPresented: Bool
+
+    init(wasModalPromptRecentlyPresented: Bool) {
+        self.wasModalPromptRecentlyPresented = wasModalPromptRecentlyPresented
+    }
 }

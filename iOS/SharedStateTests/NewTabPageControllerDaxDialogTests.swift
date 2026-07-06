@@ -98,6 +98,82 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         hvc = nil
     }
 
+    // MARK: - After-idle remote message signal
+
+    /// Builds an NTP the way the focused UTI embedded surface does: a shared messages config and the
+    /// after-idle signal passed in (the embedded surface suppresses its own escape hatch, so the
+    /// signal can't be derived from it).
+    private func makeNewTabPage(openedAfterIdle: Bool,
+                                homePageMessagesConfiguration: HomePageMessagesConfiguration) -> NewTabPageViewController {
+        NewTabPageViewController(
+            isFocussedState: true,
+            openedAfterIdle: openedAfterIdle,
+            dismissKeyboardOnScroll: false,
+            tab: Tab(),
+            interactionModel: MockFavoritesListInteracting(),
+            homePageMessagesConfiguration: homePageMessagesConfiguration,
+            newTabDialogFactory: dialogFactory,
+            daxDialogsManager: specProvider,
+            onboardingFlowProvider: flowProvider,
+            faviconLoader: EmptyFaviconLoading(),
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            appSettings: AppSettingsMock(),
+            faviconsCache: Favicons(),
+            subscriptionManager: SubscriptionManagerMock(),
+            internalUserCommands: MockURLBasedDebugCommands(),
+            tutorialSettings: tutorialSettings)
+    }
+
+    private func makeConfiguration(withScheduledMessage: Bool) -> (HomePageConfiguration, MockRemoteMessagingStore) {
+        let store = MockRemoteMessagingStore()
+        if withScheduledMessage {
+            store.scheduledRemoteMessage = RemoteMessageModel(
+                id: "idle-msg", surfaces: .newTabPage, content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        }
+        let config = HomePageConfiguration(remoteMessagingStore: store,
+                                           subscriptionDataReporter: MockSubscriptionDataReporter(),
+                                           isStillOnboarding: { false })
+        return (config, store)
+    }
+
+    func testWhenOpenedAfterIdleTrueThenMessagesConfigFetchesWithAfterIdleTrigger() {
+        // GIVEN a shared config with a scheduled after-idle message
+        let (config, store) = makeConfiguration(withScheduledMessage: true)
+
+        // WHEN an embedded (hatch-suppressed) NTP is built seeded with the after-idle signal
+        _ = makeNewTabPage(openedAfterIdle: true, homePageMessagesConfiguration: config)
+
+        // THEN its first refresh fetches the after-idle message (not .noTrigger) and keeps it in the
+        // shared config the focused-content gate reads
+        XCTAssertEqual(store.capturedTriggerFilter, .specific(.afterIdle))
+        XCTAssertFalse(config.homeMessages.isEmpty)
+    }
+
+    func testWhenOpenedAfterIdleFalseThenMessagesConfigFetchesWithNoTrigger() {
+        // GIVEN
+        let (config, store) = makeConfiguration(withScheduledMessage: true)
+
+        // WHEN a non-after-idle NTP is built
+        _ = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: config)
+
+        // THEN it fetches the standard (.noTrigger) message, not the after-idle one
+        XCTAssertEqual(store.capturedTriggerFilter, .noTrigger)
+    }
+
+    func testWhenSetOpenedAfterIdleTrueThenMessagesConfigRefetchesWithAfterIdleTrigger() {
+        // GIVEN a cached NTP originally built without the after-idle signal
+        let (config, store) = makeConfiguration(withScheduledMessage: true)
+        let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: config)
+        store.capturedTriggerFilter = nil
+
+        // WHEN a later after-idle session pushes the signal into the cached controller
+        controller.setOpenedAfterIdle(true)
+
+        // THEN it re-fetches with the after-idle trigger
+        XCTAssertEqual(store.capturedTriggerFilter, .specific(.afterIdle))
+    }
+
     func testWhenViewDidAppear_CorrectTypePassedToDialogFactory() throws {
         // GIVEN
         let expectedSpec = randomDialogType()

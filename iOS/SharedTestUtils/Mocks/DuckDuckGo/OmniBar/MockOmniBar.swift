@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import UIKit
 import PrivacyDashboard
 
@@ -35,7 +36,7 @@ final class MockOmniBar: OmniBar {
     func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int) { }
     var isTextFieldEditing: Bool = false
     var text: String?
-    var iPadDuckAISelectedModelId: String?
+    var iPadDuckAIControlValues: IPadDuckAIControlValues = IPadDuckAIControlValuesSnapshot()
 
     func updateQuery(_ query: String?) { }
     func refreshText(forUrl url: URL?, forceFullURL: Bool) { }
@@ -126,6 +127,8 @@ final class MockOmniBar: OmniBar {
         func setIconContainersAlpha(_ alpha: CGFloat) { }
         func hideBarChrome() { }
         func restoreBarChrome() { }
+        func makeGlass() { }
+        func makeOpaque() { }
 
         var progressView: DuckDuckGo.ProgressView?
         var privacyIconView: UIView?

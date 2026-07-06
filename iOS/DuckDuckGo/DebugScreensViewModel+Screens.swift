@@ -340,7 +340,7 @@ private struct CPMDebugScreensView: View {
                     Self.presentOptInDialog()
                 }
                 Button("Reset app launch flag") {
-                    // Clears the shown flag + first-shown date.
+                    // Clears the shown flag + shown count.
                     CookiePopupProtectionOptInPromptStore(keyValueStore: keyValueStore).reset()
                     // Also lift the global modal cooldown — otherwise the queue suppresses all prompts on launch until it expires.
                     try? keyValueStore.set(nil, forKey: PromptCooldownKeyValueFilesStore.StorageKey.lastPromptShownTimestamp)

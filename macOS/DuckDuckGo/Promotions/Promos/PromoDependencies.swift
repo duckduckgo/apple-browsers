@@ -34,5 +34,5 @@ struct PromoDependencies {
     let subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate
     let featureFlagger: FeatureFlagger
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
-    let windowControllersManager: WindowControllersManager
+    let windowControllersManager: WindowControllersManagerProtocol
 }

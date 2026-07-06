@@ -60,7 +60,7 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
 
     private let featureFlagger: FeatureFlagger
     private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
-    private let windowControllersManager: WindowControllersManager
+    private let windowControllersManager: WindowControllersManagerProtocol
     private let store: CookiePopupProtectionOptInPromptStore
 
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
@@ -69,7 +69,7 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
 
     init(featureFlagger: FeatureFlagger,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
-         windowControllersManager: WindowControllersManager,
+         windowControllersManager: WindowControllersManagerProtocol,
          store: CookiePopupProtectionOptInPromptStore) {
         self.featureFlagger = featureFlagger
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences

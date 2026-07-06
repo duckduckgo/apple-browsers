@@ -20,7 +20,9 @@ import AppKit
 import BrowserServicesKit
 import Combine
 import FeatureFlags
+import Persistence
 import PixelKit
+import PrivacyConfig
 import WebExtensions
 
 /// Persisted state for the Cookie Pop-up Protection opt-in dialog (for telemetry + showing conditions + debug reset).
@@ -28,21 +30,25 @@ struct CookiePopupProtectionOptInPromptStore {
     private static let firstShownDateKey = "cookie-popup-protection.opt-in.first-shown-date"
     private static let shownCountKey = "cookie-popup-protection.opt-in.shown-count"
 
-    private let userDefaults: UserDefaults
+    private let keyValueStore: ThrowingKeyValueStoring
 
-    init(userDefaults: UserDefaults = .standard) {
-        self.userDefaults = userDefaults
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
     }
 
+    /// The date the dialog was first shown on launch (set once), for telemetry.
     var firstShownDate: Date? {
-        get { userDefaults.object(forKey: Self.firstShownDateKey) as? Date }
-        nonmutating set { userDefaults.set(newValue, forKey: Self.firstShownDateKey) }
+        get {
+            guard let timestamp = (try? keyValueStore.object(forKey: Self.firstShownDateKey)) as? TimeInterval else { return nil }
+            return Date(timeIntervalSince1970: timestamp)
+        }
+        nonmutating set { try? keyValueStore.set(newValue?.timeIntervalSince1970, forKey: Self.firstShownDateKey) }
     }
 
     /// How many times the dialog has been shown on launch.
     var shownCount: Int {
-        get { userDefaults.integer(forKey: Self.shownCountKey) }
-        nonmutating set { userDefaults.set(newValue, forKey: Self.shownCountKey) }
+        get { (try? keyValueStore.object(forKey: Self.shownCountKey)) as? Int ?? 0 }
+        nonmutating set { try? keyValueStore.set(newValue, forKey: Self.shownCountKey) }
     }
 
     /// Bucketed time elapsed from the first-shown date to `now`, for telemetry.
@@ -53,8 +59,8 @@ struct CookiePopupProtectionOptInPromptStore {
 
     /// Clears all persisted opt-in dialog state (debug reset).
     func reset() {
-        userDefaults.removeObject(forKey: Self.firstShownDateKey)
-        userDefaults.removeObject(forKey: Self.shownCountKey)
+        try? keyValueStore.removeObject(forKey: Self.shownCountKey)
+        try? keyValueStore.removeObject(forKey: Self.firstShownDateKey)
     }
 }
 
@@ -83,11 +89,23 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
     /// The dialog is only shown once the install is at least this many days old.
     private static let minDaysSinceInstall = 2
 
+    private let featureFlagger: FeatureFlagger
+    private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
+    private let windowControllersManager: WindowControllersManagerProtocol
+    private let store: CookiePopupProtectionOptInPromptStore
+
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
-    private let store = CookiePopupProtectionOptInPromptStore()
+    private var hostingWindowCloseObserver: NSObjectProtocol?
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
 
-    init() {
+    init(featureFlagger: FeatureFlagger,
+         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
+         windowControllersManager: WindowControllersManagerProtocol,
+         store: CookiePopupProtectionOptInPromptStore) {
+        self.featureFlagger = featureFlagger
+        self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
+        self.windowControllersManager = windowControllersManager
+        self.store = store
         refreshEligibility()
     }
 
@@ -102,11 +120,10 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
     }
 
     private func computeEligibility() -> Bool {
-        let featureFlagger = Application.appDelegate.featureFlagger
         guard featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting),
               featureFlagger.isFeatureOn(.cookiePopupOptInDialog) else { return false }
         // Nothing to offer users already on the most-private setting — it already accepts no-opt-out cookies.
-        guard Application.appDelegate.cookiePopupProtectionPreferences.cookiePopupPreference != .max else { return false }
+        guard cookiePopupProtectionPreferences.cookiePopupPreference != .max else { return false }
         guard store.shownCount < Self.maxShowCount else { return false }
         guard let installDate = LocalStatisticsStore().installDate else { return false }
         let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: Date()).day ?? 0
@@ -115,7 +132,7 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
-        guard let browserTabViewController = Application.appDelegate.windowControllersManager
+        guard let browserTabViewController = windowControllersManager
             .lastKeyMainWindowController?.mainViewController.browserTabViewController else {
             return .noChange
         }
@@ -151,18 +168,34 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
                                           : .shownRepeat(autoconsentEnabled: autoconsentEnabled),
                               frequency: .standard)
             }
+            // If the hosting window closes (cmd+W or the File menu) while the dialog is up, neither
+            // onConfirm nor hide() fires — resume here so the promo queue isn't blocked until the next launch.
+            observeHostingWindowClose(browserTabViewController.view.window)
         }
     }
 
     @MainActor
     func hide() {
-        Application.appDelegate.windowControllersManager
+        windowControllersManager
             .lastKeyMainWindowController?.mainViewController.browserTabViewController
             .dismissCookiePopupProtectionOptInDialog()
         resume(with: .noChange)
     }
 
+    private func observeHostingWindowClose(_ window: NSWindow?) {
+        guard let window else { return }
+        hostingWindowCloseObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification, object: window, queue: .main
+        ) { [weak self] _ in
+            self?.resume(with: .noChange)
+        }
+    }
+
     private func resume(with result: PromoResult) {
+        if let hostingWindowCloseObserver {
+            NotificationCenter.default.removeObserver(hostingWindowCloseObserver)
+            self.hostingWindowCloseObserver = nil
+        }
         showContinuation?.resume(returning: result)
         showContinuation = nil
     }

@@ -140,10 +140,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
     }
 
-    var isEmailConfirmationDecouplingFeatureOn: Bool {
-        appDependencies.featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
-    }
-
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
     }
@@ -154,6 +150,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
 
     var isWebViewUserAgentOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
+    }
+
+    var isOptOutRetryErrorFrequencyExperimentOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
     var isFreemiumPIREnabled: Bool {

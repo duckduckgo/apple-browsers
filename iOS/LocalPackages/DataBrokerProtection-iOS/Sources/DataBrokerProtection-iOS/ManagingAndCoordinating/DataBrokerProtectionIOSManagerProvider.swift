@@ -100,7 +100,8 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
                                                         runTypeProvider: dbpSettings,
-                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated })
+                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated },
+                                                        optOutRetryErrorFeatureFlagger: featureFlagger)
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
 
@@ -127,7 +128,6 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                                         database: database,
                                                                         emailServiceV0: emailService,
                                                                         emailServiceV1: emailServiceV1,
-                                                                        featureFlagger: featureFlagger,
                                                                         pixelHandler: sharedPixelsHandler)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
         let executionConfig = BrokerJobExecutionConfig()

@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if os(macOS)
-
 import Combine
 import Common
 import os.log
@@ -40,6 +38,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
     var currentHistoryItemIdentityCancellable: AnyCancellable!
     var history = [UInt64: HistoryItemIdentity]()
 
+    private static var webContentProcessPIDs = [pid_t]()
     var _webView: WKWebView!
     @discardableResult
     func withWebView<T>(testURLSchemeHandler: TestNavigationSchemeHandler? = nil, do block: (WKWebView) throws -> T) rethrows -> T {
@@ -63,7 +62,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
         server?.stop()
         server = SafeHttpServer()
-        navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        navigationDelegateProxy = DistributedNavigationDelegateTestsBase.makeNavigationDelegateProxy()
         self.navigationDelegate.responders.forEach { responder in
             (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
                 XCTFail("[\(testName)] unexpected event received: \($0)")
@@ -83,6 +82,15 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
             if let navigationDelegateProxy {
                 let navigationDelegateProxyKey = UnsafeRawPointer(bitPattern: "navigationDelegateProxyKey".hashValue)!
                 objc_setAssociatedObject(_webView, navigationDelegateProxyKey, navigationDelegateProxy, .OBJC_ASSOCIATION_RETAIN)
+            }
+            if let pid = _webView.pid {
+                Self.webContentProcessPIDs.append(pid)
+            }
+            if Self.webContentProcessPIDs.count > 10 {
+                while Self.webContentProcessPIDs.count > 5 {
+                    let pid = Self.webContentProcessPIDs.removeFirst()
+                    kill(pid, SIGTERM)
+                }
             }
             _webView.killWebContentProcess()
             self._webView = nil
@@ -454,7 +462,7 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func response(matching url: URL) -> Int {
-        responder(at: 0).navigationResponses.firstIndex(where: { $0.url.matches(url) })!
+        responder(at: 0).navigationResponses.firstIndex(where: { $0.url.equals(url, by: .fuzzyIdentity) })!
     }
 
     // MARK: FrameInfo mocking
@@ -536,5 +544,3 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
 }
-
-#endif

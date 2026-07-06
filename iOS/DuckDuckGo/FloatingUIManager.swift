@@ -19,6 +19,7 @@
 
 import Common
 import Core
+import Foundation
 import PrivacyConfig
 
 protocol FloatingUIManaging {
@@ -28,14 +29,21 @@ protocol FloatingUIManaging {
 final class FloatingUIManager: FloatingUIManaging {
 
     private let featureFlagger: any FeatureFlagger
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let isPad: () -> Bool
 
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger, isPadProvider: @escaping () -> Bool = { DevicePlatform.isIpad }) {
+    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         isPadProvider: @escaping () -> Bool = { DevicePlatform.isIpad },
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()) {
         self.featureFlagger = featureFlagger
         self.isPad = isPadProvider
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
     }
 
     var isFloatingUIEnabled: Bool {
-        featureFlagger.isFeatureOn(.floatingUI) && !isPad()
+        // Floating UI is iPhone-only and depends on Unified Toggle Input; if either isn't
+        // available it stays off. These are remote-config driven, so no assert here.
+        guard featureFlagger.isFeatureOn(.floatingUI), !isPad() else { return false }
+        return unifiedToggleInputFeature.isAvailable
     }
 }

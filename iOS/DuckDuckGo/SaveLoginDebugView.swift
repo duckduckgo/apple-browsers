@@ -90,11 +90,9 @@ private struct SaveLoginDebugSheet: View {
                 viewModel.contentHeight = height
             }
             let appSettings = AppDependencyProvider.shared.appSettings
-            let featureFlagger = AppDependencyProvider.shared.featureFlagger
             let vm = SaveLoginViewModel(
                 credentialManager: SaveLoginDebugMockManager(layoutType: variant),
                 appSettings: appSettings,
-                featureFlagger: featureFlagger,
                 layoutType: variant
             )
             vm.delegate = delegate

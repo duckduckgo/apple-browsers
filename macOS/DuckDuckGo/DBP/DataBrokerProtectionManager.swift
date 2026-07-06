@@ -103,7 +103,8 @@ public final class DataBrokerProtectionManager {
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
                                                         runTypeProvider: settings,
-                                                        isAuthenticatedUser: { [authenticationManager] in await authenticationManager.isUserAuthenticated })
+                                                        isAuthenticatedUser: { [authenticationManager] in await authenticationManager.isUserAuthenticated },
+                                                        optOutRetryErrorFeatureFlagger: featureFlagger)
         let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                                     settings: settings,
                                                     vault: vault,

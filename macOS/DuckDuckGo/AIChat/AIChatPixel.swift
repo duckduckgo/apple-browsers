@@ -344,6 +344,10 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User submits a prompt in an ongoing Duck.ai conversation
     case aiChatMetricSentPromptOngoingChat
 
+    /// Event Trigger: User taps a sidebar page-suggestion chip (a tailored prompt or "Ask about this page").
+    /// `suggestionId` is the FE's fixed catalog key; `pageType` is the FE's coarse page classification.
+    case aiChatSuggestionSelected(suggestionId: String, pageType: String)
+
     // MARK: - Onboarding
 
     /// Event Trigger: User enables the Duck.ai toggle during onboarding
@@ -420,6 +424,20 @@ enum AIChatPixel: PixelKitEvent {
     /// from anything else (`other`) — useful for measuring how often the FE hook fires for
     /// unrelated WebKit failures and for sizing the OS-deny remediation funnel.
     case aiChatVoiceChatStartFailed(reason: AIChatVoiceChatStartFailedReason)
+
+    // MARK: - AI Features telemetry
+
+    // These deliberately omit the `m_mac_` prefix (fired with `doNotEnforcePrefix: true`) so the
+    // name body + params match the other platforms exactly.
+    case aiFeaturesState(duckAI: Bool, searchAssist: String, hideAIImages: Bool, noAI: Bool)
+    case aiFeaturesDisabled
+    case aiFeaturesSearchAssistNever
+    case aiFeaturesSearchAssistOnDemand
+    case aiFeaturesSearchAssistSometimes
+    case aiFeaturesSearchAssistOften
+    case aiFeaturesHideImagesOn
+    case aiFeaturesHideImagesOff
+    case serpSettingsUnrecognizedValue
 
     // MARK: -
 
@@ -628,6 +646,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_start_new_conversation"
         case .aiChatMetricSentPromptOngoingChat:
             return "aichat_sent_prompt_ongoing_chat"
+        case .aiChatSuggestionSelected:
+            return "aichat_suggestion_selected"
         case .aiChatOpenDuckAiMainMenu:
             return "aichat_open_duck_ai_main_menu"
         case .aiChatNewChatMainMenu:
@@ -664,6 +684,24 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_is_enabled"
         case .aiChatVoiceChatStartFailed:
             return "aichat_voice_chat_start_failed"
+        case .aiFeaturesState:
+            return "ai_features_state"
+        case .aiFeaturesDisabled:
+            return "ai_features_disabled"
+        case .aiFeaturesSearchAssistNever:
+            return "ai_features_search_assist_never"
+        case .aiFeaturesSearchAssistOnDemand:
+            return "ai_features_search_assist_on_demand"
+        case .aiFeaturesSearchAssistSometimes:
+            return "ai_features_search_assist_sometimes"
+        case .aiFeaturesSearchAssistOften:
+            return "ai_features_search_assist_often"
+        case .aiFeaturesHideImagesOn:
+            return "ai_features_hide_images_on"
+        case .aiFeaturesHideImagesOff:
+            return "ai_features_hide_images_off"
+        case .serpSettingsUnrecognizedValue:
+            return "serp_settings_unrecognized_value"
         }
     }
 
@@ -766,10 +804,25 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatViewAllChatsMainMenu,
                 .aiChatViewAllChatsMoreOptionsMenu,
                 .aiChatTabDidTerminate,
-                .aiChatTabTerminationLoop:
+                .aiChatTabTerminationLoop,
+                .aiFeaturesDisabled,
+                .aiFeaturesSearchAssistNever,
+                .aiFeaturesSearchAssistOnDemand,
+                .aiFeaturesSearchAssistSometimes,
+                .aiFeaturesSearchAssistOften,
+                .aiFeaturesHideImagesOn,
+                .aiFeaturesHideImagesOff,
+                .serpSettingsUnrecognizedValue:
             return nil
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
+        case .aiFeaturesState(let duckAI, let searchAssist, let hideAIImages, let noAI):
+            return [
+                "duck_ai": duckAI ? "true" : "false",
+                "search_assist": searchAssist,
+                "hide_ai_images": hideAIImages ? "on" : "off",
+                "no_ai": noAI ? "true" : "false"
+            ]
         case .aiChatAddressBarSubmitWithImage(let imageCount),
              .aiChatNtpSubmitWithImage(let imageCount):
             return ["imageCount": String(imageCount)]
@@ -807,6 +860,8 @@ enum AIChatPixel: PixelKitEvent {
             return ["failureReason": failureReason.rawValue]
         case .aiChatVoiceChatStartFailed(let reason):
             return ["reason": reason.rawValue]
+        case .aiChatSuggestionSelected(let suggestionId, let pageType):
+            return ["suggestionId": suggestionId, "pageType": pageType]
         }
     }
 
@@ -901,6 +956,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
+                .aiChatSuggestionSelected,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
                 .aiChatReportMetricDecodeError,
@@ -928,7 +984,16 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatIsEnabled,
                 .aiChatVoiceChatStartFailed,
                 .aiChatTabDidTerminate,
-                .aiChatTabTerminationLoop:
+                .aiChatTabTerminationLoop,
+                .aiFeaturesState,
+                .aiFeaturesDisabled,
+                .aiFeaturesSearchAssistNever,
+                .aiFeaturesSearchAssistOnDemand,
+                .aiFeaturesSearchAssistSometimes,
+                .aiFeaturesSearchAssistOften,
+                .aiFeaturesHideImagesOn,
+                .aiFeaturesHideImagesOff,
+                .serpSettingsUnrecognizedValue:
             return [.pixelSource]
         }
     }

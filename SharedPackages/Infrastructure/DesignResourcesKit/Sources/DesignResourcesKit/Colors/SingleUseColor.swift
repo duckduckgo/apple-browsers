@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
+
 /// Semantic colors used for single use case.
 ///
 /// - Important: When used in multiple places, it should be proposed to promote the color to `DesignSystemColor`.
@@ -62,6 +64,9 @@ public enum SingleUseColor {
     case fireModeAccentTertiary
     case fireModeBackground
     case fireModeCardBackground
+
+    // Duck.ai Grid Cell
+    case duckAIVoiceCellBackground
 }
 
 // MARK: - Onboarding Rebranding 2026
@@ -105,3 +110,5 @@ public extension SingleUseColor {
     }
 
 }
+
+#endif

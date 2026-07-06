@@ -71,7 +71,6 @@ private final class MockUnifiedInputContentContainerDelegate: UnifiedInputConten
     func unifiedInputEditingStateDidSelectViewAllChats() {}
     func unifiedInputEditingStateDidRequestSwitchTab(_ tab: Tab) {}
     func unifiedInputEditingStateDidRequestTabSwitcher() {}
-    func unifiedInputEditingStateDidRequestTryFireMode() {}
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode) {}
 
     func unifiedInputEditingStateDidRequestSyncSetup() {

@@ -121,13 +121,13 @@ extension SimplifiedSyncSettingsView {
         Section {
             VStack(spacing: 20) {
                 ZStack {
-                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-128" : "Sync-New-128-legacy")
+                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-128" : "Sync-New-128-legacy", bundle: .module)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
                         .opacity(model.isSyncEnabled ? 0 : 1)
 
-                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-Pair-128" : "Sync-Pair-96-legacy")
+                    Image(AppRebrand.isAppRebranded() ? "Desktop-Mobile-Sync-Pair-128" : "Sync-Pair-96-legacy", bundle: .module)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
@@ -215,6 +215,7 @@ extension SimplifiedSyncSettingsView {
                 ))
                 .labelsHidden()
                 .tint(Color(designSystemColor: .accentPrimary))
+                .accessibility(identifier: "SyncToggle")
             }
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
             .disabled(model.isBusy || (!model.isSyncEnabled && !model.isAccountCreationAvailable))
@@ -470,7 +471,7 @@ extension SimplifiedSyncSettingsView {
     @ViewBuilder
     var bookmarksSection: some View {
         Section {
-            Toggle(isOn: $model.isUnifiedFavoritesEnabled) {
+            HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(UserText.unifiedFavoritesTitle)
                         .daxBodyRegular()
@@ -479,9 +480,13 @@ extension SimplifiedSyncSettingsView {
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
                 .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Toggle("", isOn: $model.isUnifiedFavoritesEnabled)
+                    .labelsHidden()
+                    .tint(Color(designSystemColor: .accentPrimary))
+                    .accessibilityLabel(UserText.unifiedFavoritesTitle)
+                    .accessibility(identifier: "UnifiedFavoritesToggle")
             }
-            .tint(Color(designSystemColor: .accentPrimary))
-            .accessibility(identifier: "UnifiedFavoritesToggle")
 
             Toggle(isOn: $model.isFaviconsFetchingEnabled) {
                 VStack(alignment: .leading, spacing: 4) {

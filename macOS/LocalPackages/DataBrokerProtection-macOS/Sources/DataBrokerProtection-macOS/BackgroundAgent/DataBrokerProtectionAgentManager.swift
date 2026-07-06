@@ -85,7 +85,8 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
                                                         runTypeProvider: dbpSettings,
-                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated })
+                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated },
+                                                        optOutRetryErrorFeatureFlagger: featureFlagger)
         let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                                     settings: dbpSettings,
                                                     vault: vault,
@@ -120,7 +121,6 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                                         database: dataManager.database,
                                                                         emailServiceV0: emailService,
                                                                         emailServiceV1: emailServiceV1,
-                                                                        featureFlagger: featureFlagger,
                                                                         pixelHandler: sharedPixelsHandler)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
@@ -279,7 +279,8 @@ public final class DataBrokerProtectionAgentManager {
             await fireMonitoringPixels()
             Logger.dataBrokerProtection.debug("PIR wide event sweep requested (agent launch)")
             sweepWideEvents()
-            let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database)
+            let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database,
+                                                                              featureFlagger: jobDependencies.featureFlagger)
             operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
             await checkForEmailConfirmationData()
 

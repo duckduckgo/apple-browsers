@@ -1,11 +1,11 @@
-Wir bei DuckDuckGo glauben, dass der beste Weg, deine persönlichen Daten vor dem Zugriff durch Hacker, Betrüger und Unternehmen, die deine Privatsphäre verletzen, zu schützen, darin besteht, diese Daten gar nicht erst zu sammeln. Deshalb entscheiden sich Millionen von Menschen für den kostenlosen Browser von DuckDuckGo anstelle von Chrome und anderen Browsern. Unsere integrierte Suchmaschine ähnelt Google, trackt deine Suchanfragen jedoch nie. Unsere Browsing-Schutzfunktionen verhindern, dass andere Unternehmen deine Daten sammeln. Unsere optionalen integrierten KI-Funktionen, Search Assist und Duck.ai, sind privat und verwenden deine Daten niemals, um KI zu trainieren. Gewinne mit dem Browser, der für den Datenschutz und nicht für die Datensammlung entwickelt wurde, die Kontrolle über deine persönlichen Daten zurück. 
+Wir bei DuckDuckGo glauben, dass der beste Weg, deine persönlichen Daten vor dem Zugriff durch Hacker, Betrüger und Unternehmen, die deine Privatsphäre verletzen, zu schützen, darin besteht, diese Daten gar nicht erst zu sammeln. Deshalb entscheiden sich Millionen von Menschen für DuckDuckGo anstelle von Chrome und anderen Browsern, um online zu suchen und zu surfen. Unsere integrierte Suchmaschine ähnelt Google, trackt deine Suchanfragen jedoch nie. Unser Browser blockiert YouTube-Werbung, aufdringliche Web-Werbung und Cookie-Pop-ups, wodurch Ablenkungen reduziert werden und verhindert wird, dass andere Unternehmen deine Daten sammeln. Unsere optionalen integrierten KI-Funktionen, Search Assist und Duck.ai, sind privat und verwenden deine Daten niemals, um KI zu trainieren. Ach ja, und unser Browser ist kostenlos – wir verdienen unser Geld mit Suchanzeigen, die die Privatsphäre respektieren, nicht durch die Ausbeutung deiner Daten. Gewinne mit dem Browser, der für den Datenschutz und nicht für die Datensammlung entwickelt wurde, die Kontrolle über deine persönlichen Daten zurück.
 
 HIGHLIGHTS DER FUNKTION 
 DuckDuckGo Search ist integriert, damit du ganz einfach online suchen kannst, ohne getrackt zu werden.  
 Unsere Tracker Loading Protection blockiert die meisten Tracker, bevor sie geladen werden, und übertrifft damit bei weitem das, was die meisten gängigen Browser standardmäßig bieten.  
 Duck.ai ermöglicht es dir, private Unterhaltungen mit KI-Modellen von Drittanbietern zu führen, die von uns anonymisiert und niemals zum Training der KI verwendet werden.
 Mit Email Protection kannst du die meisten E-Mail-Tracker blockieren und deine aktuelle E-Mail-Adresse mit @duck.com-Adressen verstecken.   
-Duck Player schützt dich vor gezielter Werbung und Cookies auf YouTube mit einer ablenkungsfreien Oberfläche, die die strengsten Datenschutzeinstellungen von YouTube für eingebettete Videos enthält. 
+Werbung blockieren: Unser Browser blockiert YouTube-Werbung und stoppt das Laden invasiver Tracker auf Websites, wodurch gezielte Werbung effektiv eliminiert wird
 Verhindere, dass Unternehmen Informationen über deinen Browser und dein Gerät kombinieren. 
 Synchronisiere verschlüsselte Lesezeichen und Passwörter auf deinen Geräten. 
 Lösche deine Tabs und Browserdaten mit einem Klick auf den Fire Button. 
@@ -25,3 +25,4 @@ Weitere Informationen zu unserer kostenlosen Tracking Protection findest du unte
 Datenschutzerklärung: https://duckduckgo.com/privacy/ 
 Nutzungsbedingungen: https://duckduckgo.com/terms 
 Hinweis zum Tracker-Schutz von Drittanbietern und zu Suchanzeigen: Zwar gibt es einige Einschränkungen bei Klicks auf Suchanzeigen, aber das Anzeigen von Werbung in der DuckDuckGo-Suche ist anonym. Erfahre hier mehr https://help.duckduckgo.com/privacy/web-tracking-protections
+

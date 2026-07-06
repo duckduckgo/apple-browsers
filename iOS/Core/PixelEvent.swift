@@ -977,12 +977,6 @@ extension Pixel {
 
         case debugWebViewInVisibleTabHidden
 
-        case debugInteractionRepeatedFailedScroll
-        case debugInteractionWedgedRecognizer
-
-        case debugInteractionRecoveryAttempted
-        case debugInteractionRecoveryOutcome
-
         case debugPromptCoordinationFailedToSaveLastPresentationDate
         case debugPromptCoordinationFailedToRetrieveLastPresentationDate
 
@@ -1433,6 +1427,8 @@ extension Pixel {
         case settingsMoreSearchSettings
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
+        case settingsHideTabBarWhileScrollingOn
+        case settingsHideTabBarWhileScrollingOff
         case settingsWhatsNewOpen
         case settingsAutoplayOpen
         case settingsAutoplayChanged
@@ -1636,6 +1632,18 @@ extension Pixel {
         case aiChatSettingsAutoContextDisabled
         case aiChatSettingsDefaultTogglePositionChanged
 
+        // AI Features telemetry (cross-platform, deliberately no `m_` platform prefix so the
+        // name + params match macOS exactly). See `name` for the wire strings.
+        case aiFeaturesStateDaily
+        case aiFeaturesDisabled
+        case aiFeaturesSearchAssistNever
+        case aiFeaturesSearchAssistOnDemand
+        case aiFeaturesSearchAssistSometimes
+        case aiFeaturesSearchAssistOften
+        case aiFeaturesHideImagesOn
+        case aiFeaturesHideImagesOff
+        case serpSettingsUnrecognizedValue
+
         case aiChatOpen
         case aiChatMetricStartNewConversation
         case aiChatMetricStartNewConversationButtonClicked
@@ -1766,6 +1774,9 @@ extension Pixel {
         case aiChatHistoryDownloadStarted
         case aiChatHistoryEditModeEntered
         case aiChatHistoryNewChatTapped
+        case aiChatHistoryLoadFailed
+        case aiChatHistoryPinToggleFailed
+        case aiChatHistoryDownloadFailed
 
         // MARK: AI Chat Recent Chats
         case aiChatRecentChatSelectedPinned
@@ -2007,11 +2018,6 @@ extension Pixel {
         case webExtensionAdBlockingDetectedBufferingDaily
 
         // MARK: - Fire Mode
-        case fireModeNTPPromotionShown
-        case fireModeNTPPromotionDismissed
-        case fireModeNTPPromotionEngaged
-        case fireModeMenuPromotionShown
-        case fireModeMenuPromotionEngaged
         case browsingModeSwitched
         case tabSwitcherModeToggled
         case fireModeBurnExecuted
@@ -2158,6 +2164,8 @@ extension Pixel.Event {
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
+        case .settingsHideTabBarWhileScrollingOn: return "settings_hide_tab_bar_while_scrolling_on"
+        case .settingsHideTabBarWhileScrollingOff: return "settings_hide_tab_bar_while_scrolling_off"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
         case .settingsAutoplayOpen: return "m_settings_autoplay_open"
         case .settingsAutoplayChanged: return "m_settings_autoplay_changed"
@@ -2976,11 +2984,6 @@ extension Pixel.Event {
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
 
-        case .debugInteractionRepeatedFailedScroll: return "m_debug_interaction_repeated_failed_scroll"
-        case .debugInteractionWedgedRecognizer: return "m_debug_interaction_wedged_recognizer"
-        case .debugInteractionRecoveryAttempted: return "m_debug_interaction_recovery_attempted"
-        case .debugInteractionRecoveryOutcome: return "m_debug_interaction_recovery_outcome"
-
             // MARK: - Debug Prompt Coordination
 
         case .debugPromptCoordinationFailedToSaveLastPresentationDate: return "m_debug_prompt-coordination_failed-to-save_last-presentation-date"
@@ -3545,6 +3548,17 @@ extension Pixel.Event {
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
 
+        // AI Features telemetry: no `m_` prefix so the wire names are identical to macOS.
+        case .aiFeaturesStateDaily: return "ai_features_state_daily"
+        case .aiFeaturesDisabled: return "ai_features_disabled"
+        case .aiFeaturesSearchAssistNever: return "ai_features_search_assist_never"
+        case .aiFeaturesSearchAssistOnDemand: return "ai_features_search_assist_on_demand"
+        case .aiFeaturesSearchAssistSometimes: return "ai_features_search_assist_sometimes"
+        case .aiFeaturesSearchAssistOften: return "ai_features_search_assist_often"
+        case .aiFeaturesHideImagesOn: return "ai_features_hide_images_on"
+        case .aiFeaturesHideImagesOff: return "ai_features_hide_images_off"
+        case .serpSettingsUnrecognizedValue: return "serp_settings_unrecognized_value"
+
         case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_duck-ai_native-storage_migration_done_\(key)_unique"
         case .duckAiNativeStorageMigrationDoneCount(let key): return "m_duck-ai_native-storage_migration_done_\(key)_count"
         case .duckAiNativeStorageMigrationDoneBlankCount: return "m_duck-ai_native-storage_migration_done_blank_count"
@@ -3654,6 +3668,9 @@ extension Pixel.Event {
         case .aiChatHistoryDownloadStarted: return "aichat_history_download_started"
         case .aiChatHistoryEditModeEntered: return "aichat_history_edit_mode_entered"
         case .aiChatHistoryNewChatTapped: return "aichat_history_new_chat_tapped"
+        case .aiChatHistoryLoadFailed: return "aichat_history_load_failed"
+        case .aiChatHistoryPinToggleFailed: return "aichat_history_pin_toggle_failed"
+        case .aiChatHistoryDownloadFailed: return "aichat_history_download_failed"
 
         // MARK: AI Chat Recent Chats
         case .aiChatRecentChatSelectedPinned: return "m_aichat_recent_chat_selected_pinned"
@@ -3954,11 +3971,6 @@ extension Pixel.Event {
         case .webExtensionAdBlockingDetectedBufferingDaily: return "m_web_extension_adblocking_detected_buffering_daily"
 
         // MARK: - Fire Mode
-        case .fireModeNTPPromotionShown: return "m_fire-mode_ntp-promotion_shown"
-        case .fireModeNTPPromotionDismissed: return "m_fire-mode_ntp-promotion_dismissed"
-        case .fireModeNTPPromotionEngaged: return "m_fire-mode_ntp-promotion_engaged"
-        case .fireModeMenuPromotionShown: return "m_fire-mode_menu-promotion_shown"
-        case .fireModeMenuPromotionEngaged: return "m_fire-mode_menu-promotion_engaged"
         case .browsingModeSwitched: return "m_browsing-mode_switched"
         case .tabSwitcherModeToggled: return "m_tab-switcher_mode-toggled"
         case .fireModeBurnExecuted: return "m_fire-mode_burn_executed"

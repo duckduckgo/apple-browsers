@@ -196,7 +196,7 @@ extension MainViewController {
         present(DownloadsListHostingController(), animated: true)
     }
 
-    func segueToTabSwitcher(forceFireTabsTip: Bool = false) async {
+    func segueToTabSwitcher() async {
         Logger.lifecycle.debug(#function)
 
         // Guard against concurrent presentations
@@ -253,8 +253,6 @@ extension MainViewController {
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
         controller.previewsSource = previewsSource
-        controller.fireModePromotionsCoordinator = fireModePromotionEligibility
-        controller.shouldForceShowFireTabsTip = forceFireTabsTip
         controller.modalPresentationStyle = .overCurrentContext
 
         tabSwitcherController = controller
@@ -464,6 +462,9 @@ extension MainViewController {
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings)
+        // Share the app key-value store so native AI Features controls read/write the same
+        // SERP settings blob the SERP uses.
+        serpSettingsProvider.keyValueStore = keyValueStore
         let whatsNewCoordinator = WhatsNewCoordinator(
             displayContext: .onDemand,
             repository: whatsNewRepository,

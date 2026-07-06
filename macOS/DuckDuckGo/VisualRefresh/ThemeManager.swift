@@ -20,6 +20,7 @@ import Foundation
 import Combine
 import AppKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import PrivacyConfig
 import FeatureFlags
 
@@ -29,13 +30,14 @@ protocol ThemeManaging {
 
     var theme: ThemeStyleProviding { get }
     var themePublisher: Published<any ThemeStyleProviding>.Publisher { get }
+
+    var isAppRebranded: Bool { get }
 }
 
 final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
     private var appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
-    private let displaysTabsAnimations: Bool
 
     @Published private(set) var appearance: ThemeAppearance
 
@@ -55,15 +57,17 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 
     @Published private(set) var designColorPalette: DesignResourcesKit.ColorPalette
 
+    let isAppRebranded: Bool
+
     init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) {
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
-        self.displaysTabsAnimations = displaysTabsAnimations
-
-        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
+        self.isAppRebranded = featureFlagger.isFeatureOn(.appRebranding)
+        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
         self.appearance = appearancePreferences.themeAppearance
         self.designColorPalette = appearancePreferences.themeName.designColorPalette
 
+        setupDuckRebrandedUX()
         switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
         subscribeToSystemAppearance()
@@ -96,7 +100,7 @@ private extension ThemeManager {
 
     /// Relay the change to all of our observers
     func switchToTheme(named themeName: ThemeName) {
-        theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
+        theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger)
     }
 
     /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
@@ -104,5 +108,15 @@ private extension ThemeManager {
     func switchDesignSystemPalette(to palette: DesignResourcesKit.ColorPalette) {
         DesignSystemPalette.current = palette
         designColorPalette = palette
+    }
+
+    func setupDuckRebrandedUX() {
+        AppRebrand.isAppRebranded = { [isAppRebranded] in
+            isAppRebranded
+        }
+
+        DesignSystemRebrand.isAppRebranded = { [isAppRebranded] in
+            isAppRebranded
+        }
     }
 }

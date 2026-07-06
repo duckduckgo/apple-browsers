@@ -283,9 +283,9 @@ extension TabSwitcherViewController {
         titleBarView.setCenterView(isEditing ? nil : segmentedPickerHostingController?.view)
         titleBarView.setLeadingButtons(barsHandler.topBarLeftButtons)
         titleBarView.setTrailingButtons(barsHandler.topBarRightButtons)
-        toolbar.items = barsHandler.bottomBarItems
-        toolbar.isHidden = barsHandler.isBottomBarHidden
-        collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : toolbar.frame.height
+        bottomToolbar.setToolbarButtons(barsHandler.bottomBarButtonViews)
+        bottomToolbar.isHidden = barsHandler.isBottomBarHidden
+        collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : bottomToolbar.frame.height
     }
     
     func createMultiSelectionMenu() -> UIMenu {

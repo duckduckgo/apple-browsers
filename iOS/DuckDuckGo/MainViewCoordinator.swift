@@ -43,6 +43,7 @@ class MainViewCoordinator {
     var omniBar: OmniBar!
     var progress: ProgressView!
     var statusBackground: UIView!
+    var focusedStateBackground: UIView!
     var suggestionTrayContainer: UIView!
     var tabBarContainer: UIView!
     var aiChatTabChatHeaderContainer: UIView!
@@ -50,18 +51,17 @@ class MainViewCoordinator {
     var aiTabCollapsedTopSeparator: UIView!
     private var aiTabCollapsedTopSeparatorLogicallyVisible = false
     var unifiedInputContentContainer: UIView!
-
     /// Owned so a subsequent show can cancel an in-flight dismiss and skip the stale completion.
     private var omnibarDismissAnimator: UIViewPropertyAnimator?
-    var toolbar: UIToolbar!
+    var toolbar: BrowserToolbarView!
     var toolbarSpacer: UIView!
-    var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
-    var toolbarFireBarButtonItem: UIBarButtonItem { toolbarHandler.fireBarButtonItem }
-    var toolbarForwardButton: UIBarButtonItem { toolbarHandler.forwardButton }
-    var toolbarTabSwitcherButton: UIBarButtonItem { toolbarHandler.tabSwitcherButton }
-    var menuToolbarButton: UIBarButtonItem { toolbarHandler.browserMenuButton }
-    var toolbarPasswordsButton: UIBarButtonItem { toolbarHandler.passwordsButton }
-    var toolbarBookmarksButton: UIBarButtonItem { toolbarHandler.bookmarkButton }
+    var toolbarBackButton: BrowserChromeButton { toolbarHandler.backButton }
+    var toolbarFireButton: BrowserChromeButton { toolbarHandler.fireButton }
+    var toolbarForwardButton: BrowserChromeButton { toolbarHandler.forwardButton }
+    var toolbarTabSwitcherView: UIView { toolbarHandler.tabSwitcherView }
+    var menuToolbarButton: BrowserChromeButton { toolbarHandler.browserMenuButton }
+    var toolbarPasswordsButton: BrowserChromeButton { toolbarHandler.passwordsButton }
+    var toolbarBookmarksButton: BrowserChromeButton { toolbarHandler.bookmarkButton }
 
     let constraints = Constraints()
     var toolbarHandler: ToolbarStateHandling!
@@ -70,9 +70,19 @@ class MainViewCoordinator {
     private var statusBackgroundPresentationBeforeOmnibarEditing: StatusBackgroundPresentation?
     private(set) var isNavigationChromeHidden = false
     private var isNavBarContainerBottomKeyboardBased = false
+    private(set) var isOmnibarInToolbar = false
+    private var isFloatingUIEnabled = false
 
     var isNavigationBarContainerBottomKeyboardBased: Bool {
         isNavBarContainerBottomKeyboardBased
+    }
+
+    var isUnifiedToggleInputVisible: Bool {
+        !(unifiedToggleInputContainer?.isHidden ?? true) && (unifiedToggleInputContainer?.alpha ?? 0) > 0.01
+    }
+
+    func setFloatingUIEnabled(_ enabled: Bool) {
+        isFloatingUIEnabled = enabled
     }
 
     // The default after creating the hiearchy is top
@@ -88,7 +98,7 @@ class MainViewCoordinator {
     }
 
     func hideToolbarSeparator() {
-        toolbar.setShadowImage(UIImage(), forToolbarPosition: .any)
+        // `UIToolbar` separator/shadow removed with custom `BrowserToolbarView`.
     }
 
     class Constraints {
@@ -100,7 +110,7 @@ class MainViewCoordinator {
         var navigationBarContainerMinHeight: NSLayoutConstraint!
         var navigationBarCollectionViewSafeAreaBottom: NSLayoutConstraint!
         var toolbarBottom: NSLayoutConstraint!
-        var toolbarHeightConstraint: NSLayoutConstraint!
+        var toolbarHeight: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
         var tabBarContainerTop: NSLayoutConstraint!
         var progressBarTop: NSLayoutConstraint?
@@ -117,8 +127,84 @@ class MainViewCoordinator {
         var toolbarSpacerHeight: NSLayoutConstraint!
         var contentContainerBottomToUnifiedToggleInputTop: NSLayoutConstraint!
         var contentContainerTopToSafeArea: NSLayoutConstraint!
+        var contentContainerTopToSuperview: NSLayoutConstraint!
         var contentContainerTopToAIChatHeader: NSLayoutConstraint!
 
+    }
+
+    func updateToolbarLayoutForAddressBarPosition(_ position: AddressBarPosition) {
+        addressBarPosition = position
+        applyContentContainerTopAnchorForCurrentState()
+        guard isFloatingUIEnabled else {
+            toolbar.setOmnibarView(nil, height: 0)
+            // Flag-off keeps the original toolbar height so existing chrome is unchanged.
+            constraints.toolbarHeight.constant = BrowserToolbarView.legacyButtonsHeight
+            navigationBarContainer.isHidden = false
+            navigationBarContainer.alpha = 1
+            navigationBarContainer.isUserInteractionEnabled = true
+            if position.isBottom {
+                setContentContainerBottomAnchorMode(.toolbar)
+            }
+            isOmnibarInToolbar = false
+            return
+        }
+
+        navigationBarContainer.backgroundColor = .clear
+
+        switch position {
+        case .top:
+            toolbar.setOmnibarView(nil, height: 0)
+            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+            omniBar.barView.makeGlass()
+            navigationBarContainer.isHidden = false
+            navigationBarContainer.alpha = 1
+            navigationBarContainer.isUserInteractionEnabled = true
+            isOmnibarInToolbar = false
+        case .bottom:
+            guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+                isFloatingUIEnabled: isFloatingUIEnabled,
+                addressBarPosition: position,
+                isUnifiedToggleInputVisible: isUnifiedToggleInputVisible
+            ) else {
+                toolbar.setOmnibarView(nil, height: 0)
+                constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+                navigationBarContainer.isHidden = false
+                navigationBarContainer.alpha = 1
+                navigationBarContainer.isUserInteractionEnabled = true
+                isOmnibarInToolbar = false
+                return
+            }
+            toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
+            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight)
+            omniBar.barView.makeOpaque()
+            omniBar.barView.alpha = 1
+            omniBar.barView.isUserInteractionEnabled = true
+            navigationBarContainer.isHidden = true
+            navigationBarContainer.alpha = 0
+            navigationBarContainer.isUserInteractionEnabled = false
+            superview.bringSubviewToFront(toolbar)
+            setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
+            isOmnibarInToolbar = true
+        }
+    }
+
+    func ensureBottomOmnibarAttachedToToolbarIfNeeded() {
+        guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            addressBarPosition: addressBarPosition,
+            isUnifiedToggleInputVisible: isUnifiedToggleInputVisible
+        ) else { return }
+        guard !toolbar.isHostingOmnibarView(omniBar.barView) else { return }
+
+        toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
+        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight)
+        omniBar.barView.alpha = 1
+        omniBar.barView.isUserInteractionEnabled = true
+        navigationBarContainer.isHidden = true
+        navigationBarContainer.alpha = 0
+        navigationBarContainer.isUserInteractionEnabled = false
+        superview.bringSubviewToFront(toolbar)
+        isOmnibarInToolbar = true
     }
 
     func showTopSlideContainer() {
@@ -147,20 +233,38 @@ class MainViewCoordinator {
 
         switch position {
         case .top:
+            if isFloatingUIEnabled {
+                omniBar.barView.makeGlass()
+            }
             setAddressBarBottomActive(false)
             setAddressBarTopActive(true)
         case .bottom:
+            if isFloatingUIEnabled {
+                omniBar.barView.makeOpaque()
+            }
             setAddressBarTopActive(false)
             setAddressBarBottomActive(true)
         }
 
         addressBarPosition = position
+        applyContentContainerTopAnchorForCurrentState()
     }
 
     func hideNavigationBarWithBottomPosition() {
         guard addressBarPosition.isBottom else { return }
 
-        navigationBarContainer.isHidden = true
+        if isUnifiedToggleInputVisible {
+            navigationBarContainer.isHidden = false
+            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            return
+        }
+
+        if isFloatingUIEnabled, isOmnibarInToolbar {
+            // Keep the bottom omnibar attached while hiding chrome.
+            // Visibility is handled via alpha/offset animations in MainViewController.
+        } else {
+            navigationBarContainer.isHidden = true
+        }
 
         setContentContainerBottomAnchorMode(.safeArea)
     }
@@ -168,12 +272,26 @@ class MainViewCoordinator {
     func showNavigationBarWithBottomPosition() {
         guard addressBarPosition.isBottom else { return }
 
-        navigationBarContainer.isHidden = false
+        if isUnifiedToggleInputVisible {
+            navigationBarContainer.isHidden = false
+            navigationBarContainer.alpha = 1
+            navigationBarContainer.isUserInteractionEnabled = true
+            setContentContainerBottomAnchorMode(.unifiedToggleInput)
+            return
+        }
+
+        if isFloatingUIEnabled, isOmnibarInToolbar {
+            ensureBottomOmnibarAttachedToToolbarIfNeeded()
+        } else {
+            navigationBarContainer.isHidden = false
+            navigationBarContainer.alpha = 1
+            navigationBarContainer.isUserInteractionEnabled = true
+        }
 
         if isNavigationChromeHidden {
             setContentContainerBottomAnchorMode(.unifiedToggleInput)
         } else {
-            setContentContainerBottomAnchorMode(.toolbar)
+            setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
         }
     }
 
@@ -189,6 +307,16 @@ class MainViewCoordinator {
         constraints.navigationBarContainerBottom.isActive = active
         constraints.topSlideContainerBottomToStatusBackgroundBottom.isActive = active
         constraints.statusBackgroundBottomToSafeAreaTop.isActive = active
+    }
+
+    func ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded() {
+        guard isFloatingUIEnabled, addressBarPosition.isBottom, isOmnibarInToolbar else { return }
+        toolbar.setOmnibarView(nil, height: 0)
+        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0)
+        navigationBarContainer.isHidden = false
+        navigationBarContainer.alpha = 1
+        navigationBarContainer.isUserInteractionEnabled = true
+        isOmnibarInToolbar = false
     }
 
     func updateToolbarWithState(_ state: ToolbarContentState) {
@@ -225,6 +353,7 @@ class MainViewCoordinator {
         beginOmnibarStatusBackgroundPresentation()
         let inlineBackground = UIColor(designSystemColor: .panel)
         suggestionTrayContainer.backgroundColor = inlineBackground
+        showFocusedStateBackground()
 
         navigationBarContainer.backgroundColor = .clear
 
@@ -270,6 +399,7 @@ class MainViewCoordinator {
         unifiedToggleInputContainer.isHidden = true
         setAITabCollapsedTopSeparatorVisible(false)
         unifiedToggleInputContainer.backgroundColor = .clear
+        hideFocusedStateBackground()
         setNavBarContainerBottomToToolbar()
         if addressBarPosition == .top {
             setAddressBarBottomActive(false)
@@ -317,12 +447,19 @@ class MainViewCoordinator {
         animator.startAnimation()
     }
 
-    /// Hides chrome and brings the omnibar collection above UTI so icons can fade in on top of the collapsing UTI.
+    /// Hides chrome and puts the omnibar collection above UTI, but keeps it invisible until
+    /// `finalizeInlineDismissOmnibarReveal` snaps it in at the end of the transition.
     func prepareOmnibarForInlineDismissReveal() {
         guard !isNavigationChromeHidden, let barView = omniBar?.barView else { return }
         barView.hideBarChrome()
-        navigationBarCollectionView.alpha = 1
+        navigationBarCollectionView.alpha = 0
         navigationBarContainer.bringSubviewToFront(navigationBarCollectionView)
+    }
+
+    /// Snaps omnibar visibility once the UTI collapse finishes to avoid a layered overlap.
+    func finalizeInlineDismissOmnibarReveal() {
+        guard !isNavigationChromeHidden else { return }
+        navigationBarCollectionView.alpha = 1
     }
 
     /// Call inside an animation context — alpha swap is deferred to completion to avoid a crossfade gap.
@@ -338,6 +475,7 @@ class MainViewCoordinator {
         endOmnibarStatusBackgroundPresentation()
         navigationBarContainer.backgroundColor = nil
         suggestionTrayContainer.backgroundColor = .clear
+        hideFocusedStateBackground()
         navigationBarCollectionView.isUserInteractionEnabled = true
 
         if isNavigationChromeHidden {
@@ -373,6 +511,7 @@ class MainViewCoordinator {
     @MainActor
     func hideUnifiedInputContent() {
         unifiedInputContentContainer.isHidden = true
+        hideFocusedStateBackground()
         superview.insertSubview(statusBackground, aboveSubview: topSlideContainer)
     }
 
@@ -416,17 +555,13 @@ class MainViewCoordinator {
     func showAIChatTabChatHeader() {
         aiChatTabChatHeaderContainer.isHidden = false
         guard isNavigationChromeHidden else { return }
-        constraints.contentContainerTop.isActive = false
-        constraints.contentContainerTopToSafeArea.isActive = false
-        constraints.contentContainerTopToAIChatHeader?.isActive = true
+        setContentContainerTopAnchorMode(.aiChatHeader)
     }
 
     func hideAIChatTabChatHeader() {
         aiChatTabChatHeaderContainer.isHidden = true
         guard isNavigationChromeHidden else { return }
-        constraints.contentContainerTop.isActive = false
-        constraints.contentContainerTopToAIChatHeader?.isActive = false
-        constraints.contentContainerTopToSafeArea.isActive = true
+        setContentContainerTopAnchorMode(.safeArea)
     }
 
     /// Hides the OmniBar collection view (not the container) so that the UTI inside the container
@@ -437,12 +572,10 @@ class MainViewCoordinator {
             isNavigationChromeHidden = true
             navigationBarCollectionView.alpha = 0
             navigationBarCollectionView.isUserInteractionEnabled = false
-            constraints.contentContainerTop.isActive = false
             if constraints.contentContainerTopToAIChatHeader != nil, !aiChatTabChatHeaderContainer.isHidden {
-                constraints.contentContainerTopToSafeArea.isActive = false
-                constraints.contentContainerTopToAIChatHeader.isActive = true
+                setContentContainerTopAnchorMode(.aiChatHeader)
             } else {
-                constraints.contentContainerTopToSafeArea.isActive = true
+                setContentContainerTopAnchorMode(.safeArea)
             }
             if !addressBarPosition.isBottom {
                 constraints.statusBackgroundToNavigationBarContainerBottom.isActive = false
@@ -457,9 +590,7 @@ class MainViewCoordinator {
             isNavigationChromeHidden = false
             navigationBarCollectionView.alpha = 1
             navigationBarCollectionView.isUserInteractionEnabled = true
-            constraints.contentContainerTopToSafeArea.isActive = false
-            constraints.contentContainerTopToAIChatHeader?.isActive = false
-            constraints.contentContainerTop.isActive = true
+            activateBaseContentContainerTopAnchor()
             if !addressBarPosition.isBottom {
                 constraints.statusBackgroundBottomToSafeAreaTop.isActive = false
                 constraints.statusBackgroundToNavigationBarContainerBottom.isActive = true
@@ -469,7 +600,7 @@ class MainViewCoordinator {
             if navigationBarContainer.isHidden {
                 setContentContainerBottomAnchorMode(.safeArea)
             } else {
-                setContentContainerBottomAnchorMode(.toolbar)
+                setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
             }
         }
     }
@@ -496,14 +627,39 @@ class MainViewCoordinator {
     }
 
     private func resolvedStatusBackgroundColor() -> UIColor {
+        if isFloatingUIEnabled {
+            // The floating omnibar is self-contained glass, so the status strip behind it must stay
+            // clear to let content underflow it. The unified toggle input (the floating search bar)
+            // is visible at rest on the new tab page, so we can't gate on its visibility here — only
+            // the AI-tab chrome-hidden editing surfaces paint a dedicated backdrop.
+            switch statusBackgroundPresentation {
+            case .standard, .omnibarEditing:
+                return .clear
+            case .aiTabSearchChromeHidden:
+                return UIColor(designSystemColor: .panel)
+            case .aiTabChatChromeHidden:
+                return UIColor(designSystemColor: .surfaceCanvas)
+            }
+        }
+
         switch statusBackgroundPresentation {
         case .standard:
-            standardStatusBackgroundColor ?? UIColor(designSystemColor: .background)
+            return standardStatusBackgroundColor ?? UIColor(designSystemColor: .background)
         case .omnibarEditing, .aiTabSearchChromeHidden:
-            UIColor(designSystemColor: .panel)
+            return UIColor(designSystemColor: .panel)
         case .aiTabChatChromeHidden:
-            UIColor(designSystemColor: .surfaceCanvas)
+            return UIColor(designSystemColor: .surfaceCanvas)
         }
+    }
+
+    private func showFocusedStateBackground() {
+        guard isFloatingUIEnabled else { return }
+        focusedStateBackground.isHidden = false
+        superview.insertSubview(focusedStateBackground, belowSubview: unifiedInputContentContainer)
+    }
+
+    private func hideFocusedStateBackground() {
+        focusedStateBackground.isHidden = true
     }
 
     func setNavBarContainerBottomToKeyboard(floorAnchor: NSLayoutYAxisAnchor? = nil) {
@@ -552,6 +708,53 @@ class MainViewCoordinator {
         constraints.contentContainerBottomToToolbarTop.isActive = mode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = mode == .unifiedToggleInput
         constraints.contentContainerBottomToSafeArea.isActive = mode == .safeArea
+    }
+
+    /// Activates the resting content-container top anchor for the current mode. In floating top
+    /// mode the content spans behind the glass omnibar (safe-area top) so it can underflow on
+    /// scroll; otherwise it sits below the chrome (topSlide/navBar bottom). AI-tab chrome-hidden
+    /// and chat-header states own the top anchor themselves, so this is a no-op while those are
+    /// active.
+    func applyContentContainerTopAnchorForCurrentState() {
+        guard !isNavigationChromeHidden else { return }
+        activateBaseContentContainerTopAnchor()
+    }
+
+    private func activateBaseContentContainerTopAnchor() {
+        let useFloatingTop = isFloatingUIEnabled
+            && addressBarPosition == .top
+            && !isUnifiedToggleInputVisible
+            && (aiChatTabChatHeaderContainer?.isHidden ?? true)
+        // Floating top spans to the screen edge (behind the status bar) so content can underflow all
+        // the way up; otherwise content sits below the chrome via the topSlide anchor.
+        setContentContainerTopAnchorMode(useFloatingTop ? .floatingBehindBar : .standard)
+    }
+
+    private enum ContentContainerTopAnchorMode {
+        /// Below the chrome (topSlide / navBar bottom) — the default non-floating layout.
+        case standard
+        /// Safe-area top — AI-tab chrome-hidden state.
+        case safeArea
+        /// Below the AI chat header — AI-tab chat-header state.
+        case aiChatHeader
+        /// Screen top, behind the status bar — floating top so content underflows to the edge.
+        case floatingBehindBar
+    }
+
+    private func setContentContainerTopAnchorMode(_ mode: ContentContainerTopAnchorMode) {
+        constraints.contentContainerTop.isActive = mode == .standard
+        constraints.contentContainerTopToSafeArea.isActive = mode == .safeArea
+        constraints.contentContainerTopToAIChatHeader?.isActive = mode == .aiChatHeader
+        constraints.contentContainerTopToSuperview?.isActive = mode == .floatingBehindBar
+    }
+
+    /// Floating-bottom chrome is overlaid above the page surface, so content should extend to
+    /// the safe area floor. Legacy and non-floating bottom chrome remains toolbar-anchored.
+    private func preferredBottomContentAnchorModeForVisibleChrome() -> ContentContainerBottomAnchorMode {
+        if isFloatingUIEnabled, addressBarPosition.isBottom {
+            return .safeArea
+        }
+        return .toolbar
     }
 
     private func setNavBarContainerBottomToToolbar(active: Bool = true) {

@@ -4951,6 +4951,18 @@ extension MainViewController: PopoverSuggestionsHosting {
     }
 
     func showPopoverDuckAIList(query: String) {
+        // The Duck.ai popover is anchored under the *expanded* Duck.ai input and is only valid while
+        // that input is focused. The async recents/URL content callback (and restoration paths) can
+        // drive a present() while the bar is collapsed and unfocused — e.g. after submitting a Duck.ai
+        // prompt the toggle mode persists as .aiChat, so on relaunch the recents popover would appear
+        // over an unselected, collapsed address bar. `IPadOmnibarFocusModel` decides the surface purely
+        // from the toggle mode (no focus input), so gate the actual reveal on the input being expanded.
+        let isDuckAIInputExpanded = (viewCoordinator.omniBar as? OmniBarViewController)?
+            .expandableBarView?.isSearchAreaExpanded ?? false
+        guard isDuckAIInputExpanded else {
+            hidePopover()
+            return
+        }
         suggestionTrayController?.setAdditionalTopInset(duckAIPopoverTopInset(), animated: isPopoverVisible)
         tryToShowSuggestionTray(.duckAISuggestions(query: query))
     }

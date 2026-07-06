@@ -60,6 +60,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 subscriptionDaysSinceSubscribed: Int,
                 subscriptionDaysUntilExpiry: Int,
                 subscriptionPurchasePlatform: String?,
+                subscriptionTier: String?,
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
@@ -100,6 +101,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
             subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
             subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+            subscriptionTier: subscriptionTier,
             isSubscriptionActive: isSubscriptionActive,
             isSubscriptionExpiring: isSubscriptionExpiring,
             isSubscriptionExpired: isSubscriptionExpired,
@@ -159,6 +161,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
                 subscriptionDaysSinceSubscribed: Int,
                 subscriptionDaysUntilExpiry: Int,
                 subscriptionPurchasePlatform: String?,
+                subscriptionTier: String?,
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
@@ -194,6 +197,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
             subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
             subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
             subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+            subscriptionTier: subscriptionTier,
             isSubscriptionActive: isSubscriptionActive,
             isSubscriptionExpiring: isSubscriptionExpiring,
             isSubscriptionExpired: isSubscriptionExpired,
@@ -251,6 +255,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
     private let subscriptionDaysSinceSubscribed: Int
     private let subscriptionDaysUntilExpiry: Int
     private let subscriptionPurchasePlatform: String?
+    private let subscriptionTier: String?
     private let isSubscriptionActive: Bool
     private let isSubscriptionExpiring: Bool
     private let isSubscriptionExpired: Bool
@@ -274,6 +279,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
                 subscriptionDaysSinceSubscribed: Int,
                 subscriptionDaysUntilExpiry: Int,
                 subscriptionPurchasePlatform: String?,
+                subscriptionTier: String?,
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
@@ -297,6 +303,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
         self.subscriptionDaysSinceSubscribed = subscriptionDaysSinceSubscribed
         self.subscriptionDaysUntilExpiry = subscriptionDaysUntilExpiry
         self.subscriptionPurchasePlatform = subscriptionPurchasePlatform
+        self.subscriptionTier = subscriptionTier
         self.isSubscriptionActive = isSubscriptionActive
         self.isSubscriptionExpiring = isSubscriptionExpiring
         self.isSubscriptionExpired = isSubscriptionExpired
@@ -336,6 +343,8 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: subscriptionDaysUntilExpiry)
         case let matchingAttribute as SubscriptionPurchasePlatformMatchingAttribute:
             return matchingAttribute.evaluate(for: subscriptionPurchasePlatform ?? "")
+        case let matchingAttribute as SubscriptionTierMatchingAttribute:
+            return matchingAttribute.evaluate(for: subscriptionTier ?? "")
         case let matchingAttribute as SubscriptionStatusMatchingAttribute:
             let mappedStatuses = (matchingAttribute.value ?? []).compactMap { status in
                 return SubscriptionStatus(rawValue: status)

@@ -45,7 +45,10 @@ on:
 
 jobs:
   run-ui-test:
-    name: ${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ' / internal' || '' }})
+    # Avoid '/' in the job name: GitHub joins the reusable-workflow job name onto the caller with
+    # ' / ' and the UI splits that path on ' / ', so a '/' here would break the name into fake tree
+    # nodes. It is also used to build the report filename, where '/' is a path separator.
+    name: ${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
     runs-on: ${{ inputs.runner }}
 
     # Internal-mode failures are advance warning for features still gated to internal users; they
@@ -326,16 +329,12 @@ jobs:
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       working-directory: macOS
       run: |
-        test_id="${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ' / internal' || '' }})"
-        # The report filename must not contain '/', which is a path separator: the internal-mode
-        # suffix (' / internal') would otherwise make xcbeautify write to a non-existent directory.
-        # Sanitize the filename while keeping '/' in test_id for the human-readable suite name below.
-        file="${test_id//\//-}.xml"
+        test_id="${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})"
+        file="${test_id}.xml"
         echo "file=$file" >> $GITHUB_OUTPUT
         xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
-        # Replace the default test suite name with the test id for better grouping in the test report.
-        # Use '#' as the sed delimiter since test_id may contain '/'.
-        sed -i '' "s#Selected tests#${test_id}#" "$file"
+        # Replace the default test suite name with the test id for better grouping in the test report
+        sed -i '' "s/Selected tests/${test_id}/" "$file"
 
     # Upload test report as artifact for the test-report job
     # that publishes a combined report for all test cases

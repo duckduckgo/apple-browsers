@@ -61,15 +61,16 @@ extension Preferences {
                         )
                     }
 
-                    SpacedCheckbox {
-                        ToggleMenuItemWithDescription(
-                            UserText.popUpsWithoutOptOutsTitle,
-                            UserText.popUpsWithoutOptOutsExplanation,
-                            isOn: model.popUpsWithoutOptOutsEnabledBinding,
-                            spacing: 12
-                        )
+                    if isAutoManageEnabled {
+                        SpacedCheckbox {
+                            ToggleMenuItemWithDescription(
+                                UserText.popUpsWithoutOptOutsTitle,
+                                UserText.popUpsWithoutOptOutsExplanation,
+                                isOn: model.popUpsWithoutOptOutsEnabledBinding,
+                                spacing: 12
+                            )
+                        }
                     }
-                    .disabled(!isAutoManageEnabled)
                 }
             }
         }

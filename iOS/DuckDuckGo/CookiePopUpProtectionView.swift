@@ -66,11 +66,12 @@ struct CookiePopUpProtectionViewSettings: View {
                                  accessory: .toggle(isOn: viewModel.autoManageCookiePopupsBinding))
             }
 
-            Section(footer: Text(UserText.popUpsWithoutOptOutsExplanation)) {
-                SettingsCellView(label: UserText.popUpsWithoutOptOutsTitle,
-                                 accessory: .toggle(isOn: viewModel.popUpsWithoutOptOutsBinding))
+            if isAutoManageEnabled {
+                Section(footer: Text(UserText.popUpsWithoutOptOutsExplanation)) {
+                    SettingsCellView(label: UserText.popUpsWithoutOptOutsTitle,
+                                     accessory: .toggle(isOn: viewModel.popUpsWithoutOptOutsBinding))
+                }
             }
-            .disabled(!isAutoManageEnabled)
         } else {
             Section {
                 SettingsCellView(label: UserText.letDuckDuckGoManageCookieConsentPopups,

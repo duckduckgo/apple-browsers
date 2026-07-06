@@ -769,7 +769,7 @@ final class AddressBarViewController: NSViewController {
             activeBackgroundView.borderColor = .addressBarBorder
         } else {
             activeBackgroundView.borderWidth = 2.0
-            activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : colorsProvider.accentPrimaryColor
+            activeBackgroundView.borderColor = isBurner ? colorsProvider.addressBarFireBorderColor : colorsProvider.addressBarActiveBorderColor
         }
 
         setupAddressBarPlaceHolder()

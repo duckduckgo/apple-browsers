@@ -1,7 +1,7 @@
 //
-//  SubscriptionSurveyDataProviding.swift
+//  Configuration+FileReadError.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,12 +18,13 @@
 
 import Foundation
 
-public protocol SubscriptionSurveyDataProviding {
-    var subscriptionStatus: String? { get }
-    var subscriptionPlatform: String? { get }
-    var subscriptionBilling: String? { get }
-    var subscriptionTier: String? { get }
-    var subscriptionStartDate: Date? { get }
-    var subscriptionExpiryDate: Date? { get }
-    var subscriptionTrialActive: Bool? { get }
+extension Configuration {
+
+    /// Whether a file-read error hit while loading a configuration file is an expected, transient condition rather than a genuine load failure worth investigating.
+    public static func isExpectedFileReadError(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        guard nsError.domain == NSCocoaErrorDomain else { return false }
+        return nsError.code == NSFileReadNoSuchFileError
+            || nsError.code == NSFileReadNoPermissionError
+    }
 }

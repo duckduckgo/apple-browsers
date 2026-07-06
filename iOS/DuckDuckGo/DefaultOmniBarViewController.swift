@@ -718,9 +718,8 @@ extension DefaultOmniBarViewController {
     private func handleAttachmentsChanged() {
         refreshAttachButton()
         omniBarView.updateAttachmentsLayout(animated: true)
-        // Adding / removing / clearing attachments changes whether the input is submittable, so the
-        // send button (enabled / voice / disabled) must be re-evaluated.
-        omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
+        let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        omniBarView.updateAIChatSendButton(hasText: hasText)
         omniDelegate?.onOmniBarExpandedContentSizeChanged()
     }
 }

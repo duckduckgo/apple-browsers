@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Persistence
 import PrivacyConfig
 import SwiftUI
+import UIComponents
 import Common
 import FoundationExtensions
 import Combine
@@ -142,7 +143,7 @@ final class SettingsViewModel: ObservableObject {
     let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     
     // Properties
-    private lazy var isPad = UIDevice.current.userInterfaceIdiom == .pad
+    lazy var isPad = UIDevice.current.userInterfaceIdiom == .pad
     private var cancellables = Set<AnyCancellable>()
 
     // App Data State Notification Observer
@@ -333,6 +334,19 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .top ? .settingsAddressBarTopSelected : .settingsAddressBarBottomSelected)
                 self.appSettings.currentAddressBarPosition = $0
                 self.state.addressBar.position = $0
+            }
+        )
+    }
+
+    var hideTabBarWhileScrollingOnIPadBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                !self.appSettings.keepAddressBarVisibleOnIPad
+            },
+            set: { hideWhileScrolling in
+                Pixel.fire(pixel: hideWhileScrolling ? .settingsHideTabBarWhileScrollingOn : .settingsHideTabBarWhileScrollingOff)
+                let keepVisible = !hideWhileScrolling
+                self.appSettings.keepAddressBarVisibleOnIPad = keepVisible
             }
         )
     }

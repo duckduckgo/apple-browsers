@@ -45,7 +45,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerDidError(_ error: SyncConnectionError, underlyingError: Error?, setupRole: SyncSetupRole) async
 }
 
-public enum SyncConnectionError: Error {
+public enum SyncConnectionError: Error, Equatable {
     case unableToRecognizeCode
     case updateRequired
     case unsupportedThirdPartyRecoveryCode
@@ -63,10 +63,135 @@ public enum SyncConnectionError: Error {
     case failedToCreateAccount
     case failedToTransmitConnectRecoveryKey
 
+    case accountCreationFailed
     case accountUpgradeFailed
     case protocolError
 
     case pollingForRecoveryKeyTimedOut
+    case pairingV2SessionTimedOut(timeoutStage: SyncSetupTimeoutStage?)
+
+    case unexpectedSecondHello
+    case unexpectedEvent
+    case pairingSessionNotReady
+    case relayChannelUnavailable
+    case recoveryCodePreparationFailed
+    case peerRecoveryCodeUnavailable
+    case transportFailure
+    case unexpectedFailure
+    case missingThirdPartyCredential
+    case undecryptableThirdPartyCredential
+    case accountExtendFailed
+    case missingThirdPartyKey
+    case localStorageFailed
+    case invalidCredentials
+}
+
+public enum SyncSetupTimeoutStage: String, Equatable {
+    case waitingForPeerHello = "waiting_for_peer_hello"
+    case waitingForPeerStatus = "waiting_for_peer_status"
+    case waitingForConfirmation = "waiting_for_confirmation"
+    case waitingForRecoveryCode = "waiting_for_recovery_code"
+    case loggingIn = "logging_in"
+}
+
+enum SyncSetupFailureReason {
+    static let v1Failure = "v1_failure"
+    static let sessionTimeout = "session_timeout"
+    static let needsUpgrade = "needs_upgrade"
+    static let incompatibleCode = "incompatible_code"
+    static let alreadyUpgraded = "already_upgraded"
+    static let unrecognizedCode = "unrecognized_code"
+    static let accountCreationFailed = "account_creation_failed"
+    static let accountUpgradeFailed = "account_upgrade_failed"
+    static let invalidCredentials = "invalid_credentials"
+    static let protocolError = "protocol_error"
+    static let transportFailure = "transport_failure"
+    static let unexpectedSecondHello = "unexpected_second_hello"
+    static let unexpectedEvent = "unexpected_event"
+    static let pairingSessionNotReady = "pairing_session_not_ready"
+    static let relayChannelUnavailable = "relay_channel_unavailable"
+    static let recoveryCodePreparationFailed = "recovery_code_preparation_failed"
+    static let peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
+    static let unexpectedFailure = "unexpected_failure"
+    static let missingThirdPartyCredential = "missing_3party_credential"
+    static let undecryptableThirdPartyCredential = "undecryptable_3party_credential"
+    static let accountExtendFailed = "account_extend_failed"
+    static let missingThirdPartyKey = "missing_3party_key"
+    static let localStorageFailed = "local_storage_failed"
+}
+
+public extension SyncConnectionError {
+
+    var syncSetupFailureReason: String? {
+        switch self {
+        // These cases are emitted by the legacy V1 exchange/connect flow and are intentionally bucketed together.
+        case .failedToLogIn,
+                .failedToFetchPublicKey,
+                .failedToTransmitExchangeRecoveryKey,
+                .failedToFetchConnectRecoveryKey,
+                .failedToTransmitExchangeKey,
+                .failedToFetchExchangeRecoveryKey,
+                .failedToTransmitConnectRecoveryKey,
+                .pollingForRecoveryKeyTimedOut,
+                .failedToCreateAccount:
+            return SyncSetupFailureReason.v1Failure
+        case .invalidCredentials:
+            return SyncSetupFailureReason.invalidCredentials
+        case .pairingV2SessionTimedOut:
+            return SyncSetupFailureReason.sessionTimeout
+        case .updateRequired:
+            return SyncSetupFailureReason.needsUpgrade
+        case .unsupportedThirdPartyRecoveryCode:
+            return SyncSetupFailureReason.incompatibleCode
+        case .thirdPartyAccountAlreadyUpgraded:
+            return SyncSetupFailureReason.alreadyUpgraded
+        case .unableToRecognizeCode:
+            return SyncSetupFailureReason.unrecognizedCode
+        case .accountCreationFailed:
+            return SyncSetupFailureReason.accountCreationFailed
+        case .accountUpgradeFailed:
+            return SyncSetupFailureReason.accountUpgradeFailed
+        case .transportFailure:
+            return SyncSetupFailureReason.transportFailure
+        case .protocolError:
+            return SyncSetupFailureReason.protocolError
+        case .syncCancelledFromOtherDevice:
+            return nil
+        case .unexpectedSecondHello:
+            return SyncSetupFailureReason.unexpectedSecondHello
+        case .unexpectedEvent:
+            return SyncSetupFailureReason.unexpectedEvent
+        case .pairingSessionNotReady:
+            return SyncSetupFailureReason.pairingSessionNotReady
+        case .relayChannelUnavailable:
+            return SyncSetupFailureReason.relayChannelUnavailable
+        case .recoveryCodePreparationFailed:
+            return SyncSetupFailureReason.recoveryCodePreparationFailed
+        case .peerRecoveryCodeUnavailable:
+            return SyncSetupFailureReason.peerRecoveryCodeUnavailable
+        case .unexpectedFailure:
+            return SyncSetupFailureReason.unexpectedFailure
+        case .missingThirdPartyCredential:
+            return SyncSetupFailureReason.missingThirdPartyCredential
+        case .undecryptableThirdPartyCredential:
+            return SyncSetupFailureReason.undecryptableThirdPartyCredential
+        case .accountExtendFailed:
+            return SyncSetupFailureReason.accountExtendFailed
+        case .missingThirdPartyKey:
+            return SyncSetupFailureReason.missingThirdPartyKey
+        case .localStorageFailed:
+            return SyncSetupFailureReason.localStorageFailed
+        }
+    }
+
+    var syncSetupTimeoutStage: String? {
+        switch self {
+        case .pairingV2SessionTimedOut(let timeoutStage):
+            return timeoutStage?.rawValue
+        default:
+            return nil
+        }
+    }
 }
 
 public protocol SyncConnectionControlling {
@@ -467,7 +592,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         } else if let cryptoError = error as? PairingV2MessageCryptoError {
             await delegate?.controllerDidError(pairingV2CryptoConnectionError(for: cryptoError), underlyingError: cryptoError, setupRole: setupRole)
         } else {
-            await delegate?.controllerDidError(.failedToFetchExchangeRecoveryKey, underlyingError: error, setupRole: setupRole)
+            await delegate?.controllerDidError(.unexpectedFailure, underlyingError: error, setupRole: setupRole)
         }
 
         await coordinator.cancel()
@@ -476,11 +601,33 @@ public class SyncConnectionController: SyncConnectionControlling {
     private func handlePairingV2SyncError(_ error: SyncError, coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
         switch error {
         case .pollingDidTimeOut:
-            await delegate?.controllerDidError(.pollingForRecoveryKeyTimedOut, underlyingError: nil, setupRole: setupRole)
+            await delegate?.controllerDidError(.pairingV2SessionTimedOut(timeoutStage: timeoutStage(for: coordinator.state)), underlyingError: nil, setupRole: setupRole)
         case .accountAlreadyExists:
             await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
         default:
-            await delegate?.controllerDidError(.failedToFetchExchangeRecoveryKey, underlyingError: error, setupRole: setupRole)
+            await delegate?.controllerDidError(.transportFailure, underlyingError: error, setupRole: setupRole)
+        }
+    }
+
+    private func timeoutStage(for state: PairingV2State) -> SyncSetupTimeoutStage? {
+        switch state {
+        case .waitingForPeerHello:
+            return .waitingForPeerHello
+        case .waitingForPeerStatus:
+            return .waitingForPeerStatus
+        case .hostWaitingForConfirmation,
+                .joinerWaitingForConfirmation:
+            return .waitingForConfirmation
+        case .hostPreparingRecoveryCode,
+                .hostSendingRecoveryCode,
+                .joinerWaitingForRecoveryCode:
+            return .waitingForRecoveryCode
+        case .joinerLoggingIn:
+            return .loggingIn
+        case .idle,
+                .completed,
+                .failed:
+            return nil
         }
     }
 
@@ -604,7 +751,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             do {
                 try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false, setupRole: .sharer)
             } catch {
-                await delegate?.controllerDidError(.failedToLogIn, underlyingError: error, setupRole: .sharer)
+                await delegate?.controllerDidError(loginConnectionError(for: error), underlyingError: error, setupRole: .sharer)
             }
         }
     }
@@ -711,7 +858,7 @@ public class SyncConnectionController: SyncConnectionControlling {
                 setupRole: setupRole,
                 shouldPromptBeforeSwitchingAccounts: true)
         } else {
-            await delegate?.controllerDidError(.failedToLogIn, underlyingError: error, setupRole: setupRole)
+            await delegate?.controllerDidError(loginConnectionError(for: error), underlyingError: error, setupRole: setupRole)
         }
     }
 
@@ -733,10 +880,26 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func pairingV2ConnectionError(for error: PairingV2Error) -> SyncConnectionError {
         switch error {
-        case .recoveryCodePreparationFailed, .recoveryCodeSendFailed:
-            return .failedToTransmitExchangeRecoveryKey
+        case .recoveryCodePreparationFailed:
+            return .recoveryCodePreparationFailed
+        case .missingThirdPartyCredential:
+            return .missingThirdPartyCredential
+        case .undecryptableThirdPartyCredential:
+            return .undecryptableThirdPartyCredential
+        case .accountCreationFailed:
+            return .accountCreationFailed
+        case .accountExtendFailed:
+            return .accountExtendFailed
+        case .recoveryCodeSendFailed:
+            return .transportFailure
+        case .missingThirdPartyKey:
+            return .missingThirdPartyKey
+        case .localStorageFailed:
+            return .localStorageFailed
+        case .invalidCredentials:
+            return .invalidCredentials
         case .loginFailed:
-            return .failedToLogIn
+            return .transportFailure
         case .upgradeFailed:
             return .accountUpgradeFailed
         case .nativeCredentialAlreadyPresent:
@@ -744,18 +907,36 @@ public class SyncConnectionController: SyncConnectionControlling {
         case .recoveryCodeDenied:
             return .syncCancelledFromOtherDevice
         case .recoveryCodeUnavailable:
-            return .failedToFetchExchangeRecoveryKey
+            return .peerRecoveryCodeUnavailable
         case .unsupportedVersion(let version):
             return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor)
         case .v2ScanningDisabled, .unknownCode, .unsupportedFlow:
             return .unableToRecognizeCode
-        case .secondHello, .unexpectedEvent, .pairingSessionNotReady:
-            return .protocolError
+        case .secondHello:
+            return .unexpectedSecondHello
+        case .unexpectedEvent:
+            return .unexpectedEvent
+        case .pairingSessionNotReady:
+            return .pairingSessionNotReady
         case .relayChannelUnavailable, .relayChannelExpired:
-            return .failedToFetchExchangeRecoveryKey
+            return .relayChannelUnavailable
         case .cancelled:
             return .syncCancelledFromOtherDevice
         }
+    }
+
+    private func loginConnectionError(for error: Error) -> SyncConnectionError {
+        if let error = error as? SyncError {
+            switch error {
+            case .unexpectedStatusCode(let statusCode) where statusCode == 401:
+                return .invalidCredentials
+            case .failedToWriteSecureStore:
+                return .localStorageFailed
+            default:
+                break
+            }
+        }
+        return .failedToLogIn
     }
 
     private func syncCodeDecodingConnectionError(for error: Error) -> SyncConnectionError {

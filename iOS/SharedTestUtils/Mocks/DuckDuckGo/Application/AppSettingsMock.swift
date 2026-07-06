@@ -34,7 +34,9 @@ class AppSettingsMock: AppSettings {
     var isSyncCredentialsPaused: Bool = false
 
     var currentAddressBarPosition: DuckDuckGo.AddressBarPosition = .top
-    
+
+    var keepAddressBarVisibleOnIPad: Bool = false
+
     var currentRefreshButtonPosition: DuckDuckGo.RefreshButtonPosition = .addressBar
 
     var showFullSiteAddress: Bool = false

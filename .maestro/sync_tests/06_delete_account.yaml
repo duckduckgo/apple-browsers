@@ -28,8 +28,9 @@ name: 06_delete_account
     file: ../shared/sync_delete.yaml
 
 # Try to login and check for error
-- assertVisible: Begin Syncing
+- assertVisible: Sync With Another Device
 - tapOn: Sync With Another Device
+- tapOn: Passcode field
 - inputText: "0000"
 - pressKey: Enter
 - runFlow:

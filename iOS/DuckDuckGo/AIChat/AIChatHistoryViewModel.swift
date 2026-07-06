@@ -113,7 +113,10 @@ final class AIChatHistoryViewModel: ObservableObject {
             totalChatCount = allChats.count
             pinned = filtered.filter(\.pinned)
             recent = filtered.filter { !$0.pinned }
-        case .failure:
+        case .failure(let error):
+            if !loadFailed {
+                instrumentation.loadFailed(error: error)
+            }
             loadFailed = true
             totalChatCount = 0
             pinned = []
@@ -218,6 +221,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         // Image-gen exports do enough I/O to freeze the sheet — dispatch off-main.
         guard let downloader else { return }
         instrumentation.downloadStarted()
+        let instrumentation = instrumentation
         mutationQueue.async { [weak self] in
             do {
                 let url = try downloader.downloadChat(chatId: chatId)
@@ -226,7 +230,7 @@ final class AIChatHistoryViewModel: ObservableObject {
                 }
             } catch {
                 Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
-                // Failure-state toast pairs with the pixels-pass follow-up (task #28).
+                instrumentation.downloadFailed(error: error)
             }
         }
     }
@@ -247,11 +251,13 @@ final class AIChatHistoryViewModel: ObservableObject {
         } else {
             instrumentation.pinRemoved()
         }
+        let instrumentation = instrumentation
         mutationQueue.async {
             do {
                 try pinner.setPinned(chatId: chatId, pinned: newPinned)
             } catch {
                 Logger.aiChat.debug("Pin toggle failed: \(error.localizedDescription)")
+                instrumentation.pinToggleFailed(error: error)
             }
         }
         return move

@@ -47,8 +47,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         return model
     }()
 
-    var createAccountAndStartSyncingCalled = false
-    var capturedOptionModel: SyncSettingsViewModel?
     var hasShownSimplifiedSyncAnotherDevicePrompt: Bool = false
 
     func waitForInvocation() {
@@ -72,24 +70,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         XCTAssertEqual(model.syncBookmarksPausedButtonTitle, syncBookmarksPausedButtonTitle)
         XCTAssertEqual(model.syncCredentialsPausedButtonTitle, syncCredentialsPausedButtonTitle)
         XCTAssertEqual(model.syncCreditCardsPausedButtonTitle, syncCreditCardsPausedButtonTitle)
-    }
-
-    func testWhenSingleDeviceSetUpPressed_ThenManagerBecomesBusy_AndAccounCreationRequested() {
-        model.startSyncPressed()
-        XCTAssertTrue(model.isBusy)
-
-        XCTAssertTrue(createAccountAndStartSyncingCalled)
-        XCTAssertNotNil(capturedOptionModel)
-    }
-
-    func testWhenShowRecoveryPDFPressed_ShowRecoveryPDFIsShown() {
-        model.delegate?.showRecoveryPDF()
-
-        // You can either test one individual call was made x number of times or check for a whole number of calls
-        monitor.assert(#selector(showRecoveryPDF).description, calls: 1)
-        monitor.assertCalls([
-            #selector(showRecoveryPDF).description: 1
-        ])
     }
 
     func testWhenScanQRCodePressed_ThenSyncWithAnotherDeviceViewIsShown() {
@@ -181,11 +161,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
-    func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
-        createAccountAndStartSyncingCalled = true
-        capturedOptionModel = optionsViewModel
-    }
-
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
@@ -217,19 +192,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
 
     func showSyncWithAnotherDevice() {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
-    }
-
-    func showDeviceConnected() {
-        monitor.incrementCalls(function: #function.cleaningFunctionName())
-    }
-
-    func showRecoveryPDF() {
-        monitor.incrementCalls(function: #function.cleaningFunctionName())
-    }
-
-    func confirmAndDisableSync() async -> Bool {
-        monitor.incrementCalls(function: #function.cleaningFunctionName())
-        return true
     }
 
     func confirmAndDeleteAllData() async -> Bool {

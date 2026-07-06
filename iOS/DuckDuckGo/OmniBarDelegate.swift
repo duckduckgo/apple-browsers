@@ -142,7 +142,6 @@ protocol OmniBarDelegate: AnyObject {
     func onDuckAIVoiceModeRequested()
 
     // MARK: - Fire Mode
-    func onTryFireModeRequested()
     func isCurrentTabFireTab() -> Bool
 
     // MARK: - AI Chat suggestions keyboard navigation (iPad)

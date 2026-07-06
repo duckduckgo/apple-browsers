@@ -30,7 +30,7 @@ public protocol IPCClientInterface: AnyObject {
 }
 
 public protocol DBPLoginItemStatusChecker {
-    func doesHaveNecessaryPermissions() -> Bool
+    func doesHaveNecessaryPermissions() async -> Bool
     func isInCorrectDirectory() -> Bool
 }
 

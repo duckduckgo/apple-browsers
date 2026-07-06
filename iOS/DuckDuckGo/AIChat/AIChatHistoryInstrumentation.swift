@@ -40,6 +40,9 @@ protocol AIChatHistoryInstrumentation {
     func downloadStarted()
     func editModeEntered()
     func newChatTapped()
+    func loadFailed(error: Error)
+    func pinToggleFailed(error: Error)
+    func downloadFailed(error: Error)
 }
 
 final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
@@ -100,7 +103,19 @@ final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
         fire(.aiChatHistoryNewChatTapped)
     }
 
-    private func fire(_ pixel: Pixel.Event) {
-        dailyPixelFiring.fireDailyAndCount(pixel, error: nil, withAdditionalParameters: [:])
+    func loadFailed(error: Error) {
+        fire(.aiChatHistoryLoadFailed, error: error)
+    }
+
+    func pinToggleFailed(error: Error) {
+        fire(.aiChatHistoryPinToggleFailed, error: error)
+    }
+
+    func downloadFailed(error: Error) {
+        fire(.aiChatHistoryDownloadFailed, error: error)
+    }
+
+    private func fire(_ pixel: Pixel.Event, error: Error? = nil) {
+        dailyPixelFiring.fireDailyAndCount(pixel, error: error, withAdditionalParameters: [:])
     }
 }

@@ -1,8 +1,12 @@
 appId: com.duckduckgo.mobile.ios
+# Logs into an existing Sync account by connecting with another device and
+# pasting a recovery/connect code, using the simplified Sync setup UI.
+# Starts on the logged-out Sync settings screen. On success the device list updates.
 ---
 
-- assertVisible: Begin Syncing
+- assertVisible: Sync With Another Device
 - tapOn: Sync With Another Device
+- tapOn: Passcode field
 - inputText: "0000"
 - pressKey: Enter
 - runFlow:
@@ -13,11 +17,6 @@ appId: com.duckduckgo.mobile.ios
 - assertVisible: Scan QR Code
 - tapOn: Manually Enter Code
 - tapOn: Paste
-- assertVisible: Recover Your Data Easily
-- tapOn: Next
-- assertVisible: Device synced!
-- tapOn: Done
-- assertVisible: Sync Enabled
-- assertVisible: 
+- assertVisible:
     id: "device"
     index: 1

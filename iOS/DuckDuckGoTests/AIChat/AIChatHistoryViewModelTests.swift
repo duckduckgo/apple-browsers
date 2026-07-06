@@ -101,6 +101,28 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertTrue(sut.loadFailed, "Storage failure should set loadFailed so the UI can show an error, not the empty state")
     }
 
+    func testReaderFailure_firesLoadFailedPixelOncePerTransition() {
+        let reader = MockChatHistoryReader(chats: [chat(id: "p1", pinned: true)])
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = AIChatHistoryViewModel(reader: reader, instrumentation: instrumentation)
+        processMainQueue()
+        XCTAssertTrue(instrumentation.loadFailedErrors.isEmpty)
+
+        let error = NSError(domain: "test", code: 1)
+        reader.subject.send(completion: .failure(error))
+        processMainQueue()
+
+        XCTAssertEqual(instrumentation.loadFailedErrors.count, 1, "The load-failure pixel should fire on the failure transition")
+
+        // A later query keystroke recombines the cached failure through CombineLatest, re-running
+        // `apply(.failure:)`. Since `loadFailed` is already true, the pixel must not re-fire.
+        sut.updateQuery("hello")
+        waitForDebounce()
+
+        XCTAssertTrue(sut.loadFailed)
+        XCTAssertEqual(instrumentation.loadFailedErrors.count, 1, "Re-emitted cached failures should not re-count")
+    }
+
     func testNewChatTapped_notifiesDelegate() {
         let sut = makeSUT(chats: [])
         let delegate = MockDelegate()
@@ -625,6 +647,9 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var downloadStartedCount = 0
         private(set) var editModeEnteredCount = 0
         private(set) var newChatTappedCount = 0
+        private(set) var loadFailedErrors: [Error] = []
+        private(set) var pinToggleFailedErrors: [Error] = []
+        private(set) var downloadFailedErrors: [Error] = []
 
         func screenShown(source: AIChatHistorySource) { screenShownSources.append(source) }
         func chatOpened() { chatOpenedCount += 1 }
@@ -638,5 +663,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func downloadStarted() { downloadStartedCount += 1 }
         func editModeEntered() { editModeEnteredCount += 1 }
         func newChatTapped() { newChatTappedCount += 1 }
+        func loadFailed(error: Error) { loadFailedErrors.append(error) }
+        func pinToggleFailed(error: Error) { pinToggleFailedErrors.append(error) }
+        func downloadFailed(error: Error) { downloadFailedErrors.append(error) }
     }
 }

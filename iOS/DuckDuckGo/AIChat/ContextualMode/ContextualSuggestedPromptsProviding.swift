@@ -17,22 +17,22 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 
+struct ResolvePageSuggestionsInput {
+    let pageTypeSignals: AIChatPageTypeSignals?
+    let url: String?
+    let uiLocale: String
+}
+
 protocol ContextualSuggestedPromptsProviding {
-    func resolveSuggestions() async -> [ContextualSuggestedPrompt]
+    func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> [ContextualSuggestedPrompt]
 }
 
 struct StubContextualSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
-    private let delay: TimeInterval
-
-    init(delay: TimeInterval = 5.0) {
-        self.delay = delay
-    }
-
-    func resolveSuggestions() async -> [ContextualSuggestedPrompt] {
-        try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-        return Self.cannedSuggestions
+    func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> [ContextualSuggestedPrompt] {
+        Self.cannedSuggestions
     }
 
     private static let cannedSuggestions: [ContextualSuggestedPrompt] = [

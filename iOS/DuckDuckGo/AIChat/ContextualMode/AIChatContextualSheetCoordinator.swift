@@ -170,6 +170,7 @@ final class AIChatContextualSheetCoordinator {
         startObservingContextUpdates()
 
         if sessionState.shouldAutoCollectContext {
+            sessionState.beginLoadingSuggestions()
             pageContextHandler.triggerContextCollection()
         } else if shouldCollectSignalsOnly {
             sessionState.markPendingSignalsOnlyCollection()
@@ -223,6 +224,7 @@ final class AIChatContextualSheetCoordinator {
         sessionState.notifyPageChanged()
 
         if sessionState.shouldAutoCollectContext {
+            sessionState.beginLoadingSuggestions()
             let didTrigger = pageContextHandler.triggerContextCollection()
             if !didTrigger {
                 sessionState.clearProcessingNavigationFlag()
@@ -338,7 +340,7 @@ private extension AIChatContextualSheetCoordinator {
                     guard let expectedURL,
                           let context,
                           let emittedURL = URL(string: context.contextData.url) else { return true }
-                    return emittedURL.matches(expectedURL)
+                    return emittedURL.equals(expectedURL, by: .fuzzyIdentity)
                 })
                 .sink { context in
                     continuation.yield(context?.contextData)
@@ -486,6 +488,7 @@ private extension AIChatContextualSheetCoordinator {
             sessionState.markPendingSignalsOnlyCollection()
         } else {
             Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
+            sessionState.beginLoadingSuggestions()
         }
         pageContextHandler.triggerContextCollection()
 

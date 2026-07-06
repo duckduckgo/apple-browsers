@@ -352,8 +352,18 @@ final class AIChatContextualChatSessionState {
         beginLoadingSuggestions()
     }
 
+    func beginLoadingSuggestions() {
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
+        suggestionsResolveTask?.cancel()
+        suggestions = []
+        suggestionsLoadState = .loading
+        rebuildViewState()
+    }
+
     /// Updates the latest page context and determines attach behavior based on internal state.
     func updateContext(_ context: AIChatPageContext?) {
+        resolveSuggestionsIfLoading(from: context)
+
         if pendingSignalsOnlyCollection {
             pendingSignalsOnlyCollection = false
             isProcessingNavigation = false
@@ -532,16 +542,20 @@ private extension AIChatContextualChatSessionState {
         }
     }
 
-    private func beginLoadingSuggestions() {
-        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
+    func resolveSuggestionsIfLoading(from context: AIChatPageContext?) {
+        guard suggestionsLoadState == .loading,
+              featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
+              !hasActiveChat else { return }
+
+        let input = ResolvePageSuggestionsInput(
+            pageTypeSignals: context?.contextData.pageTypeSignals,
+            url: context?.contextData.url,
+            uiLocale: Locale.current.identifier
+        )
 
         suggestionsResolveTask?.cancel()
-        suggestions = []
-        suggestionsLoadState = .loading
-        rebuildViewState()
-
         suggestionsResolveTask = Task { [weak self] in
-            guard let resolved = await self?.suggestedPromptsProvider.resolveSuggestions() else { return }
+            guard let resolved = await self?.suggestedPromptsProvider.resolveSuggestions(input) else { return }
             guard let self, !Task.isCancelled else { return }
             self.suggestions = resolved
             self.suggestionsLoadState = .loaded

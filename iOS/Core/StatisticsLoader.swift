@@ -40,6 +40,7 @@ public class StatisticsLoader {
     private let parser = AtbParser()
     private let fireSearchExperimentPixels: () -> Void
     private let fireAppRetentionExperimentPixels: () -> Void
+    private let fireNewAIPromptExperimentPixels: () -> Void
     private let fireOSDistributionPixel: (OSDistributionPixel.Metric) -> Void
     private let pixelFiring: PixelFiring.Type
     private var isDuckAIRetentionRequestInProgress = false
@@ -57,6 +58,7 @@ public class StatisticsLoader {
             StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
             StatisticsLoader.fireSearchTokenExperimentPixels(metric: "search")
          },
+         fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels,
          fireOSDistributionPixel: @escaping (OSDistributionPixel.Metric) -> Void = PixelKit.fireOSDistributionPixel(metric:),
          pixelFiring: PixelFiring.Type = Pixel.self,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
@@ -65,6 +67,7 @@ public class StatisticsLoader {
         self.usageSegmentation = usageSegmentation
         self.fireSearchExperimentPixels = fireSearchExperimentPixels
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
+        self.fireNewAIPromptExperimentPixels = fireNewAIPromptExperimentPixels
         self.fireOSDistributionPixel = fireOSDistributionPixel
         self.pixelFiring = pixelFiring
         self.isPad = isPad
@@ -257,6 +260,7 @@ public class StatisticsLoader {
 
     private func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
+        fireNewAIPromptExperimentPixels()
 
         guard !isDuckAIRetentionRequestInProgress else {
             completion()

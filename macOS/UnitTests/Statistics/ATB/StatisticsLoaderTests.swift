@@ -30,6 +30,7 @@ class StatisticsLoaderTests: XCTestCase {
     private var testee: StatisticsLoader!
     private var fireAppRetentionExperimentPixelsCalled = false
     private var fireSearchExperimentPixelsCalled = false
+    private var fireNewAIPromptExperimentPixelsCalled = false
     var pixelKit: PixelKit! = PixelKit(dryRun: true,
                                        appVersion: "1.0.0",
                                        defaultHeaders: [:],
@@ -45,7 +46,8 @@ class StatisticsLoaderTests: XCTestCase {
                                   attributionPixelHandler: mockAttributionsPixelHandler,
                                   dockCustomization: DockCustomizerMock(),
                                   fireAppRetentionExperimentPixels: { self.fireAppRetentionExperimentPixelsCalled = true },
-                                  fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true })
+                                  fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true },
+                                  fireNewAIPromptExperimentPixels: { self.fireNewAIPromptExperimentPixelsCalled = true })
     }
 
     override func tearDown() {
@@ -56,6 +58,7 @@ class StatisticsLoaderTests: XCTestCase {
         testee = nil
         fireAppRetentionExperimentPixelsCalled = false
         fireSearchExperimentPixelsCalled = false
+        fireNewAIPromptExperimentPixelsCalled = false
         pixelKit = nil
     }
 
@@ -595,6 +598,20 @@ class StatisticsLoaderTests: XCTestCase {
         let expect = expectation(description: "DuckAI refresh triggers install statistics")
         testee.refreshDuckAIRetentionAtb {
             XCTAssertTrue(self.mockStatisticsStore.hasInstallStatistics)
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshHappens_ThenAIChatExperimentPixelsFired() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+        loadSuccessfulAtbStub()
+
+        let expect = expectation(description: "DuckAI refresh fires AI chat experiment pixels")
+        testee.refreshDuckAIRetentionAtb {
+            XCTAssertTrue(self.fireNewAIPromptExperimentPixelsCalled)
             expect.fulfill()
         }
 

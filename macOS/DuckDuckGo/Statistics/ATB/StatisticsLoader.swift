@@ -43,6 +43,7 @@ final class StatisticsLoader {
     var isDuckAIRetentionRequestInProgress = false
     private let fireSearchExperimentPixels: () -> Void
     private let fireAppRetentionExperimentPixels: () -> Void
+    private let fireNewAIPromptExperimentPixels: () -> Void
 
     init(
         statisticsStore: StatisticsStore = LocalStatisticsStore(),
@@ -54,7 +55,8 @@ final class StatisticsLoader {
         fireSearchExperimentPixels: @escaping () -> Void = {
             PixelKit.fireSearchExperimentPixels()
             StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
-        }
+        },
+        fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels
     ) {
         self.statisticsStore = statisticsStore
         self.emailManager = emailManager
@@ -63,6 +65,7 @@ final class StatisticsLoader {
         self.dockCustomization = dockCustomization
         self.fireSearchExperimentPixels = fireSearchExperimentPixels
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
+        self.fireNewAIPromptExperimentPixels = fireNewAIPromptExperimentPixels
     }
 
     /// Transitional: preserves the previous 8-15 search window for experiments already running when
@@ -306,6 +309,7 @@ final class StatisticsLoader {
 
     func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
+        fireNewAIPromptExperimentPixels()
 
         guard !isDuckAIRetentionRequestInProgress else {
             completion()

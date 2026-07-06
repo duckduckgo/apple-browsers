@@ -1,5 +1,5 @@
 //
-//  WindowDimmingBlockingView.swift
+//  MouseEventInterceptingView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,29 +18,18 @@
 
 import Cocoa
 
-/// A full-window dimming + mouse-blocking backdrop for modal-style overlays.
+/// A `ColorView` that intercepts ALL mouse/scroll events via a local event monitor and manually forwards
+/// them only to its own subviews, so nothing reaches the views behind it (web view, toolbar, tab bar, …).
 ///
-/// This reuses the event-blocking behaviour of `MouseBlockingBackgroundView` (a local event monitor that
-/// intercepts mouse/scroll events and manually forwards them only to its own subviews, so nothing reaches
-/// the views behind — like a web view). The one difference: it resolves "am I the top-most view here?"
-/// against its own `superview` instead of the window's `contentView`. That lets it be mounted on the
-/// window's frame view (`contentView.superview`), above the titlebar, so the dim and the blocking cover the
-/// WHOLE window — titlebar / tab bar included — which a contentView-bound view can't do.
-///
-/// Set `backgroundColor` for the dim. Place interactive content (e.g. a dialog card) as a sibling above
-/// this view so it receives events normally.
-final class WindowDimmingBlockingView: ColorView {
+/// Subclasses customise behaviour through the hooks below:
+/// - `shouldPassThroughEvent(at:)` — a region where events fall through untouched (also excluded from hit-testing).
+/// - `handleSpecialRegion(_:at:in:)` — a region handled specially and consumed (e.g. starting a window drag).
+/// - `eventResolutionRootView` — the view the "is something legitimately above me?" check resolves against;
+///   defaults to the window's `contentView`, override with `superview` when mounted on the window frame view.
+/// - `didStartListening()` / `willStopListening()` — template hooks for extra setup/teardown (e.g. a resize lock).
+internal class MouseEventInterceptingView: ColorView {
+
     private var localMonitor: Any?
-
-    /// Height (from the top edge) of a region where a left mouse-down starts a window drag instead of being
-    /// blocked — so the window stays movable by its titlebar while the overlay is shown. 0 disables it.
-    var topDraggableHeight: CGFloat = 0
-
-    /// When true, the window's `.resizable` style is removed while this view is in its window and restored
-    /// when it leaves — so the window can't be resized behind the overlay. Set before adding to the window.
-    var locksWindowResizing: Bool = false
-
-    private weak var lockedResizableWindow: NSWindow?
 
     init() {
         super.init(frame: .zero, backgroundColor: nil, cornerRadius: 0, borderColor: nil, borderWidth: 0, interceptClickEvents: false)
@@ -56,7 +45,6 @@ final class WindowDimmingBlockingView: ColorView {
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-
         if window != nil {
             startListening()
         } else {
@@ -64,14 +52,10 @@ final class WindowDimmingBlockingView: ColorView {
         }
     }
 
-    /// Starts listening to mouse events. Called automatically when the view enters a window.
+    // MARK: - Monitor lifecycle
+
     func startListening() {
         guard localMonitor == nil else { return }
-
-        if locksWindowResizing, let window, window.styleMask.contains(.resizable) {
-            window.styleMask.remove(.resizable)
-            lockedResizableWindow = window
-        }
 
         // A LOCAL monitor intercepts ALL mouse events and manually dispatches to our subviews, so events
         // never reach the views behind us (e.g. the web view / toolbar / tab bar).
@@ -79,32 +63,47 @@ final class WindowDimmingBlockingView: ColorView {
             guard let self else { return event }
             return self.handleMonitoredEvent(event)
         }
+        didStartListening()
     }
 
-    /// Handles one intercepted mouse event. Returns `nil` to consume it (so it never reaches the views
-    /// behind the overlay), or the original event to let it pass through.
+    func stopListening() {
+        willStopListening()
+        guard let localMonitor else { return }
+        NSEvent.removeMonitor(localMonitor)
+        self.localMonitor = nil
+    }
+
+    // MARK: - Overridable hooks
+
+    /// A region (in this view's coordinates) where events pass through untouched and hit-testing is skipped.
+    func shouldPassThroughEvent(at locationInView: NSPoint) -> Bool { false }
+
+    /// A region handled specially and consumed; return `true` if the event was handled (e.g. a window drag started).
+    func handleSpecialRegion(_ event: NSEvent, at locationInView: NSPoint, in window: NSWindow) -> Bool { false }
+
+    /// The view the "is something legitimately above me?" check resolves against.
+    var eventResolutionRootView: NSView? { window?.contentView }
+
+    /// Called right after the event monitor is installed.
+    func didStartListening() {}
+
+    /// Called right before the event monitor is removed.
+    func willStopListening() {}
+
+    // MARK: - Event handling
+
     private func handleMonitoredEvent(_ event: NSEvent) -> NSEvent? {
         guard !isHidden else { return event }
-
         guard let window, event.window === window, window.isKeyWindow || window.isMainWindow else { return event }
         let locationInWindow = event.locationInWindow
         let locationInView = convert(locationInWindow, from: nil)
-
         guard bounds.contains(locationInView) else { return event }
 
-        // Top strip: a left mouse-down starts a window drag (so the window stays movable by its titlebar)
-        // while the click itself is still consumed — a plain click moves nothing and doesn't reach the
-        // tab bar, a drag moves the window.
-        if event.type == .leftMouseDown, topDraggableHeight > 0,
-           locationInView.y > bounds.height - topDraggableHeight {
-            window.performDrag(with: event)
-            return nil
-        }
+        if shouldPassThroughEvent(at: locationInView) { return event }
+        if handleSpecialRegion(event, at: locationInView, in: window) { return nil }
 
-        // Resolve the top-most view against our SUPERVIEW (the window frame view when mounted there),
-        // not the contentView — this is what lets the overlay span the whole window. If something
-        // legitimately sits above us (e.g. the dialog card, a sibling), let the event flow normally.
-        if let root = superview {
+        // If a view legitimately sits above us, let the event flow to it normally.
+        if let root = eventResolutionRootView {
             let locationInRoot = root.convert(locationInWindow, from: nil)
             if let topHitView = root.hitTest(locationInRoot), topHitView != self, !topHitView.isDescendant(of: self) {
                 return event
@@ -114,12 +113,9 @@ final class WindowDimmingBlockingView: ColorView {
         if let hitView = hitTest(locationInView), hitView != self {
             forward(event, to: hitView, in: window)
         }
-
         return nil
     }
 
-    /// Forwards an intercepted event to the resolved subview, mirroring the responder call the system
-    /// would have made if the overlay weren't intercepting.
     private func forward(_ event: NSEvent, to hitView: NSView, in window: NSWindow) {
         switch event.type {
         case .leftMouseDown:
@@ -152,21 +148,9 @@ final class WindowDimmingBlockingView: ColorView {
         }
     }
 
-    /// Stops listening to mouse events. Called automatically when the view leaves its window.
-    func stopListening() {
-        if let lockedResizableWindow {
-            lockedResizableWindow.styleMask.insert(.resizable)
-            self.lockedResizableWindow = nil
-        }
+    // MARK: - Blocking overrides
 
-        guard let monitor = localMonitor else { return }
-        NSEvent.removeMonitor(monitor)
-        localMonitor = nil
-    }
-
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-        return true
-    }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     override func mouseDown(with event: NSEvent) {}
     override func mouseUp(with event: NSEvent) {}
@@ -181,19 +165,14 @@ final class WindowDimmingBlockingView: ColorView {
     override func scrollWheel(with event: NSEvent) {}
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        guard bounds.contains(point) else {
-            return nil
-        }
-
-        // Iterate subviews front to back so the dialog's own controls claim their hits.
+        if shouldPassThroughEvent(at: point) { return nil }
+        guard bounds.contains(point) else { return nil }
+        // Front-to-back so a subview claims its own hit.
         for subview in subviews.reversed() where !subview.isHidden {
-            if subview.frame.contains(point) {
-                if let hitView = subview.hitTest(point) {
-                    return hitView
-                }
+            if subview.frame.contains(point), let hitView = subview.hitTest(point) {
+                return hitView
             }
         }
-
         return self
     }
 }

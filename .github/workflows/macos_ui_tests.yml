@@ -171,9 +171,8 @@ jobs:
               ;;
           esac
           # Each user mode runs as its own job (ui-tests-production / ui-tests-internal). Running
-          # both in a single matrix would produce 3 runners x ~55 tests x 2 modes = 330 configs,
-          # over GitHub's 256 limit, so they are split; each job is gated on whether its mode was
-          # requested.
+          # both in a single matrix would produce more configs than GitHub's 256 limit, so they are split;
+          # each job is gated on whether its mode was requested.
           run_production=$(jq -r 'any(.[]; . == "production")' <<< "$user_modes")
           run_internal=$(jq -r 'any(.[]; . == "internal")' <<< "$user_modes")
           echo "run-production=${run_production}" >> $GITHUB_OUTPUT
@@ -222,7 +221,7 @@ jobs:
 
   # UI Tests run as two jobs, one per user mode, each calling the reusable macos_run_ui_test.yml
   # helper once per (runner x test) combination. Both modes in a single matrix would exceed GitHub's
-  # 256-configuration limit; splitting by user mode keeps each job at 3 runners x ~55 tests = 165.
+  # 256-configuration limit.
   # Each job runs only when its mode was requested (production by default; internal for
   # user_modes=internal/both and the scheduled run). Internal-mode failures stay non-gating via
   # continue-on-error inside the helper's job.

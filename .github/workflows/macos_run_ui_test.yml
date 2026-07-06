@@ -3,8 +3,7 @@ name: macOS - Run UI Test
 # Reusable helper that runs a single UITestCase class, on one runner, in one user mode.
 # Called by macos_ui_tests.yml once per (runner × test) matrix combination, per user-mode leg.
 # Splitting the UI Tests matrix into per-user-mode legs that each call this workflow keeps every
-# leg under GitHub's 256-configuration matrix limit (3 runners × ~55 tests = 165 per leg) while
-# defining the run steps only once.
+# leg under GitHub's 256-configuration matrix limit while defining the run steps only once.
 
 defaults:
   run:

@@ -916,6 +916,13 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToRecognizeCode)
     }
 
+    func testControllerDidError_updateRequired_setsTitleOnlyErrorMessage() async {
+        await syncDialogController.controllerDidError(.updateRequired, underlyingError: nil, setupRole: .sharer)
+
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .updateRequired)
+        XCTAssertNil(managementDialogModel.syncErrorMessage?.errorDescription)
+    }
+
     func testControllerDidError_connectionErrors_setsCorrectErrorMessage() async {
         await syncDialogController.controllerDidError(.failedToLogIn, underlyingError: nil, setupRole: .sharer)
 
@@ -947,6 +954,16 @@ final class SyncDialogControllerTests: XCTestCase {
         }
 
         XCTAssertEqual(dialog.errorDescription, "\(expectedDescription)\n\(detail)")
+    }
+
+    func testManagementDialogErrorDescription_whenTypeDescriptionIsNil_returnsEmptyString() {
+        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .updateRequired)
+
+        let dialog = ManagementDialog(model: managementDialogModel)
+
+        XCTAssertEqual(dialog.errorTitle, SyncErrorType.updateRequired.title)
+        XCTAssertEqual(dialog.buttonTitle, SyncErrorType.updateRequired.buttonTitle)
+        XCTAssertEqual(dialog.errorDescription, "")
     }
 
     func testControllerDidError_pollingTimeout_presentsUnableToSyncWithDeviceError() async {

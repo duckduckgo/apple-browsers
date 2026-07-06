@@ -1741,7 +1741,7 @@
     },
     "alert.unable-to-sync-with-another-device-description" : {
       "comment" : "Description for unable to sync with another device error",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

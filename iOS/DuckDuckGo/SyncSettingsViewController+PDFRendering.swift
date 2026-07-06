@@ -99,7 +99,6 @@ extension SyncSettingsViewController {
 private class RecoveryCodeItem: NSObject, UIActivityItemSource {
 
     private enum Constants {
-        static let saveToFilesActivityType = "com.apple.DocumentManagerUICore.SaveToFiles"
         static let suggestedFileName = "Sync Data Recovery - DuckDuckGo.pdf"
     }
 
@@ -114,17 +113,14 @@ private class RecoveryCodeItem: NSObject, UIActivityItemSource {
         return URL(fileURLWithPath: Constants.suggestedFileName)
     }
 
-    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
-        if activityType?.rawValue == Constants.saveToFilesActivityType {
-            let itemProvider = NSItemProvider(item: data as NSData, typeIdentifier: UTType.pdf.identifier)
-            itemProvider.suggestedName = Constants.suggestedFileName
-            return itemProvider
-        }
-        return data
+    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType _: UIActivity.ActivityType?) -> Any? {
+        let itemProvider = NSItemProvider(item: data as NSData, typeIdentifier: UTType.pdf.identifier)
+        itemProvider.suggestedName = Constants.suggestedFileName
+        return itemProvider
     }
 
     func activityViewController(_ activityViewController: UIActivityViewController,
-                                dataTypeIdentifierForActivityType activityType: UIActivity.ActivityType?) -> String {
+                                dataTypeIdentifierForActivityType _: UIActivity.ActivityType?) -> String {
         UTType.pdf.identifier
     }
 

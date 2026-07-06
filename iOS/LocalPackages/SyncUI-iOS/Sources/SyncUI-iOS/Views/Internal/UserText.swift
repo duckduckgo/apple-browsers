@@ -157,6 +157,15 @@ public struct UserText {
     static let simplifiedSyncAnotherDeviceTitle = NSLocalizedString("sync.simplified.another.device.title", bundle: Bundle.module, value: "Sync your data with another device?", comment: "Prompt title after enabling sync")
     static let simplifiedSyncAnotherDeviceBody = NSLocalizedString("sync.simplified.another.device.body", bundle: Bundle.module, value: "Your bookmarks, autofill data, and Duck.ai chats are securely backed up. Now keep them in sync with your computer or tablet.", comment: "Prompt body text after enabling sync")
     static let simplifiedSyncAnotherDeviceNotNow = NSLocalizedString("sync.simplified.another.device.notnow", bundle: Bundle.module, value: "Not Now", comment: "Prompt secondary button")
+    static let simplifiedSyncAnotherDeviceV2Title = NotLocalizedString("sync.simplified.another.device.v2.title", bundle: Bundle.module, value: "You’re now ready to sync with another device.", comment: "Title on the sync-another-device screen shown after Sync & Backup is enabled on this device")
+    static func simplifiedSyncAnotherDeviceV2Body(_ deviceName: String) -> String {
+        let format = NotLocalizedString("sync.simplified.another.device.v2.body", bundle: Bundle.module, value: "%@ is now synced.", comment: "Body on the sync-another-device screen. %@ is the name of the current device that was just synced.")
+        return String(format: format, deviceName)
+    }
+    static let simplifiedRecoverYourDataV2Title = NotLocalizedString("sync.simplified.recover.your.data.v2.title", bundle: Bundle.module, value: "Recover Your Data Easily", comment: "Title on the recover-your-data screen shown after enabling Sync & Backup")
+    static let simplifiedRecoverYourDataV2Description = NotLocalizedString("sync.simplified.recover.your.data.v2.description", bundle: Bundle.module, value: "Use this code to restore your data if you lose access to this device. Keep it safe.", comment: "Description on the recover-your-data screen explaining what the recovery code is for")
+    static let simplifiedRecoveryCodeLabel = NotLocalizedString("sync.simplified.recovery.code.label", bundle: Bundle.module, value: "Recovery Code", comment: "Label above the recovery code on the recover-your-data screen")
+    static let simplifiedDownloadYourRecoveryCodeButton = NotLocalizedString("sync.simplified.download.your.recovery.code.button", bundle: Bundle.module, value: "Download Your Recovery Code", comment: "Button to download the recovery code on the recover-your-data screen")
 
     // Simplified QR Scanning
     static let simplifiedScanTitle = NSLocalizedString("sync.simplified.scan-or-view-code.title", bundle: Bundle.module, value: "Sync Your Devices", comment: "Navigation title for simplified QR scanning screen")

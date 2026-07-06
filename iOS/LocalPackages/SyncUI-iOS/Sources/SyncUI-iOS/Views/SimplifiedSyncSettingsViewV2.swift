@@ -82,11 +82,12 @@ public struct SimplifiedSyncSettingsViewV2: View {
                 }
             }
         }
-        .sheet(isPresented: $model.isSyncWithAnotherDevicePromptVisible, onDismiss: {
-            model.syncWithAnotherDevicePromptDidDismiss()
-        }) {
-            SyncAnotherDevicePromptView(model: model)
-        }
+        .sheet(item: $model.connectingSheetPhase, onDismiss: {
+            model.connectingSheetDidDismiss()
+        }, content: {_ in
+            SimplifiedConnectingSheetViewV2(model: model)
+                .interactiveDismissDisabled()
+        })
     }
 }
 

@@ -19,49 +19,61 @@
 
 import SwiftUI
 import DesignResourcesKit
-import DesignResourcesKitIcons
 
 public struct SimplifiedConnectingSheetViewV2: View {
 
-    public init() {}
+    @ObservedObject public var model: SyncSettingsViewModel
+
+    public init(model: SyncSettingsViewModel) {
+        self.model = model
+    }
 
     public var body: some View {
-        VStack(spacing: 24) {
-            // TODO: The design uses an animated "Lock-Feature" pictogram (a Lottie/motion node).
-            // This static Sync-Lock-128 asset is an interim stand-in; swap in the canonical
-            // pictogram (or the lock Lottie) when available.
-            Image("Sync-Lock-128", bundle: .module)
-                .padding(.top, 40)
-
-            Text(UserText.simplifiedConnectingV2Title)
-                .daxTitle1()
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-
-            HStack(spacing: 10) {
-                ProgressView()
-                    .tint(Color(designSystemColor: .textSecondary))
-                Text(UserText.simplifiedConnectingStatus)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
+        ZStack {
+            switch model.connectingSheetPhase {
+            case .connecting:
+                SimplifiedConnectingContentViewV2()
+                    .transition(.opacity)
+            case .syncAnotherDevice:
+                SyncAnotherDevicePromptViewV2(model: model)
+                    .transition(.opacity)
+            case .recoverYourData:
+                RecoverYourDataView(model: model)
+                    .transition(.opacity)
+            case .none:
+                EmptyView()
             }
-
-            Spacer()
         }
-        .padding(.horizontal, 24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(.easeInOut(duration: 0.3), value: model.connectingSheetPhase)
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
 }
 
 #if DEBUG
 #Preview("Connecting") {
-    SimplifiedConnectingSheetViewV2()
+    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting))
 }
 
 #Preview("Connecting – Dark") {
-    SimplifiedConnectingSheetViewV2()
+    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .connecting))
         .preferredColorScheme(.dark)
+}
+
+#Preview("Sync Another Device") {
+    SimplifiedConnectingSheetViewV2(model: .connectingSheetPreview(phase: .syncAnotherDevice))
+}
+
+private extension SyncSettingsViewModel {
+    static func connectingSheetPreview(phase: ConnectingSheetPhase) -> SyncSettingsViewModel {
+        let model = SyncSettingsViewModel(
+            isOnDevEnvironment: { false },
+            switchToProdEnvironment: {},
+            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+        )
+        model.isSyncEnabled = true
+        model.devices = [.init(id: "1", name: "Dave’s iPhone", type: "phone", isThisDevice: true)]
+        model.connectingSheetPhase = phase
+        return model
+    }
 }
 #endif

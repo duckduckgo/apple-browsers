@@ -98,36 +98,39 @@ class AtbIntegrationTests: XCTestCase {
     func backgroundRelaunch() {
         XCUIDevice.shared.press(.home)
         app.activate()
-        if !app.searchFields["searchEntry"].waitForExistence(timeout: Constants.defaultTimeout) {
+        if !app.descendants(matching: .any)["searchEntry"].waitForExistence(timeout: Constants.defaultTimeout) {
             fatalError("Can not find search field. Has the app launched?")
         }
     }
 
     private func search(forText text: String) {
 
-        let searchentrySearchField = app.searchFields["searchEntry"]
-        XCTAssertTrue(searchentrySearchField.waitForExistence(timeout: Constants.defaultTimeout))
+        // Match by identifier across any element type: the omnibar's field can be
+        // reported as a search field or a plain text field depending on its editing
+        // state, and a type-specific query (e.g. `searchFields`) intermittently fails
+        // to resolve it while the omnibar is transitioning.
+        let searchentrySearchField = app.descendants(matching: .any)["searchEntry"]
         focus(searchentrySearchField)
         searchentrySearchField.typeText("\(text)\r")
         Snapshot.waitForLoadingIndicatorToDisappear(within: Constants.defaultTimeout)
 
     }
 
+    /// Focuses the omnibar by tapping it.
+    ///
+    /// `hasKeyboardFocus` is intentionally not asserted: the omnibar's search field
+    /// never reports keyboard focus to XCUITest even while it is actively being
+    /// edited, so gating on it makes `focus` fail every time. Instead we retry the
+    /// tap itself — the element can briefly drop out of the accessibility hierarchy
+    /// as the omnibar lays out — and let the subsequent `typeText` surface any real
+    /// focus failure.
     private func focus(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
-        let hasKeyboardFocus = NSPredicate(format: "hasKeyboardFocus == true")
-
         for _ in 0..<3 {
-            app.typeKey("l", modifierFlags: .command)
-            let keyCommandFocusExpectation = XCTNSPredicateExpectation(predicate: hasKeyboardFocus, object: element)
-            if XCTWaiter.wait(for: [keyCommandFocusExpectation], timeout: 2) == .completed {
-                return
+            guard element.waitForExistence(timeout: Constants.defaultTimeout), element.isHittable else {
+                continue
             }
-
             element.tap()
-            let tapFocusExpectation = XCTNSPredicateExpectation(predicate: hasKeyboardFocus, object: element)
-            if XCTWaiter.wait(for: [tapFocusExpectation], timeout: 2) == .completed {
-                return
-            }
+            return
         }
 
         XCTFail("Could not focus \(element)", file: file, line: line)

@@ -123,7 +123,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertNil(sut.attachedContextURL)
     }
 
-    func test_showAttachAffordanceShowsPlaceholderWithoutClearingDeliveredAttachment() {
+    func test_showAttachAffordanceKeepsPlaceholderHiddenWithoutClearingDeliveredAttachment() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
         makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .delivered)
@@ -131,7 +131,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         sut.showAttachAffordance()
 
         XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
-        XCTAssertTrue(sut.chipViewModel.isVisible)
+        XCTAssertFalse(sut.chipViewModel.isVisible)
         XCTAssertEqual(sut.attachedContextURL, url)
         XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
     }

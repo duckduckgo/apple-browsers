@@ -41,8 +41,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
 
     var onAttachRequested: (() -> Void)?
     var onRemoveRequested: (() -> Void)?
-    var onPromptSubmitted: (() -> Void)?
-    var onPromptContextDelivered: ((URL?) -> Void)?
+    var onPromptSubmitted: ((URL?) -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
 
     var attachedContextURL: URL? {
@@ -248,10 +247,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     }
 
     private func handlePromptSubmittedFromUserScript() {
-        onPromptContextDelivered?(attachedContextURL)
         if !hasDeliveredFirstPrompt {
             hasDeliveredFirstPrompt = true
-            onPromptSubmitted?()
+            onPromptSubmitted?(attachedContextURL)
             commitDeferredBindIfNeeded()
         }
         chipViewModel.markPromptSubmitted()
@@ -265,8 +263,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
                                            files: [AIChatNativePrompt.NativePromptFile]?) {
         guard !hasDeliveredFirstPrompt else { return }
         hasDeliveredFirstPrompt = true
-        onPromptSubmitted?()
-        onPromptContextDelivered?(attachedContextURL)
+        onPromptSubmitted?(attachedContextURL)
         contextualChatViewController?.submitPrompt(prompt,
                                                    images: images,
                                                    files: files,

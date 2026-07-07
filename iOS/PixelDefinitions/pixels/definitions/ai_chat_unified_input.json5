@@ -81,10 +81,7 @@
                 "key": "origin",
                 "description": "Origin value for the model picker impression.",
                 "type": "string",
-                "enum": [
-                    "funnel_addressbar_ios__modelpicker",
-                    "funnel_duckai_ios__modelpicker"
-                ]
+                "enum": ["funnel_addressbar_ios__modelpicker", "funnel_duckai_ios__modelpicker"]
             }
         ]
     },
@@ -114,10 +111,7 @@
                 "key": "origin",
                 "description": "Origin value for the reasoning effort picker impression.",
                 "type": "string",
-                "enum": [
-                    "funnel_addressbar_ios__reasoningpicker",
-                    "funnel_duckai_ios__reasoningpicker"
-                ]
+                "enum": ["funnel_addressbar_ios__reasoningpicker", "funnel_duckai_ios__reasoningpicker"]
             }
         ]
     },

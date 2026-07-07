@@ -26,13 +26,13 @@ protocol FireButtonIconStyleProviding {
 }
 
 final class LegacyFireButtonIconStyleProvider: FireButtonIconStyleProviding {
-    var icon: NSImage = .burn
-    var lightAnimation = "flame-mouse-over"
-    var darkAnimation = "dark-flame-mouse-over"
+    var icon: NSImage = DesignSystemImages.Glyphs.Size16.fireSolid
+    var lightAnimation = "fire-button-mouse-over-new"
+    var darkAnimation = "fire-button-mouse-over-new"
 }
 
 final class CurrentFireButtonIconStyleProvider: FireButtonIconStyleProviding {
     var icon: NSImage = DesignSystemImages.Glyphs.Size16.fireSolid
-    var lightAnimation = "fire-button-mouse-over-new"
-    var darkAnimation = "fire-button-mouse-over-new"
+    var lightAnimation = "Flame-24"
+    var darkAnimation = "Flame-24"
 }

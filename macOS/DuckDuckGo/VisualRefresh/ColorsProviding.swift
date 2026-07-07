@@ -23,6 +23,7 @@ import PrivacyConfig
 protocol ColorsProviding {
     // MARK: - Address Bar
     var addressBarOutlineShadow: NSColor { get }
+    var addressBarShadowColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }
     var addressBarTextFieldColor: NSColor { get }
     var addressBarActiveBorderColor: NSColor { get }
@@ -95,6 +96,7 @@ final class LegacyColorsProviding: ColorsProviding {
     var textTertiaryColor: NSColor { palette.textTertiary }
     var accentPrimaryColor: NSColor { palette.accentPrimary }
     var addressBarOutlineShadow: NSColor { palette.accentAltGlowPrimary }
+    var addressBarShadowColor: NSColor { palette.shadowPrimary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
     var addressBarActiveBorderColor: NSColor { palette.accentPrimary }
@@ -138,6 +140,7 @@ final class CurrentColorsProviding: ColorsProviding {
     var addressBarActiveBorderColor: NSColor { palette.accentPrimary }
     var addressBarFireBorderColor: NSColor { palette.accentFirePrimary }
     var addressBarOutlineShadow: NSColor { palette.accentAltGlowPrimary }
+    var addressBarShadowColor: NSColor { palette.shadowPrimary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
     var activeAddressBarBackgroundColor: NSColor { palette.inputActive }

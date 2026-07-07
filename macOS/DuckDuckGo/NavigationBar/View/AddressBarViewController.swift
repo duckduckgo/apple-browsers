@@ -907,10 +907,19 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func refreshAppearance(isSuggestionsWindowVisible: Bool) {
+        let styleProvider = theme.addressBarStyleProvider
+        let colorsProvider = theme.colorsProvider
+
         shadowView.shadowSides = isSuggestionsWindowVisible ? [.left, .top, .right] : []
-        shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
-        shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
-        shadowView.cornerRadius = theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+        shadowView.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+
+        if themeManager.isAppRebranded {
+            shadowView.shadowRadius = styleProvider.suggestionShadowRadius
+            shadowView.shadowColor = colorsProvider.addressBarOutlineShadow
+        } else {
+            shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
+            shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
+        }
 
         let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
         activeOuterBorderView.isHidden = isSuggestionsWindowVisible || view.window?.isKeyWindow != true || isToggleFocused

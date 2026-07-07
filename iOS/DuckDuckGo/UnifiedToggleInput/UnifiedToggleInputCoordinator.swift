@@ -1959,7 +1959,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
-        let prefilledText = viewController.handler.currentText
+        let prefilledText = currentText
         // Outside omnibar editing the chip can't dismiss-to-omnibar; preserve the original
         // straight-to-chat behavior to avoid wrong-destination collapses.
         guard isOmnibarSession else {

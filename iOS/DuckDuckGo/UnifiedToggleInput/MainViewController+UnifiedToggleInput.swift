@@ -1178,6 +1178,11 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
 extension MainViewController: UnifiedToggleInputDelegate {
 
+    private enum UnifiedToggleInputAIShortcutAction {
+        case query(String)
+        case chat(prompt: String)
+    }
+
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
         // No per-tab persistence: existing tabs read from URL; new tabs read from setting + app-wide last-used.
         // The app-wide last-used is written through `UnifiedInputStateStore.commitToggleMode` on submit, which fires this delegate.
@@ -1219,20 +1224,56 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
-        let trimmed = prefilledText.trimmingWhitespace()
+        switch unifiedToggleInputAIShortcutAction(for: prefilledText) {
+        case .query(let query):
+            unifiedToggleInputCoordinator?.clearText()
+            unifiedToggleInputCoordinator?.handleExternalSubmission(.query)
+            handleUnifiedToggleInputSearchSubmission(query)
+        case .chat(let prompt):
+            openUnifiedToggleInputAIShortcutChat(prompt: prompt)
+        }
+    }
+
+    private func openUnifiedToggleInputAIShortcutChat(prompt: String) {
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
         // On a Duck.ai tab, route through openAIChat so the "new tab when current has content" rule applies.
         // This opens the chip handoff in a fresh chat tab and avoids the contextual-sheet branch in onAIChatPressed.
         if currentTab?.isAITab == true {
-            if trimmed.isEmpty {
+            if prompt.isEmpty {
                 openAIChat()
             } else {
-                openAIChat(trimmed, autoSend: true)
+                openAIChat(prompt, autoSend: true)
             }
             return
         }
-        onAIChatPressed(prefilledText: trimmed.isEmpty ? nil : trimmed)
+        onAIChatPressed(prefilledText: prompt)
+    }
+
+    private func unifiedToggleInputAIShortcutAction(for text: String) -> UnifiedToggleInputAIShortcutAction {
+        let trimmed = text.trimmingWhitespace()
+        guard let currentURL = currentTab?.url,
+              unifiedToggleInputText(trimmed, matchesCurrentURL: currentURL) else {
+            return .chat(prompt: trimmed)
+        }
+
+        if currentTab?.tabModel.isHomeTab == false, currentTab?.isAITab != true {
+            return .query(trimmed)
+        }
+        return .chat(prompt: "")
+    }
+
+    private func unifiedToggleInputText(_ text: String, matchesCurrentURL currentURL: URL) -> Bool {
+        let trimmed = text.trimmingWhitespace()
+        guard !trimmed.isEmpty else { return false }
+
+        let currentURLString = currentURL.absoluteString
+        let currentURLWithoutScheme = currentURLString.dropping(prefix: currentURL.navigationalScheme?.separated() ?? "")
+        return [
+            currentURLString,
+            currentURLWithoutScheme,
+            AddressDisplayHelper.plainDisplayString(for: currentURL)
+        ].contains(trimmed)
     }
 
     func unifiedToggleInputDidChangeHeight() {

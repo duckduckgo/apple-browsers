@@ -2371,11 +2371,21 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_unifiedToggleInputVCDidTapAIChatShortcut_forwardsCurrentText() {
-        sut.viewController.handler.updateCurrentText("hello")
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "hello")
 
         sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
 
         XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "hello")
+    }
+
+    func test_unifiedToggleInputVCDidTapAIChatShortcut_afterReplacingPrefilledOmnibarTextForwardsTypedText() {
+        sut.activateFromOmnibar(prefilledText: "https://privacy-test-pages.site", inputMode: .search)
+        sut.onAnimatedDismissToOmnibar = { completion in completion?() }
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "What is a duck?")
+
+        sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
+
+        XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "What is a duck?")
     }
 
     // MARK: - Helpers

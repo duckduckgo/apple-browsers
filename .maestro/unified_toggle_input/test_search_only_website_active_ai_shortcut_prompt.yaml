@@ -1,0 +1,133 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_search_only_website_active_ai_shortcut_prompt
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        ff.unifiedToggleInput: "true"
+        ff.experimentalAddressBar: "true"
+        ff.contextualDuckAIMode: "true"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- runFlow:
+    file: ../shared/set_search_only.yaml
+
+# New tab page: Search Only hides the toggle, but the focused shortcut opens full Duck.ai.
+- tapOn:
+    id: "searchEntry"
+- assertNotVisible:
+    id: "AddressBar.Button.Search"
+- assertNotVisible:
+    id: "AddressBar.Button.DuckAI"
+- assertVisible:
+    id: "Browser.OmniBar.Button.AIChat"
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- runFlow:
+    when:
+        visible: "Agree"
+    commands:
+        - tapOn: "Agree"
+
+- assertVisible: "Close tab"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+- tapOn: "Close tab"
+- assertVisible:
+    id: "searchEntry"
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertVisible: ".*Privacy Test Pages.*"
+
+# A direct web-page shortcut tap should still open the contextual sheet.
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Search Only on a website hides the toggle but keeps the Duck.ai shortcut button in the focused field.
+- tapOn:
+    id: "searchEntry"
+- assertNotVisible:
+    id: "AddressBar.Button.Search"
+- assertNotVisible:
+    id: "AddressBar.Button.DuckAI"
+- assertVisible:
+    id: "Browser.OmniBar.Button.AIChat"
+
+# If the focused UTI still contains the page URL, the shortcut should submit the URL as a query.
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible: ".*Privacy Test Pages.*"
+- assertNotVisible: "Close tab"
+
+# If the focused UTI is cleared and left empty, the shortcut should open full Duck.ai without a prompt.
+- tapOn:
+    id: "searchEntry"
+- eraseText
+- assertVisible:
+    id: "Browser.OmniBar.Button.AIChat"
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- assertVisible: "Close tab"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+- assertNotVisible:
+    id: "AIChat.ContextualSheet"
+- tapOn: "Close tab"
+- assertVisible: ".*Privacy Test Pages.*"
+
+# A focused UTI shortcut tap should open full Duck.ai mode and send typed text as a prompt,
+# even though the current tab has a web page that supports contextual chat.
+- tapOn:
+    id: "searchEntry"
+- eraseText
+- inputText: "What is a duck?"
+- assertVisible: "What is a duck?"
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- runFlow:
+    when:
+        visible: "Agree"
+    commands:
+        - tapOn: "Agree"
+
+- assertVisible: "Close tab"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+- assertNotVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible: "What is a duck?"

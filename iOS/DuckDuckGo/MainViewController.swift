@@ -4640,7 +4640,11 @@ extension MainViewController: OmniBarDelegate {
         ViewHighlighter.hideAll()
         hideSuggestionTray()
 
-        if let currentTab, aiChatContextualModeFeature.isAvailable, newTabPageViewController == nil {
+        let shouldPresentContextualSheet = currentTab?.tabModel.isHomeTab == false
+            && aiChatContextualModeFeature.isAvailable
+            && prefilledText == nil
+
+        if let currentTab, shouldPresentContextualSheet {
             omniBar.endEditing()
             currentTab.presentContextualAIChatSheet(from: self)
         } else {

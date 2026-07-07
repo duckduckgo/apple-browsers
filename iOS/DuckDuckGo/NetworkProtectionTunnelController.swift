@@ -208,8 +208,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 withAdditionalParameters: [:],
                 onComplete: { _ in })
         } catch {
-            // Top level catch-all
-            controllerErrorSubject.send(userFacingControllerErrorMessage(for: error))
+            if let message = userFacingControllerErrorMessage(for: error) {
+                controllerErrorSubject.send(message)
+            }
+
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             if case StartError.configSystemPermissionsDenied = error {
                 return

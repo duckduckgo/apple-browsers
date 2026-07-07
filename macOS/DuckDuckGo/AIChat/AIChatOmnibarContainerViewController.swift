@@ -52,7 +52,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private enum Constants {
         static let clipMaskBottomOffset: CGFloat = 14
         static let shadowOverlapHeight: CGFloat = 21
-        static let legacyShadowOverlapHeight: CGFloat = 11
+        static let legacyShadowOverlapHeight: CGFloat = 12
         static let submitButtonSize: CGFloat = 28
         static let submitButtonCornerRadius: CGFloat = 14
         static let submitButtonTrailingInset: CGFloat = 8

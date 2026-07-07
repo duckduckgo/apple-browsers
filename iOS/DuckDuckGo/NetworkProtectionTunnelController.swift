@@ -377,13 +377,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         
         do {
             self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
-            #if DEBUG
-            // TEMP: reproduce SubscriptionManagerError 12000 (noTokenAvailable) at the oauth step. Revert before merge.
-            throw SubscriptionManagerError.noTokenAvailable
-            #else
             try await tokenHandler.getToken()
             self.connectionWideEventData?.oauthDuration?.complete()
-            #endif
         } catch {
             switch error {
             case SubscriptionManagerError.noTokenAvailable:

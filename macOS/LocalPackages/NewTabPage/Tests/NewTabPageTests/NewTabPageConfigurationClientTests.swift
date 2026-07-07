@@ -32,6 +32,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageConfigurationClient.MessageName>!
     private var eventMapper: CapturingNewTabPageConfigurationEventHandler!
+    private var isRebrandEnabled = false
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -50,7 +51,8 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             contextMenuPresenter: contextMenuPresenter,
             linkOpener: CapturingNewTabPageLinkOpener(),
             eventMapper: eventMapper,
-            stateProvider: stateProvider
+            stateProvider: stateProvider,
+            isRebrandEnabled: { [weak self] in self?.isRebrandEnabled ?? false }
         )
 
         userScript = NewTabPageUserScript()
@@ -143,6 +145,14 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             .init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible)
         ])
         XCTAssertEqual(configuration.platform, .init(name: "macos"))
+        XCTAssertEqual(configuration.settings?.newTabPageRebranding, .init(state: .disabled))
+    }
+
+    func testThatInitialSetupReturnsEnabledNewTabPageRebrandingSetting() async throws {
+        isRebrandEnabled = true
+
+        let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
+        XCTAssertEqual(configuration.settings?.newTabPageRebranding, .init(state: .enabled))
     }
 
     func testWhenOmnibarNotAvailable_ThenInitialSetupReturnsConfigurationWithoutOmnibar() async throws {

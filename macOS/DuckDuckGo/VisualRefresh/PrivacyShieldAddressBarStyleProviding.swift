@@ -32,27 +32,6 @@ protocol PrivacyShieldAddressBarStyleProviding {
 }
 
 final class LegacyPrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBarStyleProviding {
-    let icon: NSImage = .shield
-    let iconWithDot: NSImage = .shieldDot
-
-    func hoverAnimation(forLightMode: Bool) -> String {
-        forLightMode ? "shield-mouse-over" : "dark-shield-mouse-over"
-    }
-
-    func hoverAnimationWithDot(forLightMode: Bool) -> String {
-        forLightMode ? "shield-dot-mouse-over" : "dark-shield-dot-mouse-over"
-    }
-
-    func animationForShield(forLightMode: Bool) -> String {
-        forLightMode ? "shield" : "dark-shield"
-    }
-
-    func animationForShieldWithDot(forLightMode: Bool) -> String {
-        forLightMode ? "shield-dot" : "dark-shield-dot"
-    }
-}
-
-final class CurrentPrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBarStyleProviding {
     let icon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
     let iconWithDot: NSImage = DesignSystemImages.Color.Size16.shieldNeutralAlert
 
@@ -66,6 +45,27 @@ final class CurrentPrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBar
 
     func animationForShield(forLightMode: Bool) -> String {
         "shield.new" /// We use the same animation for both dark and light
+    }
+
+    func animationForShieldWithDot(forLightMode: Bool) -> String {
+        "shield-dot-new" /// We use the same animation for both dark and light
+    }
+}
+
+final class LatestPrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBarStyleProviding {
+    let icon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
+    let iconWithDot: NSImage = DesignSystemImages.Color.Size16.shieldNeutralAlert
+
+    func hoverAnimation(forLightMode: Bool) -> String {
+        "Shield-Color-24-Hover" /// We use the same animation for both dark and light
+    }
+
+    func hoverAnimationWithDot(forLightMode: Bool) -> String {
+        "shield-gray-dot-hover" /// We use the same animation for both dark and light
+    }
+
+    func animationForShield(forLightMode: Bool) -> String {
+        "Shield-Color-24" /// We use the same animation for both dark and light
     }
 
     func animationForShieldWithDot(forLightMode: Bool) -> String {

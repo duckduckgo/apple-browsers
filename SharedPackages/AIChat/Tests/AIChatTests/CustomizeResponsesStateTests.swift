@@ -25,6 +25,7 @@ final class CustomizeResponsesStateTests: XCTestCase {
 
     // MARK: - Helpers
 
+    // swiftlint:disable force_try
     /// Wraps `data` in the `{version, data}` envelope and serializes it to a JSON string (the shape
     /// the frontend persists, and one of the two forms the bridge can hand back).
     private func jsonString(_ data: [String: Any]) -> String {
@@ -32,6 +33,7 @@ final class CustomizeResponsesStateTests: XCTestCase {
         let encoded = try! JSONSerialization.data(withJSONObject: envelope)
         return String(data: encoded, encoding: .utf8)!
     }
+    // swiftlint:enable force_try
 
     /// The already-decoded object form the bridge can also hand back.
     private func object(_ data: [String: Any]) -> [String: Any] {

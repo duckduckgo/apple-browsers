@@ -49,7 +49,7 @@ final class UsageSegmentationCalculationTests: XCTestCase {
     }
 
     func testCalculations() throws {
-        let data = JsonTestDataLoader().fromJsonFile("Resources/mobile_segments_test_cases.json")
+        let data = JsonTestDataLoader().fromJsonFile("Res/mobile_segments_test_cases.json")
         XCTAssertNotNil(data)
 
         let cases = try JSONDecoder().decode([UsageSegmentationTestCase].self, from: data)

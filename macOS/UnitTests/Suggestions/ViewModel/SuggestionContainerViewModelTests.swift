@@ -382,9 +382,8 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     // MARK: - AI Chat Footer Cell Tests
 
     @MainActor
-    func testWhenAIChatToggleAndFeaturesEnabled_ThenAIChatCellAppearsInFooter() {
+    func testWhenAIFeaturesEnabled_ThenAIChatCellAppearsInFooter() {
         // Cluster removed: the AI chat cell only ever appears in the footer, never at the top
-        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle]
         let aiChatStorage = MockAIChatPreferencesStorage()
         aiChatStorage.isAIFeaturesEnabled = true
 
@@ -411,8 +410,10 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAIChatToggleDisabled_ThenListShowsOnlySuggestions() {
-        // Setup without AI chat toggle
+    func testWhenAIFeaturesDisabled_ThenListShowsOnlySuggestions() {
+        // Setup with AI features disabled
+        let aiChatStorage = MockAIChatPreferencesStorage()
+        aiChatStorage.isAIFeaturesEnabled = false
 
         suggestionContainerViewModel = SuggestionContainerViewModel(
             isHomePage: false,
@@ -424,14 +425,14 @@ final class SuggestionContainerViewModelTests: XCTestCase {
             ),
             themeManager: MockThemeManager(),
             featureFlagger: featureFlagger,
-            aiChatPreferencesStorage: MockAIChatPreferencesStorage()
+            aiChatPreferencesStorage: aiChatStorage
         )
 
         suggestionContainerViewModel.setUserStringValue("test query", userAppendedStringToTheEnd: false)
         suggestionLoadingMock.completion?(SuggestionResult.noTopHitsResult, nil)
 
-        // No AI chat cell should appear when the toggle is disabled
-        XCTAssertEqual(suggestionContainerViewModel.numberOfFooterRows, 0, "Footer should have no rows when toggle disabled")
+        // No AI chat cell should appear when AI features are disabled
+        XCTAssertEqual(suggestionContainerViewModel.numberOfFooterRows, 0, "Footer should have no rows when AI features disabled")
 
         // First row should be a suggestion
         XCTAssertEqual(suggestionContainerViewModel.rowContent(at: 0), .suggestion(index: 0))
@@ -439,8 +440,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenAIFeaturesDisabledAfterInit_ThenAIChatCellFooterIsHidden() {
-        // AI chat toggle enabled: AI chat always appears in the footer
-        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle]
+        // AI features enabled: AI chat always appears in the footer
         let aiChatStorage = MockAIChatPreferencesStorage()
         aiChatStorage.isAIFeaturesEnabled = true
 

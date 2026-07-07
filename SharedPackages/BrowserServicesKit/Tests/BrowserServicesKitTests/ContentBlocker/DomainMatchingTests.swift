@@ -49,8 +49,8 @@ class DomainMatchingTests: XCTestCase {
     private var data = JsonTestDataLoader()
 
     func testDomainMatchingRules() throws {
-        let trackerJSON = data.fromJsonFile("Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_radar_reference.json")
-        let testJSON = data.fromJsonFile("Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/domain_matching_tests.json")
+        let trackerJSON = data.fromJsonFile("Res/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_radar_reference.json")
+        let testJSON = data.fromJsonFile("Res/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/domain_matching_tests.json")
 
         let trackerData = try JSONDecoder().decode(TrackerData.self, from: trackerJSON)
 

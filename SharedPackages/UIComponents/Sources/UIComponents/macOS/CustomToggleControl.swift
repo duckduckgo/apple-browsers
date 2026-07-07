@@ -116,6 +116,18 @@ public final class CustomToggleControl: NSControl {
         }
     }
 
+    public var indicatorGap: CGFloat = 2 {
+        didSet {
+            needsDisplay = true
+        }
+    }
+
+    public var indicatorHorizontalInset: CGFloat = 0 {
+        didSet {
+            needsDisplay = true
+        }
+    }
+
     /// Suppresses Core Animation's default 0.25s implicit transition on animatable layer
     /// properties — without this, a theme switch or light/dark flip would cross-fade the
     /// focus ring colour instead of snapping to it.
@@ -479,11 +491,10 @@ public final class CustomToggleControl: NSControl {
         let leftRect = NSRect(x: 0, y: 0, width: bounds.width / 2, height: bounds.height)
         let rightRect = NSRect(x: bounds.width / 2, y: 0, width: bounds.width / 2, height: bounds.height)
 
-        let indicatorGap: CGFloat = 2.0
         let availableWidth = bounds.width - (indicatorGap * 2)
         let availableHeight = bounds.height - (indicatorGap * 2)
 
-        let indicatorWidth = availableWidth / 2
+        let indicatorWidth = availableWidth / 2 + indicatorHorizontalInset
         let indicatorHeight = availableHeight
 
         let indicatorMaxX = availableWidth - indicatorWidth

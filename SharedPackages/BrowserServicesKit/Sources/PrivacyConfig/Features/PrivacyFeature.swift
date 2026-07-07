@@ -114,6 +114,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Hang reporting feature flag
     case hangReporting
 
+    /// App rebranding feature flag
+    case appRebranding
+
     /// Remote kill switch for native unsupported-OS messaging (launch alert, About/Feedback info box).
     /// Enabled by default; set to `disabled` in privacy config to suppress the messaging.
     case osSupportWarning
@@ -139,6 +142,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Hide manual update option and always use automatic updates
     case automaticUpdatesOnly
+
+    /// Skip the automatic update check triggered when the release notes page loads
+    case skipReleaseNotesUpdateCheck
 
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
@@ -261,18 +267,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
-    /// Production observability for the hard-to-reproduce "web view scroll frozen, taps still work" bug:
-    /// a passive scroll-failure observer plus the symptom/mechanism pixels. On by default for everyone;
-    /// ship a privacy-config entry to roll back.
-    case webScrollFreezeObservability
-
-    /// Internal-only gate for the heavier on-device freeze capture (snapshot + ring buffer), kept separate
-    /// from `webScrollFreezeObservability` so the production observer ships without the capture.
-    case webScrollFreezeCapture
-
-    /// Speculative, scoped auto-recovery triggered on a confirmed freeze; default internal/off.
-    case webScrollFreezeAutoRecovery
-
     case screenTimeCleaning
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
@@ -375,7 +369,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlistBetaActive
     case freemium
     case remoteBrokerDelivery
-    case emailConfirmationDecoupling
     case foregroundRunningOnAppActive
     case continuedProcessing
     case pirRollout
@@ -446,9 +439,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Duck.ai query experiment with tracker-blocking demo during onboarding
     case onboardingDuckAIQueryTrackersDemoExperiment
 
-    /// Enables the omnibar toggle for AI Chat
-    case omnibarToggle
-
     /// Enables the omnibar onboarding for AI Chat
     case omnibarOnboarding
 
@@ -470,6 +460,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
     /// roll out the new Duck.ai-tab nav UI (no toggle on chat) independently of the master flag.
     case aiChatTabHideToggle
+
+    /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
+    case contextualUnifiedToggleInput
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
@@ -525,9 +518,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables voice chat shortcut in the focused address bar
     case voiceShortcut
-
-    /// Enables improved contextual sheet UX (welcome message, ask about page, etc.)
-    case contextualSheetImprovements
 
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
@@ -602,6 +592,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the native Duck.ai bar controls (model picker) in the iPad address bar's
     /// expanded Duck.ai input area.
     case iPadDuckAIBarControls
+
+    /// Enables the macOS native "Customize Responses" UI (omnibar + New Tab Page entry points).
+    case customizeResponses
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -708,6 +701,7 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case filterlist
     case heuristicAction
     case cookiePopupPreferenceSetting
+    case cookiePopupOptInDialog
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {

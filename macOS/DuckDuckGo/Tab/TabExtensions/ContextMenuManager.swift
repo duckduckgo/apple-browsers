@@ -481,7 +481,7 @@ private extension ContextMenuManager {
         }
 
         self.onNewWindow = { navigationAction in
-            guard navigationAction.request.url?.matches(url) ?? false else {
+            guard navigationAction.request.url?.equals(url, by: .fuzzyIdentity) ?? false else {
                 Logger.navigation.debug("ContextMenuManager.onNewWindow: ignoring `\(navigationAction.request.url?.shortDescription ??? "<nil>")`")
                 return nil
             }

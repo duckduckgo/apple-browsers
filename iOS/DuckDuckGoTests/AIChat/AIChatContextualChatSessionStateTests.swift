@@ -1091,7 +1091,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     func testQuickActionsIsAskAboutPageWhenSuggestedPromptsOnAndPlaceholder() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements, .contextualSuggestedPrompts]
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -1104,7 +1104,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     func testQuickActionsIsEmptyWhenSuggestedPromptsOnAndAttached() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualSheetImprovements, .contextualSuggestedPrompts]
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,

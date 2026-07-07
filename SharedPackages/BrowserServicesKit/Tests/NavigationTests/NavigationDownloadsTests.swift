@@ -231,7 +231,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
 
         var frameIDs = [String: UInt64]()
         responder(at: 0).onNavigationAction = { [urls] navAction, _ in
-            guard navAction.url.matches(urls.local) else {
+            guard navAction.url.equals(urls.local, by: .fuzzyIdentity) else {
 #if _FRAME_HANDLE_ENABLED
                 frameIDs[navAction.url.path] = navAction.targetFrame?.handle.frameID
                 XCTAssertNotEqual(navAction.targetFrame?.handle.frameID, WKFrameInfo.defaultMainFrameHandle)
@@ -293,7 +293,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
 
         var frameIDs = [String: UInt64]()
         responder(at: 0).onNavigationAction = { [urls] navAction, _ in
-            if !navAction.url.matches(urls.local) {
+            if !navAction.url.equals(urls.local, by: .fuzzyIdentity) {
 #if _FRAME_HANDLE_ENABLED
                 frameIDs[navAction.url.path] = navAction.targetFrame?.handle.frameID
                 XCTAssertNotEqual(navAction.targetFrame?.handle.frameID, WKFrameInfo.defaultMainFrameHandle)
@@ -302,7 +302,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
             return .allow
         }
         responder(at: 0).onNavigationResponse = { [urls] navResponse in
-            guard navResponse.url.matches(urls.local) else {
+            guard navResponse.url.equals(urls.local, by: .fuzzyIdentity) else {
                 return .download
             }
             return .allow

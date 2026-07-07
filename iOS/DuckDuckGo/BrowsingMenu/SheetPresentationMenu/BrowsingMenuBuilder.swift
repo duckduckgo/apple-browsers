@@ -105,11 +105,6 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         var sections = [BrowsingMenuModel.Section]()
 
-        // MARK: Fire Mode Promotion
-        if let fireModePromotionEntry = BrowsingMenuModel.Entry(entryBuilder.makeFireModePromotionEntry()) {
-            sections.append(BrowsingMenuModel.Section(items: [fireModePromotionEntry]))
-        }
-
         sections.append(BrowsingMenuModel.Section(items: shortcutsItems))
 
         // MARK: Duck.ai group
@@ -144,11 +139,6 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         // MARK: YouTube Ad Block toggle
         if let youTubeAdBlockEntry = BrowsingMenuModel.Entry(entryBuilder.makeYouTubeAdBlockToggleEntry()) {
             sections.append(BrowsingMenuModel.Section(items: [youTubeAdBlockEntry]))
-        }
-
-        // MARK: Fire Mode Promotion
-        if let fireModePromotionEntry = BrowsingMenuModel.Entry(entryBuilder.makeFireModePromotionEntry()) {
-            sections.append(BrowsingMenuModel.Section(items: [fireModePromotionEntry]))
         }
 
         if options.mergeActionsAndBookmarks {

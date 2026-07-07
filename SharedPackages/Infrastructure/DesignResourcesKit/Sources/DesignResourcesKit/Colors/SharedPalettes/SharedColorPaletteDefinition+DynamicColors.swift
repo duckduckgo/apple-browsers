@@ -146,6 +146,8 @@ extension SharedColorPaletteDefinition {
             return controlsRaisedBackdrop
         case .controlsRaisedFillPrimary:
             return controlsRaisedFillPrimary
+        case .controlsSubtleFillSecondary:
+            return controlsSubtleFillSecondary
 
         /// Destructive Colors
         case .destructiveContentPrimary:
@@ -248,6 +250,13 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: Color(0x857A6E))
         case .permissionReloadButtonText:
             return DynamicColor(lightColor: Color(0x333333), darkColor: Color(0xE8E8E8))
+        }
+    }
+
+    static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
+        switch singleUseColor {
+        case .fireModeAccent:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
         }
     }
 }

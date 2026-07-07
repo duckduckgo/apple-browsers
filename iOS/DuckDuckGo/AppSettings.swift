@@ -103,6 +103,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     
     var currentFireButtonAnimation: FireButtonAnimationType { get set }
     var currentAddressBarPosition: AddressBarPosition { get set }
+    var keepAddressBarVisibleOnIPad: Bool { get set }
     var currentRefreshButtonPosition: RefreshButtonPosition { get set }
     var showFullSiteAddress: Bool { get set }
     var showTrackersBlockedAnimation: Bool { get set }

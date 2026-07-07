@@ -1,7 +1,7 @@
 GIT
   remote: https://github.com/duckduckgo/fastlane-plugin-ddg_apple_automation
-  revision: 296c4e8ca6e2fc6958857cdd5261ac584b9221e1
-  tag: 4.1.3
+  revision: c51aff9c682a93254ce654e36ec58404f596d6e1
+  tag: 4.1.4
   specs:
     fastlane-plugin-ddg_apple_automation (4.1.3)
       asana
@@ -61,7 +61,7 @@ GEM
     dotenv (2.8.1)
     emoji_regex (3.2.3)
     excon (0.112.0)
-    faraday (1.10.5)
+    faraday (1.10.6)
       faraday-em_http (~> 1.0)
       faraday-em_synchrony (~> 1.0)
       faraday-excon (~> 1.1)

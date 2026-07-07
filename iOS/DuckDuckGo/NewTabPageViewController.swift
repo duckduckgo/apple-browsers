@@ -78,6 +78,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private var didHideBarsForChatPathVisitSiteDialog = false
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
+    private let floatingUIManager: FloatingUIManaging
 
     private let internalUserCommands: URLBasedDebugCommands
     private let tutorialSettings: TutorialSettings
@@ -85,6 +86,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     var onViewDidAppear: (() -> Void)?
 
     init(isFocussedState: Bool,
+         openedAfterIdle: Bool = false,
          dismissKeyboardOnScroll: Bool,
          tab: Tab,
          interactionModel: FavoritesListInteracting,
@@ -97,13 +99,13 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          remoteMessagingActionHandler: RemoteMessagingActionHandling,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          remoteMessagingPixelReporter: RemoteMessagingPixelReporting? = nil,
-         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
          appSettings: AppSettings,
          faviconsCache: FavoritesFaviconCaching,
          subscriptionManager: any SubscriptionManager,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         floatingUIManager: FloatingUIManaging = FloatingUIManager(),
          appWidthObserver: AppWidthObserver = .shared,
          tutorialSettings: TutorialSettings = DefaultTutorialSettings()) {
 
@@ -113,10 +115,12 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.onboardingFlowProvider = onboardingFlowProvider
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
+        self.floatingUIManager = floatingUIManager
         self.internalUserCommands = internalUserCommands
         self.tutorialSettings = tutorialSettings
 
         newTabPageViewModel = NewTabPageViewModel(fireTab: tab.fireTab)
+        newTabPageViewModel.openedAfterIdle = openedAfterIdle
         favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader,
@@ -127,8 +131,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
                                                 pixelReporter: remoteMessagingPixelReporter,
-                                                fireModePromotionEligibility: fireModePromotionEligibility,
-                                                isOpenedAfterIdle: { [weak viewModel] in viewModel?.escapeHatch != nil })
+                                                isOpenedAfterIdle: { [weak viewModel] in viewModel?.openedAfterIdle ?? false })
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,
@@ -139,16 +142,18 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoritesViewModel: self.favoritesModel))
 
         assignFavoriteModelActions()
-        messagesModel.onTryFireModeRequested = { [weak self] in
-            guard let self else { return }
-            self.delegate?.newTabPageDidRequestTryFireMode(self)
-        }
     }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         newTabPageViewModel.escapeHatch = model
+        newTabPageViewModel.openedAfterIdle = (model != nil)
         messagesModel.refresh()
         updateBorderView()
+    }
+
+    func setOpenedAfterIdle(_ openedAfterIdle: Bool) {
+        newTabPageViewModel.openedAfterIdle = openedAfterIdle
+        messagesModel.refresh()
     }
 
     func setChromeLayoutContext(isBorderSuppressed: Bool) {
@@ -215,6 +220,15 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     }
 
     func updateBorderView() {
+        // Floating UI overlays a glass omnibar over the page surface, so the framing border would
+        // expose a strip artifact. Suppress it entirely while floating UI is enabled.
+        if floatingUIManager.isFloatingUIEnabled {
+            borderView.isHidden = true
+            borderView.isTopVisible = false
+            borderView.isBottomVisible = false
+            return
+        }
+
         if !favoritesModel.isEmpty, isViewLoaded {
             borderView.insertSelf(into: view)
         }

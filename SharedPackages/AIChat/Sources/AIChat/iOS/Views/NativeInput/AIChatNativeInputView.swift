@@ -123,6 +123,7 @@ public final class AIChatNativeInputView: UIView {
         textView.textContainerInset = Constants.textContainerInset
         textView.isScrollEnabled = false
         textView.delegate = self
+        textView.accessibilityIdentifier = "AIChatNativeInputView.textView"
         textView.translatesAutoresizingMaskIntoConstraints = false
         return textView
     }()

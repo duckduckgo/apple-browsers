@@ -1,5 +1,5 @@
 {
-  "originHash" : "399ffe891d58229e9fdc5b46e0d999a9481c9aa1009cf67739fad28c70378bb5",
+  "originHash" : "67e77c60be7b6e941731ca7424f7e3551bcccc3a2ab089ad692ba37aadf84950",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "5735b061ee14708ca17bc5b72b8eb9d21eb7f830",
-        "version" : "15.3.0"
+        "revision" : "b08079e6b77c160fcc9a3ad1237c1338cb76e984",
+        "version" : "15.8.0"
       }
     },
     {
@@ -231,8 +231,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup",
       "state" : {
-        "revision" : "49dcadd93161f4a44b4994d3a3e8de9f085aface",
-        "version" : "2.13.5"
+        "revision" : "ead56133a693d0184d8c2db1a6d6394410cacfd6",
+        "version" : "2.13.6"
       }
     },
     {

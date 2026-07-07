@@ -28,7 +28,6 @@ final class SuggestionTableRowView: NSTableRowView {
         super.awakeFromNib()
 
         setupView()
-        updateBackgroundColor()
     }
 
     override var isEmphasized: Bool {
@@ -39,9 +38,7 @@ final class SuggestionTableRowView: NSTableRowView {
     override var isSelected: Bool {
         didSet {
             updateCellView()
-            updateBackgroundColor()
-
-            layer?.cornerRadius = theme?.addressBarStyleProvider.suggestionHighlightCornerRadius ?? 3
+            needsDisplay = true
         }
     }
 
@@ -52,11 +49,22 @@ final class SuggestionTableRowView: NSTableRowView {
         wantsLayer = true
     }
 
-    private func updateBackgroundColor() {
-        let highlightColor: NSColor = theme?.palette.accentPrimary ?? .controlAccentColor
-        let selectedColor: NSColor = isBurner ? .burnerAccent : highlightColor
+    override func drawBackground(in dirtyRect: NSRect) {
+        guard isSelected, let theme else {
+            return
+        }
 
-        backgroundColor = isSelected ? selectedColor : .clear
+        let styleProvider = theme.addressBarStyleProvider
+        let fillColor: NSColor = isBurner ? .burnerAccent : theme.palette.accentPrimary
+
+        let cornerRadius = styleProvider.suggestionHighlightCornerRadius
+        let horizontalPadding = styleProvider.suggestionHighlightHorizontalPadding
+
+        let selectionRect = bounds.insetBy(dx: horizontalPadding, dy: 0)
+        let path = NSBezierPath(roundedRect: selectionRect, xRadius: cornerRadius, yRadius: cornerRadius)
+
+        fillColor.setFill()
+        path.fill()
     }
 
     private func updateCellView() {
@@ -72,7 +80,7 @@ final class SuggestionTableRowView: NSTableRowView {
         super.layout()
 
         updateCellView()
-        updateBackgroundColor()
+        needsDisplay = true
     }
 
 }

@@ -39,6 +39,13 @@ protocol AIChatUserScriptProviding: AnyObject {
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?)
     func submitStartChatAction()
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -98,6 +105,14 @@ protocol AIChatContentHandling: AnyObject {
     /// Submits a prompt to the AI Chat with optional page context.
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
 
+    /// Submits a rich native prompt to the AI Chat.
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction()
@@ -144,6 +159,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let statisticsLoader: StatisticsLoader
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let debugSettings: AIChatDebugSettingsHandling
+    private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
 
     private var userScript: AIChatUserScriptProviding?
 
@@ -162,6 +178,7 @@ final class AIChatContentHandler: AIChatContentHandling {
          statisticsLoader: StatisticsLoader = .shared,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
          getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
@@ -172,6 +189,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.statisticsLoader = statisticsLoader
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.debugSettings = debugSettings
+        self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
         self.getPageContext = getPageContext
     }
 
@@ -233,7 +251,7 @@ final class AIChatContentHandler: AIChatContentHandling {
 
         if isNativeInputParameterSupported(for: aiChatSettings.aiChatURL) {
             queryItems.removeAll { $0.name == AIChatURLParameters.nativeInputName }
-            if unifiedToggleInputFeature.isAvailable {
+            if unifiedToggleInputFeature.isAvailable || iPadDuckAIControlsFeature.isAvailable {
                 queryItems.append(URLQueryItem(name: AIChatURLParameters.nativeInputName, value: AIChatURLParameters.nativeInputValue))
             }
         }
@@ -257,6 +275,16 @@ final class AIChatContentHandler: AIChatContentHandling {
             Logger.aiChat.debug("[PageContext] Prompt submitted without context")
         }
         userScript?.submitPrompt(prompt, pageContext: pageContext)
+    }
+
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?) {
+        userScript?.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools, pageContext: pageContext, reasoningEffort: reasoningEffort)
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
@@ -292,7 +320,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private func updatingNativeInputParameterIfNeeded(in url: URL) -> URL {
         AIChatURLParameters.updatingNativeInputURL(
             from: url,
-            isNativeInputAvailable: unifiedToggleInputFeature.isAvailable,
+            isNativeInputAvailable: unifiedToggleInputFeature.isAvailable || iPadDuckAIControlsFeature.isAvailable,
             isSupportedURL: isNativeInputParameterSupported(for: url)
         )
     }

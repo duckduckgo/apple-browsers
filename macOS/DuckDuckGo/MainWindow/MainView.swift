@@ -303,9 +303,13 @@ final class MainView: NSView {
     func setupAIChatOmnibarTextContainerConstraints(addressBarStack: NSView) {
         aiChatOmnibarTextContainerView.translatesAutoresizingMaskIntoConstraints = false
 
+        let styleProvider = themeManager.theme.addressBarStyleProvider
+        let topPadding = styleProvider.aiChatOmnibarTextContainerTopPadding
+        let leadingPadding = styleProvider.aiChatOmnibarTextContainerLeadingPadding
+
         NSLayoutConstraint.activate([
-            aiChatOmnibarTextContainerView.topAnchor.constraint(equalTo: addressBarStack.topAnchor, constant: 5),
-            aiChatOmnibarTextContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor, constant: 10),
+            aiChatOmnibarTextContainerView.topAnchor.constraint(equalTo: addressBarStack.topAnchor, constant: topPadding),
+            aiChatOmnibarTextContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor, constant: leadingPadding),
             aiChatOmnibarTextContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor, constant: -78),
         ])
 

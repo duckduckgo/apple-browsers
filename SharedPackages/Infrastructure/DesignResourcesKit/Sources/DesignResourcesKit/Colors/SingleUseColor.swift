@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
+
 /// Semantic colors used for single use case.
 ///
 /// - Important: When used in multiple places, it should be proposed to promote the color to `DesignSystemColor`.
@@ -26,6 +28,9 @@ public enum SingleUseColor {
 
     /// Color used for separator line between text input and content
     case inputContentSeparator
+
+    /// Resting background fill for the floating address bar field (composites over the toolbar's Liquid Glass capsule)
+    case floatingAddressBarBackground
 
     /// Color used for what's New background
     case whatsNewBackground
@@ -62,6 +67,9 @@ public enum SingleUseColor {
     case fireModeAccentTertiary
     case fireModeBackground
     case fireModeCardBackground
+
+    // Duck.ai Grid Cell
+    case duckAIVoiceCellBackground
 }
 
 // MARK: - Onboarding Rebranding 2026
@@ -105,3 +113,5 @@ public extension SingleUseColor {
     }
 
 }
+
+#endif

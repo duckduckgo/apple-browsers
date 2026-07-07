@@ -237,19 +237,30 @@ private extension UIButton.Configuration {
 
 extension BrowserChromeButton {
 
-    static func createToolbarButtonItem(title: String, image: UIImage?, action: (() -> Void)? = nil) -> UIBarButtonItem {
+    static func createToolbarButton(title: String, image: UIImage?, action: (() -> Void)? = nil) -> BrowserChromeButton {
         let button = BrowserChromeButton(.toolbar)
-        if let image = image {
+        if let image {
             button.setImage(image)
         }
 
-        if let action = action {
-            button.addAction(UIAction{ _ in
+        if let action {
+            button.addAction(UIAction { _ in
                 action()
             }, for: .touchUpInside)
         }
 
-        button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        button.accessibilityLabel = title
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 34),
+            button.heightAnchor.constraint(equalToConstant: 44),
+        ])
+
+        return button
+    }
+
+    static func createToolbarButtonItem(title: String, image: UIImage?, action: (() -> Void)? = nil) -> UIBarButtonItem {
+        let button = createToolbarButton(title: title, image: image, action: action)
 
         let barItem = UIBarButtonItem(customView: button)
 

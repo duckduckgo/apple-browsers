@@ -458,7 +458,7 @@ final class FaviconManager: FaviconManagement {
 
                         return FetchedFavicon(link: faviconLink, data: data, image: image)
                     } catch {
-                        Logger.favicons.error("Error downloading Favicon from \(faviconUrl.absoluteString): \(error.localizedDescription)")
+                        Logger.favicons.error("Error downloading Favicon from \(faviconUrl.shortDescription): \(error.localizedDescription)")
                         return nil
                     }
                 }

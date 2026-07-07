@@ -154,11 +154,11 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     }
 
     private func runJob() async {
-        let allBrokerProfileQueryData: [BrokerProfileQueryData]
+        let brokerProfileQueryData: [BrokerProfileQueryData]
 
         do {
-            // Jobs for removed brokers will already be prevented from being scheduled upstream and are filtered below to the specific broker ID
-            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(reason: .specificBrokerJobDispatch)
+            // Jobs for removed brokers are already prevented from being scheduled upstream.
+            brokerProfileQueryData = try jobDependencies.database.fetchBrokerProfileQueryData(forBrokerId: dataBrokerID)
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return
@@ -166,8 +166,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
         let isAuthenticatedUser = await jobDependencies.isAuthenticatedUser()
         let isFreeScan = !isAuthenticatedUser
-        let brokerProfileQueriesData = allBrokerProfileQueryData
-            .filter { $0.dataBroker.id == dataBrokerID }
+        let brokerProfileQueriesData = brokerProfileQueryData
             .excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
         let filteredAndSortedJobData = makeFilteredAndSortedJobData(brokerProfileQueriesData, isFreeScan: isFreeScan)

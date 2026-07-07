@@ -29,6 +29,9 @@ public struct UserText {
     public static let addressBarPositionBottom = NSLocalizedString("address.bar.bottom", value: "Bottom", comment: "Settings label for bottom position for the address bar")
 
     public static let appUnlock = NSLocalizedString("app.authentication.unlock", value: "Unlock DuckDuckGo.", comment: "Shown on authentication screen")
+    public static let appUnlockInstructions = NSLocalizedString("app.authentication.unlock.instructions",
+                                                                value: "Tap anywhere to unlock",
+                                                                comment: "Instruction shown on authentication screen after authentication fails")
     public static let searchDuckDuckGo = NSLocalizedString("search.hint.duckduckgo", value: "Search or enter address", comment: "")
     public static let webSaveBookmarkDone = NSLocalizedString("web.url.save.bookmark.done", value: "Bookmark added", comment: "Confirmation message")
     public static let webBookmarkAlreadySaved = NSLocalizedString("web.url.save.bookmark.exists", value: "Bookmark already saved", comment: "Floating Info message")
@@ -86,22 +89,6 @@ public struct UserText {
     public static let fireModeEmptyStateDescription = NSLocalizedString("fire.mode.empty.state.description", value: "Fire Tabs are isolated from other browser data. Their data is burned when you close them all. They give you the same tracking protection as other tabs.", comment: "Description explaining how Fire Tabs work on the empty state screen")
     public static let fireModeEmptyStateNewFireTab = NSLocalizedString("fire.mode.empty.state.new.fire.tab", value: "New Fire Tab", comment: "Button label to create a new Fire Tab on the empty state screen")
 
-    // MARK: Fire Mode NTP Promotion
-
-    public static let fireModePromotionTitle = NSLocalizedString("fire.mode.promotion.title", value: "Try Fire Tabs", comment: "Title for promotion element for pushing users to try fire mode.")
-    public static let fireModeNTPPromotionDescription = NSLocalizedString("fire.mode.ntp.promotion.description", value: "New! Browse without saving local history or sign in to sites with a different account.", comment: "Description for the Fire Mode promotion card shown on the new tab page")
-    public static let fireModeNTPPromotionPrimaryAction = NSLocalizedString("fire.mode.ntp.promotion.primary.action", value: "Try Fire Tabs", comment: "Primary action button on the Fire Mode promotion card that opens Fire Mode")
-    public static let fireModeNTPPromotionDismiss = NSLocalizedString("fire.mode.ntp.promotion.dismiss", value: "Not Now", comment: "Dismiss button on the Fire Mode promotion card on the new tab page")
-
-    // MARK: Fire Mode Tab Switcher Tip
-
-    public static let fireModeTabSwitcherTipTitle = NSLocalizedString("fire.mode.tab.switcher.tip.title", value: "New: Fire Tabs", comment: "Title for the Fire Tabs popover tip shown on the tab switcher picker")
-    public static let fireModeTabSwitcherTipDescription = NSLocalizedString("fire.mode.tab.switcher.tip.description", value: "Try Fire Tabs to browse without saving local history.", comment: "Description for the Fire Tabs popover tip shown on the tab switcher picker")
-
-    // MARK: Fire Mode Menu Promotion
-
-    public static let fireModeMenuPromotionBadge = NSLocalizedString("fire.mode.menu.promotion.badge", value: "New", comment: "Badge label on the Fire Mode promotion entry in the browsing menu")
-
     // MARK: - Tab Switcher Fire Mode
     public static let openNewTab = NSLocalizedString("tab.open.new", value: "Open new tab", comment: "Accessibility label on tab cell")
     public static let openNewFireTab = NSLocalizedString("tab.open.newFireTab", value: "Open fire tab", comment: "Accessibility label on tab cell")
@@ -156,12 +143,12 @@ public struct UserText {
     public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
     public static let sectionTitleSuggestions = NotLocalizedString("section.title.suggestions", value: "Suggestions", comment: "Section header title above search suggestions")
     public static let aiChatSuggestedChatsTitle = NotLocalizedString("aiChat.suggestedChats.title", value: "Chats", comment: "Section header title above suggested Duck.ai chats")
-    public static let aiChatTabSwitcherCardChipChat = NotLocalizedString("aiChat.tabSwitcher.card.chip.chat", value: "Chat", comment: "Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation.")
-    public static let aiChatTabSwitcherCardChipTranscript = NotLocalizedString("aiChat.tabSwitcher.card.chip.transcript", value: "Transcript", comment: "Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatTabSwitcherCardVoiceListening = NotLocalizedString("aiChat.tabSwitcher.card.voice.listening", value: "🎙️ Listening…", comment: "Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. The leading emoji is part of the copy. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatTabSwitcherCardVoiceListeningAccessibilityLabel = NotLocalizedString("aiChat.tabSwitcher.card.voice.listening.accessibilityLabel", value: "Listening…", comment: "VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatTabSwitcherCardChipVoice = NotLocalizedString("aiChat.tabSwitcher.card.chip.voice", value: "Voice", comment: "Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR.")
-    public static let aiChatTabSwitcherCardUntitledChat = NotLocalizedString("aiChat.tabSwitcher.card.untitledChat", value: "New Chat", comment: "Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR.")
+    public static let aiChatTabSwitcherCardChipChat = NSLocalizedString("aiChat.tabSwitcher.card.chip.chat", value: "Chat", comment: "Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation.")
+    public static let aiChatTabSwitcherCardChipTranscript = NSLocalizedString("aiChat.tabSwitcher.card.chip.transcript", value: "Transcript", comment: "Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation.")
+    public static let aiChatTabSwitcherCardVoiceListening = NSLocalizedString("aiChat.tabSwitcher.card.voice.listening", value: "Listening…", comment: "Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI.")
+    public static let aiChatTabSwitcherCardVoiceListeningAccessibilityLabel = NSLocalizedString("aiChat.tabSwitcher.card.voice.listening.accessibilityLabel", value: "Listening…", comment: "VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji.")
+    public static let aiChatTabSwitcherCardChipVoice = NSLocalizedString("aiChat.tabSwitcher.card.chip.voice", value: "Voice Chat", comment: "Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session.")
+    public static let aiChatTabSwitcherCardUntitledChat = NSLocalizedString("aiChat.tabSwitcher.card.untitledChat", value: "New Chat", comment: "Title shown on a Duck.ai tab grid card when the chat has no title yet.")
 
     public static let aiChatSyncPromoTitle = NSLocalizedString("aiChat.syncPromo.title", value: "Access your chats across your devices using Sync & Backup.", comment: "Headline of the sync promo card shown above the Duck.ai recent chats list.")
     public static let aiChatSyncPromoButton = NSLocalizedString("aiChat.syncPromo.button", value: "Sync With Another Device", comment: "Primary button of the sync promo card shown above the Duck.ai recent chats list.")
@@ -378,6 +365,12 @@ public struct UserText {
 
     public static let deselectAllTabs = NSLocalizedString("tab.select.none", value: "Deselect All", comment: "Deselect all tabs")
 
+    // Needs to be localised later.
+    public static let tabSwitcherGridViewMenuTitle = NotLocalizedString("tab.switcher.grid.view.menu.title", value: "Grid", comment: "Menu item that switches the tab switcher to a grid layout")
+
+    // Needs to be localised later.
+    public static let tabSwitcherListViewMenuTitle = NotLocalizedString("tab.switcher.list.view.menu.title", value: "List", comment: "Menu item that switches the tab switcher to a list layout")
+
     public static func alertTitleBookmarkSelectedTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleBookmarkSelectedTabs.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
@@ -504,6 +497,22 @@ public struct UserText {
     public static let autoconsentEnabled = NSLocalizedString("autoconsent.enabled", value: "Enabled", comment: "Autoconsent for Cookie Management Setting state")
     public static let autoconsentDisabled = NSLocalizedString("autoconsent.disabled", value: "Disabled", comment: "Autoconsent for Cookie Management Setting state")
     public static let autoconsentInfoText = NSLocalizedString("autoconsent.info.header", value: "When DuckDuckGo detects cookie consent pop-ups on sites you visit, we can try to automatically set your cookie preferences to minimize cookies and maximize privacy, then close the pop-ups. Some sites don't provide an option to manage cookie preferences, so we can only hide pop-ups like these.", comment: "")
+
+    // MARK: - Cookie Pop-up Protection Opt-In Dialog
+    public static let cookiePopupProtectionOptInBadge = NSLocalizedString("cookie-popup-protection.opt-in.badge", value: "New", comment: "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header")
+    public static let cookiePopupProtectionOptInHeader = NSLocalizedString("cookie-popup-protection.opt-in.header", value: "Cookie Pop-up Protection", comment: "Header of the Cookie Pop-up Protection opt-in dialog")
+    public static let cookiePopupProtectionOptInConfirm = NSLocalizedString("cookie-popup-protection.opt-in.confirm", value: "Confirm", comment: "Confirm button in the Cookie Pop-up Protection opt-in dialog")
+    public static let cookiePopupProtectionOptInFooter = NSLocalizedString("cookie-popup-protection.opt-in.footer", value: "You can always adjust later in\n**Settings** > **Cookie Pop-Up Protection**.", comment: "Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold.")
+    // Variant shown when Cookie Pop-up Protection is already ON
+    public static let cookiePopupProtectionOptInEnabledTitle = NSLocalizedString("cookie-popup-protection.opt-in.enabled.title", value: "Tired of cookie pop-ups that don't let you opt out?", comment: "Title of the opt-in dialog when cookie pop-up protection is already enabled")
+    public static let cookiePopupProtectionOptInEnabledBody = NSLocalizedString("cookie-popup-protection.opt-in.enabled.body", value: "We can save you a click and accept these cookies for you.", comment: "Body of the opt-in dialog when cookie pop-up protection is already enabled")
+    public static let cookiePopupProtectionOptInEnabledPrimaryOption = NSLocalizedString("cookie-popup-protection.opt-in.enabled.primary-option", value: "Accept no-opt-out cookies for me", comment: "Primary (recommended) option when cookie pop-up protection is already enabled")
+    public static let cookiePopupProtectionOptInEnabledSecondaryOption = NSLocalizedString("cookie-popup-protection.opt-in.enabled.secondary-option", value: "I'll keep handling them myself", comment: "Secondary option when cookie pop-up protection is already enabled")
+    // Variant shown when Cookie Pop-up Protection is OFF
+    public static let cookiePopupProtectionOptInDisabledTitle = NSLocalizedString("cookie-popup-protection.opt-in.disabled.title", value: "Tired of cookie pop-ups that won't leave you alone?", comment: "Title of the opt-in dialog when cookie pop-up protection is off")
+    public static let cookiePopupProtectionOptInDisabledBody = NSLocalizedString("cookie-popup-protection.opt-in.disabled.body", value: "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you.", comment: "Body of the opt-in dialog when cookie pop-up protection is off")
+    public static let cookiePopupProtectionOptInDisabledPrimaryOption = NSLocalizedString("cookie-popup-protection.opt-in.disabled.primary-option", value: "Manage or accept cookies for me", comment: "Primary (recommended) option when cookie pop-up protection is off")
+    public static let cookiePopupProtectionOptInDisabledSecondaryOption = NSLocalizedString("cookie-popup-protection.opt-in.disabled.secondary-option", value: "I'll keep handling them myself", comment: "Secondary option when cookie pop-up protection is off")
 
     public static let emailBrowsingMenuUseNewDuckAddress = NSLocalizedString("email.browsingMenu.useNewDuckAddress", value: "Generate Private Duck Address", comment: "Email option title in the browsing menu")
     public static let emailBrowsingMenuAlert = NSLocalizedString("email.browsingMenu.alert", value: "New address copied to your clipboard", comment: "Title for the email copy browsing menu alert")
@@ -649,10 +658,6 @@ public struct UserText {
     public static let autofillOnboardingKeyFeaturesSecureStorageDescription = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description", value: "Passwords are encrypted, stored on device, and locked with Face ID or passcode.", comment: "Description of autofill onboarding prompt's secure storage feature")
     public static let autofillOnboardingKeyFeaturesSyncTitle = NSLocalizedString("autofill.onboarding.key-features.sync.title", value: "Sync between devices", comment: "Title of autofill onboarding prompt's sync feature")
     public static let autofillOnboardingKeyFeaturesSyncDescription = NSLocalizedString("autofill.onboarding.key-features.sync.description", value: "End-to-end encrypted and easy to set up when you’re ready.", comment: "Description of autofill onboarding prompt's sync feature")
-    public static let autofillSaveLoginNoThanksCTA = NSLocalizedString("autofill.save-login.no-thanks.CTA", value: "No Thanks", comment: "CTA displayed on modal asking if the user wants to dismiss the save login action for now")
-
-    public static let autofillSaveLoginNotNowCTA = NSLocalizedString("autofill.save-login.not-now.CTA", value: "Not Now", comment: "CTA displayed on modal allowing the user to dismiss the save login prompt for now")
-
     public static let autofillSavePasswordSaveCTA = NSLocalizedString("autofill.save-password.save.CTA", value: "Save Password", comment: "Confirm CTA displayed on modal asking for the user to save the password")
     public static let autofillUpdatePasswordSaveCTA = NSLocalizedString("autofill.update-password.save.CTA", value: "Update Password", comment: "Confirm CTA displayed on modal asking for the user to update the password")
     public static let autofillShowPassword = NSLocalizedString("autofill.show-password", value: "Show Password", comment: "Accessibility title for a Show Password button displaying actial password instead of *****")
@@ -1291,9 +1296,6 @@ public struct UserText {
     // MARK: Sync
 
     public static let syncUserUserAuthenticationReason = NSLocalizedString("sync.user.auth.reason", value: "Unlock device to set up Sync & Backup", comment: "Reason for auth when setting up Sync")
-    public static let syncTurnOffConfirmTitle = NSLocalizedString("sync.turn.off.confirm.title", value: "Turn Off Sync?", comment: "Title of the dialog to confirm turning off Sync")
-    public static let syncTurnOffConfirmMessage = NSLocalizedString("sync.turn.off.confirm.message", value: "This Device will no longer be able to access your synced data.", comment: "Message for the dialog to confirm turning off Sync")
-    public static let syncTurnOffConfirmAction = NSLocalizedString("sync.turn.off.confirm.action", value: "Remove", comment: "Caption for a button to remove current device from Sync")
     public static let syncDeleteAllConfirmTitle = NSLocalizedString("sync.delete.all.confirm.title", value: "Delete server data?", comment: "Title of the dialog to confirm deleting Sync server data")
     public static let syncDeleteAllConfirmMessage = NSLocalizedString("sync.delete.all.confirm.message", value: "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device.", comment: "Message for the dialog to confirm deleting Sync server data")
     public static let syncDeleteAllConfirmAction = NSLocalizedString("sync.delete.all.confirm.action", value: "Delete Server Data", comment: "Caption for a button to delete Sync server data")
@@ -1498,7 +1500,7 @@ public struct UserText {
     // Privacy Protections
     public static let privateSearchExplanation = NSLocalizedString("settings.private.search.explanation", value: "DuckDuckGo Private Search is your default search engine, so you can search the web without being tracked.", comment: "Explanation in Settings how the private search feature works")
     public static let webTrackingProtectionExplanation = NSLocalizedString("settings.web.tracking.protection.explanation", value: "DuckDuckGo automatically blocks hidden trackers as you browse the web.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)", comment: "Explanation in Settings how the web tracking protection feature works")
-    public static let cookiePopUpProtectionExplanation = NSLocalizedString("settings.cookie.pop.up.protection.explanation", value: "DuckDuckGo will try to select the most private settings available and hide these pop-ups for you.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)", comment: "Explanation in Settings how the cookie pop up protection feature works")
+    public static let cookiePopUpProtectionExplanation = NSLocalizedString("settings.cookie.pop.up.protection.explanation", value: "DuckDuckGo can auto-manage cookie preferences to maximize privacy, minimize cookies, and close these pop-ups.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)", comment: "Explanation in Settings how the cookie pop up protection feature works")
     public static let emailProtectionExplanation = NSLocalizedString("settings.email.protection.explanation", value: "Block email trackers and hide your address without switching your email provider.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)", comment: "Explanation in Settings how the email protection feature works")
     public static let emailProtectionSigningOutAlert = NSLocalizedString("settings.email.protection.signing.out.alert", value: "Signing out of your Email Protection account will disable Duck Address autofill in this browser. You can still use these addresses and receive forwarded email as usual.", comment: "Alert presented to user after clicking on 'Sign out' in Email Protection Settings")
     public static let defaultBrowser = NSLocalizedString("settings.default.browser", value: "Default Browser", comment: "The name of Settings category in Privacy Features related to configuration of the default browser")
@@ -1551,11 +1553,10 @@ public struct UserText {
 
     public static let cookiePopUpProtection = NSLocalizedString("settings.cookie.pop-up-protection.protection", value: "Cookie Pop-Up Protection", comment: "The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups")
     public static let letDuckDuckGoManageCookieConsentPopups = NSLocalizedString("settings.let.duckduckgo.manage.cookie.consent.popups", value: "Let DuckDuckGo manage cookie consent pop-ups", comment: "Switch button label.")
-    public static let cookiePopupPreferenceTitle = NSLocalizedString("cookie.popup.preference.title", value: "Pop-up Setting", comment: "Title for cookie pop-up preference picker in settings")
-    public static let cookiePopupPreferenceBlockAll = NSLocalizedString("cookie.popup.preference.block-all", value: "Reject, Hide, or Accept", comment: "Cookie pop-up preference option")
-    public static let cookiePopupPreferenceBlockStandard = NSLocalizedString("cookie.popup.preference.block-standard", value: "Reject or Hide", comment: "Cookie pop-up preference option")
-    public static let cookiePopupPreferenceDoNotBlock = NSLocalizedString("cookie.popup.preference.do-not-block", value: "Off", comment: "Cookie pop-up preference option")
-    public static let cookiePopupPreferenceExplanation = NSLocalizedString("cookie.popup.preference.explanation", value: "Some cookie pop-ups don't have a 'reject' option. By default, we won't block them. Choose **Reject, Hide, or Accept** to let us handle these — we may need to accept some cookies when necessary.", comment: "Explanation below cookie pop-up preference picker in settings")
+    public static let autoManageCookiePopupsTitle = NSLocalizedString("settings.cookie.auto-manage.title", value: "Auto-Manage Cookie Pop-Ups", comment: "Title for the auto-manage cookie pop-ups toggle in settings")
+    public static let autoManageCookiePopupsExplanation = NSLocalizedString("settings.cookie.auto-manage.explanation", value: "We'll aim to only select the most private cookie options available for you, then close these pop-ups.", comment: "Explanation below the auto-manage cookie pop-ups toggle in settings")
+    public static let popUpsWithoutOptOutsTitle = NSLocalizedString("settings.cookie.popups-without-opt-outs.title", value: "Pop-Ups Without Opt-Outs", comment: "Title for the pop-ups without opt-outs toggle in settings")
+    public static let popUpsWithoutOptOutsExplanation = NSLocalizedString("settings.cookie.popups-without-opt-outs.explanation", value: "Also let DuckDuckGo save you a click by accepting cookies on your behalf to close pop-ups that don’t let you opt out.", comment: "Explanation below the pop-ups without opt-outs toggle in settings")
 
     static let threatProtection = NSLocalizedString("preferences.threat-protection", value: "Threat Protection", comment: "Title of the option to show the Threat Protection preferences")
     static let threatProtectionCaption = NSLocalizedString("preferences.threat-protection.caption", value: "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)", comment: "Caption of the option to show the Threat Protection preferences")
@@ -1612,6 +1613,8 @@ public struct UserText {
     public static let settingsCustomizableButtonDeleteTabsAndData = NSLocalizedString("settings.customizable.button.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Label for customizable toolbar button that deletes tabs and data")
     public static let settingsText = NSLocalizedString("settings.text.size", value: "Default Text Zoom", comment: "Settings screen cell text for text size")
     public static let settingsAddressBarPosition = NSLocalizedString("settings.appearance.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
+    public static let settingsHideTabBarWhileScrolling = NSLocalizedString("settings.appearance.hide.tab.bar.while.scrolling", value: "Hide Tab Bar While Scrolling", comment: "Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling")
+    public static let settingsHideTabBarWhileScrollingFooter = NSLocalizedString("settings.appearance.hide.tab.bar.while.scrolling.footer", value: "Available on most websites. Duck.ai, maps, and games may keep the tab bar visible.", comment: "Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
     public static let tabSwitcherShowTrackerCount = NSLocalizedString("settings.tab.switcher.show.tracker.count", value: "Show in Tabs Manager", comment: "Settings screen cell title for toggling tracker blocking animation in tabs manager")
     public static let settingsTrackersBlockedAnimation = NSLocalizedString("settings.address.trackers.animation", value: "Show in Address Bar", comment: "Settings screen cell title for toggling tracker blocking animation in address bar")
@@ -2289,7 +2292,23 @@ public struct UserText {
 
     public static let settingsAiFeaturesHideAIGeneratedImages = NSLocalizedString("settings.aifeatures.hide.ai.generated.images", value: "Hide AI-Generated Images", comment: "Title of hide AI-generated images settings link")
 
-    public static let settingsAiFeaturesHideAIGeneratedImagesSubtitle = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.subtitle", value: "Filters out AI-Generated images from image search results", comment: "Description of what the hide AI-generated images feature does")
+    public static let settingsAiFeaturesHideAIGeneratedImagesSubtitle = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.subtitle", value: "Filters out known AI spam sites from image search results. [Learn more](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)", comment: "Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link)")
+
+    public static let settingsAiFeaturesSearchAssistTitle = NSLocalizedString("settings.aifeatures.assist.title", value: "Search Assist", comment: "Title of the native Search Assist setting control")
+
+    public static let settingsAiFeaturesSearchAssistNever = NSLocalizedString("settings.aifeatures.assist.never", value: "Never", comment: "Search Assist frequency option: never show AI-assisted answers")
+    public static let settingsAiFeaturesSearchAssistOnDemand = NSLocalizedString("settings.aifeatures.assist.ondemand", value: "On demand", comment: "Search Assist frequency option: show AI-assisted answers on demand")
+    public static let settingsAiFeaturesSearchAssistSometimes = NSLocalizedString("settings.aifeatures.assist.sometimes", value: "Sometimes", comment: "Search Assist frequency option: sometimes show AI-assisted answers")
+    public static let settingsAiFeaturesSearchAssistOften = NSLocalizedString("settings.aifeatures.assist.often", value: "Often", comment: "Search Assist frequency option: often show AI-assisted answers")
+
+    public static let settingsAiFeaturesHideAIGeneratedImagesOn = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.on", value: "On", comment: "Hide AI-Generated Images option: on (images hidden)")
+    public static let settingsAiFeaturesHideAIGeneratedImagesOff = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.off", value: "Off", comment: "Hide AI-Generated Images option: off (images shown)")
+
+    public static let settingsAiFeaturesDisableAIFeatures = NSLocalizedString("settings.aifeatures.disable.all", value: "Use DuckDuckGo Without AI", comment: "Button that turns off all AI features")
+    public static let settingsAiFeaturesDisableAllFooter = NSLocalizedString("settings.aifeatures.disable.all.footer", value: "Disables Duck.ai, hides AI-assisted answers in search, and filters known AI spam sites in image search results.", comment: "Footer text below the disable all AI features button")
+    public static let settingsAiFeaturesDisableAllFooterDisabled = NSLocalizedString("settings.aifeatures.disable.all.footer.disabled", value: "AI is currently disabled in the Browser so you’ll no longer see AI-assisted answers and see fewer AI-generated images in image search results.", comment: "Footer text shown once all AI features are already disabled")
+
+    public static let settingsDuckAiSectionHeader = NSLocalizedString("settings.aifeatures.duckai.section.header", value: "Duck.ai", comment: "Section header for the Duck.ai settings group on the AI Features screen")
 
     public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Duck.ai Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
 
@@ -2692,8 +2711,8 @@ public struct UserText {
                 )
                 static let subscriptionMessage = NSLocalizedString(
                     "onboarding.duckai.contextual.subscription.message",
-                    value: "We also offer a paid subscription featuring advanced AI models with higher chat limits from GPT, Claude, and Llama, a secure VPN, and more.",
-                    comment: "Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated."
+                    value: "We also offer a paid subscription featuring advanced AI models with higher chat limits from GPT and Claude, a secure VPN, and more.",
+                    comment: "Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated."
                 )
             }
         }

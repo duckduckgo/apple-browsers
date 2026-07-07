@@ -9,6 +9,23 @@
         "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
         "examples": ["1.146.0"]
     },
+    "cookie_popup_preference": {
+        "key": "cookie_popup_preference",
+        "type": "string",
+        "description": "The resulting Cookie Pop-up Protection preference after the user confirms the opt-in dialog",
+        "enum": ["max", "default", "off"]
+    },
+    "autoconsent_enabled": {
+        "key": "autoconsent_enabled",
+        "type": "boolean",
+        "description": "Whether Cookie Pop-up Protection (autoconsent) was enabled at the moment the dialog was shown"
+    },
+    "time_since_shown": {
+        "key": "time_since_shown",
+        "type": "string",
+        "description": "Bucketed time elapsed from when the opt-in dialog was first shown to when it was confirmed",
+        "enum": ["0-1min", "1-5min", "5-60min", "1h-1d", "1d+"]
+    },
     "atb": {
         "key": "atb",
         "type": "string",

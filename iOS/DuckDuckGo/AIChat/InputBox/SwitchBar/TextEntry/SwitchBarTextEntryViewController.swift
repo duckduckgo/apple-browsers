@@ -22,6 +22,7 @@ import SwiftUI
 import Combine
 import UIComponents
 import DesignResourcesKitIcons
+import MetricBuilder
 
 final class SwitchBarTextEntryButtonsContainerView: UIView {
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
@@ -130,7 +131,8 @@ class SwitchBarTextEntryViewController: UIViewController {
     }
 
     private func updateContainerCornerRadius() {
-        let radius = Metrics.containerCornerRadius(forHeight: containerView.bounds.height)
+        let radius = Metrics.containerCornerRadius(forHeight: containerView.bounds.height,
+                                                   maximum: ContainerMetrics.cornerRadius)
         containerView.layer.cornerRadius = radius
         textEntryView.layer.cornerRadius = radius
     }
@@ -208,11 +210,10 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     private struct Metrics {
         static let legacyCornerRadius: CGFloat = 16
-        static let rebrandedMaxCornerRadius: CGFloat = 26
 
-        static func containerCornerRadius(forHeight height: CGFloat) -> CGFloat {
+        static func containerCornerRadius(forHeight height: CGFloat, maximum: CGFloat) -> CGFloat {
             guard AppRebrand.isAppRebranded() else { return legacyCornerRadius }
-            return min(height / 2, rebrandedMaxCornerRadius)
+            return min(height / 2, maximum)
         }
     }
 }

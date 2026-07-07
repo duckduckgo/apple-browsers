@@ -480,11 +480,7 @@ private extension AIChatContextualSheetViewController {
 
     func transitionToWebView() {
         guard let webVC = webViewController else { return }
-        if let webVCParent = webVC.parent, webVCParent !== self {
-            webVC.willMove(toParent: nil)
-            webVC.view.removeFromSuperview()
-            webVC.removeFromParent()
-        }
+
         removeCurrentChildViewController()
         embedChildViewController(webVC)
         webVC.installUTIHostIfNeeded()
@@ -777,7 +773,8 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
-        // 🚩 Interim behaviour: The full tap → chat-start-with-context flow is a separate task.
+        // Interim behaviour: The full tap → chat-start-with-context flow is a separate task.
+        // https://app.asana.com/1/137249556945/project/1210947754188321/task/1216246134909203?focus=true
         contextualInputViewController.appendText(suggestion.prompt)
     }
 

@@ -593,20 +593,6 @@ private extension AIChatContextualChatSessionState {
         }
     }
 
-    func canPushToFrontend() -> Bool {
-        let canPush: Bool
-        switch frontendState {
-        case .chatWithoutInitialContext, .restoredChat:
-            canPush = true
-        case .chatWithInitialContext:
-            canPush = supportsMultipleContexts
-        case .noChat:
-            canPush = showsSuggestionsStartSurface
-        }
-        Logger.aiChat.debug("[SessionState] canPushToFrontend=\(canPush) (frontendState=\(self.frontendState), multipleContexts=\(self.supportsMultipleContexts))")
-        return canPush
-    }
-
     func shouldAllowAutomaticUpgrade() -> Bool {
         return !userDowngradedToPlaceholder
     }
@@ -631,13 +617,6 @@ private extension AIChatContextualChatSessionState {
             pageTypeSignals: context.pageTypeSignals,
             attached: false
         )
-    }
-
-    func clearUserDowngradeOnNavigation() {
-        if userDowngradedToPlaceholder {
-            userDowngradedToPlaceholder = false
-            Logger.aiChat.debug("[SessionState] Cleared user downgrade flag on navigation")
-        }
     }
 
     var shouldProcessNilContextUpdate: Bool {

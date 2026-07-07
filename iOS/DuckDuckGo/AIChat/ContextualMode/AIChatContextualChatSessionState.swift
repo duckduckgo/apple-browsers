@@ -135,13 +135,14 @@ final class AIChatContextualChatSessionState {
     private(set) var suggestionsLoadState: SuggestionsLoadState = .loaded
     private(set) var suggestions: [ContextualSuggestedPrompt] = []
     private var suggestionsResolveTask: Task<Void, Never>?
+    private var suggestionsTimeoutTask: Task<Void, Never>?
 
     // MARK: - Initialization
 
     init(aiChatSettings: AIChatSettingsProvider,
          pixelHandler: AIChatContextualModePixelFiring,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         suggestedPromptsProvider: ContextualSuggestedPromptsProviding = StubContextualSuggestedPromptsProvider()) {
+         suggestedPromptsProvider: ContextualSuggestedPromptsProviding = DefaultContextualSuggestedPromptsProvider()) {
         self.aiChatSettings = aiChatSettings
         self.pixelHandler = pixelHandler
         self.featureFlagger = featureFlagger
@@ -253,6 +254,7 @@ final class AIChatContextualChatSessionState {
         isProcessingNavigation = false
         pendingSignalsOnlyCollection = false
         suggestionsResolveTask?.cancel()
+        suggestionsTimeoutTask?.cancel()
         suggestions = []
         suggestionsLoadState = .loaded
         pixelHandler.endManualAttach()
@@ -358,6 +360,17 @@ final class AIChatContextualChatSessionState {
         suggestions = []
         suggestionsLoadState = .loading
         rebuildViewState()
+        startSuggestionsTimeout()
+    }
+
+    private func startSuggestionsTimeout() {
+        suggestionsTimeoutTask?.cancel()
+        let timeout = AIChatContextualSheetCoordinator.contextualContextCollectionTimeout
+        suggestionsTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+            guard let self, !Task.isCancelled else { return }
+            self.resolveSuggestionsIfLoading(from: nil)
+        }
     }
 
     /// Updates the latest page context and determines attach behavior based on internal state.
@@ -546,6 +559,8 @@ private extension AIChatContextualChatSessionState {
         guard suggestionsLoadState == .loading,
               featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
               !hasActiveChat else { return }
+
+        suggestionsTimeoutTask?.cancel()
 
         let input = ResolvePageSuggestionsInput(
             pageTypeSignals: context?.contextData.pageTypeSignals,

@@ -83,7 +83,7 @@ final class AIChatContextualSheetCoordinator {
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
-    private let contextualContextCollectionTimeout: TimeInterval = 5
+    static let contextualContextCollectionTimeout: TimeInterval = 5
 
     /// Handler for page context - single source of truth.
     let pageContextHandler: AIChatPageContextHandling
@@ -157,7 +157,11 @@ final class AIChatContextualSheetCoordinator {
         )
         didFinishURLCancellable = tabURLPublishers.didFinish
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] url in self?.latestDidFinishURL = url }
+            .sink { [weak self] url in
+                guard let self else { return }
+                self.latestDidFinishURL = url
+                self.recollectSuggestionsIfPageFinishedLoading()
+            }
     }
 
     // MARK: - Public Methods
@@ -168,14 +172,7 @@ final class AIChatContextualSheetCoordinator {
         sessionState.refreshAutoAttachSetting()
 
         startObservingContextUpdates()
-
-        if sessionState.shouldAutoCollectContext {
-            sessionState.beginLoadingSuggestions()
-            pageContextHandler.triggerContextCollection()
-        } else if shouldCollectSignalsOnly {
-            sessionState.markPendingSignalsOnlyCollection()
-            pageContextHandler.triggerContextCollection()
-        }
+        startSuggestionsCollection()
 
         stopSessionTimer()
 
@@ -184,6 +181,21 @@ final class AIChatContextualSheetCoordinator {
         } else {
             presentNewSheet(from: presentingViewController, restoreURL: restoreURL)
         }
+    }
+
+    private func startSuggestionsCollection() {
+        if sessionState.shouldAutoCollectContext {
+            sessionState.beginLoadingSuggestions()
+            pageContextHandler.triggerContextCollection()
+        } else if shouldCollectSignalsOnly {
+            sessionState.markPendingSignalsOnlyCollection()
+            pageContextHandler.triggerContextCollection()
+        }
+    }
+
+    private func recollectSuggestionsIfPageFinishedLoading() {
+        guard isSheetPresented, sessionState.suggestionsLoadState == .loading else { return }
+        startSuggestionsCollection()
     }
 
     /// Dismisses the sheet if currently presented. The sheet is retained for potential re-presentation.
@@ -402,7 +414,7 @@ private extension AIChatContextualSheetCoordinator {
                     }
                     return nil
                 }
-                return await self.collectFreshContextAndWait(timeout: contextualContextCollectionTimeout)
+                return await self.collectFreshContextAndWait(timeout: Self.contextualContextCollectionTimeout)
             },
             pixelHandler: pixelHandler,
             utiHostInstaller: { [weak self] contextualChatViewController in

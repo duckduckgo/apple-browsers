@@ -1499,11 +1499,20 @@ class TabViewController: UIViewController {
         error.isHidden = false
         setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
-        errorMessage.text = message
+        errorMessage.text = formattedErrorMessage(message)
         errorActionButton.isHidden = true
         errorReportBrokenSiteButton.isHidden = true
         safariRedirectLoopErrorURL = nil
         error.layoutIfNeeded()
+    }
+
+    private func formattedErrorMessage(_ message: String) -> String {
+        // The English NSURLErrorCannotFindHost description wraps awkwardly; break it after
+        // "hostname" so it reads as two balanced lines.
+        return message.replacingOccurrences(
+            of: "A server with the specified hostname could not be found",
+            with: "A server with the specified hostname\ncould not be found"
+        )
     }
 
     private func hideErrorMessage() {

@@ -592,6 +592,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the native Duck.ai bar controls (model picker) in the iPad address bar's
     /// expanded Duck.ai input area.
     case iPadDuckAIBarControls
+
+    /// Enables the macOS native "Customize Responses" UI (omnibar + New Tab Page entry points).
+    case customizeResponses
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -604,6 +607,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
+
+    /// Global switch to disable advanced card ordering for the Next Steps List widget
+    case nextStepsListAdvancedCardOrdering
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

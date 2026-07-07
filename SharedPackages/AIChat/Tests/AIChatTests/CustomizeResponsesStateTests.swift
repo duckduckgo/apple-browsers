@@ -26,8 +26,6 @@ final class CustomizeResponsesStateTests: XCTestCase {
     // MARK: - Helpers
 
     // swiftlint:disable force_try
-    /// Wraps `data` in the `{version, data}` envelope and serializes it to a JSON string (the shape
-    /// the frontend persists, and one of the two forms the bridge can hand back).
     private func jsonString(_ data: [String: Any]) -> String {
         let envelope: [String: Any] = ["version": "1", "data": data]
         let encoded = try! JSONSerialization.data(withJSONObject: envelope)
@@ -35,7 +33,6 @@ final class CustomizeResponsesStateTests: XCTestCase {
     }
     // swiftlint:enable force_try
 
-    /// The already-decoded object form the bridge can also hand back.
     private func object(_ data: [String: Any]) -> [String: Any] {
         ["version": "1", "data": data]
     }
@@ -84,7 +81,7 @@ final class CustomizeResponsesStateTests: XCTestCase {
                                                  clarifiesLabel: clarifies)
         XCTAssertTrue(state.hasCustomization)
         XCTAssertEqual(state.subLabel, "Formal")
-        XCTAssertFalse(state.isActive) // active is independent of customization
+        XCTAssertFalse(state.isActive)
     }
 
     func testParsesFromDecodedObject() {
@@ -132,7 +129,6 @@ final class CustomizeResponsesStateTests: XCTestCase {
                                "shouldSeekClarity": true,
                                "assistantName": "AN",
                                "userName": "UN"])
-        // Large budget so we assert ordering without truncation.
         let state = CustomizeResponsesState.make(customizationValue: json, activeValue: nil, clarifiesLabel: "Clarifies", maxSubLabelLength: 100)
         XCTAssertTrue(state.hasCustomization)
         XCTAssertEqual(state.subLabel, "T, L, AR, UR, Clarifies, AN, UN")
@@ -158,24 +154,21 @@ final class CustomizeResponsesStateTests: XCTestCase {
         XCTAssertNil(state.subLabel)
     }
 
-    // MARK: - Truncation (mirrors the frontend `truncateByWord`)
+    // MARK: - Truncation
 
     func testSubLabelExactlyAtMaxLengthIsNotTruncated() {
-        // "Friendly, Short" is exactly 15 characters.
         let json = jsonString(["tone": "Friendly", "length": "Short"])
         let state = CustomizeResponsesState.make(customizationValue: json, activeValue: nil, clarifiesLabel: clarifies, maxSubLabelLength: 15)
         XCTAssertEqual(state.subLabel, "Friendly, Short")
     }
 
     func testSubLabelTruncatesOnWordBoundaryWithEllipsis() {
-        // "Friendly, Detailed" (18) exceeds 15 → keeps the first whole word, drops the trailing comma.
         let json = jsonString(["tone": "Friendly", "length": "Detailed"])
         let state = CustomizeResponsesState.make(customizationValue: json, activeValue: nil, clarifiesLabel: clarifies, maxSubLabelLength: 15)
         XCTAssertEqual(state.subLabel, "Friendly…")
     }
 
     func testSubLabelSingleWordLongerThanMaxIsHardTruncated() {
-        // A single 20-char value with no space to break on → hard prefix cut + ellipsis.
         let json = jsonString(["tone": "Supercalifragilistic"])
         let state = CustomizeResponsesState.make(customizationValue: json, activeValue: nil, clarifiesLabel: clarifies, maxSubLabelLength: 15)
         XCTAssertEqual(state.subLabel, "Supercalifragil…")

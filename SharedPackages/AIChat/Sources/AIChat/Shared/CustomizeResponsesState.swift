@@ -18,24 +18,15 @@
 
 import Foundation
 
-/// Storage keys the Duck.ai frontend uses to persist Customize Responses state through the
-/// `duckAiNativeStorage` bridge. Shared across platforms; keep in lockstep with the frontend.
 public enum CustomizeResponsesStorageKey {
     public static let customization = "duckaiCustomization"
     public static let active = "duckaiCustomizationActive"
 }
 
-/// Platform-agnostic view of the Duck.ai Customize Responses state, derived from the raw values the
-/// native-storage bridge returns. Mirrors the Windows `CustomizeResponsesState` /
-/// `CustomizeResponsesSubLabel`. The sub-label needs a localized "Clarifies" fragment, which each
-/// platform passes in from its own `UserText`.
 public struct CustomizeResponsesState: Equatable {
 
-    /// Whether the user has set any non-default customization.
     public let hasCustomization: Bool
-    /// Short summary of the customization for a menu row's sub-label; `nil` when there's nothing to show.
     public let subLabel: String?
-    /// Whether the customization is currently applied (the frontend's `duckaiCustomizationActive` flag).
     public let isActive: Bool
 
     public static let none = CustomizeResponsesState(hasCustomization: false, subLabel: nil, isActive: false)
@@ -46,12 +37,6 @@ public struct CustomizeResponsesState: Equatable {
         self.isActive = isActive
     }
 
-    /// Derives the state from the raw values stored under `CustomizeResponsesStorageKey`. The bridge
-    /// returns each entry as whatever type the frontend wrote, so `customizationValue` may be a JSON
-    /// `String` or an already-decoded object, and `activeValue` a `Bool` or a "true"/"false" `String`.
-    /// - Parameters:
-    ///   - clarifiesLabel: localized fragment appended to the sub-label when clarifying questions are on.
-    ///   - maxSubLabelLength: character budget for the sub-label before word-truncation.
     public static func make(customizationValue: Any?,
                             activeValue: Any?,
                             clarifiesLabel: String,
@@ -73,14 +58,10 @@ public struct CustomizeResponsesState: Equatable {
     }
 }
 
-/// Derives the Customize Responses sub-label from the frontend's `duckaiCustomization` payload.
-/// Mirrors the frontend `CustomizeResponsesSubLabel` (and the Windows port).
 enum CustomizeResponsesSubLabel {
 
     private static let defaultValue = "Default"
 
-    /// Payload shape: `{"version":"1","data":{ assistantName, assistantRole, userName, userRole,
-    /// tone, length, shouldSeekClarity, additionalInstructions }}`, values already human-readable.
     static func summary(from customizationValue: Any?, clarifiesLabel: String, maxLength: Int) -> (isCustomized: Bool, subLabel: String?) {
         let root: [String: Any]?
         switch customizationValue {
@@ -144,8 +125,6 @@ enum CustomizeResponsesSubLabel {
         (data["shouldSeekClarity"] as? Bool) == true
     }
 
-    /// Mirrors the frontend `truncateByWord`: keeps whole words up to `maxLength`, drops a trailing
-    /// comma, and appends an ellipsis when truncated unless it already ends with a period.
     private static func truncateByWord(_ text: String, maxLength: Int) -> String {
         if text.count <= maxLength { return text }
         var result = ""

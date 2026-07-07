@@ -18,11 +18,6 @@
 
 import Cocoa
 
-/// Custom Tools-menu row for "Customize Responses": icon + title + dynamic sub-label, plus a
-/// right-aligned `NSSwitch` shown only once responses have been customized. Clicking the row runs
-/// `onOpen` and dismisses the menu; toggling the switch region flips the apply/ignore state and
-/// keeps the menu open. Mirrors the Windows omnibar row; hover/click handling follows the same
-/// `NSMenuItem.view` idiom as `AIChatTabPickerMenuRowView`.
 final class CustomizeResponsesMenuRowView: NSView {
 
     private enum Layout {
@@ -151,17 +146,12 @@ final class CustomizeResponsesMenuRowView: NSView {
         }
     }
 
-    /// Route every click to the row itself so the embedded `NSSwitch` stays visual-only — we decide
-    /// toggle-vs-open by hit region in `mouseUp`, which is more reliable inside `NSMenu` tracking
-    /// than relying on the control to receive the event.
     override func hitTest(_ point: NSPoint) -> NSView? {
         let local = convert(point, from: superview)
         return bounds.contains(local) ? self : nil
     }
 
-    override func mouseDown(with event: NSEvent) {
-        // Swallow the press; act on mouseUp (keeps NSMenu from treating it as an item activation).
-    }
+    override func mouseDown(with event: NSEvent) {}
 
     override func mouseUp(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
@@ -174,7 +164,6 @@ final class CustomizeResponsesMenuRowView: NSView {
             return
         }
 
-        // Dismiss the menu, then run onOpen on the next runloop tick.
         enclosingMenuItem?.menu?.cancelTracking()
         let open = onOpen
         DispatchQueue.main.async { open() }

@@ -1140,7 +1140,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 icon: DesignSystemImages.Glyphs.Size16.glasses,
                 showsToggle: state.hasCustomization,
                 isActive: state.isActive,
-                // No-op until the customize modal lands (follow-up PR); the row only reflects state for now.
                 onOpen: {},
                 onToggle: { active in store.setActive(active) }
             )
@@ -2047,9 +2046,6 @@ private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
 
 // MARK: - Customize Responses state (native storage bridge)
 
-/// Thin macOS reader over the `duckAiNativeStorage` bridge: pulls the Customize Responses entries
-/// off the injected storage handler and hands them to the shared `CustomizeResponsesState` deriver.
-/// The parsing / sub-label logic lives in the AIChat package (`CustomizeResponsesState`).
 final class CustomizeResponsesStore {
 
     private let storageHandler: DuckAiNativeStorageHandling?
@@ -2065,8 +2061,6 @@ final class CustomizeResponsesStore {
         return CustomizeResponsesState.make(customizationValue: customization, activeValue: active, clarifiesLabel: clarifiesLabel)
     }
 
-    /// Writes the enabled flag without touching the stored customization, so turning it off
-    /// ignores customizations without resetting them (mirrors Windows `SetActive`).
     func setActive(_ active: Bool) {
         try? storageHandler?.putEntry(key: CustomizeResponsesStorageKey.active, value: active ? "true" : "false")
     }

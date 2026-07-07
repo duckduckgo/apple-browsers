@@ -215,3 +215,379 @@ final class InternalFeedbackFormTabExtensionTests: XCTestCase {
         XCTAssertNil(asProtocol.popupContext?.screenshotData)
     }
 }
+
+/// Behavioural tests for the screenshot-attachment logic in
+/// `internal-feedback-autofiller.js`, driven via JavaScriptCore against a
+/// minimal DOM stub (`domStub` below).
+///
+/// The autofiller uses promise-based `waitForElement` and `MutationObserver`
+/// chains that are impractical to drive from a headless `JSContext`, so these
+/// tests bypass the async init flow and call `injectScreenshotSection()`,
+/// `showAndRelabelAttachmentRow()`, and `hookSubmitForDiagnostics()` directly
+/// after loading the real production script (obtained via
+/// `InternalFeedbackFormUserScript`, so these tests exercise the exact script
+/// that ships to the WebView, not a hand-copied approximation).
+///
+/// Mirrors `InternalFeedbackFormFillerScreenshotTests` in the Windows browser
+/// repo (Jint-based) — the DOM stub below intentionally uses the same helper
+/// names (`_fileCount`, `_tickScreenshotCheckbox`, `_attachLabelInDom`, etc.)
+/// so the two suites stay easy to compare when the shared JS logic changes.
+@MainActor
+final class InternalFeedbackFormAutofillerScreenshotTests: XCTestCase {
+
+    // A 1×1 transparent PNG — small enough to be fast, valid enough that the
+    // script produces a non-empty screenshotBase64 value.
+    private static let minimalPngBase64 =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+
+    // MARK: - Helpers
+
+    private func productionScript(base64: String) -> String {
+        InternalFeedbackFormUserScript(quickMode: true, diagnostics: "", screenshotBase64: base64).source
+    }
+
+    /// Creates a JSContext loaded with the DOM stub and the real production
+    /// script, then runs the three setup functions that `hideIrrelevantFields()`
+    /// would call in production.
+    ///
+    /// - Parameter attachLabelInDom: When `false`, simulates Asana's attachment
+    ///   row not yet being in the DOM during this initial pass — the scenario
+    ///   the lazy-retry fix in `attachScreenshotToForm()` guards against. Tests
+    ///   exercising that scenario should call `_makeAttachLabelAvailable()`
+    ///   before submitting.
+    private func makeContext(
+        base64: String = minimalPngBase64,
+        attachLabelInDom: Bool = true
+    ) throws -> JSContext {
+        let context = try XCTUnwrap(JSContext())
+        var caughtException: JSValue?
+        context.exceptionHandler = { _, value in caughtException = value }
+
+        context.evaluateScript(Self.domStub)
+        context.evaluateScript("_attachLabelInDom = \(attachLabelInDom);")
+        context.evaluateScript(productionScript(base64: base64))
+        context.evaluateScript("""
+            injectScreenshotSection();
+            showAndRelabelAttachmentRow();
+            hookSubmitForDiagnostics();
+            """)
+
+        XCTAssertNil(caughtException, "Stub or production script threw: \(caughtException?.toString() ?? "")")
+        return context
+    }
+
+    private func fileCount(_ context: JSContext) -> Int {
+        Int(context.evaluateScript("_fileCount()")?.toInt32() ?? -1)
+    }
+
+    // MARK: - Tests
+
+    func testNoFilesBeforeAnyInteraction() throws {
+        let context = try makeContext()
+
+        XCTAssertEqual(fileCount(context), 0)
+    }
+
+    /// Privacy contract: ticking the checkbox must NOT eagerly write to the
+    /// hidden file input. Any write is captured immediately by Asana's React
+    /// form state and cannot be reversed by our script — the screenshot would
+    /// then be uploaded even if the user unticks before submitting.
+    func testTickingCheckboxDoesNotWriteToFileInput() throws {
+        let context = try makeContext()
+
+        context.evaluateScript("_tickScreenshotCheckbox();")
+
+        XCTAssertEqual(fileCount(context), 0,
+                       "ticking must not eagerly attach the screenshot — any write to the file input is " +
+                       "captured immediately by Asana's React state and cannot be undone by our script")
+    }
+
+    func testSubmitWithCheckboxCheckedAttachesScreenshotFile() throws {
+        let context = try makeContext()
+
+        context.evaluateScript("_tickScreenshotCheckbox(); _clickSubmit();")
+
+        XCTAssertEqual(fileCount(context), 1,
+                       "when the user ticks Include screenshot and submits, exactly one screenshot file " +
+                       "must be attached to the hidden Asana file input")
+    }
+
+    func testSubmitWithCheckboxUncheckedDoesNotAttachFile() throws {
+        let context = try makeContext()
+
+        context.evaluateScript("_clickSubmit();")
+
+        XCTAssertEqual(fileCount(context), 0,
+                       "submitting without ticking the screenshot checkbox must not attach any file")
+    }
+
+    func testSubmitWithCheckboxCheckedAndExistingUserFilePreservesBothFiles() throws {
+        let context = try makeContext()
+
+        context.evaluateScript("""
+            _seedUserFile('my-attachment.pdf');
+            _tickScreenshotCheckbox();
+            _clickSubmit();
+            """)
+
+        XCTAssertEqual(fileCount(context), 2,
+                       "a file already selected by the user must be preserved when the screenshot is also " +
+                       "merged in — neither file may be lost")
+    }
+
+    func testScreenshotSectionNotInjectedWhenNoBase64() throws {
+        let context = try makeContext(base64: "")
+
+        let sectionExists = context.evaluateScript("_screenshotSectionExists()")?.toBool() ?? true
+
+        XCTAssertFalse(sectionExists,
+                        "when no screenshot is available (empty base64), injectScreenshotSection() must be " +
+                        "a no-op so no screenshot UI is shown to the user")
+    }
+
+    /// Regression test: if Asana's attachment row/label is not yet in the DOM
+    /// when `hideIrrelevantFields()` runs its one-shot `showAndRelabelAttachmentRow()`
+    /// call, the row would never be marked, and `attachScreenshotToForm()` would
+    /// silently attach nothing at submit. The production fix added a lazy retry
+    /// inside `attachScreenshotToForm()` itself (see git history: "Lazy-init
+    /// attachment row marker at screenshot submit time").
+    ///
+    /// This test does not use the default `attachLabelInDom: true` setup, since
+    /// that would make the row always available and this scenario impossible
+    /// to reproduce.
+    func testSubmitAttachesScreenshotWhenAttachRowRendersAfterInitialInjection() throws {
+        let context = try makeContext(attachLabelInDom: false)
+
+        // Asana renders the attachment row shortly after, before the user submits.
+        context.evaluateScript("""
+            _makeAttachLabelAvailable();
+            _tickScreenshotCheckbox();
+            _clickSubmit();
+            """)
+
+        XCTAssertEqual(fileCount(context), 1,
+                       "attachScreenshotToForm() must retry marking the attachment row if the initial " +
+                       "showAndRelabelAttachmentRow() pass ran before Asana's row was in the DOM, otherwise " +
+                       "the screenshot silently fails to attach")
+    }
+
+    // MARK: - DOM stub
+
+    /// Minimal DOM stub providing just enough infrastructure for
+    /// `injectScreenshotSection()`, `showAndRelabelAttachmentRow()`, and
+    /// `hookSubmitForDiagnostics()` to run without error in a bare JSContext
+    /// (which, unlike a WebView, has no `document`, `window`, `Promise`
+    /// shadowing DOM timing, `MutationObserver`, `File`/`Blob`/`DataTransfer`,
+    /// or `console`).
+    private static let domStub = #"""
+    var setTimeout = function(fn, ms) { return 1; };
+    var clearTimeout = function() {};
+    var setInterval = function(fn, ms) { return 1; };
+    var clearInterval = function() {};
+
+    var console = { error: function() {}, log: function() {}, warn: function() {} };
+
+    // Shadows JavaScriptCore's built-in Promise so waitForElement()'s chain
+    // never resolves/rejects — keeps these tests deterministic regardless of
+    // microtask timing, mirroring the Jint-based Windows test stub.
+    var Promise = function(executor) {
+        try { executor(function() {}, function() {}); } catch (e) {}
+        this.then = function() { return this; };
+        this.catch = function() { return this; };
+    };
+
+    var MutationObserver = function() {
+        return { observe: function() {}, disconnect: function() {} };
+    };
+
+    var atob = function(s) { return ''; };
+    var Blob = function() {};
+    var File = function(parts, name) { this.name = name; };
+    var Event = function(type, opts) { this.type = type; this.bubbles = !!(opts && opts.bubbles); };
+
+    var DataTransfer = function() {
+        var _files = [];
+        this.items = { add: function(f) { _files.push(f); } };
+        Object.defineProperty(this, 'files', { get: function() { return _files; } });
+    };
+
+    // hookSubmitForDiagnostics() calls Object.getOwnPropertyDescriptor(
+    //   window.HTMLTextAreaElement.prototype, 'value').set to drive React's value;
+    // stub it to a plain property assignment so the call succeeds.
+    var window = {};
+    window.HTMLTextAreaElement = { prototype: {} };
+    window.HTMLInputElement    = { prototype: {} };
+    Object.getOwnPropertyDescriptor = function(obj, prop) {
+        if (prop === 'value') { return { set: function(v) { this.value = v; } }; }
+        return { value: obj[prop], writable: true, enumerable: true, configurable: true };
+    };
+
+    var _elementsById = {};
+
+    function _el(tag) {
+        var el = {
+            _tag: tag, _children: [], _listeners: {}, _id: '',
+            type: '', src: '', title: '', textContent: '', checked: false,
+            files: [], value: '', style: { cssText: '', display: '' },
+            parentNode: null, nextSibling: null,
+            setAttribute: function(k, v) { this[k] = v; },
+            getAttribute: function(k) { return this[k] !== undefined ? this[k] : null; },
+            appendChild: function(c) { c.parentNode = this; this._children.push(c); return c; },
+            insertBefore: function(n) { n.parentNode = this; return n; },
+            querySelector: function(sel) {
+                for (var i = 0; i < this._children.length; i++) {
+                    var c = this._children[i];
+                    if (_matches(c, sel)) return c;
+                    var found = c.querySelector ? c.querySelector(sel) : null;
+                    if (found) return found;
+                }
+                return null;
+            },
+            closest: function() { return null; },
+            addEventListener: function(type, fn, cap) {
+                if (!this._listeners[type]) this._listeners[type] = [];
+                this._listeners[type].push({ fn: fn, cap: !!cap });
+            },
+            dispatchEvent: function(e) {
+                (this._listeners[e.type] || []).forEach(function(h) { h.fn(e); });
+            }
+        };
+        Object.defineProperty(el, 'id', {
+            get: function() { return el._id; },
+            set: function(v) { el._id = v; _elementsById[v] = el; },
+            configurable: true
+        });
+        return el;
+    }
+
+    function _matches(el, sel) {
+        if (!el || !sel) return false;
+        if (sel === 'textarea') return el._tag === 'textarea';
+        if (sel === 'input[type="file"]') return el._tag === 'input' && el.type === 'file';
+        return false;
+    }
+
+    // Textarea for the description field.
+    var _textarea = _el('textarea');
+    _textarea.value = 'smoke test feedback';
+
+    // Description label. hookSubmitForDiagnostics finds this to reach the textarea.
+    var _descLabel = _el('label');
+    _descLabel.textContent = 'Please describe your issue/feedback';
+
+    var _descRow = _el('div');
+    _descRow.appendChild(_descLabel);
+    _descRow.appendChild(_textarea);
+    _descLabel.closest = function(sel) {
+        return (sel === '.WorkRequestsFieldRow') ? _descRow : null;
+    };
+    _descRow.querySelector = function(sel) {
+        return (sel === 'textarea') ? _textarea : null;
+    };
+
+    // Hidden file input inside the attachment row.
+    var _fileInput = _el('input');
+    _fileInput.type = 'file';
+
+    // Attachment label. showAndRelabelAttachmentRow() searches for this text.
+    var _attachLabel = _el('label');
+    _attachLabel.textContent = 'If available, attach any screenshots';
+
+    // Attachment row. showAndRelabelAttachmentRow() marks this with data-ddg-attach-row.
+    var _attachRow = _el('div');
+    _attachRow.appendChild(_attachLabel);
+    _attachRow.appendChild(_fileInput);
+    _attachLabel.closest = function(sel) {
+        return (sel === '.WorkRequestsFieldRow') ? _attachRow : null;
+    };
+    _attachRow.querySelector = function(sel) {
+        return (sel === 'input[type="file"]') ? _fileInput : null;
+    };
+
+    // The real submit button that hookSubmitForDiagnostics hooks.
+    var _submitBtn = _el('button');
+
+    // An anchor div that stands in for ddg-submit-clone so injectDiagnosticsSection()
+    // and injectScreenshotSection() have a valid insertion point.
+    var _submitClone = _el('div');
+    _submitClone._id = 'ddg-submit-clone';
+    _elementsById['ddg-submit-clone'] = _submitClone;
+
+    // Form body: parent node for all the above so insertBefore calls succeed.
+    var _formBody = _el('div');
+    _formBody.appendChild(_descRow);
+    _formBody.appendChild(_attachRow);
+    _formBody.appendChild(_submitBtn);
+    _formBody.appendChild(_submitClone);
+    _submitClone.parentNode = _formBody;
+
+    // Whether the attachment label is discoverable via querySelectorAll('label') yet.
+    // Defaults to true (row present immediately, as in the common case). Tests that
+    // need to simulate Asana rendering the row *after* the initial hideIrrelevantFields()
+    // pass can flip this to false before init and call _makeAttachLabelAvailable() later.
+    var _attachLabelInDom = true;
+
+    function _visibleLabels() {
+        return _attachLabelInDom ? [_descLabel, _attachLabel] : [_descLabel];
+    }
+
+    var document = {
+        body: _formBody,
+        createElement: function(tag) { return _el(tag); },
+        getElementById: function(id) { return _elementsById[id] || null; },
+        querySelector: function(sel) {
+            // data-ddg-attach-row is set by showAndRelabelAttachmentRow() at runtime.
+            if (sel === '[data-ddg-attach-row]') {
+                return (_attachRow['data-ddg-attach-row'] === 'true') ? _attachRow : null;
+            }
+            if (sel.indexOf('WorkRequestsSubmissionForm-submitButton') !== -1) return _submitBtn;
+            if (sel === '#ddg-screenshot-section img') {
+                var sec = _elementsById['ddg-screenshot-section'];
+                if (!sec) return null;
+                for (var i = 0; i < sec._children.length; i++) {
+                    if (sec._children[i]._tag === 'img') return sec._children[i];
+                }
+                return null;
+            }
+            return null;
+        },
+        querySelectorAll: function(sel) {
+            return (sel === 'label') ? _visibleLabels() : [];
+        },
+        evaluate: function() { return { singleNodeValue: null }; }
+    };
+
+    // True when injectScreenshotSection() has created the section node.
+    function _screenshotSectionExists() {
+        return !!_elementsById['ddg-screenshot-section'];
+    }
+
+    // Number of files currently in the hidden file input.
+    function _fileCount() {
+        return (_fileInput.files && _fileInput.files.length) ? _fileInput.files.length : 0;
+    }
+
+    // Pre-seed a user-selected file so merge tests can verify it is preserved.
+    function _seedUserFile(name) {
+        _fileInput.files = [{ name: name || 'user-file.txt' }];
+    }
+
+    // Simulate ticking the Include screenshot checkbox.
+    function _tickScreenshotCheckbox() {
+        var cb = document.getElementById('ddg-include-screenshot');
+        if (!cb) throw new Error('ddg-include-screenshot not found - call injectScreenshotSection() first');
+        cb.checked = true;
+        cb.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // Simulate clicking the submit button (triggers the capture-phase listener).
+    function _clickSubmit() {
+        _submitBtn.dispatchEvent(new Event('click', { bubbles: true }));
+    }
+
+    // Simulate Asana rendering the attachment row after the initial init pass.
+    function _makeAttachLabelAvailable() {
+        _attachLabelInDom = true;
+    }
+    """#
+}

@@ -467,6 +467,7 @@ private final class StubPreferences: AIChatPreferencesPersisting {
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
+@MainActor
 private final class StubModelsService: AIChatModelsProviding {
     enum StubError: Error {
         case fetchFailed

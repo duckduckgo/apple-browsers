@@ -293,6 +293,7 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
 // MARK: - Mocks
 
+@MainActor
 private final class MockModelsService: AIChatModelsProviding {
     var modelsToReturn: [AIChatRemoteModel] = []
     var errorToThrow: Error?

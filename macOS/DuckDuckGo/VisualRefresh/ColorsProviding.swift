@@ -140,7 +140,7 @@ final class CurrentColorsProviding: ColorsProviding {
     var addressBarActiveBorderColor: NSColor { palette.accentPrimary }
     var addressBarFireBorderColor: NSColor { palette.accentFirePrimary }
     var addressBarOutlineShadow: NSColor { palette.accentAltGlowPrimary }
-    var addressBarShadowColor: NSColor { palette.shadowPrimary }
+    var addressBarShadowColor: NSColor { palette.shadowSecondary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
     var activeAddressBarBackgroundColor: NSColor { palette.inputActive }

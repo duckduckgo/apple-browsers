@@ -233,7 +233,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
     func testWhenDidUpdateStorageCacheNotificationNotificationSentThenUserScriptsAreRebuild() {
         let e1 = expectation(description: "should post initial update")
-        var e2: XCTestExpectation!
+        var e2: XCTestExpectation?
         var ruleList: WKContentRuleList!
         let c = updating.userContentBlockingAssets.sink { assets in
             if ruleList == nil {
@@ -243,7 +243,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                 // ruleList should not be recompiled
                 XCTAssertTrue(assets.rules(withName: "test") === ruleList)
                 XCTAssertTrue(assets.isValid)
-                e2.fulfill()
+                e2?.fulfill()
+                e2 = nil
             }
         }
 

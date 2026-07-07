@@ -173,4 +173,10 @@ final class CustomizeResponsesStateTests: XCTestCase {
         let state = CustomizeResponsesState.make(customizationValue: json, activeValue: nil, clarifiesLabel: clarifies, maxSubLabelLength: 15)
         XCTAssertEqual(state.subLabel, "Supercalifragil…")
     }
+
+    func testSubLabelWithNonPositiveMaxLengthReturnsEmptyWithoutCrashing() {
+        let json = jsonString(["tone": "Friendly", "length": "Detailed"])
+        XCTAssertEqual(CustomizeResponsesState.make(customizationValue: json, activeValue: nil, clarifiesLabel: clarifies, maxSubLabelLength: 0).subLabel, "")
+        XCTAssertEqual(CustomizeResponsesState.make(customizationValue: json, activeValue: nil, clarifiesLabel: clarifies, maxSubLabelLength: -5).subLabel, "")
+    }
 }

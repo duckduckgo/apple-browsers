@@ -126,6 +126,7 @@ enum CustomizeResponsesSubLabel {
     }
 
     private static func truncateByWord(_ text: String, maxLength: Int) -> String {
+        guard maxLength > 0 else { return "" }
         if text.count <= maxLength { return text }
         var result = ""
         for word in text.split(separator: " ", omittingEmptySubsequences: false) {

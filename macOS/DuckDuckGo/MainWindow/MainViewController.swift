@@ -333,7 +333,11 @@ final class MainViewController: NSViewController {
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
             themeManager: themeManager,
             omnibarController: aiChatOmnibarController,
-            duckAiNativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler
+            // Fire windows use an isolated in-memory Duck.ai store; the registry returns nil for
+            // `.regular`, so regular windows fall back to the on-disk handler. Mirrors how
+            // AIChatTabExtension resolves the tab's own storage.
+            duckAiNativeStorageHandler: NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: tabCollectionViewModel.burnerMode)
+                ?? NSApp.delegateTyped.duckAiNativeStorageHandler
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,

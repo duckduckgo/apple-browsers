@@ -53,7 +53,7 @@ struct BadgeAnimationView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                ExpandableRectangle(animationModel: animationModel, backgroundColor: bannerBackgroundColor)
+                ExpandableRectangle(animationModel: animationModel, backgroundColor: bannerBackgroundColor, backgroundCornerRadius: backgroundRoundedCornersRadius(containerSize: geometry.size))
                 .frame(width: geometry.size.width, height: geometry.size.height)
 
                 HStack {
@@ -92,7 +92,7 @@ struct BadgeAnimationView: View {
                 HStack {
                     Rectangle()
                         .foregroundColor(bannerBackgroundColor)
-                        .clipShape(LeftRoundedRectangle(radius: Consts.View.cornerRadius))
+                        .clipShape(LeftRoundedRectangle(radius: backgroundRoundedCornersRadius(containerSize: geometry.size)))
                         .frame(width: geometry.size.height - Consts.View.opaqueViewOffset, height: geometry.size.height)
                     Spacer()
                 }
@@ -106,6 +106,10 @@ struct BadgeAnimationView: View {
         }
         .frame(width: viewWidth - 1)
         .frame(width: viewWidth, alignment: .trailing)
+    }
+
+    private func backgroundRoundedCornersRadius(containerSize: CGSize) -> CGFloat {
+        themeManager.isAppRebranded ? containerSize.height * 0.5 : Consts.View.cornerRadius
     }
 
     private var textWidth: CGFloat {
@@ -200,6 +204,7 @@ struct ExpandableRectangle: View {
     @ObservedObject var animationModel: BadgeNotificationAnimationModel
     @State var width: CGFloat = 0
     let backgroundColor: Color
+    let backgroundCornerRadius: CGFloat
 
     private let minimumWidthOffset: CGFloat = 2
 
@@ -207,7 +212,7 @@ struct ExpandableRectangle: View {
         GeometryReader { geometry in
             Rectangle()
                 .fill(backgroundColor)
-                .clipShape(RoundedRectangle(cornerRadius: Consts.View.cornerRadius))
+                .clipShape(RoundedRectangle(cornerRadius: backgroundCornerRadius))
                 .frame(width: geometry.size.height + minimumWidthOffset + width, height: geometry.size.height)
                 .onReceive(animationModel.$state, perform: { state in
                     switch state {

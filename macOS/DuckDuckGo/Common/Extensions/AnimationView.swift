@@ -22,13 +22,24 @@ import AppKit
 
 extension LottieAnimationView {
 
+    /// `.lottie` file are .zip archives, loaded async for performance. JSON animations load in place.
     convenience init?(named animationName: String, imageProvider: AnimationImageProvider? = nil) {
-        guard let animation = LottieAnimation.named(animationName, animationCache: LottieAnimationCache.shared) else {
+        if Bundle.main.containsLottieAnimation(named: animationName) {
+            self.init(dotLottieName: animationName)
+        } else if let animation = LottieAnimation.named(animationName, animationCache: LottieAnimationCache.shared) {
+            self.init(animation: animation, imageProvider: imageProvider)
+        } else {
             return nil
         }
 
-        self.init(animation: animation, imageProvider: imageProvider)
         identifier = NSUserInterfaceItemIdentifier(rawValue: animationName)
     }
+}
 
+private extension Bundle {
+
+    func containsLottieAnimation(named animationName: String) -> Bool {
+        let lottieExtension = "lottie"
+        return url(forResource: animationName, withExtension: lottieExtension) != nil
+    }
 }

@@ -743,7 +743,7 @@ final class AddressBarTextField: NSTextField {
     enum SuggestionWindowSizes {
 
         private enum Metrics {
-            static let shadowOffset: CGFloat = -8
+            static let shadowOffset: CGFloat = -2
             static let windowOffset = CGPoint(x: -20, y: -3)
             static let legacyShadowOffset: CGFloat = 4
             static let legacyWindowOffset = CGPoint(x: -20, y: 5)

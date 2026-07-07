@@ -96,7 +96,7 @@ final class LegacyColorsProviding: ColorsProviding {
     var textTertiaryColor: NSColor { palette.textTertiary }
     var accentPrimaryColor: NSColor { palette.accentPrimary }
     var addressBarOutlineShadow: NSColor { palette.accentAltGlowPrimary }
-    var addressBarShadowColor: NSColor { palette.shadowPrimary }
+    var addressBarShadowColor: NSColor { palette.shadowTertiary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
     var addressBarActiveBorderColor: NSColor { palette.accentPrimary }
@@ -140,7 +140,7 @@ final class CurrentColorsProviding: ColorsProviding {
     var addressBarActiveBorderColor: NSColor { palette.accentPrimary }
     var addressBarFireBorderColor: NSColor { palette.accentFirePrimary }
     var addressBarOutlineShadow: NSColor { palette.accentAltGlowPrimary }
-    var addressBarShadowColor: NSColor { palette.shadowSecondary }
+    var addressBarShadowColor: NSColor { palette.shadowTertiary }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
     var activeAddressBarBackgroundColor: NSColor { palette.inputActive }

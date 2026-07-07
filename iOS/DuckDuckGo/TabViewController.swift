@@ -1026,9 +1026,9 @@ class TabViewController: UIViewController {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
         if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            webView.scrollView.clipsToBounds = false
-            webView.clipsToBounds = false
-            outerContainer.clipsToBounds = false
+            //webView.scrollView.clipsToBounds = false
+            //webView.clipsToBounds = false
+            //outerContainer.clipsToBounds = false
         }
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)

@@ -45,7 +45,7 @@ enum FloatingUILayoutPolicy {
         guard !isUnifiedToggleInputAffectingLayout else { return .zero }
         switch addressBarPosition {
         case .top:
-            return UIEdgeInsets(top: omniBarHeight, left: 0, bottom: 0, right: 0)
+            return UIEdgeInsets(top: omniBarHeight, left: 0, bottom: toolbarHeight, right: 0)
         case .bottom:
             return UIEdgeInsets(top: 0, left: 0, bottom: toolbarHeight, right: 0)
         }

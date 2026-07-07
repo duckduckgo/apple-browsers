@@ -547,9 +547,9 @@ class MainViewCoordinator {
     /// content container to the safe area, giving voice mode the full height between the AI
     /// header and the home indicator. Idempotent.
     func setAITabBottomChromeHidden(_ hidden: Bool) {
+        isAITabBottomChromeHidden = hidden
         guard navigationBarContainer.isHidden != hidden else { return }
         navigationBarContainer.isHidden = hidden
-        isAITabBottomChromeHidden = hidden
         applyAITabCollapsedTopSeparatorVisibility()
         if hidden {
             setContentContainerBottomAnchorMode(.safeArea)

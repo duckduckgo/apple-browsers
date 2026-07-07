@@ -913,12 +913,14 @@ final class AddressBarViewController: NSViewController {
         shadowView.shadowSides = isSuggestionsWindowVisible ? [.left, .top, .right] : []
         shadowView.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
-        if themeManager.isAppRebranded {
-            shadowView.shadowRadius = styleProvider.suggestionShadowRadius
-            shadowView.shadowColor = colorsProvider.addressBarOutlineShadow
-        } else {
-            shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
-            shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
+        NSAppearance.withAppAppearance {
+            if themeManager.isAppRebranded {
+                shadowView.shadowRadius = styleProvider.suggestionShadowRadius
+                shadowView.shadowColor = colorsProvider.addressBarShadowColor
+            } else {
+                shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
+                shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
+            }
         }
 
         let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl

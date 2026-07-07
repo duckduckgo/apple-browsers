@@ -364,10 +364,13 @@ extension SuggestionViewController: ThemeUpdateListening {
         backgroundViewTopConstraint.constant = barStyleProvider.topSpaceForSuggestionWindow
         backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
         innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
-        shadowView.shadowColor = colorsProvider.addressBarShadowColor
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
-        backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
+
+        NSAppearance.withAppAppearance {
+            shadowView.shadowColor = colorsProvider.addressBarShadowColor
+            backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
+        }
 
         tableView.reloadData()
     }

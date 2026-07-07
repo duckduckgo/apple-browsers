@@ -1894,9 +1894,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
-        shadowView.shadowColor = colorsProvider.addressBarShadowColor
 
         NSAppearance.withAppAppearance {
+            shadowView.shadowColor = colorsProvider.addressBarShadowColor
             imageUploadButton.hoverBackgroundColor = .buttonMouseOver
             imageUploadButton.pressedBackgroundColor = .buttonMouseDown
             modelPickerButton.hoverBackgroundColor = .buttonMouseOver

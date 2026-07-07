@@ -411,7 +411,7 @@ private extension AIChatContextualSheetCoordinator {
                     guard let expectedURL,
                           let context,
                           let emittedURL = URL(string: context.contextData.url) else { return true }
-                    return emittedURL.equals(expectedURL, by: .fuzzyIdentity)
+                    return emittedURL.equals(expectedURL, by: .sameDocument)
                 })
                 .sink { context in
                     continuation.yield(context?.contextData)

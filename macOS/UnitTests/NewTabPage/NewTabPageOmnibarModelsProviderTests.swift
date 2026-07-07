@@ -111,6 +111,54 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertFalse(allIds.contains("pro-only"))
     }
 
+    // MARK: - Attachment Limits Tests
+
+    func testWhenResponseHasNoAttachmentLimitsThenProviderLimitsAreNil() async {
+        mockModelsService.modelsToReturn = [makeRemoteModel(id: "free-model", accessTier: ["free"])]
+        mockModelsService.attachmentLimitsToReturn = nil
+
+        _ = await provider.fetchAIModelSections()
+
+        XCTAssertNil(provider.attachmentLimits)
+    }
+
+    func testWhenResponseHasAttachmentLimitsThenTheyAreMappedForFreeTier() async {
+        mockModelsService.modelsToReturn = [makeRemoteModel(id: "free-model", accessTier: ["free"])]
+        mockModelsService.attachmentLimitsToReturn = makeAttachmentLimits()
+
+        _ = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(provider.attachmentLimits, expectedAttachmentLimits(base: freeBase))
+    }
+
+    func testWhenPlusUserThenPlusAttachmentLimitsAreMapped() async {
+        mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
+        mockModelsService.modelsToReturn = [makeRemoteModel(id: "plus-model", accessTier: ["plus"])]
+        mockModelsService.attachmentLimitsToReturn = makeAttachmentLimits()
+
+        _ = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(provider.attachmentLimits, expectedAttachmentLimits(base: plusBase))
+    }
+
+    func testWhenProUserThenProAttachmentLimitsAreMapped() async {
+        mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .pro))
+        mockModelsService.modelsToReturn = [makeRemoteModel(id: "pro-model", accessTier: ["pro"])]
+        mockModelsService.attachmentLimitsToReturn = makeAttachmentLimits()
+
+        _ = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(provider.attachmentLimits, expectedAttachmentLimits(base: proBase))
+    }
+
+    func testWhenFetchFailsThenAttachmentLimitsRemainNil() async {
+        mockModelsService.errorToThrow = NSError(domain: "test", code: -1)
+
+        _ = await provider.fetchAIModelSections()
+
+        XCTAssertNil(provider.attachmentLimits)
+    }
+
     // MARK: - Reasoning Effort Tests
 
     func testWhenModelHasSupportedReasoningEffortThenItIsMappedToItem() async {
@@ -274,6 +322,51 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         )
     }
 
+    // Distinct base values per tier so tier-specific mapping is verifiable.
+    private let freeBase = 10
+    private let plusBase = 100
+    private let proBase = 1000
+
+    private func makeAttachmentLimits() -> AIChatAttachmentLimits {
+        AIChatAttachmentLimits(
+            free: makeTierLimits(base: freeBase),
+            plus: makeTierLimits(base: plusBase),
+            pro: makeTierLimits(base: proBase)
+        )
+    }
+
+    private func makeTierLimits(base: Int) -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(
+                maxPerConversation: base + 1,
+                maxFileSizeMB: base + 2,
+                maxTotalFileSizeBytes: base + 3,
+                maxPagesPerFile: base + 4
+            ),
+            images: AIChatAttachmentImageLimits(
+                maxPerTurn: base + 5,
+                maxPerConversation: base + 6,
+                maxInputCharsWithAttachments: base + 7
+            )
+        )
+    }
+
+    private func expectedAttachmentLimits(base: Int) -> NewTabPageDataModel.AttachmentLimits {
+        NewTabPageDataModel.AttachmentLimits(
+            files: .init(
+                maxPerConversation: base + 1,
+                maxFileSizeMB: base + 2,
+                maxTotalFileSizeBytes: base + 3,
+                maxPagesPerFile: base + 4
+            ),
+            images: .init(
+                maxPerTurn: base + 5,
+                maxPerConversation: base + 6,
+                maxInputCharsWithAttachments: base + 7
+            )
+        )
+    }
+
     private func makeSubscription(tier: TierName) -> DuckDuckGoSubscription {
         DuckDuckGoSubscription(
             productId: "test",
@@ -295,10 +388,11 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
 
 private final class MockModelsService: AIChatModelsProviding {
     var modelsToReturn: [AIChatRemoteModel] = []
+    var attachmentLimitsToReturn: AIChatAttachmentLimits?
     var errorToThrow: Error?
 
     func fetchModels() async throws -> AIChatModelsResponse {
         if let error = errorToThrow { throw error }
-        return AIChatModelsResponse(models: modelsToReturn)
+        return AIChatModelsResponse(models: modelsToReturn, attachmentLimits: attachmentLimitsToReturn)
     }
 }

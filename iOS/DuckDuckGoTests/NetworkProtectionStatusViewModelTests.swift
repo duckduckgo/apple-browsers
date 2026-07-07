@@ -238,6 +238,23 @@ import Subscription
         XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
     }
 
+    func testControllerError_takesPrecedenceOverLiveSessionError() async {
+        let controllerErrorSubject = CurrentValueSubject<String?, Never>(nil)
+        let errorObserver = MockConnectionErrorObserver()
+        let viewModel = makeViewModel(controllerErrorPublisher: controllerErrorSubject.eraseToAnyPublisher(),
+                                      errorObserver: errorObserver)
+
+        // A real (non-nil) session error is showing in the banner first.
+        errorObserver.subject.send("VPN disconnected due to expired subscription")
+        await waitFor(condition: viewModel.error?.message == UserText.vpnErrorSubscriptionExpired)
+
+        // With a controller (pre-session) start failure also present, the controller message wins.
+        controllerErrorSubject.send(UserText.vpnErrorAuthenticationFailed)
+        await waitFor(condition: viewModel.error?.message == UserText.vpnErrorAuthenticationFailed)
+        XCTAssertEqual(viewModel.error?.title, UserText.netPStatusViewErrorConnectionFailedTitle)
+        XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
+    }
+
     // MARK: - Helpers
 
     private func makeViewModel(controllerErrorPublisher: AnyPublisher<String?, Never>,

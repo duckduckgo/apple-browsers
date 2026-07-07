@@ -69,6 +69,9 @@ class MainViewCoordinator {
     private var statusBackgroundPresentation: StatusBackgroundPresentation = .standard
     private var statusBackgroundPresentationBeforeOmnibarEditing: StatusBackgroundPresentation?
     private(set) var isNavigationChromeHidden = false
+    /// True when the bottom UTI (`navigationBarContainer`) is intentionally hidden for the current
+    /// AI tab — voice mode or any FE-driven `hideChatInput`. Written only by `setAITabBottomChromeHidden`.
+    private(set) var isAITabBottomChromeHidden = false
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
     private var isFloatingUIEnabled = false
@@ -139,11 +142,15 @@ class MainViewCoordinator {
             toolbar.setOmnibarView(nil, height: 0)
             // Flag-off keeps the original toolbar height so existing chrome is unchanged.
             constraints.toolbarHeight.constant = BrowserToolbarView.legacyButtonsHeight
-            navigationBarContainer.isHidden = false
-            navigationBarContainer.alpha = 1
-            navigationBarContainer.isUserInteractionEnabled = true
-            if position.isBottom {
-                setContentContainerBottomAnchorMode(.toolbar)
+            // Voice mode (and any FE-driven hideChatInput) intentionally hides the bottom UTI via
+            // setAITabBottomChromeHidden(true). The flag-off path must not undo that hide.
+            if !isAITabBottomChromeHidden {
+                navigationBarContainer.isHidden = false
+                navigationBarContainer.alpha = 1
+                navigationBarContainer.isUserInteractionEnabled = true
+                if position.isBottom {
+                    setContentContainerBottomAnchorMode(.toolbar)
+                }
             }
             isOmnibarInToolbar = false
             return
@@ -542,6 +549,7 @@ class MainViewCoordinator {
     func setAITabBottomChromeHidden(_ hidden: Bool) {
         guard navigationBarContainer.isHidden != hidden else { return }
         navigationBarContainer.isHidden = hidden
+        isAITabBottomChromeHidden = hidden
         applyAITabCollapsedTopSeparatorVisibility()
         if hidden {
             setContentContainerBottomAnchorMode(.safeArea)

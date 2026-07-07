@@ -49,6 +49,32 @@ protocol SharedColorPaletteDefinition {
     static var accentAltTextSecondary: DynamicColor { get }
     static var accentAltTextTertiary: DynamicColor { get }
 
+    // MARK: - Accent Brand Colors
+    static var accentBrandContentPrimary: DynamicColor { get }
+    static var accentBrandContentSecondary: DynamicColor { get }
+    static var accentBrandContentTertiary: DynamicColor { get }
+    static var accentBrandGlowPrimary: DynamicColor { get }
+    static var accentBrandGlowSecondary: DynamicColor { get }
+    static var accentBrandPrimary: DynamicColor { get }
+    static var accentBrandSecondary: DynamicColor { get }
+    static var accentBrandTertiary: DynamicColor { get }
+    static var accentBrandTextPrimary: DynamicColor { get }
+    static var accentBrandTextSecondary: DynamicColor { get }
+    static var accentBrandTextTertiary: DynamicColor { get }
+
+    // MARK: - Accent Fire Colors
+    static var accentFireContentPrimary: DynamicColor { get }
+    static var accentFireContentSecondary: DynamicColor { get }
+    static var accentFireContentTertiary: DynamicColor { get }
+    static var accentFireGlowPrimary: DynamicColor { get }
+    static var accentFireGlowSecondary: DynamicColor { get }
+    static var accentFirePrimary: DynamicColor { get }
+    static var accentFireSecondary: DynamicColor { get }
+    static var accentFireTertiary: DynamicColor { get }
+    static var accentFireTextPrimary: DynamicColor { get }
+    static var accentFireTextSecondary: DynamicColor { get }
+    static var accentFireTextTertiary: DynamicColor { get }
+
     // MARK: - Alert
     static var alertGreen: DynamicColor { get }
     static var alertYellow: DynamicColor { get }
@@ -91,6 +117,12 @@ protocol SharedColorPaletteDefinition {
     static var controlsFillTertiary: DynamicColor { get }
     static var controlsRaisedBackdrop: DynamicColor { get }
     static var controlsRaisedFillPrimary: DynamicColor { get }
+    static var controlsRaisedFillSecondary: DynamicColor { get }
+    static var controlsRaisedFillTertiary: DynamicColor { get }
+    static var controlsSubtleBorderPrimary: DynamicColor { get }
+    static var controlsSubtleBorderSecondary: DynamicColor { get }
+    static var controlsSubtleBorderTertiary: DynamicColor { get }
+    static var controlsSubtleFillSecondary: DynamicColor { get }
 
     // MARK: - Destructive Colors
     static var destructiveContentPrimary: DynamicColor { get }
@@ -112,6 +144,10 @@ protocol SharedColorPaletteDefinition {
     static var iconsSecondary: DynamicColor { get }
     static var iconsTertiary: DynamicColor { get }
 
+    // MARK: - Input Colors
+    static var inputActive: DynamicColor { get }
+    static var inputResting: DynamicColor { get }
+
     // MARK: - System
     static var lines: DynamicColor { get }
 
@@ -120,9 +156,19 @@ protocol SharedColorPaletteDefinition {
     static var shadowSecondary: DynamicColor { get }
     static var shadowTertiary: DynamicColor { get }
 
+    // MARK: - Status Colors
+    static var statusGray: DynamicColor { get }
+    static var statusGreen: DynamicColor { get }
+    static var statusRed: DynamicColor { get }
+    static var statusWarningContentPrimary: DynamicColor { get }
+    static var statusWarningFillPrimary: DynamicColor { get }
+    static var statusWarningPrimary: DynamicColor { get }
+    static var statusYellow: DynamicColor { get }
+
     // MARK: - Surface Colors
     static var surfaceBackdrop: DynamicColor { get }
     static var surfaceCanvas: DynamicColor { get }
+    static var surfaceContrast: DynamicColor { get }
     static var surfacePrimary: DynamicColor { get }
     static var surfaceSecondary: DynamicColor { get }
     static var surfaceTertiary: DynamicColor { get }
@@ -140,6 +186,7 @@ protocol SharedColorPaletteDefinition {
     // MARK: - Tone Colors
     static var toneShadePrimary: DynamicColor { get }
     static var toneTintPrimary: DynamicColor { get }
+    static var toneTintSecondary: DynamicColor { get }
 }
 
 #endif

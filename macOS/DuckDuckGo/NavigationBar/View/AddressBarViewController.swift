@@ -106,6 +106,7 @@ final class AddressBarViewController: NSViewController {
     @IBOutlet var activeBackgroundView: ColorView!
     @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
     @IBOutlet var innerBorderView: ColorView!
+    @IBOutlet var bottomSeparatorView: ColorView!
     @IBOutlet var buttonsContainerView: NSView!
     @IBOutlet var switchToTabBox: ColorView!
     @IBOutlet var switchToTabLabel: NSTextField!
@@ -780,7 +781,7 @@ final class AddressBarViewController: NSViewController {
         inactiveBackgroundView.cornerRadius = styleProvider.addressBarInactiveBackgroundViewRadius
         innerBorderView.cornerRadius = styleProvider.addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: isSuggestionsWindowVisible)
 
-        if featureFlagger.isFeatureOn(.appRebranding) {
+        if themeManager.isAppRebranded {
             let roundedCorners: RoundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
 
             innerBorderView.roundedCorners = roundedCorners
@@ -965,6 +966,7 @@ final class AddressBarViewController: NSViewController {
         }
 
         addressBarTextField.refreshStyle()
+        bottomSeparatorView.isHidden = !themeManager.isAppRebranded
 
         let navigationBarBackgroundColor = theme.colorsProvider.navigationBackgroundColor
 

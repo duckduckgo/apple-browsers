@@ -583,6 +583,33 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Hello")
         XCTAssertNil(mockUserScript.lastSubmittedPageContext)
     }
+
+    func testSubmitRichPromptPassesPageContextToUserScript() throws {
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .contextual)
+        let pageContext = AIChatPageContextData(
+            title: "Queued Page",
+            favicon: [],
+            url: "https://example.com/queued",
+            content: "Queued content",
+            truncated: false,
+            fullContentLength: 14
+        )
+
+        handler.submitPrompt("Summarize queued page",
+                             images: nil,
+                             files: nil,
+                             modelId: nil,
+                             tools: nil,
+                             pageContext: pageContext,
+                             reasoningEffort: nil)
+
+        XCTAssertEqual(mockUserScript.submitPromptCallCount, 1)
+        XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Summarize queued page")
+        XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.title, "Queued Page")
+        XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.url, "https://example.com/queued")
+    }
     
     // MARK: - Delegate Notifications
 
@@ -771,6 +798,18 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
+        submitPromptCallCount += 1
+        lastSubmittedPrompt = prompt
+        lastSubmittedPageContext = pageContext
+    }
+
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?) {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
         lastSubmittedPageContext = pageContext

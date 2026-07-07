@@ -158,10 +158,15 @@ extension TabViewController {
         errorInfoImage = UIImageView(image: UIImage(rebrandable: "Dax-Accident"))
         errorInfoImage.contentMode = .scaleAspectFit
         errorInfoImage.translatesAutoresizingMaskIntoConstraints = false
+        errorInfoImage.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            errorInfoImage.widthAnchor.constraint(equalToConstant: 296),
+            errorInfoImage.heightAnchor.constraint(equalToConstant: 188)
+        ])
 
         let labelsStack = UIStackView()
         labelsStack.axis = .vertical
-        labelsStack.alignment = .fill
+        labelsStack.alignment = .center
         labelsStack.spacing = 11
         labelsStack.translatesAutoresizingMaskIntoConstraints = false
 
@@ -207,6 +212,7 @@ extension TabViewController {
             errorContentStack.bottomAnchor.constraint(lessThanOrEqualTo: error.bottomAnchor),
 
             labelsStack.widthAnchor.constraint(lessThanOrEqualToConstant: 400),
+            errorMessage.widthAnchor.constraint(lessThanOrEqualTo: errorHeader.widthAnchor),
             errorActionButtonFillWidthConstraint,
             errorActionButton.widthAnchor.constraint(lessThanOrEqualToConstant: 360),
             errorActionButton.heightAnchor.constraint(equalToConstant: 50),

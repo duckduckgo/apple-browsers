@@ -743,7 +743,7 @@ final class AddressBarTextField: NSTextField {
     enum SuggestionWindowSizes {
 
         private enum ToggleAlignmentOffset {
-            static let rebranded: CGFloat = 2
+            static let rebranded: CGFloat = -9
             static let legacy: CGFloat = 4
         }
 

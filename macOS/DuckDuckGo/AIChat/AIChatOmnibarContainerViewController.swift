@@ -642,10 +642,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         innerBorderView.borderWidth = 1
         backgroundView.addSubview(innerBorderView)
 
-        shadowView.shadowColor = .suggestionsShadow
+        shadowView.shadowColor = themeManager.theme.colorsProvider.addressBarShadowColor
         shadowView.shadowOpacity = 1
         shadowView.shadowOffset = CGSize(width: 0, height: 0)
-        shadowView.shadowRadius = 20
+        shadowView.shadowRadius = themeManager.theme.addressBarStyleProvider.suggestionShadowRadius
         shadowView.shadowSides = [.left, .right, .bottom]
 
         containerView.translatesAutoresizingMaskIntoConstraints = false

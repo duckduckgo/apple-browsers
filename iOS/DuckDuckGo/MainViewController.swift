@@ -1341,6 +1341,14 @@ class MainViewController: UIViewController {
     /// from/to. Computed from layout metrics rather than the live bar frame so it stays fixed while
     /// the bar slides off-screen during the transition.
     private func floatingBarExpandedFrame() -> CGRect {
+        // Match the correct size for the capsule.
+        if appSettings.currentAddressBarPosition.isBottom, viewCoordinator.isOmnibarInToolbar {
+            let capsuleFrame = viewCoordinator.toolbar.restingCapsuleFrame(in: view)
+            if !capsuleFrame.isEmpty {
+                return capsuleFrame
+            }
+        }
+
         let expectedHeight = viewCoordinator.omniBar.barView.expectedHeight
         let width = viewCoordinator.omniBar.barView.frame.width
         let centerX = view.bounds.midX

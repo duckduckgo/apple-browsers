@@ -221,6 +221,9 @@ class MainViewController: UIViewController {
     private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
         self?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
     }
+    /// Drives the floating-UI capsule morph frame-by-frame during animated bar reveal/hide so the
+    /// pill physically morphs into/out of the bars, matching the scroll transition.
+    private let chromeMorphAnimator = ChromeMorphAnimator()
     /// The last true chrome-visibility fraction requested (1 = fully shown, 0 = hidden). Tracked
     /// separately from container alpha because the floating capsule morph drives chrome alpha with a
     /// non-linear handoff ramp, so alpha is no longer a reliable source for the real percent.
@@ -560,6 +563,10 @@ class MainViewController: UIViewController {
         tabManager.fireModeDelegate = self
         self.fireExecutor.delegate = self
         bindSyncService()
+    }
+
+    deinit {
+        chromeMorphAnimator.cancel()
     }
 
     func loadFindInPage() {
@@ -3745,6 +3752,9 @@ extension MainViewController: BrowserChromeDelegate {
 
     struct ChromeAnimationConstants {
         static let duration = 0.1
+        /// Longer than `duration` so the floating capsule morph is legible; the pill grows/moves into
+        /// the bars (and back) rather than snapping across the short legacy cross-fade.
+        static let morphDuration = 0.33
     }
 
     var tabBarContainer: UIView {
@@ -3777,7 +3787,12 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
+        // Start any morph scrub from where the chrome visually is (a scrub already in flight, or the
+        // last committed fraction) so an interruption resumes smoothly rather than snapping.
+        let fromPercent = chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
         lastChromeVisibilityPercent = percent
+        // Any prior scrub is superseded by this command; the new state is applied below.
+        chromeMorphAnimator.cancel()
 
         if percent < 1 {
             if omniBar.isTextFieldEditing || unifiedToggleInputCoordinator?.isOmnibarSession == true {
@@ -3789,39 +3804,40 @@ extension MainViewController: BrowserChromeDelegate {
             showMenuHighlighterIfNeeded()
         }
 
-        let updateBlock = {
-            if self.isFloatingUIEnabled {
-                self.viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
-            }
-            self.updateToolbarConstant(percent)
-            self.updateNavBarConstant(percent)
-            self.currentTab?.updateWebViewBottomAnchor(for: percent)
-            self.updateFloatingTopNewTabPageInset(for: percent)
+        let postNotification = percent == 0 || percent == 1
 
-            let chromeAlpha = self.chromeAlpha(for: percent)
-            self.viewCoordinator.navigationBarContainer.alpha = chromeAlpha
-            self.viewCoordinator.tabBarContainer.alpha = chromeAlpha
-            self.viewCoordinator.toolbar.alpha = chromeAlpha
-            self.updateFloatingDomainCapsuleVisibility(for: percent)
-            
-            // Post notification only when bars are fully shown or hidden
-            if percent == 0 || percent == 1 {
-                NotificationCenter.default.post(
-                    name: .browserChromeVisibilityChanged,
-                    object: nil,
-                    userInfo: ["isHidden": percent == 0]
-                )
-            }
-        }
-           
-        if animated {
+        // The floating capsule morph geometry and its chrome-alpha handoff are non-linear in
+        // `percent`, so a single `UIView.animate` (which only interpolates the endpoints) skips the
+        // morph and the bars pop/slide in. Replay the exact per-frame state the scroll path applies
+        // by scrubbing `percent` with a display link instead.
+        let useMorphScrub = animated
+            && isFloatingCapsuleActive
+            && !UIAccessibility.isReduceMotionEnabled
+            && abs(fromPercent - percent) > 0.001
+
+        if useMorphScrub {
+            chromeMorphAnimator.animate(
+                from: fromPercent,
+                to: percent,
+                duration: animationDuration ?? ChromeAnimationConstants.morphDuration,
+                onProgress: { [weak self] progress in
+                    guard let self else { return }
+                    self.applyBarsVisibilityState(progress, postChromeVisibilityNotification: false)
+                    self.view.layoutIfNeeded()
+                },
+                onComplete: { [weak self] in
+                    guard let self else { return }
+                    self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
+                    self.view.layoutIfNeeded()
+                })
+        } else if animated {
             self.view.layoutIfNeeded()
             UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) {
-                updateBlock()
+                self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
                 self.view.layoutIfNeeded()
             }
         } else {
-            updateBlock()
+            applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
 
             // Calling this here is important as it causes the layout to run immediately inside current run loop,
             // instead of deferring it until next update block.
@@ -3829,6 +3845,34 @@ extension MainViewController: BrowserChromeDelegate {
             // which may cause an infitie loop layout loop in certain scenarios.
             // See https://app.asana.com/1/137249556945/project/414709148257752/task/1208671955053442 for details.
             self.view.layoutIfNeeded()
+        }
+    }
+
+    /// Applies the chrome layout/alpha/capsule state for a given visibility `percent`. Extracted so
+    /// it can be applied as a single step (legacy `UIView.animate` / non-animated) or per frame by
+    /// the floating capsule morph scrub. `.browserChromeVisibilityChanged` is posted only when
+    /// requested (the settled 0/1 endpoints), so intermediate scrub frames don't emit it.
+    private func applyBarsVisibilityState(_ percent: CGFloat, postChromeVisibilityNotification: Bool) {
+        if isFloatingUIEnabled {
+            viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
+        }
+        updateToolbarConstant(percent)
+        updateNavBarConstant(percent)
+        currentTab?.updateWebViewBottomAnchor(for: percent)
+        updateFloatingTopNewTabPageInset(for: percent)
+
+        let chromeAlpha = chromeAlpha(for: percent)
+        viewCoordinator.navigationBarContainer.alpha = chromeAlpha
+        viewCoordinator.tabBarContainer.alpha = chromeAlpha
+        viewCoordinator.toolbar.alpha = chromeAlpha
+        updateFloatingDomainCapsuleVisibility(for: percent)
+
+        if postChromeVisibilityNotification {
+            NotificationCenter.default.post(
+                name: .browserChromeVisibilityChanged,
+                object: nil,
+                userInfo: ["isHidden": percent == 0]
+            )
         }
     }
 

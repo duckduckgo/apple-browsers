@@ -358,7 +358,7 @@ final class BrowserToolbarView: UIView {
         let bottom = bounds.maxY - safeBottom + offset
         return CGRect(x: bounds.minX + insets.left, y: bottom - height, width: width, height: height)
     }
-
+    
     /// Shifts the glass capsule down from its safe-area-anchored position toward the device bottom,
     /// leaving `floatingBottomMargin`. Done as a transform (not a constraint change) so it doesn't
     /// disturb the toolbar's layout slot or the runtime chrome hide/show constant logic.

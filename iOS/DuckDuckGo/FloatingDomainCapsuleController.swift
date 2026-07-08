@@ -155,14 +155,17 @@ final class FloatingDomainCapsuleController {
         button.accessibilityLabel = domain
 
         let p = max(0, min(1, barsVisibilityPercent))
+
+        // Keep the pill geometry current even when it's about to be hidden, so it is never left
+        // frozen at a stale size/position the next time it becomes visible.
+        applyMorphGeometry(for: p, addressBarPosition: addressBarPosition, expandedFrame: expandedFrame, reduceMotion: reduceMotion, in: view)
+
         let pillAlpha = pillAlpha(for: p, reduceMotion: reduceMotion)
         guard pillAlpha > 0.01 else {
             button.alpha = 0
             button.isHidden = true
             return
         }
-
-        applyMorphGeometry(for: p, addressBarPosition: addressBarPosition, expandedFrame: expandedFrame, reduceMotion: reduceMotion, in: view)
 
         domainLabel.alpha = reduceMotion ? 1 : max(0, min(1, 1 - p))
         button.isHidden = false

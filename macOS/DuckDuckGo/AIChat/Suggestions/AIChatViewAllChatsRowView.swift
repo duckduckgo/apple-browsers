@@ -28,10 +28,13 @@ import DesignResourcesKitIcons
 final class AIChatViewAllChatsRowView: NSView {
 
     private enum Constants {
-        static let rowHeight: CGFloat = 32
-        static let horizontalPadding: CGFloat = 12
+        static let rowHeight: CGFloat = 34
+        static let legacyRowHeight: CGFloat = 32
+        static let horizontalPadding: CGFloat = 14
+        static let legacyHorizontalPadding: CGFloat = 12
         static let iconSize: CGFloat = 16
-        static let iconTitleSpacing: CGFloat = 6
+        static let iconTitleSpacing: CGFloat = 8
+        static let legacyIconTitleSpacing: CGFloat = 6
         static let trailingSpacing: CGFloat = 6
 
         static let iconColor: NSColor = .suggestionIcon
@@ -39,6 +42,8 @@ final class AIChatViewAllChatsRowView: NSView {
     }
 
     // MARK: - UI Components
+
+    private let themeManager: ThemeManaging
 
     private let iconImageView: NSImageView = {
         let imageView = NSImageView()
@@ -113,8 +118,12 @@ final class AIChatViewAllChatsRowView: NSView {
 
     // MARK: - Initialization
 
-    init(themeProvider: SuggestionRowThemeProviding = DefaultSuggestionRowThemeProvider()) {
-        self.themeProvider = themeProvider
+    init(
+        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+        themeProvider: SuggestionRowThemeProviding? = nil)
+    {
+        self.themeManager = themeManager
+        self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager)
         super.init(frame: .zero)
         setupView()
     }
@@ -139,19 +148,23 @@ final class AIChatViewAllChatsRowView: NSView {
         addSubview(openDuckAILabel)
         addSubview(arrowImageView)
 
-        NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: Constants.rowHeight),
+        let rowHeight = themeManager.isAppRebranded ? Constants.rowHeight : Constants.legacyRowHeight
+        let iconPadding = themeManager.isAppRebranded ? Constants.horizontalPadding : Constants.legacyHorizontalPadding
+        let titlePadding = themeManager.isAppRebranded ? Constants.iconTitleSpacing : Constants.legacyIconTitleSpacing
 
-            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: rowHeight),
+
+            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: iconPadding),
             iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
-            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: keyboardShortcutView.leadingAnchor, constant: -Constants.trailingSpacing),
+            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: titlePadding),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: keyboardShortcutView.leadingAnchor, constant: -titlePadding),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            arrowImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
+            arrowImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -iconPadding),
             arrowImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             arrowImageView.widthAnchor.constraint(equalToConstant: 9),
             arrowImageView.heightAnchor.constraint(equalToConstant: 9),
@@ -186,16 +199,16 @@ final class AIChatViewAllChatsRowView: NSView {
                 let tintColor = themeProvider.selectedTintColor
                 backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
                 titleLabel.textColor = tintColor
-                openDuckAILabel.textColor = tintColor
+                openDuckAILabel.textColor = themeProvider.suffixSelectedTextColor
                 iconImageView.contentTintColor = tintColor
-                arrowImageView.contentTintColor = tintColor
+                arrowImageView.contentTintColor = themeProvider.suffixSelectedTextColor
                 keyboardShortcutView.isHighlighted = true
             } else {
                 backgroundLayer.backgroundColor = NSColor.clear.cgColor
                 titleLabel.textColor = Constants.textColor
-                openDuckAILabel.textColor = themeProvider.accentPrimaryColor
+                openDuckAILabel.textColor = themeProvider.suffixTextColor
                 iconImageView.contentTintColor = Constants.iconColor
-                arrowImageView.contentTintColor = themeProvider.accentPrimaryColor
+                arrowImageView.contentTintColor = themeProvider.suffixTextColor
                 keyboardShortcutView.isHighlighted = false
             }
         }

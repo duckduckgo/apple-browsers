@@ -74,10 +74,21 @@ extension SyncSettingsViewController {
 
             let pdf = RecoveryCodeItem(data: data)
 
-            navigationController?.visibleViewController?.presentShareSheet(withItems: [pdf],
-                                                                           fromView: view,
-                                                                           additionalExcludedActivityTypes: recoveryPDFExcludedActivityTypes)
+            // Present from the top-most presented controller (e.g. the V2 connecting sheet) rather than
+            // the settings VC underneath, which would already be presenting and cause the share sheet to fail.
+            let presenter = topmostPresentedViewController
+            presenter?.presentShareSheet(withItems: [pdf],
+                                         fromView: presenter?.view ?? view,
+                                         additionalExcludedActivityTypes: recoveryPDFExcludedActivityTypes)
         }
+    }
+
+    private var topmostPresentedViewController: UIViewController? {
+        var presenter: UIViewController? = navigationController?.visibleViewController ?? self
+        while let presented = presenter?.presentedViewController {
+            presenter = presented
+        }
+        return presenter
     }
 
     func shareCode(_ code: String, source: CodeCollectionSource) {

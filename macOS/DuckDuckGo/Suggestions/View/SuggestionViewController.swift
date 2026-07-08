@@ -55,6 +55,18 @@ final class SuggestionViewController: NSViewController {
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
 
+    private lazy var sectionDividerRowHeight: CGFloat = {
+        let rebrandedHeight: CGFloat = 14
+        let legacyHeight: CGFloat = 9
+        return themeManager.isAppRebranded ? rebrandedHeight : legacyHeight
+    }()
+
+    private lazy var scrollViewBottomInset: CGFloat = {
+        let rebrandedInset: CGFloat = 3
+        let legacyInset: CGFloat = 5
+        return themeManager.isAppRebranded ? rebrandedInset : legacyInset
+    }()
+
     required init?(coder: NSCoder) {
         fatalError("SuggestionViewController: Bad initializer")
     }
@@ -135,11 +147,12 @@ final class SuggestionViewController: NSViewController {
 
     private func setupTableView() {
         tableView.style = .plain
+        tableView.enclosingScrollView?.contentInsets.bottom = scrollViewBottomInset
         tableView.setAccessibilityIdentifier("SuggestionViewController.tableView")
     }
 
     private func setupRoundedCorners() {
-        guard featureFlagger.isFeatureOn(.appRebranding) else {
+        guard themeManager.isAppRebranded else {
             return
         }
 
@@ -351,8 +364,15 @@ extension SuggestionViewController: ThemeUpdateListening {
         backgroundViewTopConstraint.constant = barStyleProvider.topSpaceForSuggestionWindow
         backgroundView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
         innerBorderView.setCornerRadius(barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions)
+
+        shadowView.shadowSides = [.left, .right, .bottom]
+        shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
-        backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
+
+        NSAppearance.withAppAppearance {
+            shadowView.shadowColor = colorsProvider.addressBarShadowColor
+            backgroundView.backgroundColor = colorsProvider.suggestionsBackgroundColor
+        }
 
         tableView.reloadData()
     }
@@ -380,7 +400,9 @@ extension SuggestionViewController: NSTableViewDelegate {
 
         let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier, owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView()
         cell.theme = themeManager.theme
-        cell.isAIChatToggleBeingDisplayed = isAIChatToggleBeingDisplayed
+
+        /// `isAIChatToggleBeingDisplayed` adds an extra leading padding. The AppRebrand new UX already picks the right leading padding via `AddressBarStyleProviding`
+        cell.isAIChatToggleBeingDisplayed = isAIChatToggleBeingDisplayed && !themeManager.isAppRebranded
 
         switch rowContent {
         case .aiChatCell:
@@ -420,21 +442,31 @@ extension SuggestionViewController: NSTableViewDelegate {
 
         containerView.addSubview(dividerLine)
 
+        let isAppRebranded = themeManager.isAppRebranded
+        let leadingConstant: CGFloat = isAppRebranded ? 0 : 12
+        let trailingConstant: CGFloat = isAppRebranded ? 0 : -12
+
+        let verticalConstraint: NSLayoutConstraint = {
+            if isAppRebranded {
+                return dividerLine.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 8)
+            }
+
+            return dividerLine.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
+        }()
+
         NSLayoutConstraint.activate([
-            dividerLine.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            dividerLine.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            dividerLine.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            dividerLine.heightAnchor.constraint(equalToConstant: 1)
+            dividerLine.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: leadingConstant),
+            dividerLine.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: trailingConstant),
+            dividerLine.heightAnchor.constraint(equalToConstant: 1),
+            verticalConstraint
         ])
 
         return containerView
     }
 
-    private static let sectionDividerRowHeight: CGFloat = 9
-
     func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
         if suggestionContainerViewModel.isDividerRow(row) {
-            return Self.sectionDividerRowHeight
+            return sectionDividerRowHeight
         }
         let barStyleProvider = themeManager.theme.addressBarStyleProvider
         return barStyleProvider.sizeForSuggestionRow(isHomePage: suggestionContainerViewModel.isHomePage)
@@ -449,6 +481,7 @@ extension SuggestionViewController: NSTableViewDelegate {
         }
 
         suggestionTableRowView.theme = themeManager.theme
+        suggestionTableRowView.isAppRebranded = themeManager.isAppRebranded
         return suggestionTableRowView
     }
 

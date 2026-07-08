@@ -34,6 +34,8 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
 
     public var onActionSelected: ((Action) -> Void)?
 
+    private var loadingView: AIChatSuggestionsLoadingView?
+
     // MARK: - UI Components
 
     private lazy var stackView: UIStackView = {
@@ -59,10 +61,12 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
     // MARK: - Configuration
 
     public func configure(with actions: [Action]) {
-        stackView.arrangedSubviews.forEach {
-            stackView.removeArrangedSubview($0)
-            $0.removeFromSuperview()
-        }
+        stackView.arrangedSubviews
+            .filter { $0 !== loadingView }
+            .forEach {
+                stackView.removeArrangedSubview($0)
+                $0.removeFromSuperview()
+            }
 
         for action in actions {
             let chipView = AIChatQuickActionChipView()
@@ -71,6 +75,18 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
                 self?.onActionSelected?(action)
             }
             stackView.addArrangedSubview(chipView)
+        }
+    }
+
+    public func setLoading(_ isLoading: Bool) {
+        if isLoading {
+            guard loadingView == nil else { return }
+            let view = AIChatSuggestionsLoadingView()
+            loadingView = view
+            stackView.insertArrangedSubview(view, at: 0)
+        } else {
+            loadingView?.removeFromSuperview()
+            loadingView = nil
         }
     }
 }

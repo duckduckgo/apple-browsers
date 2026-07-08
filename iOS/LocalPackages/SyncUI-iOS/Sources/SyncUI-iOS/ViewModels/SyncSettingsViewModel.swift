@@ -178,6 +178,19 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
     @Published public var isSyncWithAnotherDevicePromptVisible: Bool = false
 
+    public enum ConnectingSheetPhase: Equatable, Identifiable {
+        case connecting
+        case syncAnotherDevice
+        case recoverYourData
+
+        // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
+        // per-case id would dismiss and re-present the sheet on every phase change. A stable id keeps
+        // it the same presented sheet, letting the content morph in place; only nil ↔ non-nil presents/dismisses.
+        public var id: Int { 0 }
+    }
+
+    @Published public var connectingSheetPhase: ConnectingSheetPhase?
+
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
 
     public let isAutoRestoreFeatureAvailable: Bool
@@ -194,6 +207,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
     private var shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
+    private var postConnectingSheetDismissAction: (() -> Void)?
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
 
@@ -386,15 +400,50 @@ public class SyncSettingsViewModel: ObservableObject {
         }
     }
 
-    @discardableResult
-    public func checkAndShowSyncWithAnotherDevicePrompt() -> Bool {
+    public var thisDeviceName: String? {
+        devices.first(where: { $0.isThisDevice })?.name
+    }
+
+    public func shouldShowSyncWithAnotherDevicePrompt() -> Bool {
         guard !isBusy else { return false }
         guard isSyncEnabled else { return false }
         guard devices.count == 1 else { return false }
         guard delegate?.hasShownSimplifiedSyncAnotherDevicePrompt == false else { return false }
+        return true
+    }
+
+    @discardableResult
+    public func checkAndShowSyncWithAnotherDevicePrompt() -> Bool {
+        guard shouldShowSyncWithAnotherDevicePrompt() else { return false }
         isSyncWithAnotherDevicePromptVisible = true
         delegate?.hasShownSimplifiedSyncAnotherDevicePrompt = true
         return true
+    }
+
+    public func showSyncWithAnotherDeviceInConnectingSheet() {
+        scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
+        connectingSheetPhase = .syncAnotherDevice
+    }
+
+    public func syncAnotherDeviceFromConnectingSheet() {
+        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
+        postConnectingSheetDismissAction = { [weak self] in self?.scanQRCode() }
+        connectingSheetPhase = nil
+    }
+
+    public func notNowFromConnectingSheet() {
+        connectingSheetPhase = .recoverYourData
+    }
+
+    public func recoverYourDataDoneFromConnectingSheet() {
+        postConnectingSheetDismissAction = { [weak self] in self?.syncWithAnotherDevicePromptDidDismiss() }
+        connectingSheetPhase = nil
+    }
+
+    public func connectingSheetDidDismiss() {
+        let action = postConnectingSheetDismissAction
+        postConnectingSheetDismissAction = nil
+        action?()
     }
 
     public func dismissSyncWithAnotherDevicePrompt() {

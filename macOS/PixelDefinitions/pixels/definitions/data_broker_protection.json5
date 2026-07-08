@@ -27,8 +27,7 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             "channel"
         ]
@@ -404,8 +403,7 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             "dbpActionTries",
             "dbpDataBroker",
@@ -606,8 +604,7 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             "dbpDataBroker",
             "dbpBrokerVersion",
@@ -764,9 +761,8 @@
             },
             {
                 "key": "feature.data.ext.scan.free_scan",
-                "type": "string",
-                "description": "Whether this scan attempt belongs to a free (unauthenticated) user",
-                "enum": ["true", "false"]
+                "type": "boolean",
+                "description": "Whether this scan attempt belongs to a free (unauthenticated) user"
             },
             {
                 "key": "feature.data.ext.scan.latency_ms",
@@ -845,8 +841,7 @@
             {
                 "key": "is_manual_scan",
                 "description": "Whether the scan was initiated manually by the user",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "vpn_connection_state",
@@ -884,8 +879,7 @@
             {
                 "key": "is_manual_scan",
                 "description": "Whether the scan was initiated manually by the user",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "vpn_connection_state",
@@ -935,8 +929,7 @@
             {
                 "key": "is_manual_scan",
                 "description": "Whether the scan was initiated manually by the user",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "vpn_connection_state",

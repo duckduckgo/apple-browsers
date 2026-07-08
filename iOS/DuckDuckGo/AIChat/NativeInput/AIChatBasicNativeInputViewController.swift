@@ -1,5 +1,5 @@
 //
-//  AIChatNativeInputViewController.swift
+//  AIChatBasicNativeInputViewController.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -22,31 +22,31 @@ import UIKit
 
 // MARK: - Delegate Protocol
 
-/// Delegate protocol for handling user interactions with the native input view controller.
-protocol AIChatNativeInputViewControllerDelegate: AnyObject {
-    func nativeInputViewController(_ viewController: AIChatNativeInputViewController, didSubmitPrompt prompt: String)
-    func nativeInputViewControllerDidTapVoice(_ viewController: AIChatNativeInputViewController)
-    func nativeInputViewControllerDidTapClear(_ viewController: AIChatNativeInputViewController)
-    func nativeInputViewControllerDidRemoveContextChip(_ viewController: AIChatNativeInputViewController)
-    func nativeInputViewController(_ viewController: AIChatNativeInputViewController, didChangeText text: String)
+/// Delegate protocol for handling user interactions with the basic native input view controller.
+protocol AIChatBasicNativeInputViewControllerDelegate: AnyObject {
+    func basicNativeInputViewController(_ viewController: AIChatBasicNativeInputViewController, didSubmitPrompt prompt: String)
+    func basicNativeInputViewControllerDidTapVoice(_ viewController: AIChatBasicNativeInputViewController)
+    func basicNativeInputViewControllerDidTapClear(_ viewController: AIChatBasicNativeInputViewController)
+    func basicNativeInputViewControllerDidRemoveContextChip(_ viewController: AIChatBasicNativeInputViewController)
+    func basicNativeInputViewController(_ viewController: AIChatBasicNativeInputViewController, didChangeText text: String)
 }
 
 // MARK: - Default Implementations
 
-extension AIChatNativeInputViewControllerDelegate {
-    func nativeInputViewControllerDidTapClear(_ viewController: AIChatNativeInputViewController) {}
-    func nativeInputViewControllerDidRemoveContextChip(_ viewController: AIChatNativeInputViewController) {}
-    func nativeInputViewController(_ viewController: AIChatNativeInputViewController, didChangeText text: String) {}
+extension AIChatBasicNativeInputViewControllerDelegate {
+    func basicNativeInputViewControllerDidTapClear(_ viewController: AIChatBasicNativeInputViewController) {}
+    func basicNativeInputViewControllerDidRemoveContextChip(_ viewController: AIChatBasicNativeInputViewController) {}
+    func basicNativeInputViewController(_ viewController: AIChatBasicNativeInputViewController, didChangeText text: String) {}
 }
 
 // MARK: - View Controller
 
-/// View controller that wraps the native input view and manages voice search availability.
-final class AIChatNativeInputViewController: UIViewController {
+/// View controller that wraps the basic native input view and manages voice search availability.
+final class AIChatBasicNativeInputViewController: UIViewController {
 
     // MARK: - Properties
 
-    weak var delegate: AIChatNativeInputViewControllerDelegate?
+    weak var delegate: AIChatBasicNativeInputViewControllerDelegate?
 
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let nativeInputView = AIChatNativeInputView()
@@ -128,7 +128,7 @@ final class AIChatNativeInputViewController: UIViewController {
 
 // MARK: - Private Setup
 
-private extension AIChatNativeInputViewController {
+private extension AIChatBasicNativeInputViewController {
 
     func setupUI() {
         view.backgroundColor = .clear
@@ -152,26 +152,26 @@ private extension AIChatNativeInputViewController {
 
 // MARK: - AIChatNativeInputViewDelegate
 
-extension AIChatNativeInputViewController: AIChatNativeInputViewDelegate {
+extension AIChatBasicNativeInputViewController: AIChatNativeInputViewDelegate {
 
     func nativeInputViewDidChangeText(_ view: AIChatNativeInputView, text: String) {
-        delegate?.nativeInputViewController(self, didChangeText: text)
+        delegate?.basicNativeInputViewController(self, didChangeText: text)
     }
 
     func nativeInputViewDidTapSubmit(_ view: AIChatNativeInputView, text: String) {
-        delegate?.nativeInputViewController(self, didSubmitPrompt: text)
+        delegate?.basicNativeInputViewController(self, didSubmitPrompt: text)
     }
 
     func nativeInputViewDidTapVoice(_ view: AIChatNativeInputView) {
-        delegate?.nativeInputViewControllerDidTapVoice(self)
+        delegate?.basicNativeInputViewControllerDidTapVoice(self)
     }
 
     func nativeInputViewDidTapClear(_ view: AIChatNativeInputView) {
-        delegate?.nativeInputViewControllerDidTapClear(self)
+        delegate?.basicNativeInputViewControllerDidTapClear(self)
     }
 
     func nativeInputViewDidRemoveContextChip(_ view: AIChatNativeInputView) {
-        delegate?.nativeInputViewControllerDidRemoveContextChip(self)
+        delegate?.basicNativeInputViewControllerDidRemoveContextChip(self)
     }
 
     func nativeInputViewNeedsLayout(_ view: AIChatNativeInputView) {

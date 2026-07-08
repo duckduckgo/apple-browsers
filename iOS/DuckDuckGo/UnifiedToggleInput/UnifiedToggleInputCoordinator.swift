@@ -262,6 +262,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var committedInputMode: TextEntryMode = .search
     private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
     private(set) var isInputVisibleForKeyboard: Bool = true
+    /// Window-space X of the resting omnibar placeholder text, captured at focus time (before the
+    /// bottom floating omnibar is detached from the toolbar). Reused on dismiss to slide the UTI
+    /// text back onto the omnibar's text leading edge — the omnibar can't be measured live then.
+    var cachedOmnibarPlaceholderWindowX: CGFloat?
     private var isAwaitingTopOmnibarKeyboardPresentation = false
     private var topOmnibarKeyboardPresentationFallback: DispatchWorkItem?
     private var invalidAttachmentRecoveryTasks: [UUID: Task<Void, Never>] = [:]
@@ -388,9 +392,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
         aiChatSyncCleaner: AIChatSyncCleaning? = nil,
+        recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
         sessionStateMetrics: SessionStateMetricsProviding = SessionStateMetrics(storage: UserDefaults.standard),
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
-        duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil
+        duckAIWideEventFlowScope: DuckAIWideEventFlowScope? = nil,
+        contextualStartsPreSubmit: Bool = false
     ) {
         self.host = host
         self.isToggleEnabled = isToggleEnabled
@@ -420,7 +426,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             syncService: syncService,
-            aiChatSyncCleaner: aiChatSyncCleaner
+            aiChatSyncCleaner: aiChatSyncCleaner,
+            recentModalPromptStatusProvider: recentModalPromptStatusProvider
         )
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
@@ -477,7 +484,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // `hasSubmittedPrompt` should reflect that — drives follow-up placeholder + model chip hide.
         if host == .contextualChat {
             displayState = .aiTab(.expanded)
-            hasSubmittedPrompt = true
+            hasSubmittedPrompt = !contextualStartsPreSubmit
             syncHasSubmittedPromptToHandler()
             updateModelChipVisibility()
         }
@@ -742,7 +749,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.send(.showCollapsed(from: previousDisplayState))
     }
 
-    func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat) {
+    func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat, activatesInput: Bool = true) {
         guard !isOnboardingLocked else { return }
         cancelTopOmnibarKeyboardPresentationFallback()
         isAwaitingTopOmnibarKeyboardPresentation = false
@@ -768,6 +775,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateFloatingReturnKeyState()
 
         intentSubject.send(.showExpanded(from: previousDisplayState))
+        guard activatesInput else { return }
+
         DispatchQueue.main.async { [weak self] in
             guard let self, case .aiTab(.expanded) = self.displayState else { return }
             guard !self.isOnboardingLocked else { return }
@@ -783,6 +792,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 self.viewController.selectAllText()
             }
         }
+    }
+
+    func submitProgrammatic(text: String) {
+        unifiedToggleInputVC(viewController, didSubmitText: text, mode: .aiChat)
     }
 
     func hide() {
@@ -1430,7 +1443,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             UnifiedToggleInputCoordinatorPixelHelper.fireShowModelPickerPixel()
-            self.viewController.presentModelPickerMenu()
+            if self.viewController.presentModelPickerMenu() {
+                self.fireModelPickerShown()
+            }
         }
     }
 
@@ -1447,7 +1462,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isSubmitBlockedByRecoveryCard = false
             updateSelectedModel(modelId)
             if isNewSelection {
-                Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
+                fireModelSelectedPixel(modelId: modelId)
             }
             notifyFrontendOfActiveChatModelChange(modelId)
         } else {
@@ -1499,7 +1514,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isSubmitBlockedByRecoveryCard = false
         updateSelectedModel(modelId)
         if isNewSelection {
-            Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
+            fireModelSelectedPixel(modelId: modelId)
         }
         notifyFrontendOfActiveChatModelChange(modelId)
         return true
@@ -1549,8 +1564,24 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
+    private func fireModelSelectedPixel(modelId: String) {
+        Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId ])
+    }
+
     private func fireReasoningEffortSelectedPixel(mode: AIChatReasoningMode) {
         Pixel.fire(pixel: .unifiedToggleInputReasoningEffortSelected, withAdditionalParameters: ["effort_level": mode.rawValue])
+    }
+
+    private func fireModelPickerShown() {
+        Pixel.fire(pixel: .unifiedToggleInputModelPickerShown, withAdditionalParameters: [
+            AttributionParameter.origin: UnifiedToggleInputCoordinatorPixelHelper.measurementOrigin(for: .modelPicker, isAITabState: isAITabState).rawValue
+        ])
+    }
+
+    private func fireReasoningPickerShown() {
+        Pixel.fire(pixel: .unifiedToggleInputReasoningEffortPickerShown, withAdditionalParameters: [
+            AttributionParameter.origin: UnifiedToggleInputCoordinatorPixelHelper.measurementOrigin(for: .reasoningPicker, isAITabState: isAITabState).rawValue
+        ])
     }
     
     private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
@@ -1883,6 +1914,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         // two animations can't run concurrently and glitch each other. On release, restore swipe to
         // whatever toggle visibility dictates (the single source of truth for the gesture).
         contentViewController.isSwipeEnabled = isDragging ? false : isToggleVisible
+    }
+
+    func unifiedToggleInputVCDidShowModelPicker(_ vc: UnifiedToggleInputViewController) {
+        fireModelPickerShown()
+    }
+
+    func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController) {
+        fireReasoningPickerShown()
     }
 
     func unifiedToggleInputVCDidClearSelectedTool(_ vc: UnifiedToggleInputViewController) {

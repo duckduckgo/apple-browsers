@@ -21,6 +21,8 @@ import UIKit
 
 @MainActor
 protocol ModalPromptCoordinationManaging {
+    var didPresentModalPromptThisSession: Bool { get }
+
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
 }
 
@@ -37,6 +39,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private let providers: [any ModalPromptProvider]
     private let cooldownManager: PromptCooldownManaging
     private let scheduler: ModalPromptScheduling
+
+    private(set) var didPresentModalPromptThisSession = false
 
     /// Creates a new modal prompts coordination manager.
     ///
@@ -74,6 +78,9 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         for provider in providers {
             guard let modalPromptConfiguration = provider.provideModalPrompt() else { continue }
 
+            // Set at commit time (not in the present completion) so the sync banner can't slip in
+            // during the schedule + present-animation window; the completion reflects actual presentation.
+            didPresentModalPromptThisSession = true
             Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: provider))")
             presentModalPrompt(modalPromptConfiguration: modalPromptConfiguration, from: presenter) { [weak self] in
                 self?.saveModalPromptLastPresentationDate()

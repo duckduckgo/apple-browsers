@@ -544,6 +544,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Deblochează DuckDuckGo.";
 
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Atinge oriunde pentru a debloca";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Autentificare";
 
@@ -2524,27 +2527,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "File Fire";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "Nouă";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Nou! Răsfoiește fără a salva istoricul local sau conectează-te la site-uri cu un cont diferit.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Nu acum";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Încearcă filele Fire";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Încearcă filele Fire";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Încearcă filele Fire pentru a naviga fără a salva istoricul local.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "Nou: file Fire";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Filă Fire";
 
@@ -3919,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Poziția barei de adrese";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Ascunde bara de file la derulare";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Disponibil pe majoritatea site-urilor. Duck.ai, hărțile și jocurile pot menține bara de file vizibilă.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Deschide linkuri în aplicațiile asociate";
 
@@ -4813,15 +4801,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Oprești Sync & Backup?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Elimină";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Acest dispozitiv nu va mai putea accesa datele tale sincronizate.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Oprești sincronizarea?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Deblochează dispozitivul pentru a configura Sync & Backup";
 
@@ -5356,9 +5335,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Nu există potriviri pentru „%@”";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Cod copiat";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

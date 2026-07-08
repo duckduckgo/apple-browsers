@@ -1045,7 +1045,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
 
     func makeDuckAiChatsEntry() -> BrowsingMenuEntry? {
-        guard isNativeChatHistoryAvailable else { return nil }
+        guard shouldShowAIChatInMenu, isNativeChatHistoryAvailable else { return nil }
         return buildDuckAiChatsEntry(withSmallIcon: false)
     }
 
@@ -1148,19 +1148,6 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeKeepSignInEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
         return buildKeepSignInEntry(forLink: link, useSmallIcon: false)
-    }
-
-    func makeFireModePromotionEntry() -> BrowsingMenuEntry? {
-        guard !tabModel.fireTab,
-              fireModePromotionCoordinator?.isMenuPromotionEligible == true else { return nil }
-        fireModePromotionCoordinator?.markMenuPromotionShown()
-        return .regular(name: UserText.fireModePromotionTitle,
-                        image: DesignSystemImages.Glyphs.Size24.fireTabs,
-                        detailBadge: UserText.fireModeMenuPromotionBadge) { [weak self] in
-            self?.fireModePromotionCoordinator?.markMenuPromotionEngaged()
-            guard let self else { return }
-            self.delegate?.tabDidRequestFireMode(tab: self)
-        }
     }
 
     func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry? {

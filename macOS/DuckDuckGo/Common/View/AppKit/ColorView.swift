@@ -26,12 +26,13 @@ internal class ColorView: DraggingDestinationView {
         setupView()
     }
 
-    init(frame: NSRect, backgroundColor: NSColor? = nil, cornerRadius: CGFloat = 0, borderColor: NSColor? = nil, borderWidth: CGFloat = 0, interceptClickEvents: Bool = false) {
+    init(frame: NSRect, backgroundColor: NSColor? = nil, cornerRadius: CGFloat = 0, roundedCorners: RoundedCorners = .all, borderColor: NSColor? = nil, borderWidth: CGFloat = 0, interceptClickEvents: Bool = false) {
         super.init(frame: frame)
 
         self.translatesAutoresizingMaskIntoConstraints = false
         self.backgroundColor = backgroundColor
         self.cornerRadius = cornerRadius
+        self.roundedCorners = roundedCorners
         self.borderColor = borderColor
         self.borderWidth = borderWidth
         self.interceptClickEvents = interceptClickEvents
@@ -55,8 +56,16 @@ internal class ColorView: DraggingDestinationView {
             updateCornerRadius()
         }
     }
+
+    var roundedCorners: RoundedCorners = .all {
+        didSet {
+            updateCornerRadius()
+        }
+    }
+
     private func updateCornerRadius() {
         layer?.cornerRadius = cornerRadius
+        layer?.maskedCorners = roundedCorners.cornerMask
         layer?.masksToBounds = true
     }
 
@@ -128,5 +137,37 @@ internal class ColorView: DraggingDestinationView {
         if !interceptClickEvents {
             super.otherMouseDown(with: event)
         }
+    }
+}
+
+struct RoundedCorners: OptionSet {
+    let rawValue: Int
+
+    static let topLeft = RoundedCorners(rawValue: 1 << 0)
+    static let topRight = RoundedCorners(rawValue: 1 << 1)
+    static let bottomLeft = RoundedCorners(rawValue: 1 << 2)
+    static let bottomRight = RoundedCorners(rawValue: 1 << 3)
+
+    static let all: RoundedCorners = [.topLeft, .topRight, .bottomLeft, .bottomRight]
+
+    var cornerMask: CACornerMask {
+        var mask: CACornerMask = []
+        if contains(.topLeft) {
+            mask.insert(.layerMinXMaxYCorner)
+        }
+
+        if contains(.topRight) {
+            mask.insert(.layerMaxXMaxYCorner)
+        }
+
+        if contains(.bottomLeft) {
+            mask.insert(.layerMinXMinYCorner)
+        }
+
+        if contains(.bottomRight) {
+            mask.insert(.layerMaxXMinYCorner)
+        }
+
+        return mask
     }
 }

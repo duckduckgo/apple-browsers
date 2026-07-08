@@ -27,6 +27,7 @@ import DataBrokerProtection_iOS
 import AIChat
 import WebExtensions
 import DuckUI
+import Persistence
 
 extension DebugScreensViewModel {
 
@@ -49,8 +50,8 @@ extension DebugScreensViewModel {
                     }
                 }
             }),
-            .action(title: "Reset Autoconsent Prompt", { _ in
-                AppUserDefaults().clearAutoconsentUserSetting()
+            .view(title: "CPM", { d in
+                CPMDebugScreensView(keyValueStore: d.keyValueStore)
             }),
             .action(title: "Reset Sync Promos", { d in
                 let syncPromoPresenter = SyncPromoManager(syncService: d.syncService)
@@ -82,10 +83,6 @@ extension DebugScreensViewModel {
 
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
-            .action(title: "Reset Fire Mode Promotion", { _ in
-                FireModePromotionsCoordinator.resetState()
-                ActionMessageView.present(message: "Fire Mode Promotion state reset")
-            }),
             .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
 
             // MARK: SwiftUI Views
@@ -103,9 +100,6 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()
-            }),
-            .view(title: "Interaction Diagnostics", { _ in
-                InteractionDiagnosticsDebugScreen()
             }),
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
@@ -325,4 +319,51 @@ extension DebugScreensViewModel {
         }
     }
 
+}
+
+/// Sub-screen grouping the CPM (Cookie Pop-up Protection) debug actions.
+private struct CPMDebugScreensView: View {
+
+    let keyValueStore: ThrowingKeyValueStoring
+
+    var body: some View {
+        List {
+            Section("Opt-in dialog") {
+                Button("Show opt-in dialog") {
+                    Self.presentOptInDialog()
+                }
+                Button("Reset app launch flag") {
+                    // Clears the shown flag + shown count.
+                    CookiePopupProtectionOptInPromptStore(keyValueStore: keyValueStore).reset()
+                    // Also lift the global modal cooldown — otherwise the queue suppresses all prompts on launch until it expires.
+                    try? keyValueStore.set(nil, forKey: PromptCooldownKeyValueFilesStore.StorageKey.lastPromptShownTimestamp)
+                    ActionMessageView.present(message: "Reset opt-in dialog launch state - DONE")
+                }
+            }
+            Section {
+                Button("Reset Autoconsent Prompt") {
+                    AppUserDefaults().clearAutoconsentUserSetting()
+                    ActionMessageView.present(message: "Reset Autoconsent Prompt - DONE")
+                }
+            }
+        }
+        .navigationTitle("CPM")
+    }
+
+    /// Presents the Cookie Pop-up Protection opt-in dialog as a sheet over the browser.
+    private static func presentOptInDialog() {
+        guard let window = UIApplication.shared.firstKeyWindow else { return }
+
+        let present = {
+            let controller = CookiePopupProtectionOptInModalPromptProvider.makeViewController()
+            window.rootViewController?.present(controller, animated: true)
+        }
+
+        // Dismiss the Settings/debug stack first so the dialog appears over the browser.
+        if let presented = window.rootViewController?.presentedViewController {
+            presented.dismiss(animated: true, completion: present)
+        } else {
+            present()
+        }
+    }
 }

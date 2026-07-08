@@ -1,5 +1,5 @@
 {
-  "originHash" : "0f42dea8f2afa8e91a8117ec8a8483793c17c273cca7a2c108472494c1544b8c",
+  "originHash" : "fa530ae9be7f9b7531c1afefe5cd520e9e7f6cb24cf5c56ea5c4be896834cf8e",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "79f92b48fafa783528227adac0adcee29709ff42",
-        "version" : "15.7.0"
+        "revision" : "6cec6781b44c538161a906bed097b264682c92cd",
+        "version" : "15.9.0"
       }
     },
     {
@@ -177,8 +177,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-clocks.git",
       "state" : {
-        "revision" : "cc46202b53476d64e824e0b6612da09d84ffde8e",
-        "version" : "1.0.6"
+        "revision" : "72d749bf341b78851203066ab421869b783ec42a",
+        "version" : "1.1.0"
       }
     },
     {
@@ -249,8 +249,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup",
       "state" : {
-        "revision" : "49dcadd93161f4a44b4994d3a3e8de9f085aface",
-        "version" : "2.13.5"
+        "revision" : "ead56133a693d0184d8c2db1a6d6394410cacfd6",
+        "version" : "2.13.6"
       }
     },
     {

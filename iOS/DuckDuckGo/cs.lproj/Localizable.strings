@@ -544,6 +544,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Odemkněte DuckDuckGo.";
 
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Klepnutím kdekoli odemknete";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Přihlásit";
 
@@ -2524,27 +2527,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "Karty Fire";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "Nová";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Novinka! Prohlížej si webové stránky bez ukládání místní historie nebo se přihlas k webovým službám pod jiným účtem.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Teď ne";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Vyzkoušet karty Fire";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Vyzkoušet karty Fire";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Vyzkoušej karty Fire pro prohlížení bez ukládání místní historie.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "Nové: Karty Fire";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Karta Fire";
 
@@ -3919,6 +3901,12 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Pozice adresního řádku";
 
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Skrýt panel karet při posouvání";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "K dispozici na většině webů. Duck.ai, mapy a hry mohou ponechat panel karet viditelný.";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otevřít odkazy v přidružených aplikacích";
 
@@ -4813,15 +4801,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Vypnout Sync & Backup?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Odstranit";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Tohle zařízení už nebude mít přístup ke tvým synchronizovaným datům.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Vypnout synchronizaci?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Pokud chceš nastavit funkci Sync & Backup, odemkni zařízení";
 
@@ -5356,9 +5335,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Žádné shody pro \"%@\"";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kód je zkopírovaný";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

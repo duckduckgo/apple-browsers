@@ -83,7 +83,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
     /// Struct to keep track of some Toggle conditions to avoid expensive operations like checking user defaults
     private struct AIChatOmnibarToggleConditions {
-        let isFeatureOn: Bool
         let hasUserInteractedWithToggle: Bool
     }
 
@@ -254,6 +253,16 @@ final class AddressBarButtonsViewController: NSViewController {
         self.tabViewModel?.tab.content == .newtab && theme.addressBarStyleProvider.shouldShowNewSearchIcon
     }
 
+    /// Drop this subview when `.appRebranding` ships
+    var trailingButtonsBackgroundColor: NSColor? {
+        get {
+            trailingButtonsBackground.backgroundColor
+        }
+        set {
+            trailingButtonsBackground.backgroundColor = newValue
+        }
+    }
+
     private var isInPopUpWindow: Bool {
         tabCollectionViewModel.isPopup
     }
@@ -297,8 +306,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private let aiChatCoordinator: AIChatCoordinating
     private let aiChatSettings: AIChatPreferencesStorage
     private lazy var aiChatToggleConditions: AIChatOmnibarToggleConditions = {
-        AIChatOmnibarToggleConditions(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
-                                      hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
+        AIChatOmnibarToggleConditions(hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
     }()
     private var isChromeSidebarFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
@@ -440,7 +448,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     func setupButtonPaddings(isFocused: Bool = false) {
-        guard theme.addressBarStyleProvider.shouldAddPaddingToAddressBarButtons else { return }
+        let styleProvider = theme.addressBarStyleProvider
+        guard styleProvider.shouldAddPaddingToAddressBarButtons else { return }
 
         imageButtonLeadingConstraint.constant = isFocused ? 2 : 1
         animationWrapperViewLeadingConstraint.constant = 1
@@ -458,12 +467,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if let superview = aiChatButton.superview {
             aiChatButton.translatesAutoresizingMaskIntoConstraints = false
-            if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-                /// When the toggle is enabled we need a fixed constant, otherwise the stackview feels wobbly
-                trailingStackViewTrailingViewConstraint.constant = 4
-            } else {
-                trailingStackViewTrailingViewConstraint.constant = isFocused ? 4 : 3
-            }
+            trailingStackViewTrailingViewConstraint.constant = styleProvider.addressBarTrailingStackViewPadding(focused: isFocused, showsToggle: shouldShowSearchModeToggle)
             NSLayoutConstraint.activate([
                 aiChatButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
                 aiChatButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
@@ -1280,6 +1284,10 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyDashboardButton.setCornerRadius(cornerRadius)
         permissionCenterButton.setCornerRadius(cornerRadius)
         youTubeAdBlockButton.setCornerRadius(cornerRadius)
+
+        if themeManager.isAppRebranded {
+            trailingButtonsBackground.setCornerRadius(cornerRadius)
+        }
     }
 
     private func setupButtonsSize() {
@@ -1330,7 +1338,7 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        if isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+        if isTextFieldEditorFirstResponder {
             bookmarkButton.isShown = false
             updateAIChatDividerVisibility()
             return
@@ -1425,7 +1433,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
-        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && aiChatSettings.isAIFeaturesEnabled
 
         if isTextFieldEditorFirstResponder {
             if isToggleFeatureEnabled {
@@ -1900,7 +1908,7 @@ final class AddressBarButtonsViewController: NSViewController {
     /// Per the new design the toggle is visible in all selection states (focused and unfocused) so the user can
     /// always see / change the tab's current mode — previously it was gated on the address bar being first responder.
     private var isSearchModeToggleFeatureActive: Bool {
-        featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        aiChatSettings.isAIFeaturesEnabled
     }
 
     /// True when the toggle should be shown (feature active + user setting enabled).
@@ -1920,12 +1928,18 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let isToggleFeatureEnabled = isSearchModeToggleFeatureActive
         let shouldShowToggle = shouldShowSearchModeToggle
+        let toggleVisibilityChanged = shouldShowToggle != wasToggleVisible
 
         // Update key view chain when toggle visibility changes
         updateKeyViewChainForToggle(shouldShowToggle: shouldShowToggle)
 
         searchModeToggleControl?.isHidden = !shouldShowToggle
         updateToggleExpansionState(shouldShowToggle: shouldShowToggle)
+
+        /// When `SearchModeToggle` is visible, we'll fine tune the `trailingStackViewTrailingViewConstraint` Layout Constraint
+        if toggleVisibilityChanged {
+            setupButtonPaddings(isFocused: isTextFieldEditorFirstResponder)
+        }
 
         if isToggleFeatureEnabled {
             aiChatButton.isHidden = true
@@ -2190,11 +2204,19 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func setupSearchModeToggleControl() {
-        let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 70, height: 32))
-        toggleControl.translatesAutoresizingMaskIntoConstraints = false
+        let toggleFrame: CGRect = themeManager.isAppRebranded ? NSRect(x: 0, y: 0, width: 82, height: 30) : NSRect(x: 0, y: 0, width: 70, height: 32)
+        let toggleControl = CustomToggleControl(frame: toggleFrame)
 
-        toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.searchFindToggle, forSegment: 0)
-        toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.aiChatToggle, forSegment: 1)
+        toggleControl.translatesAutoresizingMaskIntoConstraints = false
+        toggleControl.collapsedWidth = toggleFrame.width
+
+        if themeManager.isAppRebranded {
+            toggleControl.setSelectedImage(DesignSystemImages.Glyphs.Size16.searchFind, forSegment: 0)
+            toggleControl.setSelectedImage(DesignSystemImages.Glyphs.Size16.aiChat, forSegment: 1)
+        } else {
+            toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.searchFindToggle, forSegment: 0)
+            toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.aiChatToggle, forSegment: 1)
+        }
 
         toggleControl.setToolTip(UserText.aiChatSearchTheWebTooltip, forSegment: 0)
         toggleControl.setToolTip(UserText.aiChatChatWithAITooltip, forSegment: 1)
@@ -2225,10 +2247,10 @@ final class AddressBarButtonsViewController: NSViewController {
         trailingButtonsContainer.addArrangedSubview(toggleControl)
         toggleControl.isHidden = true
 
-        let widthConstraint = toggleControl.widthAnchor.constraint(equalToConstant: toggleControl.collapsedWidth)
+        let widthConstraint = toggleControl.widthAnchor.constraint(equalToConstant: toggleFrame.width)
         NSLayoutConstraint.activate([
             widthConstraint,
-            toggleControl.heightAnchor.constraint(equalToConstant: 32)
+            toggleControl.heightAnchor.constraint(equalToConstant: toggleFrame.height)
         ])
 
         self.searchModeToggleWidthConstraint = widthConstraint
@@ -2256,8 +2278,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatToggleConditions() {
-        aiChatToggleConditions = AIChatOmnibarToggleConditions(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
-                                                                hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
+        aiChatToggleConditions = AIChatOmnibarToggleConditions(hasUserInteractedWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle)
     }
 
     @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {
@@ -2334,7 +2355,10 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
-        toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
+        let backgroundColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .controlsSubtleFillSecondary) : NSColor(designSystemColor: .controlsRaisedBackdrop)
+        let selectionBorder = themeManager.isAppRebranded ? NSColor(designSystemColor: .shadowPrimary) : NSColor(designSystemColor: .shadowSecondary)
+
+        toggleControl.backgroundColor = backgroundColor
         toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
 
@@ -2346,8 +2370,12 @@ final class AddressBarButtonsViewController: NSViewController {
             toggleControl.outerBorderColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         }
 
+        let styleProvider = themeManager.theme.addressBarStyleProvider
+        toggleControl.indicatorGap = styleProvider.addressBarToggleIndicatorGap
+        toggleControl.indicatorHorizontalInset = styleProvider.addressBarToggleIndicatorHorizontalInset
+
         toggleControl.outerBorderWidth = 2.0
-        toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .shadowSecondary)
+        toggleControl.selectionInnerBorderColor = selectionBorder
 
         toggleControl.leftImage = DesignSystemImages.Glyphs.Size16.findSearch.tinted(with: themeManager.theme.colorsProvider.iconsColor)
         toggleControl.rightImage = DesignSystemImages.Glyphs.Size16.aiChat.tinted(with: themeManager.theme.colorsProvider.iconsColor)

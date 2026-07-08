@@ -1,9 +1,6 @@
 /* No comment provided by engineer. */
 "%@\n%@" = "%@\n %@";
 
-/* Auto-Restore - Description */
-"auto.restore.description" = "Restaura automáticamente tus datos en este dispositivo si vuelves a instalar la aplicación.";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Reanuda tu sesión de Sync & Backup para restaurar tus marcadores, contraseñas y más o continúa con una nueva configuración.";
 
@@ -31,12 +28,6 @@
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Activado";
 
-/* Auto-restore section - Footer */
-"auto.restore.toggle.footer" = "Restaura automáticamente tus datos si vuelves a instalar la aplicación. Los datos de Sync & Backup no se pueden recuperar después de 18 meses de inactividad.";
-
-/* Auto-Restore - Toggle Label */
-"auto.restore.toggle.label" = "Restaurar al reinstalar la aplicación";
-
 /* Standard Buttons - Back Button */
 "back.button" = "Volver";
 
@@ -58,32 +49,11 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Se requiere permiso para acceder a la cámara";
 
-/* Camera View - Point Camera Indication */
-"camera.point.camera.indication" = "Apunta con la cámara al código QR para sincronizar";
-
 /* No comment provided by engineer. */
 "Cancel" = "Cancelar";
 
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Cancelar";
-
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Activar sincronización y copia de seguridad";
-
-/* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Esto crea una copia de seguridad encriptada de tus marcadores y datos de autocompletado en el servidor seguro de DuckDuckGo que se puede sincronizar con tus otros dispositivos.";
-
-/* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1-updated" = "Esto crea una copia de seguridad encriptada de tus marcadores guardados, contraseñas, tarjetas de crédito y chats de Duck.ai en el servidor seguro de DuckDuckGo, que se puede sincronizar con tus otros dispositivos.";
-
-/* Connect With Server Sheet - Description Part 2 */
-"connect.with.server.sheet.description.part2" = "La clave de encriptación solo se almacena en tu dispositivo, DuckDuckGo no puede acceder a ella.";
-
-/* Connect With Server Sheet - Footer */
-"connect.with.server.sheet.footer" = "Puedes sincronizar con tus otros dispositivos más tarde.";
-
-/* Connect With Server Sheet - Title */
-"connect.with.server.sheet.title" = "Sincronizar y hacer una copia de seguridad de este dispositivo";
 
 /* Standard Buttons - Copy Button */
 "copy.button" = "Copiar";
@@ -100,17 +70,8 @@
 /* Alert title for invalid credit cards being filtered out of synced data */
 "creditCards.invalid.objects.present.title" = "Algunas tarjetas de crédito no se sincronizan debido a un contenido excesivamente largo en determinados campos.";
 
-/* Delete Server Data - Button */
-"delete.server.data" = "Desactivar y eliminar datos del servidor...";
-
 /* No comment provided by engineer. */
 "Dev environment" = "Entorno de desarrollo";
-
-/* Device SyncedSheet Button to go get DuckDuckGo on other devices */
-"device.synced.sheet.button.get.other.devices" = "Obtener DuckDuckGo en otros dispositivos";
-
-/* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "¡Dispositivo sincronizado!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Hecho";
@@ -130,38 +91,17 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "¿Descargar los iconos que faltan?";
 
-/* Options - Fetch Favicons Description */
-"fetch.favicons.option.caption" = "Descargar automáticamente iconos para tus marcadores sincronizados. Las descargas de iconos están expuestas a tu red.";
-
 /* Options - Fetch Favicons Title */
 "fetch.favicons.option.title" = "Descargar automáticamente iconos";
 
 /* No comment provided by engineer. */
 "Keep Development" = "Mantener el desarrollo";
 
-/* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
-"manually.enter.code.instruction.attributed" = "Ve a %1$@ y selecciona %2$@ en la aplicación DuckDuckGo en otro dispositivo sincronizado y pega el código aquí para sincronizar este dispositivo.";
-
 /* Manually Enter Code View - Title */
 "manually.enter.code.title" = "Introducir código manualmente";
 
-/* Manually Enter Code View - Validating Code Action */
-"manually.enter.code.validating.code.action" = "Validando código";
-
-/* Manually Enter Code View - Validating Code Failed Action */
-"manually.enter.code.validating.code.failed.action" = "Código no válido.";
-
-/* Standard Buttons - Next Button */
-"next.button" = "Siguiente";
-
 /* Standard Buttons - Not Now Button */
 "not.now.button" = "Ahora no";
-
-/* Options - Section Header */
-"options.section.header" = "Opciones";
-
-/* Section header for other syncing options */
-"other.options.section.header" = "Otras opciones";
 
 /* Standard Buttons - Paste Button */
 "paste.button" = "Pegar";
@@ -175,23 +115,8 @@
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Administrar tarjetas de crédito…";
 
-/* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Tus marcadores y datos de auutorrelleno se están preparando para sincronizar. Esto solo debería tardar un momento.";
-
-/* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description-updated" = "Tus marcadores, contraseñas y chats de Duck.ai se están preparando para sincronizarse. Esto solo debería tardar un momento.";
-
-/* Preparing To Sync Sheet - Footer */
-"preparing.to.sync.sheet.footer" = "Conectando...";
-
-/* Preparing To Sync Sheet - Title */
-"preparing.to.sync.sheet.title" = "Configuración de sincronización y copia de seguridad";
-
 /* Preparing to sync title */
 "preparing.to.sync.title" = "Preparando la sincronización";
-
-/* Link label for recovering synced data */
-"recover.synced.data.link" = "Recuperar datos sincronizados";
 
 /* Recover Synced Data Sheet - Button */
 "recover.synced.data.sheet.button" = "Recuperar datos sincronizados";
@@ -220,86 +145,8 @@
 /* Remove Device View - Title */
 "remove.device.title" = "¿Eliminar dispositivo?";
 
-/* Save Recovery Code Sheet - Card Title */
-"save.recovery.code.card.title" = "Código de recuperación";
-
-/* Save Recovery Code Sheet - Copy Code Toast */
-"save.recovery.code.code.copied.button" = "Código de recuperación copiado en el portapapeles";
-
-/* Save Recovery Code Sheet - Copy Code Button */
-"save.recovery.code.copy.code.button" = "Copiar código";
-
-/* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Descargar como PDF";
-
-/* Save Recovery Code Sheet - Footer */
-"save.recovery.code.sheet.footer" = "Cualquiera que tenga acceso a este código puede acceder a tus datos sincronizados, así que guárdalo en un lugar seguro.";
-
-/* Recovery Code Sheet - Description */
-"save.recovery.key.body" = "Guarda este código para que puedas recuperar tus datos si pierdes el acceso a este dispositivo — guárdalo de forma segura.";
-
-/* Recovery Code Sheet - Title */
-"save.recovery.key.title" = "Recupera tus datos fácilmente";
-
-/* Save RecoveryPDF - Button */
-"save.recovery.pdf.button" = "Guardar PDF de recuperación";
-
-/* Save RecoveryPDF - Footer + Learn More, with markdown link */
-"save.recovery.pdf.footer" = "Usa este código para restaurar tus datos si pierdes el acceso a este dispositivo. Los datos de Sync & Backup no se pueden recuperar después de 18 meses de inactividad. [Más información](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
-
-/* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
-"scan.code.to.recover.synced.data.enter.code.link" = "Introducir el código de texto manualmente";
-
-/* Scan Or Enter Code To Recover Synced Data View - Explanation */
-"scan.code.to.recover.synced.data.explanation" = "Escanea el código QR de tu PDF de recuperación u otro dispositivo sincronizado para recuperar tus datos.";
-
-/* Scan Or Enter Code To Recover Synced Data View - Footer */
-"scan.code.to.recover.synced.data.footer" = "¿No puedes escanear?";
-
-/* Scan Or Enter Code To Recover Synced Data View - Title */
-"scan.code.to.recover.synced.data.title" = "Recuperar datos sincronizados";
-
-/* Scan or See Code View - Footer */
-"scan.or.see.code.footer" = "¿No puedes escanear?";
-
-/* Scan or See Code View - Instruction */
-"scan.or.see.code.instruction" = "Ve a Ajustes › Sincronización y copia de seguridad en el navegador DuckDuckGo en otro dispositivo y selecciona «Sincronizar con otro dispositivo».";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.instruction.attributed" = "Ve a %@ en el navegador DuckDuckGo en otro dispositivo y selecciona «Sincronizar con otro dispositivo».";
-
-/* Scan or See Code View - Manually Enter Code Link */
-"scan.or.see.code.manually.enter.code.link" = "Introducir código manualmente";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.other.device.instruction.attributed" = "Abre la aplicación DuckDuckGo en tu otro dispositivo y dirígete a %@.";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.instructions.body" = "Escanea este código con otro dispositivo para sincronizar.";
-
-/* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.instructions.title" = "¿De móvil a móvil?";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.qr.instructions.body" = "Abre DuckDuckGo en tu otro dispositivo y escanea este código para sincronizar.";
-
-/* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.qr.instructions.title" = "O escanear con DuckDuckGo en tu otro dispositivo";
-
-/* Scan or See Code View - Share Code Link */
-"scan.or.see.code.share.code.link" = "Compartir código de texto";
-
-/* Scan or See Code View - Title */
-"scan.or.see.code.title" = "Escanear código QR";
-
 /* No comment provided by engineer. */
 "Switch to Production" = "Cambiar a producción";
-
-/* Link label for syncing and backing up the device */
-"sync.and.backup.this.device.link" = "Sincronizar y hacer una copia de seguridad de este dispositivo";
-
-/* Button to get DuckDuckGo on other devices */
-"sync.get.other.devices" = "Obtener DuckDuckGo en otros dispositivos";
 
 /* Button title to share link for downloading DuckDuckGo on other devices */
 "sync.get.other.devices.card.button.title" = "Compartir enlace de descarga";
@@ -315,9 +162,6 @@
 
 /* Message included when sharing a url via the system share sheet */
 "sync.get.other.devices.share.link.message" = "Instala el navegador DuckDuckGo en tus dispositivos para empezar a sincronizar de forma segura tus marcadores y datos de autorrelleno:";
-
-/* Sync Menu Path */
-"sync.menu.path" = "Ajustes > Sincronización y copia de seguridad > Sincronizar con otro dispositivo";
 
 /* Sync passcode required alert - button */
 "sync.passcode.required.alert.go.to.settings.button" = "Ir a Ajustes";
@@ -451,47 +295,14 @@
 /* Title of the warning message */
 "sync.warning.sync.unavailable" = "La sincronización y copia de seguridad no está disponible";
 
-/* Button label for syncing with another device */
-"sync.with.another.device.button" = "Sincronizar con otro dispositivo";
-
-/* Footer message for syncing with another device */
-"sync.with.another.device.footer" = "Tus datos están encriptados de extremo a extremo y DuckDuckGo no tiene acceso a la clave de encriptación.";
-
-/* Message for syncing with another device */
-"sync.with.another.device.message" = "Sincroniza de forma segura los marcadores y las contraseñas entre tus dispositivos.";
-
-/* Message for syncing with another device */
-"sync.with.another.device.message-updated" = "Sincroniza de forma segura los marcadores, los datos de autocompletado y los chats de Duck.ai entre tus dispositivos.";
-
-/* Title for syncing with another device */
-"sync.with.another.device.title" = "Iniciar sincronización";
-
 /* Synced Devices - Section Header */
 "synced.devices.section.header" = "Dispositivos sincronizados";
-
-/* Synced Devices - Sync with Another Device Label */
-"synced.devices.sync.with.another.device.label" = "Sincronizar con otro dispositivo";
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Este dispositivo";
 
-/* Turn Sync Off - Button */
-"turn.sync.off" = "Desactivar sincronización y copia de seguridad...";
-
-/* Sync enabled - footer description of data that is syncing */
-"turn.sync.off.section.footer" = "Los marcadores, los datos de autorelleno y los chats de Duck.ai están sincronizados entre tus dispositivos.";
-
-/* Turn Sync Off - Section Header */
-"turn.sync.off.section.header" = "Sincronización activada";
-
-/* Options - Unify Favorites Instruction */
-"unified.favorites.instruction" = "Usa los mismos marcadores favoritos en todos tus dispositivos. Deja de tener diferentes favoritos en tus dispositivos móviles y de escritorio.";
-
 /* Options - Unify Favorites Title */
 "unified.favorites.title" = "Unifica tus favoritos en todos los dispositivos";
-
-/* View Text Code menu item */
-"view.text.code.menu.item" = "Ver código de texto";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Estás utilizando el entorno de sincronización de desarrollo.";

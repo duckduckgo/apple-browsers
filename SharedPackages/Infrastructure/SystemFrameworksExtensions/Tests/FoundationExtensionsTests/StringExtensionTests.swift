@@ -66,27 +66,6 @@ final class StringExtensionTests: XCTestCase {
         XCTAssertEqual(normalizedString, "dax")
     }
 
-    func testHashedSuffix() {
-        XCTAssertEqual("http://localhost:8084/#navlink".hashedSuffix, "#navlink")
-        XCTAssertEqual("http://localhost:8084/#navlink#1".hashedSuffix, "#navlink#1")
-        XCTAssertEqual("http://localhost:8084/#".hashedSuffix, "#")
-        XCTAssertEqual("http://localhost:8084/##".hashedSuffix, "##")
-        XCTAssertNil("http://localhost:8084/".hashedSuffix)
-        XCTAssertNil("http://localhost:8084".hashedSuffix)
-    }
-
-    func testDroppingHashedSuffix() {
-        XCTAssertEqual("http://localhost:8084/#navlink".droppingHashedSuffix(), "http://localhost:8084/")
-        XCTAssertEqual("http://localhost:8084/#navlink#1".droppingHashedSuffix(), "http://localhost:8084/")
-        // The 3 assertions below rely on a `String.url` test helper that uses
-        // `URL(trimmedAddressBarString:)` from URLExtension.swift. URLExtension
-        // is deferred from the BSK→SFE move (TLD coupling); restore these once
-        // URLExtension lands in FoundationExtensions.
-        // XCTAssertEqual("about://blank/#navlink1".url!.absoluteString.droppingHashedSuffix(), "about://blank/")
-        // XCTAssertEqual("about:blank/#navlink1".url!.absoluteString.droppingHashedSuffix(), "about:blank/")
-        // XCTAssertEqual("about:blank#navlink1".url!.absoluteString.droppingHashedSuffix(), "about:blank")
-    }
-
     func testToIPv4Host() {
         XCTAssertEqual("1.1.1.1".toIPv4Host, "1.1.1.1")
         XCTAssertEqual("1".toIPv4Host, "0.0.0.1")

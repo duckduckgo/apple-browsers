@@ -54,6 +54,9 @@ protocol TabSwitcherBarsStateHandling {
     var duckChatButton: UIBarButtonItem { get }
 
     var bottomBarItems: [UIBarButtonItem] { get }
+    /// Bottom-bar button views in order, with the `.flexibleSpace()` separators dropped. Used when
+    /// the bottom bar is a `BrowserToolbarView` (equal-spacing stack) instead of a `UIToolbar`.
+    var bottomBarButtonViews: [UIView] { get }
     var topBarLeftButtons: [UIView] { get }
     var topBarRightButtons: [UIView] { get }
 
@@ -163,6 +166,9 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     }()
 
     private(set) var bottomBarItems = [UIBarButtonItem]()
+    var bottomBarButtonViews: [UIView] {
+        bottomBarItems.compactMap { $0.customView }
+    }
     private(set) var isBottomBarHidden = false
     private(set) var topBarLeftButtons = [UIView]()
     private(set) var topBarRightButtons = [UIView]()
@@ -354,7 +360,14 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         button.setImage(DesignSystemImages.Glyphs.Size24.shield)
         button.alpha = 0
         button.isUserInteractionEnabled = false
+        button.translatesAutoresizingMaskIntoConstraints = false
         button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        // Match the real toolbar buttons' fixed size so the equal-spacing stack (used when the
+        // bottom bar is a BrowserToolbarView) distributes this placeholder identically.
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 34),
+            button.heightAnchor.constraint(equalToConstant: 44),
+        ])
 
         let barItem = UIBarButtonItem(customView: button)
         if #available(iOS 26.0, *) {

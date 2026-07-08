@@ -24,37 +24,41 @@ import XCTest
 
 final class FloatingUIManagerTests: XCTestCase {
 
-    func testWhenFeatureOnAndDeviceIsNotIPadThenFloatingUIIsEnabled() {
+    func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPhoneThenFloatingUIIsEnabled() {
         let manager = FloatingUIManager(
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
-            isPadProvider: { false }
+            isPadProvider: { false },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
         )
 
         XCTAssertTrue(manager.isFloatingUIEnabled)
     }
 
-    func testWhenFeatureOnAndDeviceIsIPadThenFloatingUIIsDisabled() {
+    func testWhenFloatingUIIsEnabledButUnifiedToggleInputIsUnavailableThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
-            isPadProvider: { true }
+            isPadProvider: { false },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
         )
 
         XCTAssertFalse(manager.isFloatingUIEnabled)
     }
 
-    func testWhenFeatureOffAndDeviceIsNotIPadThenFloatingUIIsDisabled() {
+    func testWhenFloatingUIIsDisabledAndUnifiedToggleInputIsAvailableThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-            isPadProvider: { false }
+            isPadProvider: { false },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
         )
 
         XCTAssertFalse(manager.isFloatingUIEnabled)
     }
 
-    func testWhenFeatureOffAndDeviceIsIPadThenFloatingUIIsDisabled() {
+    func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPadThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-            isPadProvider: { true }
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUI]),
+            isPadProvider: { true },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
         )
 
         XCTAssertFalse(manager.isFloatingUIEnabled)

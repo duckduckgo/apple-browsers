@@ -22,6 +22,26 @@ import Foundation
 import SwiftUI
 import UIComponents
 
+private struct ButtonMetrics {
+    let fontSize: CGFloat
+    let topPadding: CGFloat
+    let bottomPadding: CGFloat
+    let horizontalPadding: CGFloat
+    let cornerRadius: CGFloat
+
+    private static var `default`: ButtonMetrics {
+        ButtonMetrics(fontSize: 13, topPadding: 2.5, bottomPadding: 3, horizontalPadding: 7.5, cornerRadius: 5)
+    }
+
+    private static var rebranded: ButtonMetrics {
+        ButtonMetrics(fontSize: 13, topPadding: 2.5, bottomPadding: 3, horizontalPadding: 7.5, cornerRadius: 24)
+    }
+
+    static var current: ButtonMetrics {
+        DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
+    }
+}
+
 public struct StandardButtonStyle: ButtonStyle {
     public let fontSize: CGFloat
     public let topPadding: CGFloat
@@ -37,14 +57,16 @@ public struct StandardButtonStyle: ButtonStyle {
     /// and falls back to using provided `cornerRadius`.
     public let pillShape: Bool
 
-    public init(fontSize: CGFloat = 13, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, horizontalPadding: CGFloat = 7.5, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil, cornerRadius: CGFloat = 5, pillShape: Bool = false) {
-        self.fontSize = fontSize
-        self.topPadding = topPadding
-        self.bottomPadding = bottomPadding
-        self.horizontalPadding = horizontalPadding
+    public init(fontSize: CGFloat? = nil, topPadding: CGFloat? = nil, bottomPadding: CGFloat? = nil, horizontalPadding: CGFloat? = nil, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil, cornerRadius: CGFloat? = nil, pillShape: Bool = false) {
+        let metrics = ButtonMetrics.current
+
+        self.fontSize = fontSize ?? metrics.fontSize
+        self.topPadding = topPadding ?? metrics.topPadding
+        self.bottomPadding = bottomPadding ?? metrics.bottomPadding
+        self.horizontalPadding = horizontalPadding ?? metrics.horizontalPadding
         self.backgroundColor = backgroundColor ?? Color(.pwmButtonBackground)
         self.backgroundPressedColor = backgroundPressedColor ?? Color(.pwmButtonBackgroundPressed)
-        self.cornerRadius = cornerRadius
+        self.cornerRadius = cornerRadius ?? metrics.cornerRadius
         self.pillShape = pillShape
     }
 

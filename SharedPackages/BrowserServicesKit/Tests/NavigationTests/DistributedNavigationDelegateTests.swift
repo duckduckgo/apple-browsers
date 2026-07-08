@@ -149,7 +149,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         responder(at: 0).onNavigationResponse = { [urls] resp in
-            XCTAssertTrue(resp.url.matches(urls.local))
+            XCTAssertTrue(resp.url.equals(urls.local, by: .fuzzyIdentity))
             XCTAssertEqual(resp.isSuccessful, true)
             XCTAssertEqual(resp.httpResponse?.statusCode, 200)
             XCTAssertEqual(resp.httpResponse?.statusCode, 200)
@@ -239,7 +239,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
             XCTAssertEqual(error._nsError.domain, WKError.WebKitErrorDomain)
             XCTAssertTrue(nav.state.isFailed)
             XCTAssertTrue(error.isFrameLoadInterrupted)
-            XCTAssertEqual(error.failingUrl?.matches(urls.local1), true)
+            XCTAssertTrue(error.failingUrl?.equals(urls.local1, by: .fuzzyIdentity) == true)
             eDidFail.fulfill()
         }
 
@@ -1140,7 +1140,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         responder(at: 0).onDidFail = { [urls] _, error in
             XCTAssertEqual(error._nsError.domain, NSURLErrorDomain)
             XCTAssertTrue(error.isNavigationCancelled)
-            XCTAssertEqual(error.failingUrl?.matches(urls.testScheme), true)
+            XCTAssertTrue(error.failingUrl?.equals(urls.testScheme, by: .fuzzyIdentity) == true)
         }
 
         withWebView(testURLSchemeHandler: testSchemeHandler) { webView in
@@ -1357,7 +1357,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
             eDidFinish.fulfill()
         }
 
-        let url = Bundle.module.url(forResource: "Resources/test", withExtension: "html")!
+        let url = Bundle.module.url(forResource: "Res/test", withExtension: "html")!
         withWebView { webView in
             _=webView.navigator(distributedNavigationDelegate: navigationDelegate)
                 .loadFileURL(url, allowingReadAccessTo: url, withExpectedNavigationType: .custom(.init(rawValue: "custom")))
@@ -1385,7 +1385,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
             eDidFinish.fulfill()
         }
 
-        let url = Bundle.module.url(forResource: "Resources/test", withExtension: "html")!
+        let url = Bundle.module.url(forResource: "Res/test", withExtension: "html")!
         withWebView { webView in
             _=webView.navigator(distributedNavigationDelegate: navigationDelegate)
                 .loadFileRequest(URLRequest(url: url), allowingReadAccessTo: url, withExpectedNavigationType: .custom(.init(rawValue: "custom")))
@@ -1612,7 +1612,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         let eOnNavAction1 = expectation(description: "onNavigationAction 1")
         var eOnNavAction1_1: XCTestExpectation!
         responder(at: 0).onNavigationAction = { [urls] action, _ in
-            if action.url.matches(urls.local2) {
+            if action.url.equals(urls.local2, by: .fuzzyIdentity) {
                 eOnNavAction1.fulfill()
                 _=await f.value
                 XCTAssertTrue(Task.isCancelled)

@@ -40,7 +40,7 @@ final class DBPEndToEndTests: XCTestCase {
     var viewModel: DBPUIViewModel!
     var testUserDefault: UserDefaults! = UserDefaults(suiteName: #function)
 
-    override func setUpWithError() throws {
+    override func setUp() async throws {
         continueAfterFailure = false
 
         // Store the integration test run type so that the agent can reliably access it:
@@ -49,7 +49,7 @@ final class DBPEndToEndTests: XCTestCase {
 
         pirProtectionManager = DataBrokerProtectionManager.shared
         loginItemsManager = LoginItemsManager()
-        loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
+        await loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
 
         communicationLayer = DBPUICommunicationLayer(webURLSettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
@@ -67,7 +67,7 @@ final class DBPEndToEndTests: XCTestCase {
 
     override func tearDown() async throws {
         try pirProtectionManager.dataManager!.database.deleteProfileData()
-        loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
+        await loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
 
         loginItemsManager = nil
         pirProtectionManager = nil
@@ -191,8 +191,9 @@ final class DBPEndToEndTests: XCTestCase {
         print("Successfully detected 1 non-removed broker and 1 removed broker with proper filtering")
 
         // At this stage the login item should be running
+        let isLoginItemEnabled = await loginItemsManager.isAnyEnabled([.dbpBackgroundAgent])
         assertCondition(withExpectationDescription: "Login item enabled after profile save",
-                        condition: { loginItemsManager.isAnyEnabled([.dbpBackgroundAgent]) })
+                        condition: { isLoginItemEnabled })
 
         // This needs to be await since it takes time to start the login item
         let loginItemRunningExpectation = expectation(description: "Login item running after profile save")

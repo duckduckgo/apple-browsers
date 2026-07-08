@@ -465,6 +465,36 @@ final class AIChatContextualChatSessionState {
         Logger.aiChat.debug("[SessionState] Manual attach cancelled")
     }
 
+    /// Ends in-flight attach work when a sheet session ends.
+    func handleSheetDismissed() {
+        if isManualAttachInProgress {
+            isManualAttachInProgress = false
+            isManualAttachFromFrontend = false
+            pixelHandler.endManualAttach()
+        }
+
+        rebuildViewState()
+    }
+
+    /// Clears pre-submit manual context when reopening on a different page.
+    /// Auto-attach-off manual context remains sticky while the sheet is open, including across
+    /// navigation and same-page reopen, but it should not leak into another page's sheet session.
+    func clearPreSubmitManualContextIfStale(for currentPageURL: URL?) -> Bool {
+        guard !shouldAutoCollectContext,
+              frontendState == .noChat,
+              case .attached(let context) = chipState,
+              let currentPageURL,
+              URL(string: context.contextData.url) != currentPageURL else {
+            return false
+        }
+
+        chipState = .placeholder
+        userDowngradedToPlaceholder = false
+        rebuildViewState()
+        Logger.aiChat.debug("[SessionState] Cleared stale pre-submit manual context on sheet present")
+        return true
+    }
+
     /// Requests a WebView reload. ViewController should observe `effects`.
     func requestWebViewReload() {
         emit(.reloadWebView)

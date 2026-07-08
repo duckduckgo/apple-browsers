@@ -344,6 +344,87 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(mockPixelHandler.manualAttachEnded)
     }
 
+    func testManualAttachWithAutoAttachOffStaysStickyAcrossNavigationWhileSheetIsOpen() {
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+
+        sessionState.notifyPageChanged()
+        sessionState.updateContext(makeTestContext(title: "Page B"))
+
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, "Page A")
+        } else {
+            XCTFail("Expected manually attached chip to stay sticky across navigation")
+        }
+    }
+
+    func testManualAttachWithAutoAttachOffDoesNotClearOnSheetDismissBeforeSubmit() {
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A"))
+
+        sessionState.handleSheetDismissed()
+
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, "Page A")
+        } else {
+            XCTFail("Expected same sheet session context to survive dismiss")
+        }
+    }
+
+    func testManualAttachWithAutoAttachOffDoesNotClearOnSamePageReopen() {
+        let pageURL = URL(string: "https://example.com/page-a")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A", url: pageURL.absoluteString))
+        sessionState.handleSheetDismissed()
+
+        let didClear = sessionState.clearPreSubmitManualContextIfStale(for: pageURL)
+
+        XCTAssertFalse(didClear)
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, "Page A")
+        } else {
+            XCTFail("Expected same-page reopen to keep manual context")
+        }
+    }
+
+    func testManualAttachWithAutoAttachOffClearsOnDifferentPageReopenBeforeSubmit() {
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        sessionState.handleSheetDismissed()
+
+        let didClear = sessionState.clearPreSubmitManualContextIfStale(for: pageBURL)
+
+        XCTAssertTrue(didClear)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
+    func testManualAttachWithAutoAttachOffDoesNotClearActiveChatOnDifferentPageReopen() {
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        sessionState.beginChatForUTISubmission()
+        sessionState.handleSheetDismissed()
+
+        let didClear = sessionState.clearPreSubmitManualContextIfStale(for: pageBURL)
+
+        XCTAssertFalse(didClear)
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, "Page A")
+        } else {
+            XCTFail("Expected active chat context to survive sheet dismiss")
+        }
+    }
+
     func testCancelManualAttach() {
         // Given
         sessionState.beginManualAttach()

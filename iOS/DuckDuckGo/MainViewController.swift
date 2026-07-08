@@ -3879,6 +3879,7 @@ extension MainViewController: BrowserChromeDelegate {
 
     func setNavigationBarHidden(_ hidden: Bool) {
         lastChromeVisibilityPercent = hidden ? 0 : 1
+        chromeMorphAnimator.cancel()
         if hidden { hideKeyboard() }
         if isFloatingUIEnabled {
             viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()

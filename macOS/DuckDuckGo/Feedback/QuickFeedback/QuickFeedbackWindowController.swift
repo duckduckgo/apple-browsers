@@ -140,6 +140,8 @@ final class QuickFeedbackWindowController: NSWindowController {
     private func showOpenPanel(with request: OpenPanelDialogRequest) {
         let openPanel = NSOpenPanel()
         openPanel.allowsMultipleSelection = request.parameters.allowsMultipleSelection
+        // Match the popup's floating level, otherwise the panel opens behind it.
+        openPanel.level = window?.level ?? .floating
 
         openPanel.begin { [weak request] response in
             switch response {

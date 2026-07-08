@@ -3936,11 +3936,12 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     /// Current visibility fraction of the chrome bars (1.0 = fully visible, 0.0 = hidden).
-    /// In minimal chrome the toolbar is hidden so we read the navigation bar container alpha instead.
+    /// We track the driven fraction directly rather than reading a container's alpha: with the
+    /// floating capsule morph, `chromeAlpha(for:)` keeps the chrome alpha at 0 through the resize
+    /// band and only fades it in over `[handoffStart, 1]`, so container alpha no longer reflects the
+    /// real fraction mid-transition. Call sites that reapply visibility need the true fraction.
     var currentBarsVisibility: CGFloat {
-        viewCoordinator.toolbar.isHidden
-            ? viewCoordinator.navigationBarContainer.alpha
-            : viewCoordinator.toolbar.alpha
+        lastChromeVisibilityPercent
     }
 
     // 1.0 - full size, 0.0 - hidden

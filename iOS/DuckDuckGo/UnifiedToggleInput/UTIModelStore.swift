@@ -61,6 +61,12 @@ final class UTIModelStore {
         preferences.selectedReasoningMode
     }
 
+    var submissionReasoningEffort: AIChatReasoningEffort? {
+        guard let selectedModel else { return nil }
+        guard selectedReasoningMode != nil || selectedModel.supportsReasoningPicker else { return nil }
+        return selectedModel.resolvedReasoningEffort(from: selectedReasoningMode)
+    }
+
     var selectedModel: AIChatModel? {
         guard let persistedModelId else { return nil }
         return models.first(where: { $0.id == persistedModelId })

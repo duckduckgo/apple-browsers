@@ -543,7 +543,6 @@ class SmallOmniBarStateTests: XCTestCase {
     }
 
     func testWhenStateIsNotLargeWidthThenShowRefreshOutsideAddressBarIsFalse() {
-        mockFeatureFlagger.enabledFeatureFlags = [.iPadAIToggle]
         let appSettings = AppSettingsMock()
         appSettings.currentRefreshButtonPosition = .addressBar
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,

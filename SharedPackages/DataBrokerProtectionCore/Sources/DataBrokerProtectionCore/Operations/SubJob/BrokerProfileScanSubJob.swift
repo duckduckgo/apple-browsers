@@ -114,7 +114,6 @@ struct BrokerProfileScanSubJob {
                                         runnerFactory: dependencies.createScanRunner)
 
             let profilesFoundDuringCurrentScanJob = try await executeScan(runner: runner,
-                                                                          brokerProfileQueryData: brokerProfileQueryData,
                                                                           showWebView: showWebView,
                                                                           shouldRunNextStep: shouldRunNextStep)
 
@@ -248,12 +247,10 @@ struct BrokerProfileScanSubJob {
     }
 
     internal func executeScan(runner: BrokerProfileScanSubJobWebRunning,
-                              brokerProfileQueryData: BrokerProfileQueryData,
                               showWebView: Bool,
                               shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         // 4b. Get extracted profiles from the runner:
-        try await runner.scan(brokerProfileQueryData,
-                              showWebView: showWebView,
+        try await runner.scan(showWebView: showWebView,
                               shouldRunNextStep: shouldRunNextStep)
     }
 
@@ -563,9 +560,7 @@ struct BrokerProfileScanSubJob {
     private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<JobEvent>,
                                                      database: DataBrokerProtectionRepository) {
 
-        // Jobs for removed brokers will already be prevented from being scheduled upstream
-        guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
-            .flatMap({ $0.extractedProfiles }),
+        guard let savedExtractedProfiles = try? database.fetchAllExtractedProfiles(),
               savedExtractedProfiles.count > 0 else {
             return
         }
@@ -589,7 +584,8 @@ struct BrokerProfileScanSubJob {
                                            extractedProfileId: Int64?,
                                            schedulingConfig: DataBrokerScheduleConfig,
                                            database: DataBrokerProtectionRepository) throws {
-        let dateUpdater = OperationPreferredDateUpdater(database: database)
+        let dateUpdater = OperationPreferredDateUpdater(database: database,
+                                                        featureFlagger: DisabledOptOutRetryErrorFeatureFlagger())
         try dateUpdater.updateOperationDataDates(origin: origin,
                                                  brokerId: brokerId,
                                                  profileQueryId: profileQueryId,

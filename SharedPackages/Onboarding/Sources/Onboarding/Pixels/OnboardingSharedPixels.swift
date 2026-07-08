@@ -162,6 +162,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
     case appIconColor(AppIconColorEvent) // iOS only
     case addressBarPosition(AddressBarPositionEvent) // iOS only
     case importData(EngagementEvent) // macOS only
+    case chromeExtensionInstall(EngagementEvent) // macOS only
     case duckPlayer(EngagementEvent) // macOS only
     case customization(CustomizeEvent) // macOS only
     case searchExperience(SearchExperienceEvent)
@@ -295,6 +296,7 @@ private extension OnboardingSharedPixelEvent {
         case .appIconColor: return "app-icon-color"
         case .addressBarPosition: return "address-bar-position"
         case .importData: return "import-data"
+        case .chromeExtensionInstall: return "chrome-extension-install"
         case .duckPlayer: return "duck-player"
         case .customization: return "customization"
         case .searchExperience: return "search-experience"
@@ -323,6 +325,7 @@ private extension OnboardingSharedPixelEvent {
                 .aiComparison(let event),
                 .addToDock(let event),
                 .importData(let event),
+                .chromeExtensionInstall(let event),
                 .duckPlayer(let event),
                 .skipOnboarding(let event),
                 .searchResults(let event),
@@ -391,6 +394,7 @@ private extension OnboardingSharedPixelEvent {
                 .aiComparison(let event),
                 .addToDock(let event),
                 .importData(let event),
+                .chromeExtensionInstall(let event),
                 .duckPlayer(let event),
                 .skipOnboarding(let event),
                 .searchResults(let event),

@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import Persistence
+import SERPSettings
 
 private extension BoolFileMarker.Name {
     static let hasSuccessfullyLaunchedBefore = BoolFileMarker.Name(rawValue: "app-launched-successfully")
@@ -167,6 +168,27 @@ struct Foreground: ForegroundHandling {
 
         let switchBarRetentionMetrics = SwitchBarRetentionMetrics(aiChatSettings: appDependencies.aiChatSettings)
         switchBarRetentionMetrics.checkDailyAndSendPixelIfApplicable()
+
+        fireAIFeaturesStateDailyPixel()
+    }
+
+    /// Once-daily snapshot of the three AI settings + the derived "no AI" state, across the active base.
+    private func fireAIFeaturesStateDailyPixel() {
+        let aiChatSettings = appDependencies.aiChatSettings
+        let serpSettings = SERPSettingsProvider(aiChatProvider: aiChatSettings)
+        serpSettings.keyValueStore = appDependencies.services.keyValueFileStoreService.keyValueFilesStore
+
+        let duckAIEnabled = aiChatSettings.isAIChatEnabled
+        let searchAssist = serpSettings.searchAssistFrequency
+        let hideAIImages = serpSettings.hideAIGeneratedImages
+        let noAI = !duckAIEnabled && searchAssist == .never && hideAIImages
+
+        DailyPixel.fire(pixel: .aiFeaturesStateDaily, withAdditionalParameters: [
+            "duck_ai": duckAIEnabled ? "true" : "false",
+            "search_assist": searchAssist.rawValue,
+            "hide_ai_images": hideAIImages ? "on" : "off",
+            "no_ai": noAI ? "true" : "false"
+        ])
     }
 
     private func configureAppearance() {

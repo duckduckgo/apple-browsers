@@ -255,7 +255,7 @@ private extension RebrandedNewTabDaxDialogFactory {
                 createSubscriptionPromoMessageDeprecated()
             }
         case .duckAI:
-            AttributedString(UserText.Onboarding.DuckAICPP.Contextual.subscriptionMessage)
+            AttributedString(UserText.Onboarding.DuckAICPP.Contextual.subscriptionMessage.preventWidows())
         }
         let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip
         let manualDismissAction: (() -> Void)? = isChatPath ? nil : { [weak self] in

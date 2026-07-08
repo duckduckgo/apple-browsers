@@ -38,6 +38,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     var mockAIChatFullModeFeature: MockAIChatFullModeFeatureProviding!
     var mockAIChatContextualModeFeature: MockAIChatContextualModeFeatureProviding!
     var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
+    var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
     private var mockUserScriptErrorEventMapper: CapturingAIChatUserScriptErrorEventMapper!
     private var mockUserDefaults: UserDefaults!
 
@@ -53,6 +54,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockAIChatFullModeFeature = MockAIChatFullModeFeatureProviding()
         mockAIChatContextualModeFeature = MockAIChatContextualModeFeatureProviding()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
+        mockIPadDuckAIControlsFeature = MockIPadDuckAIControlsFeatureProvider()
         mockUserScriptErrorEventMapper = CapturingAIChatUserScriptErrorEventMapper()
 
         mockUserDefaults = UserDefaults(suiteName: mockSuiteName)
@@ -70,6 +72,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockAIChatFullModeFeature = nil
         mockAIChatContextualModeFeature = nil
         mockUnifiedToggleInputFeature = nil
+        mockIPadDuckAIControlsFeature = nil
         mockUserScriptErrorEventMapper = nil
         PixelFiringMock.tearDown()
         super.tearDown()
@@ -88,6 +91,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             aichatFullModeFeature: mockAIChatFullModeFeature,
             aichatContextualModeFeature: mockAIChatContextualModeFeature,
             unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature,
             aiChatUserScriptErrorEventMapper: aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(),
             isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
             installDateProvider: installDateProvider,
@@ -875,14 +879,14 @@ final class MockAIChatSyncHandling: AIChatSyncHandling {
 
 extension AIChatUserScriptHandlerTests {
 
-    func testGetAIChatPageContextReturnsNilContextWhenNoHandler() {
-        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+    func testGetAIChatPageContextReturnsNilContextWhenNoHandler() async {
+        let response = await aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
 
         XCTAssertNotNil(response)
         XCTAssertNil(response?.pageContext)
     }
 
-    func testGetAIChatPageContextReturnsContextWhenProviderSet() {
+    func testGetAIChatPageContextReturnsContextWhenProviderSet() async {
         let expectedContext = AIChatPageContextData(
             title: "Test Page",
             favicon: [],
@@ -893,7 +897,7 @@ extension AIChatUserScriptHandlerTests {
         )
         aiChatUserScriptHandler.setPageContextProvider { _ in expectedContext }
 
-        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+        let response = await aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
 
         XCTAssertNotNil(response)
         XCTAssertNotNil(response?.pageContext)
@@ -902,10 +906,10 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(response?.pageContext?.content, "Test content")
     }
 
-    func testGetAIChatPageContextReturnsNilContextWhenProviderReturnsNil() {
+    func testGetAIChatPageContextReturnsNilContextWhenProviderReturnsNil() async {
         aiChatUserScriptHandler.setPageContextProvider { _ in nil }
 
-        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+        let response = await aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
 
         XCTAssertNotNil(response)
         XCTAssertNil(response?.pageContext)
@@ -1007,5 +1011,35 @@ extension AIChatUserScriptHandlerTests {
 
         // Then
         XCTAssertNil(result)
+    }
+}
+
+// MARK: - supportsNativePrompt (iPad Duck.ai bar controls)
+
+extension AIChatUserScriptHandlerTests {
+
+    func testWhenIPadDuckAIControlsAvailableThenSupportsNativePromptIsTrueButSupportsNativeChatInputIsFalse() {
+        // Given the iPad model picker is active and UTI (iPhone) is not
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = true
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then: the front end is told to read the native prompt (model), but input is not deferred to native
+        XCTAssertEqual(configValues?.supportsNativePrompt, true)
+        XCTAssertEqual(configValues?.supportsNativeChatInput, false)
+    }
+
+    func testWhenNoNativePromptSourceAvailableThenSupportsNativePromptIsFalse() {
+        // Given neither the iPad picker nor UTI is active
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsNativePrompt, false)
     }
 }

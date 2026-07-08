@@ -46,7 +46,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         winBackOfferService: WinBackOfferService,
         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil,
         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
-        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+        freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+        idleReturnEligibilityManager: IdleReturnEligibilityManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -59,6 +60,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.dbpRunPrerequisitesDelegate = dbpRunPrerequisitesDelegate
         self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -72,6 +74,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+    let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
         var bookmarksCount = 0
@@ -96,6 +99,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var subscriptionDaysSinceSubscribed: Int = -1
         var subscriptionDaysUntilExpiry: Int = -1
         var subscriptionPurchasePlatform: String?
+        var subscriptionTier: String?
         var isSubscriptionActive: Bool = false
         var isSubscriptionExpiring: Bool = false
         var isSubscriptionExpired: Bool = false
@@ -130,6 +134,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             subscriptionPurchasePlatform = subscription.platform.rawValue
+            subscriptionTier = subscription.tier?.rawValue
             subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
             switch subscription.status {
@@ -161,6 +166,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
         }.map(\.rawValue)
 
+        let ntpAfterIdleState = idleReturnEligibilityManager.ntpAfterIdleState().rawValue
+
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager,
@@ -178,6 +185,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
                                                        subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
                                                        subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+                                                       subscriptionTier: subscriptionTier,
                                                        isSubscriptionActive: isSubscriptionActive,
                                                        isSubscriptionExpiring: isSubscriptionExpiring,
                                                        isSubscriptionExpired: isSubscriptionExpired,
@@ -192,7 +200,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isFreemiumPIREligible: isFreemiumPIREligible,
                                                        isFreemiumPIRActivated: didActivateFreemiumPIR,
                                                        freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
-                                                       isCurrentPIRUser: isCurrentPIRUser),
+                                                       isCurrentPIRUser: isCurrentPIRUser,
+                                                       ntpAfterIdleState: ntpAfterIdleState),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds
@@ -211,6 +220,10 @@ extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
 
     public var subscriptionBilling: String? {
         return billingPeriod.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionTier: String? {
+        return tier?.rawValue
     }
 
     public var subscriptionStartDate: Date? {

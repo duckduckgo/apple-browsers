@@ -26,13 +26,11 @@ final class EmailConfirmationDataServiceTests: XCTestCase {
     private let mockDatabase = MockDatabase()
     private let mockEmailServiceV0 = MockEmailService()
     private let mockEmailServiceV1 = MockEmailServiceV1()
-    private let mockFeatureFlagger = MockDBPFeatureFlagger(isEmailConfirmationDecouplingFeatureOn: true)
 
     private lazy var sut = EmailConfirmationDataService(emailConfirmationStore: mockDatabase,
                                                         database: mockDatabase,
                                                         emailServiceV0: mockEmailServiceV0,
                                                         emailServiceV1: mockEmailServiceV1,
-                                                        featureFlagger: mockFeatureFlagger,
                                                         pixelHandler: nil,
                                                         debugEventHandler: nil)
 

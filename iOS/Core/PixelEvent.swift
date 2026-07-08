@@ -151,6 +151,16 @@ extension Pixel {
         case settingsAutoconsentOn
         case settingsAutoconsentOff
 
+        case autoconsentSettingsShown
+        case autoconsentSettingsOn
+        case autoconsentSettingsOff
+        case autoconsentSettingsDefault
+        case autoconsentSettingsMax
+
+        case cookiePopupOptInShownFirst
+        case cookiePopupOptInShownRepeat
+        case cookiePopupOptInOptionConfirmed
+
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuOpenedError
@@ -977,12 +987,6 @@ extension Pixel {
 
         case debugWebViewInVisibleTabHidden
 
-        case debugInteractionRepeatedFailedScroll
-        case debugInteractionWedgedRecognizer
-
-        case debugInteractionRecoveryAttempted
-        case debugInteractionRecoveryOutcome
-
         case debugPromptCoordinationFailedToSaveLastPresentationDate
         case debugPromptCoordinationFailedToRetrieveLastPresentationDate
 
@@ -1433,6 +1437,8 @@ extension Pixel {
         case settingsMoreSearchSettings
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
+        case settingsHideTabBarWhileScrollingOn
+        case settingsHideTabBarWhileScrollingOff
         case settingsWhatsNewOpen
         case settingsAutoplayOpen
         case settingsAutoplayChanged
@@ -1636,6 +1642,18 @@ extension Pixel {
         case aiChatSettingsAutoContextDisabled
         case aiChatSettingsDefaultTogglePositionChanged
 
+        // AI Features telemetry (cross-platform, deliberately no `m_` platform prefix so the
+        // name + params match macOS exactly). See `name` for the wire strings.
+        case aiFeaturesStateDaily
+        case aiFeaturesDisabled
+        case aiFeaturesSearchAssistNever
+        case aiFeaturesSearchAssistOnDemand
+        case aiFeaturesSearchAssistSometimes
+        case aiFeaturesSearchAssistOften
+        case aiFeaturesHideImagesOn
+        case aiFeaturesHideImagesOff
+        case serpSettingsUnrecognizedValue
+
         case aiChatOpen
         case aiChatMetricStartNewConversation
         case aiChatMetricStartNewConversationButtonClicked
@@ -1766,6 +1784,9 @@ extension Pixel {
         case aiChatHistoryDownloadStarted
         case aiChatHistoryEditModeEntered
         case aiChatHistoryNewChatTapped
+        case aiChatHistoryLoadFailed
+        case aiChatHistoryPinToggleFailed
+        case aiChatHistoryDownloadFailed
 
         // MARK: AI Chat Recent Chats
         case aiChatRecentChatSelectedPinned
@@ -1809,7 +1830,9 @@ extension Pixel {
         case unifiedToggleInputWebSearchSubmitted
         case unifiedToggleInputCustomizeResponsesSelected
         case unifiedToggleInputModelSelected
+        case unifiedToggleInputModelPickerShown
         case unifiedToggleInputReasoningEffortSelected
+        case unifiedToggleInputReasoningEffortPickerShown
         case unifiedToggleInputImageAttached
         case unifiedToggleInputImageRemoved
         case unifiedToggleInputFileAttached
@@ -1904,6 +1927,11 @@ extension Pixel {
         // MARK: - Push Notifications
         case inactiveUserProvisionalPushNotificationTapped
         case userNotificationAuthorizationStatusDaily
+        case subscriptionExpirationReminderScheduled
+        case subscriptionExpirationReminderNotificationTapped
+        case subscriptionExpirationReminderNotificationDismissed
+        case subscriptionExpirationReminderCancelled
+        case subscriptionExpirationReminderSchedulingError
 
         // MARK: - Freemium Personal Information Removal
         case freemiumPIRSettingsEntryPointClicked
@@ -2007,11 +2035,6 @@ extension Pixel {
         case webExtensionAdBlockingDetectedBufferingDaily
 
         // MARK: - Fire Mode
-        case fireModeNTPPromotionShown
-        case fireModeNTPPromotionDismissed
-        case fireModeNTPPromotionEngaged
-        case fireModeMenuPromotionShown
-        case fireModeMenuPromotionEngaged
         case browsingModeSwitched
         case tabSwitcherModeToggled
         case fireModeBurnExecuted
@@ -2128,6 +2151,16 @@ extension Pixel.Event {
         case .settingsAutoconsentOn: return "m_settings_autoconsent_on"
         case .settingsAutoconsentOff: return "m_settings_autoconsent_off"
 
+        case .autoconsentSettingsShown: return "autoconsent_settings_shown"
+        case .autoconsentSettingsOn: return "autoconsent_settings_on"
+        case .autoconsentSettingsOff: return "autoconsent_settings_off"
+        case .autoconsentSettingsDefault: return "autoconsent_settings_default"
+        case .autoconsentSettingsMax: return "autoconsent_settings_max"
+
+        case .cookiePopupOptInShownFirst: return "cookie_popup_opt_in_shown_first"
+        case .cookiePopupOptInShownRepeat: return "cookie_popup_opt_in_shown_repeat"
+        case .cookiePopupOptInOptionConfirmed: return "cookie_popup_opt_in_option_confirmed"
+
         case .settingsPrivateSearchOpen: return "m_settings_private_search_open"
         case .settingsEmailProtectionOpen: return "m_settings_email_protection_open"
         case .settingsEmailProtectionEnable: return "m_settings_email_protection_enable"
@@ -2158,6 +2191,8 @@ extension Pixel.Event {
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
+        case .settingsHideTabBarWhileScrollingOn: return "settings_hide_tab_bar_while_scrolling_on"
+        case .settingsHideTabBarWhileScrollingOff: return "settings_hide_tab_bar_while_scrolling_off"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
         case .settingsAutoplayOpen: return "m_settings_autoplay_open"
         case .settingsAutoplayChanged: return "m_settings_autoplay_changed"
@@ -2976,11 +3011,6 @@ extension Pixel.Event {
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
 
-        case .debugInteractionRepeatedFailedScroll: return "m_debug_interaction_repeated_failed_scroll"
-        case .debugInteractionWedgedRecognizer: return "m_debug_interaction_wedged_recognizer"
-        case .debugInteractionRecoveryAttempted: return "m_debug_interaction_recovery_attempted"
-        case .debugInteractionRecoveryOutcome: return "m_debug_interaction_recovery_outcome"
-
             // MARK: - Debug Prompt Coordination
 
         case .debugPromptCoordinationFailedToSaveLastPresentationDate: return "m_debug_prompt-coordination_failed-to-save_last-presentation-date"
@@ -3545,6 +3575,17 @@ extension Pixel.Event {
         case .aiChatContextualAutoAttachDAU: return "m_aichat_contextual_auto_attach_dau"
         case .aiChatIsEnabledDaily: return "m_aichat_is_enabled_daily"
 
+        // AI Features telemetry: no `m_` prefix so the wire names are identical to macOS.
+        case .aiFeaturesStateDaily: return "ai_features_state_daily"
+        case .aiFeaturesDisabled: return "ai_features_disabled"
+        case .aiFeaturesSearchAssistNever: return "ai_features_search_assist_never"
+        case .aiFeaturesSearchAssistOnDemand: return "ai_features_search_assist_on_demand"
+        case .aiFeaturesSearchAssistSometimes: return "ai_features_search_assist_sometimes"
+        case .aiFeaturesSearchAssistOften: return "ai_features_search_assist_often"
+        case .aiFeaturesHideImagesOn: return "ai_features_hide_images_on"
+        case .aiFeaturesHideImagesOff: return "ai_features_hide_images_off"
+        case .serpSettingsUnrecognizedValue: return "serp_settings_unrecognized_value"
+
         case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_duck-ai_native-storage_migration_done_\(key)_unique"
         case .duckAiNativeStorageMigrationDoneCount(let key): return "m_duck-ai_native-storage_migration_done_\(key)_count"
         case .duckAiNativeStorageMigrationDoneBlankCount: return "m_duck-ai_native-storage_migration_done_blank_count"
@@ -3654,6 +3695,9 @@ extension Pixel.Event {
         case .aiChatHistoryDownloadStarted: return "aichat_history_download_started"
         case .aiChatHistoryEditModeEntered: return "aichat_history_edit_mode_entered"
         case .aiChatHistoryNewChatTapped: return "aichat_history_new_chat_tapped"
+        case .aiChatHistoryLoadFailed: return "aichat_history_load_failed"
+        case .aiChatHistoryPinToggleFailed: return "aichat_history_pin_toggle_failed"
+        case .aiChatHistoryDownloadFailed: return "aichat_history_download_failed"
 
         // MARK: AI Chat Recent Chats
         case .aiChatRecentChatSelectedPinned: return "m_aichat_recent_chat_selected_pinned"
@@ -3697,7 +3741,9 @@ extension Pixel.Event {
         case .unifiedToggleInputWebSearchSubmitted: return "m_aichat_unified_input_web_search_submitted"
         case .unifiedToggleInputCustomizeResponsesSelected: return "m_aichat_unified_input_customize_responses_selected"
         case .unifiedToggleInputModelSelected: return "m_aichat_unified_input_model_selected"
+        case .unifiedToggleInputModelPickerShown: return "m_aichat_unified_input_model_picker_shown"
         case .unifiedToggleInputReasoningEffortSelected: return "m_aichat_unified_input_reasoning_effort_selected"
+        case .unifiedToggleInputReasoningEffortPickerShown: return "m_aichat_unified_input_reasoning_effort_picker_shown"
         case .unifiedToggleInputImageAttached: return "m_aichat_unified_input_image_attached"
         case .unifiedToggleInputImageRemoved: return "m_aichat_unified_input_image_removed"
         case .unifiedToggleInputFileAttached: return "m_aichat_unified_input_file_attached"
@@ -3846,6 +3892,11 @@ extension Pixel.Event {
         // MARK: Push Notification
         case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
+        case .subscriptionExpirationReminderScheduled: return "push-notification_subscription-expiration-reminder_scheduled"
+        case .subscriptionExpirationReminderNotificationTapped: return "push-notification_subscription-expiration-reminder_tapped"
+        case .subscriptionExpirationReminderNotificationDismissed: return "push-notification_subscription-expiration-reminder_dismissed"
+        case .subscriptionExpirationReminderCancelled: return "push-notification_subscription-expiration-reminder_cancelled"
+        case .subscriptionExpirationReminderSchedulingError: return "push-notification_subscription-expiration-reminder_scheduling-error"
 
         // MARK: Freemium Personal Information Removal
         case .freemiumPIRSettingsEntryPointClicked: return "m_dbp_freemium_settings_entry_point_clicked"
@@ -3954,11 +4005,6 @@ extension Pixel.Event {
         case .webExtensionAdBlockingDetectedBufferingDaily: return "m_web_extension_adblocking_detected_buffering_daily"
 
         // MARK: - Fire Mode
-        case .fireModeNTPPromotionShown: return "m_fire-mode_ntp-promotion_shown"
-        case .fireModeNTPPromotionDismissed: return "m_fire-mode_ntp-promotion_dismissed"
-        case .fireModeNTPPromotionEngaged: return "m_fire-mode_ntp-promotion_engaged"
-        case .fireModeMenuPromotionShown: return "m_fire-mode_menu-promotion_shown"
-        case .fireModeMenuPromotionEngaged: return "m_fire-mode_menu-promotion_engaged"
         case .browsingModeSwitched: return "m_browsing-mode_switched"
         case .tabSwitcherModeToggled: return "m_tab-switcher_mode-toggled"
         case .fireModeBurnExecuted: return "m_fire-mode_burn_executed"
@@ -4103,6 +4149,7 @@ public extension Pixel.Event {
     enum MaliciousSiteProtectionEvent: Equatable {
         case errorPageShown(category: ThreatKind, clientSideHit: Bool?)
         case visitSite(category: ThreatKind)
+        case leaveSite(category: ThreatKind)
         case iframeLoaded(category: ThreatKind)
         case settingToggled(to: Bool)
         case matchesApiTimeout
@@ -4118,6 +4165,8 @@ public extension Pixel.Event {
                 self = .errorPageShown(category: category, clientSideHit: clientSideHit)
             case .visitSite(category: let category):
                 self = .visitSite(category: category)
+            case .leaveSite(category: let category):
+                self = .leaveSite(category: category)
             case .iframeLoaded(category: let category):
                 self = .iframeLoaded(category: category)
             case .settingToggled(let enabled):
@@ -4145,6 +4194,8 @@ public extension Pixel.Event {
                 return MaliciousSiteProtection.Event.errorPageShown(category: category, clientSideHit: clientSideHit)
             case .visitSite(let category):
                 return MaliciousSiteProtection.Event.visitSite(category: category)
+            case .leaveSite(category: let category):
+                return MaliciousSiteProtection.Event.leaveSite(category: category)
             case .iframeLoaded(let category):
                 return MaliciousSiteProtection.Event.iframeLoaded(category: category)
             case .settingToggled(let enabled):

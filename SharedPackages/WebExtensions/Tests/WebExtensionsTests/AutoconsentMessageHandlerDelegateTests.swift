@@ -115,7 +115,11 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
             "selftestFailed": nil as Any?,
             "consentReloadLoop": false,
             "consentRule": "test-rule",
-            "consentHeuristicEnabled": true
+            "consentHeuristicEnabled": true,
+            "cpmStage": "popup_found",
+            "cpmErrors": "multiple_cmps,tab_refreshDashboardState",
+            "cpmQueueSize": 2,
+            "cpmConfigVersion": "123"
         ]
         let params: [String: Any] = [
             "url": "https://example.com/articles/one",
@@ -141,6 +145,42 @@ final class AutoconsentMessageHandlerDelegateTests: XCTestCase {
             XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.consentManaged, true)
             XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.cosmetic, false)
             XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.consentRule, "test-rule")
+            XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.cpmStage, "popup_found")
+            XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.cpmErrors, "multiple_cmps,tab_refreshDashboardState")
+            XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.cpmQueueSize, 2)
+            XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.cpmConfigVersion, "123")
+        case .failure(let error):
+            XCTFail("Expected success but got failure: \(error)")
+        case .noHandler:
+            XCTFail("Expected success but got noHandler")
+        }
+    }
+
+    func testRefreshDashboardStateCapsCPMErrors() async {
+        let longErrors = String(repeating: "a", count: 300)
+        let consentStatus: [String: Any] = [
+            "consentManaged": false,
+            "cpmErrors": longErrors
+        ]
+        let params: [String: Any] = [
+            "url": "https://example.com/articles/one",
+            "consentStatus": consentStatus
+        ]
+        let message = WebExtensionMessage(
+            featureName: Self.testFeatureName,
+            method: "refreshCpmDashboardState",
+            id: nil,
+            params: params,
+            context: nil,
+            extensionIdentifier: Self.testExtensionIdentifier
+        )
+
+        let result = await handler.handleMessage(message)
+
+        switch result {
+        case .success:
+            XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.cpmErrors?.count, 255)
+            XCTAssertEqual(mockDelegate.dashboardRefreshed?.1.cpmErrors, String(longErrors.prefix(255)))
         case .failure(let error):
             XCTFail("Expected success but got failure: \(error)")
         case .noHandler:

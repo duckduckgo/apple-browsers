@@ -116,20 +116,25 @@ public extension SERPSettingsProviding {
     ///
     /// - Returns: Encoded settings blob, or an empty JSON object if no data exists, or `nil` if an error occurs
     func getSERPSettings() -> Encodable? {
+        let storedString: String?
         do {
-            if let stringData = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? String,
-                let data = stringData.data(using: .utf8) {
-                let dict = try JSONDecoder().decode([String: String].self, from: data)
-                return dict
-            } else {
-                // First-time access: return empty JSON object
-                return EmptyPayload()
-            }
+            storedString = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? String
         } catch {
-            eventMapper?.fire(.keyValueStoreReadError, error: error)
+            eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.storeRead.pixelParameters)
+            return nil
         }
 
-        return nil
+        guard let storedString, let data = storedString.data(using: .utf8) else {
+            // First-time access: return empty JSON object
+            return EmptyPayload()
+        }
+
+        do {
+            return try JSONDecoder().decode([String: String].self, from: data)
+        } catch {
+            eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.decode.pixelParameters)
+            return nil
+        }
     }
 
     /// Stores SERP settings in a thread-safe manner.
@@ -154,6 +159,8 @@ public extension SERPSettingsProviding {
             let stringData = String(data: data, encoding: .utf8)
             do {
                 try keyValueStore?.set(stringData, forKey: SERPSettingsConstants.serpSettingsStorage)
+                // Let native settings UI re-read the stored values after a SERP-originated change.
+                NotificationCenter.default.post(name: .serpSettingsDidReceiveWebUpdate, object: nil)
             } catch {
                 eventMapper?.fire(.keyValueStoreWriteError, error: error)
             }
@@ -221,8 +228,12 @@ public extension SERPSettingsProviding {
     /// default removes the key, mirroring the SERP (which omits defaults) so the two stay consistent.
     var searchAssistFrequency: SearchAssistFrequency {
         get {
-            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey),
-                  let frequency = SearchAssistFrequency(rawValue: rawValue) else {
+            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.searchAssistKey) else {
+                return .defaultValue
+            }
+            guard let frequency = SearchAssistFrequency(rawValue: rawValue) else {
+                // Key is present but holds a value the native enum doesn't recognize (contract mismatch).
+                eventMapper?.fire(.unrecognizedValue)
                 return .defaultValue
             }
             return frequency
@@ -239,8 +250,12 @@ public extension SERPSettingsProviding {
     /// default removes the key.
     var hideAIGeneratedImages: Bool {
         get {
-            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey),
-                  let hidden = HideAIGeneratedImages.isHidden(fromRawValue: rawValue) else {
+            guard let rawValue = serpSettingValue(forKey: SERPSettingsConstants.hideAIGeneratedImagesKey) else {
+                return HideAIGeneratedImages.defaultValue
+            }
+            guard let hidden = HideAIGeneratedImages.isHidden(fromRawValue: rawValue) else {
+                // Key is present but holds a value the native side doesn't recognize (contract mismatch).
+                eventMapper?.fire(.unrecognizedValue)
                 return HideAIGeneratedImages.defaultValue
             }
             return hidden
@@ -254,14 +269,22 @@ public extension SERPSettingsProviding {
     // MARK: - Blob read/write helpers
 
     private func readSERPSettingsDictionary() -> [String: String]? {
+        let storedString: String?
         do {
-            guard let stringData = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? String,
-                  let data = stringData.data(using: .utf8) else {
-                return nil
-            }
+            storedString = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? String
+        } catch {
+            eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.storeRead.pixelParameters)
+            return nil
+        }
+
+        guard let storedString, let data = storedString.data(using: .utf8) else {
+            return nil
+        }
+
+        do {
             return try JSONDecoder().decode([String: String].self, from: data)
         } catch {
-            eventMapper?.fire(.keyValueStoreReadError, error: error)
+            eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.decode.pixelParameters)
             return nil
         }
     }

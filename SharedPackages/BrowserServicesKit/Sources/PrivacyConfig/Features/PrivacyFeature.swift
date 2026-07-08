@@ -114,6 +114,12 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Hang reporting feature flag
     case hangReporting
 
+    /// App rebranding feature flag
+    case appRebranding
+
+    /// New Tab Page rebranding feature flag
+    case newTabPageRebranding
+
     /// Remote kill switch for native unsupported-OS messaging (launch alert, About/Feedback info box).
     /// Enabled by default; set to `disabled` in privacy config to suppress the messaging.
     case osSupportWarning
@@ -139,6 +145,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Hide manual update option and always use automatic updates
     case automaticUpdatesOnly
+
+    /// Skip the automatic update check triggered when the release notes page loads
+    case skipReleaseNotesUpdateCheck
 
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
@@ -187,8 +196,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Autoplay policy control via WKWebpagePreferences
     case autoplayPolicy
 
-    case tabAnimations
-
     /// Enables lazy reload for the more options menu
     case lazyMenuRebuild
 
@@ -199,6 +206,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
     case onboardingRebranding
+
+    /// Option to install Chrome extension during onboarding (DMG only)
+    case onboardingChromeExtension
 
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
@@ -260,21 +270,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case crashReportOptInStatusResetting
 
-    /// Production observability for the hard-to-reproduce "web view scroll frozen, taps still work" bug:
-    /// a passive scroll-failure observer plus the symptom/mechanism pixels. On by default for everyone;
-    /// ship a privacy-config entry to roll back.
-    case webScrollFreezeObservability
-
-    /// Internal-only gate for the heavier on-device freeze capture (snapshot + ring buffer), kept separate
-    /// from `webScrollFreezeObservability` so the production observer ships without the capture.
-    case webScrollFreezeCapture
-
-    /// Speculative, scoped auto-recovery triggered on a confirmed freeze; default internal/off.
-    case webScrollFreezeAutoRecovery
-
     case screenTimeCleaning
-
-    case minimalChromeInLandscape
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
     case bottomBarViewportFixedElementsWorkaround
@@ -364,7 +360,6 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
-    case onboardingDismissExperiment
     case autofillPasswordsStatusBar
 }
 
@@ -377,14 +372,13 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlistBetaActive
     case freemium
     case remoteBrokerDelivery
-    case emailConfirmationDecoupling
     case foregroundRunningOnAppActive
     case continuedProcessing
     case pirRollout
     case goToMarket
     case webViewUserAgent
     case freemiumPIR
-    case contentBlocking
+    case optOutRetryError96Hours
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -419,6 +413,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the "Attach to Duck.ai" context-menu item that attaches selected text as the sidebar's page context
     case selectionContext
 
+    case sidebarSuggestedPrompts
+
+    /// Context-aware page suggestions shown in the iOS contextual Duck.ai sheet
+    case contextualSuggestedPrompts
+
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
@@ -446,14 +445,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Duck.ai query experiment with tracker-blocking demo during onboarding
     case onboardingDuckAIQueryTrackersDemoExperiment
 
-    /// Enables the omnibar toggle for AI Chat
-    case omnibarToggle
-
     /// Enables the omnibar onboarding for AI Chat
     case omnibarOnboarding
-
-    /// Enables the omnibar cluster for AI Chat
-    case omnibarCluster
 
     /// Enables the omnibar tools (customize, search toggle, image upload) for AI Chat
     case omnibarTools
@@ -474,14 +467,14 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// roll out the new Duck.ai-tab nav UI (no toggle on chat) independently of the master flag.
     case aiChatTabHideToggle
 
+    /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
+    case contextualUnifiedToggleInput
+
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 
     /// Controls whether automatic page context attachment defaults to enabled
     case autoAttachContextByDefault
-
-    /// Signals that the iPad app should display duck.ai chats in a tab instead of a sheet
-    case iPadDuckaiOnTab
 
     /// Signals that the iPad app should display the duck.ai toggle
     case iPadAIChatToggle
@@ -531,9 +524,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables voice chat shortcut in the focused address bar
     case voiceShortcut
-
-    /// Enables improved contextual sheet UX (welcome message, ask about page, etc.)
-    case contextualSheetImprovements
 
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
@@ -604,6 +594,13 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// settings screen with native controls, regroups the main AI settings at the top, and adds the
     /// "Disable All AI Options" / Reset button. Off keeps today's web-link rows.
     case aiFeaturesNativeControls
+
+    /// Enables the native Duck.ai bar controls (model picker) in the iPad address bar's
+    /// expanded Duck.ai input area.
+    case iPadDuckAIBarControls
+
+    /// Enables the macOS native "Customize Responses" UI (omnibar + New Tab Page entry points).
+    case customizeResponses
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -616,6 +613,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
+
+    /// Global switch to disable advanced card ordering for the Next Steps List widget
+    case nextStepsListAdvancedCardOrdering
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -691,14 +691,17 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncIdentities
     case aiChatSync
     case aiChatSyncPromo
-    case simplifiedSyncSetupExperiment
     case allowSingleDeviceOnConnectScreen
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
+
+    /// Gates the Simplified Sync Setup follow-up screens (deactivation + multi-device path).
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1215960387490701
+    case simplifiedSyncSetupV2
 }
 
-public enum AutoconsentSubfeature: String, PrivacySubfeature {
+public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .autoconsent
     }
@@ -706,6 +709,8 @@ public enum AutoconsentSubfeature: String, PrivacySubfeature {
     case onByDefault
     case filterlist
     case heuristicAction
+    case cookiePopupPreferenceSetting
+    case cookiePopupOptInDialog
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
@@ -723,6 +728,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
+    case subscriptionExpirationReminderNotification
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

@@ -83,6 +83,7 @@ class BlankSnapshotViewController: UIViewController {
                                                               aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
+                                                              floatingUIManager: FloatingUIManager(featureFlagger: featureFlagger),
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization)
         if addressBarPosition.isBottom {
@@ -99,7 +100,7 @@ class BlankSnapshotViewController: UIViewController {
                 configureTabBar()
             }
         } else {
-            viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+            viewCoordinator.toolbarHandler.setTabSwitcherView(tabSwitcherButton)
         }
 
         addTapInterceptor()
@@ -217,14 +218,13 @@ extension BlankSnapshotViewController {
         viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
 
-        viewCoordinator.toolbar.barTintColor = theme.barBackgroundColor
         viewCoordinator.toolbar.tintColor = theme.barTintColor
 
-        viewCoordinator.toolbarTabSwitcherButton.tintColor = theme.barTintColor
+        viewCoordinator.toolbarTabSwitcherView.tintColor = theme.barTintColor
 
         // We don't want this to appear as a real button to users using acessibility devices and our UI tests
-        viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = false
-        viewCoordinator.toolbarTabSwitcherButton.accessibilityLabel = nil
+        viewCoordinator.toolbarTabSwitcherView.isAccessibilityElement = false
+        viewCoordinator.toolbarTabSwitcherView.accessibilityLabel = nil
 
         viewCoordinator.logoText.tintColor = theme.ddgTextTintColor
      }

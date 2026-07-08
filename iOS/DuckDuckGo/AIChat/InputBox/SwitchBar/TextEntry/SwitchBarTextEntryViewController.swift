@@ -21,6 +21,8 @@ import UIKit
 import SwiftUI
 import Combine
 import UIComponents
+import DesignResourcesKitIcons
+import MetricBuilder
 
 final class SwitchBarTextEntryButtonsContainerView: UIView {
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
@@ -83,6 +85,11 @@ class SwitchBarTextEntryViewController: UIViewController {
         setupPasteAndGo()
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateContainerCornerRadius()
+    }
+
     func refreshFireMode(fireMode: Bool) {
         applyContainerBackground(isFireTab: fireMode)
         textEntryView.refreshFireMode(fireMode: fireMode)
@@ -115,14 +122,19 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     private func setupContainerViewAppearance() {
 
-        containerView.layer.cornerRadius = Metrics.containerCornerRadius
         containerView.layer.masksToBounds = false
-
-        textEntryView.layer.cornerRadius = Metrics.containerCornerRadius
         textEntryView.layer.masksToBounds = true
+        updateContainerCornerRadius()
 
         applyContainerBackground(isFireTab: handler.isFireTab)
         containerView.applyActiveShadow()
+    }
+
+    private func updateContainerCornerRadius() {
+        let radius = Metrics.containerCornerRadius(forHeight: containerView.bounds.height,
+                                                   maximum: ContainerMetrics.cornerRadius)
+        containerView.layer.cornerRadius = radius
+        textEntryView.layer.cornerRadius = radius
     }
 
     private func applyContainerBackground(isFireTab: Bool) {
@@ -197,6 +209,11 @@ class SwitchBarTextEntryViewController: UIViewController {
     }
 
     private struct Metrics {
-        static let containerCornerRadius: CGFloat = 16
+        static let legacyCornerRadius: CGFloat = 16
+
+        static func containerCornerRadius(forHeight height: CGFloat, maximum: CGFloat) -> CGFloat {
+            guard AppRebrand.isAppRebranded() else { return legacyCornerRadius }
+            return min(height / 2, maximum)
+        }
     }
 }

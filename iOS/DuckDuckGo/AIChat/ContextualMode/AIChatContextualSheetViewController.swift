@@ -874,7 +874,6 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling) {
         webViewController?.notifyFrontendPromptSubmissionAcknowledged()
-        sessionState.handleFrontendDrivenChatStart()
     }
 
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {

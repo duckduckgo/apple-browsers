@@ -242,20 +242,6 @@ final class AIChatContextualChatSessionState {
         emit(.submitPrompt(prompt: prompt, context: contextData))
     }
 
-    /// Call when the FE submits a prompt on its own (e.g. a tapped suggestion on the
-    /// suggestions start surface) — transition to the chat view without re-emitting a submit, since
-    /// the FE has already submitted. No-op once a chat is active.
-    func handleFrontendDrivenChatStart() {
-        guard frontendState == .noChat else { return }
-        switch chipState {
-        case .attached:
-            frontendState = .chatWithInitialContext
-        case .placeholder:
-            frontendState = .chatWithoutInitialContext
-        }
-        rebuildViewState()
-    }
-
     /// Call when the first prompt is submitted through contextual UTI. The UTI coordinator
     /// delivers the prompt, so this only performs the contextual session transition and pixels.
     func beginChatForUTISubmission(url: URL? = nil) {

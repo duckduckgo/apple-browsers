@@ -65,7 +65,8 @@ struct ScanTabView: View {
             .aspectRatio(contentMode: .fit)
             .padding(.horizontal, 48)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
+            .padding(.top, instructionsHeight)
+
             Button {
                 dismissIntroAnimation()
             } label: {

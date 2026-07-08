@@ -1200,18 +1200,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private func updateVerticalSpacing() {
         textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
         textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
-        // The bottom floating field's resting fill differs from the top; refresh when the position
-        // (small-top-spacing) flips, unless fire mode owns the appearance.
-        if isFloatingUIEnabled, !fireMode {
-            // Don't clobber the top glass with an opaque fill. `makeGlass()` keeps the container
-            // clear so the glass effect (behind the content) shows through; only the bottom field
-            // takes an opaque resting fill.
-            if shouldUseFloatingTopGlass {
-                makeGlass()
-            } else {
-                setFieldBackgroundColor(opaqueFieldBackgroundColor)
-            }
-        }
         updateFireModeAppearance()
     }
 

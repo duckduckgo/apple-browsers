@@ -879,14 +879,14 @@ final class MockAIChatSyncHandling: AIChatSyncHandling {
 
 extension AIChatUserScriptHandlerTests {
 
-    func testGetAIChatPageContextReturnsNilContextWhenNoHandler() {
-        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+    func testGetAIChatPageContextReturnsNilContextWhenNoHandler() async {
+        let response = await aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
 
         XCTAssertNotNil(response)
         XCTAssertNil(response?.pageContext)
     }
 
-    func testGetAIChatPageContextReturnsContextWhenProviderSet() {
+    func testGetAIChatPageContextReturnsContextWhenProviderSet() async {
         let expectedContext = AIChatPageContextData(
             title: "Test Page",
             favicon: [],
@@ -897,7 +897,7 @@ extension AIChatUserScriptHandlerTests {
         )
         aiChatUserScriptHandler.setPageContextProvider { _ in expectedContext }
 
-        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+        let response = await aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
 
         XCTAssertNotNil(response)
         XCTAssertNotNil(response?.pageContext)
@@ -906,10 +906,10 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(response?.pageContext?.content, "Test content")
     }
 
-    func testGetAIChatPageContextReturnsNilContextWhenProviderReturnsNil() {
+    func testGetAIChatPageContextReturnsNilContextWhenProviderReturnsNil() async {
         aiChatUserScriptHandler.setPageContextProvider { _ in nil }
 
-        let response = aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
+        let response = await aiChatUserScriptHandler.getAIChatPageContext(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? PageContextResponse
 
         XCTAssertNotNil(response)
         XCTAssertNil(response?.pageContext)

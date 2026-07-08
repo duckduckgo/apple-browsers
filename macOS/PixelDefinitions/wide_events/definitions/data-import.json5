@@ -94,6 +94,8 @@
                 }
             }
         },
-        "context": ["funnel_default_macos"]
+        "context": {
+            "name": ["funnel_default_macos"]
+        }
     }
 }

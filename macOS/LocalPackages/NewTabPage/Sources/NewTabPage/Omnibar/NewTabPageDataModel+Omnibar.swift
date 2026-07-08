@@ -137,9 +137,7 @@ public extension NewTabPageDataModel {
         let enableAttachTabs: Bool?
         /// Backend-provided attachment limits, already tier-resolved. `nil` on older native builds
         /// or when the backend omits them, in which case the web falls back to its built-in defaults.
-        /// This is optional so older native builds and omitted backend values continue to fall back
-        /// to web defaults while existing `OmnibarConfig(...)` call sites compile unchanged.
-        var attachmentLimits: AttachmentLimits?
+        let attachmentLimits: AttachmentLimits?
     }
 
     // MARK: - omnibar_getSuggestions

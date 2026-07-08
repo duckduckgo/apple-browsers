@@ -217,6 +217,10 @@ extension SimplifiedSyncSettingsViewV2 {
                 Text(UserText.simplifiedSyncToggleTitleThisDevice)
                     .daxBodyRegular()
                 Spacer()
+                if model.isBusy && !model.isSyncEnabled {
+                    ProgressView()
+                        .transition(.opacity)
+                }
                 Toggle("", isOn: Binding(
                     get: { model.isSyncEnabled },
                     set: { newValue in

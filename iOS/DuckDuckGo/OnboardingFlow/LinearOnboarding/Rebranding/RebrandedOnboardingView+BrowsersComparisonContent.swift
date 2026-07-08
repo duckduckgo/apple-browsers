@@ -27,17 +27,6 @@ extension OnboardingRebranding.OnboardingView {
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=7419-54020
     struct BrowsersComparisonContent: View {
 
-        /// Dax "Wing Wave Up" animation
-        static var daxAnimation: DaxAnimation {
-            DaxAnimation(
-                animationName: "Dax-WingBottom",
-                size: CGSize(width: 159.33, height: 180.33),
-                position: .bottom(),
-                twoStagesAnimation: 0.5,
-                exitDuration: 1.0
-            )
-        }
-
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

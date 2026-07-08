@@ -23,7 +23,7 @@ import UIKit
 final class UnifiedToggleInputAttachmentsStripView: UIView {
 
     enum Constants {
-        static let spacing: CGFloat = 4
+        static let spacing: CGFloat = 10
         static let horizontalPadding: CGFloat = 12
         static let topPadding: CGFloat = 8
         static let stripHeight: CGFloat = topPadding + UnifiedToggleInputAttachmentThumbnailView.Constants.chipHeight

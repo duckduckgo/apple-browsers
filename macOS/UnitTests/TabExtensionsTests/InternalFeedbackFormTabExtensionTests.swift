@@ -216,22 +216,10 @@ final class InternalFeedbackFormTabExtensionTests: XCTestCase {
     }
 }
 
-/// Behavioural tests for the screenshot-attachment logic in
-/// `internal-feedback-autofiller.js`, driven via JavaScriptCore against a
-/// minimal DOM stub (`domStub` below).
-///
-/// The autofiller uses promise-based `waitForElement` and `MutationObserver`
-/// chains that are impractical to drive from a headless `JSContext`, so these
-/// tests bypass the async init flow and call `injectScreenshotSection()`,
-/// `showAndRelabelAttachmentRow()`, and `hookSubmitForDiagnostics()` directly
-/// after loading the real production script (obtained via
-/// `InternalFeedbackFormUserScript`, so these tests exercise the exact script
-/// that ships to the WebView, not a hand-copied approximation).
-///
-/// Mirrors `InternalFeedbackFormFillerScreenshotTests` in the Windows browser
-/// repo (Jint-based) — the DOM stub below intentionally uses the same helper
-/// names (`_fileCount`, `_tickScreenshotCheckbox`, `_attachLabelInDom`, etc.)
-/// so the two suites stay easy to compare when the shared JS logic changes.
+/// Behavioural tests for the screenshot-attachment logic in `internal-feedback-autofiller.js`,
+/// run via JavaScriptCore against a minimal DOM stub (`domStub` below). Bypasses the promise/
+/// `MutationObserver`-based async init flow and calls the setup functions directly, using the
+/// real production script from `InternalFeedbackFormUserScript`.
 @MainActor
 final class InternalFeedbackFormAutofillerScreenshotTests: XCTestCase {
 
@@ -246,15 +234,9 @@ final class InternalFeedbackFormAutofillerScreenshotTests: XCTestCase {
         InternalFeedbackFormUserScript(quickMode: true, diagnostics: "", screenshotBase64: base64).source
     }
 
-    /// Creates a JSContext loaded with the DOM stub and the real production
-    /// script, then runs the three setup functions that `hideIrrelevantFields()`
-    /// would call in production.
-    ///
-    /// - Parameter attachLabelInDom: When `false`, simulates Asana's attachment
-    ///   row not yet being in the DOM during this initial pass — the scenario
-    ///   the lazy-retry fix in `attachScreenshotToForm()` guards against. Tests
-    ///   exercising that scenario should call `_makeAttachLabelAvailable()`
-    ///   before submitting.
+    /// Loads the DOM stub and production script, then runs the setup calls `hideIrrelevantFields()`
+    /// makes in production. `attachLabelInDom: false` simulates the attachment row not yet being
+    /// in the DOM at init, for testing the lazy-retry fix in `attachScreenshotToForm()`.
     private func makeContext(
         base64: String = minimalPngBase64,
         attachLabelInDom: Bool = true
@@ -288,18 +270,14 @@ final class InternalFeedbackFormAutofillerScreenshotTests: XCTestCase {
         XCTAssertEqual(fileCount(context), 0)
     }
 
-    /// Privacy contract: ticking the checkbox must NOT eagerly write to the
-    /// hidden file input. Any write is captured immediately by Asana's React
-    /// form state and cannot be reversed by our script — the screenshot would
-    /// then be uploaded even if the user unticks before submitting.
+    /// Ticking must not eagerly write to the file input — Asana's React state would capture it
+    /// immediately, uploading the screenshot even if the user unticks before submitting.
     func testTickingCheckboxDoesNotWriteToFileInput() throws {
         let context = try makeContext()
 
         context.evaluateScript("_tickScreenshotCheckbox();")
 
-        XCTAssertEqual(fileCount(context), 0,
-                       "ticking must not eagerly attach the screenshot — any write to the file input is " +
-                       "captured immediately by Asana's React state and cannot be undone by our script")
+        XCTAssertEqual(fileCount(context), 0)
     }
 
     func testSubmitWithCheckboxCheckedAttachesScreenshotFile() throws {
@@ -307,9 +285,7 @@ final class InternalFeedbackFormAutofillerScreenshotTests: XCTestCase {
 
         context.evaluateScript("_tickScreenshotCheckbox(); _clickSubmit();")
 
-        XCTAssertEqual(fileCount(context), 1,
-                       "when the user ticks Include screenshot and submits, exactly one screenshot file " +
-                       "must be attached to the hidden Asana file input")
+        XCTAssertEqual(fileCount(context), 1)
     }
 
     func testSubmitWithCheckboxUncheckedDoesNotAttachFile() throws {
@@ -317,8 +293,7 @@ final class InternalFeedbackFormAutofillerScreenshotTests: XCTestCase {
 
         context.evaluateScript("_clickSubmit();")
 
-        XCTAssertEqual(fileCount(context), 0,
-                       "submitting without ticking the screenshot checkbox must not attach any file")
+        XCTAssertEqual(fileCount(context), 0)
     }
 
     func testSubmitWithCheckboxCheckedAndExistingUserFilePreservesBothFiles() throws {
@@ -330,9 +305,7 @@ final class InternalFeedbackFormAutofillerScreenshotTests: XCTestCase {
             _clickSubmit();
             """)
 
-        XCTAssertEqual(fileCount(context), 2,
-                       "a file already selected by the user must be preserved when the screenshot is also " +
-                       "merged in — neither file may be lost")
+        XCTAssertEqual(fileCount(context), 2)
     }
 
     func testScreenshotSectionNotInjectedWhenNoBase64() throws {
@@ -340,45 +313,28 @@ final class InternalFeedbackFormAutofillerScreenshotTests: XCTestCase {
 
         let sectionExists = context.evaluateScript("_screenshotSectionExists()")?.toBool() ?? true
 
-        XCTAssertFalse(sectionExists,
-                        "when no screenshot is available (empty base64), injectScreenshotSection() must be " +
-                        "a no-op so no screenshot UI is shown to the user")
+        XCTAssertFalse(sectionExists)
     }
 
-    /// Regression test: if Asana's attachment row/label is not yet in the DOM
-    /// when `hideIrrelevantFields()` runs its one-shot `showAndRelabelAttachmentRow()`
-    /// call, the row would never be marked, and `attachScreenshotToForm()` would
-    /// silently attach nothing at submit. The production fix added a lazy retry
-    /// inside `attachScreenshotToForm()` itself (see git history: "Lazy-init
-    /// attachment row marker at screenshot submit time").
-    ///
-    /// This test does not use the default `attachLabelInDom: true` setup, since
-    /// that would make the row always available and this scenario impossible
-    /// to reproduce.
+    /// Regression: if the attachment row isn't in the DOM yet when `hideIrrelevantFields()` runs
+    /// its one-shot `showAndRelabelAttachmentRow()` call, `attachScreenshotToForm()` must retry
+    /// marking it at submit time rather than silently attaching nothing.
     func testSubmitAttachesScreenshotWhenAttachRowRendersAfterInitialInjection() throws {
         let context = try makeContext(attachLabelInDom: false)
 
-        // Asana renders the attachment row shortly after, before the user submits.
         context.evaluateScript("""
             _makeAttachLabelAvailable();
             _tickScreenshotCheckbox();
             _clickSubmit();
             """)
 
-        XCTAssertEqual(fileCount(context), 1,
-                       "attachScreenshotToForm() must retry marking the attachment row if the initial " +
-                       "showAndRelabelAttachmentRow() pass ran before Asana's row was in the DOM, otherwise " +
-                       "the screenshot silently fails to attach")
+        XCTAssertEqual(fileCount(context), 1)
     }
 
     // MARK: - DOM stub
 
-    /// Minimal DOM stub providing just enough infrastructure for
-    /// `injectScreenshotSection()`, `showAndRelabelAttachmentRow()`, and
-    /// `hookSubmitForDiagnostics()` to run without error in a bare JSContext
-    /// (which, unlike a WebView, has no `document`, `window`, `Promise`
-    /// shadowing DOM timing, `MutationObserver`, `File`/`Blob`/`DataTransfer`,
-    /// or `console`).
+    /// Minimal DOM stub so `injectScreenshotSection()`, `showAndRelabelAttachmentRow()`, and
+    /// `hookSubmitForDiagnostics()` can run in a bare JSContext.
     private static let domStub = #"""
     var setTimeout = function(fn, ms) { return 1; };
     var clearTimeout = function() {};
@@ -467,7 +423,6 @@ final class InternalFeedbackFormAutofillerScreenshotTests: XCTestCase {
         return false;
     }
 
-    // Textarea for the description field.
     var _textarea = _el('textarea');
     _textarea.value = 'smoke test feedback';
 
@@ -485,7 +440,6 @@ final class InternalFeedbackFormAutofillerScreenshotTests: XCTestCase {
         return (sel === 'textarea') ? _textarea : null;
     };
 
-    // Hidden file input inside the attachment row.
     var _fileInput = _el('input');
     _fileInput.type = 'file';
 

@@ -4551,7 +4551,6 @@ extension MainViewController: OmniBarDelegate {
 
     // TODO clean up old interactions and also handle the new tab page, etc
     private func updateScrollInteractionIfNeeded() {
-        print("***", #function)
         guard #available(iOS 26, *) else { return }
         guard floatingUIManager.isFloatingUIEnabled else { return }
 

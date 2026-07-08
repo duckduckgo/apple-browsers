@@ -124,9 +124,18 @@ public final class AddressBarPerformanceCoordinator {
     /// the same t₀ for the char stage to consume at commit time. Also cancels any pending
     /// hook stop — a Cmd-Tab cycle that returns to typing without re-acquiring first responder
     /// still keeps the hook alive.
+    ///
+    /// When the insertion was driven by a physical keyDown, anchors t₀ to the event's
+    /// `NSEvent.timestamp` — earlier than this call and on the same `CACurrentMediaTime` timebase
+    /// as the paint hook. For any other source (paste, IME commit, dictation, programmatic),
+    /// `currentEvent` isn't reliably the initiating event, so the recorder stamps its own clock.
     public func markKeystroke() {
         cancelPendingHookStop()
-        pendingCharStartTime = recorder.markKeystrokeForSuggest()
+        var keystrokeTime: TimeInterval?
+        if let event = NSApp?.currentEvent, event.type == .keyDown {
+            keystrokeTime = event.timestamp
+        }
+        pendingCharStartTime = recorder.markKeystrokeForSuggest(at: keystrokeTime)
     }
 
     /// Confirms that the buffer actually changed for a previously-marked keystroke. Pushes its

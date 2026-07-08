@@ -36,6 +36,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
+    func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
@@ -81,6 +82,9 @@ protocol AIChatContentHandlingDelegate: AnyObject {
 
     /// Called when the frontend requests page context (`getAIChatPageContext`), signaling it has initialized and registered its JS message handlers.
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling)
+
+    /// Called when the frontend reports the current chat response state.
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didUpdateChatStatus status: AIChatStatusValue)
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL)
 }
@@ -144,6 +148,7 @@ extension AIChatContentHandling {
 extension AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {}
     func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {}
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didUpdateChatStatus status: AIChatStatusValue) {}
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {}
 }
 
@@ -201,6 +206,10 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.userScript?.setOpenLinkHandler { [weak self] url in
             guard let self else { return }
             self.delegate?.aiChatContentHandler(self, didRequestToOpen: url)
+        }
+        self.userScript?.setChatStatusHandler { [weak self] status in
+            guard let self else { return }
+            self.delegate?.aiChatContentHandler(self, didUpdateChatStatus: status)
         }
         self.userScript?.webView = webView
         self.userScript?.setPageContextProvider(getPageContext)

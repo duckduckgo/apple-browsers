@@ -789,6 +789,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         pageContextProviderSet = true
     }
 
+    func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {
+        // No-op for testing
+    }
+
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {
         // No-op for testing
     }
@@ -840,6 +844,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     var focusChatInputHandler: (@MainActor () -> Void)?
 
     func setPageContextProvider(_ provider: PageContextAsyncProvider?) {}
+    func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {}
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {}
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? { nil }

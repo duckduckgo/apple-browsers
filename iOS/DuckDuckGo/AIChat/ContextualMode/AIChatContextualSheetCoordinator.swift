@@ -520,8 +520,7 @@ private extension AIChatContextualSheetCoordinator {
                     host?.installInWebView(contextualChatViewController)
                 }
                 return host
-            },
-            deferUTIInstall: featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+            }
         )
 
         return webVC

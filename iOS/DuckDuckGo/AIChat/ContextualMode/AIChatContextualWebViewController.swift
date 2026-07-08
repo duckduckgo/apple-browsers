@@ -66,10 +66,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let debugSettings: AIChatDebugSettingsHandling
     private let userAgentManager: UserAgentManaging
     private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
-    private let deferUTIInstall: Bool
     private var utiHost: AIChatContextualUTIHost?
-    private weak var boundAIChatUserScript: AIChatUserScript?
-    private var boundChatUpdatesPublisher: AnyPublisher<String, Never>?
     private var webViewBottomConstraint: NSLayoutConstraint?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
@@ -152,8 +149,7 @@ final class AIChatContextualWebViewController: UIViewController {
          pixelHandler: AIChatContextualModePixelFiring,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
-         utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil,
-         deferUTIInstall: Bool = false) {
+         utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -167,7 +163,6 @@ final class AIChatContextualWebViewController: UIViewController {
         self.debugSettings = debugSettings
         self.userAgentManager = userAgentManager
         self.utiHostInstaller = utiHostInstaller
-        self.deferUTIInstall = deferUTIInstall
 
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         self.aiChatContentHandler = AIChatContentHandler(
@@ -192,7 +187,7 @@ final class AIChatContextualWebViewController: UIViewController {
         super.viewDidLoad()
         Logger.aiChat.debug("[ContextualWebVC] viewDidLoad - initialURL: \(self.initialURL?.shortDescription ?? "nil")")
         setupUI()
-        if shouldInstallUTIHost, !deferUTIInstall, let utiHostInstaller {
+        if shouldInstallUTIHost, let utiHostInstaller {
             utiHost = utiHostInstaller(self)
         }
         aiChatContentHandler.fireAIChatTelemetry()
@@ -364,17 +359,6 @@ final class AIChatContextualWebViewController: UIViewController {
         unifiedToggleInputFeature.isAvailable && utiHostInstaller != nil
     }
 
-    func installUTIHostIfNeeded() {
-        guard utiHost == nil, shouldInstallUTIHost, let utiHostInstaller else { return }
-        utiHost = utiHostInstaller(self)
-        if let aiChatUserScript = boundAIChatUserScript {
-            utiHost?.bindToUserScript(aiChatUserScript)
-            if let publisher = boundChatUpdatesPublisher {
-                utiHost?.observeChatUpdates(publisher)
-            }
-        }
-    }
-
     private var defaultChatURL: URL {
         aiChatSettings.aiChatURL.addingOrReplacing(URLQueryItem(name: "placement", value: "sidebar"))
     }
@@ -481,9 +465,6 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
         userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
-        // Retain the bridge so a deferred UTI host can bind to it later (see installUTIHostIfNeeded).
-        boundAIChatUserScript = userScripts.aiChatUserScript
-        boundChatUpdatesPublisher = userScripts.duckAiNativeStorageUserScript?.chatUpdatesPublisher
         utiHost?.bindToUserScript(userScripts.aiChatUserScript)
         if let chatUpdatesPublisher = userScripts.duckAiNativeStorageUserScript?.chatUpdatesPublisher {
             utiHost?.observeChatUpdates(chatUpdatesPublisher)

@@ -152,6 +152,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     var isFireModeProvider: (() -> Bool)? { get set }
     var focusChatInputHandler: (@MainActor () -> Void)? { get set }
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
+    func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
@@ -201,6 +202,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let promptHandler: any AIChatConsumableDataHandling
     private var inputBoxHandler: (any AIChatInputBoxHandling)?
     private var openLinkHandler: ((URL) -> Void)?
+    private var chatStatusHandler: (@MainActor (AIChatStatusValue) -> Void)?
     private weak var metricReportingHandler: (any AIChatMetricReportingHandling)?
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let syncHandler: AIChatSyncHandling
@@ -425,6 +427,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             let jsonData = try JSONSerialization.data(withJSONObject: params, options: [])
             let decodedStatus = try JSONDecoder().decode(AIChatStatus.self, from: jsonData)
             inputBoxHandler?.aiChatStatus = decodedStatus.status
+            chatStatusHandler?(decodedStatus.status)
             if let attachments = decodedStatus.attachments {
                 inputBoxHandler?.attachmentUsage = attachments
             }
@@ -472,6 +475,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?) {
         openLinkHandler = handler
+    }
+
+    func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {
+        chatStatusHandler = handler
     }
 
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {

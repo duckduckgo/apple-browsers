@@ -274,6 +274,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.handler.setPageContextProvider(provider)
     }
 
+    func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?) {
+        self.handler.setChatStatusHandler(handler)
+    }
+
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring) {
         self.handler.setContextualModePixelHandler(pixelHandler)
     }

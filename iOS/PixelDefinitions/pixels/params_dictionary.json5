@@ -211,15 +211,13 @@
     },
     "dbpIsAuthenticated": {
         "key": "isAuthenticated",
-        "type": "string",
-        "description": "Whether the user is authenticated",
-        "enum": ["true", "false"]
+        "type": "boolean",
+        "description": "Whether the user is authenticated"
     },
     "dbpIsFreeScan": {
         "key": "free_scan",
-        "type": "string",
-        "description": "Whether this is a free (unauthenticated) scan",
-        "enum": ["true", "false"]
+        "type": "boolean",
+        "description": "Whether this is a free (unauthenticated) scan"
     },
     "dbpStageDuration": {
         "key": "duration",
@@ -317,9 +315,8 @@
     },
     "is_enabled": {
         "key": "is_enabled",
-        "type": "string",
-        "description": "Whether the feature or setting is enabled",
-        "enum": ["true", "false"]
+        "type": "boolean",
+        "description": "Whether the feature or setting is enabled"
     },
     "returningUser": {
         "key": "ru",

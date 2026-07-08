@@ -1471,6 +1471,7 @@ private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
 
 // MARK: - Mock Models Service
 
+@MainActor
 private class MockAIChatModelsProviding: AIChatModelsProviding {
     var modelsToReturn: [AIChatRemoteModel] = []
     var errorToThrow: Error?

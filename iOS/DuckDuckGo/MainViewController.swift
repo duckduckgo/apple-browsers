@@ -1292,6 +1292,7 @@ class MainViewController: UIViewController {
         }
 
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(position)
+        reconcileAIChromeForCurrentTab()
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
         omniBar.adjust(for: position)
@@ -2655,7 +2656,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth)
         } else {
             self.suggestionTrayController?.coversFullScreen = isInMinimalChromeLayout
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
@@ -4001,7 +4002,9 @@ extension MainViewController: OmniBarDelegate {
         let controlValues = viewCoordinator.omniBar.iPadDuckAIControlValues
         openAIChat(query, autoSend: true, tools: tools ?? controlValues.selectedTools,
                    modelId: controlValues.selectedModelId,
-                   reasoningEffort: controlValues.selectedReasoningEffort)
+                   reasoningEffort: controlValues.selectedReasoningEffort,
+                   images: controlValues.selectedImages,
+                   files: controlValues.selectedFiles)
     }
 
     func onChatHistorySelected(url: URL) {
@@ -4781,6 +4784,13 @@ extension MainViewController: OmniBarDelegate {
 
     @objc private func dismissExpandedOmniBar() {
         performCancel()
+    }
+
+    func onOmniBarExpandedContentSizeChanged() {
+        // The expanded input grew or shrank (an attachment was added/removed) while a Duck.ai popover
+        // is anchored beneath it — re-apply the inset so it follows instead of leaving a gap.
+        guard isPad, isPopoverVisible, isModeToggleInAIChatMode else { return }
+        suggestionTrayController?.setAdditionalTopInset(duckAIPopoverTopInset(), animated: true)
     }
 
     private func duckAIPopoverTopInset() -> CGFloat {
@@ -6527,9 +6537,11 @@ extension MainViewController {
     }
 
     private func applyFloatingUIIfNeeded() {
+        guard floatingUIManager.isFloatingUIEnabled else { return }
         viewCoordinator.setFloatingUIEnabled(floatingUIManager.isFloatingUIEnabled)
         FloatingUIChromeStyler().decorateMainViewIfNeeded(manager: floatingUIManager, coordinator: viewCoordinator)
         viewCoordinator.updateToolbarLayoutForAddressBarPosition(appSettings.currentAddressBarPosition)
+        reconcileAIChromeForCurrentTab()
     }
 
 }

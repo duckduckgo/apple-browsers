@@ -412,6 +412,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case sidebarSuggestedPrompts
 
+    /// Context-aware page suggestions shown in the iOS contextual Duck.ai sheet
+    case contextualSuggestedPrompts
+
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 

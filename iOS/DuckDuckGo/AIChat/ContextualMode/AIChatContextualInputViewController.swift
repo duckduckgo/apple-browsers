@@ -28,6 +28,7 @@ import UIKit
 protocol AIChatContextualInputViewControllerDelegate: AnyObject {
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String)
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction)
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt)
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController)
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController)
 }
@@ -97,8 +98,8 @@ final class AIChatContextualInputViewController: UIViewController {
         return scrollView
     }()
 
-    private lazy var quickActionsView: AIChatQuickActionsView<AIChatContextualQuickAction> = {
-        let view = AIChatQuickActionsView<AIChatContextualQuickAction>()
+    private lazy var quickActionsView: AIChatQuickActionsView<ContextualSheetAction> = {
+        let view = AIChatQuickActionsView<ContextualSheetAction>()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.setContentCompressionResistancePriority(.required, for: .vertical)
         return view
@@ -117,7 +118,8 @@ final class AIChatContextualInputViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol, showsBasicNativeInput: Bool = true) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol,
+         showsBasicNativeInput: Bool = true) {
         self.showsBasicNativeInput = showsBasicNativeInput
         self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
@@ -200,9 +202,16 @@ final class AIChatContextualInputViewController: UIViewController {
         inputSurface.setChipTapCallback(callback)
     }
 
-    func updateQuickActions(with actions: [AIChatContextualQuickAction]) {
+    func updateStartActions(suggestions: [ContextualSuggestedPrompt], quickActions: [AIChatContextualQuickAction]) {
+        let actions = suggestions.map(ContextualSheetAction.suggestion)
+            + quickActions.map(ContextualSheetAction.quickAction)
         quickActionsView.configure(with: actions)
     }
+
+    func updateSuggestionsLoading(_ isLoading: Bool) {
+        quickActionsView.setLoading(isLoading)
+    }
+
 }
 
 // MARK: - Private Setup
@@ -328,7 +337,12 @@ private extension AIChatContextualInputViewController {
     func configureQuickActions() {
         quickActionsView.onActionSelected = { [weak self] action in
             guard let self else { return }
-            delegate?.contextualInputViewController(self, didSelectQuickAction: action)
+            switch action {
+            case .quickAction(let quickAction):
+                delegate?.contextualInputViewController(self, didSelectQuickAction: quickAction)
+            case .suggestion(let suggestion):
+                delegate?.contextualInputViewController(self, didSelectSuggestion: suggestion)
+            }
         }
     }
 

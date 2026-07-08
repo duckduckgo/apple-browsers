@@ -23,6 +23,8 @@ import SwiftUI
 
 struct SyncAppNameChip: View {
 
+    var name: String = UserText.simplifiedViewCodeAppName
+
     var body: some View {
         HStack(spacing: 6) {
             Image(uiImage: DesignSystemImages.Color.Size24.appDuckDuckGo)
@@ -30,7 +32,7 @@ struct SyncAppNameChip: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 16, height: 16)
 
-            Text(UserText.simplifiedViewCodeAppName)
+            Text(name)
                 .daxSubheadSemibold()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
         }

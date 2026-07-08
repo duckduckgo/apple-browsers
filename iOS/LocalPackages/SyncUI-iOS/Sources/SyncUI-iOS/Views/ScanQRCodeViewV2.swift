@@ -79,20 +79,13 @@ public struct ScanQRCodeViewV2: View {
         .fixedSize(horizontal: true, vertical: false)
     }
 
+    @ViewBuilder
     private var contentPanel: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color(designSystemColor: .surfaceSecondary))
-            }
-            .ignoresSafeArea(edges: .bottom)
-
-            switch selectedTab {
-            case .scanQRCode:
-                ScanTabView(model: model)
-            case .enterCode:
-                EnterCodeTabView(model: model)
-            }
+        switch selectedTab {
+        case .scanQRCode:
+            ScanTabView(model: model)
+        case .enterCode:
+            EnterCodeTabView(model: model)
         }
     }
 }

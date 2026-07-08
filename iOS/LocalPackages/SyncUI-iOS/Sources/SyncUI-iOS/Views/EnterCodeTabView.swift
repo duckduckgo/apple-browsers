@@ -35,6 +35,9 @@ struct EnterCodeTabView: View {
         .onAppear {
             model.delegate?.codeEntryScreenShown()
         }
+        .background(Color(designSystemColor: .surfaceSecondary))
+        .clipShape(RoundedRectangle(cornerRadius: 34))
+        .ignoresSafeArea(.all, edges: .bottom)
     }
 
     private var instructions: some View {
@@ -70,7 +73,7 @@ struct EnterCodeTabView: View {
             RoundedRectangle(cornerRadius: 26)
                 .fill(SimplifiedSyncStyle.subduedPanelBackground)
         )
-        .padding(.bottom, 16)
+        .padding(.bottom, 24)
     }
 
     @ViewBuilder

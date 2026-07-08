@@ -26,26 +26,12 @@ struct ScanTabView: View {
     @ObservedObject var model: ScanOrPasteCodeViewModel
 
     var body: some View {
-        VStack(spacing: 24) {
-            instructions
-                .padding(.top, 24)
-
+        ZStack(alignment: .top) {
             cameraContainer
-                .layoutPriority(1)
-
-            manuallyEnterCodeButton
-                .padding(.bottom, 16)
+            instructions
         }
-        .padding(.horizontal, 16)
-    }
-
-    private var instructions: some View {
-        Text("\(UserText.simplifiedScanInstructions)\n\(UserText.simplifiedScanInstructionsLine2)")
-            .daxSubheadRegular()
-            .foregroundColor(SimplifiedSyncStyle.instructionText)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, minHeight: 72, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 34))
+        .ignoresSafeArea(.all, edges: .bottom)
     }
 
     private var cameraContainer: some View {
@@ -65,13 +51,13 @@ struct ScanTabView: View {
                     Color.black
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 16))
 
             if model.showCamera && model.videoPermission != .denied {
                 cameraPromptPill
                     .padding(.bottom, 16)
             }
         }
+        .overlay(Color(designSystemColor: .shadowSecondary).opacity(0.7))
     }
 
     private var cameraPromptPill: some View {
@@ -90,25 +76,27 @@ struct ScanTabView: View {
             )
     }
 
-    private var manuallyEnterCodeButton: some View {
-        NavigationLink {
-            SimplifiedManuallyEnterCodeView(model: model)
-        } label: {
-            Label {
-                Text(UserText.simplifiedScanManuallyEnterCode)
-                    .daxSubheadSemibold()
-            } icon: {
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.keyboard)
+    private var instructions: some View {
+        VStack(spacing: 16) {
+            Text(UserText.simplifiedScanQRHeading)
+                .daxTitle2()
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+
+            VStack(spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(UserText.simplifiedScanQROpenInstruction)
+                        .daxSubheadRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+
+                    SyncAppNameChip(name: UserText.simplifiedScanQRAppName)
+                }
+
+                SyncInstructionText(markdown: UserText.simplifiedScanQRStepsInstruction)
             }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 40)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(designSystemColor: .controlsFillPrimary))
-            )
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
+        .padding(.top, 24)
     }
 }
 

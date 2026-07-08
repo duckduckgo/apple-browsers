@@ -41,6 +41,10 @@ struct PasswordManagementItemListView: View {
     @State var autoSelected = false
     @EnvironmentObject var themeManager: ThemeManager
 
+    private var style: PasswordManagementStyle {
+        PasswordManagementStyle.style(theme: themeManager.theme, isAppRebranded: themeManager.isAppRebranded)
+    }
+
     private func selectItem(id: String, proxy: ScrollViewProxy) {
         // Selection/scroll wont work until list is fully rendered
         // so give it a few milis before auto-selecting
@@ -66,7 +70,7 @@ struct PasswordManagementItemListView: View {
 
             ScrollView {
                 ScrollViewReader { proxy in
-                    PasswordManagementItemListStackView()
+                    PasswordManagementItemListStackView(style: style)
                         .environmentObject(themeManager)
                         .onChange(of: model.selected?.id) { itemId in
                             if let id = itemId {
@@ -135,9 +139,11 @@ struct PasswordManagementItemListStackView: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
 
+    let style: PasswordManagementStyle
+
     var body: some View {
         LazyVStack(alignment: .leading) {
-            PasswordManagementItemStackContentsView()
+            PasswordManagementItemStackContentsView(style: style)
         }
     }
 
@@ -146,9 +152,11 @@ struct PasswordManagementItemListStackView: View {
 private struct ExternalPasswordManagerItemSection: View {
     @ObservedObject var model: PasswordManagementItemListModel
 
+    let style: PasswordManagementStyle
+
     var body: some View {
         Section(header: Text(UserText.passwordManager).padding(.leading, 18).padding(.top, 0)) {
-            PasswordManagerItemView(model: model) {
+            PasswordManagerItemView(model: model, style: style) {
                 model.externalPasswordManagerSelected = true
             }
             .padding(.horizontal, 10)
@@ -159,9 +167,11 @@ private struct ExternalPasswordManagerItemSection: View {
 private struct SyncPromoItemSection: View {
     @ObservedObject var model: PasswordManagementItemListModel
 
+    let style: PasswordManagementStyle
+
     var body: some View {
         Section {
-            SyncPromoItemView(model: model) {
+            SyncPromoItemView(model: model, style: style) {
                 model.syncPromoSelected = true
             }
             .padding(.horizontal, 10)
@@ -172,6 +182,8 @@ private struct SyncPromoItemSection: View {
 private struct PasswordManagementItemStackContentsView: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
+
+    let style: PasswordManagementStyle
 
     private var shouldDisplayExternalPasswordManagerRow: Bool {
         model.passwordManagerCoordinator.isEnabled &&
@@ -199,16 +211,16 @@ private struct PasswordManagementItemStackContentsView: View {
         Spacer(minLength: 10)
 
         if shouldDisplayExternalPasswordManagerRow {
-            ExternalPasswordManagerItemSection(model: model)
+            ExternalPasswordManagerItemSection(model: model, style: style)
         } else if shouldDisplaySyncPromoRow {
-            SyncPromoItemSection(model: model)
+            SyncPromoItemSection(model: model, style: style)
         }
 
         ForEach(Array(model.displayedSections.enumerated()), id: \.offset) { index, section in
             Section(header: Text(section.title).padding(.leading, 18).padding(.top, index == 0 ? 0 : 10)) {
 
                 ForEach(section.items, id: \.id) { item in
-                    ItemView(item: item) {
+                    ItemView(item: item, style: style) {
                         model.selected(item: item)
                     }
                     .padding(.horizontal, 10)
@@ -222,8 +234,8 @@ private struct PasswordManagementItemStackContentsView: View {
 
 private struct PasswordManagerItemView: View {
     @ObservedObject var model: PasswordManagementItemListModel
-    @EnvironmentObject var themeManager: ThemeManager
 
+    let style: PasswordManagementStyle
     let action: () -> Void
 
     private var isLocked: Bool {
@@ -238,21 +250,8 @@ private struct PasswordManagerItemView: View {
         model.externalPasswordManagerSelected
     }
 
-    private var isAppRebranded: Bool {
-        themeManager.isAppRebranded
-    }
-
-    private var selectedBackgroundColor: Color {
-        guard selected else {
-            // Almost clear, so that whole view is clickable
-            return Color(NSColor.windowBackgroundColor.withAlphaComponent(0.001))
-        }
-
-        return isAppRebranded ? Color(themeManager.theme.palette.accentPrimary) : .accentColor
-    }
-
     var body: some View {
-        let textColor = selected ? .white : Color(NSColor.controlTextColor)
+        let textColor = style.textColor(selected: selected)
         let font = Font.system(size: 13)
 
         Button(action: action, label: {
@@ -281,35 +280,22 @@ private struct PasswordManagerItemView: View {
             }
         })
         .frame(maxHeight: 48)
-        .buttonStyle(PasswordManagerItemButtonStyle(isAppRebranded: isAppRebranded, bgColor: selectedBackgroundColor))
+        .buttonStyle(PasswordManagerItemButtonStyle(style: style, selected: selected))
     }
 }
 
 private struct SyncPromoItemView: View {
     @ObservedObject var model: PasswordManagementItemListModel
-    @EnvironmentObject var themeManager: ThemeManager
 
+    let style: PasswordManagementStyle
     let action: () -> Void
 
     private var selected: Bool {
         model.syncPromoSelected
     }
 
-    private var isAppRebranded: Bool {
-        themeManager.isAppRebranded
-    }
-
-    private var selectedBackgroundColor: Color {
-        guard selected else {
-            // Almost clear, so that whole view is clickable
-            return Color(NSColor.windowBackgroundColor.withAlphaComponent(0.001))
-        }
-
-        return isAppRebranded ? Color(themeManager.theme.palette.accentPrimary) : .accentColor
-    }
-
     var body: some View {
-        let textColor = selected ? .white : Color(NSColor.controlTextColor)
+        let textColor = style.textColor(selected: selected)
         let font = Font.system(size: 13)
 
         Button(action: action, label: {
@@ -331,33 +317,20 @@ private struct SyncPromoItemView: View {
             }
         })
         .frame(maxHeight: 48)
-        .buttonStyle(PasswordManagerItemButtonStyle(isAppRebranded: isAppRebranded, bgColor: selectedBackgroundColor) )
+        .buttonStyle(PasswordManagerItemButtonStyle(style: style, selected: selected))
     }
 }
 
 private struct ItemView: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
-    @EnvironmentObject var themeManager: ThemeManager
 
     let item: SecureVaultItem
+    let style: PasswordManagementStyle
     let action: () -> Void
-
-    private var isAppRebranded: Bool {
-        themeManager.isAppRebranded
-    }
 
     private var selected: Bool {
         model.selected == item
-    }
-
-    private var selectedBackgroundColor: Color {
-        guard selected else {
-            // Almost clear, so that whole view is clickable
-            return Color(NSColor.windowBackgroundColor.withAlphaComponent(0.001))
-        }
-
-        return isAppRebranded ? Color(themeManager.theme.palette.accentPrimary) : .accentColor
     }
 
     func getIconLetters(account: SecureVaultModels.WebsiteAccount) -> String {
@@ -368,7 +341,7 @@ private struct ItemView: View {
     }
 
     var body: some View {
-        let textColor = selected ? .white : Color(NSColor.controlTextColor)
+        let textColor = style.textColor(selected: selected)
         let font = Font.system(size: 13)
 
         Button(action: action, label: {
@@ -417,27 +390,23 @@ private struct ItemView: View {
             }
         })
         .frame(maxHeight: 48)
-        .buttonStyle(PasswordManagerItemButtonStyle(isAppRebranded: isAppRebranded, bgColor: selectedBackgroundColor))
+        .buttonStyle(PasswordManagerItemButtonStyle(style: style, selected: selected))
     }
 
 }
 
 private struct PasswordManagerItemButtonStyle: ButtonStyle {
 
-    let isAppRebranded: Bool
-    let bgColor: Color
-
-    private var backgroundCornerRadius: CGFloat {
-        isAppRebranded ? 12 : 3
-    }
+    let style: PasswordManagementStyle
+    let selected: Bool
 
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .truncationMode(.tail)
-            .background(RoundedRectangle(cornerRadius: backgroundCornerRadius, style: .continuous)
-            .fill(bgColor))
+            .background(RoundedRectangle(cornerRadius: style.backgroundCornerRadius, style: .continuous)
+            .fill(style.backgroundColor(selected: selected)))
     }
 }
 
@@ -588,4 +557,33 @@ private struct FlexibleButtonSizingModifier: ViewModifier {
 #endif
     }
 
+}
+
+struct PasswordManagementStyle {
+    let backgroundColor: Color
+    let backgroundCornerRadius: CGFloat
+    let textColor: Color
+    let selectedBackgroundColor: Color
+    let selectedTextColor: Color
+
+    func backgroundColor(selected: Bool) -> Color {
+        selected ? selectedBackgroundColor : backgroundColor
+    }
+
+    func textColor(selected: Bool) -> Color {
+        selected ? selectedTextColor : textColor
+    }
+
+    static func style(theme: ThemeStyleProviding, isAppRebranded: Bool) -> PasswordManagementStyle {
+        // Almost clear, so that whole view is clickable
+        let clearBackgroundColor = Color(NSColor.windowBackgroundColor.withAlphaComponent(0.001))
+        let controlTextColor = Color(NSColor.controlTextColor)
+
+        guard isAppRebranded else {
+            return PasswordManagementStyle(backgroundColor: clearBackgroundColor, backgroundCornerRadius: 3, textColor: controlTextColor, selectedBackgroundColor: .accentColor, selectedTextColor: .white)
+        }
+
+        let selectedBackgroundColor = Color(theme.palette.controlsFillTertiary)
+        return PasswordManagementStyle(backgroundColor: clearBackgroundColor, backgroundCornerRadius: 12, textColor: controlTextColor, selectedBackgroundColor: selectedBackgroundColor, selectedTextColor: controlTextColor)
+    }
 }

@@ -1064,6 +1064,7 @@ final class PasswordManagementViewController: NSViewController {
         }
 
         let syncPromoViewModel = SyncPromoViewModel(
+            isAppRebranded: themeManager.isAppRebranded,
             touchpointType: touchpoint,
             primaryButtonAction: { [weak self] in
                 self?.syncPromoManager.goToSyncSettings(for: touchpoint)
@@ -1250,11 +1251,20 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private func showEmptyState(category: SecureVaultSorting.Category) {
+        let isAppRebranded = themeManager.isAppRebranded
+        var passwordsAddImage: NSImage = isAppRebranded ? .passwordsAdd128 : .passwordsAddLegacy128
+
         switch category {
-        case .allItems: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateDefaultTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
-        case .logins: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateLoginsTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
-        case .identities: showEmptyState(image: .identityAdd128, title: UserText.pmEmptyStateIdentitiesTitle, hideMessage: true, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities))
-        case .cards: showEmptyState(image: .creditCardsAdd128, title: UserText.pmEmptyStateCardsTitle, hideMessage: false, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards))
+        case .allItems:
+            showEmptyState(image: passwordsAddImage, title: UserText.pmEmptyStateDefaultTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
+        case .logins:
+            showEmptyState(image: passwordsAddImage, title: UserText.pmEmptyStateLoginsTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
+        case .identities:
+            let identityAddImage: NSImage = isAppRebranded ? .identityAdd128 : .identityAddLegacy128
+            showEmptyState(image: identityAddImage, title: UserText.pmEmptyStateIdentitiesTitle, hideMessage: false, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities))
+        case .cards:
+            let creditCardsAddImage: NSImage = isAppRebranded ? .creditCardsAdd128 : .creditCardsAddLegacy128
+            showEmptyState(image: creditCardsAddImage, title: UserText.pmEmptyStateCardsTitle, hideMessage: false, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards))
         }
     }
 

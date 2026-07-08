@@ -38,6 +38,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1216081727196784
     case appRebranding
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216394295428096?focus=true
+    case newTabPageRebranding
+
     /// Option to install Chrome extension during onboarding (DMG only)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216010708822357
     case onboardingChromeExtension
@@ -497,6 +500,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingRebranding))
         case .appRebranding:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
+        case .newTabPageRebranding:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension))
         case .unknownUsernameCategorization:
@@ -688,7 +693,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSidebarFloating:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.sidebarFloating), category: .duckAI)
         case .sidebarSuggestedPrompts:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.sidebarSuggestedPrompts), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebarSuggestedPrompts), category: .duckAI)
         case .aiChatChromeSidebar:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebar), category: .duckAI)
         case .webViewLookUpAction:

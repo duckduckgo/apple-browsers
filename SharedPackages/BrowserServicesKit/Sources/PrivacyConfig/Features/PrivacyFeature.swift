@@ -117,6 +117,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// App rebranding feature flag
     case appRebranding
 
+    /// New Tab Page rebranding feature flag
+    case newTabPageRebranding
+
     /// Remote kill switch for native unsupported-OS messaging (launch alert, About/Feedback info box).
     /// Enabled by default; set to `disabled` in privacy config to suppress the messaging.
     case osSupportWarning
@@ -725,6 +728,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
+    case subscriptionExpirationReminderNotification
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

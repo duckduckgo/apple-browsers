@@ -48,3 +48,22 @@ public enum SERPSettingsError: Error {
     /// range the native side recognizes. The native getter falls back to its default.
     case unrecognizedValue
 }
+
+/// Distinguishes which operation produced a `keyValueStoreReadError`.
+///
+/// The read path does two very different things under one error case: it reads the raw value
+/// from the key-value store, then decodes that value's JSON blob into `[String: String]`. This is
+/// surfaced as the `reason` pixel parameter so the two failure modes can be told apart in analytics.
+enum SERPSettingsReadFailure: String {
+
+    /// The underlying key-value store threw while reading the raw stored value.
+    case storeRead
+
+    /// The stored blob was read successfully but failed to decode into `[String: String]`.
+    case decode
+
+    static let parameterKey = "reason"
+
+    /// Pixel parameters describing this failure, keyed by ``parameterKey``.
+    var pixelParameters: [String: String] { [Self.parameterKey: rawValue] }
+}

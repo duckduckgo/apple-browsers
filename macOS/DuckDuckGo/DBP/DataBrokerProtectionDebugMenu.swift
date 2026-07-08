@@ -126,6 +126,13 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                     .targetting(self)
             }
 
+            NSMenuItem(title: "Debug Server") {
+                NSMenuItem(title: "Start", action: #selector(DataBrokerProtectionDebugMenu.startPIRDebugServer))
+                    .targetting(self)
+                NSMenuItem(title: "Stop", action: #selector(DataBrokerProtectionDebugMenu.stopPIRDebugServer))
+                    .targetting(self)
+            }
+
             NSMenuItem(title: "Operations") {
                 NSMenuItem(title: "Hidden WebView") {
                     menuItem(withTitle: "Run queued operations",
@@ -420,6 +427,26 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func showAgentIPAddress() {
         DataBrokerProtectionManager.shared.showAgentIPAddress()
+    }
+
+    @objc private func startPIRDebugServer() {
+        Task { @MainActor in
+            guard await DataBrokerProtectionManager.shared.loginItemInterface.startDebugServer() else {
+                Logger.dataBrokerProtection.error("Failed to start PIR debug server (is the background agent running?)")
+                return
+            }
+
+            let url = "http://127.0.0.1:\(DataBrokerProtectionDebugServerDefaults.defaultPort)/api"
+            let alert = NSAlert()
+            alert.messageText = "PIR Debug Server Started"
+            alert.informativeText = url
+            alert.addButton(withTitle: "OK")
+            await alert.runModal()
+        }
+    }
+
+    @objc private func stopPIRDebugServer() {
+        DataBrokerProtectionManager.shared.loginItemInterface.stopDebugServer()
     }
 
     @objc private func showForceOptOutWindow() {

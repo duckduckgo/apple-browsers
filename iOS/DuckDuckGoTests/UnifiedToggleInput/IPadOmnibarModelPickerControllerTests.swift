@@ -278,6 +278,7 @@ private final class StubPreferences: AIChatPreferencesPersisting {
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
+@MainActor
 private final class StubModelsService: AIChatModelsProviding {
     var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
 

@@ -94,6 +94,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let iPadPopoverWidth: CGFloat = 375
         static let iPadPopoverDefaultHeight: CGFloat = 520
         static let maxHeightRatio: CGFloat = 0.9
+        static let initialPromptRevealFallbackDelay: TimeInterval = 1
     }
 
     // MARK: - Types
@@ -122,15 +123,17 @@ final class AIChatContextualSheetViewController: UIViewController {
     private let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
     private let suggestionsReader: AIChatSuggestionsReading?
+    private let persistentUTIHost: AIChatContextualUTIHost?
     private var recentChatsPopup: AIChatRecentChatsPopupViewController?
     private var popupWindow: UIWindow?
     private var isFetchingRecentChats = false
 
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
-        isContextualSheetImprovementsEnabled: featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements)
+        showsBasicNativeInput: persistentUTIHost == nil
     )
     private var cancellables = Set<AnyCancellable>()
+    private var contentContainerBottomConstraint: NSLayoutConstraint?
 
     /// The single web view controller for this sheet, created once and reused
     private var webViewController: AIChatContextualWebViewController?
@@ -146,6 +149,10 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Whether the fire confirmation is currently shown
     private var isShowingFireConfirmation = false
+
+    /// Prevents showing the preloaded Duck.ai start surface before the frontend switches into a response state.
+    private var isWaitingForInitialPromptResponseState = false
+    private var initialPromptRevealFallbackWorkItem: DispatchWorkItem?
 
     // MARK: - UI Components
 
@@ -274,6 +281,7 @@ final class AIChatContextualSheetViewController: UIViewController {
          pixelHandler: AIChatContextualModePixelFiring,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         persistentUTIHost: AIChatContextualUTIHost? = nil,
          suggestionsReader: AIChatSuggestionsReading? = nil) {
         self.sessionState = sessionState
         self.aiChatSettings = aiChatSettings
@@ -282,6 +290,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         self.pixelHandler = pixelHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
+        self.persistentUTIHost = persistentUTIHost
         self.suggestionsReader = suggestionsReader
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
@@ -305,6 +314,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        mountPersistentUTIHostIfNeeded()
         createAndConfigureWebViewController(restoreURL: sessionState.contextualChatURL)
         bindViewModel()
     }
@@ -423,6 +433,18 @@ final class AIChatContextualSheetViewController: UIViewController {
         }
     }
 
+    func pushPageContext(_ context: AIChatPageContextData?) {
+        webViewController?.pushPageContext(context)
+    }
+
+    func handleFirstUTISubmission() {
+        if beginWaitingForInitialPromptResponseStateIfNeeded() {
+            return
+        }
+        transitionToWebView()
+        expandToLargeDetent()
+    }
+
 }
 
 // MARK: - Private Methods
@@ -457,6 +479,7 @@ private extension AIChatContextualSheetViewController {
 
     func removeCurrentChildViewController() {
         children.forEach { child in
+            guard child.view.superview === contentContainerView else { return }
             child.willMove(toParent: nil)
             child.view.removeFromSuperview()
             child.removeFromParent()
@@ -465,6 +488,7 @@ private extension AIChatContextualSheetViewController {
 
     func transitionToWebView() {
         guard let webVC = webViewController else { return }
+
         removeCurrentChildViewController()
         embedChildViewController(webVC)
         isWebViewVisible = true
@@ -475,13 +499,16 @@ private extension AIChatContextualSheetViewController {
 
         guard let webVC = webViewController else {
             Logger.aiChat.debug("[SheetVC] showWebViewWithPrompt - no web VC available")
+            cancelWaitingForInitialPromptResponseState()
             return
         }
 
         // Don't transition immediately - wait for delegate callback after prompt is submitted
         // This prevents showing the initial duck.ai page before the prompt navigates it
         webVC.submitPrompt(prompt, pageContext: pageContext)
-        expandToLargeDetent()
+        if !isWaitingForInitialPromptResponseState {
+            expandToLargeDetent()
+        }
     }
 
     func expandToLargeDetent(completion: (() -> Void)? = nil) {
@@ -556,34 +583,11 @@ private extension AIChatContextualSheetViewController {
     }
 
     func updateChipUI(chipState: ChipState) {
+        guard persistentUTIHost == nil else { return }
         switch chipState {
         case .placeholder:
-            if featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) {
-                if contextualInputViewController.isContextChipVisible {
-                    contextualInputViewController.hideContextChip()
-                }
-            } else {
-                if contextualInputViewController.isContextChipVisible {
-                    contextualInputViewController.updateContextChipState(.placeholder)
-                    contextualInputViewController.setChipTapCallback { [weak self] in
-                        guard let self else { return }
-                        self.pixelHandler.firePageContextPlaceholderTapped()
-                        self.delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
-                    }
-                } else {
-                    let chipView = createPlaceholderChipView(
-                        onTapToAttach: { [weak self] in
-                            guard let self else { return }
-                            self.pixelHandler.firePageContextPlaceholderTapped()
-                            self.delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
-                        },
-                        onRemove: { [weak self] in
-                            self?.handleChipRemoved()
-                        }
-                    )
-                    contextualInputViewController.showContextChip(chipView)
-                    pixelHandler.firePageContextPlaceholderShown()
-                }
+            if contextualInputViewController.isContextChipVisible {
+                contextualInputViewController.hideContextChip()
             }
         case .attached(let context):
             if contextualInputViewController.isContextChipVisible {
@@ -749,7 +753,7 @@ private extension AIChatContextualSheetViewController {
 extension AIChatContextualSheetViewController: AIChatContextualInputViewControllerDelegate {
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {
-        delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt)
+        submitPromptFromNativeInput(prompt)
     }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
@@ -757,7 +761,11 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         case .askAboutPage:
             pixelHandler.fireQuickActionAskAboutPageSelected()
             delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
-            contextualInputViewController.becomeFirstResponder()
+            if let persistentUTIHost {
+                persistentUTIHost.activateInput()
+            } else {
+                contextualInputViewController.becomeFirstResponder()
+            }
         case .summarize:
             pixelHandler.fireQuickActionSummarizeSelected()
             delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
@@ -766,8 +774,18 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             }
         case .summarizePage:
             pixelHandler.fireQuickActionSummarizeSelected()
-            delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: action.prompt)
+            if let persistentUTIHost {
+                persistentUTIHost.submitQuickActionPrompt(action.prompt)
+            } else {
+                submitPromptFromNativeInput(action.prompt)
+            }
         }
+    }
+
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
+        // Interim behaviour: The full tap → chat-start-with-context flow is a separate task.
+        // https://app.asana.com/1/137249556945/project/1210947754188321/task/1216246134909203?focus=true
+        contextualInputViewController.appendText(suggestion.prompt)
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
@@ -872,6 +890,10 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
         webViewController?.markFrontendAsReady()
     }
 
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didUpdateChatStatus status: AIChatStatusValue) {
+        transitionToWebViewAfterInitialPromptStatusIfNeeded(status)
+    }
+
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {
         delegate?.aiChatContextualSheetViewController(self, didRequestToLoad: url)
     }
@@ -899,10 +921,12 @@ private extension AIChatContextualSheetViewController {
 
     func apply(_ viewState: SheetViewState) {
         expandButton.isEnabled = viewState.isExpandButtonEnabled
-        contextualInputViewController.updateQuickActions(with: viewState.quickActions)
+        contextualInputViewController.updateStartActions(suggestions: viewState.suggestions, quickActions: viewState.quickActions)
+        contextualInputViewController.updateSuggestionsLoading(viewState.suggestionsLoadState == .loading)
 
         switch viewState.content {
         case .nativeInput:
+            cancelWaitingForInitialPromptResponseState()
             // When returning to native input (new chat), reload the default URL on existing web VC
             if isWebViewVisible, let webVC = webViewController {
                 webVC.loadDefaultChatURL()
@@ -915,11 +939,15 @@ private extension AIChatContextualSheetViewController {
                 showNativeInputUI()
             }
         case .webView:
+            if isWaitingForInitialPromptResponseState {
+                fireButton.isHidden = true
+                return
+            }
             // Web VC was created in viewDidLoad, just show it if not already visible
             if !isWebViewVisible {
                 transitionToWebView()
             }
-            fireButton.isHidden = false
+            fireButton.isHidden = !viewState.shouldShowNewChatButton
         }
 
     }
@@ -930,10 +958,72 @@ private extension AIChatContextualSheetViewController {
             showWebViewWithPrompt(prompt, pageContext: context)
         case .reloadWebView:
             webViewController?.reload()
-        case .pushContextToFrontend(let context):
-            webViewController?.pushPageContext(context)
+        case .deliverPageContext:
+            break
         case .clearPrompt:
             contextualInputViewController.setText("")
+        }
+    }
+}
+
+// MARK: - Initial Prompt Transition
+
+private extension AIChatContextualSheetViewController {
+
+    func submitPromptFromNativeInput(_ prompt: String) {
+        beginWaitingForInitialPromptResponseStateIfNeeded()
+        delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt)
+    }
+
+    func transitionToWebViewAfterInitialPromptStatusIfNeeded(_ status: AIChatStatusValue) {
+        guard isWaitingForInitialPromptResponseState, status.shouldRevealInitialPromptWebView else { return }
+        revealInitialPromptWebViewIfNeeded()
+    }
+
+    @discardableResult
+    func beginWaitingForInitialPromptResponseStateIfNeeded() -> Bool {
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return false }
+        isWaitingForInitialPromptResponseState = true
+        scheduleInitialPromptRevealFallback()
+        return true
+    }
+
+    func cancelWaitingForInitialPromptResponseState() {
+        isWaitingForInitialPromptResponseState = false
+        initialPromptRevealFallbackWorkItem?.cancel()
+        initialPromptRevealFallbackWorkItem = nil
+    }
+
+    func scheduleInitialPromptRevealFallback() {
+        initialPromptRevealFallbackWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.revealInitialPromptWebViewIfNeeded()
+        }
+        initialPromptRevealFallbackWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.initialPromptRevealFallbackDelay, execute: workItem)
+    }
+
+    func revealInitialPromptWebViewIfNeeded() {
+        guard isWaitingForInitialPromptResponseState else { return }
+        guard case .webView = sessionState.viewState.content else { return }
+        cancelWaitingForInitialPromptResponseState()
+
+        if !isWebViewVisible {
+            transitionToWebView()
+        }
+        fireButton.isHidden = !sessionState.viewState.shouldShowNewChatButton
+        expandToLargeDetent()
+    }
+}
+
+private extension AIChatStatusValue {
+
+    var shouldRevealInitialPromptWebView: Bool {
+        switch self {
+        case .startStreamNewPrompt, .startStreamRestartStream, .loading, .streaming, .error, .blocked:
+            return true
+        case .ready, .unknown:
+            return false
         }
     }
 }
@@ -989,6 +1079,9 @@ private extension AIChatContextualSheetViewController {
     }
 
     func setupConstraints() {
+        let contentBottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        contentContainerBottomConstraint = contentBottomConstraint
+
         NSLayoutConstraint.activate([
 
             topSeparator.topAnchor.constraint(equalTo: view.topAnchor),
@@ -1029,8 +1122,18 @@ private extension AIChatContextualSheetViewController {
             contentContainerView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: Constants.contentTopPadding),
             contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            contentContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            contentBottomConstraint,
         ])
+    }
+
+    func mountPersistentUTIHostIfNeeded() {
+        guard let persistentUTIHost else { return }
+
+        let utiView = persistentUTIHost.mountAtSheetLevel(in: self)
+        contentContainerBottomConstraint?.isActive = false
+        let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
+        contentContainerBottomConstraint = bottomConstraint
+        bottomConstraint.isActive = true
     }
     
     func updateShadowPath() {

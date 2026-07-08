@@ -595,8 +595,7 @@
             "appVersion",
             {
                 "key": "extension_loaded",
-                "type": "string",
-                "enum": ["true", "false"],
+                "type": "boolean",
                 "description": "Whether the ad-blocking extension itself was loaded (true) or also missing (false)."
             }
         ]

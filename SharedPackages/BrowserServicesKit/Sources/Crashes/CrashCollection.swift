@@ -51,6 +51,12 @@ public enum CrashReportPixelParameter: String {
 @available(iOS 13, *)
 public final class CrashCollection {
 
+    /// Crash reports whose crash occurred more than this long ago are excluded from crash pixels.
+    ///
+    /// This prevents old crashes from skewing crash metrics and causing false alarms.
+    /// Such reports are still uploaded to Sentry, only pixel reporting is affected.
+    public static let maxCrashReportAgeForPixels: TimeInterval = .days(7)
+
     public init(crashReportSender: CrashReportSending,
                 crashCollectionStorage: KeyValueStoring = UserDefaults.standard) {
         self.crashHandler = CrashHandler()
@@ -81,7 +87,12 @@ public final class CrashCollection {
 
         crashHandler.crashDiagnosticsPayloadHandler = { payloads in
             Logger.general.log("😵 loaded \(payloads.count, privacy: .public) diagnostic payloads")
+
+            // Exclude crash reports older than `maxCrashReportAgeForPixels` from crash pixels to
+            // avoid skewing metrics with stale crashes. Uploads (`process` below) are unaffected.
+            let pixelReportingCutoffDate = Date().addingTimeInterval(-Self.maxCrashReportAgeForPixels)
             let pixelParameters = payloads
+                .filter { $0.timeStampBegin >= pixelReportingCutoffDate }
                 .compactMap(\.crashDiagnostics)
                 .flatMap { $0 }
                 .map { diagnostic in

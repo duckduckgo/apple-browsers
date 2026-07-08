@@ -234,6 +234,7 @@ extension SimplifiedSyncSettingsViewV2 {
                 ))
                 .labelsHidden()
                 .tint(Color(designSystemColor: .accentPrimary))
+                .accessibilityLabel(UserText.simplifiedSyncToggleTitleThisDevice)
             }
             .animation(.easeInOut(duration: 0.3), value: model.isBusy)
             .disabled(model.isBusy || (!model.isSyncEnabled && !model.isAccountCreationAvailable))

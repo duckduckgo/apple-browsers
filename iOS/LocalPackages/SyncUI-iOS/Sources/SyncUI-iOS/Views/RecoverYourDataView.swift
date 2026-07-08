@@ -49,6 +49,7 @@ struct RecoverYourDataView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     doneButton
+                        .accessibilityLabel(UserText.doneButton)
                 }
             }
         }
@@ -120,6 +121,7 @@ struct RecoverYourDataView: View {
                         .foregroundColor(Color(designSystemColor: .icons))
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel(UserText.simplifiedCopyRecoveryCodeButton)
             }
 
             Button {

@@ -94,6 +94,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let iPadPopoverWidth: CGFloat = 375
         static let iPadPopoverDefaultHeight: CGFloat = 520
         static let maxHeightRatio: CGFloat = 0.9
+        static let initialPromptRevealFallbackDelay: TimeInterval = 1
     }
 
     // MARK: - Types
@@ -151,6 +152,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Prevents showing the preloaded Duck.ai start surface before the frontend switches into a response state.
     private var isWaitingForInitialPromptResponseState = false
+    private var initialPromptRevealFallbackWorkItem: DispatchWorkItem?
 
     // MARK: - UI Components
 
@@ -436,8 +438,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     func handleFirstUTISubmission() {
-        if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
-            isWaitingForInitialPromptResponseState = true
+        if beginWaitingForInitialPromptResponseStateIfNeeded() {
             return
         }
         transitionToWebView()
@@ -498,7 +499,7 @@ private extension AIChatContextualSheetViewController {
 
         guard let webVC = webViewController else {
             Logger.aiChat.debug("[SheetVC] showWebViewWithPrompt - no web VC available")
-            isWaitingForInitialPromptResponseState = false
+            cancelWaitingForInitialPromptResponseState()
             return
         }
 
@@ -925,7 +926,7 @@ private extension AIChatContextualSheetViewController {
 
         switch viewState.content {
         case .nativeInput:
-            isWaitingForInitialPromptResponseState = false
+            cancelWaitingForInitialPromptResponseState()
             // When returning to native input (new chat), reload the default URL on existing web VC
             if isWebViewVisible, let webVC = webViewController {
                 webVC.loadDefaultChatURL()
@@ -970,17 +971,42 @@ private extension AIChatContextualSheetViewController {
 private extension AIChatContextualSheetViewController {
 
     func submitPromptFromNativeInput(_ prompt: String) {
-        if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
-            isWaitingForInitialPromptResponseState = true
-        }
+        beginWaitingForInitialPromptResponseStateIfNeeded()
         delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt)
     }
 
     func transitionToWebViewAfterInitialPromptStatusIfNeeded(_ status: AIChatStatusValue) {
         guard isWaitingForInitialPromptResponseState, status.shouldRevealInitialPromptWebView else { return }
-        isWaitingForInitialPromptResponseState = false
+        revealInitialPromptWebViewIfNeeded()
+    }
 
+    @discardableResult
+    func beginWaitingForInitialPromptResponseStateIfNeeded() -> Bool {
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return false }
+        isWaitingForInitialPromptResponseState = true
+        scheduleInitialPromptRevealFallback()
+        return true
+    }
+
+    func cancelWaitingForInitialPromptResponseState() {
+        isWaitingForInitialPromptResponseState = false
+        initialPromptRevealFallbackWorkItem?.cancel()
+        initialPromptRevealFallbackWorkItem = nil
+    }
+
+    func scheduleInitialPromptRevealFallback() {
+        initialPromptRevealFallbackWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.revealInitialPromptWebViewIfNeeded()
+        }
+        initialPromptRevealFallbackWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.initialPromptRevealFallbackDelay, execute: workItem)
+    }
+
+    func revealInitialPromptWebViewIfNeeded() {
+        guard isWaitingForInitialPromptResponseState else { return }
         guard case .webView = sessionState.viewState.content else { return }
+        cancelWaitingForInitialPromptResponseState()
 
         if !isWebViewVisible {
             transitionToWebView()

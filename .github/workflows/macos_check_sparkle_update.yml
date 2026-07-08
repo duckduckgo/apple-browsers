@@ -17,7 +17,9 @@ jobs:
       SPARKLE_OWNERS: "diegoreymendez jotaemepereira"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        # Pinned to v5: v6 duplicates the git Authorization header and breaks
+        # peter-evans/create-pull-request (Duplicate header: "Authorization", HTTP 400).
+        uses: actions/checkout@v5
 
       - name: Assign SSH keys
         uses: webfactory/ssh-agent@v0.9.1
@@ -128,9 +130,8 @@ jobs:
           gh pr ready "$pr_number"
           gh pr edit "$pr_number" --add-reviewer "${SPARKLE_OWNERS// /,}"
 
-      # Only notify for scheduled (cron) runs; manual dispatches surface the failure directly.
       - name: Report failure to Asana
-        if: failure() && github.event_name == 'schedule'
+        if: failure()
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |

@@ -742,21 +742,19 @@ final class AddressBarTextField: NSTextField {
 
     enum SuggestionWindowSizes {
 
-        private enum ToggleAlignmentOffset {
-            static let rebranded: CGFloat = -9
-            static let legacy: CGFloat = 4
+        private enum Metrics {
+            static let shadowOffset: CGFloat = -2
+            static let windowOffset = CGPoint(x: -20, y: -3)
+            static let legacyShadowOffset: CGFloat = 5
+            static let legacyWindowOffset = CGPoint(x: -20, y: 5)
         }
 
-        private static let padding = CGPoint(x: -20, y: 1)
-
-        static func verticalOffset(isAppRebranded: Bool) -> CGFloat {
-            isAppRebranded ? ToggleAlignmentOffset.rebranded : ToggleAlignmentOffset.legacy
+        static func shadowOffset(isAppRebranded: Bool) -> CGFloat {
+            isAppRebranded ? Metrics.shadowOffset : Metrics.legacyShadowOffset
         }
 
-        static func padding(isAppRebranded: Bool) -> CGPoint {
-            var output = padding
-            output.y += verticalOffset(isAppRebranded: isAppRebranded)
-            return output
+        static func windowOffset(isAppRebranded: Bool) -> CGPoint {
+            isAppRebranded ? Metrics.windowOffset : Metrics.legacyWindowOffset
         }
     }
 
@@ -853,7 +851,7 @@ final class AddressBarTextField: NSTextField {
         }
 
         /// Shift the panel so its top edge clears the AI Chat omnibar toggle / aligns with the focused bar.
-        let padding = SuggestionWindowSizes.padding(isAppRebranded: themeManager.isAppRebranded)
+        let padding = SuggestionWindowSizes.windowOffset(isAppRebranded: themeManager.isAppRebranded)
 
         suggestionWindow.setFrame(NSRect(x: 0, y: 0, width: superview.frame.width - 2 * padding.x, height: 0), display: true)
 

@@ -152,9 +152,8 @@ final class AIChatSuggestionsView: NSView {
 
     /// Calculates the required height for a given number of suggestions.
     /// This is a static calculation that doesn't depend on view state.
-    static func calculateHeight(forSuggestionCount count: Int, showViewAllChats: Bool = false) -> CGFloat {
+    static func calculateHeight(forSuggestionCount count: Int, showViewAllChats: Bool = false, isAppRebranded: Bool) -> CGFloat {
         guard count > 0 else { return 0 }
-        let isAppRebranded = NSApp.delegateTyped.themeManager.isAppRebranded
         let rowHeight = isAppRebranded ? Constants.rowHeight : Constants.legacyRowHeight
         let viewAllChatsSeparatorBottomPadding = isAppRebranded ? Constants.viewAllChatsSeparatorBottomPadding : Constants.legacyViewAllChatsSeparatorBottomPadding
         let bottomPadding = isAppRebranded ? Constants.bottomPadding : Constants.legacyBottomPadding
@@ -317,7 +316,8 @@ final class AIChatSuggestionsView: NSView {
 
                 if countChanged {
                     let newHeight = AIChatSuggestionsView.calculateHeight(forSuggestionCount: suggestions.count,
-                                                                          showViewAllChats: viewModel.showViewAllChats)
+                                                                          showViewAllChats: viewModel.showViewAllChats,
+                                                                          isAppRebranded: themeManager.isAppRebranded)
                     onHeightChange(newHeight)
                 }
             }
@@ -332,7 +332,8 @@ final class AIChatSuggestionsView: NSView {
                 self.updateViewAllChatsFooter(show: showViewAllChats)
                 self.updateSelection(viewModel.selectedIndex, isKeyboardNavigating: viewModel.isKeyboardNavigating)
                 let newHeight = AIChatSuggestionsView.calculateHeight(forSuggestionCount: viewModel.filteredSuggestions.count,
-                                                                      showViewAllChats: showViewAllChats)
+                                                                      showViewAllChats: showViewAllChats,
+                                                                      isAppRebranded: themeManager.isAppRebranded)
                 onHeightChange(newHeight)
             }
             .store(in: &cancellables)

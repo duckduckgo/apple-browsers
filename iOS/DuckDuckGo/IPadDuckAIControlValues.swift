@@ -32,6 +32,12 @@ protocol IPadDuckAIControlValues {
     /// The Duck.ai tools selected in the iPad address-bar tool picker, or `nil` when no tool is
     /// selected or the picker is inactive.
     var selectedTools: [AIChatRAGTool]? { get }
+
+    /// The images attached in the iPad address-bar attach button, encoded for submission, or `nil`.
+    var selectedImages: [AIChatNativePrompt.NativePromptImage]? { get }
+
+    /// The files attached in the iPad address-bar attach button, encoded for submission, or `nil`.
+    var selectedFiles: [AIChatNativePrompt.NativePromptFile]? { get }
 }
 
 /// A concrete snapshot of `IPadDuckAIControlValues`. Every value defaults to `nil`, so callers
@@ -40,4 +46,6 @@ struct IPadDuckAIControlValuesSnapshot: IPadDuckAIControlValues {
     var selectedModelId: String?
     var selectedReasoningEffort: AIChatReasoningEffort?
     var selectedTools: [AIChatRAGTool]?
+    var selectedImages: [AIChatNativePrompt.NativePromptImage]?
+    var selectedFiles: [AIChatNativePrompt.NativePromptFile]?
 }

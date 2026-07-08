@@ -333,25 +333,6 @@ final class AppearancePreferences: ObservableObject {
         persistor.continueSetUpCardsNumberOfDaysDemonstrated
     }
 
-    /// Whether onboarding-related Next Steps cards may be shown.
-    ///
-    /// Onboarding cards are suppressed on the user's first calendar day of seeing Next Steps.
-    /// They become eligible when the demonstration-day counter reaches 1, or when the calendar
-    /// rolls past the first demonstration while the counter is still 0.
-    var isOnboardingNextStepsCardsDelayMet: Bool {
-        if nextStepsCardsDemonstrationDays >= 1 {
-            return true
-        }
-
-        guard let lastDemonstrated = persistor.continueSetUpCardsLastDemonstrated else {
-            return false
-        }
-
-        let daysSinceFirstDemonstration = Calendar.current.dateComponents([.day], from: lastDemonstrated, to: dateTimeProvider()).day ?? 0
-
-        return daysSinceFirstDemonstration > 0
-    }
-
     private var shouldHideNextStepsCards: Bool {
        persistor.continueSetUpCardsNumberOfDaysDemonstrated >= maxNextStepsCardsDemonstrationDays
     }

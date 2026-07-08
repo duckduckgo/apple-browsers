@@ -66,9 +66,6 @@
                                                     <userDefinedRuntimeAttribute type="color" keyPath="shadowColor">
                                                         <color key="value" name="SuggestionsShadowColor"/>
                                                     </userDefinedRuntimeAttribute>
-                                                    <userDefinedRuntimeAttribute type="size" keyPath="shadowOffset">
-                                                        <size key="value" width="0.0" height="-4"/>
-                                                    </userDefinedRuntimeAttribute>
                                                     <userDefinedRuntimeAttribute type="number" keyPath="shadowRadius">
                                                         <real key="value" value="8"/>
                                                     </userDefinedRuntimeAttribute>

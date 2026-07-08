@@ -650,7 +650,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
         case .nextStepsListAdvancedCardOrdering:
-            Config(source: .disabled)
+            Config(defaultValue: .enabled, source: .remoteReleasable(HtmlNewTabPageSubfeature.nextStepsListAdvancedCardOrdering))
         case .crashCollectionLimitCallStackTreeDepth:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .freeTrialConversionWideEvent:

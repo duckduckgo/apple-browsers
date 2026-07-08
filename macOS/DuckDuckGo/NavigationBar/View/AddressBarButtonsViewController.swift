@@ -253,6 +253,16 @@ final class AddressBarButtonsViewController: NSViewController {
         self.tabViewModel?.tab.content == .newtab && theme.addressBarStyleProvider.shouldShowNewSearchIcon
     }
 
+    /// Drop this subview when `.appRebranding` ships
+    var trailingButtonsBackgroundColor: NSColor? {
+        get {
+            trailingButtonsBackground.backgroundColor
+        }
+        set {
+            trailingButtonsBackground.backgroundColor = newValue
+        }
+    }
+
     private var isInPopUpWindow: Bool {
         tabCollectionViewModel.isPopup
     }
@@ -2345,7 +2355,10 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
-        toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
+        let backgroundColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .controlsSubtleFillSecondary) : NSColor(designSystemColor: .controlsRaisedBackdrop)
+        let selectionBorder = themeManager.isAppRebranded ? NSColor(designSystemColor: .shadowPrimary) : NSColor(designSystemColor: .shadowSecondary)
+
+        toggleControl.backgroundColor = backgroundColor
         toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
 
@@ -2362,7 +2375,7 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.indicatorHorizontalInset = styleProvider.addressBarToggleIndicatorHorizontalInset
 
         toggleControl.outerBorderWidth = 2.0
-        toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .shadowSecondary)
+        toggleControl.selectionInnerBorderColor = selectionBorder
 
         toggleControl.leftImage = DesignSystemImages.Glyphs.Size16.findSearch.tinted(with: themeManager.theme.colorsProvider.iconsColor)
         toggleControl.rightImage = DesignSystemImages.Glyphs.Size16.aiChat.tinted(with: themeManager.theme.colorsProvider.iconsColor)

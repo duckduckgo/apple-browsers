@@ -2655,7 +2655,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth)
         } else {
             self.suggestionTrayController?.coversFullScreen = isInMinimalChromeLayout
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
@@ -4001,7 +4001,9 @@ extension MainViewController: OmniBarDelegate {
         let controlValues = viewCoordinator.omniBar.iPadDuckAIControlValues
         openAIChat(query, autoSend: true, tools: tools ?? controlValues.selectedTools,
                    modelId: controlValues.selectedModelId,
-                   reasoningEffort: controlValues.selectedReasoningEffort)
+                   reasoningEffort: controlValues.selectedReasoningEffort,
+                   images: controlValues.selectedImages,
+                   files: controlValues.selectedFiles)
     }
 
     func onChatHistorySelected(url: URL) {
@@ -4192,6 +4194,7 @@ extension MainViewController: OmniBarDelegate {
                 Pixel.fire(pixel: .browsingMenuOpenedError)
             }
         }
+        productSurfaceTelemetry.menuUsed()
     }
 
     private func launchDefaultBrowsingMenu(in context: BrowsingMenuContext, tabController tab: TabViewController) {
@@ -4217,8 +4220,7 @@ extension MainViewController: OmniBarDelegate {
         let browsingMenu: BrowsingMenuViewController =
         BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
                                                menuEntries: menuEntries,
-                                               daxDialogsManager: daxDialogsManager,
-                                               productSurfaceTelemetry: productSurfaceTelemetry)
+                                               daxDialogsManager: daxDialogsManager)
         browsingMenu.isUsingSingleBar = isUsingSingleBar
         browsingMenu.onDismiss = { wasActionSelected in
             self.showMenuHighlighterIfNeeded()
@@ -4781,6 +4783,13 @@ extension MainViewController: OmniBarDelegate {
 
     @objc private func dismissExpandedOmniBar() {
         performCancel()
+    }
+
+    func onOmniBarExpandedContentSizeChanged() {
+        // The expanded input grew or shrank (an attachment was added/removed) while a Duck.ai popover
+        // is anchored beneath it — re-apply the inset so it follows instead of leaving a gap.
+        guard isPad, isPopoverVisible, isModeToggleInAIChatMode else { return }
+        suggestionTrayController?.setAdditionalTopInset(duckAIPopoverTopInset(), animated: true)
     }
 
     private func duckAIPopoverTopInset() -> CGFloat {

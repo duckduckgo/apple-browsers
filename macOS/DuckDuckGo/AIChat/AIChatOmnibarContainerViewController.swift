@@ -51,7 +51,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private enum Constants {
         static let clipMaskBottomOffset: CGFloat = 14
-        static let shadowOverlapHeight: CGFloat = 11
+        static let shadowOverlapHeight: CGFloat = 21
+        static let legacyShadowOverlapHeight: CGFloat = 12
         static let submitButtonSize: CGFloat = 28
         static let submitButtonCornerRadius: CGFloat = 14
         static let submitButtonTrailingInset: CGFloat = 8
@@ -641,10 +642,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         innerBorderView.borderWidth = 1
         backgroundView.addSubview(innerBorderView)
 
-        shadowView.shadowColor = .suggestionsShadow
+        shadowView.shadowColor = themeManager.theme.colorsProvider.addressBarShadowColor
         shadowView.shadowOpacity = 1
         shadowView.shadowOffset = CGSize(width: 0, height: 0)
-        shadowView.shadowRadius = 20
+        shadowView.shadowRadius = themeManager.theme.addressBarStyleProvider.suggestionShadowRadius
         shadowView.shadowSides = [.left, .right, .bottom]
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -1059,7 +1060,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
 
         /// Do not overlap shadow of main address bar
-        frame.size.height -= Constants.shadowOverlapHeight
+        frame.size.height -= themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
 
         shadowView.frame = frame
     }
@@ -1895,6 +1896,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         NSAppearance.withAppAppearance {
+            shadowView.shadowColor = colorsProvider.addressBarShadowColor
             imageUploadButton.hoverBackgroundColor = .buttonMouseOver
             imageUploadButton.pressedBackgroundColor = .buttonMouseDown
             modelPickerButton.hoverBackgroundColor = .buttonMouseOver

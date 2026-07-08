@@ -43,7 +43,7 @@ final class AIChatViewAllChatsRowView: NSView {
 
     // MARK: - UI Components
 
-    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    private let themeManager: ThemeManaging
 
     private let iconImageView: NSImageView = {
         let imageView = NSImageView()
@@ -118,8 +118,12 @@ final class AIChatViewAllChatsRowView: NSView {
 
     // MARK: - Initialization
 
-    init(themeProvider: SuggestionRowThemeProviding = DefaultSuggestionRowThemeProvider()) {
-        self.themeProvider = themeProvider
+    init(
+        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+        themeProvider: SuggestionRowThemeProviding? = nil)
+    {
+        self.themeManager = themeManager
+        self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager)
         super.init(frame: .zero)
         setupView()
     }
@@ -195,16 +199,16 @@ final class AIChatViewAllChatsRowView: NSView {
                 let tintColor = themeProvider.selectedTintColor
                 backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
                 titleLabel.textColor = tintColor
-                openDuckAILabel.textColor = tintColor
+                openDuckAILabel.textColor = themeProvider.suffixSelectedTextColor
                 iconImageView.contentTintColor = tintColor
-                arrowImageView.contentTintColor = tintColor
+                arrowImageView.contentTintColor = themeProvider.suffixSelectedTextColor
                 keyboardShortcutView.isHighlighted = true
             } else {
                 backgroundLayer.backgroundColor = NSColor.clear.cgColor
                 titleLabel.textColor = Constants.textColor
-                openDuckAILabel.textColor = themeProvider.accentPrimaryColor
+                openDuckAILabel.textColor = themeProvider.suffixTextColor
                 iconImageView.contentTintColor = Constants.iconColor
-                arrowImageView.contentTintColor = themeProvider.accentPrimaryColor
+                arrowImageView.contentTintColor = themeProvider.suffixTextColor
                 keyboardShortcutView.isHighlighted = false
             }
         }

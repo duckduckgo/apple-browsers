@@ -67,44 +67,85 @@ final class FloatingUIManagerTests: XCTestCase {
 
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
-    func testWhenTopAddressBarThenAdditionalSafeAreaInsetsApplyOmniBarHeightToTopAndToolbarHeightToBottom() {
+    func testWhenTopAddressBarThenAdditionalSafeAreaInsetsApplyOmniBarHeightToTopOnly() {
         let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
             addressBarPosition: .top,
             isUnifiedToggleInputAffectingLayout: false,
-            omniBarHeight: 52,
-            toolbarHeight: 44
+            omniBarHeight: 52
         )
 
-        XCTAssertEqual(insets, UIEdgeInsets(top: 52, left: 0, bottom: 44, right: 0))
+        XCTAssertEqual(insets, UIEdgeInsets(top: 52, left: 0, bottom: 0, right: 0))
     }
 
-    func testWhenBottomAddressBarThenAdditionalSafeAreaInsetsApplyToolbarHeightToBottom() {
+    func testWhenBottomAddressBarThenAdditionalSafeAreaInsetsAreZero() {
         let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
             addressBarPosition: .bottom,
             isUnifiedToggleInputAffectingLayout: false,
-            omniBarHeight: 52,
-            toolbarHeight: 44
+            omniBarHeight: 52
         )
 
-        XCTAssertEqual(insets, UIEdgeInsets(top: 0, left: 0, bottom: 44, right: 0))
+        XCTAssertEqual(insets, .zero)
     }
 
     func testWhenUnifiedToggleInputAffectsLayoutThenInsetsAreZero() {
         let topInsets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
             addressBarPosition: .top,
             isUnifiedToggleInputAffectingLayout: true,
-            omniBarHeight: 52,
-            toolbarHeight: 44
+            omniBarHeight: 52
         )
         XCTAssertEqual(topInsets, .zero)
 
         let bottomInsets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
             addressBarPosition: .bottom,
             isUnifiedToggleInputAffectingLayout: true,
-            omniBarHeight: 52,
-            toolbarHeight: 44
+            omniBarHeight: 52
         )
         XCTAssertEqual(bottomInsets, .zero)
+    }
+
+    func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 1,
+            toolbarSlotHeight: 100,
+            bottomCapsuleObscuredHeight: 70,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 100, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndBottomCapsuleVisibleThenBottomObscuredHeightTracksCapsule() {
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 0,
+            toolbarSlotHeight: 100,
+            bottomCapsuleObscuredHeight: 70,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 70, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndNoBottomCapsuleThenBottomObscuredHeightIsSafeArea() {
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 0,
+            toolbarSlotHeight: 100,
+            bottomCapsuleObscuredHeight: 0,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 34, accuracy: 0.001)
+    }
+
+    func testWhenPartiallyHiddenThenBottomObscuredHeightIsMaxOfShrinkingToolbarAndCapsule() {
+        // toolbar term = 100 * 0.5 = 50, capsule rest = 70 -> capsule wins the crossover.
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 0.5,
+            toolbarSlotHeight: 100,
+            bottomCapsuleObscuredHeight: 70,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 70, accuracy: 0.001)
     }
 }
 

@@ -28,6 +28,26 @@ final class FloatingDomainCapsuleController {
     /// cross-fade. Shared with `MainViewController` for the complementary chrome-alpha ramp.
     static let handoffStart: CGFloat = 0.85
 
+    /// Gap between the pill and the edge of the safe area at its resting position.
+    static let restEdgePadding: CGFloat = 8
+
+    /// Extra clearance kept between a page-fixed footer and the top of the resting capsule so the two
+    /// don't visually touch.
+    static let fixedElementClearance: CGFloat = 4
+
+    /// The pill's resting height, hugging the domain label. Independent of the label text (driven by
+    /// the font line height), so it is stable enough to size the web view's obscured bottom inset.
+    var capsuleHeight: CGFloat {
+        domainLabel.intrinsicContentSize.height + 12
+    }
+
+    /// Height of the region obscured by the resting capsule, measured from the safe area edge (the
+    /// `restEdgePadding` gap plus the pill height). Used by the floating web view inset so a page-fixed
+    /// footer pins above the capsule once the bars have hidden.
+    var restObscuredHeightAboveSafeArea: CGFloat {
+        Self.restEdgePadding + capsuleHeight
+    }
+
     private let onTap: () -> Void
     private let backgroundView = UIVisualEffectView(effect: nil)
     private let domainLabel: UILabel = {
@@ -175,11 +195,11 @@ final class FloatingDomainCapsuleController {
                                     reduceMotion: Bool,
                                     in view: UIView) {
         let labelSize = domainLabel.intrinsicContentSize
-        let capsuleHeight = labelSize.height + 12
+        let capsuleHeight = self.capsuleHeight
         let capsuleWidth = min(labelSize.width + 24, max(0, view.bounds.width - 32))
         let restCenterY = addressBarPosition == .top
-            ? view.safeAreaInsets.top + 8 + capsuleHeight / 2
-            : view.bounds.maxY - view.safeAreaInsets.bottom - 8 - capsuleHeight / 2
+            ? view.safeAreaInsets.top + Self.restEdgePadding + capsuleHeight / 2
+            : view.bounds.maxY - view.safeAreaInsets.bottom - Self.restEdgePadding - capsuleHeight / 2
 
         let morphP = (reduceMotion || expandedFrame.isEmpty) ? 0 : p
         let width = capsuleWidth + (expandedFrame.width - capsuleWidth) * morphP

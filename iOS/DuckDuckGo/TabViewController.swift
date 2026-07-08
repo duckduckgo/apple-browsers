@@ -898,7 +898,16 @@ class TabViewController: UIViewController {
             webViewBottomAnchorConstraint?.constant = 0
         }
         if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            webViewBottomAnchorConstraint?.constant = 0
+            // Physically resize the web view so its bottom edge sits at the top of the visible bottom
+            // chrome (toolbar -> capsule -> safe area). Resizing the frame lays out page `position: fixed`
+            // footers reliably, including on load, unlike `additionalSafeAreaInsets` which WebKit only
+            // reflows on a subsequent scroll. AI tabs with the unified toggle input keep the full-bleed
+            // web view since that feature owns its own bottom layout.
+            let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
+            let bottomObscuredHeight = isUnifiedToggleInputAffectingLayout
+                ? 0
+                : (chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0)
+            webViewBottomAnchorConstraint?.constant = -bottomObscuredHeight
             borderView.bottomAlpha = 0
             borderView.isHidden = true
             borderView.isTopVisible = false
@@ -910,12 +919,10 @@ class TabViewController: UIViewController {
         }
     }
 
-    /// In floating UI mode the web view spans full-screen behind the glass chrome. Communicate the
-    /// chrome-obscured region to WebKit via `additionalSafeAreaInsets` so scrollable content rests
-    /// below the omnibar / above the toolbar and, crucially, so page `position: fixed` elements are
-    /// laid out within the unobscured region instead of behind the chrome. The inset is held constant
-    /// so that when the bars hide on scroll their space is retained and the floating domain capsule
-    /// occupies it (matching Safari), rather than the content jumping up behind the capsule.
+    /// In floating UI mode the web view underflows the top glass chrome, so communicate the top
+    /// omnibar-obscured region to WebKit via `additionalSafeAreaInsets` (top only). The bottom obscured
+    /// region is handled by resizing the web view instead (see `updateWebViewBottomAnchor`), which pins
+    /// bottom `position: fixed` elements reliably on load.
     private func updateFloatingUISafeAreaInsets() {
         // AI tabs with the unified toggle input manage their own top/bottom layout (the content
         // container stays anchored to the chrome), so adding insets there would double-offset.
@@ -923,8 +930,7 @@ class TabViewController: UIViewController {
         let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
             addressBarPosition: appSettings.currentAddressBarPosition,
             isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingLayout,
-            omniBarHeight: chromeDelegate?.omniBar.barView.expectedHeight ?? 0,
-            toolbarHeight: chromeDelegate?.toolbarHeight ?? 0
+            omniBarHeight: chromeDelegate?.omniBar.barView.expectedHeight ?? 0
         )
         guard additionalSafeAreaInsets != insets else { return }
         additionalSafeAreaInsets = insets
@@ -1026,9 +1032,10 @@ class TabViewController: UIViewController {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
         if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            //webView.scrollView.clipsToBounds = false
-            //webView.clipsToBounds = false
-            //outerContainer.clipsToBounds = false
+            webView.scrollView.clipsToBounds = false
+            webView.clipsToBounds = false
+            outerContainer.clipsToBounds = false
+            webViewContainer.clipsToBounds = false
         }
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)
@@ -1043,9 +1050,6 @@ class TabViewController: UIViewController {
         webView.uiDelegate = self
 
         webViewContainer.addSubview(webView)
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            webViewContainer.clipsToBounds = false
-        }
         webView.translatesAutoresizingMaskIntoConstraints = false
         webViewBottomAnchorConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
         NSLayoutConstraint.activate([

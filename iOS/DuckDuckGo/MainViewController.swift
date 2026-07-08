@@ -3917,6 +3917,40 @@ extension MainViewController: BrowserChromeDelegate {
         return height
     }
 
+    /// Full toolbar slot height at the bottom, measured from the screen bottom: the toolbar height (its
+    /// bottom is pinned to the safe area) plus the safe area itself. In floating bottom-address-bar mode
+    /// the omnibar is hosted inside the toolbar (so `toolbarHeight` already includes it) and the nav bar
+    /// container is hidden, so it must not be added here. A footer resized against this lands exactly on
+    /// the toolbar's top edge.
+    private var floatingToolbarSlotHeight: CGFloat {
+        toolbarHeight + view.safeAreaInsets.bottom
+    }
+
+    /// Height obscured by the resting floating domain capsule, measured from the screen bottom, with a
+    /// little extra clearance so a page-fixed footer doesn't sit flush against the pill. The capsule
+    /// only rests at the bottom in bottom-address-bar mode, and only when it is eligible to show for a
+    /// non-empty domain; otherwise a hidden footer should pin straight to the safe area.
+    private var floatingBottomCapsuleObscuredHeight: CGFloat {
+        guard appSettings.currentAddressBarPosition.isBottom,
+              isFloatingCapsuleActive,
+              let domain = currentFloatingDomainText(),
+              !domain.isEmpty else {
+            return 0
+        }
+        return view.safeAreaInsets.bottom
+            + floatingDomainCapsuleController.restObscuredHeightAboveSafeArea
+            + FloatingDomainCapsuleController.fixedElementClearance
+    }
+
+    func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
+        FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: barsVisibilityPercent,
+            toolbarSlotHeight: floatingToolbarSlotHeight,
+            bottomCapsuleObscuredHeight: floatingBottomCapsuleObscuredHeight,
+            safeAreaBottom: view.safeAreaInsets.bottom
+        )
+    }
+
     var minimalChromeBottomHeight: CGFloat {
         toolbarHeight + view.safeAreaInsets.bottom
     }

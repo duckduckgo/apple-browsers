@@ -1,5 +1,5 @@
 {
-  "originHash" : "83590c802b17708ff1dbc5df3e760fed809d90190bbdced50a6929247e9be35e",
+  "originHash" : "8cde124e3c5f5116b5b535b2ad357be97bde12aa3eb7c2f1b2ad3a0a391e67b8",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -141,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "5581748cef2bae787496fe6d61139aebe0a451f6",
-        "version" : "2.8.1"
+        "revision" : "b6496a74a087257ef5e6da1c5b29a447a60f5bd7",
+        "version" : "2.9.4"
       }
     },
     {
@@ -249,8 +249,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup",
       "state" : {
-        "revision" : "49dcadd93161f4a44b4994d3a3e8de9f085aface",
-        "version" : "2.13.5"
+        "revision" : "ead56133a693d0184d8c2db1a6d6394410cacfd6",
+        "version" : "2.13.6"
       }
     },
     {

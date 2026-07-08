@@ -1839,6 +1839,7 @@ class MainViewController: UIViewController {
         // ie remove back/forward and show bookmarks/passwords
         // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
         refreshControls()
+        updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
 
         // It's possible for this to be called when in the background of the
@@ -4602,7 +4603,9 @@ extension MainViewController: OmniBarDelegate {
         self.view.layoutIfNeeded()
     }
 
-    // TODO clean up old interactions and also handle the new tab page, etc
+    // Refreshes the iOS 26 scroll-edge chrome interactions so they track the currently visible
+    // page. Must be called on every content change (tab switch, address bar move, NTP attach),
+    // otherwise the interactions keep pointing at a dismissed tab's scroll view.
     private func updateScrollInteractionIfNeeded() {
         guard #available(iOS 26, *) else { return }
         guard floatingUIManager.isFloatingUIEnabled else { return }
@@ -4624,23 +4627,26 @@ extension MainViewController: OmniBarDelegate {
             self.bottomCapsuleInteraction = nil
         }
 
-        func attachToWebView(_ view: UIView,
-                             onEdge edge: UIRectEdge) -> UIInteraction? {
+        // The scroll-edge chrome must track the currently visible scroll view. On the NTP (or any
+        // tab without a web view) there's no scroll view to track, so we leave the interactions
+        // detached rather than pointing them at a dismissed tab's scroll view.
+        guard let scrollView = currentTab?.webView?.scrollView else { return }
+
+        func attach(to view: UIView, onEdge edge: UIRectEdge) -> UIInteraction {
             let interaction = UIScrollEdgeElementContainerInteraction()
-            interaction.scrollView = currentTab?.webView?.scrollView
-            assert(interaction.scrollView != nil)
+            interaction.scrollView = scrollView
             interaction.edge = edge
             view.addInteraction(interaction)
             return interaction
         }
 
         if appSettings.currentAddressBarPosition == .top {
-            topBarInteraction = attachToWebView(omniBar.barView, onEdge: .top)
-            topCapsuleInteraction = attachToWebView(floatingDomainCapsuleController.button, onEdge: .top)
+            topBarInteraction = attach(to: omniBar.barView, onEdge: .top)
+            topCapsuleInteraction = attach(to: floatingDomainCapsuleController.button, onEdge: .top)
         } else {
-            bottomCapsuleInteraction = attachToWebView(floatingDomainCapsuleController.button, onEdge: .bottom)
+            bottomCapsuleInteraction = attach(to: floatingDomainCapsuleController.button, onEdge: .bottom)
         }
-        bottomBarInteraction = attachToWebView(viewCoordinator.toolbar, onEdge: .bottom)
+        bottomBarInteraction = attach(to: viewCoordinator.toolbar, onEdge: .bottom)
     }
 
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {

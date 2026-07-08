@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check-and-update:
-    runs-on: macos-15
+    runs-on: macos-26
     env:
       # Feature owners (GitHub handles, space-separated). Used for PR reviewers and Asana assignee.
       SPARKLE_OWNERS: "diegoreymendez jotaemepereira"

@@ -25,4 +25,5 @@ public extension NSNotification.Name {
     static let aiChatVoiceSessionEnded: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceSessionEnded")
     static let aiChatNewImageGenerationChatStarted: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.newImageGenerationChatStarted")
     static let aiChatShowModelPicker: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.showModelPicker")
+    static let aiChatCustomizeResponsesModalClosed: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.customizeResponsesModalClosed")
 }

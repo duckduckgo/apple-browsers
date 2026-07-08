@@ -155,6 +155,9 @@ protocol AIChatUserScriptHandling: AnyObject {
     /// Posted by Duck.ai when `getUserMedia()` rejects while starting dictation. Mirrors
     /// `voiceChatStartFailed` but surfaces dictation-specific remediation copy.
     @MainActor func dictationStartFailed(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    /// Posted by the native-customize-modal placement when the user dismisses the Customize Responses card.
+    @MainActor func customizeResponsesModalClosed(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -883,6 +886,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         // handled. The carried `reason` drives the same OS-mic-denied check as voice chat;
         // only the remediation copy differs.
         voiceChatFailureHandler.handleDictationStartFailed(reason: Self.failureReason(from: params), sourceWebView: message.messageWebView)
+        return nil
+    }
+
+    @MainActor
+    func customizeResponsesModalClosed(params: Any, message: UserScriptMessage) async -> Encodable? {
+        notificationCenter.post(name: .aiChatCustomizeResponsesModalClosed, object: message.messageWebView)
         return nil
     }
 

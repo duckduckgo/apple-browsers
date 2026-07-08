@@ -270,13 +270,24 @@ final class MainWindowController: NSWindowController {
 
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
+    private var didMoveTabBarForFireAnimation = false
 
     private func subscribeToBurningData() {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher
             .dropFirst()
             .removeDuplicates()
             .sink { [weak self] burningData in
-                self?.moveTabBarView(toTitlebarView: burningData == nil)
+                guard let self else { return }
+                // The tab bar is only moved out of the titlebar so the fire animation can cover it.
+                // Site-level burns (e.g. from the New Tab Page) don't play the animation, so leave the
+                // tab bar in place to avoid a flash from needlessly reparenting it.
+                if let burningData, burningData.shouldPlayFireAnimation(decider: fireViewModel.fire.visualizeFireAnimationDecider) {
+                    moveTabBarView(toTitlebarView: false)
+                    didMoveTabBarForFireAnimation = true
+                } else if burningData == nil, didMoveTabBarForFireAnimation {
+                    moveTabBarView(toTitlebarView: true)
+                    didMoveTabBarForFireAnimation = false
+                }
             }
     }
 

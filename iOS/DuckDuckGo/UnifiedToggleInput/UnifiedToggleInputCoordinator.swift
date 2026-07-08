@@ -309,6 +309,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState == .contextualChat
     }
 
+    var isDuckAISurfaceForAttribution: Bool {
+        isAITabState || isContextualChatState
+    }
+
     /// True when the current display state corresponds to the expanded card layout.
     /// Synchronous (driven by `displayState`) so it's safe to read before the deferred
     /// `applyCardLayout` runs from the intent handler.
@@ -526,6 +530,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             boundUserScript = userScript
             userScript.inputBoxHandler = self
             syncChipVisibility(hasExistingChat: hasExistingChat)
+            refreshToolsPresentation()
             return
         }
         let hadPreviousScript = boundUserScriptIdentifier != nil
@@ -537,6 +542,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             resetSessionState()
         }
         syncChipVisibility(hasExistingChat: hasExistingChat)
+        refreshToolsPresentation()
     }
 
     func unbind() {
@@ -1504,7 +1510,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             requiredTier: requiredPublicTier,
             userTier: subscriptionState.userTier,
             source: .modelPicker,
-            isAITabState: isAITabState
+            isAITabState: isDuckAISurfaceForAttribution
         )
     }
 
@@ -1594,13 +1600,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func fireModelPickerShown() {
         Pixel.fire(pixel: .unifiedToggleInputModelPickerShown, withAdditionalParameters: [
-            AttributionParameter.origin: UnifiedToggleInputCoordinatorPixelHelper.measurementOrigin(for: .modelPicker, isAITabState: isAITabState).rawValue
+            AttributionParameter.origin: UnifiedToggleInputCoordinatorPixelHelper.measurementOrigin(for: .modelPicker, isAITabState: isDuckAISurfaceForAttribution).rawValue
         ])
     }
 
     private func fireReasoningPickerShown() {
         Pixel.fire(pixel: .unifiedToggleInputReasoningEffortPickerShown, withAdditionalParameters: [
-            AttributionParameter.origin: UnifiedToggleInputCoordinatorPixelHelper.measurementOrigin(for: .reasoningPicker, isAITabState: isAITabState).rawValue
+            AttributionParameter.origin: UnifiedToggleInputCoordinatorPixelHelper.measurementOrigin(for: .reasoningPicker, isAITabState: isDuckAISurfaceForAttribution).rawValue
         ])
     }
     
@@ -1618,7 +1624,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             requiredTier: requiredPublicTier,
             userTier: subscriptionState.userTier,
             source: .reasoningPicker,
-            isAITabState: isAITabState
+            isAITabState: isDuckAISurfaceForAttribution
         )
     }
 
@@ -2535,7 +2541,7 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.aiVoiceChatButtonTappedPublisher
             .sink { [weak self] in
                 guard let self else { return }
-                let source = self.isAITabState ? "duck_ai" : "ntp"
+                let source = self.isDuckAISurfaceForAttribution ? "duck_ai" : "ntp"
                 DailyPixel.fireDailyAndCount(
                     pixel: .unifiedToggleInputVoiceTapped,
                     withAdditionalParameters: ["source": source]

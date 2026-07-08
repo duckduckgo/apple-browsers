@@ -491,6 +491,7 @@ final class AIChatContextualChatSessionState {
         }
 
         chipState = .placeholder
+        latestContext = nil
         userDowngradedToPlaceholder = false
         rebuildViewState()
         Logger.aiChat.debug("[SessionState] Cleared stale pre-submit manual context on sheet present")

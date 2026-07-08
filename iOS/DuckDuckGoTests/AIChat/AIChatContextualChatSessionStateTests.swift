@@ -420,6 +420,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         XCTAssertTrue(didClear)
         XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertNil(sessionState.latestContext)
         XCTAssertFalse(sessionState.userDowngradedToPlaceholder)
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }

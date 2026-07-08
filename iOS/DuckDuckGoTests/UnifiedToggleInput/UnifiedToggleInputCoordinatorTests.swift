@@ -71,6 +71,19 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.hasActiveChat)
     }
 
+    func test_contextualChat_isDuckAISurfaceForAttributionButNotAITab() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+
+        XCTAssertFalse(sut.isAITabState)
+        XCTAssertTrue(sut.isDuckAISurfaceForAttribution)
+    }
+
     // MARK: - Display State: showCollapsed
 
     func test_showCollapsed_setsDisplayState() {
@@ -1344,6 +1357,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
 
         _ = sut.prepareExternalPromptSubmission()
+        XCTAssertFalse(toolsMenuActions().map(\.title).contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
         sut.bindToTab(makeBridgeReadyUserScript(), hasExistingChat: true)
 
         let actionTitles = toolsMenuActions().map(\.title)

@@ -102,22 +102,23 @@ final class CustomizeResponsesModalController: NSObject {
             return nil
         }
 
-        // Tie the modal's lifetime to the parent: dismiss when it closes, and keep the scrim covering
-        // it if it moves or resizes.
+        // Tie the modal's lifetime to the parent: dismiss when it closes; re-cover it on resize
+        // (moves are handled automatically by the child-window attachment below).
         NotificationCenter.default.publisher(for: NSWindow.willCloseNotification, object: parentWindow)
             .sink { [weak self] _ in self?.dismiss() }
             .store(in: &parentCancellables)
-        Publishers.Merge(
-            NotificationCenter.default.publisher(for: NSWindow.didResizeNotification, object: parentWindow),
-            NotificationCenter.default.publisher(for: NSWindow.didMoveNotification, object: parentWindow)
-        )
-        .sink { [weak self] _ in
-            guard let self, let parentWindow = self.parentWindow else { return }
-            self.modalWindow?.setFrame(parentWindow.frame, display: true)
-        }
-        .store(in: &parentCancellables)
+        NotificationCenter.default.publisher(for: NSWindow.didResizeNotification, object: parentWindow)
+            .sink { [weak self] _ in
+                guard let self, let parentWindow = self.parentWindow else { return }
+                self.modalWindow?.setFrame(parentWindow.frame, display: true)
+            }
+            .store(in: &parentCancellables)
 
         window.setFrame(coverFrame, display: true)
+        // Attach as a child window so it stays ordered above the parent — otherwise, on app
+        // re-activation part of the parent composites in front of the scrim (un-dimmed band) — and
+        // follows the parent as it moves.
+        parentWindow.addChildWindow(window, ordered: .above)
         window.makeKeyAndOrderFront(nil)
     }
 
@@ -139,6 +140,7 @@ final class CustomizeResponsesModalController: NSObject {
         tab.webView.uiDelegate = nil
         webViewContainer?.removeFromSuperview()
         webViewContainer = nil
+        parentWindow?.removeChildWindow(window)
         window.orderOut(nil)
         modalWindow = nil
 

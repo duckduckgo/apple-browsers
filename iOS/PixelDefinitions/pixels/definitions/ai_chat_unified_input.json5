@@ -70,6 +70,21 @@
             }
         ]
     },
+    "m_aichat_unified_input_model_picker_shown": {
+        "description": "Fires when the user opens the Unified Toggle Input model picker by tapping the model chip.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Origin value for the model picker impression.",
+                "type": "string",
+                "enum": ["funnel_addressbar_ios__modelpicker", "funnel_duckai_ios__modelpicker"]
+            }
+        ]
+    },
     "m_aichat_unified_input_reasoning_effort_selected": {
         "description": "Fires when the user selects a reasoning effort level in the Unified Toggle Input reasoning picker. Does not fire for gated/rejected selections.",
         "owners": ["pikorddg"],
@@ -82,6 +97,21 @@
                 "description": "The reasoning effort level selected.",
                 "type": "string",
                 "enum": ["fast", "reasoning", "extended_reasoning"]
+            }
+        ]
+    },
+    "m_aichat_unified_input_reasoning_effort_picker_shown": {
+        "description": "Fires when the user opens the Unified Toggle Input reasoning effort picker by tapping the reasoning button.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Origin value for the reasoning effort picker impression.",
+                "type": "string",
+                "enum": ["funnel_addressbar_ios__reasoningpicker", "funnel_duckai_ios__reasoningpicker"]
             }
         ]
     },
@@ -188,6 +218,17 @@
                 "description": "Type of subscription flow.",
                 "type": "string",
                 "enum": ["purchase", "upgrade"]
+            },
+            {
+                "key": "origin",
+                "description": "Origin value for the gated model or reasoning picker upsell.",
+                "type": "string",
+                "enum": [
+                    "funnel_addressbar_ios__modelpicker",
+                    "funnel_addressbar_ios__reasoningpicker",
+                    "funnel_duckai_ios__modelpicker",
+                    "funnel_duckai_ios__reasoningpicker"
+                ]
             }
         ]
     },

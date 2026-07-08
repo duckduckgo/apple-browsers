@@ -35,6 +35,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var clearCallCount = 0
         var clearAttachedContextCallCount = 0
         var resubscribeCallCount = 0
+        var onTriggerContextCollection: (() -> Void)?
 
         private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
         var contextPublisher: AnyPublisher<AIChatPageContext?, Never> {
@@ -47,6 +48,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         func triggerContextCollection() -> Bool {
             triggerContextCollectionCallCount += 1
+            onTriggerContextCollection?()
             return triggerContextCollectionReturnValue
         }
 
@@ -133,6 +135,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     private var mockPageContextHandler: MockPageContextHandler!
     private var contentBlockingSubject: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>!
     private var originatingTabURLSubject: CurrentValueSubject<URL?, Never>!
+    private var didFinishTabURLSubject: CurrentValueSubject<URL?, Never>!
     private var cancellables: Set<AnyCancellable>!
 
     // MARK: - Setup
@@ -146,6 +149,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockPageContextHandler = MockPageContextHandler()
         contentBlockingSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
         originatingTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
+        didFinishTabURLSubject = CurrentValueSubject<URL?, Never>(nil)
         sut = AIChatContextualSheetCoordinator(
             voiceSearchHelper: MockVoiceSearchHelper(),
             aiChatSettings: mockSettings,
@@ -157,7 +161,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             pageContextHandler: mockPageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(
                 originating: originatingTabURLSubject.eraseToAnyPublisher(),
-                didFinish: PassthroughSubject<URL?, Never>().eraseToAnyPublisher()
+                didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
             )
         )
         mockDelegate = MockDelegate()
@@ -177,6 +181,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockPageContextHandler = nil
         contentBlockingSubject = nil
         originatingTabURLSubject = nil
+        didFinishTabURLSubject = nil
         cancellables = nil
         super.tearDown()
     }
@@ -265,6 +270,40 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
     }
 
+    @MainActor
+    func testPresentExistingSheetDoesNotCollectSameAttachedURLAfterSubmit() async {
+        let pageURL = URL(string: "https://example.com/page-a")!
+        originatingTabURLSubject.send(pageURL)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.updateContext(makeTestContext(title: "Page A", url: pageURL.absoluteString))
+        sut.sessionState.beginChatForUTISubmission()
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        sut.aiChatContextualSheetViewControllerDidDismiss(sut.sheetViewController!)
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+    }
+
+    @MainActor
+    func testNotifyPageChangedStillCollectsSameURLAfterSubmit() async {
+        let pageURL = URL(string: "https://example.com/page-a")!
+        originatingTabURLSubject.send(pageURL)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.updateContext(makeTestContext(title: "Page A", url: pageURL.absoluteString))
+        sut.sessionState.beginChatForUTISubmission()
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        sut.aiChatContextualSheetViewControllerDidDismiss(sut.sheetViewController!)
+        await sut.notifyPageChanged()
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
     // MARK: - Delegate Forwarding Tests
 
     @MainActor
@@ -321,6 +360,59 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testDidFinishURLPublisherTriggersCollectionWhenAutoAttachEnabled() async {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        didFinishTabURLSubject.send(URL(string: "https://example.com/page-b")!)
+        await Task.yield()
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    @MainActor
+    func testDidFinishURLPublisherInitialReplayDoesNotDuplicateCollectionWhenSheetOpens() async {
+        sut = nil
+        mockPageContextHandler = MockPageContextHandler()
+        originatingTabURLSubject = CurrentValueSubject<URL?, Never>(URL(string: "https://example.com/page-a")!)
+        didFinishTabURLSubject = CurrentValueSubject<URL?, Never>(URL(string: "https://example.com/page-a")!)
+        sut = AIChatContextualSheetCoordinator(
+            voiceSearchHelper: MockVoiceSearchHelper(),
+            aiChatSettings: mockSettings,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: contentBlockingSubject.eraseToAnyPublisher(),
+            featureDiscovery: MockFeatureDiscovery(),
+            featureFlagger: mockFeatureFlagger,
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            pageContextHandler: mockPageContextHandler,
+            tabURLPublishers: AIChatTabURLPublishers(
+                originating: originatingTabURLSubject.eraseToAnyPublisher(),
+                didFinish: didFinishTabURLSubject.eraseToAnyPublisher()
+            )
+        )
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        await sut.presentSheet(from: mockPresentingVC)
+        await Task.yield()
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    @MainActor
+    func testNotifyPageChangedTriggersCollectionAfterUserRemoveWhenAutoAttachEnabled() async {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext())
+        sut.aiChatContextualSheetViewControllerDidRequestRemoveChip(sut.sheetViewController!)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        await sut.notifyPageChanged()
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    @MainActor
     func testNotifyPageChangedDoesNotTriggerCollectionWhenAutoAttachDisabled() async {
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
@@ -341,7 +433,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testRemoveChipRequestClearsAttachedContextFromHandler() async {
+    func testRemoveChipRequestClearsHandler() async {
         mockSettings.isAutomaticContextAttachmentEnabled = true
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.sendContext(makeTestContext())
@@ -349,7 +441,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         sut.aiChatContextualSheetViewControllerDidRequestRemoveChip(sut.sheetViewController!)
 
         XCTAssertEqual(sut.sessionState.chipState, .placeholder)
-        XCTAssertEqual(mockPageContextHandler.clearAttachedContextCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.clearCallCount, 1)
     }
 
     // MARK: - Session Timer Tests
@@ -370,7 +462,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var receivedNullPush = false
         sut.sessionState.effects
             .sink { effect in
-                if case .pushContextToFrontend(let data) = effect, data == nil {
+                if case .deliverPageContext(let data, let targets) = effect, data == nil, targets == .frontendBridge {
                     receivedNullPush = true
                 }
             }
@@ -395,7 +487,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var receivedPush = false
         sut.sessionState.effects
             .sink { effect in
-                if case .pushContextToFrontend = effect {
+                if case .deliverPageContext = effect {
                     receivedPush = true
                 }
             }
@@ -427,7 +519,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var receivedPush = false
         sut.sessionState.effects
             .sink { effect in
-                if case .pushContextToFrontend = effect {
+                if case .deliverPageContext = effect {
                     receivedPush = true
                 }
             }
@@ -456,7 +548,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var receivedPush = false
         sut.sessionState.effects
             .sink { effect in
-                if case .pushContextToFrontend = effect {
+                if case .deliverPageContext = effect {
                     receivedPush = true
                 }
             }
@@ -467,6 +559,149 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         // Then - no null signal sent (sheet not visible)
         XCTAssertFalse(receivedPush)
+    }
+
+    @MainActor
+    func testImmediateUTINotifyPageChangedSendsAttachAffordanceWhenSheetDismissedButRetained() async {
+        // Given - immediate UTI keeps a persistent host while the sheet is dismissed
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.beginChatForUTISubmission()
+
+        sut.aiChatContextualSheetViewControllerDidDismiss(sut.sheetViewController!)
+        XCTAssertTrue(sut.hasActiveSheet)
+        XCTAssertFalse(sut.isSheetPresented)
+
+        var receivedTargets: PageContextDeliveryTargets?
+        sut.sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(let context, let targets) = effect, context == nil {
+                    receivedTargets = targets
+                }
+            }
+            .store(in: &cancellables)
+
+        // When - navigate while the immediate UTI sheet is dismissed
+        await sut.notifyPageChanged()
+
+        // Then - remember that the next sheet presentation should offer manual attach
+        XCTAssertTrue(receivedTargets?.contains(.utiAttachAffordance) == true)
+        XCTAssertTrue(receivedTargets?.contains(.utiChip) == false)
+    }
+
+    @MainActor
+    func testImmediateUTINavigationUsesNotifyPageChangedPath() async {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        sut.sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        originatingTabURLSubject.send(URL(string: "https://example.com/did-commit"))
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+
+        await sut.notifyPageChanged()
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    @MainActor
+    func testImmediateUTIDoesNotAutoCollectBeforeNavigationAfterPreSubmitOptOut() async {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        let pageURL = URL(string: "https://example.com")!
+
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
+        sut.sessionState.downgradeToPlaceholder()
+        mockPageContextHandler.clearCallCount = 0
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(mockPageContextHandler.clearCallCount, 0)
+    }
+
+    @MainActor
+    func testImmediateUTIAutoCollectsOnNavigationAfterPreSubmitOptOut() async {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        let pageURL = URL(string: "https://example.com")!
+
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
+        sut.sessionState.downgradeToPlaceholder()
+        mockPageContextHandler.clearCallCount = 0
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        await sut.notifyPageChanged()
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.clearCallCount, 0)
+    }
+
+    @MainActor
+    func testImmediateUTIAutoCollectsOnReloadAfterPreSubmitOptOut() async {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        let pageURL = URL(string: "https://example.com")!
+
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
+        sut.sessionState.downgradeToPlaceholder()
+        mockPageContextHandler.clearCallCount = 0
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        await sut.notifyPageChanged()
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.clearCallCount, 0)
+    }
+
+    @MainActor
+    func testNotifyPageChangedAutoCollectsWhenImmediateUTISheetIsDismissed() async {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .multiplePageContexts]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.sessionState.beginChatForUTISubmission()
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        sut.aiChatContextualSheetViewControllerDidDismiss(sut.sheetViewController!)
+        XCTAssertTrue(sut.hasActiveSheet)
+        XCTAssertFalse(sut.isSheetPresented)
+
+        await sut.notifyPageChanged()
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    @MainActor
+    func testBaseUTIAvailableWithoutContextualFlagUsesLegacyNavigationPath() async {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = []
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        await sut.presentSheet(from: mockPresentingVC)
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
+
+        originatingTabURLSubject.send(URL(string: "https://example.com/finished"))
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+
+        await sut.notifyPageChanged()
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
+    }
+
+    @MainActor
+    func testBaseUTIAvailableWithoutContextualFlagStillEnablesUTIChipDelivery() async {
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertTrue(sut.sessionState.shouldDeliverToUTIChip(makeTestContext().contextData))
     }
 
     // MARK: - Double Present Guard Tests
@@ -522,11 +757,11 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeTestContext(title: String = "Test Page") -> AIChatPageContext {
+    private func makeTestContext(title: String = "Test Page", url: String = "https://example.com") -> AIChatPageContext {
         let contextData = AIChatPageContextData(
             title: title,
             favicon: [],
-            url: "https://example.com",
+            url: url,
             content: "Test content",
             truncated: false,
             fullContentLength: 12

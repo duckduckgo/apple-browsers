@@ -20,6 +20,7 @@
 import AIChat
 import Core
 import Foundation
+import Subscription
 
 private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
     case webSearch = "web_search"
@@ -92,16 +93,31 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         source: SubscriptionFlowSource,
         currentTier: AIChatUserTier,
         requiredTier: AIChatModelPublicAccessTier,
-        flowType: UpsellFlowType
+        flowType: UpsellFlowType,
+        isAITabState: Bool
     ) {
         Pixel.fire(pixel: .unifiedToggleInputSubscriptionUpsellTriggered,
                    withAdditionalParameters: [
                     "source": source == .modelPicker ? "model_picker" : "reasoning_picker",
                     "current_tier": currentTier.rawValue,
                     "required_tier": requiredTier == .pro ? "pro" : "plus",
-                    "flow_type": flowType.rawValue
+                    "flow_type": flowType.rawValue,
+                    AttributionParameter.origin: measurementOrigin(for: source, isAITabState: isAITabState).rawValue
                    ]
         )
+    }
+
+    static func measurementOrigin(for source: SubscriptionFlowSource, isAITabState: Bool) -> SubscriptionFunnelOrigin {
+        switch (isAITabState, source) {
+        case (true, .modelPicker):
+            return .duckAIModelPicker
+        case (true, .reasoningPicker):
+            return .duckAIReasoningPicker
+        case (false, .modelPicker):
+            return .addressBarModelPicker
+        case (false, .reasoningPicker):
+            return .addressBarReasoningPicker
+        }
     }
 
     static func fireToolSelectedPixel(for tool: AIChatRAGTool) {

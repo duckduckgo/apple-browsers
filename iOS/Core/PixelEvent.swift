@@ -151,6 +151,16 @@ extension Pixel {
         case settingsAutoconsentOn
         case settingsAutoconsentOff
 
+        case autoconsentSettingsShown
+        case autoconsentSettingsOn
+        case autoconsentSettingsOff
+        case autoconsentSettingsDefault
+        case autoconsentSettingsMax
+
+        case cookiePopupOptInShownFirst
+        case cookiePopupOptInShownRepeat
+        case cookiePopupOptInOptionConfirmed
+
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuOpenedError
@@ -1820,7 +1830,9 @@ extension Pixel {
         case unifiedToggleInputWebSearchSubmitted
         case unifiedToggleInputCustomizeResponsesSelected
         case unifiedToggleInputModelSelected
+        case unifiedToggleInputModelPickerShown
         case unifiedToggleInputReasoningEffortSelected
+        case unifiedToggleInputReasoningEffortPickerShown
         case unifiedToggleInputImageAttached
         case unifiedToggleInputImageRemoved
         case unifiedToggleInputFileAttached
@@ -2133,6 +2145,16 @@ extension Pixel.Event {
         case .settingsAutoconsentShown: return "m_settings_autoconsent_shown"
         case .settingsAutoconsentOn: return "m_settings_autoconsent_on"
         case .settingsAutoconsentOff: return "m_settings_autoconsent_off"
+
+        case .autoconsentSettingsShown: return "autoconsent_settings_shown"
+        case .autoconsentSettingsOn: return "autoconsent_settings_on"
+        case .autoconsentSettingsOff: return "autoconsent_settings_off"
+        case .autoconsentSettingsDefault: return "autoconsent_settings_default"
+        case .autoconsentSettingsMax: return "autoconsent_settings_max"
+
+        case .cookiePopupOptInShownFirst: return "cookie_popup_opt_in_shown_first"
+        case .cookiePopupOptInShownRepeat: return "cookie_popup_opt_in_shown_repeat"
+        case .cookiePopupOptInOptionConfirmed: return "cookie_popup_opt_in_option_confirmed"
 
         case .settingsPrivateSearchOpen: return "m_settings_private_search_open"
         case .settingsEmailProtectionOpen: return "m_settings_email_protection_open"
@@ -3714,7 +3736,9 @@ extension Pixel.Event {
         case .unifiedToggleInputWebSearchSubmitted: return "m_aichat_unified_input_web_search_submitted"
         case .unifiedToggleInputCustomizeResponsesSelected: return "m_aichat_unified_input_customize_responses_selected"
         case .unifiedToggleInputModelSelected: return "m_aichat_unified_input_model_selected"
+        case .unifiedToggleInputModelPickerShown: return "m_aichat_unified_input_model_picker_shown"
         case .unifiedToggleInputReasoningEffortSelected: return "m_aichat_unified_input_reasoning_effort_selected"
+        case .unifiedToggleInputReasoningEffortPickerShown: return "m_aichat_unified_input_reasoning_effort_picker_shown"
         case .unifiedToggleInputImageAttached: return "m_aichat_unified_input_image_attached"
         case .unifiedToggleInputImageRemoved: return "m_aichat_unified_input_image_removed"
         case .unifiedToggleInputFileAttached: return "m_aichat_unified_input_file_attached"

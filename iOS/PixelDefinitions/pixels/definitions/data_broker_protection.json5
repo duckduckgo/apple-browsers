@@ -502,8 +502,7 @@
             {
                 "key": "need_background_app_refresh",
                 "description": "Whether Background App Refresh is required for DBP on this device.",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },
@@ -860,9 +859,8 @@
             },
             {
                 "key": "feature.data.ext.scan.free_scan",
-                "type": "string",
-                "description": "Whether this scan attempt belongs to a free (unauthenticated) user",
-                "enum": ["true", "false"]
+                "type": "boolean",
+                "description": "Whether this scan attempt belongs to a free (unauthenticated) user"
             },
             {
                 "key": "feature.data.ext.scan.latency_ms",
@@ -940,8 +938,7 @@
             {
                 "key": "is_manual_scan",
                 "description": "Whether the scan was initiated manually by the user",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "vpn_connection_state",
@@ -978,8 +975,7 @@
             {
                 "key": "is_manual_scan",
                 "description": "Whether the scan was initiated manually by the user",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "vpn_connection_state",
@@ -1028,8 +1024,7 @@
             {
                 "key": "is_manual_scan",
                 "description": "Whether the scan was initiated manually by the user",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "vpn_connection_state",

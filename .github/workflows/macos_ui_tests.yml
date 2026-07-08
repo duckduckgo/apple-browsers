@@ -97,7 +97,7 @@ jobs:
       skip-notify: true
     secrets: inherit
 
-  # This job sets up the matrix strategy arguments for the ui-tests job
+  # This job sets up the matrix strategy arguments for the ui-tests jobs
   setup-tests:
     name: Set up tests list
     runs-on: macos-26
@@ -111,7 +111,11 @@ jobs:
       test: ${{ steps.list-tests.outputs.test }}
       all-os-versions: ${{ steps.define-runners.outputs.all-os-versions }}
       start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-      user-modes: ${{ steps.define-user-modes.outputs.user-modes }}
+      # The UI Tests matrix runs each user mode as a separate job (ui-tests-production /
+      # ui-tests-internal) so that a single matrix never exceeds GitHub's 256-configuration limit.
+      # Each flag says whether that mode was requested; the matching job is skipped when it is false.
+      run-production: ${{ steps.define-user-modes.outputs.run-production }}
+      run-internal: ${{ steps.define-user-modes.outputs.run-internal }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -166,8 +170,14 @@ jobs:
               user_modes='["production"]'
               ;;
           esac
-          echo "user-modes=${user_modes}" >> $GITHUB_OUTPUT
-          echo "Resolved user-modes: ${user_modes}"
+          # Each user mode runs as its own job (ui-tests-production / ui-tests-internal). Running
+          # both in a single matrix would produce more configs than GitHub's 256 limit, so they are split;
+          # each job is gated on whether its mode was requested.
+          run_production=$(jq -r 'any(.[]; . == "production")' <<< "$user_modes")
+          run_internal=$(jq -r 'any(.[]; . == "internal")' <<< "$user_modes")
+          echo "run-production=${run_production}" >> $GITHUB_OUTPUT
+          echo "run-internal=${run_internal}" >> $GITHUB_OUTPUT
+          echo "Resolved user modes: ${user_modes} (production=${run_production}, internal=${run_internal})"
 
       - name: List tests
         id: list-tests
@@ -209,373 +219,58 @@ jobs:
 
           echo "test=${test}" >> $GITHUB_OUTPUT
 
-  ui-tests:
-    name: ${{ matrix.test }} (macOS ${{ matrix.os-version }}${{ matrix.user-mode == 'internal' && ' / internal' || '' }})
+  # UI Tests run as two jobs, one per user mode, each calling the reusable macos_run_ui_test.yml
+  # helper once per (runner x test) combination. Both modes in a single matrix would exceed GitHub's
+  # 256-configuration limit.
+  # Each job runs only when its mode was requested (production by default; internal for
+  # user_modes=internal/both and the scheduled run). Internal-mode failures stay non-gating via
+  # continue-on-error inside the helper's job.
+  ui-tests-production:
+    name: UI Tests
     needs: [create-notarized-app, setup-tests]
-    runs-on: ${{ matrix.runner }}
+    if: needs.setup-tests.outputs.run-production == 'true'
     strategy:
       fail-fast: false
       matrix:
         runner: ${{ fromJSON(needs.setup-tests.outputs.runner) }}
         test: ${{ fromJSON(needs.setup-tests.outputs.test) }}
-        user-mode: ${{ fromJSON(needs.setup-tests.outputs.user-modes) }}
         include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
+    uses: ./.github/workflows/macos_run_ui_test.yml
+    with:
+      runner: ${{ matrix.runner }}
+      os-version: ${{ matrix.os-version }}
+      xcode-version: ${{ matrix.xcode-version }}
+      test: ${{ matrix.test }}
+      user-mode: production
+      build-type: ${{ inputs.build-type || 'dmg' }}
+      branch: ${{ inputs.branch || github.sha }}
+    secrets: inherit
 
-    continue-on-error: ${{ matrix.user-mode == 'internal' }}
-
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}-${{ matrix.user-mode }}-${{ inputs.build-type }}
-      cancel-in-progress: true
-
-    timeout-minutes: 120
-
-    env:
-      scheme: ${{ inputs.build-type == 'appstore' && 'macOS UI Tests App Store CI' || 'macOS UI Tests CI' }}
-      app-name: ${{ inputs.build-type == 'appstore' && 'DuckDuckGo App Store Review' || 'DuckDuckGo Review' }}
-      app-bundle-id: ${{ inputs.build-type == 'appstore' && 'com.duckduckgo.mobile.ios.review' || 'com.duckduckgo.macos.browser.review' }}
-      release-type: ${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}
-      extra-xcargs: ${{ inputs.build-type == 'appstore' && 'UI_TESTS_TARGET_APP=sandbox' || '' }}
-
-    steps:
-    - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
-      with:
-        ssh-private-key: |
-          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
-
-    - name: Check out the code
-      uses: actions/checkout@v6
-      with:
-        ref: ${{ inputs.branch || github.sha }}
-
-    - name: Initialize submodules with retry
-      run: |
-        max_attempts=3
-        retry_delay=15
-        for attempt in $(seq 1 $max_attempts); do
-          echo "Submodule init attempt $attempt of $max_attempts"
-          if git submodule update --init --recursive; then
-            echo "Submodules initialized successfully"
-            exit 0
-          fi
-          if [[ $attempt -lt $max_attempts ]]; then
-            echo "Failed, retrying in ${retry_delay}s..."
-            sleep $retry_delay
-          fi
-        done
-        echo "All submodule init attempts failed"
-        exit 1
-
-    - name: Install screenresolution
-      if: matrix.os-version != '14'
-      run: brew install screenresolution
-
-    - name: Change screen resolution
-      if: matrix.os-version != '14'
-      run: screenresolution set 1920x1080x32@60
-
-    - name: Setup Ruby and dependencies
-      uses: ./.github/actions/setup-ruby
-      with:
-        working-directory: macOS
-        cache-key-prefix: macos-ruby
-
-    - name: Create Default Keychain
-      run: bundle exec fastlane create_keychain_ui_tests
-
-    - name: Sync code signing assets
-      id: sync-signing-first-attempt
-      continue-on-error: true
-      env:
-        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-      run: |
-        bundle exec fastlane sync_signing_ci
-
-    - name: Retry sync code signing assets
-      if: steps.sync-signing-first-attempt.outcome == 'failure'
-      env:
-        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-      run: |
-        echo "First attempt to sync code signing assets failed. Retrying..."
-        bundle exec fastlane sync_signing_ci
-
-    - name: Download and unzip artifact
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        max_attempts=3
-        retry_delay=10
-
-        for attempt in $(seq 1 $max_attempts); do
-          echo "Attempt $attempt of $max_attempts"
-          rm -rf build-download-temp
-          mkdir build-download-temp
-          if gh run download "${{ github.run_id }}" --dir build-download-temp; then
-            echo "Download successful"
-            mv build-download-temp/* .
-            rm -rf build-download-temp
-            exit 0
-          fi
-          rm -rf build-download-temp
-          if [[ $attempt -lt $max_attempts ]]; then
-            echo "Download failed, retrying in ${retry_delay}s..."
-            sleep $retry_delay
-            retry_delay=$((retry_delay * 2))
-          fi
-        done
-        echo "All download attempts failed"
-        exit 1
-
-    - name: Set cache key hash
-      run: |
-        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
-        if [[ "$has_only_tags" == "true" ]]; then
-          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
-        else
-          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
-        fi
-
-    - name: Cache SPM
-      if: env.cache_key_hash
-      uses: actions/cache@v4
-      with:
-        path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
-        restore-keys: |
-          ${{ runner.os }}-macos-
-
-    - name: Select Xcode
-      uses: ./.github/actions/select-xcode-version
-      with:
-        xcode-version: ${{ matrix.xcode-version }}
-
-    - name: Configure system logging
-      working-directory: SharedPackages/BrowserServicesKit
-      run: |
-        sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
-        sudo killall logd || true
-
-    - name: Start log stream in background
-      working-directory: macOS
-      run: |
-        log stream --debug --info --predicate 'process == "${{ env.app-name }}" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
-        echo $! > log_stream.pid
-
-    - name: Resolve package dependencies
-      working-directory: macOS
-      run: |
-        max_attempts=5
-        retry_delay=10
-
-        for attempt in $(seq 1 $max_attempts); do
-          echo "Attempt $attempt of $max_attempts"
-          if xcodebuild -resolvePackageDependencies \
-            -scheme "${{ env.scheme }}" \
-            -derivedDataPath DerivedData \
-            2>&1 | tee resolve.log; then
-            echo "Package resolution succeeded"
-            exit 0
-          fi
-
-          if [[ $attempt -lt $max_attempts ]]; then
-            echo "Package resolution failed (attempt $attempt), retrying in ${retry_delay}s..."
-            sleep $retry_delay
-          fi
-        done
-        echo "Package resolution failed after $max_attempts attempts"
-        exit 1
-
-    - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
-      with:
-        path: macOS/DerivedData/CompilationCache.noindex
-        key: xcode-compilation-cache-ui-tests
-        restore-keys: |
-          xcode-compilation-cache-ui-tests-
-
-    - name: Build for testing
-      working-directory: macOS
-      run: |
-        set -o pipefail && xcodebuild build-for-testing \
-          -scheme "${{ env.scheme }}" \
-          -derivedDataPath DerivedData \
-          -skipPackagePluginValidation \
-          -skipMacroValidation \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
-          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          ${{ env.extra-xcargs }} \
-        | tee xcodebuild.log \
-        | xcbeautify
-
-    - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main'
-      id: compilation-cache-hash
-      run: |
-        if [ -d "DerivedData/CompilationCache.noindex" ]; then
-          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
-          echo "hash=${hash}" >> $GITHUB_OUTPUT
-        else
-          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
-        fi
-
-    - name: Save Xcode Compilation Cache
-      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
-      with:
-        path: macOS/DerivedData/CompilationCache.noindex
-        key: xcode-compilation-cache-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
-
-    - name: Extract and Copy app to /DerivedData
-      working-directory: macOS
-      run: |
-        cd DuckDuckGo-${{ env.release-type }}-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
-
-        # Find the extracted app bundle and rename if needed
-        extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
-        if [[ -n "${extracted_app}" ]]; then
-          extracted_app_name=$(basename "${extracted_app}")
-          if [[ "${extracted_app_name}" != "${{ env.app-name }}.app" ]]; then
-            echo "Renaming extracted app from '${extracted_app_name}' to '${{ env.app-name }}.app'"
-            mv "${extracted_app}" "${{ env.app-name }}.app"
-          fi
-        fi
-
-        mv -f "${{ env.app-name }}.app" "../DerivedData/Build/Products/Review/${{ env.app-name }}.app"
-
-    - name: Run UI Tests
-      id: run-ui-tests
-      working-directory: macOS
-      run: |
-        defaults write ${{ env.app-bundle-id }} moveToApplicationsFolderAlertSuppress 1
-        set -o pipefail && xcodebuild test-without-building \
-          -scheme "${{ env.scheme }}" \
-          -derivedDataPath DerivedData \
-          -skipPackagePluginValidation \
-          -skipMacroValidation \
-          -test-iterations 2 \
-          -retry-tests-on-failure \
-          -test-repetition-relaunch-enabled YES \
-          '-only-testing:UI Tests/${{ matrix.test }}' \
-          ${{ env.extra-xcargs }} \
-          "TEST_RUNNER_INTERNAL_USER_MODE=${{ matrix.user-mode == 'internal' && 'true' || 'false' }}" \
-        | tee -a xcodebuild.log \
-        | tee ui-tests.log
-
-    - name: Stop log stream
-      if: always()
-      working-directory: macOS
-      run: |
-        if [ -f log_stream.pid ]; then
-          kill $(cat log_stream.pid) || true
-        fi
-
-    - name: Check for test failures
-      id: check-failures
-      if: always()
-      working-directory: macOS
-      run: |
-        if grep -Eq 'XCTAssert.*failed|Test Case.*failed|Testing failed:' ui-tests.log; then
-          echo "had_failures=true" >> $GITHUB_OUTPUT
-          echo "⚠️ Detected test failures in the log (may have passed on retry)"
-        else
-          echo "had_failures=false" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Prepare test report
-      id: prepare-test-report
-      if: always() && steps.run-ui-tests.outcome != 'skipped'
-      working-directory: macOS
-      run: |
-        test_id="${{ matrix.test }} (macOS ${{ matrix.os-version }}${{ matrix.user-mode == 'internal' && ' / internal' || '' }})"
-        file="${test_id}.xml"
-        echo "file=$file" >> $GITHUB_OUTPUT
-        xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
-        # Replace the default test suite name with the test id for better grouping in the test report
-        sed -i '' "s/Selected tests/${test_id}/" "$file"
-
-    # Upload test report as artifact for the test-report job
-    # that publishes a combined report for all test cases
-    - name: Upload test report
-      uses: actions/upload-artifact@v4
-      if: always() && steps.run-ui-tests.outcome != 'skipped'
-      with:
-        name: "testreport-${{ matrix.test }}-macos${{ matrix.os-version }}-${{ matrix.user-mode }}"
-        path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
-        retention-days: 1
-
-    - name: Upload xcresult files (passed on retry)
-      uses: actions/upload-artifact@v4
-      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
-      with:
-        name: "xcresult-${{ matrix.test }}-macos${{ matrix.os-version }}-${{ matrix.user-mode }}"
-        path: "macOS/DerivedData/Logs/Test/*.xcresult"
-        retention-days: 1
-
-    - name: Upload app console log (passed on retry)
-      uses: actions/upload-artifact@v4
-      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
-      with:
-        name: "app-console-${{ matrix.test }}-macos${{ matrix.os-version }}-${{ matrix.user-mode }}"
-        path: "macOS/app-console.log"
-        if-no-files-found: warn
-        retention-days: 1
-
-    - name: Mark user-mode failure
-      if: failure() || cancelled()
-      working-directory: ${{ github.workspace }}
-      run: |
-        mkdir -p failure-marker
-        echo "macos-ui:${{ matrix.user-mode }}:${{ matrix.test }}:${{ matrix.os-version }}" > failure-marker/marker.txt
-    - name: Upload failure marker
-      if: failure() || cancelled()
-      uses: actions/upload-artifact@v4
-      with:
-        name: failure-marker-macos-ui-${{ matrix.user-mode }}-${{ matrix.test }}-${{ matrix.os-version }}
-        path: failure-marker/
-        retention-days: 1
-
-    - name: Organize logs for upload
-      if: failure() || cancelled()
-      working-directory: macOS
-      run: |
-        echo "Current working directory: $(pwd)"
-
-        # Create staging directory with timestamp, OS version and failing test name
-        timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
-        archive_name="BuildLogs ${{ matrix.test }} (macOS ${{ matrix.os-version }}${{ matrix.user-mode == 'internal' && ' internal' || '' }}) ${timestamp}"
-        echo "Creating archive directory: $archive_name"
-        mkdir -p "$archive_name"
-
-        # locate and copy all files, flattening the structure with verbose output
-        cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
-        cp "app-console.log" "$archive_name/" || echo "No app-console.log found"
-        find DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
-        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/" || echo "No DiagnosticReports found"
-
-        # Store archive name for upload step
-        echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
-
-    - name: Upload logs when workflow failed
-      uses: actions/upload-artifact@v4
-      if: failure() || cancelled()
-      with:
-        name: "${{ env.ARCHIVE_NAME }}"
-        path: "macOS/${{ env.ARCHIVE_NAME }}"
-        retention-days: 7
+  ui-tests-internal:
+    name: UI Tests
+    needs: [create-notarized-app, setup-tests]
+    if: needs.setup-tests.outputs.run-internal == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(needs.setup-tests.outputs.runner) }}
+        test: ${{ fromJSON(needs.setup-tests.outputs.test) }}
+        include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
+    uses: ./.github/workflows/macos_run_ui_test.yml
+    with:
+      runner: ${{ matrix.runner }}
+      os-version: ${{ matrix.os-version }}
+      xcode-version: ${{ matrix.xcode-version }}
+      test: ${{ matrix.test }}
+      user-mode: internal
+      build-type: ${{ inputs.build-type || 'dmg' }}
+      branch: ${{ inputs.branch || github.sha }}
+    secrets: inherit
 
   test-report:
     name: Report test results
     if: always() && needs.should-run-checks.outputs.should_run == 'true'
-    needs: [should-run-checks, setup-tests, ui-tests]
+    needs: [should-run-checks, setup-tests, ui-tests-production, ui-tests-internal]
     runs-on: ubuntu-latest
 
     steps:
@@ -615,7 +310,7 @@ jobs:
   notify-failure:
     name: Notify on failure
     if: ${{ always() && github.event_name == 'schedule' }}
-    needs: [ui-tests]
+    needs: [ui-tests-production, ui-tests-internal]
     runs-on: ubuntu-latest
 
     steps:

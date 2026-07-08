@@ -26,8 +26,7 @@ import CoreGraphics
 enum SuggestionsListHeightCalculator {
 
     private enum Metrics {
-        /// `listTopInset` (6) per `SuggestionsListView`, top-bar only.
-        static let topContentInset: CGFloat = 6
+        static let verticalContentInset: CGFloat = 12
         /// `rowVerticalPaddingSingleLine` (15) ×2 + 24pt icon row.
         static let singleLineRowHeight: CGFloat = 54
         /// `rowVerticalPaddingWithSubtitle` (14) ×2 + title line + 21pt subtitle.
@@ -35,7 +34,7 @@ enum SuggestionsListHeightCalculator {
         /// `.listSectionSpacing(.compact)` gap between adjacent sections.
         static let interSectionSpacing: CGFloat = 10
         /// Slack below the last row so the rounded popover doesn't clip it.
-        static let bottomPadding: CGFloat = 12
+        static let bottomPadding: CGFloat = 6
     }
 
     static func height(for sections: [SuggestionSection], isAddressBarAtBottom: Bool) -> CGFloat {
@@ -45,9 +44,9 @@ enum SuggestionsListHeightCalculator {
             runningTotal + section.rows.reduce(CGFloat.zero) { $0 + rowHeight(for: $1) }
         }
         let spacing = CGFloat(max(0, sections.count - 1)) * Metrics.interSectionSpacing
-        let topInset = isAddressBarAtBottom ? 0 : Metrics.topContentInset
+        let verticalInsets = Metrics.verticalContentInset * 2
 
-        return rowsHeight + spacing + topInset + Metrics.bottomPadding
+        return rowsHeight + spacing + verticalInsets + Metrics.bottomPadding
     }
 
     private static func rowHeight(for row: SuggestionRow) -> CGFloat {

@@ -131,6 +131,9 @@ public final class AddressBarPerformanceCoordinator {
     public func markKeystroke() {
         cancelPendingHookStop()
         var keystrokeTime: TimeInterval?
+        // Optional-chain `NSApp?`, don't force-unwrap: `NSApp` is an IUO that is nil when no
+        // `NSApplication` has been created, e.g. under unit tests — `NSApp.currentEvent` would
+        // trap on every test run.
         if let event = NSApp?.currentEvent, event.type == .keyDown {
             keystrokeTime = event.timestamp
         }

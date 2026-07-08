@@ -236,7 +236,7 @@ private struct DotView: View {
 
 struct ShieldIconView: View {
     var body: some View {
-        Image(nsImage: DesignSystemImages.Color.Size16.shieldCheck)
+        Image(nsImage: DesignSystemImages.Color.Size24.shieldCheck)
             .resizable()
             .frame(width: 16, height: 16)
             .offset(x: 1)

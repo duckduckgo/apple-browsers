@@ -31,11 +31,13 @@ struct NetworkProtectionRootView: View {
     init() {
         let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
         let locationListRepository = NetworkProtectionLocationListCompositeRepository()
+        let tunnelController = AppDependencyProvider.shared.networkProtectionTunnelController
         _statusViewModel = StateObject(wrappedValue: NetworkProtectionStatusViewModel(
-            tunnelController: AppDependencyProvider.shared.networkProtectionTunnelController,
+            tunnelController: tunnelController,
             settings: AppDependencyProvider.shared.vpnSettings,
             statusObserver: AppDependencyProvider.shared.connectionObserver,
             serverInfoObserver: AppDependencyProvider.shared.serverInfoObserver,
+            controllerErrorPublisher: tunnelController.controllerErrorPublisher,
             locationListRepository: locationListRepository,
             enablesUnifiedFeedbackForm: subscriptionManager.isUserAuthenticated))
 

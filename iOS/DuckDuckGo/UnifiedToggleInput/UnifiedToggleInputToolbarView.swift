@@ -49,6 +49,8 @@ final class UnifiedToggleInputToolbarView: UIView {
     var onVoiceTapped: (() -> Void)?
     var onStopGeneratingTapped: (() -> Void)?
     var onReturnKeyTapped: (() -> Void)?
+    var onModelPickerShown: (() -> Void)?
+    var onReasoningPickerShown: (() -> Void)?
 
     // MARK: - State
 
@@ -125,6 +127,8 @@ final class UnifiedToggleInputToolbarView: UIView {
     /// otherwise.
     @discardableResult
     func presentModelPickerMenu() -> Bool {
+        guard modelPickerMenu != nil else { return false }
+
         if #available(iOS 17.4, *) {
             modelChipButton.performPrimaryAction()
             return true
@@ -219,6 +223,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         if #available(iOS 16.0, *) {
             button.preferredMenuElementOrder = .fixed
         }
+        button.addTarget(self, action: #selector(reasoningPickerShown), for: .touchDown)
         return button
     }()
 
@@ -252,6 +257,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         if #available(iOS 16.0, *) {
             button.preferredMenuElementOrder = .fixed
         }
+        button.addTarget(self, action: #selector(modelPickerShown), for: .touchDown)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setContentHuggingPriority(.defaultLow, for: .horizontal)
         button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -342,6 +348,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.accessibilityLabel = UserText.aiChatToolbarSubmitButtonAccessibilityLabel
+        button.accessibilityIdentifier = "AIChat.Toolbar.Button.Submit"
         button.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
@@ -524,6 +531,14 @@ private extension UnifiedToggleInputToolbarView {
 
     @objc private func selectedToolClearTapped() { onSelectedToolClearTapped?() }
     @objc private func returnKeyTapped() { onReturnKeyTapped?() }
+    @objc private func modelPickerShown() {
+        guard modelPickerMenu != nil else { return }
+        onModelPickerShown?()
+    }
+    @objc private func reasoningPickerShown() {
+        guard reasoningPickerMenu != nil else { return }
+        onReasoningPickerShown?()
+    }
     @objc private func submitTapped() {
         if isAIVoiceChatActive && !isSubmitEnabled {
             onVoiceTapped?()

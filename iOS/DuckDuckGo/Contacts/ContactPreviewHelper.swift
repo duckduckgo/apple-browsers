@@ -35,11 +35,16 @@ enum ContactCardFactory {
         contactViewController.contactStore = CNContactStore()
         contactViewController.allowsActions = true
         contactViewController.delegate = delegate
-        contactViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(
+        let cancelButton = UIBarButtonItem(
             barButtonSystemItem: .cancel,
             target: cancelTarget,
             action: cancelAction
         )
+        // Stable anchor for E2E tests: the system Contacts UI renders its content (name, fields) in
+        // a remote view whose accessibility is only intermittently captured, but this nav-bar button
+        // is app-owned and reliably exposed. Distinguishes the card from the browser omnibar's Cancel.
+        cancelButton.accessibilityIdentifier = "contactPreviewCancelButton"
+        contactViewController.navigationItem.leftBarButtonItem = cancelButton
         pixelFiring.fire(.vcardContactEditorPresented, withAdditionalParameters: [:])
         return UINavigationController(rootViewController: contactViewController)
     }

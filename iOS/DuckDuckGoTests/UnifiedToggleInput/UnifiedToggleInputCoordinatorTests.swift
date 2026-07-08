@@ -283,6 +283,27 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
     }
 
+    func test_duckAIWideEvent_recordsEffectiveModelId_onFollowUpPrompts() {
+        // Follow-ups previously dropped model_id by reusing the submission-config value.
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            switchBarSubmissionMetrics: mockSubmissionMetrics,
+            duckAIWideEventInstrumentation: instrumentation
+        )
+        coordinator.activateForTab("tab-A")
+        coordinator.modelStore.models = [makeModel(id: "gpt-5", access: true)]
+
+        coordinator.unifiedToggleInputVC(coordinator.viewController, didSubmitText: "first prompt", mode: .aiChat)
+        coordinator.unifiedToggleInputVC(coordinator.viewController, didSubmitText: "follow-up", mode: .aiChat)
+
+        XCTAssertEqual(instrumentation.submissionStartedModelIds, ["gpt-5", "gpt-5"],
+                       "Both the first and follow-up prompts should record the effective model id in the wide event")
+    }
+
     func test_hide_clearsRecoveryBlock() {
         sut.isSubmitBlockedByRecoveryCard = true
         sut.hide()
@@ -3624,6 +3645,7 @@ final class MockSwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding 
 @MainActor
 private final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
     private(set) var submissionStartedScopes: [DuckAIWideEventFlowScope] = []
+    private(set) var submissionStartedModelIds: [String?] = []
     private(set) var tabSwitchedAwayCalls: [TabUID] = []
     private(set) var promptInterpretedAsURLScopes: [DuckAIWideEventFlowScope] = []
 
@@ -3640,6 +3662,7 @@ private final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumen
                            toolsSelected: Bool,
                            attachmentsSelected: Bool) {
         submissionStartedScopes.append(scope)
+        submissionStartedModelIds.append(modelId)
     }
     func promptDeliveryUpdated(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?) {}
     func frontendSubmissionAcknowledged(scope: DuckAIWideEventFlowScope) {}

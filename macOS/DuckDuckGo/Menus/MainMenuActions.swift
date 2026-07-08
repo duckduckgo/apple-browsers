@@ -578,6 +578,12 @@ extension AppDelegate {
     }
 
     @objc func debugResetContinueSetup(_ sender: Any?) {
+        homePageSetUpDependencies.clearAll()
+
+        NewTabPageNextStepsCardsDebugPersistor().debugVisibleCards = []
+
+        NotificationCenter.default.post(name: .nextStepsCardsDebugDidReset, object: nil)
+
         let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
         persistor.continueSetUpCardsLastDemonstrated = nil
         persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
@@ -588,7 +594,8 @@ extension AppDelegate {
         duckPlayer.preferences.youtubeOverlayAnyButtonPressed = false
         duckPlayer.preferences.duckPlayerMode = .alwaysAsk
         UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
-        homePageSetUpDependencies.clearAll()
+
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
     @MainActor
@@ -911,7 +918,7 @@ extension AppDelegate {
             throw error
         }
         if let configurationUrl {
-            Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
+            Logger.config.debug("New configuration URL set to \(configurationUrl.shortDescription)")
         } else {
             Logger.config.log("New configuration URL reset to default")
         }
@@ -1494,6 +1501,15 @@ extension MainViewController {
         browserTabViewController.openNewTab(with: .url(.favicons, source: .ui))
     }
 
+    @objc func debugShowCookiePopupProtectionOptInDialog(_ sender: Any?) {
+        browserTabViewController.showCookiePopupProtectionOptInDialog()
+    }
+
+    @objc func debugResetCookiePopupProtectionOptInLaunchFlag(_ sender: Any?) {
+        NSApp.delegateTyped.promoService?.undismiss(promoId: PromoServiceFactory.cookiePopupProtectionOptInPromoID, clearHistory: true)
+        CookiePopupProtectionOptInPromptStore(keyValueStore: Application.appDelegate.keyValueStore).reset()
+    }
+
     @objc func showHistory(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .anyHistoryPane)
@@ -1651,8 +1667,8 @@ extension MainViewController {
         let persistor = NewTabPageNextStepsCardsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         let debugPersistor = NewTabPageNextStepsCardsDebugPersistor()
         guard let card = debugPersistor.debugVisibleCards.first else { return }
-        persistor.setTimesShown(10, for: card)
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: nil)
+        persistor.setTimesShown(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown, for: card)
+        NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
     }
 
     @objc func debugShiftNewTabOpeningDate(_ sender: Any?) {
@@ -1953,7 +1969,7 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
             return recentlyClosedCoordinator.canReopenRecentlyClosedTab
 
-        // Reopen All Windows From Last Session
+        // Reopen All Windows and Tabs From Last Session
         case #selector(AppDelegate.reopenAllWindowsFromLastSession(_:)):
             return stateRestorationManager.canRestoreLastSessionState
 

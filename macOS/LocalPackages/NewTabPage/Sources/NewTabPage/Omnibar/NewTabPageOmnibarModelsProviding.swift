@@ -19,5 +19,12 @@
 @MainActor
 public protocol NewTabPageOmnibarModelsProviding {
     var lastFetchedSections: [NewTabPageDataModel.AIModelSection]? { get }
+    /// Attachment limits resolved for the user's tier from the most recent duck.ai models fetch.
+    /// `nil` until a fetch succeeds, or when the backend omits them.
+    var attachmentLimits: NewTabPageDataModel.AttachmentLimits? { get }
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection]
+}
+
+public extension NewTabPageOmnibarModelsProviding {
+    var attachmentLimits: NewTabPageDataModel.AttachmentLimits? { nil }
 }

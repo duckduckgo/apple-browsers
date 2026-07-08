@@ -22,6 +22,7 @@ import Bookmarks
 import Common
 import FoundationExtensions
 import Persistence
+import SwiftUI
 import WebExtensions
 
 protocol CookiePopupProtectionPreferencesPersistor {
@@ -70,6 +71,31 @@ final class CookiePopupProtectionPreferences: ObservableObject, PreferencesTabOp
     var isAutoconsentEnabled: Bool {
         get { cookiePopupPreference.isBlockingEnabled }
         set { cookiePopupPreference = newValue ? .default : .off }
+    }
+
+    var autoManageCookiePopupsEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { self.cookiePopupPreference.isAutoManageCookiePopupsEnabled },
+            set: { isEnabled in
+                let popUpsWithoutOptOuts = isEnabled ? self.cookiePopupPreference.isPopUpsWithoutOptOutsEnabled : false
+                self.cookiePopupPreference = .preference(
+                    autoManageEnabled: isEnabled,
+                    popUpsWithoutOptOutsEnabled: popUpsWithoutOptOuts
+                )
+            }
+        )
+    }
+
+    var popUpsWithoutOptOutsEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { self.cookiePopupPreference.isPopUpsWithoutOptOutsEnabled },
+            set: { isEnabled in
+                self.cookiePopupPreference = .preference(
+                    autoManageEnabled: true,
+                    popUpsWithoutOptOutsEnabled: isEnabled
+                )
+            }
+        )
     }
 
     init(

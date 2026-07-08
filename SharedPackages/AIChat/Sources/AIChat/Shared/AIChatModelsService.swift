@@ -19,17 +19,20 @@
 import Foundation
 import os.log
 import WebKit
+import WKAbstractions
 
 // MARK: - Cookie Providing
 
+@MainActor
 public protocol AIChatCookieProviding {
     func cookies(for url: URL) async -> [HTTPCookie]
 }
 
+@MainActor
 public struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
-    private let cookieStore: WKHTTPCookieStore
+    private let cookieStore: any DDGHTTPCookieStore
 
-    public init(cookieStore: WKHTTPCookieStore = WKWebsiteDataStore.default().httpCookieStore) {
+    public nonisolated init(cookieStore: any DDGHTTPCookieStore = HTTPCookieStoreWrapper(wrapped: WKWebsiteDataStore.default().httpCookieStore)) {
         self.cookieStore = cookieStore
     }
 
@@ -156,12 +159,14 @@ public struct AIChatRemoteModel: Decodable, Equatable {
 
 // MARK: - Service Protocol
 
+@MainActor
 public protocol AIChatModelsProviding {
     func fetchModels() async throws -> AIChatModelsResponse
 }
 
 // MARK: - Service Implementation
 
+@MainActor
 public final class AIChatModelsService: AIChatModelsProviding {
 
     public enum ServiceError: Error, LocalizedError {
@@ -176,12 +181,15 @@ public final class AIChatModelsService: AIChatModelsProviding {
         }
     }
 
+    /// The production AI Chat API origin, built from the canonical `URL.duckAIHost`.
+    public static let defaultBaseURL = URL(string: "https://\(URL.duckAIHost)")!
+
     private let baseURL: URL
     private let session: URLSession
     private let cookieProvider: AIChatCookieProviding
 
-    public init(
-        baseURL: URL = URL(string: "https://duck.ai")!,
+    public nonisolated init(
+        baseURL: URL = AIChatModelsService.defaultBaseURL,
         session: URLSession = .shared,
         cookieProvider: AIChatCookieProviding = WKHTTPCookieStoreProvider()
     ) {
@@ -264,7 +272,7 @@ extension AIChatModel.ModelProvider {
             return .meta
         } else if isMistralProvider {
             return .mistral
-        } else if id.contains("gpt-oss") {
+        } else if id.contains("gpt-oss") || normalizedProviderString == "tinfoil" {
             return .oss
         } else if normalizedProviderString == "anthropic" {
             return .anthropic

@@ -19,6 +19,7 @@
 import XCTest
 import AIChat
 
+@MainActor
 final class AIChatModelsServiceTests: XCTestCase {
 
     // MARK: - JSON Decoding Tests
@@ -762,6 +763,11 @@ final class AIChatModelsServiceTests: XCTestCase {
         XCTAssertEqual(provider, .oss)
     }
 
+    func testWhenProviderIsTinfoilForNonGptOssModel_ThenMapsToOSS() {
+        let provider = AIChatModel.ModelProvider.from(id: "tinfoil/gemma4-31b", providerString: "tinfoil")
+        XCTAssertEqual(provider, .oss)
+    }
+
     func testWhenProviderIsOpenAIString_ThenMapsToOpenAI() {
         let provider = AIChatModel.ModelProvider.from(id: "gpt-5", providerString: "openai")
         XCTAssertEqual(provider, .openAI)
@@ -805,6 +811,7 @@ final class AIChatModelsServiceTests: XCTestCase {
 
 // MARK: - Mocks
 
+@MainActor
 private final class MockCookieProvider: AIChatCookieProviding {
     var cookiesToReturn: [HTTPCookie] = []
 

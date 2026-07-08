@@ -29,6 +29,7 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import DataBrokerProtectionDebugServer
 import PrivacyConfig
 import FeatureFlags
 
@@ -85,7 +86,8 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
                                                         runTypeProvider: dbpSettings,
-                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated })
+                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated },
+                                                        optOutRetryErrorFeatureFlagger: featureFlagger)
         let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                                     settings: dbpSettings,
                                                     vault: vault,
@@ -120,7 +122,6 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                                         database: dataManager.database,
                                                                         emailServiceV0: emailService,
                                                                         emailServiceV1: emailServiceV1,
-                                                                        featureFlagger: featureFlagger,
                                                                         pixelHandler: sharedPixelsHandler)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
@@ -204,6 +205,8 @@ public final class DataBrokerProtectionAgentManager {
     // Used for debug functions only, so not injected
     private lazy var browserWindowManager = BrowserWindowManager()
 
+    private var debugServer: DataBrokerProtectionDebugHTTPServer?
+
     private var didStartActivityScheduler = false
     private var currentRunIsFreeScan: Bool?
 
@@ -279,7 +282,8 @@ public final class DataBrokerProtectionAgentManager {
             await fireMonitoringPixels()
             Logger.dataBrokerProtection.debug("PIR wide event sweep requested (agent launch)")
             sweepWideEvents()
-            let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database)
+            let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database,
+                                                                              featureFlagger: jobDependencies.featureFlagger)
             operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
             await checkForEmailConfirmationData()
 
@@ -555,10 +559,81 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
                                               lastSchedulerSessionStartTimestamp: activityScheduler.lastTriggerTimestamp?.timeIntervalSince1970)
         }
     }
+
+    private var canStartDebugServer: Bool {
+        #if DEBUG
+        return true
+        #else
+        return privacyConfigurationManager.internalUserDecider.isInternalUser
+        #endif
+    }
+
+    public func startDebugServer() async -> Bool {
+        guard canStartDebugServer else {
+            Logger.dataBrokerProtection.error("Blocked PIR debug server start outside debug/internal-user context.")
+            return false
+        }
+
+        if let debugServer {
+            if debugServer.isStartingOrRunning {
+                return true
+            }
+            debugServer.stop()
+            self.debugServer = nil
+        }
+
+        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionOSLogReader())
+        do {
+            try server.start()
+            debugServer = server
+            return true
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to start PIR debug server: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
+
+    public func stopDebugServer() {
+        debugServer?.stop()
+        debugServer = nil
+    }
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAppToAgentInterface {
 
+}
+
+// MARK: - Debug HTTP server read access
+
+extension DataBrokerProtectionAgentManager: DataBrokerProtectionDebugReadProviding {
+
+    private var debugSettings: DataBrokerProtectionSettings { DataBrokerProtectionSettings(defaults: .dbp) }
+
+    public var agentVersion: String {
+        let version = Bundle.main.releaseVersionNumber ?? "unknown"
+        let build = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "unknown"
+        return "\(version) (build: \(build))"
+    }
+
+    public var schedulerStateString: String { queueManager.debugRunningStatusString }
+
+    public var lastSchedulerTrigger: Date? { activityScheduler.lastTriggerTimestamp }
+
+    public var environmentName: String {
+        debugSettings.selectedEnvironment == .production ? "production" : "staging"
+    }
+
+    public var endpointURL: URL { debugSettings.endpointURL }
+
+    public var mainConfigETag: String? { debugSettings.mainConfigETag }
+
+    public var lastBrokerJSONUpdateCheck: Date {
+        Date(timeIntervalSince1970: debugSettings.lastBrokerJSONUpdateCheckTimestamp)
+    }
+
+    public func brokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+        try dataManager.fetchBrokerProfileQueryData(ignoresCache: true)
+    }
 }
 
 extension DataBrokerProtectionAgentManager: EmailConfirmationDataDelegate {

@@ -59,7 +59,7 @@ extension MainViewController {
         else { return }
 
         ViewHighlighter.hideAll()
-        ViewHighlighter.showIn(window, focussedOnButton: self.viewCoordinator.menuToolbarButton)
+        ViewHighlighter.showIn(window, focussedOnView: self.viewCoordinator.menuToolbarButton)
     }
     
 }

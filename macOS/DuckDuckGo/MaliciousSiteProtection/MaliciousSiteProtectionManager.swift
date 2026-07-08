@@ -158,8 +158,10 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
 
     private static let debugEvents = EventMapping<MaliciousSiteProtection.Event> { event, _, _, _ in
         switch event {
-        case .errorPageShown,
-             .visitSite,
+        case .errorPageShown:
+            PixelKit.fire(event, frequency: .dailyAndStandard)
+        case .visitSite,
+             .leaveSite,
              .iframeLoaded,
              .settingToggled,
              .matchesApiTimeout:

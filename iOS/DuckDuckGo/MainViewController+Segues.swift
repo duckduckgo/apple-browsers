@@ -196,7 +196,7 @@ extension MainViewController {
         present(DownloadsListHostingController(), animated: true)
     }
 
-    func segueToTabSwitcher(forceFireTabsTip: Bool = false) async {
+    func segueToTabSwitcher() async {
         Logger.lifecycle.debug(#function)
 
         // Guard against concurrent presentations
@@ -253,8 +253,6 @@ extension MainViewController {
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
         controller.previewsSource = previewsSource
-        controller.fireModePromotionsCoordinator = fireModePromotionEligibility
-        controller.shouldForceShowFireTabsTip = forceFireTabsTip
         controller.modalPresentationStyle = .overCurrentContext
 
         tabSwitcherController = controller
@@ -472,6 +470,9 @@ extension MainViewController {
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings)
+        // Share the app key-value store so native AI Features controls read/write the same
+        // SERP settings blob the SERP uses.
+        serpSettingsProvider.keyValueStore = keyValueStore
         let whatsNewCoordinator = WhatsNewCoordinator(
             displayContext: .onDemand,
             repository: whatsNewRepository,
@@ -534,6 +535,9 @@ extension MainViewController {
 
                 // We are still presenting legacy views, so use a Navcontroller
                 let navController = SettingsUINavigationController(rootViewController: settingsController)
+                // When Settings is opened purely to host the onboarding subscription purchase, backing out
+                // without buying should return home rather than land on Settings (see the override).
+                navController.dismissesModalOnSubscriptionBailout = deepLinkTarget?.isOnboardingSubscriptionFlow ?? false
                 navController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
                 settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
                 // Opaque nav bar and matching view background so sheet top gap (if any) is visually continuous with the bar
@@ -630,17 +634,48 @@ extension MainViewController {
 //  so that we get the event regardless of where in the UI hierarchy it happens.
 class SettingsUINavigationController: UINavigationController {
 
+    /// Whether to dismiss the entire Settings modal when the subscription flow was presented,
+    /// but a subscription was not purchased
+    var dismissesModalOnSubscriptionBailout = false
+
+    /// Whether a subscription was acquired while the subscription flow was presented
+    private var didAcquireSubscription = false
+    private var subscriptionChangeObserver: Any?
+
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
     init(rootViewController: SettingsHostingController) {
         super.init(rootViewController: rootViewController)
+        subscriptionChangeObserver = NotificationCenter.default.addObserver(forName: .subscriptionDidChange,
+                                                                            object: nil,
+                                                                            queue: .main) { [weak self] _ in
+            self?.didAcquireSubscription = true
+        }
+    }
+
+    deinit {
+        if let subscriptionChangeObserver {
+            NotificationCenter.default.removeObserver(subscriptionChangeObserver)
+        }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         NotificationCenter.default.post(name: .settingsDidDisappear, object: nil)
+    }
+
+    override func popViewController(animated: Bool) -> UIViewController? {
+        // Bail out to home instead of popping to the Settings root
+        // when leaving the onboarding subscription flow without a purchase.
+        if dismissesModalOnSubscriptionBailout,
+           viewControllers.count == 2,
+           !didAcquireSubscription {
+            dismiss(animated: true)
+            return nil
+        }
+        return super.popViewController(animated: animated)
     }
 
     override func pushViewController(_ viewController: UIViewController, animated: Bool) {

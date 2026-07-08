@@ -33,6 +33,7 @@ protocol BrowserChromeDelegate: AnyObject {
     var isToolbarHidden: Bool { get }
     var toolbarHeight: CGFloat { get }
     var barsMaxHeight: CGFloat { get }
+    var isInMinimalChromeLayout: Bool { get }
 
     var omniBar: any OmniBar { get }
     var tabBarContainer: UIView { get }
@@ -105,7 +106,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         
         if scrollView.fullyZoomedOut {
             animator.revealBars(animated: true)
-        } else if abs(scrollView.zoomScale - startZoomScale) > Constants.zoomThreshold {
+        } else if abs(scrollView.zoomScale - startZoomScale) > Constants.zoomThreshold, delegate?.canHideBars ?? true {
             animator.hideBars(animated: true)
         }
     }

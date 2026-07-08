@@ -1,23 +1,22 @@
 appId: com.duckduckgo.mobile.ios
+# Recovers a Sync account from a recovery code via the simplified UI:
+# "Use Recovery Code" -> authenticate -> "Recover your synced data" sheet ->
+# manually paste the code. Starts on the logged-out Sync settings screen.
 ---
 
-- assertVisible: Sync & Backup
-- tapOn: Sync & Backup
-- assertVisible: Begin Syncing
-- assertVisible: Recover Synced Data
-- tapOn: Recover Synced Data
+- assertVisible: Use Recovery Code
+- tapOn: Use Recovery Code
+- tapOn: Passcode field
 - inputText: "0000"
 - pressKey: Enter
+- assertVisible: Recover your synced data
 - tapOn: Recover Synced Data
 - runFlow:
     when:
       visible: Allows you to upload photographs and videos
     commands:
         - tapOn: "Allow"
-- tapOn: Enter Text Code Manually
+- tapOn: Manually Enter Code
 - tapOn: Paste
-- assertVisible: Recover Your Data Easily
-- tapOn: Next
-- assertVisible: Device synced!
-- tapOn: Done
-- assertVisible: Sync Enabled
+- assertVisible:
+    id: "device"

@@ -30,6 +30,7 @@ import WebExtensions
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)
+    func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController, allowsAsync: Bool)
     func addressBarViewControllerSearchModeToggleChanged(_ addressBarViewController: AddressBarViewController, isAIChatMode: Bool)
     /// Called when the user unfocuses the address bar while duck.ai mode is selected for the current tab.
     /// The panel should stay on screen, but the suggestions row should collapse.
@@ -103,14 +104,24 @@ final class AddressBarViewController: NSViewController {
     @IBOutlet var passiveTextField: PassiveAddressBarTextField!
     @IBOutlet var inactiveBackgroundView: ColorView!
     @IBOutlet var activeBackgroundView: ColorView!
-    @IBOutlet var activeOuterBorderView: ColorView!
     @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
     @IBOutlet var innerBorderView: ColorView!
+    @IBOutlet var bottomSeparatorView: ColorView!
     @IBOutlet var buttonsContainerView: NSView!
     @IBOutlet var switchToTabBox: ColorView!
     @IBOutlet var switchToTabLabel: NSTextField!
     @IBOutlet var shadowView: ShadowView!
 
+    @IBOutlet var activeBackgroundViewTopConstraint: NSLayoutConstraint!
+    @IBOutlet var activeBackgroundViewBottomConstraint: NSLayoutConstraint!
+    @IBOutlet var activeBackgroundViewLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet var activeBackgroundViewTrailingConstraint: NSLayoutConstraint!
+    @IBOutlet var inactiveBackgroundViewTopConstraint: NSLayoutConstraint!
+    @IBOutlet var inactiveBackgroundViewBottomConstraint: NSLayoutConstraint!
+    @IBOutlet var inactiveBackgroundViewLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet var inactiveBackgroundViewTrailingConstraint: NSLayoutConstraint!
+    @IBOutlet var buttonsContainerViewLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet var buttonsContainerViewTrailingConstraint: NSLayoutConstraint!
     @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
     @IBOutlet var passiveTextFieldMinXConstraint: NSLayoutConstraint!
     @IBOutlet var activeTextFieldMinXConstraint: NSLayoutConstraint!
@@ -143,6 +154,8 @@ final class AddressBarViewController: NSViewController {
         tabViewModel?.addressBarSharedTextState ?? AddressBarSharedTextState()
     }
 
+    /// Deprecated: Remove when `appRebranding` ships
+    @IBOutlet var activeOuterBorderView: ColorView!
     @IBOutlet weak var activeOuterBorderTrailingConstraint: NSLayoutConstraint!
     @IBOutlet weak var activeOuterBorderLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var activeOuterBorderBottomConstraint: NSLayoutConstraint!
@@ -159,16 +172,22 @@ final class AddressBarViewController: NSViewController {
             /// re-evaluates the height. Trigger a resize on the editing-ness flip so the compact
             /// layout applies immediately on session restore / "Open in New Window".
             if oldValue.isEditing != mode.isEditing {
-                delegate?.resizeAddressBarForHomePage(self)
+                requestAddressBarResize()
             }
         }
     }
 
-    /// True when the nav bar should render at its tall / focused height. Covers any selected state, duck.ai
-    /// (focused or unfocused — Duck.ai is always a typing context), and unfocused search with user-provided
-    /// input (typed text / URL / tab suggestion). Compact only for `.inactive` + `.browsing` (URL rendered passively).
+    private var isSearchOrChatSuggestionsWindowVisible: Bool {
+        addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible
+    }
+
+    /// True when the nav bar should render at its tall / focused height
     var shouldUseTallAddressBarLayout: Bool {
-        selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
+        guard themeManager.isAppRebranded else {
+            return selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
+        }
+
+        return selectionState.isSelected && isSearchOrChatSuggestionsWindowVisible
     }
 
     let themeManager: ThemeManaging
@@ -191,6 +210,8 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
+    private var displaysTallLayout: Bool = false
+
     private var isFirstResponder = false {
         didSet {
             handleFirstResponderChange()
@@ -212,7 +233,7 @@ final class AddressBarViewController: NSViewController {
         didSet {
             addressBarButtonsViewController?.isAIChatPanelActive = isAIChatOmnibarVisible
             if isSelected {
-                updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
+                refreshAppearance(isSuggestionsWindowVisible: addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
             }
         }
     }
@@ -361,6 +382,7 @@ final class AddressBarViewController: NSViewController {
 
         setupInactiveShadowView()
         setupActiveOuterBorderSize()
+        refreshConstraints()
         refreshSuggestionsAppearance()
     }
 
@@ -531,7 +553,7 @@ final class AddressBarViewController: NSViewController {
             selectionState = .inactiveWithAIChat
             updateMode()
             view.window?.makeFirstResponder(nil)
-            delegate?.resizeAddressBarForHomePage(self)
+            requestAddressBarResize()
             delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
         case (true, false):
             /// Incoming tab is in search mode — fully dismiss the duck.ai panel (in case it was up) and reset the toggle.
@@ -609,7 +631,7 @@ final class AddressBarViewController: NSViewController {
         addressBarTextField.isSuggestionWindowVisiblePublisher
             .sink { [weak self] isSuggestionsWindowVisible in
                 guard let self else { return }
-                self.updateShadowView(isSuggestionsWindowVisible || self.isAIChatOmnibarVisible)
+                self.refreshAppearance(isSuggestionsWindowVisible: isSuggestionsWindowVisible || self.isAIChatOmnibarVisible)
                 if isSuggestionsWindowVisible || self.isAIChatOmnibarVisible {
                     self.layoutShadowView()
                 }
@@ -683,6 +705,8 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func updateView() {
+        let colorsProvider = theme.colorsProvider
+
         switch selectionState {
         case .activeWithAIChat:
             /// Focused Duck.ai: the prompt panel covers the address-bar area. Hide both text fields so their
@@ -702,7 +726,7 @@ final class AddressBarViewController: NSViewController {
             addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
             passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
         }
-        passiveTextField.textColor = theme.colorsProvider.textPrimaryColor
+        passiveTextField.textColor = colorsProvider.textPrimaryColor
 
         // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug.
         // The internal labels get `alpha = 0` when the text field is hidden; un-hiding the field (e.g. transitioning
@@ -716,16 +740,20 @@ final class AddressBarViewController: NSViewController {
         }
 
         updateShadowViewPresence(selectionState.isSelected)
-        inactiveBackgroundView.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
+        inactiveBackgroundView.backgroundColor = colorsProvider.inactiveAddressBarBackgroundColor
 
         /// When duck.ai is active, the extended `activeBackgroundViewWithSuggestions` is the single background
         /// behind the bar (it merges with the panel below). Suppress the regular inactive / active variants to
         /// avoid two layers rendering with different widths — that's the ~1pt edge mismatch and the
-        /// "address-bar-like" look on tab-switch back into a Duck.ai tab. `updateShadowView` (fired off the
+        /// "address-bar-like" look on tab-switch back into a Duck.ai tab. `refreshAppearance` (fired off the
         /// suggestion-window publisher) handles the suggestions-visible case; don't duplicate its isHidden flips
         /// here or we risk racing it after first ESC closes the suggestions window.
         inactiveBackgroundView.alphaValue = (selectionState.isSelected || isAIChatOmnibarVisible) ? 0 : 1
         activeBackgroundView.alphaValue = (selectionState.isSelected && !isAIChatOmnibarVisible) ? 1 : 0
+
+        if themeManager.isAppRebranded {
+            addressBarButtonsViewController?.trailingButtonsBackgroundColor = .clear
+        }
 
         let isKey = self.view.window?.isKeyWindow == true
         let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
@@ -738,27 +766,37 @@ final class AddressBarViewController: NSViewController {
         let currentTextFieldValue = addressBarTextField.value
         let hasUserTypedContent = currentTextFieldValue.isUserTyped && !currentTextFieldValue.isEmpty
         activeOuterBorderView.alphaValue = isKey && selectionState.isSelected && !isToggleFocused && !hasUserTypedContent && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
-        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
+        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : colorsProvider.addressBarOutlineShadow
 
         if isToggleFocused {
             activeBackgroundView.borderWidth = 1.0
             activeBackgroundView.borderColor = .addressBarBorder
         } else {
             activeBackgroundView.borderWidth = 2.0
-            activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : theme.colorsProvider.accentPrimaryColor
+            activeBackgroundView.borderColor = isBurner ? colorsProvider.addressBarFireBorderColor : colorsProvider.addressBarActiveBorderColor
         }
 
         setupAddressBarPlaceHolder()
-        setupAddressBarCornerRadius()
+        refreshAddressBarCornerRadius()
         inactiveAddressBarShadowView.isHidden = selectionState.isSelected
     }
 
-    private func setupAddressBarCornerRadius() {
-        activeBackgroundView.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
-        inactiveBackgroundView.setCornerRadius(theme.addressBarStyleProvider.addressBarInactiveBackgroundViewRadius)
-        innerBorderView.setCornerRadius(theme.addressBarStyleProvider.addressBarInnerBorderViewRadius)
-        activeOuterBorderView.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveOuterBorderViewRadius)
-        activeBackgroundViewWithSuggestions.setCornerRadius(theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
+    private func refreshAddressBarCornerRadius() {
+        let styleProvider = theme.addressBarStyleProvider
+        let isSuggestionsWindowVisible = isSearchOrChatSuggestionsWindowVisible
+
+        activeBackgroundView.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadius
+        activeBackgroundViewWithSuggestions.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+        activeOuterBorderView.cornerRadius = styleProvider.addressBarActiveOuterBorderViewRadius
+        inactiveBackgroundView.cornerRadius = styleProvider.addressBarInactiveBackgroundViewRadius
+        innerBorderView.cornerRadius = styleProvider.addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: isSuggestionsWindowVisible)
+
+        if themeManager.isAppRebranded {
+            let roundedCorners: RoundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
+
+            innerBorderView.roundedCorners = roundedCorners
+            activeBackgroundViewWithSuggestions.roundedCorners = roundedCorners
+        }
     }
 
     private func setupInactiveShadowView() {
@@ -787,6 +825,19 @@ final class AddressBarViewController: NSViewController {
         activeOuterBorderLeadingConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
         activeOuterBorderBottomConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
         activeOuterBorderTopConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
+    }
+
+    private func refreshConstraints() {
+        let styleProvider = theme.addressBarStyleProvider
+
+        activeBackgroundViewTopConstraint.constant = styleProvider.addressBarActiveBackgroundViewVerticalPadding
+        activeBackgroundViewBottomConstraint.constant = styleProvider.addressBarActiveBackgroundViewVerticalPadding
+        inactiveBackgroundViewTopConstraint.constant = styleProvider.addressBarInactiveBackgroundViewVerticalPadding
+        inactiveBackgroundViewBottomConstraint.constant = styleProvider.addressBarInactiveBackgroundViewVerticalPadding
+        inactiveBackgroundViewLeadingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewLeadingPadding
+        inactiveBackgroundViewTrailingConstraint.constant = styleProvider.addressBarInactiveBackgroundViewTrailingPadding
+        buttonsContainerViewLeadingConstraint.constant = styleProvider.addressBarButtonsContainerViewLeadingPadding
+        buttonsContainerViewTrailingConstraint.constant = styleProvider.addressBarButtonsContainerViewTrailingPadding
     }
 
     private func setupAddressBarPlaceHolder() {
@@ -842,7 +893,7 @@ final class AddressBarViewController: NSViewController {
             return
         }
         if shadowView.superview == nil {
-            updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
+            refreshAppearance(isSuggestionsWindowVisible: addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
             view.window?.contentView?.addSubview(shadowView)
             layoutShadowView()
 
@@ -855,17 +906,34 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    private func updateShadowView(_ isSuggestionsWindowVisible: Bool) {
+    private func refreshAppearance(isSuggestionsWindowVisible: Bool) {
+        let styleProvider = theme.addressBarStyleProvider
+        let colorsProvider = theme.colorsProvider
+
         shadowView.shadowSides = isSuggestionsWindowVisible ? [.left, .top, .right] : []
-        shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
-        shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
-        shadowView.cornerRadius = theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius
+        shadowView.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
+
+        NSAppearance.withAppAppearance {
+            if themeManager.isAppRebranded {
+                shadowView.shadowRadius = styleProvider.suggestionShadowRadius
+                shadowView.shadowColor = colorsProvider.addressBarShadowColor
+            } else {
+                shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
+                shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
+            }
+        }
 
         let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
         activeOuterBorderView.isHidden = isSuggestionsWindowVisible || view.window?.isKeyWindow != true || isToggleFocused
         activeBackgroundView.isHidden = isSuggestionsWindowVisible
         activeBackgroundViewWithSuggestions.isHidden = !isSuggestionsWindowVisible
         inactiveAddressBarShadowView.isHidden = isSuggestionsWindowVisible
+
+        if themeManager.isAppRebranded {
+            /// When Search Suggestions (OR) Omnibar are rendered, we'll switch to the Extended Height mode, with different rounded corners
+            resizeAddressBarIfNeeded()
+            refreshAddressBarCornerRadius()
+        }
     }
 
     private func layoutShadowView() {
@@ -874,12 +942,10 @@ final class AddressBarViewController: NSViewController {
         let winFrame = self.view.convert(self.view.bounds, to: nil)
         var frame = superview.convert(winFrame, from: nil)
 
-        /// Extend shadow upward when AI Chat omnibar toggle is enabled to vertically align the toggle
-        if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-            let offset = AddressBarTextField.SuggestionWindowSizes.aiChatToggleVerticalOffset
-            frame.origin.y += offset
-            frame.size.height -= offset
-        }
+        /// Keep the suggestions shadow aligned with the panel by applying the same vertical offset.
+        let offset = AddressBarTextField.SuggestionWindowSizes.shadowOffset(isAppRebranded: themeManager.isAppRebranded)
+        frame.origin.y += offset
+        frame.size.height -= offset
 
         shadowView.frame = frame
     }
@@ -926,8 +992,10 @@ final class AddressBarViewController: NSViewController {
         }
 
         addressBarTextField.refreshStyle()
+        bottomSeparatorView.isHidden = !themeManager.isAppRebranded
 
-        let navigationBarBackgroundColor = theme.colorsProvider.navigationBackgroundColor
+        let colorsProvider = theme.colorsProvider
+        let navigationBarBackgroundColor = colorsProvider.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {
             // Keep selected appearance when AI chat is active, even if window loses key status
@@ -940,24 +1008,43 @@ final class AddressBarViewController: NSViewController {
                     activeBackgroundView.borderColor = .addressBarBorder
                 } else {
                     activeBackgroundView.borderWidth = 2.0
-                    activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : theme.colorsProvider.accentPrimaryColor
+                    activeBackgroundView.borderColor = isBurner ? colorsProvider.addressBarFireBorderColor : colorsProvider.addressBarActiveBorderColor
                 }
                 activeBackgroundView.backgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
-                addressBarButtonsViewController?.trailingButtonsBackground.backgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
+                /// Important: `activeOuterBorderView` is hidden when `isAppRedesign` evaluates as true
                 activeOuterBorderView.isHidden = isToggleFocused || !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) || selectionState == .activeWithAIChat
                 activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
+
+                if !themeManager.isAppRebranded {
+                    addressBarButtonsViewController?.trailingButtonsBackgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
+                }
+
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
                 activeBackgroundView.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
-                addressBarButtonsViewController?.trailingButtonsBackground.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
+
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
 
                 activeOuterBorderView.isHidden = true
+
+                if !themeManager.isAppRebranded {
+                    addressBarButtonsViewController?.trailingButtonsBackgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor
+                }
             }
         }
+    }
+
+    func refreshAddressBarBackgroundWidth() {
+        let styleProvider = theme.addressBarStyleProvider
+        guard let padding = styleProvider.addressBarHorizontalPadding(focused: shouldUseTallAddressBarLayout) else {
+            return
+        }
+
+        activeBackgroundViewLeadingConstraint.constant = padding
+        activeBackgroundViewTrailingConstraint.constant = padding
     }
 
     private func refreshSuggestionsAppearance() {
@@ -970,9 +1057,11 @@ final class AddressBarViewController: NSViewController {
         /// When the toggle feature is on, all editing states have no left icon, so we pin the text at a constant
         /// padding that matches the Duck.ai prompt panel's leading inset. When the buttons container is wider
         /// (e.g. browsing with the privacy dashboard showing), we respect that width so the text clears the button.
-        let isToggleFeatureEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        let isToggleFeatureEnabled = aiChatSettings.isAIFeaturesEnabled
         let isToggleVisible = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
-        let duckAILeadingPadding: CGFloat = 20
+
+        let styleProvider = theme.addressBarStyleProvider
+        let duckAILeadingPadding: CGFloat = styleProvider.addressBarTextFieldLeadingPadding
 
         if isToggleVisible {
             let effectiveMinX = max(minX, duckAILeadingPadding)
@@ -988,10 +1077,9 @@ final class AddressBarViewController: NSViewController {
         /// The negative offset compensates for the leading padding of the search icon so the typed text sits
         /// flush against it (the buttons side sets a matching positive pad on the privacy-shield constraint —
         /// see `AddressBarButtonsViewController.IconLeadingTuning`). With the redesign, editing states
-        /// (`.text`, `.url`, `.openTabSuggestion`, `.aiChat`) no longer render a leading icon regardless of
-        /// the `aiChatOmnibarToggle` flag — skip the offset so the text isn't pushed past the (now-narrower)
-        /// buttons container's left edge on that path.
-        if theme.addressBarStyleProvider.shouldShowNewSearchIcon && !self.mode.isEditing {
+        /// (`.text`, `.url`, `.openTabSuggestion`, `.aiChat`) no longer render a leading icon — skip the
+        /// offset so the text isn't pushed past the (now-narrower) buttons container's left edge on that path.
+        if styleProvider.shouldShowNewSearchIcon && !self.mode.isEditing {
             let pullback = isAddressBarFocused
                 ? AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.focused
                 : AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.unfocused
@@ -1031,7 +1119,7 @@ final class AddressBarViewController: NSViewController {
             updateView()
             refreshAddressBarAppearance(nil)
 
-            delegate?.resizeAddressBarForHomePage(self)
+            requestAddressBarResize()
             addressBarButtonsViewController?.setupButtonPaddings(isFocused: false)
         }
 
@@ -1071,8 +1159,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func fireAddressBarActivatedPixelIfNeeded() {
-        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
-              aiChatSettings.isAIFeaturesEnabled else {
+        guard aiChatSettings.isAIFeaturesEnabled else {
             return
         }
 
@@ -1282,6 +1369,22 @@ extension AddressBarViewController: ThemeUpdateListening {
     }
 }
 
+private extension AddressBarViewController {
+
+    func resizeAddressBarIfNeeded() {
+        guard isViewLoaded, shouldUseTallAddressBarLayout != displaysTallLayout else {
+            return
+        }
+
+        requestAddressBarResize(allowsAsync: false)
+    }
+
+    func requestAddressBarResize(allowsAsync: Bool = true) {
+        displaysTallLayout = shouldUseTallAddressBarLayout
+        delegate?.resizeAddressBarForHomePage(self, allowsAsync: allowsAsync)
+    }
+}
+
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         aiChatSettings.showShortcutInAddressBar = false
@@ -1387,6 +1490,8 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
                 addressBarButtonsViewController?.resetSearchModeToggle()
             }
         }
+
+        resizeAddressBarIfNeeded()
     }
 
     /// Transitions from focused duck.ai mode (`.activeWithAIChat`) to unfocused duck.ai mode (`.inactiveWithAIChat`):
@@ -1409,7 +1514,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         selectionState = .inactiveWithAIChat
         updateMode()
         view.window?.makeFirstResponder(nil)
-        delegate?.resizeAddressBarForHomePage(self)
+        requestAddressBarResize()
         delegate?.addressBarViewControllerDidResignFocusKeepingAIChatMode(self)
     }
 
@@ -1438,7 +1543,9 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         isAIChatOmnibarVisible = true
         selectionState = .activeWithAIChat
         mode = .editing(.aiChat)
-        delegate?.resizeAddressBarForHomePage(self)
+
+        // Important: Resizing the Address Bar must be synchronous. Otherwise we'll observe the Omnibar jumping onscreen
+        requestAddressBarResize(allowsAsync: false)
         delegate?.addressBarViewControllerDidRefocusInAIChatMode(self)
     }
 }
@@ -1560,12 +1667,12 @@ extension AddressBarViewController: NSDraggingDestination {
 
 extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField) {
-        delegate?.resizeAddressBarForHomePage(self)
+        requestAddressBarResize()
         addressBarButtonsViewController?.setupButtonPaddings(isFocused: true)
     }
 
     func addressBarDidLoseFocus(_ addressBarTextField: AddressBarTextField) {
-        delegate?.resizeAddressBarForHomePage(self)
+        requestAddressBarResize()
         addressBarButtonsViewController?.setupButtonPaddings(isFocused: false)
 
         // Restore internal text field labels when address bar loses focus

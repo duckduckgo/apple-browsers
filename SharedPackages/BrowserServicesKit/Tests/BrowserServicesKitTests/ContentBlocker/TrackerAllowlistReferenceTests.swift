@@ -50,13 +50,13 @@ final class TrackerAllowlistReferenceTests: XCTestCase {
         let loader = JsonTestDataLoader()
 
         let tdsData = loader.fromJsonFile(
-            "Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_tds_reference.json"
+            "Res/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_tds_reference.json"
         )
         let tdsJSON = String(data: tdsData, encoding: .utf8)!
         let trackerData = try JSONDecoder().decode(TrackerData.self, from: tdsData)
 
         let allowlistData = loader.fromJsonFile(
-            "Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_reference.json"
+            "Res/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_reference.json"
         )
 
         let allowlistJson = try JSONSerialization.jsonObject(with: allowlistData) as! [String: Any]
@@ -67,7 +67,7 @@ final class TrackerAllowlistReferenceTests: XCTestCase {
         let tests = try JSONDecoder().decode(
             [AllowlistTest].self,
             from: loader.fromJsonFile(
-                "Resources/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_matching_tests.json"
+                "Res/privacy-reference-tests/tracker-radar-tests/TR-domain-matching/tracker_allowlist_matching_tests.json"
             )
         )
 

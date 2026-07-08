@@ -92,5 +92,26 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform"],
         "parameters": ["appVersion"]
+    },
+    "aichat_history_load_failed": {
+        "description": "The chat history list failed to load (native storage unavailable or an observer error). This is what drives the load-error alert shown on the chat history screen; use it to gauge how often the error surfaces and how many users are affected",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "aichat_history_pin_toggle_failed": {
+        "description": "Persisting a pin/unpin toggle failed after the optimistic in-memory move on the chat history screen",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "aichat_history_download_failed": {
+        "description": "Exporting a chat for download failed on the chat history screen",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
     }
 }

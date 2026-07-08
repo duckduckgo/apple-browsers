@@ -35,6 +35,17 @@ private struct CookiePopupProtectionKeys: StoringKeys {
     let didMigrateCookiePopupPreference = StorageKey<Bool>(CookiePopupProtectionStorageKeys.didMigrateCookiePopupPreference)
 }
 
+private enum AddressBarStorageKeys: String, StorageKeyDescribing {
+    case keepAddressBarVisibleOnIPad = "com_duckduckgo_ios_keepAddressBarVisibleOnIPad"
+}
+
+private struct AddressBarKeys: StoringKeys {
+    let keepAddressBarVisibleOnIPad = StorageKey<Bool>(
+        AddressBarStorageKeys.keepAddressBarVisibleOnIPad,
+        migrateLegacyKey: "com.duckduckgo.ios.keepaddressbarvisibleonipad"
+    )
+}
+
 public class AppUserDefaults: AppSettings {
     
     public struct Notifications {
@@ -49,6 +60,7 @@ public class AppUserDefaults: AppSettings {
         public static let didVerifyInternalUser = Notification.Name("com.duckduckgo.app.DidVerifyInternalUser")
         public static let inspectableWebViewsToggled = Notification.Name("com.duckduckgo.app.DidToggleInspectableWebViews")
         public static let addressBarPositionChanged = Notification.Name("com.duckduckgo.app.AddressBarPositionChanged")
+        public static let keepAddressBarVisibleOnIPadChanged = Notification.Name("com.duckduckgo.app.KeepAddressBarVisibleOnIPadChanged")
         public static let refreshButtonSettingsChanged = Notification.Name("com.duckduckgo.refreshButton.settings.changed")
         public static let customizationSettingsChanged = Notification.Name("com.duckduckgo.customization.settings.changed")
         public static let showsFullURLAddressSettingChanged = Notification.Name("com.duckduckgo.app.ShowsFullURLAddressSettingChanged")
@@ -268,6 +280,21 @@ public class AppUserDefaults: AppSettings {
         set {
             addressBarPositionStorage = newValue.rawValue
             NotificationCenter.default.post(name: Notifications.addressBarPositionChanged, object: currentAddressBarPosition)
+        }
+    }
+
+    private var addressBarStorage: any KeyedStoring<AddressBarKeys> {
+        UserDefaults.app.keyedStoring()
+    }
+
+    var keepAddressBarVisibleOnIPad: Bool {
+        get {
+            addressBarStorage.keepAddressBarVisibleOnIPad ?? false
+        }
+
+        set {
+            addressBarStorage.keepAddressBarVisibleOnIPad = newValue
+            NotificationCenter.default.post(name: Notifications.keepAddressBarVisibleOnIPadChanged, object: newValue)
         }
     }
     

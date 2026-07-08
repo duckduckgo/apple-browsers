@@ -27,8 +27,7 @@ import Common
 public typealias BrokerProfileOptOutSubJobWebProtocol = BrokerProfileOptOutSubJobWebRunning & BrokerProfileOptOutSubJobWebTesting
 
 public protocol BrokerProfileOptOutSubJobWebRunning {
-    func optOut(profileQuery: BrokerProfileQueryData,
-                extractedProfile: ExtractedProfile,
+    func optOut(extractedProfile: ExtractedProfile,
                 showWebView: Bool,
                 shouldRunNextStep: @escaping () -> Bool) async throws
 }
@@ -52,7 +51,7 @@ extension BrokerProfileOptOutSubJobWebTesting {
 public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerProfileOptOutSubJobWebProtocol {
     public enum ActionsHandlerMode {
         case testing // for injecting custom actionsHandler
-        case optOut // for opt-out operations (action list may be modified depending on featureFlagger.isEmailConfirmationDecouplingFeatureOn)
+        case optOut // for opt-out operations (action list is truncated before the email confirmation action)
         case emailConfirmation(URL) // for email confirmation operations
     }
 
@@ -119,8 +118,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.contentBlocking = contentBlocking
     }
 
-    public func optOut(profileQuery: BrokerProfileQueryData,
-                       extractedProfile: ExtractedProfile,
+    public func optOut(extractedProfile: ExtractedProfile,
                        showWebView: Bool,
                        shouldRunNextStep: @escaping () -> Bool) async throws {
         try await run(inputValue: extractedProfile, showWebView: showWebView)
@@ -165,7 +163,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                             if actionsHandler != nil {
                                 assertionFailure("Use .testing actionsHandlerMode instead")
                             }
-                            self.actionsHandler = ActionsHandler.forOptOut(optOutStep, haltsAtEmailConfirmation: featureFlagger.isEmailConfirmationDecouplingFeatureOn)
+                            self.actionsHandler = ActionsHandler.forOptOut(optOutStep)
                         case .emailConfirmation(let url):
                             if actionsHandler != nil {
                                 assertionFailure("Use .testing actionsHandlerMode instead")

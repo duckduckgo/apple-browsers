@@ -56,11 +56,7 @@ final class SaveLoginViewModel: ObservableObject {
     private let maximumPasswordDisplayCount = 40
     private let credentialManager: SaveAutofillLoginManagerProtocol
     private let appSettings: AppSettings
-    private let featureFlagger: FeatureFlagger
     private let biometryType: LABiometryType
-
-    private(set) var dismissExperimentCohort: FeatureFlag.AutofillOnboardingDismissExperimentCohort?
-    private let experimentPixels: AutofillOnboardingExperimentPixelFiring
 
     private var dismissButtonWasPressed = false
     var didSave = false
@@ -138,7 +134,6 @@ final class SaveLoginViewModel: ObservableObject {
         }
         
         if autofillFirstTimeUser {
-            resolveDismissExperimentCohort()
             return .newUser
         }
         
@@ -161,22 +156,14 @@ final class SaveLoginViewModel: ObservableObject {
     
     internal init(credentialManager: SaveAutofillLoginManagerProtocol,
                   appSettings: AppSettings,
-                  featureFlagger: FeatureFlagger,
-                  experimentPixels: AutofillOnboardingExperimentPixelFiring = AutofillOnboardingExperimentPixelReporter(),
                   layoutType: SaveLoginView.LayoutType? = nil,
                   domainLastShownOn: String? = nil,
                   biometryType: LABiometryType = LAContext().biometryType) {
         self.credentialManager = credentialManager
         self.appSettings = appSettings
-        self.featureFlagger = featureFlagger
-        self.experimentPixels = experimentPixels
         self.attributedLayoutType = layoutType
         self.domainLastShownOn = domainLastShownOn
         self.biometryType = biometryType
-    }
-
-    private func resolveDismissExperimentCohort() {
-        dismissExperimentCohort = featureFlagger.resolveCohort(for: FeatureFlag.autofillOnboardingDismissExperiment) as? FeatureFlag.AutofillOnboardingDismissExperimentCohort
     }
 
     private func updateRejectionCountIfNeeded() {
@@ -225,7 +212,6 @@ final class SaveLoginViewModel: ObservableObject {
     func neverPrompt() {
         didSave = true
         updateRejectionCountIfNeeded()
-        experimentPixels.fireDismissTap()
         delegate?.saveLoginViewModelNeverPrompt(self)
         showDisableAutofillPromptIfNeeded()
     }

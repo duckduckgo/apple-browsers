@@ -146,7 +146,6 @@ class TabViewController: UIViewController {
     }
     
     weak var delegate: TabDelegate?
-    var fireModePromotionCoordinator: FireModePromotionCoordinating?
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
         get {
             aiChatContentHandler.delegate
@@ -325,12 +324,6 @@ class TabViewController: UIViewController {
     var urlPublisher: AnyPublisher<URL?, Never> {
         urlSubject.eraseToAnyPublisher()
     }
-
-    /// Emits the URL of the underlying tab each time a navigation finishes loading. Unlike
-    /// `urlPublisher` (which fires at didCommit, before the new DOM is ready), this is the
-    /// reliable signal for "the new page's content is available to query." Replays the last
-    /// finished URL on subscribe so late subscribers (e.g. a contextual chat opened after
-    /// the page already loaded) still see the current page.
     private let didFinishURLSubject = CurrentValueSubject<URL?, Never>(nil)
     var didFinishURLPublisher: AnyPublisher<URL?, Never> {
         didFinishURLSubject.eraseToAnyPublisher()
@@ -437,17 +430,17 @@ class TabViewController: UIViewController {
     private var canDisplayJavaScriptAlert: Bool {
         return presentedViewController == nil
             && delegate?.tabCheckIfItsBeingCurrentlyPresented(self) ?? false
-            && !(jsAlertController?.isShown ?? false)
+            && !(jsAlertView?.isShown ?? false)
     }
 
     func present(_ alert: WebJSAlert) {
-        setupJSAlertControllerIfNeeded()
-        jsAlertController.present(alert)
+        setupJSAlertViewIfNeeded()
+        jsAlertView.present(alert)
     }
 
     private func dismissJSAlertIfNeeded() {
-        if jsAlertController?.isShown == true {
-            jsAlertController?.dismiss(animated: false)
+        if jsAlertView?.isShown == true {
+            jsAlertView?.dismiss(animated: false)
         }
     }
 
@@ -752,10 +745,10 @@ class TabViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Note: JSAlertController is intentionally NOT set up here. Instantiating its
-        // storyboard eagerly triggers a first-time UIVisualEffectView/CoreMaterial bundle
+        // Note: JSAlertView is intentionally NOT set up here. Instantiating its
+        // UIVisualEffectView eagerly triggers a first-time CoreMaterial bundle
         // scan on the cold-launch critical path, which can trip the scene-create watchdog
-        // (0x8BADF00D). It is now lazily created on first use via setupJSAlertControllerIfNeeded().
+        // (0x8BADF00D). It is now lazily created on first use via setupJSAlertViewIfNeeded().
 
         fireproofingWorker = FireproofingWorking(controller: self, fireproofing: fireproofing, favicons: favicons)
         initAttributionLogic()
@@ -800,7 +793,6 @@ class TabViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        webScrollObserver?.reset()
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
         unregisterFromResignActive()
@@ -855,7 +847,14 @@ class TabViewController: UIViewController {
 
     @objc
     private func onAddressBarPositionChanged() {
-        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+            borderView.isHidden = true
+            borderView.isTopVisible = false
+            borderView.isBottomVisible = false
+        } else {
+            borderView.isHidden = false
+            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        }
         updateWebViewBottomAnchor()
     }
 
@@ -864,26 +863,68 @@ class TabViewController: UIViewController {
     }
 
     func updateWebViewBottomAnchor(for barsVisibilityPercent: CGFloat) {
-        if appSettings.currentAddressBarPosition == .bottom && !(isAITab && unifiedToggleInputFeature.isAvailable) {
-            /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
-            /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
-            /// manages its own native bottom layout via the UnifiedToggleInput container.
-            let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
-            let effectiveBarsVisibilityPercent: CGFloat
-            if #available(iOS 26, *),
-               featureFlagger.isFeatureOn(.bottomBarViewportFixedElementsWorkaround) {
-                /// iOS 26 regressed fixed-bottom webpage elements when the browser continuously
-                /// resizes the webview's bottom inset while chrome hides/shows. Keep the inset
-                /// stable in bottom-address-bar mode to avoid pushing page-fixed footers offscreen.
-                effectiveBarsVisibilityPercent = 1.0
+        let isUnifiedToggleInputAffectingBottomLayout = isAITab && unifiedToggleInputFeature.isAvailable
+        if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingBottomLayout {
+            if chromeDelegate?.isInMinimalChromeLayout == true {
+                // Minimal chrome: inset follows the bars so the slot is reclaimed when hidden. The
+                // iOS 26 fixed inset is skipped; in landscape it leaves a visible gap once the bar
+                // scrolls away (contentContainer is exactly the screen height).
+                let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
+                webViewBottomAnchorConstraint?.constant = -targetHeight * barsVisibilityPercent
             } else {
-                effectiveBarsVisibilityPercent = barsVisibilityPercent
+                /// When address bar is at bottom on iPhone, offset webview to make room for the bars.
+                /// AI tabs skip this inset only when unifiedToggleInput is active — that feature
+                /// manages its own native bottom layout via the UnifiedToggleInput container.
+                let targetHeight = chromeDelegate?.barsMaxHeight ?? 0.0
+                let effectiveBarsVisibilityPercent: CGFloat
+                if #available(iOS 26, *),
+                   featureFlagger.isFeatureOn(.bottomBarViewportFixedElementsWorkaround) {
+                    /// iOS 26 regressed fixed-bottom webpage elements when the browser continuously
+                    /// resizes the webview's bottom inset while chrome hides/shows. Keep the inset
+                    /// stable in bottom-address-bar mode to avoid pushing page-fixed footers offscreen.
+                    effectiveBarsVisibilityPercent = 1.0
+                } else {
+                    effectiveBarsVisibilityPercent = barsVisibilityPercent
+                }
+                webViewBottomAnchorConstraint?.constant = -targetHeight * effectiveBarsVisibilityPercent
             }
-            webViewBottomAnchorConstraint?.constant = -targetHeight * effectiveBarsVisibilityPercent
         } else {
             webViewBottomAnchorConstraint?.constant = 0
         }
-        borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+            webViewBottomAnchorConstraint?.constant = 0
+            borderView.bottomAlpha = 0
+            borderView.isHidden = true
+            borderView.isTopVisible = false
+            borderView.isBottomVisible = false
+            updateFloatingTopContentInset(for: barsVisibilityPercent)
+        } else {
+            borderView.isHidden = false
+            borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+        }
+    }
+
+    /// In floating top mode the web content spans the full height behind the glass omnibar. Inset
+    /// the scroll view so content rests below the bar at rest and underflows it on scroll. The inset
+    /// scales with `barsVisibilityPercent` so it collapses to zero in lock-step as the bar hides.
+    private func updateFloatingTopContentInset(for barsVisibilityPercent: CGFloat) {
+        let topInset: CGFloat
+        // AI tabs with the unified toggle input manage their own top layout (the content container
+        // stays anchored below the chrome), so adding a top inset there would double-offset.
+        let isUnifiedToggleInputAffectingTopLayout = isAITab && unifiedToggleInputFeature.isAvailable
+        if FloatingUILayoutPolicy.shouldApplyFloatingTopContentInset(
+            isFloatingUIEnabled: true,
+            addressBarPosition: appSettings.currentAddressBarPosition,
+            isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingTopLayout
+        ) {
+            let omniBarHeight = chromeDelegate?.omniBar.barView.expectedHeight ?? 0
+            topInset = omniBarHeight * barsVisibilityPercent
+        } else {
+            topInset = 0
+        }
+        guard webView.scrollView.contentInset.top != topInset else { return }
+        webView.scrollView.contentInset.top = topInset
+        webView.scrollView.verticalScrollIndicatorInsets.top = topInset
     }
 
     private func observeNetPConnectionStatusChanges() {
@@ -891,8 +932,6 @@ class TabViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .assign(to: \.netPConnectionStatus, onWeaklyHeld: self)
     }
-
-    private(set) var webScrollObserver: WebScrollObserver?
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
@@ -909,7 +948,6 @@ class TabViewController: UIViewController {
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
 
         checkWebViewVisibilityConsistency()
-        webScrollObserver?.checkForWedgedRecognizer()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -984,12 +1022,16 @@ class TabViewController: UIViewController {
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
+        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+            webView.scrollView.clipsToBounds = false
+            webView.clipsToBounds = false
+            outerContainer.clipsToBounds = false
+        }
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)
 
         webView.allowsLinkPreview = true
         webView.allowsBackForwardNavigationGestures = true
-
         webView.preventFlashOnLoad()
 
         addObservers()
@@ -998,6 +1040,9 @@ class TabViewController: UIViewController {
         webView.uiDelegate = self
 
         webViewContainer.addSubview(webView)
+        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+            webViewContainer.clipsToBounds = false
+        }
         webView.translatesAutoresizingMaskIntoConstraints = false
         webViewBottomAnchorConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
         NSLayoutConstraint.activate([
@@ -1012,8 +1057,6 @@ class TabViewController: UIViewController {
                                                             onRefresh: { [weak self] in
             self?.handlePullToRefresh()
         })
-
-        attachScrollFreezeDiagnosticsIfNeeded()
 
         if isAITab {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(false)
@@ -1071,31 +1114,18 @@ class TabViewController: UIViewController {
 #endif
 
         borderView.insertSelf(into: webView)
-        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        updateBorderViewForFloatingUIIfNeeded()
     }
 
-    // Symptom detection + pixels ship to production behind the `webScrollFreezeObservability` kill switch
-    // (on by default). The heavy on-device freeze capture is injected only when `webScrollFreezeCapture`
-    // (internal-only) is on — in production `captureFreeze` is a no-op.
-    private func attachScrollFreezeDiagnosticsIfNeeded() {
-        guard webScrollObserver == nil, featureFlagger.isFeatureOn(.webScrollFreezeObservability) else { return }
-        let captureEnabled = featureFlagger.isFeatureOn(.webScrollFreezeCapture)
-        webScrollObserver = WebScrollObserver(container: webViewContainer,
-                                              scrollView: { [weak self] in self?.webView?.scrollView },
-                                              currentURL: { [weak self] in self?.webView?.url },
-                                              captureFreeze: captureEnabled
-                                                ? { WebScrollFreezeDebugCaptureStore.save(WebScrollFreezeDebugProbe.captureNow()) }
-                                                : {},
-                                              autoRecover: featureFlagger.isFeatureOn(.webScrollFreezeAutoRecovery)
-                                                ? { [weak self] in
-                                                    let ran = WebScrollFreezeRecovery.autoRecover(scrollView: self?.webView?.scrollView)
-                                                    if ran { DailyPixel.fireDailyAndCount(pixel: .debugInteractionRecoveryAttempted, withAdditionalParameters: [:]) }
-                                                    return ran
-                                                }
-                                                : { false })
-        webScrollObserver?.install()
-        if captureEnabled, let window = WebScrollFreezeDebugProbe.keyWindow() {
-            WebScrollFreezeDebugActiveTouchProbe.installIfNeeded(on: window)
+    private func updateBorderViewForFloatingUIIfNeeded() {
+        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
+            borderView.isHidden = true
+            borderView.isTopVisible = false
+            borderView.isBottomVisible = false
+            borderView.bottomAlpha = 0
+        } else {
+            borderView.isHidden = false
+            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         }
     }
 
@@ -1469,11 +1499,20 @@ class TabViewController: UIViewController {
         error.isHidden = false
         setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
-        errorMessage.text = message
+        errorMessage.text = formattedErrorMessage(message)
         errorActionButton.isHidden = true
         errorReportBrokenSiteButton.isHidden = true
         safariRedirectLoopErrorURL = nil
         error.layoutIfNeeded()
+    }
+
+    private func formattedErrorMessage(_ message: String) -> String {
+        // The English NSURLErrorCannotFindHost description wraps awkwardly; break it after
+        // "hostname" so it reads as two balanced lines.
+        return message.replacingOccurrences(
+            of: "A server with the specified hostname could not be found",
+            with: "A server with the specified hostname\ncould not be found"
+        )
     }
 
     private func hideErrorMessage() {
@@ -1511,7 +1550,7 @@ class TabViewController: UIViewController {
         return url.isDuckDuckGo
     }
 
-    var jsAlertController: JSAlertController!
+    var jsAlertView: JSAlertView!
 
     private func addTextZoomObserver() {
         NotificationCenter.default.addObserver(self,
@@ -1894,7 +1933,6 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        webScrollObserver?.reset()
         if let url = webView.url {
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)
@@ -1912,11 +1950,6 @@ extension TabViewController: WKNavigationDelegate {
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
 
-        if aiChatContextualSheetCoordinator.hasActiveSheet {
-            Task { [weak self] in
-                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
-            }
-        }
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -2141,8 +2174,8 @@ extension TabViewController: WKNavigationDelegate {
             let image = renderer.image { context in
                 context.cgContext.translateBy(x: 0, y: -webView.scrollView.contentInset.top)
                 webView.drawHierarchy(in: webView.bounds, afterScreenUpdates: true)
-                if let jsAlertController = self?.jsAlertController {
-                    jsAlertController.view.drawHierarchy(in: jsAlertController.view.bounds, afterScreenUpdates: false)
+                if let jsAlertView = self?.jsAlertView {
+                    jsAlertView.drawHierarchy(in: jsAlertView.bounds, afterScreenUpdates: false)
                 }
             }
 
@@ -2258,7 +2291,7 @@ extension TabViewController: WKNavigationDelegate {
             Logger.daxEasterEgg.debug("Created DaxEasterEggHandler for new tab")
         }
         
-        Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.absoluteString)")
+        Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.shortDescription)")
         daxEasterEggHandler?.extractLogosForCurrentPage()
     }
 
@@ -4036,7 +4069,6 @@ extension TabViewController: SecureVaultManagerDelegate {
             
             let saveLoginController = SaveLoginViewController(credentialManager: manager,
                                                               appSettings: self.appSettings,
-                                                              featureFlagger: self.featureFlagger,
                                                               domainLastShownOn: self.domainSaveLoginPromptLastShownOn,
                                                               backfilled: backfilled)
             self.domainSaveLoginPromptLastShownOn = self.url?.host
@@ -4575,7 +4607,6 @@ extension TabViewController: SaveLoginViewControllerDelegate {
             syncService.scheduler.notifyDataChanged()
 
             NotificationCenter.default.post(name: .autofillSaveEvent, object: nil)
-            AutofillOnboardingExperimentPixelReporter().firePasswordsSaved()
         } catch {
             Logger.general.error("failed to store credentials: \(error.localizedDescription, privacy: .public)")
         }

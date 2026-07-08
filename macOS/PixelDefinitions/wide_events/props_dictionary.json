@@ -88,5 +88,95 @@
                 "description": "The ninth nested underlying error code"
             }
         }
+    },
+    "dataImportTypeError": {
+        "type": "object",
+        "description": "Per-type error details for a single data import type (bookmarks, passwords, credit cards). Mirrors the shared error block but is keyed by `description` rather than `error_description`.",
+        "properties": {
+            "domain": {
+                "type": "string",
+                "description": "The top level error domain"
+            },
+            "code": {
+                "type": "integer",
+                "description": "The top level error code"
+            },
+            "description": {
+                "type": "string",
+                "description": "Additional error description"
+            },
+            "underlying_domain": {
+                "type": "string",
+                "description": "The underlying error domain"
+            },
+            "underlying_code": {
+                "type": "integer",
+                "description": "The underlying error code"
+            },
+            "underlying_domain2": {
+                "type": "string",
+                "description": "The second nested underlying error domain"
+            },
+            "underlying_code2": {
+                "type": "integer",
+                "description": "The second nested underlying error code"
+            },
+            "underlying_domain3": {
+                "type": "string",
+                "description": "The third nested underlying error domain"
+            },
+            "underlying_code3": {
+                "type": "integer",
+                "description": "The third nested underlying error code"
+            },
+            "underlying_domain4": {
+                "type": "string",
+                "description": "The fourth nested underlying error domain"
+            },
+            "underlying_code4": {
+                "type": "integer",
+                "description": "The fourth nested underlying error code"
+            },
+            "underlying_domain5": {
+                "type": "string",
+                "description": "The fifth nested underlying error domain"
+            },
+            "underlying_code5": {
+                "type": "integer",
+                "description": "The fifth nested underlying error code"
+            },
+            "underlying_domain6": {
+                "type": "string",
+                "description": "The sixth nested underlying error domain"
+            },
+            "underlying_code6": {
+                "type": "integer",
+                "description": "The sixth nested underlying error code"
+            },
+            "underlying_domain7": {
+                "type": "string",
+                "description": "The seventh nested underlying error domain"
+            },
+            "underlying_code7": {
+                "type": "integer",
+                "description": "The seventh nested underlying error code"
+            },
+            "underlying_domain8": {
+                "type": "string",
+                "description": "The eighth nested underlying error domain"
+            },
+            "underlying_code8": {
+                "type": "integer",
+                "description": "The eighth nested underlying error code"
+            },
+            "underlying_domain9": {
+                "type": "string",
+                "description": "The ninth nested underlying error domain"
+            },
+            "underlying_code9": {
+                "type": "integer",
+                "description": "The ninth nested underlying error code"
+            }
+        }
     }
 }

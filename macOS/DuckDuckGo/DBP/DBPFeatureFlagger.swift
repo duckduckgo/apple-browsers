@@ -30,10 +30,6 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
     }
 
-    var isEmailConfirmationDecouplingFeatureOn: Bool {
-        featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
-    }
-
     var isForegroundRunningOnAppActiveFeatureOn: Bool {
         // Not relevant to macOS
         return false
@@ -46,6 +42,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
     var isWebViewUserAgentOn: Bool {
         featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
+    }
+
+    var isOptOutRetryErrorFrequencyExperimentOn: Bool {
+        featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
     init(featureFlagger: FeatureFlagger) {

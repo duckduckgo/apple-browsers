@@ -173,6 +173,10 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     public var isAtRestartCheckpoint: Bool { progressState.isAtRestartCheckpoint }
     public var isAtDownloadCheckpoint: Bool { progressState.isAtDownloadCheckpoint }
 
+    public var shouldAutoCheckOnReleaseNotesLoad: Bool {
+        !featureFlagger.isFeatureOn(.skipReleaseNotesUpdateCheck)
+    }
+
     /// Updates Sparkle auto-download settings based on current feature flags and user preference.
     private func updateAutoDownloadSettings() {
         let shouldAutoDownload = resolveAutoDownloadEnabled(userPreference: areAutomaticUpdatesEnabled)
@@ -497,7 +501,9 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     @objc public func runUpdateFromMenuItem() {
-        openUpdatesPage()
+        if !featureFlagger.isFeatureOn(.skipReleaseNotesUpdateCheck) {
+            openUpdatesPage()
+        }
         runUpdate()
     }
 

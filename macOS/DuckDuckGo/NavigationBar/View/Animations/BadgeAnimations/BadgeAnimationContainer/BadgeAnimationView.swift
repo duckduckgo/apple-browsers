@@ -82,7 +82,12 @@ struct BadgeAnimationView: View {
                         .padding(.leading, geometry.size.height)
 
                     Spacer()
-                }.clipped()
+                }
+                .clipShape(
+                    /// Clip the sliding text to the badge's rounded-left shape (not a plain rectangle) so it doesn't  leak past the rounded corners while retracting.
+                    LeftRoundedRectangle(radius: backgroundRoundedCornersRadius(containerSize: geometry.size))
+                        .offset(x: Consts.View.textOffsetMargin)
+                )
                 .onAppear {
                     // Initialize text offset to hide text completely before animation
                     textOffset = -textWidth - Consts.View.textOffsetMargin
@@ -291,6 +296,7 @@ private enum Consts {
         static let cornerRadius: CGFloat = 10
         static let opaqueViewOffset: CGFloat = 8
         static let textOffsetMargin: CGFloat = 10
+        static let textClippingOffset: CGFloat = 1
     }
 }
 

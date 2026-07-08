@@ -1178,11 +1178,6 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
 
 extension MainViewController: UnifiedToggleInputDelegate {
 
-    private enum UnifiedToggleInputAIShortcutAction {
-        case query(String)
-        case chat(prompt: String)
-    }
-
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {
         // No per-tab persistence: existing tabs read from URL; new tabs read from setting + app-wide last-used.
         // The app-wide last-used is written through `UnifiedInputStateStore.commitToggleMode` on submit, which fires this delegate.
@@ -1224,14 +1219,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
-        switch unifiedToggleInputAIShortcutAction(for: prefilledText) {
-        case .query(let query):
-            unifiedToggleInputCoordinator?.clearText()
-            unifiedToggleInputCoordinator?.handleExternalSubmission(.query)
-            handleUnifiedToggleInputSearchSubmission(query)
-        case .chat(let prompt):
-            openUnifiedToggleInputAIShortcutChat(prompt: prompt)
-        }
+        // Coordinator-resolved: empty = untouched prefill (open Duck.ai, no prompt), else submit as the prompt.
+        openUnifiedToggleInputAIShortcutChat(prompt: prefilledText.trimmingWhitespace())
     }
 
     private func openUnifiedToggleInputAIShortcutChat(prompt: String) {
@@ -1248,32 +1237,6 @@ extension MainViewController: UnifiedToggleInputDelegate {
             return
         }
         onAIChatPressed(prefilledText: prompt)
-    }
-
-    private func unifiedToggleInputAIShortcutAction(for text: String) -> UnifiedToggleInputAIShortcutAction {
-        let trimmed = text.trimmingWhitespace()
-        guard let currentURL = currentTab?.url,
-              unifiedToggleInputText(trimmed, matchesCurrentURL: currentURL) else {
-            return .chat(prompt: trimmed)
-        }
-
-        if currentTab?.tabModel.isHomeTab == false, currentTab?.isAITab != true {
-            return .query(trimmed)
-        }
-        return .chat(prompt: "")
-    }
-
-    private func unifiedToggleInputText(_ text: String, matchesCurrentURL currentURL: URL) -> Bool {
-        let trimmed = text.trimmingWhitespace()
-        guard !trimmed.isEmpty else { return false }
-
-        let currentURLString = currentURL.absoluteString
-        let currentURLWithoutScheme = currentURLString.dropping(prefix: currentURL.navigationalScheme?.separated() ?? "")
-        return [
-            currentURLString,
-            currentURLWithoutScheme,
-            AddressDisplayHelper.plainDisplayString(for: currentURL)
-        ].contains(trimmed)
     }
 
     func unifiedToggleInputDidChangeHeight() {

@@ -244,6 +244,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var isOnboardingLocked: Bool = false
     private(set) var displayState: UnifiedToggleInputDisplayState = .hidden
     private(set) var textState: InputTextState = .empty
+    /// Omnibar prefill (usually the page URL); lets the shortcut tell an untouched prefill from user text.
+    private var omnibarPrefilledText: String?
     private(set) var inputMode: TextEntryMode = .aiChat
     private let stateStore: UnifiedInputStateStoring
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
@@ -859,8 +861,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if let text = prefilledText, !text.isEmpty {
             setText(text)
             textState = .prefilledSelected
+            omnibarPrefilledText = text
             shouldSelectAllText = true
         } else {
+            omnibarPrefilledText = nil
             shouldSelectAllText = false
         }
         updateFloatingReturnKeyState()
@@ -1176,6 +1180,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         //   covers the queued sink that fires next runloop tick.
         isPerformingDismissCleanup = true
         textState = .empty
+        omnibarPrefilledText = nil
         viewController.text = ""
         DispatchQueue.main.async { [weak self] in
             self?.isPerformingDismissCleanup = false
@@ -1959,15 +1964,15 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController) {
-        let prefilledText = currentText
-        // Outside omnibar editing the chip can't dismiss-to-omnibar; preserve the original
-        // straight-to-chat behavior to avoid wrong-destination collapses.
+        // Non-omnibar chip can't dismiss-to-omnibar; hand off current text to avoid wrong-destination collapses.
         guard isOmnibarSession else {
-            delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: prefilledText)
+            delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: currentText)
             return
         }
-        // Defer the chat request to the dismiss completion — its side-effects (omniBar.endEditing,
-        // sheet present, tab refresh) clobber the in-flight UTI mid-collapse otherwise.
+        // Untouched prefill (== omnibarPrefilledText) opens Duck.ai with no prompt; typed/edited text is the prompt.
+        let isUnmodifiedPrefill = omnibarPrefilledText.map { !$0.isEmpty && currentText == $0 } ?? false
+        let prefilledText = isUnmodifiedPrefill ? "" : currentText
+        // Defer to the dismiss completion — its side-effects clobber the in-flight UTI mid-collapse otherwise.
         vc.applyDismissSnapshot(delegate?.unifiedToggleInputDismissSnapshot() ?? .empty)
         onAnimatedDismissToOmnibar?({ [weak self] in
             self?.delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: prefilledText)

@@ -38,7 +38,7 @@ public final class SiteLoadingPerformanceSubfeature: Subfeature {
     private let samplePercentage: Int
     private let pixelFire: (PixelKitEvent, PixelKit.Frequency) -> Void
 
-    public init(samplePercentage: Int = 20,
+    public init(samplePercentage: Int = 2,
                 pixelFire: @escaping (PixelKitEvent, PixelKit.Frequency) -> Void = { event, frequency in
                     PixelKit.fire(event, frequency: frequency)
                 }) {

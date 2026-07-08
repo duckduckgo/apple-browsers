@@ -302,7 +302,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         #expect(items.first?.placeholderImage == expectedPlaceholder)
     }
 
-    @Test("Two-lines item parses imageUrl when present in JSON", .timeLimit(.minutes(1)))
+    @Test("Two-lines item parses imageUrl when present in JSON")
     func twoLinesItemParsesImageUrl() throws {
         // GIVEN
         let item = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(
@@ -323,7 +323,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         #expect(items.first?.imageUrl == URL(string: "https://example.com/image.png"))
     }
 
-    @Test("Two-lines item has nil imageUrl when JSON field is absent", .timeLimit(.minutes(1)))
+    @Test("Two-lines item has nil imageUrl when JSON field is absent")
     func twoLinesItemHasNilImageUrlWhenAbsent() throws {
         // GIVEN
         let item = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(id: "item1")
@@ -341,7 +341,7 @@ struct JsonToRemoteMessageModelMapperCardsListTests {
         #expect(items.first?.imageUrl == nil)
     }
 
-    @Test("Two-lines item has nil imageUrl when JSON value is an empty string", .timeLimit(.minutes(1)))
+    @Test("Two-lines item has nil imageUrl when JSON value is an empty string")
     func twoLinesItemRejectsEmptyImageUrl() throws {
         let invalidUrl = ""
         // GIVEN
@@ -1031,7 +1031,7 @@ struct JsonToRemoteMessageModelMapperFeaturedItemTests {
         #expect(items.last?.id == "item1")
     }
 
-    @Test("Featured item parses imageUrl when present in JSON", .timeLimit(.minutes(1)))
+    @Test("Featured item parses imageUrl when present in JSON")
     func featuredItemParsesImageUrl() throws {
         // GIVEN
         let featuredItem = RemoteMessageResponse.JsonListItem.mockFeaturedItem(
@@ -1052,7 +1052,7 @@ struct JsonToRemoteMessageModelMapperFeaturedItemTests {
         #expect(items.first?.imageUrl == URL(string: "https://example.com/featured.png"))
     }
 
-    @Test("Featured item has nil imageUrl when JSON field is absent", .timeLimit(.minutes(1)))
+    @Test("Featured item has nil imageUrl when JSON field is absent")
     func featuredItemHasNilImageUrlWhenAbsent() throws {
         // GIVEN
         let featuredItem = RemoteMessageResponse.JsonListItem.mockFeaturedItem(id: "featured1")

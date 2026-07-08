@@ -247,6 +247,24 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Fonctionnalités de l'IA";
 
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Discussion";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transcript";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Chat vocal";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Nouvelle discussion";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "À l'écoute…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "À l'écoute…";
+
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Discussions";
 
@@ -525,6 +543,9 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Déverrouiller DuckDuckGo.";
+
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Appuyez n'importe où pour déverrouiller";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Se connecter";
@@ -1059,12 +1080,6 @@
 
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Enregistrer ce mot de passe ?";
-
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Non merci";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Pas maintenant";
 
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Stockez votre mot de passe en toute sécurité sur votre appareil avec DuckDuckGo, Mots de passe et saisie automatique.";
@@ -2512,27 +2527,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "Onglets Fire";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "Nouveau";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Nouveau ! Naviguez sans enregistrer l'historique local ni vous connecter à des sites avec un autre compte.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Pas maintenant";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Essayez les Onglets Fire";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Essayez les Onglets Fire";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Essayez les onglets Fire pour naviguer sans enregistrer l'historique local.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "Nouveau : les onglets Fire";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Onglet Fire";
 
@@ -3202,8 +3196,8 @@
 /* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
 "onboarding.duckai.contextual.end-of-journey.message" = "Lancez un chat IA privé avec Duck.ai ou passez en mode Recherche pour une navigation protégée.\n\nVous pouvez utiliser Duck.ai partout où vous voyez l'icône de chat [[chat_icon]]";
 
-/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
-"onboarding.duckai.contextual.subscription.message" = "Nous proposons également un abonnement payant comprenant des modèles d'IA avancés avec des limites de chat supérieures de GPT, Claude et Llama, un VPN sécurisé et plus encore.";
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Nous proposons également un abonnement payant comprenant des modèles d'IA avancés avec des limites de chat supérieures de GPT et Claude, un VPN sécurisé et plus encore.";
 
 /* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
 "onboarding.duckai.duckAIQuery.title" = "Maintenant, essayez un chat IA privé !";
@@ -3261,6 +3255,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Protections activées !";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Servez-vous de la barre d'adresse pour effectuer des recherches et visiter des sites, ou passez sur Duck.ai pour un chat IA privé.\n\nVous pouvez utiliser Duck.ai partout où vous voyez l'icône de chat [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Les chats IA privés que vous pouvez supprimer à tout moment avec le Fire Button. Essayez par vous-même ! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "C’est Duck.ai !";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Posez toutes vos questions en privé";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Faites une recherche privée";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Explique-moi le marché boursier comme si j'avais 10 ans";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planifie une journée parfaite à Londres";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Cite 10 faits fascinants dans les domaines de la science, de la nature et de l'histoire.";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Prêt(e) à commencer ?\nEssayez une recherche ou un chat IA !";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Demander à l'IA";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Ignorer";
@@ -3572,6 +3596,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Previews" = "Prévisualisations";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Action principale / première action";
 
 /* No comment provided by engineer. */
@@ -3817,6 +3844,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Paramètres de recherche Assist";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Jamais";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Souvent";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "À la demande";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Parfois";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Search Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Envoyer automatiquement le contenu de la page à Duck.ai";
 
@@ -3826,11 +3868,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Suggestions de chat";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Utiliser DuckDuckGo sans IA";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Désactive Duck.ai, masque les réponses assistées par l'IA dans la recherche et filtre les sites de spam liés à l'IA dans les résultats de recherche d'images.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "L'IA est actuellement désactivée dans le navigateur ; vous ne verrez donc plus de réponses assistées par l'IA et verrez moins d'images générées par l'IA dans les résultats de recherche d'images.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Masquer les images générées par l'IA";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtre les images générées par l'IA des résultats de recherche d'images";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Désactivé";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Activé";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtre les sites de spam IA connus dans les résultats de recherche d'images. [En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Toujours activé";
@@ -3840,6 +3900,12 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Position de la barre d'adresse";
+
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Masquer la barre d'onglets pendant le défilement";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Disponible sur la plupart des sites web. Duck.ai, les cartes et les jeux peuvent garder la barre d'onglets visible.";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ouvrir les liens dans les applications associées";
@@ -3947,7 +4013,7 @@
 "settings.cookie.pop-up-protection.protection" = "Protection contre les fenêtres contextuelles des cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo essaiera de sélectionner les paramètres de confidentialité les plus élevés et de masquer ces fenêtres contextuelles pour vous.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo essaiera de sélectionner les paramètres de confidentialité les plus élevés et de masquer ces fenêtres contextuelles pour vous.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Gérer les fenêtres contextuelles (cookies)";
@@ -4735,15 +4801,6 @@
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Désactiver Sync & Backup ?";
 
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Supprimer";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Cet appareil ne pourra plus accéder à vos données synchronisées.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Désactiver la synchronisation ?";
-
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Déverrouiller l'appareil pour configurer Sync & Backup";
 
@@ -5278,39 +5335,6 @@
 
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Aucun résultat pour \"%@\"";
-
-/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.highlights.duckAIQuery.completion.message" = "Servez-vous de la barre d'adresse pour effectuer des recherches et visiter des sites, ou passez sur Duck.ai pour un chat IA privé.\n\nVous pouvez utiliser Duck.ai partout où vous voyez l'icône de chat [[chat_icon]]";
-
-/* Fire onboarding message shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.message" = "Les chats IA privés que vous pouvez supprimer à tout moment avec le Fire Button. Essayez par vous-même ! 🔥";
-
-/* Fire onboarding title shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.title" = "C’est Duck.ai !";
-
-/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.ai" = "Posez toutes vos questions en privé";
-
-/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.search" = "Faites une recherche privée";
-
-/* First suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option1" = "Explique-moi le marché boursier comme si j'avais 10 ans";
-
-/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option2" = "Planifie une journée parfaite à Londres";
-
-/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Cite 10 faits fascinants dans les domaines de la science, de la nature et de l'histoire.";
-
-/* Title for the onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.title" = "Prêt(e) à commencer ?\nEssayez une recherche ou un chat IA !";
-
-/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
-"onboarding.highlights.duckAIQuery.toggle.ai" = "Demander à l'IA";
-
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Code copié";
 
 
 /* Open the native Duck.ai chat history sheet from the browser menu. */

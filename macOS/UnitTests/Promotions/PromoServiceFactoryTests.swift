@@ -27,6 +27,7 @@ final class PromoServiceFactoryTests: XCTestCase {
 
     private var dependencies: PromoDependencies!
 
+    @MainActor
     override func setUp() {
         super.setUp()
         dependencies = makeDependencies()
@@ -134,6 +135,7 @@ final class PromoServiceFactoryTests: XCTestCase {
 }
 
 extension PromoServiceFactoryTests {
+    @MainActor
     private func makeDependencies() -> PromoDependencies {
         let activeRemoteMessageModel = ActiveRemoteMessageModel(
             remoteMessagingStore: MockRemoteMessagingStore(),
@@ -158,7 +160,10 @@ extension PromoServiceFactoryTests {
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
-            subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate()
+            subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
+            featureFlagger: MockFeatureFlagger(),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            windowControllersManager: WindowControllersManagerMock()
         )
     }
 }

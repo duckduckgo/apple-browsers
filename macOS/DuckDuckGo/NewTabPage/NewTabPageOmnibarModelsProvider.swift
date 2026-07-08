@@ -27,6 +27,7 @@ import Subscription
 final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
     private(set) var lastFetchedSections: [NewTabPageDataModel.AIModelSection]?
+    private(set) var attachmentLimits: NewTabPageDataModel.AttachmentLimits?
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
 
@@ -42,6 +43,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
         do {
             let response = try await modelsService.fetchModels()
             let userTier = await resolveUserTier()
+            attachmentLimits = mapAttachmentLimits(response.attachmentLimits?.limits(for: userTier))
             let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
             let hasActiveSubscription = userTier != .free
 
@@ -75,6 +77,23 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             Logger.aiChat.error("Failed to fetch models for NTP: \(error.localizedDescription)")
             return []
         }
+    }
+
+    private func mapAttachmentLimits(_ limits: AIChatAttachmentTierLimits?) -> NewTabPageDataModel.AttachmentLimits? {
+        guard let limits else { return nil }
+        return NewTabPageDataModel.AttachmentLimits(
+            files: .init(
+                maxPerConversation: limits.files.maxPerConversation,
+                maxFileSizeMB: limits.files.maxFileSizeMB,
+                maxTotalFileSizeBytes: limits.files.maxTotalFileSizeBytes,
+                maxPagesPerFile: limits.files.maxPagesPerFile
+            ),
+            images: .init(
+                maxPerTurn: limits.images.maxPerTurn,
+                maxPerConversation: limits.images.maxPerConversation,
+                maxInputCharsWithAttachments: limits.images.maxInputCharsWithAttachments
+            )
+        )
     }
 
     private func resolveUserTier() async -> AIChatUserTier {

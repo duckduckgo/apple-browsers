@@ -758,7 +758,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         responder(at: 0).onDidFinish = { _ in eDidFinish.fulfill() }
 
         responder(at: 0).onNavigationAction = { [urls, data] action, _ in
-            if action.url.matches(urls.local) {
+            if action.url.equals(urls.local, by: .fuzzyIdentity) {
                 return .redirect(action.mainFrameTarget!) { webView in
                     webView.loadSimulatedRequest(req(urls.https), responseHTML: String(data: data.html, encoding: .utf8)!, withExpectedNavigationType: .custom(.init(rawValue: "redir")))
                 }
@@ -798,7 +798,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         responder(at: 0).onDidFinish = { _ in eDidFinish.fulfill() }
 
         responder(at: 0).onNavigationAction = { [urls] action, _ in
-            if action.url.matches(urls.local) {
+            if action.url.equals(urls.local, by: .fuzzyIdentity) {
                 return .redirect(action.mainFrameTarget!) { webView in
                     webView.load(req(urls.aboutBlank))
                 }
@@ -839,7 +839,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         }
 
         responder(at: 0).onNavigationAction = { [urls] action, _ in
-            if action.url.matches(urls.local) {
+            if action.url.equals(urls.local, by: .fuzzyIdentity) {
                 return .redirect(action.mainFrameTarget!) { webView in
                     webView.load(req(urls.local2))
                 }
@@ -849,7 +849,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             }
         }
         responder(at: 0).onNavigationResponse = { [urls] response in
-            if response.url.matches(urls.local2) {
+            if response.url.equals(urls.local2, by: .fuzzyIdentity) {
                 return .cancel
             }
             return .allow
@@ -886,7 +886,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         responder(at: 0).onDidFinish = { _ in eDidFinish.fulfill() }
 
         responder(at: 0).onNavigationAction = { [urls] action, _ in
-            if action.url.matches(urls.local) {
+            if action.url.equals(urls.local, by: .fuzzyIdentity) {
                 return .redirect(action.mainFrameTarget!) { webView in
                     webView.load(req(urls.local2))
                     webView.load(req(urls.local3))
@@ -950,7 +950,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         try server.start(8084)
 
         responder(at: 0).onNavigationAction = { [urls] action, _ in
-            if action.url.matches(urls.local2) {
+            if action.url.equals(urls.local2, by: .fuzzyIdentity) {
                 return .cancel
             }
             return .allow
@@ -1000,7 +1000,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         responder(at: 0).onNavigationAction = { _, _ in .allow }
         responder(at: 0).onDidCommit = { [weak self, urls] nav in
-            if nav.url.matches(urls.testScheme) {
+            if nav.url.equals(urls.testScheme, by: .fuzzyIdentity) {
                 DispatchQueue.main.async {
                     self!._webView!.load(req(urls.local4))
                     lock.unlock()
@@ -1037,6 +1037,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         ])
     }
 
+    @MainActor
     func testClientRedirectNavigationActionCancellation() throws {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
         navigationDelegateProxy.finishEventsDispatchTime = .instant
@@ -1054,7 +1055,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         try server.start(8084)
 
         responder(at: 0).onNavigationAction = { [urls] navAction, _ in
-            if navAction.url.matches(urls.local2) {
+            if navAction.url.equals(urls.local2, by: .fuzzyIdentity) {
                 return .cancel
             }
             return .allow
@@ -1100,7 +1101,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         try server.start(8084)
 
         responder(at: 0).onNavigationAction = { [urls] navAction, _ in
-            if navAction.url.matches(urls.local2) {
+            if navAction.url.equals(urls.local2, by: .fuzzyIdentity) {
                 return .cancel
             }
             return .allow
@@ -1145,7 +1146,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         try server.start(8084)
 
         responder(at: 0).onNavigationResponse = { [urls] navResponse in
-            if navResponse.url.matches(urls.local2) {
+            if navResponse.url.equals(urls.local2, by: .fuzzyIdentity) {
                 return .cancel
             }
             return .allow
@@ -1213,7 +1214,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         let eDidFinish2 = expectation(description: "onDidFinish 2")
         var eDidFinish = eDidFinish1
         responder(at: 0).onNavigationAction = { @MainActor [urls] navAction, _ in
-            if navAction.url.matches(urls.local2) {
+            if navAction.url.equals(urls.local2, by: .fuzzyIdentity) {
 #if _IS_USER_INITIATED_ENABLED
                 XCTAssertTrue(navAction.isUserInitiated)
 #endif
@@ -1236,13 +1237,13 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         responder(at: 0).history.removeAll {
             switch $0 {
             case .navigationAction(let navAct, _, _):
-                return navAct.navigationAction.url.matches(urls.local3)
+                return navAct.navigationAction.url.equals(urls.local3, by: .fuzzyIdentity)
             case .navigationResponse(.response(let resp, _), _):
-                return resp.response.url.matches(urls.local3)
+                return resp.response.url.equals(urls.local3, by: .fuzzyIdentity)
             case .didCommit(let nav, _):
-                return nav.navigationAction.navigationAction.url.matches(urls.local3)
+                return nav.navigationAction.navigationAction.url.equals(urls.local3, by: .fuzzyIdentity)
             case .didFinish(let nav, _):
-                return nav.navigationAction.navigationAction.url.matches(urls.local3)
+                return nav.navigationAction.navigationAction.url.equals(urls.local3, by: .fuzzyIdentity)
             default:
                 return false
             }
@@ -1319,7 +1320,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         var developerRedirectExpectation: XCTestExpectation!
         responder(at: 0).onNavigationAction = { @MainActor [urls] action, _ in
-            if action.url.matches(urls.local3) {
+            if action.url.equals(urls.local3, by: .fuzzyIdentity) {
                 // Developer-redirect during client-redirected navigation
                 return .redirect(action.mainFrameTarget!) { webView in
                     webView.load(req(urls.local4))
@@ -1343,11 +1344,11 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         let eDidFinishFinal = expectation(description: "onDidFinish urls.local4")
 
         responder(at: 0).onDidFinish = { [urls] navigation in
-            if navigation.url.matches(urls.local) {
+            if navigation.url.equals(urls.local, by: .fuzzyIdentity) {
                 eDidFinishInitial.fulfill()
-            } else if navigation.url.matches(urls.local2) {
+            } else if navigation.url.equals(urls.local2, by: .fuzzyIdentity) {
                 eDidFinishLocal2.fulfill()
-            } else if navigation.url.matches(urls.local4) {
+            } else if navigation.url.equals(urls.local4, by: .fuzzyIdentity) {
                 eDidFinishFinal.fulfill()
             }
         }
@@ -1389,7 +1390,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         var developerRedirectExpectation: XCTestExpectation!
         responder(at: 0).onNavigationAction = { @MainActor [urls] action, _ in
-            if action.url.matches(urls.local3) {
+            if action.url.equals(urls.local3, by: .fuzzyIdentity) {
                 // Developer-redirect during client-redirected navigation
                 return .redirect(action.mainFrameTarget!) { webView in
                     webView.load(req(urls.local4), withExpectedNavigationType: .custom(CustomNavigationType(rawValue: "redir")))
@@ -1413,11 +1414,11 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         let eDidFinishFinal = expectation(description: "onDidFinish urls.local4")
 
         responder(at: 0).onDidFinish = { [urls] navigation in
-            if navigation.url.matches(urls.local) {
+            if navigation.url.equals(urls.local, by: .fuzzyIdentity) {
                 eDidFinishInitial.fulfill()
-            } else if navigation.url.matches(urls.local2) {
+            } else if navigation.url.equals(urls.local2, by: .fuzzyIdentity) {
                 eDidFinishLocal2.fulfill()
-            } else if navigation.url.matches(urls.local4) {
+            } else if navigation.url.equals(urls.local4, by: .fuzzyIdentity) {
                 eDidFinishFinal.fulfill()
             }
         }
@@ -1459,7 +1460,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         var developerRedirectExpectation: XCTestExpectation!
         responder(at: 0).onNavigationAction = { @MainActor [urls] action, _ in
-            if action.url.matches(urls.local3) {
+            if action.url.equals(urls.local3, by: .fuzzyIdentity) {
                 // Developer-redirect during client-redirected navigation
                 return .redirect(action.mainFrameTarget!) { webView in
                     webView.load(req(urls.local4))
@@ -1483,9 +1484,9 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         let eDidFinishFinal = expectation(description: "onDidFinish urls.local4")
 
         responder(at: 0).onDidFinish = { [urls] navigation in
-            if navigation.url.matches(urls.local2) {
+            if navigation.url.equals(urls.local2, by: .fuzzyIdentity) {
                 eDidFinishLocal2.fulfill()
-            } else if navigation.url.matches(urls.local4) {
+            } else if navigation.url.equals(urls.local4, by: .fuzzyIdentity) {
                 eDidFinishFinal.fulfill()
             }
         }
@@ -1525,13 +1526,13 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         var firstDeveloperRedirectExpectation: XCTestExpectation!
         var secondDeveloperRedirectExpectation: XCTestExpectation!
         responder(at: 0).onNavigationAction = { @MainActor [urls] action, _ in
-            if action.url.matches(urls.local3) {
+            if action.url.equals(urls.local3, by: .fuzzyIdentity) {
                 // First developer-redirect during first client-redirected navigation
                 return .redirect(action.mainFrameTarget!) { webView in
                     webView.load(req(urls.local4))
                     firstDeveloperRedirectExpectation.fulfill()
                 }
-            } else if action.url.matches(urls.local2) {
+            } else if action.url.equals(urls.local2, by: .fuzzyIdentity) {
                 // Second developer-redirect during second client-redirected navigation
                 return .redirect(action.mainFrameTarget!) { webView in
                     webView.load(req(urls.local6))

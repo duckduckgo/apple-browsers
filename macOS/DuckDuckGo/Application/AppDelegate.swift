@@ -54,6 +54,7 @@ import os.log
 import Persistence
 import PixelExperimentKit
 import PixelKit
+import SERPSettings
 import PrivacyConfig
 import PrivacyStats
 import RemoteMessaging
@@ -469,8 +470,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let startupProfiler: StartupProfiler
     private var startupMetricsReporter: PerformanceMetricsReporter?
 
-    let displaysTabsAnimations: Bool
-
     /// The date this app instance was launched, used for computing uptime in memory pixels.
     private let appLaunchDate = Date()
 
@@ -640,8 +639,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
-
-        displaysTabsAnimations = AnimationsAvailabilityDecider(featureFlagger: featureFlagger).displaysTabsAnimations
 
         webExtensionAvailability = WebExtensionAvailability(
             featureFlagger: featureFlagger,
@@ -850,7 +847,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
 
         let voiceChatPermissionOverride = DuckAiVoiceChatPermissionOverride(featureFlagger: featureFlagger)
 #if DEBUG
@@ -1433,7 +1430,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
                 sessionRestoreCoordinator: sessionRestorePromptCoordinator,
-                subscriptionPromoDelegate: subscriptionPromoDelegate
+                subscriptionPromoDelegate: subscriptionPromoDelegate,
+                featureFlagger: featureFlagger,
+                cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                windowControllersManager: windowControllersManager
             )
             promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
             NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1567,6 +1567,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
         fireDailyAIChatEnabledPixel()
+        fireDailyAIFeaturesStatePixel()
         fireDailyAdBlockingPixel()
         fireDailyAutoClearOnExitEnabledPixel()
 
@@ -1617,6 +1618,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyAIChatEnabledPixel() {
         PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
+    }
+
+    /// Once-daily snapshot of the three AI settings + the derived "no AI" state, across the active base.
+    private func fireDailyAIFeaturesStatePixel() {
+        let serpSettings = SERPSettingsProvider()
+        let duckAIEnabled = aiChatPreferences.isAIFeaturesEnabled
+        let searchAssist = serpSettings.searchAssistFrequency
+        let hideAIImages = serpSettings.hideAIGeneratedImages
+        let noAI = !duckAIEnabled && searchAssist == .never && hideAIImages
+
+        PixelKit.fire(AIChatPixel.aiFeaturesState(duckAI: duckAIEnabled,
+                                                  searchAssist: searchAssist.rawValue,
+                                                  hideAIImages: hideAIImages,
+                                                  noAI: noAI),
+                      frequency: .daily,
+                      includeAppVersionParameter: true)
     }
 
     private func fireDailyAutoClearOnExitEnabledPixel() {

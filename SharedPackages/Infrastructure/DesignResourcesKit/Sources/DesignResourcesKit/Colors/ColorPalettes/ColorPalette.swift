@@ -60,6 +60,8 @@ public enum ColorPalette {
 
     var paletteDefinition: SharedColorPaletteDefinition.Type {
         switch self {
+        case .default where DesignSystemRebrand.isAppRebranded():
+            return LatestColorPalette.self
         case .default:
             return FigmaColorPalette.self
         case .coolGray:

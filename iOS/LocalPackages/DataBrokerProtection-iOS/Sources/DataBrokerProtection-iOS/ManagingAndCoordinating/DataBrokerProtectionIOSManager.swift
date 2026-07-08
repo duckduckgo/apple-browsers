@@ -27,6 +27,7 @@ import os.log
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import DataBrokerProtectionDebugServer
 import WebKit
 import BackgroundTasks
 import PrivacyConfig
@@ -79,6 +80,11 @@ public class DBPIOSInterface {
         func fireWeeklyPixels() async
 
         func resetAllNotificationStatesForDebug()
+
+        @discardableResult
+        func startDebugServer() async -> Bool
+        func stopDebugServer()
+        var debugServerPort: UInt16? { get }
     }
 
     public protocol AuthenticationDelegate: AnyObject {
@@ -185,6 +191,9 @@ public final class DataBrokerProtectionIOSManager {
     private var currentRunIsFreeScan: Bool?
     private var isContinuedProcessingRunActive = false
 
+    private var debugServer: DataBrokerProtectionDebugHTTPServer?
+    private var lastBackgroundTaskTriggerTimestamp: Date?
+
     private lazy var continuedProcessingCoordinator: any DBPContinuedProcessingCoordinating = {
         guard #available(iOS 26.0, *) else {
             fatalError("Continued processing coordinator is unavailable before iOS 26")
@@ -247,7 +256,8 @@ public final class DataBrokerProtectionIOSManager {
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
                                                         runTypeProvider: settings,
-                                                        isAuthenticatedUser: { [authenticationManager] in await authenticationManager.isUserAuthenticated })
+                                                        isAuthenticatedUser: { [authenticationManager] in await authenticationManager.isUserAuthenticated },
+                                                        optOutRetryErrorFeatureFlagger: featureFlagger)
 
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                        settings: settings,
@@ -353,7 +363,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
             return
         }
 
-        let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database)
+        let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database,
+                                                                          featureFlagger: featureFlagger)
         operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
 
         if featureFlagger.isForegroundRunningOnAppActiveFeatureOn,
@@ -624,6 +635,84 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
     public func resetAllNotificationStatesForDebug() {
         userNotificationService.resetAllNotificationStatesForDebug()
     }
+
+    private var canStartDebugServer: Bool {
+        #if DEBUG
+        return true
+        #else
+        return privacyConfigManager.internalUserDecider.isInternalUser
+        #endif
+    }
+
+    @discardableResult
+    public func startDebugServer() async -> Bool {
+        guard canStartDebugServer else {
+            Logger.dataBrokerProtection.error("Blocked PIR debug server start outside debug/internal-user context.")
+            return false
+        }
+
+        if let debugServer {
+            if debugServer.isStartingOrRunning {
+                return true
+            }
+            debugServer.stop()
+            self.debugServer = nil
+        }
+
+        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionIOSLogReader())
+        do {
+            try server.start()
+            debugServer = server
+            return true
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to start PIR debug server: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
+
+    public func stopDebugServer() {
+        debugServer?.stop()
+        debugServer = nil
+    }
+
+    public var debugServerPort: UInt16? {
+        guard let debugServer, debugServer.isStartingOrRunning else {
+            return nil
+        }
+
+        return debugServer.port
+    }
+}
+
+// MARK: - Debug HTTP server read access
+
+extension DataBrokerProtectionIOSManager: DataBrokerProtectionDebugReadProviding {
+
+    public var agentVersion: String {
+        let version = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "unknown"
+        let build = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "unknown"
+        return "\(version) (build: \(build))"
+    }
+
+    public var schedulerStateString: String { queueManager.debugRunningStatusString }
+
+    public var lastSchedulerTrigger: Date? { lastBackgroundTaskTriggerTimestamp }
+
+    public var environmentName: String {
+        settings.selectedEnvironment == .production ? "production" : "staging"
+    }
+
+    public var endpointURL: URL { settings.endpointURL }
+
+    public var mainConfigETag: String? { settings.mainConfigETag }
+
+    public var lastBrokerJSONUpdateCheck: Date {
+        Date(timeIntervalSince1970: settings.lastBrokerJSONUpdateCheckTimestamp)
+    }
+
+    public func brokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+        try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
+    }
 }
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelegate {
@@ -846,6 +935,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
         iOSPixelsHandler.fire(.backgroundTaskStarted)
         let startDate = Date.now
         let sessionId = UUID().uuidString
+        lastBackgroundTaskTriggerTimestamp = startDate
 
         // Record started event
         do {

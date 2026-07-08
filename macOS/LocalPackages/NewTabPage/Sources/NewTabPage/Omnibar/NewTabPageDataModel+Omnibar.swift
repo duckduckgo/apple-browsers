@@ -64,6 +64,46 @@ public extension NewTabPageDataModel {
         }
     }
 
+    /// Attachment limits sourced from the Duck.ai backend (`/duckchat/v1/models`, field
+    /// `attachmentLimits`), already resolved for the user's tier. Forwarded to the web so the NTP
+    /// omnibar can enforce them instead of hardcoding defaults. Mirrors the resolved shape of
+    /// `AIChat.AIChatAttachmentTierLimits`.
+    struct AttachmentLimits: Codable, Equatable {
+        public struct FileLimits: Codable, Equatable {
+            let maxPerConversation: Int
+            let maxFileSizeMB: Int
+            let maxTotalFileSizeBytes: Int
+            let maxPagesPerFile: Int
+
+            public init(maxPerConversation: Int, maxFileSizeMB: Int, maxTotalFileSizeBytes: Int, maxPagesPerFile: Int) {
+                self.maxPerConversation = maxPerConversation
+                self.maxFileSizeMB = maxFileSizeMB
+                self.maxTotalFileSizeBytes = maxTotalFileSizeBytes
+                self.maxPagesPerFile = maxPagesPerFile
+            }
+        }
+
+        public struct ImageLimits: Codable, Equatable {
+            let maxPerTurn: Int
+            let maxPerConversation: Int
+            let maxInputCharsWithAttachments: Int
+
+            public init(maxPerTurn: Int, maxPerConversation: Int, maxInputCharsWithAttachments: Int) {
+                self.maxPerTurn = maxPerTurn
+                self.maxPerConversation = maxPerConversation
+                self.maxInputCharsWithAttachments = maxInputCharsWithAttachments
+            }
+        }
+
+        let files: FileLimits
+        let images: ImageLimits
+
+        public init(files: FileLimits, images: ImageLimits) {
+            self.files = files
+            self.images = images
+        }
+    }
+
     struct OmnibarConfig: Codable, Equatable {
         let mode: OmnibarMode
         let enableAi: Bool
@@ -95,6 +135,11 @@ public extension NewTabPageDataModel {
         /// `aiChatNtpAttachMoreTabs` feature flag and reactive over `omnibar_onConfigUpdate`.
         /// `nil`/false means the affordances stay hidden and existing flows are unchanged.
         let enableAttachTabs: Bool?
+        /// Backend-provided attachment limits, already tier-resolved. `nil` on older native builds
+        /// or when the backend omits them, in which case the web falls back to its built-in defaults.
+        /// The `= nil` default makes this a trailing optional parameter of the synthesized memberwise
+        /// initializer, so the existing `OmnibarConfig(...)` call sites (and tests) compile unchanged.
+        var attachmentLimits: AttachmentLimits? = nil
     }
 
     // MARK: - omnibar_getSuggestions

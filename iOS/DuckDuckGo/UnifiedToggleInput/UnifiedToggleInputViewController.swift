@@ -42,6 +42,8 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAppMenu(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidShowModelPicker(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
 }
 
 // MARK: - View Controller
@@ -324,6 +326,15 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.finalizeOmnibarEditingDismiss()
     }
 
+    var omnibarPillWindowFrame: CGRect? {
+        get { inputBarView.omnibarPillWindowFrame }
+        set { inputBarView.omnibarPillWindowFrame = newValue }
+    }
+
+    func captureOmnibarMatchedInsets() {
+        inputBarView.captureOmnibarMatchedInsets()
+    }
+
     func setInputMode(_ mode: TextEntryMode, animated: Bool) {
         inputBarView.setInputMode(mode, animated: animated)
     }
@@ -461,6 +472,14 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapReturnKey(self)
+    }
+
+    func unifiedToggleInputViewDidShowModelPicker(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidShowModelPicker(self)
+    }
+
+    func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidShowReasoningPicker(self)
     }
 }
 

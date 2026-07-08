@@ -203,6 +203,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let syncHandler: AIChatSyncHandling
     private let featureFlagger: FeatureFlagger
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
+    private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
     private var syncStatusChangedHandler: ((AIChatSyncHandler.SyncStatus) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private let migrationStore = AIChatMigrationStore()
@@ -237,6 +238,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
          aichatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
          aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> = AIChatUserScriptErrorEventMapper(),
          isNativeStorageBridgeAvailable: Bool = false,
          installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
@@ -251,6 +253,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.aichatFullModeFeature = aichatFullModeFeature
         self.aichatContextualModeFeature = aichatContextualModeFeature
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
         self.aiChatUserScriptErrorEventMapper = aiChatUserScriptErrorEventMapper
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
         self.installDateProvider = installDateProvider
@@ -384,7 +387,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && unifiedToggleInputFeature.isAvailable
-        let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt
+        let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt || iPadDuckAIControlsFeature.isAvailable
         let fireMode = isFireModeProvider?() ?? false
 
         return AIChatNativeConfigValues(

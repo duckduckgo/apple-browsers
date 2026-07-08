@@ -36,6 +36,7 @@ final class AIChatContentHandlerTests: XCTestCase {
     var mockProductSurfaceTelemetry: MockProductSurfaceTelemetry!
     var mockFreeTrialConversionService: MockFreeTrialConversionInstrumentationService!
     var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
+    var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
 
     override func setUpWithError() throws {
         mockSettings = MockAIChatSettingsProvider()
@@ -44,6 +45,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         mockProductSurfaceTelemetry = MockProductSurfaceTelemetry()
         mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
+        mockIPadDuckAIControlsFeature = MockIPadDuckAIControlsFeatureProvider()
 
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
@@ -53,7 +55,8 @@ final class AIChatContentHandlerTests: XCTestCase {
             productSurfaceTelemetry: mockProductSurfaceTelemetry,
             freeTrialConversionService: mockFreeTrialConversionService,
             statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
-            unifiedToggleInputFeature: mockUnifiedToggleInputFeature
+            unifiedToggleInputFeature: mockUnifiedToggleInputFeature,
+            iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature
         )
     }
 
@@ -283,6 +286,34 @@ final class AIChatContentHandlerTests: XCTestCase {
 
         let nativeInputItem = components.queryItems?.first { $0.name == AIChatURLParameters.nativeInputName }
         XCTAssertEqual(nativeInputItem?.value, AIChatURLParameters.nativeInputValue)
+    }
+
+    func testWhenIPadDuckAIControlsAvailableThenBuildQueryURLAddsNativeInputParameter() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = true
+
+        let url = handler.buildQueryURL(query: "test", autoSend: false, flowType: .default, tools: nil)
+
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            XCTFail("Invalid URL components")
+            return
+        }
+
+        let nativeInputItem = components.queryItems?.first { $0.name == AIChatURLParameters.nativeInputName }
+        XCTAssertEqual(nativeInputItem?.value, AIChatURLParameters.nativeInputValue)
+    }
+
+    func testWhenNoNativeInputSourceAvailableThenBuildQueryURLOmitsNativeInputParameter() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+
+        let url = handler.buildQueryURL(query: "test", autoSend: false, flowType: .default, tools: nil)
+
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let nativeInputItem = components?.queryItems?.first { $0.name == AIChatURLParameters.nativeInputName }
+        XCTAssertNil(nativeInputItem)
     }
 
     func testBuildQueryURLWithNativeInputAvailableAndNilQueryAddsNativeInputParameter() throws {
@@ -552,6 +583,33 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Hello")
         XCTAssertNil(mockUserScript.lastSubmittedPageContext)
     }
+
+    func testSubmitRichPromptPassesPageContextToUserScript() throws {
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView, displayMode: .contextual)
+        let pageContext = AIChatPageContextData(
+            title: "Queued Page",
+            favicon: [],
+            url: "https://example.com/queued",
+            content: "Queued content",
+            truncated: false,
+            fullContentLength: 14
+        )
+
+        handler.submitPrompt("Summarize queued page",
+                             images: nil,
+                             files: nil,
+                             modelId: nil,
+                             tools: nil,
+                             pageContext: pageContext,
+                             reasoningEffort: nil)
+
+        XCTAssertEqual(mockUserScript.submitPromptCallCount, 1)
+        XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Summarize queued page")
+        XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.title, "Queued Page")
+        XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.url, "https://example.com/queued")
+    }
     
     // MARK: - Delegate Notifications
 
@@ -683,13 +741,11 @@ final class MockAIChatRequestAuthHandler: AIChatRequestAuthorizationHandling {
     }
 }
 
-final class MockUnifiedToggleInputFeatureProvider: UnifiedToggleInputFeatureProviding {
+final class MockIPadDuckAIControlsFeatureProvider: IPadDuckAIControlsFeatureProviding {
     var isAvailable: Bool
-    var isToggleHiddenOnDuckAITab: Bool
 
-    init(isAvailable: Bool = false, isToggleHiddenOnDuckAITab: Bool = false) {
+    init(isAvailable: Bool = false) {
         self.isAvailable = isAvailable
-        self.isToggleHiddenOnDuckAITab = isToggleHiddenOnDuckAITab
     }
 }
 
@@ -742,6 +798,18 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     }
 
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
+        submitPromptCallCount += 1
+        lastSubmittedPrompt = prompt
+        lastSubmittedPageContext = pageContext
+    }
+
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?) {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
         lastSubmittedPageContext = pageContext

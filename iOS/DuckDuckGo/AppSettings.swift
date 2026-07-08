@@ -20,6 +20,7 @@
 import Bookmarks
 import Foundation
 import Onboarding
+import WebExtensions
 
 enum AutoplayBlockingMode: String, CaseIterable, CustomStringConvertible {
     case allowAll
@@ -102,6 +103,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     
     var currentFireButtonAnimation: FireButtonAnimationType { get set }
     var currentAddressBarPosition: AddressBarPosition { get set }
+    var keepAddressBarVisibleOnIPad: Bool { get set }
     var currentRefreshButtonPosition: RefreshButtonPosition { get set }
     var showFullSiteAddress: Bool { get set }
     var showTrackersBlockedAnimation: Bool { get set }
@@ -124,6 +126,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     func isWidgetInstalled() async -> Bool
     
     var autoconsentEnabled: Bool { get set }
+    var cookiePopupPreference: CookiePopupPreference { get set }
 
     var crashCollectionOptInStatus: CrashCollectionOptInStatus { get set }
     var crashCollectionShouldRevertOptedInStatusTrigger: Int { get set }

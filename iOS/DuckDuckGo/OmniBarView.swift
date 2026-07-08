@@ -130,6 +130,9 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     /// Restores bar pill background, shadow, and text field. Idempotent.
     func restoreBarChrome()
+
+    func makeGlass()
+    func makeOpaque()
 }
 
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.

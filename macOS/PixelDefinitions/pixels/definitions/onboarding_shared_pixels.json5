@@ -56,6 +56,20 @@
             "onboardingDaysSinceInstall"
         ]
     },
+    "m_mac_onboarding_chrome-extension-install": {
+        "description": "Fired on the Chrome Extension Install option of the Get Started step of the linear onboarding flow.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall"
+        ]
+    },
     "m_mac_onboarding_duck-player": {
         "description": "Fired on the Duck Player step of the linear onboarding flow.",
         "owners": ["rachelmcr"],

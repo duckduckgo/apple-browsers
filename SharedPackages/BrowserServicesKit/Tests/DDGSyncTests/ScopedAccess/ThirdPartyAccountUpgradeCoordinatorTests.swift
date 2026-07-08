@@ -190,8 +190,8 @@ final class ThirdPartyAccountUpgradeCoordinatorTests: XCTestCase {
                 recoveryCode(),
                 deviceName: "Mac",
                 deviceType: "desktop")
-            XCTFail("Expected unauthorized final native login failure")
-        } catch ThirdPartyAccountUpgradeError.finalNativeLoginFailed {
+            XCTFail("Expected invalid credentials final native login failure")
+        } catch ThirdPartyAccountUpgradeError.invalidCredentials {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

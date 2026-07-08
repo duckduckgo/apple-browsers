@@ -30,6 +30,8 @@ struct ScanTabView: View {
 
     @Binding var showIntroAnimation: Bool
 
+    @State private var instructionsHeight: CGFloat = 0
+
     var body: some View {
         ZStack(alignment: .top) {
             if showIntroAnimation {
@@ -39,10 +41,15 @@ struct ScanTabView: View {
             }
 
             instructions
-                .allowsHitTesting(false)
+                .background(
+                    GeometryReader { geometry in
+                        Color.clear.preference(key: InstructionsHeightKey.self, value: geometry.size.height)
+                    }
+                )
         }
         .clipShape(RoundedRectangle(cornerRadius: 34))
         .ignoresSafeArea(.all, edges: .bottom)
+        .onPreferenceChange(InstructionsHeightKey.self) { instructionsHeight = $0 }
     }
 
     private var introAnimation: some View {
@@ -76,10 +83,12 @@ struct ScanTabView: View {
 
     private func dismissIntroAnimation() {
         guard showIntroAnimation else { return }
-        withAnimation(.easeInOut(duration: 0.3)) {
-            showIntroAnimation = false
-        }
+        showIntroAnimation = false
         model.introAnimationCompleted()
+    }
+
+    private var isScanningActive: Bool {
+        model.videoPermission == .authorised && model.showCamera
     }
 
     private var cameraContainer: some View {
@@ -100,7 +109,13 @@ struct ScanTabView: View {
                 }
             }
         }
-        .overlay(Color(designSystemColor: .shadowSecondary).opacity(0.7))
+        .overlay {
+            if isScanningActive {
+                QRScannerOverlay(topInset: instructionsHeight)
+            } else {
+                Color(designSystemColor: .shadowSecondary).opacity(0.7)
+            }
+        }
     }
 
     private var instructions: some View {
@@ -135,7 +150,7 @@ private struct CameraPermissionDeniedView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            Image(rebrandable: "SyncCameraPermission")
+            Image(rebrandable: "SyncCameraPermission", bundle: .module)
                 .padding(.bottom, 20)
 
             Text(UserText.cameraPermissionRequired)
@@ -157,7 +172,7 @@ private struct CameraPermissionDeniedView: View {
                 model.gotoSettings()
             } label: {
                 HStack {
-                    Image("SyncGotoButton")
+                    Image("SyncGotoButton", bundle: .module)
                     Text(UserText.cameraGoToSettingsButton)
                 }
             }
@@ -175,7 +190,7 @@ private struct CameraUnavailableView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            Image(rebrandable: "SyncCameraUnavailable")
+            Image(rebrandable: "SyncCameraUnavailable", bundle: .module)
                 .padding(.bottom, 20)
 
             Text(UserText.cameraIsUnavailableTitle)
@@ -189,15 +204,92 @@ private struct CameraUnavailableView: View {
     }
 }
 
-private struct BlurView: UIViewRepresentable {
-    var style: UIBlurEffect.Style
-
-    func makeUIView(context: Context) -> UIVisualEffectView {
-        return UIVisualEffectView(effect: UIBlurEffect(style: style))
+private struct InstructionsHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
+}
 
-    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
-        uiView.effect = UIBlurEffect(style: style)
+private struct QRScannerOverlay: View {
+
+    let topInset: CGFloat
+
+    private let cornerRadius: CGFloat = 26
+    private let armLength: CGFloat = 28
+    private let lineWidth: CGFloat = 6
+    private let sideRatio: CGFloat = 0.6
+    private let initialScale: CGFloat = 0.5
+    private let animationDelay: TimeInterval = 0.5
+
+    @State private var isExpanded = false
+
+    var body: some View {
+        GeometryReader { proxy in
+            let side = proxy.size.width * sideRatio
+            let scale = isExpanded ? 1 : initialScale
+            let center = CGPoint(x: proxy.size.width / 2, y: topInset + (proxy.size.height - topInset) / 2)
+
+            Color(designSystemColor: .shadowSecondary).opacity(0.7)
+                .mask {
+                    Rectangle()
+                        .overlay {
+                            RoundedRectangle(cornerRadius: cornerRadius)
+                                .frame(width: side, height: side)
+                                .scaleEffect(scale)
+                                .position(center)
+                                .blendMode(.destinationOut)
+                        }
+                        .compositingGroup()
+                }
+
+            QRCornerBrackets(cornerRadius: cornerRadius, armLength: armLength)
+                .stroke(Color(designSystemColor: .accentPrimary), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
+                .frame(width: side, height: side)
+                .scaleEffect(scale)
+                .position(center)
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.6).delay(animationDelay)) {
+                isExpanded = true
+            }
+        }
+    }
+}
+
+private struct QRCornerBrackets: Shape {
+
+    let cornerRadius: CGFloat
+    let armLength: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY + cornerRadius + armLength))
+        path.addArc(tangent1End: CGPoint(x: rect.minX, y: rect.minY),
+                    tangent2End: CGPoint(x: rect.minX + cornerRadius + armLength, y: rect.minY),
+                    radius: cornerRadius)
+        path.addLine(to: CGPoint(x: rect.minX + cornerRadius + armLength, y: rect.minY))
+
+        path.move(to: CGPoint(x: rect.maxX - cornerRadius - armLength, y: rect.minY))
+        path.addArc(tangent1End: CGPoint(x: rect.maxX, y: rect.minY),
+                    tangent2End: CGPoint(x: rect.maxX, y: rect.minY + cornerRadius + armLength),
+                    radius: cornerRadius)
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + cornerRadius + armLength))
+
+        path.move(to: CGPoint(x: rect.maxX, y: rect.maxY - cornerRadius - armLength))
+        path.addArc(tangent1End: CGPoint(x: rect.maxX, y: rect.maxY),
+                    tangent2End: CGPoint(x: rect.maxX - cornerRadius - armLength, y: rect.maxY),
+                    radius: cornerRadius)
+        path.addLine(to: CGPoint(x: rect.maxX - cornerRadius - armLength, y: rect.maxY))
+
+        path.move(to: CGPoint(x: rect.minX + cornerRadius + armLength, y: rect.maxY))
+        path.addArc(tangent1End: CGPoint(x: rect.minX, y: rect.maxY),
+                    tangent2End: CGPoint(x: rect.minX, y: rect.maxY - cornerRadius - armLength),
+                    radius: cornerRadius)
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY - cornerRadius - armLength))
+
+        return path
     }
 }
 
@@ -233,19 +325,18 @@ private struct ScanTabPreview: View {
     ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true))
 }
 
-#Preview("Camera Unavailable") {
-    ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: false))
-}
-
 #Preview("Permission Denied") {
     ScanTabPreview(model: scanTabPreviewModel(permission: .denied, showCamera: false))
 }
 
-#Preview("Initializing") {
-    ScanTabPreview(model: scanTabPreviewModel(permission: .unknown, showCamera: false))
-}
-
 #Preview("Intro Animation") {
     ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true), showIntroAnimation: true)
+}
+
+#Preview("Scanner Overlay") {
+    QRScannerOverlay(topInset: 0)
+        .background(SimplifiedSyncStyle.screenBackground)
+        .ignoresSafeArea()
+        .environment(\.colorScheme, .dark)
 }
 #endif

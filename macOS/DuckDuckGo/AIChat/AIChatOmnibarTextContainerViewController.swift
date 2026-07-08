@@ -197,7 +197,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         placeholderLabel.hitTestForwardingTarget = textView
         containerView.addSubview(placeholderLabel)
 
-        let placeholderLeadingConstant = featureFlagger.isFeatureOn(.appRebranding) ? Constants.placeholderLeadingOffset : Constants.placeholderLegacyLeadingOffset
+        let placeholderLeadingConstant = themeManager.isAppRebranded ? Constants.placeholderLeadingOffset : Constants.placeholderLegacyLeadingOffset
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),

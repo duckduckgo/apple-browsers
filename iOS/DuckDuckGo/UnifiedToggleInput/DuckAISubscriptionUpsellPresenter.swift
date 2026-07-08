@@ -67,7 +67,8 @@ extension DuckAISubscriptionUpselling {
                 source: source,
                 currentTier: userTier,
                 requiredTier: requiredTier,
-                flowType: .purchase
+                flowType: .purchase,
+                isAITabState: isAITabState
             )
             presentPurchaseFlow(source: source, isAITabState: isAITabState)
             return true
@@ -76,7 +77,8 @@ extension DuckAISubscriptionUpselling {
                 source: source,
                 currentTier: userTier,
                 requiredTier: requiredTier,
-                flowType: .upgrade
+                flowType: .upgrade,
+                isAITabState: isAITabState
             )
             presentUpgradeFlow(source: source, isAITabState: isAITabState)
             return true

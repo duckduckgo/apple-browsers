@@ -74,14 +74,16 @@
                 }
             }
         },
-        "context": [
-            "funnel_bookmarks_ios",
-            "funnel_passwords_ios",
-            "funnel_settings_ios",
-            "funnel_complete_setup_ios",
-            "funnel_promo_ios",
-            "funnel_in_browser_promo_ios",
-            "funnel_whats_new_ios"
-        ]
+        "context": {
+            "name": [
+                "funnel_bookmarks_ios",
+                "funnel_passwords_ios",
+                "funnel_settings_ios",
+                "funnel_complete_setup_ios",
+                "funnel_promo_ios",
+                "funnel_in_browser_promo_ios",
+                "funnel_whats_new_ios"
+            ]
+        }
     }
 }

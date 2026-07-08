@@ -38,6 +38,8 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidShowModelPicker(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView)
 }
 
 // MARK: - Card Position
@@ -1466,6 +1468,14 @@ private extension UnifiedToggleInputView {
         toolsToolbar.onReturnKeyTapped = { [weak self] in
             guard let self else { return }
             delegate?.unifiedToggleInputViewDidTapReturnKey(self)
+        }
+        toolsToolbar.onModelPickerShown = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidShowModelPicker(self)
+        }
+        toolsToolbar.onReasoningPickerShown = { [weak self] in
+            guard let self else { return }
+            delegate?.unifiedToggleInputViewDidShowReasoningPicker(self)
         }
         addSubview(toolsToolbar)
         toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)

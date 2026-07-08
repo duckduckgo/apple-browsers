@@ -22653,7 +22653,7 @@
       }
     },
     "cookie-popup-protection.opt-in.badge" : {
-      "comment" : "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header",
+      "comment" : "Small 'NEW' badge shown in the titlebar of the Cookie Pop-up Protection opt-in dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -23314,7 +23314,7 @@
     },
     "cookie-popup-protection.opt-in.header" : {
       "comment" : "Header of the Cookie Pop-up Protection opt-in dialog",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

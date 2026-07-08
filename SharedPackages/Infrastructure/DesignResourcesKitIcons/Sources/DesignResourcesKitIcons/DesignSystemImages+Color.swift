@@ -459,6 +459,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .desktopSyncPasswords96)
                     : .init(resource: .syncPasswordsDesktop96Legacy)
             }
+            public static var youtubeClean: DesignSystemImage { .init(resource: .youTubeClean96) }
         }
 
         public enum Size128 {

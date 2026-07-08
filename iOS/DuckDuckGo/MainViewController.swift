@@ -3172,6 +3172,16 @@ class MainViewController: UIViewController {
             }
             .store(in: &urlInterceptorCancellables)
 
+        NotificationCenter.default.publisher(for: .dataBrokerProtectionOpenSubscriptionFlow)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                let redirectURLComponents = notification.userInfo?[
+                    DataBrokerProtectionSubscriptionFlowParameter.redirectURLComponents
+                ] as? URLComponents
+                self?.presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: redirectURLComponents)
+            }
+            .store(in: &urlInterceptorCancellables)
+
         NotificationCenter.default.publisher(for: .urlInterceptAIChat)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -3200,6 +3210,45 @@ class MainViewController: UIViewController {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: deepLinkTarget)
         }, deepLinkTarget: deepLinkTarget)
+    }
+
+    private func presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: URLComponents?) {
+        let subscriptionFlowViewController = makeDataBrokerProtectionSubscriptionFlowViewController(
+            redirectURLComponents: redirectURLComponents
+        )
+
+        if let settingsNavigationController = presentedViewController as? SettingsUINavigationController {
+            settingsNavigationController.pushViewController(subscriptionFlowViewController, animated: true)
+            return
+        }
+
+        let navigationController = DataBrokerProtectionSubscriptionFlowNavigationController(
+            rootViewController: subscriptionFlowViewController
+        )
+        var presenter: UIViewController = self
+        while let presentedViewController = presenter.presentedViewController {
+            presenter = presentedViewController
+        }
+        presenter.present(navigationController, animated: true)
+    }
+
+    private func makeDataBrokerProtectionSubscriptionFlowViewController(redirectURLComponents: URLComponents?) -> UIViewController {
+        let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
+        let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makePurchaseFlowV2(
+            redirectURLComponents: redirectURLComponents,
+            navigationCoordinator: subscriptionNavigationCoordinator,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+            subscriptionDataReporter: subscriptionDataReporter,
+            userScriptsDependencies: userScriptsDependencies,
+            tld: AppDependencyProvider.shared.storageCache.tld,
+            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            featureFlagger: featureFlagger
+        ))
+        viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
+        return viewController
     }
 
     private func subscribeToSettingsDeeplinkNotifications() {

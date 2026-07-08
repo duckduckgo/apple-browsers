@@ -109,6 +109,12 @@ final public class DataBrokerProtectionViewController: UIViewController {
 
         super.init(nibName: nil, bundle: nil)
     }
+
+    deinit {
+        if let reloadObserver {
+            NotificationCenter.default.removeObserver(reloadObserver)
+        }
+    }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -119,6 +125,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
 
         setupWebView()
         setupLoadingView()
+        subscribeToSubscriptionChangeNotifications()
 
         if let url = URL(string: webUISettings.selectedURL) {
             webView.load(url)
@@ -184,6 +191,15 @@ final public class DataBrokerProtectionViewController: UIViewController {
             self?.notifyBackgroundAppRefreshChange()
         }
         .store(in: &cancellables)
+    }
+
+    private func subscribeToSubscriptionChangeNotifications() {
+        reloadObserver = NotificationCenter.default.addObserver(forName: .subscriptionDidChange,
+                                                                object: nil,
+                                                                queue: .main) { [weak self] _ in
+            // Refresh the web UI under the subscription flow so PIR handshakes with the new auth state.
+            self?.webView.reload()
+        }
     }
 
     private func notifyBackgroundAppRefreshChange() {

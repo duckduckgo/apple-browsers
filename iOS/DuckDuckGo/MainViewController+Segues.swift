@@ -684,6 +684,28 @@ class SettingsUINavigationController: UINavigationController {
 
 }
 
+final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigationController {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        let surfaceColor = UIColor(designSystemColor: .surface)
+        view.backgroundColor = surfaceColor
+        navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
+        navigationBar.isTranslucent = false
+        navigationBar.barTintColor = surfaceColor
+        navigationBar.backgroundColor = surfaceColor
+        viewControllers.first?.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close,
+                                                                                  target: self,
+                                                                                  action: #selector(dismissSubscriptionFlow))
+    }
+
+    @objc
+    private func dismissSubscriptionFlow() {
+        dismiss(animated: true)
+    }
+}
+
 extension NSNotification.Name {
     static let settingsDidDisappear: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.settings.didDisappear")
 }

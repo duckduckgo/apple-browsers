@@ -428,16 +428,6 @@ final class AIChatContextualChatSessionState {
         startSuggestionsTimeout()
     }
 
-    private func startSuggestionsTimeout() {
-        suggestionsTimeoutTask?.cancel()
-        let timeout = AIChatContextualSheetCoordinator.contextualContextCollectionTimeout
-        suggestionsTimeoutTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-            guard let self, !Task.isCancelled else { return }
-            self.resolveSuggestionsIfLoading(from: nil)
-        }
-    }
-
     /// Updates the latest page context and determines attach behavior based on internal state.
     func updateContext(_ context: AIChatPageContext?) {
         resolveSuggestionsIfLoading(from: context)
@@ -633,6 +623,16 @@ private extension AIChatContextualChatSessionState {
         switch chipState {
         case .placeholder: return [.askAboutPage]
         case .attached: return [.summarizePage]
+        }
+    }
+
+    func startSuggestionsTimeout() {
+        suggestionsTimeoutTask?.cancel()
+        let timeout = AIChatContextualSheetCoordinator.contextualContextCollectionTimeout
+        suggestionsTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+            guard let self, !Task.isCancelled else { return }
+            self.resolveSuggestionsIfLoading(from: nil)
         }
     }
 

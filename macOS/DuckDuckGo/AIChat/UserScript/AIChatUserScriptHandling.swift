@@ -985,6 +985,15 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
                 frequency: .dailyAndStandard
             )
             completion?()
+        case .userDidViewSuggestions:
+            pixelFiring?.fire(
+                AIChatPixel.aiChatSuggestionsViewed(
+                    isSmart: metric.isSmart ?? false,
+                    pageType: metric.pageType ?? "none"
+                ),
+                frequency: .dailyAndStandard
+            )
+            completion?()
         default:
             completion?()
             return

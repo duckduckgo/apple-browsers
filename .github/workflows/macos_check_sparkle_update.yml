@@ -1,4 +1,4 @@
-name: Check Sparkle Update
+name: macOS - Check Sparkle Update
 
 on:
   schedule:
@@ -15,6 +15,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Assign SSH keys
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
       - name: Check for Sparkle update
         id: check

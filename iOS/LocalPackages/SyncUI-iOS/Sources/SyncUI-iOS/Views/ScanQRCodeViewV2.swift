@@ -83,7 +83,7 @@ public struct ScanQRCodeViewV2: View {
     private var contentPanel: some View {
         switch selectedTab {
         case .scanQRCode:
-            ScanTabView(model: model)
+            ScanTabView(model: model, isCameraActive: !isShowingSyncCodeSheet)
         case .enterCode:
             EnterCodeTabView(model: model)
         }

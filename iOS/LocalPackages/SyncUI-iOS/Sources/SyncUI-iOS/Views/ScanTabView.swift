@@ -24,6 +24,7 @@ import SwiftUI
 struct ScanTabView: View {
 
     @ObservedObject var model: ScanOrPasteCodeViewModel
+    var isCameraActive = true
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -41,7 +42,7 @@ struct ScanTabView: View {
                     CameraPermissionDeniedView(model: model)
                 } else if model.videoPermission == .authorised && !model.showCamera {
                     CameraUnavailableView()
-                } else if model.showCamera {
+                } else if model.showCamera && isCameraActive {
                     QRCodeScannerView {
                         return await model.codeScanned($0)
                     } onCameraUnavailable: {
@@ -52,7 +53,7 @@ struct ScanTabView: View {
                 }
             }
 
-            if model.showCamera && model.videoPermission != .denied {
+            if model.showCamera && isCameraActive && model.videoPermission != .denied {
                 cameraPromptPill
                     .padding(.bottom, 16)
             }

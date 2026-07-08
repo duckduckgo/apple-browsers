@@ -67,42 +67,12 @@ struct SyncCodeSheetView: View {
                         .daxSubheadRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
 
-                    appNameChip
+                    SyncAppNameChip()
                 }
 
-                Text(scanInstructionText)
-                    .daxSubheadRegular()
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                SyncInstructionText(markdown: UserText.simplifiedSyncCodeSheetScanInstruction)
             }
         }
-    }
-
-    private var appNameChip: some View {
-        HStack(spacing: 6) {
-            Image(uiImage: DesignSystemImages.Color.Size24.appDuckDuckGo)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 16, height: 16)
-
-            Text(UserText.simplifiedSyncCodeAppName)
-                .daxSubheadSemibold()
-        }
-        .padding(4)
-    }
-    
-    private var scanInstructionText: AttributedString {
-        var attributed = (try? AttributedString(markdown: UserText.simplifiedSyncCodeSheetScanInstruction))
-            ?? AttributedString(UserText.simplifiedSyncCodeSheetScanInstruction)
-        attributed.foregroundColor = Color(designSystemColor: .textSecondary)
-        let emphasizedRanges = attributed.runs
-            .filter { $0.inlinePresentationIntent == .stronglyEmphasized }
-            .map(\.range)
-        for range in emphasizedRanges {
-            attributed[range].foregroundColor = Color(designSystemColor: .textPrimary)
-            attributed[range].inlinePresentationIntent = nil
-        }
-        return attributed
     }
 
     private var qrCard: some View {

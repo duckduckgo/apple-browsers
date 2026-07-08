@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Danger
-        uses: brindy/danger-js@e8192a5
+        uses: brindy/danger-js@e8192a524b14986d451ed258f9ae250e5e7eeae3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

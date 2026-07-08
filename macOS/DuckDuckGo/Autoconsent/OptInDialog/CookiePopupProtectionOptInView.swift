@@ -123,6 +123,7 @@ struct CookiePopupProtectionOptInView: View {
                         .tracking(0.5)
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                 }
+                .padding(.horizontal, 36)
             }
             .frame(height: 52)
             .padding(.horizontal, 16)

@@ -42,7 +42,13 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         stateProvider = MockNewTabPageStateProviding()
         contextMenuPresenter = CapturingNewTabPageContextMenuPresenter()
         eventMapper = CapturingNewTabPageConfigurationEventHandler()
-        client = NewTabPageConfigurationClient(
+        userScript = NewTabPageUserScript()
+        messageHelper = .init(userScript: userScript)
+        client = buildConfigurationClient(userScript: userScript, isRebrandEnabled: false)
+    }
+
+    private func buildConfigurationClient(userScript: NewTabPageUserScript, isRebrandEnabled: Bool) -> NewTabPageConfigurationClient {
+        let client = NewTabPageConfigurationClient(
             environment: .development,
             sectionsAvailabilityProvider: sectionsAvailabilityProvider,
             sectionsVisibilityProvider: sectionsVisibilityProvider,
@@ -52,12 +58,10 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             linkOpener: CapturingNewTabPageLinkOpener(),
             eventMapper: eventMapper,
             stateProvider: stateProvider,
-            isRebrandEnabled: { [weak self] in self?.isRebrandEnabled ?? false }
+            isRebrandEnabled: isRebrandEnabled
         )
-
-        userScript = NewTabPageUserScript()
-        messageHelper = .init(userScript: userScript)
         client.registerMessageHandlers(for: userScript)
+        return client
     }
 
     // MARK: - contextMenu
@@ -149,7 +153,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     }
 
     func testThatInitialSetupReturnsEnabledNewTabPageRebrandingSetting() async throws {
-        isRebrandEnabled = true
+        client = buildConfigurationClient(userScript: userScript, isRebrandEnabled: true)
 
         let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
         XCTAssertEqual(configuration.settings?.newTabPageRebranding, .init(state: .enabled))

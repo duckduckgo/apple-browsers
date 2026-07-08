@@ -100,7 +100,7 @@ jobs:
           echo "✅ Running on branch: $BRANCH"
 
       - name: Register SSH keys for private repos
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -146,7 +146,7 @@ jobs:
         uses: ./.github/actions/select-xcode-version
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 

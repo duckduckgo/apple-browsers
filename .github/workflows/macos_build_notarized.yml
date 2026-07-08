@@ -103,7 +103,7 @@ jobs:
 
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -252,13 +252,13 @@ jobs:
         echo "dsym-name=${dsym_name}" >> $GITHUB_OUTPUT
 
     - name: Upload app artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app.tar.xz
         path: ${{ github.workspace }}/macOS/release/DuckDuckGo-${{ env.app-version }}.app.tar.xz
 
     - name: Upload dSYMs artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DuckDuckGo-${{ env.release-type }}-dSYM-${{ env.app-version }}
         path: ${{ github.workspace }}/macOS/release/${{ steps.set-outputs.outputs.dsym-name }}
@@ -382,7 +382,7 @@ jobs:
         cache-key-prefix: macos-ruby
 
     - name: Fetch app bundle
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app.tar.xz
         path: ${{ github.workspace }}/macOS/dmg
@@ -446,7 +446,7 @@ jobs:
           runner: ${{ env.RUNS_ON }}
 
     - name: Upload DMG artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.dmg
         path: ${{ github.workspace }}/macOS/${{ steps.create-dmg.outputs.dmg }}
@@ -485,7 +485,7 @@ jobs:
 
     - name: Upload DMG URL artifact
       if: ${{ env.release-type == 'alpha' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: dmg_url
         path: ${{ github.workspace }}/macOS/dmg_url.txt

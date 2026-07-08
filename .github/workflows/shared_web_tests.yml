@@ -46,7 +46,7 @@ jobs:
     steps:
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -99,7 +99,7 @@ jobs:
         fi
 
     - name: Upload logs when workflow failed
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: iOS-BuildLogs
@@ -119,7 +119,7 @@ jobs:
     steps:
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -219,7 +219,7 @@ jobs:
         ls -la DerivedData/Build/Products/Debug/ > tmp/diagnostics/macos_build_products.log 2>&1 || true
 
     - name: Upload logs when workflow failed
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: macOS-BuildLogs
@@ -242,7 +242,7 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v6
       - name: Create Asana task when workflow failed
-        uses: duckduckgo/native-github-asana-sync@v1.1
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
           action: create-asana-task
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

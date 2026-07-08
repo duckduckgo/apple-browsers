@@ -44,7 +44,7 @@ jobs:
         submodules: recursive
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -64,7 +64,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
@@ -107,7 +107,7 @@ jobs:
       id: build-experimental
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: experimental-build-${{ steps.build-experimental.outputs.app_version }}-${{ steps.build-experimental.outputs.build_version }}
         path: |
@@ -135,7 +135,7 @@ jobs:
         submodules: recursive
 
     - name: Download build artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: experimental-build-${{ needs.build-experimental.outputs.app_version }}-${{ needs.build-experimental.outputs.build_version }}
         path: iOS/
@@ -155,7 +155,7 @@ jobs:
         bundle exec fastlane upload_experimental groups:["${{ env.destination }}"] ipa_path:"${{ needs.build-experimental.outputs.ipa_path }}"
 
     - name: Upload dSYMs artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DuckDuckGo-Experimental-dSYM-${{ needs.build-experimental.outputs.app_version }}
         path: ${{ needs.build-experimental.outputs.dsyms_path }}

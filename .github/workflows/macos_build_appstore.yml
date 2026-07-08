@@ -104,7 +104,7 @@ jobs:
         esac
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -154,7 +154,7 @@ jobs:
       run: bundle exec fastlane build_${{ env.destination }}
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: appstore-artifacts
         path: |
@@ -196,7 +196,7 @@ jobs:
         cache-key-prefix: macos-ruby
 
     - name: Download build artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: appstore-artifacts
         path: macOS/
@@ -234,7 +234,7 @@ jobs:
 
     - name: Upload dSYMs artifact
       if: steps.upload-app-to-appstore.conclusion == 'success'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DuckDuckGo-${{ env.destination }}-dSYM-${{ env.app-version }}
         path: ${{ env.dsym-path }}

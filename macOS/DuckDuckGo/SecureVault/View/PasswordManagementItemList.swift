@@ -39,6 +39,7 @@ struct PasswordManagementItemListView: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
     @State var autoSelected = false
+    @EnvironmentObject var themeManager: ThemeManager
 
     private func selectItem(id: String, proxy: ScrollViewProxy) {
         // Selection/scroll wont work until list is fully rendered
@@ -66,6 +67,7 @@ struct PasswordManagementItemListView: View {
             ScrollView {
                 ScrollViewReader { proxy in
                     PasswordManagementItemListStackView()
+                        .environmentObject(themeManager)
                         .onChange(of: model.selected?.id) { itemId in
                             if let id = itemId {
                                 selectItem(id: id, proxy: proxy)
@@ -220,6 +222,7 @@ private struct PasswordManagementItemStackContentsView: View {
 
 private struct PasswordManagerItemView: View {
     @ObservedObject var model: PasswordManagementItemListModel
+    @EnvironmentObject var themeManager: ThemeManager
 
     let action: () -> Void
 
@@ -233,6 +236,19 @@ private struct PasswordManagerItemView: View {
 
     private var selected: Bool {
         model.externalPasswordManagerSelected
+    }
+
+    private var isAppRebranded: Bool {
+        themeManager.isAppRebranded
+    }
+
+    private var selectedBackgroundColor: Color {
+        guard selected else {
+            // Almost clear, so that whole view is clickable
+            return Color(NSColor.windowBackgroundColor.withAlphaComponent(0.001))
+        }
+
+        return isAppRebranded ? Color(themeManager.theme.palette.accentPrimary) : .accentColor
     }
 
     var body: some View {
@@ -264,21 +280,32 @@ private struct PasswordManagerItemView: View {
                 .padding(.leading, 4)
             }
         })
-            .frame(maxHeight: 48)
-            .buttonStyle(selected ?
-                         PasswordManagerItemButtonStyle(bgColor: Color.accentColor) :
-                            // Almost clear, so that whole view is clickable
-                         PasswordManagerItemButtonStyle(bgColor: Color(NSColor.windowBackgroundColor.withAlphaComponent(0.001))))
+        .frame(maxHeight: 48)
+        .buttonStyle(PasswordManagerItemButtonStyle(isAppRebranded: isAppRebranded, bgColor: selectedBackgroundColor))
     }
 }
 
 private struct SyncPromoItemView: View {
     @ObservedObject var model: PasswordManagementItemListModel
+    @EnvironmentObject var themeManager: ThemeManager
 
     let action: () -> Void
 
     private var selected: Bool {
         model.syncPromoSelected
+    }
+
+    private var isAppRebranded: Bool {
+        themeManager.isAppRebranded
+    }
+
+    private var selectedBackgroundColor: Color {
+        guard selected else {
+            // Almost clear, so that whole view is clickable
+            return Color(NSColor.windowBackgroundColor.withAlphaComponent(0.001))
+        }
+
+        return isAppRebranded ? Color(themeManager.theme.palette.accentPrimary) : .accentColor
     }
 
     var body: some View {
@@ -304,20 +331,34 @@ private struct SyncPromoItemView: View {
             }
         })
         .frame(maxHeight: 48)
-        .buttonStyle(selected ?
-                     PasswordManagerItemButtonStyle(bgColor: Color.accentColor) :
-                        // Almost clear, so that whole view is clickable
-                     PasswordManagerItemButtonStyle(bgColor: Color(NSColor.windowBackground.withAlphaComponent(0.001))))
-
+        .buttonStyle(PasswordManagerItemButtonStyle(isAppRebranded: isAppRebranded, bgColor: selectedBackgroundColor) )
     }
 }
 
 private struct ItemView: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
+    @EnvironmentObject var themeManager: ThemeManager
 
     let item: SecureVaultItem
     let action: () -> Void
+
+    private var isAppRebranded: Bool {
+        themeManager.isAppRebranded
+    }
+
+    private var selected: Bool {
+        model.selected == item
+    }
+
+    private var selectedBackgroundColor: Color {
+        guard selected else {
+            // Almost clear, so that whole view is clickable
+            return Color(NSColor.windowBackgroundColor.withAlphaComponent(0.001))
+        }
+
+        return isAppRebranded ? Color(themeManager.theme.palette.accentPrimary) : .accentColor
+    }
 
     func getIconLetters(account: SecureVaultModels.WebsiteAccount) -> String {
         if let title = account.title, !title.isEmpty {
@@ -327,8 +368,6 @@ private struct ItemView: View {
     }
 
     var body: some View {
-
-        let selected = model.selected == item
         let textColor = selected ? .white : Color(NSColor.controlTextColor)
         let font = Font.system(size: 13)
 
@@ -377,27 +416,28 @@ private struct ItemView: View {
                 .padding(.leading, 4)
             }
         })
-            .frame(maxHeight: 48)
-            .buttonStyle(selected ?
-                         PasswordManagerItemButtonStyle(bgColor: Color.accentColor) :
-                            // Almost clear, so that whole view is clickable
-                         PasswordManagerItemButtonStyle(bgColor: Color(NSColor.windowBackground.withAlphaComponent(0.001))))
+        .frame(maxHeight: 48)
+        .buttonStyle(PasswordManagerItemButtonStyle(isAppRebranded: isAppRebranded, bgColor: selectedBackgroundColor))
     }
 
 }
 
 private struct PasswordManagerItemButtonStyle: ButtonStyle {
 
+    let isAppRebranded: Bool
     let bgColor: Color
 
-    func makeBody(configuration: Self.Configuration) -> some View {
+    private var backgroundCornerRadius: CGFloat {
+        isAppRebranded ? 12 : 3
+    }
 
+    func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .truncationMode(.tail)
-            .background(RoundedRectangle(cornerRadius: 3, style: .continuous).fill(bgColor))
-
+            .background(RoundedRectangle(cornerRadius: backgroundCornerRadius, style: .continuous)
+            .fill(bgColor))
     }
 }
 

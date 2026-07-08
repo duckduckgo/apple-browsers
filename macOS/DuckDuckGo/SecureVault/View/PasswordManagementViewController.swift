@@ -195,8 +195,11 @@ final class PasswordManagementViewController: NSViewController {
 
     private var escapeKeyMonitor: Any?
 
-    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    private let themeManagerModel: ThemeManager = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
+    var themeManager: ThemeManaging {
+        themeManagerModel
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -1015,7 +1018,9 @@ final class PasswordManagementViewController: NSViewController {
         })
 
         self.listModel = listModel
-        self.listView = NSHostingView(rootView: PasswordManagementItemListView().environmentObject(listModel))
+        self.listView = NSHostingView(rootView: PasswordManagementItemListView()
+            .environmentObject(themeManagerModel)
+            .environmentObject(listModel))
 
         passwordManagerSelectionCancellable = listModel.$externalPasswordManagerSelected
             .receive(on: DispatchQueue.main)

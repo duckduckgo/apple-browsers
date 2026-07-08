@@ -33,6 +33,7 @@ public struct ScanQRCodeViewV2: View {
     @ObservedObject var model: ScanOrPasteCodeViewModel
     @State private var selectedTab: Tab = .scanQRCode
     @State private var isShowingSyncCodeSheet = false
+    @State private var showIntroAnimation = true
 
     public init(model: ScanOrPasteCodeViewModel) {
         self.model = model
@@ -83,7 +84,7 @@ public struct ScanQRCodeViewV2: View {
     private var contentPanel: some View {
         switch selectedTab {
         case .scanQRCode:
-            ScanTabView(model: model, isCameraActive: !isShowingSyncCodeSheet)
+            ScanTabView(model: model, isCameraActive: !isShowingSyncCodeSheet, showIntroAnimation: $showIntroAnimation)
         case .enterCode:
             EnterCodeTabView(model: model)
         }

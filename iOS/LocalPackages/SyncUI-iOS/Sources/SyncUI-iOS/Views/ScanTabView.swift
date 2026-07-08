@@ -19,20 +19,67 @@
 
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import Lottie
 import SwiftUI
+import DuckUI
 
 struct ScanTabView: View {
 
     @ObservedObject var model: ScanOrPasteCodeViewModel
     var isCameraActive = true
 
+    @Binding var showIntroAnimation: Bool
+
     var body: some View {
         ZStack(alignment: .top) {
-            cameraContainer
+            if showIntroAnimation {
+                introAnimation
+            } else {
+                cameraContainer
+            }
+
             instructions
+                .allowsHitTesting(false)
         }
         .clipShape(RoundedRectangle(cornerRadius: 34))
         .ignoresSafeArea(.all, edges: .bottom)
+    }
+
+    private var introAnimation: some View {
+        ZStack(alignment: .bottom) {
+            LottieView {
+                try await DotLottieFile.named("SyncScanQRCode", bundle: .module)
+            }
+            .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+            .animationDidFinish { _ in
+                dismissIntroAnimation()
+            }
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .padding(.horizontal, 48)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            Button {
+                dismissIntroAnimation()
+            } label: {
+                Text(UserText.simplifiedScanQRReadyButton)
+            }
+            .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
+            .padding(.bottom, 24)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            dismissIntroAnimation()
+        }
+        .transition(.opacity)
+    }
+
+    private func dismissIntroAnimation() {
+        guard showIntroAnimation else { return }
+        withAnimation(.easeInOut(duration: 0.3)) {
+            showIntroAnimation = false
+        }
+        model.introAnimationCompleted()
     }
 
     private var cameraContainer: some View {
@@ -49,32 +96,11 @@ struct ScanTabView: View {
                         model.cameraUnavailable()
                     }
                 } else {
-                    Color.black
+                    Color(designSystemColor: .surfaceSecondary)
                 }
-            }
-
-            if model.showCamera && isCameraActive && model.videoPermission != .denied {
-                cameraPromptPill
-                    .padding(.bottom, 16)
             }
         }
         .overlay(Color(designSystemColor: .shadowSecondary).opacity(0.7))
-    }
-
-    private var cameraPromptPill: some View {
-        Text(UserText.simplifiedScanCameraPrompt)
-            .daxSubheadSemibold()
-            .foregroundColor(.white)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 20)
-            .background(
-                Capsule()
-                    .fill(.clear)
-                    .background(
-                        BlurView(style: .light)
-                            .clipShape(Capsule())
-                    )
-            )
     }
 
     private var instructions: some View {
@@ -140,7 +166,6 @@ private struct CameraPermissionDeniedView: View {
         }
         .padding(.horizontal, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black)
     }
 }
 
@@ -161,7 +186,6 @@ private struct CameraUnavailableView: View {
         }
         .padding(.horizontal, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black)
     }
 }
 
@@ -178,18 +202,50 @@ private struct BlurView: UIViewRepresentable {
 }
 
 #if DEBUG
-#Preview {
+private func scanTabPreviewModel(
+    permission: ScanOrPasteCodeViewModel.VideoPermission,
+    showCamera: Bool
+) -> ScanOrPasteCodeViewModel {
     let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
+    let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
+    model.videoPermission = permission
+    model.showCamera = showCamera
+    return model
+}
 
-    return RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            ScanTabView(
-                model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(SimplifiedSyncStyle.screenBackground)
-            .environment(\.colorScheme, .dark)
+private struct ScanTabPreview: View {
+    let model: ScanOrPasteCodeViewModel
+    @State var showIntroAnimation = false
+
+    var body: some View {
+        RebrandedPreview(isRebranded: true) {
+            NavigationView {
+                ScanTabView(model: model, showIntroAnimation: $showIntroAnimation)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(SimplifiedSyncStyle.screenBackground)
+                    .environment(\.colorScheme, .dark)
+            }
         }
     }
+}
+
+#Preview("Camera") {
+    ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true))
+}
+
+#Preview("Camera Unavailable") {
+    ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: false))
+}
+
+#Preview("Permission Denied") {
+    ScanTabPreview(model: scanTabPreviewModel(permission: .denied, showCamera: false))
+}
+
+#Preview("Initializing") {
+    ScanTabPreview(model: scanTabPreviewModel(permission: .unknown, showCamera: false))
+}
+
+#Preview("Intro Animation") {
+    ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true), showIntroAnimation: true)
 }
 #endif

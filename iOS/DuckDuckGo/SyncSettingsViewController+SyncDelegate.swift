@@ -636,7 +636,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             navController.modalPresentationStyle = .fullScreen
         }
         navigationController?.present(navController, animated: true) {
-            self.checkCameraPermission(model: model)
+            if !self.useSimplifiedLayoutV2 {
+                self.checkCameraPermission(model: model)
+            }
             if let onPresentPixelInfo {
                 let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
                 var parameters = [
@@ -647,6 +649,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 Pixel.fire(pixel: onPresentPixelInfo.pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
             }
         }
+    }
+
+    func requestCameraPermission(for model: ScanOrPasteCodeViewModel) {
+        checkCameraPermission(model: model)
     }
 
     func checkCameraPermission(model: ScanOrPasteCodeViewModel) {

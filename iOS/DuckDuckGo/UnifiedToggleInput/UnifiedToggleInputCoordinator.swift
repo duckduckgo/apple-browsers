@@ -331,6 +331,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isOmnibarSession && inputMode == .aiChat && !hasSubmittedPrompt
     }
 
+    private var submitsAIChatPromptOnKeyboardReturn: Bool {
+        isOmnibarNewAIChatPrompt || isContextualChatState
+    }
+
     private var usesFloatingReturnKey: Bool {
         displayState == .omnibar(.active) && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt
     }
@@ -1891,6 +1895,22 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
             resetToolsSelection()
             clearStoreEntryAfterSubmission()
+            if isContextualChatState, userScript == nil {
+                markActiveChatPromptSubmitted()
+                delegate?.unifiedToggleInputDidSubmitPrompt(
+                    text,
+                    modelId: configuration.modelId,
+                    tools: tools,
+                    reasoningEffort: configuration.reasoningEffort,
+                    images: images,
+                    files: files
+                )
+                recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
+                clearAttachments()
+                setText("")
+                return
+            }
+
             clearAttachments()
             if isOmnibarNewAIChatPrompt {
                 viewController.prepareToolbarSubmitStyleForDismissal()
@@ -2348,7 +2368,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func syncInputBehaviorToHandler() {
-        viewController.handler.submitsAIChatOnKeyboardReturn = isOmnibarNewAIChatPrompt
+        viewController.handler.submitsAIChatOnKeyboardReturn = submitsAIChatPromptOnKeyboardReturn
     }
 
     func resetSessionState() {

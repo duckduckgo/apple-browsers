@@ -227,6 +227,28 @@ final class UTIRenderStateTests: XCTestCase {
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
     }
 
+    func test_contextualChat_submitsAIChatOnKeyboardReturn() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            contextualStartsPreSubmit: true
+        )
+
+        XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+    }
+
+    func test_contextualChat_keepsSubmittingAIChatOnKeyboardReturnAfterSubmit() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            contextualStartsPreSubmit: true
+        )
+
+        _ = sut.prepareExternalPromptSubmission()
+
+        XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+    }
+
     func test_aiTabNewChat_usesNormalKeyboardReturn() {
         sut.showExpanded(inputMode: .aiChat)
         XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)

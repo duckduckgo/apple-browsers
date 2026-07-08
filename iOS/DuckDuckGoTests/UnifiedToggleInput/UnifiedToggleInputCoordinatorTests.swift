@@ -501,6 +501,44 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.textState, .empty)
     }
 
+    func test_submitProgrammatic_contextualNoBoundScript_passesAttachmentsBeforeClearing() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            switchBarSubmissionMetrics: mockSubmissionMetrics,
+            contextualStartsPreSubmit: true
+        )
+        sut.delegate = mockDelegate
+        mockPreferences.selectedModelId = "file-model"
+        sut.modelStore.models = [
+            AIChatModel(
+                id: "file-model",
+                name: "File model",
+                provider: .unknown,
+                supportsImageUpload: false,
+                supportedFileTypes: ["application/pdf"],
+                entityHasAccess: true
+            )
+        ]
+        sut.modelStore.attachmentLimits = makeLimits()
+        sut.addFileAttachment(makeFileAttachment())
+
+        var attachmentCountAtSubmit: Int?
+        mockDelegate.onPromptSubmit = { [weak sut] in
+            attachmentCountAtSubmit = sut?.viewController.currentAttachments.count
+        }
+
+        sut.submitProgrammatic(text: "Summarize This Page")
+
+        XCTAssertEqual(mockDelegate.submittedPrompt, "Summarize This Page")
+        XCTAssertEqual(mockDelegate.submittedFiles?.count, 1)
+        XCTAssertEqual(mockDelegate.submittedFiles?.first?.fileName, "test.pdf")
+        XCTAssertEqual(attachmentCountAtSubmit, 1)
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
     // MARK: - VC Delegate: Submit — Submission Metrics
 
     func test_submitAIChat_processesSubmissionMetricsForAIChat() {
@@ -2470,6 +2508,17 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         components?.queryItems?.contains { $0.name == name && $0.value == value } == true
     }
 
+    private func makeFileAttachment(fileName: String = "test.pdf", pageCount: Int? = 1) -> AIChatFileAttachment {
+        let data = Data(repeating: 0, count: 1_000)
+        return AIChatFileAttachment(
+            data: data,
+            fileName: fileName,
+            mimeType: "application/pdf",
+            fileSizeBytes: data.count,
+            pageCount: pageCount
+        )
+    }
+
     private func makeLimits() -> AIChatAttachmentTierLimits {
         AIChatAttachmentTierLimits(
             files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
@@ -2850,6 +2899,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
     var submittedQuery: String?
     var committedMode: TextEntryMode?
+    var onPromptSubmit: (() -> Void)?
     var didRequestVoiceSearchCount = 0
     var didRequestAIVoiceChatCount = 0
     var didRequestAIChatCount = 0
@@ -2862,6 +2912,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedReasoningEffort = reasoningEffort
         submittedImages = images
         submittedFiles = files
+        onPromptSubmit?()
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearchCount += 1 }

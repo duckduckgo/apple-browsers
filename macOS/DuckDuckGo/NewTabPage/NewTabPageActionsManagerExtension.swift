@@ -215,9 +215,7 @@ extension NewTabPageActionsManager {
                 linkOpener: NewTabPageLinkOpener(),
                 eventMapper: NewTabPageConfigurationEventHandler(),
                 stateProvider: stateProvider,
-                isRebrandEnabled: {
-                    contentBlocking.privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(MacOSBrowserConfigSubfeature.newTabPageRebranding)
-                }
+                isRebrandEnabled: featureFlagger.isFeatureOn(.newTabPageRebranding)
             ),
             NewTabPageCustomBackgroundClient(model: customizationProvider),
             NewTabPageRMFClient(remoteMessageProvider: activeRemoteMessageModel),

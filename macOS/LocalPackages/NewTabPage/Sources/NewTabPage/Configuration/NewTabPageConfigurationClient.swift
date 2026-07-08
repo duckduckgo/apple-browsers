@@ -80,7 +80,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private let linkOpener: NewTabPageLinkOpening
     private let eventMapper: EventMapping<NewTabPageConfigurationEvent>?
     private let stateProvider: NewTabPageStateProviding
-    private let isRebrandEnabled: () -> Bool
+    private let isRebrandEnabled: Bool
 
     public init(
         environment: Environment,
@@ -92,7 +92,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         linkOpener: NewTabPageLinkOpening,
         eventMapper: EventMapping<NewTabPageConfigurationEvent>?,
         stateProvider: NewTabPageStateProviding,
-        isRebrandEnabled: @escaping () -> Bool = { false }
+        isRebrandEnabled: Bool = false
     ) {
         self.environment = environment
         self.sectionsAvailabilityProvider = sectionsAvailabilityProvider
@@ -304,7 +304,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             platform: .init(name: "macos"),
             settings: .init(
                 customizerDrawer: .init(state: .enabled),
-                newTabPageRebranding: .init(state: isRebrandEnabled() ? .enabled : .disabled)
+                newTabPageRebranding: .init(state: isRebrandEnabled ? .enabled : .disabled)
             ),
             customizer: customizerData,
             tabs: tabs

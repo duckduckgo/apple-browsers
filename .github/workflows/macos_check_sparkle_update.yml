@@ -12,6 +12,9 @@ permissions:
 jobs:
   check-and-update:
     runs-on: macos-15
+    env:
+      # Feature owners (GitHub handles, space-separated). Used for PR reviewers and Asana assignee.
+      SPARKLE_OWNERS: "diegoreymendez jotaemepereira"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -73,8 +76,7 @@ jobs:
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
-          sparkle_owners="diegoreymendez jotaemepereira"
-          primary_owner="${sparkle_owners%% *}"
+          primary_owner="${SPARKLE_OWNERS%% *}"
           mapping=$(curl -fLSs "https://raw.githubusercontent.com/duckduckgo/apple-toolbox/main/actions/asana-get-user-id-for-github-handle/github-asana-user-id-mapping.yml")
 
           asana_user_id=$(echo "$mapping" | grep "^${primary_owner}:" | awk '{print $2}' | tr -d '"') || true
@@ -124,7 +126,7 @@ jobs:
           } | gh pr edit "$pr_number" --body-file -
 
           gh pr ready "$pr_number"
-          gh pr edit "$pr_number" --add-reviewer diegoreymendez,jotaemepereira
+          gh pr edit "$pr_number" --add-reviewer "${SPARKLE_OWNERS// /,}"
 
       # Only notify for scheduled (cron) runs; manual dispatches surface the failure directly.
       - name: Report failure to Asana
@@ -132,8 +134,7 @@ jobs:
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         run: |
-          sparkle_owners="diegoreymendez jotaemepereira"
-          primary_owner="${sparkle_owners%% *}"
+          primary_owner="${SPARKLE_OWNERS%% *}"
           mapping=$(curl -fLSs "https://raw.githubusercontent.com/duckduckgo/apple-toolbox/main/actions/asana-get-user-id-for-github-handle/github-asana-user-id-mapping.yml") || true
 
           asana_user_id=$(echo "$mapping" | grep "^${primary_owner}:" | awk '{print $2}' | tr -d '"') || true

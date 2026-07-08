@@ -390,6 +390,24 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         }
     }
 
+    func testManualAttachWithAutoAttachOffDoesNotClearOnSameDocumentReopen() {
+        let attachedURL = URL(string: "https://example.com/page-a#attached")!
+        let currentPageURL = URL(string: "https://example.com/page-a#current")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(title: "Page A", url: attachedURL.absoluteString))
+        sessionState.handleSheetDismissed()
+
+        let didClear = sessionState.clearPreSubmitManualContextIfStale(for: currentPageURL)
+
+        XCTAssertFalse(didClear)
+        if case .attached(let attachedContext) = sessionState.chipState {
+            XCTAssertEqual(attachedContext.title, "Page A")
+        } else {
+            XCTFail("Expected same-document reopen to keep manual context")
+        }
+    }
+
     func testManualAttachWithAutoAttachOffClearsOnDifferentPageReopenBeforeSubmit() {
         let pageAURL = URL(string: "https://example.com/page-a")!
         let pageBURL = URL(string: "https://example.com/page-b")!

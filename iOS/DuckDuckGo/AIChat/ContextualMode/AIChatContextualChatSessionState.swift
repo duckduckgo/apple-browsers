@@ -20,6 +20,7 @@
 import AIChat
 import BrowserServicesKit
 import Combine
+import Common
 import Core
 import Foundation
 import os.log
@@ -484,7 +485,8 @@ final class AIChatContextualChatSessionState {
               frontendState == .noChat,
               case .attached(let context) = chipState,
               let currentPageURL,
-              URL(string: context.contextData.url) != currentPageURL else {
+              let attachedURL = URL(string: context.contextData.url),
+              !attachedURL.equals(currentPageURL, by: .sameDocument) else {
             return false
         }
 

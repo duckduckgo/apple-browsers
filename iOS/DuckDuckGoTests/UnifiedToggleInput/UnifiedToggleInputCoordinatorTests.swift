@@ -1316,7 +1316,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
     }
 
-    func test_toolsMenu_containsCustomizeResponsesAction_contextualPostSubmit() {
+    func test_toolsMenu_doesNotContainCustomizeResponsesAction_contextualPostSubmitBeforeScriptBinds() {
         sut = UnifiedToggleInputCoordinator(
             host: .contextualChat,
             isToggleEnabled: false,
@@ -1327,6 +1327,24 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
 
         _ = sut.prepareExternalPromptSubmission()
+
+        let actionTitles = toolsMenuActions().map(\.title)
+
+        XCTAssertFalse(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+    }
+
+    func test_toolsMenu_containsCustomizeResponsesAction_contextualPostSubmitAfterScriptBinds() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+
+        _ = sut.prepareExternalPromptSubmission()
+        sut.bindToTab(makeBridgeReadyUserScript(), hasExistingChat: true)
 
         let actionTitles = toolsMenuActions().map(\.title)
 

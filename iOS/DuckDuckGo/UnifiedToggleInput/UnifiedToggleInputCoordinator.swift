@@ -2443,7 +2443,7 @@ private extension UnifiedToggleInputCoordinator {
         case .aiTab:
             return true
         case .contextualChat:
-            return hasSubmittedPrompt
+            return hasSubmittedPrompt && boundUserScript?.canDispatchBridgeMessages == true
         case .hidden, .omnibar:
             return false
         }

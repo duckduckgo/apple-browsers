@@ -78,7 +78,7 @@
         "owners": ["jleandroperez"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": ["appVersion", "pixelSource", "channel", "originalPixelTimestamp", "retriedPixel"]
     },
     "m_mac_new-tab-page_customizer_shown": {
         "description": "Fires when the user reveals the New Tab Page Customizer UI.",
@@ -93,7 +93,9 @@
                 "key": "themePopoverWasOpen",
                 "type": "boolean",
                 "description": "Whether the Themes Discovery Popover was onscreen, or not"
-            }
+            },
+            "originalPixelTimestamp",
+            "retriedPixel"
         ]
     },
     "m_mac_new-tab-page_loading_time": {

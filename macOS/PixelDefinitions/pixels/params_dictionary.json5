@@ -392,5 +392,18 @@
         "description": "The mode of the consent heuristic feature: '', off, reject, tier1, tier2",
         "type": "string",
         "enum": ["", "off", "reject", "tier1", "tier2"]
+    },
+    "originalPixelTimestamp": {
+        "key": "originalPixelTimestamp",
+        "type": "string",
+        "format": "date-time",
+        "description": "Optional. ISO8601 timestamp of when the pixel was originally fired, attached when the pixel is queued for retry by the pixel retry queue.",
+        "examples": ["2026-06-11T00:00:00Z"]
+    },
+    "retriedPixel": {
+        "key": "retriedPixel",
+        "type": "string",
+        "description": "Optional. Set to '1' when the pixel is being re-sent from the pixel retry queue after an earlier delivery failure.",
+        "enum": ["1"]
     }
 }

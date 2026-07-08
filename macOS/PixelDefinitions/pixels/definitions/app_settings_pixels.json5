@@ -33,14 +33,14 @@
         "owners": ["jleandroperez"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel", "themeChangeSource"]
+        "parameters": ["appVersion", "pixelSource", "channel", "themeChangeSource", "originalPixelTimestamp", "retriedPixel"]
     },
     "m_mac_settings_theme_name_changed": {
         "description": "Fired when Browser Theme Name setting is changed",
         "owners": ["jleandroperez"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel", "themeChangeSource", "themeName"]
+        "parameters": ["appVersion", "pixelSource", "channel", "themeChangeSource", "themeName", "originalPixelTimestamp", "retriedPixel"]
     },
     "m_mac_settings_add-to-dock_show-me-how-clicked": {
         "description": "Fired when Add to Dock Show Me How link in settings is clicked to open the demo video",

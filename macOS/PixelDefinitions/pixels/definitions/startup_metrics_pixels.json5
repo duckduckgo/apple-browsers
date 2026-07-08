@@ -102,7 +102,9 @@
                 "key": "session_restoration",
                 "type": "boolean",
                 "description": "Whether session restoration was enabled at launch time."
-            }
+            },
+            "originalPixelTimestamp",
+            "retriedPixel"
         ]
     }
 }

@@ -3118,6 +3118,10 @@
 		B598E7BD2F4F745E00F19027 /* StartupProfilerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */; };
 		B598E7BE2F4F745E00F19027 /* StartupMetricsBucketsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B42F4F745E00F19027 /* StartupMetricsBucketsTests.swift */; };
 		B598E7BF2F4F745E00F19027 /* StartupMetricsPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */; };
+		B599B5E52FFE95A900B5E877 /* Shield-Color-24.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5E32FFE95A900B5E877 /* Shield-Color-24.json */; };
+		B599B5E62FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */; };
+		B599B5E72FFE95A900B5E877 /* Shield-Color-24.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5E32FFE95A900B5E877 /* Shield-Color-24.json */; };
+		B599B5E82FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */; };
 		B59AB6442EFB179F00C2F87A /* SearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59AB6432EFB179F00C2F87A /* SearchField.swift */; };
 		B59AB6452EFB179F00C2F87A /* SearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59AB6432EFB179F00C2F87A /* SearchField.swift */; };
 		B5AE99532E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
@@ -3145,12 +3149,8 @@
 		B5DFC53A2F608DD8001AB6AA /* XCUIApplication+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DFC5392F608DD8001AB6AA /* XCUIApplication+Helpers.swift */; };
 		B5E197EB2E8C645500C447CC /* ThemeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */; };
 		B5E197EC2E8C646700C447CC /* ThemeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */; };
-		B5E77B372FFD4396007AC8F5 /* Shield-Color-24.lottie in Resources */ = {isa = PBXBuildFile; fileRef = B5E77B322FFD4396007AC8F5 /* Shield-Color-24.lottie */; };
 		B5E77B382FFD4396007AC8F5 /* Flame-24.lottie in Resources */ = {isa = PBXBuildFile; fileRef = B5E77B312FFD4396007AC8F5 /* Flame-24.lottie */; };
-		B5E77B392FFD4396007AC8F5 /* Shield-Color-24-Hover.lottie in Resources */ = {isa = PBXBuildFile; fileRef = B5E77B332FFD4396007AC8F5 /* Shield-Color-24-Hover.lottie */; };
-		B5E77B3C2FFD4396007AC8F5 /* Shield-Color-24.lottie in Resources */ = {isa = PBXBuildFile; fileRef = B5E77B322FFD4396007AC8F5 /* Shield-Color-24.lottie */; };
 		B5E77B3D2FFD4396007AC8F5 /* Flame-24.lottie in Resources */ = {isa = PBXBuildFile; fileRef = B5E77B312FFD4396007AC8F5 /* Flame-24.lottie */; };
-		B5E77B3E2FFD4396007AC8F5 /* Shield-Color-24-Hover.lottie in Resources */ = {isa = PBXBuildFile; fileRef = B5E77B332FFD4396007AC8F5 /* Shield-Color-24-Hover.lottie */; };
 		B5E7B6C02ED4A52E00094EDF /* TitleDisplayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E7B6BF2ED4A52C00094EDF /* TitleDisplayPolicy.swift */; };
 		B5E7B6C12ED4A52E00094EDF /* TitleDisplayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E7B6BF2ED4A52C00094EDF /* TitleDisplayPolicy.swift */; };
 		B5E7B6C52ED4A79500094EDF /* TitleDisplayPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E7B6C42ED4A79500094EDF /* TitleDisplayPolicyTests.swift */; };
@@ -6268,6 +6268,8 @@
 		B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsPixelTests.swift; sourceTree = "<group>"; };
 		B598E7B62F4F745E00F19027 /* StartupMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsTests.swift; sourceTree = "<group>"; };
 		B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupProfilerTests.swift; sourceTree = "<group>"; };
+		B599B5E32FFE95A900B5E877 /* Shield-Color-24.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Shield-Color-24.json"; sourceTree = "<group>"; };
+		B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Shield-Color-24-Hover.json"; sourceTree = "<group>"; };
 		B59AB6432EFB179F00C2F87A /* SearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchField.swift; sourceTree = "<group>"; };
 		B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockThemeManager.swift; sourceTree = "<group>"; };
 		B5AE99522E84A5D900F45912 /* ThemeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeName.swift; sourceTree = "<group>"; };
@@ -6286,8 +6288,6 @@
 		B5DFC5392F608DD8001AB6AA /* XCUIApplication+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCUIApplication+Helpers.swift"; sourceTree = "<group>"; };
 		B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
 		B5E77B312FFD4396007AC8F5 /* Flame-24.lottie */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Flame-24.lottie"; sourceTree = "<group>"; };
-		B5E77B322FFD4396007AC8F5 /* Shield-Color-24.lottie */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Shield-Color-24.lottie"; sourceTree = "<group>"; };
-		B5E77B332FFD4396007AC8F5 /* Shield-Color-24-Hover.lottie */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Shield-Color-24-Hover.lottie"; sourceTree = "<group>"; };
 		B5E7B6BF2ED4A52C00094EDF /* TitleDisplayPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleDisplayPolicy.swift; sourceTree = "<group>"; };
 		B5E7B6C42ED4A79500094EDF /* TitleDisplayPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleDisplayPolicyTests.swift; sourceTree = "<group>"; };
 		B5E7B6C82ED4A7A800094EDF /* LoadingIndicatorPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingIndicatorPolicyTests.swift; sourceTree = "<group>"; };
@@ -10026,8 +10026,8 @@
 				37EE55C22D5F197300D53C7C /* trackers-2.json */,
 				37EE55C32D5F197300D53C7C /* trackers-3.json */,
 				B5E77B312FFD4396007AC8F5 /* Flame-24.lottie */,
-				B5E77B322FFD4396007AC8F5 /* Shield-Color-24.lottie */,
-				B5E77B332FFD4396007AC8F5 /* Shield-Color-24-Hover.lottie */,
+				B599B5E32FFE95A900B5E877 /* Shield-Color-24.json */,
+				B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -14234,6 +14234,8 @@
 				37EE56092D5F197300D53C7C /* flame-mouse-over.json in Resources */,
 				37EE560A2D5F197300D53C7C /* shield.json in Resources */,
 				37EE560B2D5F197300D53C7C /* shield-dot.json in Resources */,
+				B599B5E52FFE95A900B5E877 /* Shield-Color-24.json in Resources */,
+				B599B5E62FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */,
 				37EE560C2D5F197300D53C7C /* shield-dot-mouse-over.json in Resources */,
 				D6229C312ED0E213001DAE71 /* shield.new.json in Resources */,
 				37EE560D2D5F197300D53C7C /* shield-mouse-over.json in Resources */,
@@ -14263,9 +14265,7 @@
 				BB0DA4DF2DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
 				3706FCEA293F65D500E42796 /* PasswordManager.storyboard in Resources */,
 				7B0A6DFB2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */,
-				B5E77B3C2FFD4396007AC8F5 /* Shield-Color-24.lottie in Resources */,
 				B5E77B3D2FFD4396007AC8F5 /* Flame-24.lottie in Resources */,
-				B5E77B3E2FFD4396007AC8F5 /* Shield-Color-24-Hover.lottie in Resources */,
 				BD384ACC2BBC821B00EF3735 /* vpn-light-mode.json in Resources */,
 				3706FCED293F65D500E42796 /* httpsMobileV2Bloom.bin in Resources */,
 				3706FCEF293F65D500E42796 /* macos-config.json in Resources */,
@@ -14468,6 +14468,8 @@
 				37EE55E02D5F197300D53C7C /* flame-mouse-over.json in Resources */,
 				7BE2073A2DCCC4230037394C /* DeveloperID.xcstrings in Resources */,
 				37EE55E12D5F197300D53C7C /* shield.json in Resources */,
+				B599B5E72FFE95A900B5E877 /* Shield-Color-24.json in Resources */,
+				B599B5E82FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */,
 				37EE55E22D5F197300D53C7C /* shield-dot.json in Resources */,
 				37EE55E32D5F197300D53C7C /* shield-dot-mouse-over.json in Resources */,
 				D6229C302ED0E213001DAE71 /* shield.new.json in Resources */,
@@ -14497,9 +14499,7 @@
 				85625994269C8F9600EE44BC /* PasswordManager.storyboard in Resources */,
 				7B0A6DFD2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */,
 				BD384ACA2BBC821A00EF3735 /* vpn-light-mode.json in Resources */,
-				B5E77B372FFD4396007AC8F5 /* Shield-Color-24.lottie in Resources */,
 				B5E77B382FFD4396007AC8F5 /* Flame-24.lottie in Resources */,
-				B5E77B392FFD4396007AC8F5 /* Shield-Color-24-Hover.lottie in Resources */,
 				4B677433255DBEB800025BD8 /* httpsMobileV2Bloom.bin in Resources */,
 				026ADE1426C3010C002518EE /* macos-config.json in Resources */,
 				4B677432255DBEB800025BD8 /* httpsMobileV2BloomSpec.json in Resources */,

@@ -79173,6 +79173,18 @@
         }
       }
     },
+    "pm.empty.default.identities.description.extended.v2" : {
+      "comment" : "Label for empty state description when the user has no identities saved",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Identities are stored securely on your device."
+          }
+        }
+      }
+    },
     "pm.empty.default.passwords.description.extended.v2" : {
       "comment" : "Label for default empty state description",
       "extractionState" : "extracted_with_value",

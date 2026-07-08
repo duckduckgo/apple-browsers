@@ -1,5 +1,5 @@
 //
-//  SimplifiedScanOrShowCodeViewV2.swift
+//  ScanQRCodeViewV2.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -23,7 +23,7 @@ import DuckUI
 import SwiftUI
 import UIComponents
 
-public struct SimplifiedScanOrShowCodeViewV2: View {
+public struct ScanQRCodeViewV2: View {
 
     enum Tab {
         case scanQRCode
@@ -449,7 +449,7 @@ private struct BlurView: UIViewRepresentable {
     let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
 
     return NavigationView {
-        SimplifiedScanOrShowCodeViewV2(
+        ScanQRCodeViewV2(
             model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
         )
         .colorScheme(.dark)

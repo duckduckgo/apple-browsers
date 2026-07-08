@@ -615,7 +615,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         model.delegate = self
 
         let rootView = useSimplifiedLayoutV2
-            ? AnyView(SimplifiedScanOrShowCodeViewV2(model: model))
+            ? AnyView(ScanQRCodeViewV2(model: model))
             : AnyView(SimplifiedScanOrShowCodeView(model: model))
         let controller = UIHostingController(rootView: rootView)
 

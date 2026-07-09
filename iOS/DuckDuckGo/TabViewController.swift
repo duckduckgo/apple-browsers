@@ -1848,6 +1848,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        safariRedirectHandler.reset()
         webView.stopLoading()
         wasLoadingStoppedExternally = true
 

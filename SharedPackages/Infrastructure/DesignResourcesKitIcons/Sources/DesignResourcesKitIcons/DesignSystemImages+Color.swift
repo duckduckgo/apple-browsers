@@ -424,6 +424,9 @@ public extension DesignSystemImages {
                     ? .init(resource: .announcement96)
                     : .init(resource: .announcement96Legacy)
             }
+            public static var browserWarn: DesignSystemImage {
+                .init(resource: .browserWarn96)
+            }
             public static var cookieCheckFeature: DesignSystemImage { .init(resource: .cookieCheckFeature96) }
             public static var daxDuckAIStacked: DesignSystemImage { .init(resource: .daxDuckAIStacked96) }
             public static var duckAIDDGHero: DesignSystemImage { .init(resource: .duckAIDDGHeroColor96) }

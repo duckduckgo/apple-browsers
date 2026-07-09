@@ -144,6 +144,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     let themeManager: ThemeManaging
     let omnibarController: AIChatOmnibarController
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let burnerMode: BurnerMode
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     private var textChangeCancellable: AnyCancellable?
@@ -307,10 +308,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     required init(themeManager: ThemeManaging,
                   omnibarController: AIChatOmnibarController,
-                  duckAiNativeStorageHandler: DuckAiNativeStorageHandling?) {
+                  duckAiNativeStorageHandler: DuckAiNativeStorageHandling?,
+                  burnerMode: BurnerMode) {
         self.themeManager = themeManager
         self.omnibarController = omnibarController
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.burnerMode = burnerMode
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -1189,7 +1192,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             omnibarController.openCustomizeResponses()
             return
         }
-        let modal = CustomizeResponsesModalController()
+        let modal = CustomizeResponsesModalController(burnerMode: burnerMode)
         modal.onClose = { [weak self] in self?.customizeResponsesModal = nil }
         customizeResponsesModal = modal
         modal.present(over: parentWindow)

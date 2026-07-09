@@ -47,12 +47,20 @@ final class CustomizeResponsesModalController: NSObject {
         if let escMonitor {
             NSEvent.removeMonitor(escMonitor)
         }
+        // Safety net if released without dismiss(): detach and hide the child overlay so it (and its
+        // web view) doesn't outlive the controller.
+        if let modalWindow {
+            parentWindow?.removeChildWindow(modalWindow)
+            modalWindow.orderOut(nil)
+        }
     }
 
-    override init() {
+    init(burnerMode: BurnerMode) {
         let url = AIChatURLParameters.nativeCustomizeModalURL(from: AIChatRemoteSettings().aiChatURL)
         // NOT a sidebar tab: isLoadedInSidebar makes the FE report a sidebar host and render the full chat.
-        tab = Tab(content: .url(url, source: .ui), burnerMode: .regular, isLoadedInSidebar: false)
+        // Match the presenting window's burnerMode so the native-storage bridge shares the menu row's
+        // handler (persistent for regular, the burner-scoped in-memory store in a Fire window).
+        tab = Tab(content: .url(url, source: .ui), burnerMode: burnerMode, isLoadedInSidebar: false)
         super.init()
     }
 

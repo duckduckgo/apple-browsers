@@ -163,12 +163,9 @@ private struct Buttons: View {
                 Button(UserText.pmEdit) {
                     model.edit()
                 }
-
             }
-
         }
     }
-
 }
 
 private struct EditableCreditCardField: View {

@@ -150,7 +150,6 @@ private struct Buttons: View {
                 Button(UserText.pmEdit) {
                     model.edit()
                 }
-
             }
 
         }

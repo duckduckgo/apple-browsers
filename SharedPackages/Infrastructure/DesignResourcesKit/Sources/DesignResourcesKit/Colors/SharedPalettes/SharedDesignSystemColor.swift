@@ -23,7 +23,7 @@ import Foundation
 public typealias DesignSystemColor = SharedDesignSystemColor
 public typealias SingleUseColor = SharedSingleUseColor
 
-public enum SharedDesignSystemColor {
+public enum SharedDesignSystemColor: CaseIterable {
 
     // Accent
     case accentContentPrimary
@@ -162,7 +162,7 @@ public enum SharedDesignSystemColor {
     case permissionReloadButtonText
 }
 
-public enum SharedSingleUseColor {
+public enum SharedSingleUseColor: CaseIterable {
 
     // Fire View
     case fireModeAccent

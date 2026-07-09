@@ -46,6 +46,9 @@ let package = Package(
             ]),
         .testTarget(
             name: "DesignResourcesKitTests",
-            dependencies: ["DesignResourcesKit"]),
+            dependencies: ["DesignResourcesKit"],
+            // Colour parity baselines are read/written via their source path (`#filePath`) so that
+            // `RECORD=1` can rewrite them; they are fixtures, not bundled resources.
+            exclude: ["Baselines"]),
     ]
 )

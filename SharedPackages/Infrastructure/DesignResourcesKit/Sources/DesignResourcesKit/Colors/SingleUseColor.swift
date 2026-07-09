@@ -76,7 +76,7 @@ public enum SingleUseColor {
 
 public extension SingleUseColor {
 
-    enum Rebranding {
+    enum Rebranding: CaseIterable {
         case textPrimary
         case textSecondary
         case textLink
@@ -110,6 +110,41 @@ public extension SingleUseColor {
         case decorationSecondary
 
         case alertGreen
+    }
+
+}
+
+// MARK: - CaseIterable
+
+/// The `rebranding(Rebranding)` associated value prevents the compiler from synthesising
+/// `allCases`, so it is spelled out by hand. Keep the simple-case list below in sync with the
+/// cases declared above; the nested `Rebranding` cases are covered automatically.
+extension SingleUseColor: CaseIterable {
+
+    public static var allCases: [SingleUseColor] {
+        [
+            .controlWidgetBackground,
+            .unifiedFeedbackFieldBackground,
+            .privacyDashboardBackground,
+            .inputContentSeparator,
+            .floatingAddressBarBackground,
+            .whatsNewBackground,
+            .duckAIContextualSheetBackground,
+            .duckAIWebViewBackground,
+            .unifiedToggleInputCardBackground,
+            .unifiedToggleInputAttachmentErrorBannerBackground,
+            .unifiedToggleInputAttachmentErrorText,
+            .unifiedToggleInputAttachmentErrorIcon,
+            .unifiedToggleInputStopButtonBackground,
+            .tabSwitcherTrackerCountBackground,
+            .toolbarButton,
+            .fireModeAccent,
+            .fireModeAccentDark,
+            .fireModeAccentTertiary,
+            .fireModeBackground,
+            .fireModeCardBackground,
+            .duckAIVoiceCellBackground
+        ] + Rebranding.allCases.map(SingleUseColor.rebranding)
     }
 
 }

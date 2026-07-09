@@ -19,7 +19,7 @@
 /// Base colors for use when there's no semantic color required.
 ///
 /// - Important: These colors are returned through a palette definition and can vary between platforms and themes.
-public enum BaseColor {
+public enum BaseColor: CaseIterable {
     case gray0
     case gray10
     case gray20

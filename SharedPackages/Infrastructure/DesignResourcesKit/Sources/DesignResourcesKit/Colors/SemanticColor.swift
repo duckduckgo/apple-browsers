@@ -18,7 +18,7 @@
 
 #if os(iOS)
 
-public enum DesignSystemColor {
+public enum DesignSystemColor: CaseIterable {
 
     // Backgrounds
     case background

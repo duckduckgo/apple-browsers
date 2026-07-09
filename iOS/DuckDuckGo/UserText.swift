@@ -494,7 +494,6 @@ public struct UserText {
 
     // MARK: - Cookie Pop-up Protection Opt-In Dialog
     public static let cookiePopupProtectionOptInBadge = NSLocalizedString("cookie-popup-protection.opt-in.badge", value: "New", comment: "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header")
-    public static let cookiePopupProtectionOptInHeader = NSLocalizedString("cookie-popup-protection.opt-in.header", value: "Cookie Pop-up Protection", comment: "Header of the Cookie Pop-up Protection opt-in dialog")
     public static let cookiePopupProtectionOptInConfirm = NSLocalizedString("cookie-popup-protection.opt-in.confirm", value: "Confirm", comment: "Confirm button in the Cookie Pop-up Protection opt-in dialog")
     public static let cookiePopupProtectionOptInFooter = NSLocalizedString("cookie-popup-protection.opt-in.footer", value: "You can always adjust later in\n**Settings** > **Cookie Pop-Up Protection**.", comment: "Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold.")
     // Variant shown when Cookie Pop-up Protection is already ON

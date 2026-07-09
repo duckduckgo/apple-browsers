@@ -1420,9 +1420,6 @@
 /* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
 "cookie-popup-protection.opt-in.footer" = "You can always adjust later in\n**Settings** > **Cookie Pop-Up Protection**.";
 
-/* Header of the Cookie Pop-up Protection opt-in dialog */
-"cookie-popup-protection.opt-in.header" = "Cookie Pop-up Protection";
-
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Always Send Crash Reports";
 

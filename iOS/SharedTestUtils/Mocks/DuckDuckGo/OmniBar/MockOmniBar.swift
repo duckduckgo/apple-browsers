@@ -129,6 +129,7 @@ final class MockOmniBar: OmniBar {
         func restoreBarChrome() { }
         func makeGlass() { }
         func makeOpaque() { }
+        func updateAIChatButtonForContextualSheet(isPresented: Bool) { }
 
         var progressView: DuckDuckGo.ProgressView?
         var privacyIconView: UIView?

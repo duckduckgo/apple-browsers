@@ -85,6 +85,8 @@ jobs:
 
     outputs:
       upload-to: ${{ steps.is-official-release.outputs.upload-to }}
+      app-version: ${{ steps.prepare-dsyms.outputs.app-version }}
+      dsym-s3-path: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
 
     steps:
 
@@ -153,14 +155,58 @@ jobs:
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       run: bundle exec fastlane build_${{ env.destination }}
 
+    - name: Prepare dSYMs
+      id: prepare-dsyms
+      run: |
+        case "${{ env.destination }}" in
+          testflight_review)
+            app_bundle_name="DuckDuckGo App Store Review"
+            app_dsym_name="DuckDuckGo-AppStore-Review"
+            ;;
+          testflight_alpha)
+            app_bundle_name="DuckDuckGo App Store Alpha"
+            app_dsym_name="DuckDuckGo-AppStore-Alpha"
+            ;;
+          *)
+            app_bundle_name="DuckDuckGo App Store"
+            app_dsym_name="DuckDuckGo-AppStore"
+            ;;
+        esac
+
+        dsym_path="${{ github.workspace }}/macOS/${app_dsym_name}.app.dSYM.zip"
+        mv -f "${{ github.workspace }}/macOS/${app_bundle_name}.app.dSYM.zip" "${dsym_path}"
+        version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig | tr -d '\n')"
+        build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig | tr -d '\n')"
+        echo "dsym-path=${dsym_path}" >> $GITHUB_ENV
+        echo "app-version=${version}.${build_number}" >> $GITHUB_ENV
+        echo "app-dsym-name=${app_dsym_name}" >> $GITHUB_ENV
+        echo "app-version=${version}.${build_number}" >> $GITHUB_OUTPUT
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: appstore-artifacts
         path: |
-          macOS/DuckDuckGo*.app.dSYM.zip
           macOS/DuckDuckGo*.pkg
         retention-days: 1
+
+    - name: Upload dSYMs artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DuckDuckGo-${{ env.destination }}-dSYM-${{ env.app-version }}
+        path: ${{ env.dsym-path }}
+
+    - name: Upload dSYMs to S3
+      id: upload-dsyms-to-s3
+      if: env.upload-to == 's3'
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+        DSYM_S3_PATH: s3://${{ vars.DSYM_BUCKET_NAME }}/${{ vars.MACOS_DSYM_BUCKET_PREFIX }}/${{ env.app-dsym-name }}-${{ env.app-version }}-dSYM.zip
+      run: |
+        echo "dsym-s3-path=${DSYM_S3_PATH}" >> $GITHUB_OUTPUT
+        aws s3 cp ${{ env.dsym-path }} ${{ env.DSYM_S3_PATH }}
 
   upload:
     name: Upload App Store Connect Release
@@ -207,54 +253,12 @@ jobs:
         APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      run: |
-        case "${{ env.destination }}" in
-          testflight_review)
-            app_bundle_name="DuckDuckGo App Store Review"
-            app_dsym_name="DuckDuckGo-AppStore-Review"
-            ;;
-          testflight_alpha)
-            app_bundle_name="DuckDuckGo App Store Alpha"
-            app_dsym_name="DuckDuckGo-AppStore-Alpha"
-            ;;
-          *)
-            app_bundle_name="DuckDuckGo App Store"
-            app_dsym_name="DuckDuckGo-AppStore"
-            ;;
-        esac
-
-        bundle exec fastlane upload_${{ env.destination }}
-        dsym_path="${{ github.workspace }}/macOS/${app_dsym_name}.app.dSYM.zip"
-        mv -f "${{ github.workspace }}/macOS/${app_bundle_name}.app.dSYM.zip" "${dsym_path}"
-        version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig | tr -d '\n')"
-        build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig | tr -d '\n')"
-        echo "dsym-path=${dsym_path}" >> $GITHUB_ENV
-        echo "app-version=${version}.${build_number}" >> $GITHUB_ENV
-        echo "app-dsym-name=${app_dsym_name}" >> $GITHUB_ENV
-
-    - name: Upload dSYMs artifact
-      if: steps.upload-app-to-appstore.conclusion == 'success'
-      uses: actions/upload-artifact@v4
-      with:
-        name: DuckDuckGo-${{ env.destination }}-dSYM-${{ env.app-version }}
-        path: ${{ env.dsym-path }}
-
-    - name: Upload dSYMs to S3
-      id: upload-dsyms-to-s3
-      if: steps.upload-app-to-appstore.conclusion == 'success' && env.upload-to == 's3'
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
-        DSYM_S3_PATH: s3://${{ vars.DSYM_BUCKET_NAME }}/${{ vars.MACOS_DSYM_BUCKET_PREFIX }}/${{ env.app-dsym-name }}-${{ env.app-version }}-dSYM.zip
-      run: |
-        echo "dsym-s3-path=${DSYM_S3_PATH}" >> $GITHUB_OUTPUT
-        aws s3 cp ${{ env.dsym-path }} ${{ env.DSYM_S3_PATH }}
+      run: bundle exec fastlane upload_${{ env.destination }}
 
     - name: Report success
       env:
-        DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
-        TAG: ${{ env.app-version }}
+        DSYM_S3_PATH: ${{ needs.build.outputs.dsym-s3-path }}
+        TAG: ${{ needs.build.outputs.app-version }}
         WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       if: steps.upload-app-to-appstore.conclusion == 'success' && env.asana-task-url != ''

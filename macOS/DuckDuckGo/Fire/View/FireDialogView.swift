@@ -744,7 +744,7 @@ private struct FirePictogramAnimation: NSViewRepresentable {
     let isAppRebranded: Bool
 
     private var assetName: String {
-        isAppRebranded ? "fire-pictogram-new" : "fire-pictogram-new"
+        isAppRebranded ? "fire-pictogram-new" : "fire-pictogram"
     }
 
     func makeNSView(context: Context) -> NSView {

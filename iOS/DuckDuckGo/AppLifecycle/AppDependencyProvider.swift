@@ -62,6 +62,7 @@ protocol DependencyProvider {
     var freeTrialConversionService: FreeTrialConversionInstrumentationService { get }
     var subscriptionManager: any SubscriptionManager { get }
     var tokenHandlerProvider: any SubscriptionTokenHandling { get }
+    var subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling { get }
     var dbpSettings: DataBrokerProtectionSettings { get }
     var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging { get }
 }
@@ -91,6 +92,7 @@ final class AppDependencyProvider: DependencyProvider {
     // Subscription
     var subscriptionManager: any SubscriptionManager
     var tokenHandlerProvider: any SubscriptionTokenHandling
+    let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
@@ -282,6 +284,10 @@ final class AppDependencyProvider: DependencyProvider {
         self.subscriptionManager = subscriptionManager
         tokenHandler = subscriptionManager
         authenticationStateProvider = subscriptionManager
+        self.subscriptionExpirationReminderScheduler = DefaultSubscriptionExpirationReminderScheduler(
+            subscriptionManager: subscriptionManager,
+            isFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }
+        )
         self.freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
             wideEvent: wideEvent,
             pixelHandler: FreeTrialPixelHandler(),

@@ -148,6 +148,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475
     case subscriptionPromoForReinstallers
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215316109166260?focus=true
+    case subscriptionExpirationReminderNotification
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
 
@@ -503,11 +506,21 @@ public enum FeatureFlag: String {
     /// Gates the Simplified Sync Setup follow-up screens.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216075349711580
     case simplifiedSyncSetupV2
+
+    /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
+    case searchTokenExperiment
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     /// Test-only cohort for verifying UI test experiment override mechanism.
     public enum UITestExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Search-token experiment cohorts. Treatment devices signal the SERP to serve the faster combined response.
+    public enum SearchTokenExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -615,6 +628,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.privacyProOnboardingPromotion))
         case .subscriptionPromoForReinstallers:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForReinstallers))
+        case .subscriptionExpirationReminderNotification:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionExpirationReminderNotification))
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -753,6 +768,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .uiTestExperiment:
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
+        case .searchTokenExperiment:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperiment), cohortType: SearchTokenExperimentCohort.self)
         case .genericBackgroundTask:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionLimitCallStackTreeDepth:

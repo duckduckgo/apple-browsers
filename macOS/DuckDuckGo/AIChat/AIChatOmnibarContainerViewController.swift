@@ -141,6 +141,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     let themeManager: ThemeManaging
     let omnibarController: AIChatOmnibarController
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     private var textChangeCancellable: AnyCancellable?
@@ -159,7 +160,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private lazy var historyCleaner: HistoryCleaning = HistoryCleaner(
         featureFlagger: NSApp.delegateTyped.featureFlagger,
         privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
-        nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+        nativeStorageHandler: duckAiNativeStorageHandler,
         featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: NSApp.delegateTyped.featureFlagger)
     )
 
@@ -302,9 +303,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         fatalError("AIChatOmnibarContainerViewController: Bad initializer")
     }
 
-    required init(themeManager: ThemeManaging, omnibarController: AIChatOmnibarController) {
+    required init(themeManager: ThemeManaging,
+                  omnibarController: AIChatOmnibarController,
+                  duckAiNativeStorageHandler: DuckAiNativeStorageHandling?) {
         self.themeManager = themeManager
         self.omnibarController = omnibarController
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -484,7 +488,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     // MARK: - Tool Button Visibility
 
     private var shouldShowToolsButton: Bool {
-        omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible)
+        omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible || isCustomizeResponsesItemVisible)
     }
 
     private var isImageGenerationItemVisible: Bool {
@@ -493,6 +497,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private var isWebSearchItemVisible: Bool {
         omnibarController.isWebSearchEnabled && omnibarController.selectedModelSupportsWebSearch
+    }
+
+    private var isCustomizeResponsesItemVisible: Bool {
+        omnibarController.isCustomizeResponsesEnabled
     }
 
     private var shouldShowWebSearchChip: Bool {
@@ -1121,6 +1129,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 webSearchItem.state = .on
             }
             menu.addItem(webSearchItem)
+        }
+
+        if isCustomizeResponsesItemVisible {
+            let store = CustomizeResponsesStore(storageHandler: duckAiNativeStorageHandler)
+            let state = store.currentState(clarifiesLabel: UserText.aiChatCustomizeResponsesClarifies)
+            let subtitle = (state.hasCustomization ? state.subLabel : nil) ?? UserText.aiChatCustomizeResponsesToolSubtitle
+            let rowView = CustomizeResponsesMenuRowView(
+                title: UserText.aiChatCustomizeResponsesButtonLabel,
+                subtitle: subtitle,
+                icon: DesignSystemImages.Glyphs.Size16.glasses,
+                showsToggle: state.hasCustomization,
+                isActive: state.isActive,
+                onOpen: {},
+                onToggle: { active in store.setActive(active) }
+            )
+            let customizeItem = NSMenuItem()
+            customizeItem.view = rowView
+            menu.addItem(customizeItem)
         }
 
         return menu
@@ -2017,5 +2043,27 @@ private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
     /// user actually picked or removed something during this session.
     func markDidMutate() {
         didMutateDuringSession = true
+    }
+}
+
+// MARK: - Customize Responses state (native storage bridge)
+
+final class CustomizeResponsesStore {
+
+    private let storageHandler: DuckAiNativeStorageHandling?
+
+    init(storageHandler: DuckAiNativeStorageHandling?) {
+        self.storageHandler = storageHandler
+    }
+
+    func currentState(clarifiesLabel: String) -> CustomizeResponsesState {
+        guard let storageHandler else { return .none }
+        let customization = (try? storageHandler.getEntry(key: CustomizeResponsesStorageKey.customization)) ?? nil
+        let active = (try? storageHandler.getEntry(key: CustomizeResponsesStorageKey.active)) ?? nil
+        return CustomizeResponsesState.make(customizationValue: customization, activeValue: active, clarifiesLabel: clarifiesLabel)
+    }
+
+    func setActive(_ active: Bool) {
+        try? storageHandler?.putEntry(key: CustomizeResponsesStorageKey.active, value: active ? "true" : "false")
     }
 }

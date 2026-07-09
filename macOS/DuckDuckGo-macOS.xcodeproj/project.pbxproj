@@ -431,6 +431,8 @@
 		31BFDB712ECA46DD00ADFABD /* AIChatOmnibarTextContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BFDB6F2ECA46DD00ADFABD /* AIChatOmnibarTextContainerViewController.swift */; };
 		31BFDB792ECA5FCD00ADFABD /* AIChatOmnibarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BFDB782ECA5FCD00ADFABD /* AIChatOmnibarController.swift */; };
 		31BFDB7A2ECA5FCD00ADFABD /* AIChatOmnibarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BFDB782ECA5FCD00ADFABD /* AIChatOmnibarController.swift */; };
+		CA57DE500000000000000011 /* CustomizeResponsesMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA57DE500000000000000010 /* CustomizeResponsesMenuRowView.swift */; };
+		CA57DE500000000000000012 /* CustomizeResponsesMenuRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA57DE500000000000000010 /* CustomizeResponsesMenuRowView.swift */; };
 		31C26A0A2CBE9D2700FFF462 /* PreferencesAIChat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C26A092CBE9D2200FFF462 /* PreferencesAIChat.swift */; };
 		31C26A0B2CBE9D2700FFF462 /* PreferencesAIChat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C26A092CBE9D2200FFF462 /* PreferencesAIChat.swift */; };
 		31C26A0D2CBE9DFE00FFF462 /* AIChatPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C26A0C2CBE9DFA00FFF462 /* AIChatPreferences.swift */; };
@@ -5023,6 +5025,7 @@
 		31BFDB6C2ECA423900ADFABD /* MouseBlockingBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseBlockingBackgroundView.swift; sourceTree = "<group>"; };
 		31BFDB6F2ECA46DD00ADFABD /* AIChatOmnibarTextContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatOmnibarTextContainerViewController.swift; sourceTree = "<group>"; };
 		31BFDB782ECA5FCD00ADFABD /* AIChatOmnibarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatOmnibarController.swift; sourceTree = "<group>"; };
+		CA57DE500000000000000010 /* CustomizeResponsesMenuRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomizeResponsesMenuRowView.swift; sourceTree = "<group>"; };
 		31C26A092CBE9D2200FFF462 /* PreferencesAIChat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesAIChat.swift; sourceTree = "<group>"; };
 		31C26A0C2CBE9DFA00FFF462 /* AIChatPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPreferences.swift; sourceTree = "<group>"; };
 		31C3CE0128EDC1E70002C24A /* CustomRoundedCornersShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomRoundedCornersShape.swift; sourceTree = "<group>"; };
@@ -7811,6 +7814,7 @@
 				31224EF02F9F9922008E0118 /* BurnerDuckAiStorageRegistry.swift */,
 				31BFDB692ECA420E00ADFABD /* AIChatOmnibarContainerViewController.swift */,
 				31BFDB782ECA5FCD00ADFABD /* AIChatOmnibarController.swift */,
+				CA57DE500000000000000010 /* CustomizeResponsesMenuRowView.swift */,
 				31BFDB6F2ECA46DD00ADFABD /* AIChatOmnibarTextContainerViewController.swift */,
 				31E3FD712CE39C4600A392C8 /* Debug */,
 				1E4EDA262DE9ED1C0019B6E8 /* Sidebar */,
@@ -15153,6 +15157,7 @@
 				CC82ABB72F5206BE00AD9807 /* PromoHistoryProviding.swift in Sources */,
 				C1935A1C2C88F9ED001AD72D /* SyncPromoViewModel.swift in Sources */,
 				31BFDB7A2ECA5FCD00ADFABD /* AIChatOmnibarController.swift in Sources */,
+				CA57DE500000000000000011 /* CustomizeResponsesMenuRowView.swift in Sources */,
 				4D5E6F708192A3B4C5D6E7F8 /* BookmarksBarMenuCustomPopover.swift in Sources */,
 				84F1C8D02C7705B500716446 /* BookmarksBarMenuPopover.swift in Sources */,
 				2B3C4D5E6F708192A3B4C5D6 /* BookmarksBarMenuPopoverPresenting.swift in Sources */,
@@ -17699,6 +17704,7 @@
 				4BE65474271FCD40008D1D63 /* PasswordManagementIdentityItemView.swift in Sources */,
 				566B73692BECBF8400FF1959 /* SyncAlertsPresenter.swift in Sources */,
 				31BFDB792ECA5FCD00ADFABD /* AIChatOmnibarController.swift in Sources */,
+				CA57DE500000000000000012 /* CustomizeResponsesMenuRowView.swift in Sources */,
 				BDD13E222D8BD47A00FBC383 /* VPNBypassServiceExtensions.swift in Sources */,
 				EE1886532EB3BA4900A46272 /* NewImportSummaryView.swift in Sources */,
 				B6F41031264D2B23003DA42C /* ProgressExtension.swift in Sources */,
@@ -20357,7 +20363,7 @@
 			repositoryURL = "https://github.com/pointfreeco/swift-clocks.git";
 			requirement = {
 				kind = exactVersion;
-				version = 1.1.0;
+				version = 1.0.6;
 			};
 		};
 		9FF521422BAA8FF300B9819B /* XCRemoteSwiftPackageReference "lottie-spm" */ = {

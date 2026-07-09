@@ -30,5 +30,40 @@
                 "enum": ["denied", "authorized"]
             }
         ]
+    },
+    "push-notification_subscription-expiration-reminder_scheduled": {
+        "description": "Fires when a Privacy Pro subscription expiration reminder notification is successfully scheduled.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "push-notification_subscription-expiration-reminder_tapped": {
+        "description": "Fires when a user taps the scheduled Privacy Pro subscription expiration reminder notification, launching the app.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "push-notification_subscription-expiration-reminder_dismissed": {
+        "description": "Fires when a user explicitly dismisses the scheduled Privacy Pro subscription expiration reminder notification (single clear; bulk Clear All is not reliably reported by iOS).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "push-notification_subscription-expiration-reminder_cancelled": {
+        "description": "Fires when a previously scheduled expiration reminder is cancelled before firing because the subscription no longer warrants it (status became inactive/expired/unknown, or the free-trial offer ended). Not fired for the feature-flag kill switch.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "push-notification_subscription-expiration-reminder_scheduling-error": {
+        "description": "Fires when scheduling the expiration reminder fails (UNUserNotificationCenter.add threw an error).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
     }
 }

@@ -162,6 +162,18 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         updateShadowAppearanceByApplyingLayerMask()
     }
 
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        /// Keep the inline duck.ai field first responder across the rotation
+        guard omniBarView.aiChatTextView.isFirstResponder else { return }
+
+        omniBarView.aiChatTextView.suppressResignFirstResponder = true
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.omniBarView.aiChatTextView.suppressResignFirstResponder = false
+        }
+    }
+
     // MARK: - Text Field Delegate Overrides
 
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {

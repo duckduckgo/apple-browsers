@@ -1,5 +1,5 @@
 {
-  "originHash" : "fa530ae9be7f9b7531c1afefe5cd520e9e7f6cb24cf5c56ea5c4be896834cf8e",
+  "originHash" : "ebf980233738fd085feb3abca1f0428bab865b24cdad092ece80a058b914c968",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -177,8 +177,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-clocks.git",
       "state" : {
-        "revision" : "72d749bf341b78851203066ab421869b783ec42a",
-        "version" : "1.1.0"
+        "revision" : "cc46202b53476d64e824e0b6612da09d84ffde8e",
+        "version" : "1.0.6"
       }
     },
     {

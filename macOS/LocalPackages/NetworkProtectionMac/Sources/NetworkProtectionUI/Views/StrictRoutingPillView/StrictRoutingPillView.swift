@@ -17,6 +17,7 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 
 /// A compact status pill shown under the VPN status header while the VPN is on. It reflects the current
@@ -32,14 +33,15 @@ struct StrictRoutingPillView: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 5) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 10, weight: .bold))
+            HStack(spacing: isStrictRoutingOn ? 6 : 4) {
+                Image(nsImage: DesignSystemImages.Color.Size24.lock)
+                    .resizable()
+                    .frame(width: 12, height: 12)
 
                 Text(isStrictRoutingOn
                      ? UserText.networkProtectionStrictRoutingPillOn
                      : UserText.networkProtectionStrictRoutingPillOff)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 11, weight: .medium))
             }
         }
         .buttonStyle(StrictRoutingPillButtonStyle(isStrictRoutingOn: isStrictRoutingOn))
@@ -52,14 +54,21 @@ private struct StrictRoutingPillButtonStyle: ButtonStyle {
 
     let isStrictRoutingOn: Bool
 
+    private static let cornerRadius: CGFloat = 12
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundColor(textColor)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Capsule().fill(fillColor))
-            .contentShape(Capsule())
+            .padding(padding)
+            .background(RoundedRectangle(cornerRadius: Self.cornerRadius).fill(fillColor))
+            .contentShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
             .opacity(configuration.isPressed ? 0.85 : 1)
+    }
+
+    private var padding: EdgeInsets {
+        isStrictRoutingOn
+            ? EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 10)
+            : EdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 8)
     }
 
     private var textColor: Color {

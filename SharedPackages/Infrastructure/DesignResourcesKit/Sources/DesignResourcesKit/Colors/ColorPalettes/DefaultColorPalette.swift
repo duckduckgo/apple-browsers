@@ -233,6 +233,12 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .shieldPrivacy: return shieldPrivacy
+        case .vpnStrictRoutingActive:
+            return DynamicColor(lightColor: RebrandingColor.Green.green50, darkColor: RebrandingColor.Green.green80)
+        case .vpnStrictRoutingInactive:
+            return DynamicColor(lightColor: Color(0xFFF0C2), darkColor: Color(0xC18010).opacity(0.16))
+        case .vpnStrictRoutingInactiveText:
+            return DynamicColor(lightColor: Color(0x92540C), darkColor: RebrandingColor.Pollen.pollen20)
         case .border: return border
         case .accentTextPrimary: return accentTextPrimary
         case .textPlaceholder: return textPlaceholder

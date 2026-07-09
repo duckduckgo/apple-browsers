@@ -86,6 +86,11 @@ public enum DesignSystemColor {
     // Shield
     case shieldPrivacy
 
+    // VPN
+    case vpnStrictRoutingActive
+    case vpnStrictRoutingInactive
+    case vpnStrictRoutingInactiveText
+
     // Icons
     case icons
     case iconsSecondary

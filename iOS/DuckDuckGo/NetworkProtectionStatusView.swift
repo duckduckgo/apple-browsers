@@ -280,14 +280,15 @@ struct NetworkProtectionStatusView: View {
         Button {
             isShowingVPNSettings = true
         } label: {
-            HStack(spacing: 5) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 10, weight: .bold))
+            HStack(spacing: statusModel.enforceRoutes ? 6 : 4) {
+                Image(uiImage: DesignSystemImages.Color.Size24.lock)
+                    .resizable()
+                    .frame(width: 12, height: 12)
 
                 Text(statusModel.enforceRoutes
                      ? UserText.netPStrictRoutingPillOn
                      : UserText.netPStrictRoutingPillOff)
-                    .daxFootnoteSemibold()
+                    .font(.system(size: 11, weight: .medium))
             }
         }
         .buttonStyle(StrictRoutingPillButtonStyle(isStrictRoutingOn: statusModel.enforceRoutes))
@@ -591,24 +592,36 @@ extension NetworkProtectionDNSSettings {
     }
 }
 
-/// Renders the Strict routing pill as a coloured capsule and darkens it while pressed.
+/// Renders the Strict routing pill as a coloured rounded rectangle. The design treats this as a badge
+/// with no pressed state, so pressing applies a simple dim as tap feedback.
 private struct StrictRoutingPillButtonStyle: ButtonStyle {
+
+    private static let cornerRadius: CGFloat = 12
 
     let isStrictRoutingOn: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundColor(isStrictRoutingOn ? .white : .black.opacity(0.84))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(
-                Capsule()
-                    .fill(isStrictRoutingOn
-                          ? Color(designSystemColor: .alertGreen)
-                          : Color(designSystemColor: .alertYellow))
-                    .overlay(
-                        Capsule().fill(Color.black.opacity(configuration.isPressed ? 0.15 : 0))
-                    )
-            )
+            .foregroundColor(textColor)
+            .padding(padding)
+            .background(RoundedRectangle(cornerRadius: Self.cornerRadius).fill(fillColor))
+            .contentShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
+            .opacity(configuration.isPressed ? 0.85 : 1)
+    }
+
+    private var textColor: Color {
+        isStrictRoutingOn ? .white : Color(designSystemColor: .vpnStrictRoutingInactiveText).opacity(0.9)
+    }
+
+    private var fillColor: Color {
+        isStrictRoutingOn
+            ? Color(designSystemColor: .vpnStrictRoutingActive)
+            : Color(designSystemColor: .vpnStrictRoutingInactive)
+    }
+
+    private var padding: EdgeInsets {
+        isStrictRoutingOn
+            ? EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 10)
+            : EdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 8)
     }
 }

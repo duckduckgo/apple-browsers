@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
@@ -502,15 +503,95 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
     }
 
-    /// Whether a tool is currently selected — tints the chip to signal the active state.
-    var isToolSelected: Bool = false {
+    var selectedTool: AIChatRAGTool? {
         didSet {
-            toolPickerButton.tintColor = UIColor(designSystemColor: isToolSelected ? .accentPrimary : .iconsSecondary)
+            selectedToolIconView.image = selectedTool?.toolbarChipIcon
+            selectedToolTitleLabel.text = selectedTool?.toolbarChipTitle
+            selectedToolChipView.accessibilityLabel = selectedTool?.toolbarChipAccessibilityLabel
+            refreshSelectedToolBadgeVisibility()
         }
     }
 
+    /// Fired when the badge's clear (✕) button is tapped, so the host can deselect the tool.
+    var onSelectedToolClearTapped: (() -> Void)?
+
     private var canShowToolPicker: Bool {
         isToolPickerEnabled && toolPickerButton.menu != nil
+    }
+
+    private var canShowSelectedToolBadge: Bool {
+        canShowToolPicker && selectedTool != nil
+    }
+
+    private lazy var selectedToolIconView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.tintColor = UIColor(designSystemColor: .textPrimary)
+        imageView.contentMode = .scaleAspectFit
+        imageView.setContentHuggingPriority(.required, for: .horizontal)
+        imageView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        NSLayoutConstraint.activate([
+            imageView.widthAnchor.constraint(equalToConstant: Metrics.selectedToolIconSize),
+            imageView.heightAnchor.constraint(equalToConstant: Metrics.selectedToolIconSize),
+        ])
+        return imageView
+    }()
+
+    private lazy var selectedToolTitleLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = UIFont.daxSubheadSemibold()
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.lineBreakMode = .byTruncatingTail
+        // Let the label truncate rather than push into the trailing controls when width is tight.
+        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return label
+    }()
+
+    private lazy var selectedToolClearButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.accessibilityLabel = UserText.aiChatToolbarClearSelectedToolAccessibilityLabel
+        button.accessibilityIdentifier = "AIChat.Omnibar.iPad.SelectedToolBadge.Clear"
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.addTarget(self, action: #selector(selectedToolClearButtonTapped), for: .primaryActionTriggered)
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: Metrics.selectedToolClearButtonSize),
+            button.heightAnchor.constraint(equalToConstant: Metrics.selectedToolClearButtonSize),
+        ])
+        return button
+    }()
+
+    private lazy var selectedToolChipView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        view.layer.cornerRadius = Metrics.selectedToolChipHeight / 2
+        view.isHidden = true
+        view.accessibilityIdentifier = "AIChat.Omnibar.iPad.SelectedToolBadge"
+
+        let stackView = UIStackView(arrangedSubviews: [selectedToolIconView, selectedToolTitleLabel, selectedToolClearButton])
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .horizontal
+        stackView.alignment = .center
+        stackView.spacing = Metrics.selectedToolChipSpacing
+        view.addSubview(stackView)
+
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Metrics.selectedToolChipHorizontalPadding),
+            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Metrics.selectedToolChipHorizontalPadding),
+            stackView.topAnchor.constraint(equalTo: view.topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        return view
+    }()
+
+    @objc private func selectedToolClearButtonTapped() {
+        onSelectedToolClearTapped?()
     }
 
     let attachButton: UIButton = {
@@ -640,17 +721,21 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     final class TopLevelStackView: UIStackView { }
     private let stackView = TopLevelStackView()
 
-    private let glassEffect: UIVisualEffectView = {
+    private lazy var glassEffect: UIVisualEffectView = makeGlassEffectView()
+
+    private func makeGlassEffectView() -> UIVisualEffectView {
         let view: UIVisualEffectView
         if #available(iOS 26.0, *) {
-            view = UIVisualEffectView(effect: UIGlassEffect())
+            let effect = UIGlassEffect()
+            effect.tintColor = fireMode ? UIColor(singleUseColor: .fireModeBackground) : nil
+            view = UIVisualEffectView(effect: effect)
             view.cornerConfiguration = .capsule()
         } else {
             view = UIVisualEffectView()
         }
         view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         return view
-    }()
+    }
     private var floatingHostToContainerConstraints: [NSLayoutConstraint] = []
     private var floatingHostToGlassContentConstraints: [NSLayoutConstraint] = []
     private var chromeContentContainerView: UIView {
@@ -713,31 +798,64 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             makeOpaque()
             return
         }
-        glassEffect.removeFromSuperview()
         opaqueEffect.removeFromSuperview()
+
+        // `UIGlassEffect`'s tint is fixed at construction time, so the glass view is rebuilt on the
+        // fly to reflect the current fire-mode tint.
+        floatingHostToGlassContentConstraints.forEach { $0.isActive = false }
+        floatingHostToContainerConstraints.forEach { $0.isActive = false }
+        floatingGlassContentHostView.removeFromSuperview()
+        glassEffect.removeFromSuperview()
+
+        glassEffect = makeGlassEffectView()
         glassEffect.frame = searchAreaContainerView.bounds
         searchAreaContainerView.insertSubview(glassEffect, at: 0)
-        if floatingGlassContentHostView.superview !== glassEffect.contentView {
-            floatingHostToContainerConstraints.forEach { $0.isActive = false }
-            floatingGlassContentHostView.removeFromSuperview()
+
+        if fireMode {
+            // We don't want the text field to adapt to content behind the omnibar, so making it a
+            // sibling of the glass (pinned to the container) prevents that.
+            searchAreaContainerView.addSubview(floatingGlassContentHostView)
+            floatingHostToContainerConstraints.forEach { $0.isActive = true }
+        } else {
+            // As a child of the glass the text color will automatically adapt to the content behind
+            // the omnibar.
             glassEffect.contentView.addSubview(floatingGlassContentHostView)
-            floatingHostToGlassContentConstraints.forEach { $0.isActive = true }
+            floatingHostToGlassContentConstraints = [
+                floatingGlassContentHostView.topAnchor.constraint(equalTo: glassEffect.contentView.topAnchor),
+                floatingGlassContentHostView.leadingAnchor.constraint(equalTo: glassEffect.contentView.leadingAnchor),
+                floatingGlassContentHostView.trailingAnchor.constraint(equalTo: glassEffect.contentView.trailingAnchor),
+                floatingGlassContentHostView.bottomAnchor.constraint(equalTo: glassEffect.contentView.bottomAnchor)
+            ]
+            NSLayoutConstraint.activate(floatingHostToGlassContentConstraints)
         }
-        searchAreaContainerView.backgroundColor = .clear
+
+        // Don't apply a colour here, that will get set later when animations and such have finished.
     }
 
     func makeOpaque() {
-        if isFloatingUIEnabled, floatingGlassContentHostView.superview !== searchAreaContainerView {
+        if isFloatingUIEnabled {
             floatingHostToGlassContentConstraints.forEach { $0.isActive = false }
-            floatingGlassContentHostView.removeFromSuperview()
-            searchAreaContainerView.addSubview(floatingGlassContentHostView)
+            if floatingGlassContentHostView.superview !== searchAreaContainerView {
+                floatingGlassContentHostView.removeFromSuperview()
+                searchAreaContainerView.addSubview(floatingGlassContentHostView)
+            }
             floatingHostToContainerConstraints.forEach { $0.isActive = true }
         }
         glassEffect.removeFromSuperview()
         opaqueEffect.removeFromSuperview()
-        searchAreaContainerView.backgroundColor = isFloatingUIEnabled
-            ? restingFieldBackgroundColor
-            : UIColor(designSystemColor: .urlBar)
+
+        setFieldBackgroundColor(isFloatingUIEnabled
+            ? opaqueFieldBackgroundColor
+            : UIColor(designSystemColor: .urlBar))
+    }
+
+    /// Applies the field fill without animation. The address-bar move animation only animates the
+    /// bar's position; the fill must snap so it never cross-fades through an intermediate colour
+    /// (e.g. the stale-position fill computed before `isUsingSmallTopSpacing` is updated).
+    private func setFieldBackgroundColor(_ color: UIColor?) {
+        UIView.performWithoutAnimation {
+            searchAreaContainerView.backgroundColor = color
+        }
     }
 
     private func setUpSubviews() {
@@ -775,6 +893,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         chromeContentContainerView.addSubview(modelPickerButton)
         chromeContentContainerView.addSubview(reasoningPickerButton)
         chromeContentContainerView.addSubview(toolPickerButton)
+        chromeContentContainerView.addSubview(selectedToolChipView)
         chromeContentContainerView.addSubview(attachButton)
         chromeContentContainerView.addSubview(attachmentsStripView)
         chromeContentContainerView.addSubview(aiChatLeftButton)
@@ -828,12 +947,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 floatingGlassContentHostView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
                 floatingGlassContentHostView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
             ]
-            floatingHostToGlassContentConstraints = [
-                floatingGlassContentHostView.topAnchor.constraint(equalTo: glassEffect.contentView.topAnchor),
-                floatingGlassContentHostView.leadingAnchor.constraint(equalTo: glassEffect.contentView.leadingAnchor),
-                floatingGlassContentHostView.trailingAnchor.constraint(equalTo: glassEffect.contentView.trailingAnchor),
-                floatingGlassContentHostView.bottomAnchor.constraint(equalTo: glassEffect.contentView.bottomAnchor)
-            ]
+            // `floatingHostToGlassContentConstraints` are (re)built in `makeGlass()` against the
+            // freshly-created glass view's `contentView`, since the glass view is recreated on the fly.
+            floatingHostToGlassContentConstraints = []
             NSLayoutConstraint.activate(floatingHostToContainerConstraints)
         } else {
             floatingHostToContainerConstraints = []
@@ -1047,17 +1163,30 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             activeOutlineView.layer.borderColor = fireMode
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
+        } else if isFloatingUIEnabled {
+            setFieldBackgroundColor(opaqueFieldBackgroundColor)
+            activeOutlineView.layer.borderColor = fireMode
+                ? UIColor(singleUseColor: .fireModeAccent).cgColor
+                : UIColor(designSystemColor: .accentPrimary).cgColor
         } else {
-            if fireMode {
-                searchAreaContainerView.backgroundColor = UIColor(singleUseColor: .fireModeCardBackground)
-                activeOutlineView.layer.borderColor = UIColor(singleUseColor: .fireModeAccent).cgColor
-            } else {
-                searchAreaContainerView.backgroundColor = restingFieldBackgroundColor
-                activeOutlineView.layer.borderColor = UIColor(designSystemColor: .accentPrimary).cgColor
-            }
+            // Floating UI off (production): preserve the original fire-mode fill so the
+            // fire-mode omnibar colour is unchanged from `main`.
+            setFieldBackgroundColor(fireMode
+                ? UIColor(singleUseColor: .fireModeCardBackground)
+                : restingFieldBackgroundColor)
+            activeOutlineView.layer.borderColor = fireMode
+                ? UIColor(singleUseColor: .fireModeAccent).cgColor
+                : UIColor(designSystemColor: .accentPrimary).cgColor
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
+        // When floating, the chrome (and the address text) lives inside `floatingGlassContentHostView`,
+        // which in non-fire mode is reparented into `glassEffect.contentView` and so isn't reached by
+        // the loop above. Apply the style directly so it resets to `.unspecified` in non-fire mode and
+        // the text can adapt to the glass, rather than staying forced-dark from a prior fire session.
+        if isFloatingUIEnabled {
+            floatingGlassContentHostView.overrideUserInterfaceStyle = style
+        }
         progressView?.updateFireModeAppearance(fireMode: fireMode)
     }
 
@@ -1162,18 +1291,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private func updateVerticalSpacing() {
         textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
         textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
-        // The bottom floating field's resting fill differs from the top; refresh when the position
-        // (small-top-spacing) flips, unless fire mode owns the appearance.
-        if isFloatingUIEnabled, !fireMode {
-            // Don't clobber the top glass with an opaque fill. `makeGlass()` keeps the container
-            // clear so the glass effect (behind the content) shows through; only the bottom field
-            // takes an opaque resting fill.
-            if shouldUseFloatingTopGlass {
-                makeGlass()
-            } else {
-                searchAreaContainerView.backgroundColor = restingFieldBackgroundColor
-            }
-        }
+        updateFireModeAppearance()
     }
 
     func refreshLongPressMenuAvailability() {
@@ -1191,6 +1309,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     func moveTransitionCompleted() {
         backgroundColor = isFloatingUIEnabled ? .clear : defaultBackgroundColor
+        updateFireModeAppearance()
     }
 
     private func addOmniBarLongPressInteractionIfNeeded() {
@@ -1211,7 +1330,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         guard isSearchAreaExpanded else { return nil }
         // The strip and attach button sit above the text view (which is brought to front for typing),
         // so route taps to them before falling back to the text view.
-        let candidates: [UIView] = [aiChatSendButton, modelPickerButton, reasoningPickerButton, toolPickerButton, attachButton, attachmentsStripView, aiChatTextView]
+        let candidates: [UIView] = [aiChatSendButton, modelPickerButton, reasoningPickerButton, toolPickerButton, selectedToolChipView, attachButton, attachmentsStripView, aiChatTextView]
         return candidates.first { candidate in
             guard !candidate.isHidden else { return false }
             let localPoint = candidate.convert(point, from: self)
@@ -1381,6 +1500,15 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         static let reasoningToModelPickerSpacing: CGFloat = 4.0
         static let toolPickerChipSize: CGFloat = 40.0
 
+        // Duck.ai selected-tool badge (iPad): capsule with icon + name + clear, to the trailing edge
+        // of the tool picker. Sizing matches the iOS selected-tool / attachment chip family.
+        static let selectedToolChipHeight: CGFloat = 40.0
+        static let selectedToolChipHorizontalPadding: CGFloat = 16.0
+        static let selectedToolChipSpacing: CGFloat = 4.0
+        static let selectedToolIconSize: CGFloat = 24.0
+        static let selectedToolClearButtonSize: CGFloat = 24.0
+        static let toolPickerToSelectedToolChipSpacing: CGFloat = 4.0
+
         // Duck.ai attach button (iPad), sits on the far left, to the left of the tool picker.
         static let attachButtonSize: CGFloat = 40.0
         static let attachToToolPickerSpacing: CGFloat = 4.0
@@ -1445,6 +1573,14 @@ private extension DefaultOmniBarView {
         isBottomFloatingField
             ? UIColor(singleUseColor: .floatingAddressBarBackground)
             : UIColor(designSystemColor: .backgroundTertiary)
+    }
+
+    /// The opaque field fill used when the field isn't a glass surface (e.g. the bottom floating
+    /// field). In fire mode it takes the fire background so it matches the tinted top glass.
+    var opaqueFieldBackgroundColor: UIColor {
+        fireMode
+            ? UIColor(singleUseColor: .fireModeBackground)
+            : restingFieldBackgroundColor
     }
 }
 
@@ -1714,6 +1850,11 @@ extension DefaultOmniBarView {
             toolPickerButton.widthAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),
             toolPickerButton.heightAnchor.constraint(equalToConstant: Metrics.toolPickerChipSize),
 
+            selectedToolChipView.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
+            selectedToolChipView.heightAnchor.constraint(equalToConstant: Metrics.selectedToolChipHeight),
+            selectedToolChipView.leadingAnchor.constraint(equalTo: toolPickerButton.trailingAnchor, constant: Metrics.toolPickerToSelectedToolChipSpacing),
+            selectedToolChipView.trailingAnchor.constraint(lessThanOrEqualTo: reasoningPickerButton.leadingAnchor, constant: -Metrics.toolPickerToSelectedToolChipSpacing),
+
             attachmentsStripView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
             attachmentsStripView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
             attachmentsStripView.bottomAnchor.constraint(equalTo: aiChatSendButton.topAnchor, constant: -Metrics.attachmentsStripToButtonRowSpacing),
@@ -1779,12 +1920,14 @@ extension DefaultOmniBarView {
             modelPickerButton.alpha = (isSearchAreaExpanded && canShowModelPicker) ? 1 : 0
             reasoningPickerButton.alpha = (isSearchAreaExpanded && canShowReasoningPicker) ? 1 : 0
             toolPickerButton.alpha = (isSearchAreaExpanded && canShowToolPicker) ? 1 : 0
+            selectedToolChipView.alpha = (isSearchAreaExpanded && canShowSelectedToolBadge) ? 1 : 0
             attachButton.alpha = (isSearchAreaExpanded && canShowAttachButton) ? 1 : 0
             if !isSearchAreaExpanded {
                 aiChatSendButton.isHidden = true
                 modelPickerButton.isHidden = true
                 reasoningPickerButton.isHidden = true
                 toolPickerButton.isHidden = true
+                selectedToolChipView.isHidden = true
                 attachButton.isHidden = true
             }
             applyExpansionConstraints()
@@ -1827,6 +1970,7 @@ extension DefaultOmniBarView {
                 self.modelPickerButton.alpha = self.canShowModelPicker ? 1 : 0
                 self.reasoningPickerButton.alpha = self.canShowReasoningPicker ? 1 : 0
                 self.toolPickerButton.alpha = self.canShowToolPicker ? 1 : 0
+                self.selectedToolChipView.alpha = self.canShowSelectedToolBadge ? 1 : 0
                 self.attachButton.alpha = self.canShowAttachButton ? 1 : 0
             } else {
                 self.searchAreaShadowView?.applyShadowOpacityMultiplier(0)
@@ -1834,6 +1978,7 @@ extension DefaultOmniBarView {
                 self.modelPickerButton.alpha = 0
                 self.reasoningPickerButton.alpha = 0
                 self.toolPickerButton.alpha = 0
+                self.selectedToolChipView.alpha = 0
                 self.attachButton.alpha = 0
             }
             self.attachmentsStripView.alpha = showStrip ? 1 : 0
@@ -1849,6 +1994,7 @@ extension DefaultOmniBarView {
                 self.modelPickerButton.isHidden = true
                 self.reasoningPickerButton.isHidden = true
                 self.toolPickerButton.isHidden = true
+                self.selectedToolChipView.isHidden = true
                 self.attachButton.isHidden = true
                 self.onCollapseAnimationCompleted?()
                 self.onCollapseAnimationCompleted = nil
@@ -1891,6 +2037,12 @@ extension DefaultOmniBarView {
                 toolPickerButton.isHidden = false
                 toolPickerButton.alpha = 0
                 searchAreaContainerView.bringSubviewToFront(toolPickerButton)
+            }
+
+            if canShowSelectedToolBadge {
+                selectedToolChipView.isHidden = false
+                selectedToolChipView.alpha = 0
+                searchAreaContainerView.bringSubviewToFront(selectedToolChipView)
             }
 
             if canShowAttachButton {
@@ -1951,6 +2103,20 @@ extension DefaultOmniBarView {
         searchAreaContainerView.bringSubviewToFront(toolPickerButton)
         UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
             self.toolPickerButton.alpha = 1
+        }
+    }
+
+    private func refreshSelectedToolBadgeVisibility() {
+        guard isSearchAreaExpanded, canShowSelectedToolBadge else {
+            selectedToolChipView.isHidden = true
+            return
+        }
+        guard selectedToolChipView.isHidden else { return }
+        selectedToolChipView.isHidden = false
+        selectedToolChipView.alpha = 0
+        searchAreaContainerView.bringSubviewToFront(selectedToolChipView)
+        UIView.animate(withDuration: Metrics.expansionAnimationDuration) {
+            self.selectedToolChipView.alpha = 1
         }
     }
 

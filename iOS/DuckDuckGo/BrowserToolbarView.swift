@@ -346,6 +346,19 @@ final class BrowserToolbarView: UIView {
         hasEmbeddedOmnibar ? Self.floatingBottomMarginWithEmbedded : Self.floatingBottomMarginStandalone
     }
 
+    /// Floating style only; returns `.zero` otherwise.
+    func restingCapsuleFrame(in view: UIView) -> CGRect {
+        guard isFloatingStyleEnabled else { return .zero }
+        let bounds = view.bounds
+        let safeBottom = view.safeAreaInsets.bottom
+        let insets = Self.floatingBarOuterInsets
+        let width = bounds.width - insets.left - insets.right
+        let height = buttonsHeightConstraint.constant
+        let offset = max(0, safeBottom - floatingBottomMargin)
+        let bottom = bounds.maxY - safeBottom + offset
+        return CGRect(x: bounds.minX + insets.left, y: bottom - height, width: width, height: height)
+    }
+    
     /// Shifts the glass capsule down from its safe-area-anchored position toward the device bottom,
     /// leaving `floatingBottomMargin`. Done as a transform (not a constraint change) so it doesn't
     /// disturb the toolbar's layout slot or the runtime chrome hide/show constant logic.

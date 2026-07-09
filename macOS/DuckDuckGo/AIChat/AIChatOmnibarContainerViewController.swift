@@ -1146,6 +1146,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 icon: DesignSystemImages.Glyphs.Size16.glasses,
                 showsToggle: state.hasCustomization,
                 isActive: state.isActive,
+                isEnabled: !omnibarController.isImageGenerationMode,
                 onOpen: { [weak self] in self?.presentCustomizeResponsesModal() },
                 onToggle: { active in store.setActive(active) }
             )

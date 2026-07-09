@@ -482,15 +482,24 @@ final class PreferencesSidebarModel: ObservableObject {
         adjustSelectedPaneIfNeeded()
     }
 
+    /// Panes whose visibility and correct target depend on subscription entitlement state, which
+    /// loads asynchronously.
+    private static let subscriptionGatedPanes: Set<PreferencePaneIdentifier> = [
+        .vpn, .personalInformationRemoval, .identityTheftRestoration, .paidAIChat, .subscription, .subscriptionSettings
+    ]
+
     func adjustSelectedPaneIfNeeded() {
         let allPanes = sections.flatMap(\.panes)
 
-        if !allPanes.contains(selectedPane) {
+        // Keep the requested pane as-is until entitlement state has loaded. Adjusting against the
+        // initial (empty) state can bounce a deep link to a subscription-gated pane (e.g. `.vpn`)
+        // onto the subscription pane, depending on whether the entitlements happened to load first.
+        // `refreshSections()` calls this again once the state arrives.
+        if !hasLoadedInitialSubscriptionState, Self.subscriptionGatedPanes.contains(selectedPane) {
+            return
+        }
 
-            // Required to keep selection since subscription settings need to load its initial state
-            if selectedPane == .subscriptionSettings && !hasLoadedInitialSubscriptionState {
-                return
-            }
+        if !allPanes.contains(selectedPane) {
 
             // Adjust Subscription selection when subscribed/unsubscribed state changes
             if selectedPane == .subscriptionSettings, allPanes.contains(.subscription) {
@@ -520,8 +529,11 @@ final class PreferencesSidebarModel: ObservableObject {
                                                                   newTab: true)
         }
 
-        // Required to keep selection since subscription settings need to load its initial state
-        if identifier == .subscriptionSettings && !hasLoadedInitialSubscriptionState {
+        // Subscription-gated panes are absent from `sections` until entitlement state loads, so a
+        // deep link to one (e.g. `.vpn` from the VPN status view) would otherwise no-op and leave
+        // Settings on the default pane. Remember the requested pane so it survives the async load;
+        // `adjustSelectedPaneIfNeeded()` preserves it until the sections include it.
+        if !hasLoadedInitialSubscriptionState, Self.subscriptionGatedPanes.contains(identifier) {
             selectedPane = identifier
             return
         }

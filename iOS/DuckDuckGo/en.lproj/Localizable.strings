@@ -2767,6 +2767,9 @@ https://duckduckgo.com/mac";
 /* Message label text for the status view when VPN is disconnected */
 "network.protection.status.header.message.on" = "All device Internet traffic is being secured\nthrough the VPN.";
 
+/* Status view message shown while the VPN is on but Strict routing is off */
+"network.protection.status.header.message.strict.routing.off" = "Some traffic may bypass the VPN on untrusted networks.";
+
 /* Header title label text for the status view when VPN is disconnected */
 "network.protection.status.header.title.off" = "DuckDuckGo VPN is Off";
 
@@ -2809,20 +2812,23 @@ https://duckduckgo.com/mac";
 /* Label shown on the title of the settings section in NetworkProtection's status view. */
 "network.protection.status.view.settings.section.title" = "Manage";
 
-/* Action button title for the notice prompting the user to turn the VPN Strict routing setting back on */
-"network.protection.status.view.strict.routing.notice.action" = "Turn On Strict Routing";
+/* Label for the status pill shown while the VPN's Strict routing setting is off */
+"network.protection.status.view.strict.routing.pill.off" = "Strict routing off";
 
-/* Message for the notice prompting the user to turn the VPN Strict routing setting back on */
-"network.protection.status.view.strict.routing.notice.message" = "Enforce Strict Routing is off. Turning it on strengthens protection against traffic leaks on untrusted networks.";
-
-/* Title for the notice prompting the user to turn the VPN Strict routing setting back on */
-"network.protection.status.view.strict.routing.notice.title" = "Allow DuckDuckGo VPN to Enforce Strict Routing";
+/* Label for the status pill shown while the VPN's Strict routing setting is on */
+"network.protection.status.view.strict.routing.pill.on" = "Strict routing on";
 
 /* Title label text for the status view when netP is disconnected */
 "network.protection.status.view.title" = "VPN";
 
 /* Title of the Troubleshooting section in the VPN status screen. */
 "network.protection.status.view.troubleshooting.section.title" = "Troubleshooting";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Enforce Strict Routing is off. Turning it on strengthens protection against traffic leaks on untrusted networks.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Allow DuckDuckGo VPN to Enforce Strict Routing";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPN is On. Your location and online activity are protected.";

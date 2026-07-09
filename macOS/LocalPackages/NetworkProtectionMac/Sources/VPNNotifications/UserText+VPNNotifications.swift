@@ -45,6 +45,11 @@ final class UserText {
 
     static let vpnConnectionSuccessNotificationTitle = NSLocalizedString("vpn.success.notification.title", value: "DuckDuckGo VPN is ON", comment: "The title of the notification shown when DuckDuckGo VPN connects successfully")
 
+    // MARK: - Strict Routing Reminder
+
+    static let vpnStrictRoutingReminderNotificationTitle = NSLocalizedString("vpn.strict.routing.reminder.notification.title", value: "Allow DuckDuckGo VPN to Enforce Strict Routing", comment: "The title of the notification reminding the user to turn the VPN Strict routing setting back on")
+    static let vpnStrictRoutingReminderNotificationSubtitle = NSLocalizedString("vpn.strict.routing.reminder.notification.subtitle", value: "Enforce Strict Routing is off. Turning it on strengthens protection against traffic leaks on untrusted networks.", comment: "The subtitle of the notification reminding the user to turn the VPN Strict routing setting back on")
+
     // MARK: - Entitlement Expired
 
     static let vpnEntitlementExpiredNotificationTitle = NSLocalizedString("vpn.entitlement.expired.notification.title", value: "VPN disconnected", comment: "The title of the notification when Privacy Pro subscription expired")

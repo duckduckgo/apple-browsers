@@ -272,6 +272,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     snoozeEnded: snoozeJustEnded
                 )
 
+                if !settings.enforceRoutes {
+                    self.notificationsPresenter.showStrictRoutingReminderNotification()
+                }
+
                 snoozeJustEnded = false
             }
 

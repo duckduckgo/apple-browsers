@@ -86,6 +86,22 @@ extension SharedColorPaletteDefinition {
         case .shieldPrivacy:
             return shieldPrivacy
 
+        /// VPN
+        /// Feature-scoped, palette-invariant colours for the Strict routing status pill, resolved inline
+        /// (following the Permission Center pattern) since they don't vary by accent palette.
+        ///
+        /// The active/green background is mode-adaptive per the Figma variable (`--ds-color-green-40`):
+        /// rebrand green50 in light, green80 in dark. The Figma spec only covers light mode for the
+        /// inactive/yellow pill; its dark values are derived — the background mirrors
+        /// `permissionWarningBackground`'s treatment of the same pale yellow, and the text lightens so it
+        /// stays legible on that background. Both inactive dark values are pending designer confirmation.
+        case .vpnStrictRoutingActive:
+            return DynamicColor(lightColor: RebrandingColor.Green.green50, darkColor: RebrandingColor.Green.green80)
+        case .vpnStrictRoutingInactive:
+            return DynamicColor(lightColor: Color(0xFFF0C2), darkColor: Color(0xC18010).opacity(0.16))
+        case .vpnStrictRoutingInactiveText:
+            return DynamicColor(lightColor: Color(0x92540C), darkColor: RebrandingColor.Pollen.pollen20)
+
         /// Buttons/Primary
         case .buttonsPrimaryDefault:
             return buttonsPrimaryDefault

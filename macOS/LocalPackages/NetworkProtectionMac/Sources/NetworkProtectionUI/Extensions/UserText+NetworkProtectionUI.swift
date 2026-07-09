@@ -116,9 +116,9 @@ final class UserText {
 
     // MARK: Security
 
-    static let networkProtectionStrictRoutingNoticeTitle = NSLocalizedString("network.protection.status.view.strict.routing.notice.title", bundle: Bundle.module, value: "Allow DuckDuckGo VPN to Enforce Strict Routing", comment: "Title for the notice prompting the user to turn the VPN Strict routing setting back on")
-    static let networkProtectionStrictRoutingNoticeMessage = NSLocalizedString("network.protection.status.view.strict.routing.notice.message", bundle: Bundle.module, value: "Enforce Strict Routing is off. Turning it on strengthens protection against traffic leaks on untrusted networks.", comment: "Message for the notice prompting the user to turn the VPN Strict routing setting back on")
-    static let networkProtectionStrictRoutingNoticeActionTitle = NSLocalizedString("network.protection.status.view.strict.routing.notice.action", bundle: Bundle.module, value: "Turn On Strict Routing", comment: "Action button title for the notice prompting the user to turn the VPN Strict routing setting back on")
+    static let networkProtectionStrictRoutingPillOn = NSLocalizedString("network.protection.status.view.strict.routing.pill.on", bundle: Bundle.module, value: "Strict routing on", comment: "Label for the status pill shown while the VPN's Strict routing setting is on")
+    static let networkProtectionStrictRoutingPillOff = NSLocalizedString("network.protection.status.view.strict.routing.pill.off", bundle: Bundle.module, value: "Strict routing off", comment: "Label for the status pill shown while the VPN's Strict routing setting is off")
+    static let networkProtectionStatusHeaderMessageStrictRoutingOff = NSLocalizedString("network.protection.status.header.message.strict.routing.off", bundle: Bundle.module, value: "Some traffic may bypass the VPN\non untrusted networks.", comment: "Status view message shown while the VPN is on but Strict routing is off")
 
     // MARK: Updating Appex to Sysex for App Store builds
 

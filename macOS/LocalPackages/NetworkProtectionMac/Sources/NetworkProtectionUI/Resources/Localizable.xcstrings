@@ -2213,30 +2213,6 @@
         }
       }
     },
-    "network.protection.status.view.security.section.title" : {
-      "comment" : "Title for the Security section in the VPN status view",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Security"
-          }
-        }
-      }
-    },
-    "network.protection.status.view.strict.routing.toggle.title" : {
-      "comment" : "Title for the Strict routing toggle in the VPN status view",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Strict Routing"
-          }
-        }
-      }
-    },
     "network.protection.site.troubleshooting.title" : {
       "comment" : "Title for VPN website preferences view",
       "extractionState" : "extracted_with_value",
@@ -2657,6 +2633,18 @@
         }
       }
     },
+    "network.protection.status.header.message.strict.routing.off" : {
+      "comment" : "Status view message shown while the VPN is on but Strict routing is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some traffic may bypass the VPN\non untrusted networks."
+          }
+        }
+      }
+    },
     "network.protection.status.view.connection.details" : {
       "comment" : "Connection details label shown in NetworkProtection's status view.",
       "extractionState" : "extracted_with_value",
@@ -3019,6 +3007,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Геопозиция"
+          }
+        }
+      }
+    },
+    "network.protection.status.view.strict.routing.pill.off" : {
+      "comment" : "Label for the status pill shown while the VPN's Strict routing setting is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Strict routing off"
+          }
+        }
+      }
+    },
+    "network.protection.status.view.strict.routing.pill.on" : {
+      "comment" : "Label for the status pill shown while the VPN's Strict routing setting is on",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Strict routing on"
           }
         }
       }

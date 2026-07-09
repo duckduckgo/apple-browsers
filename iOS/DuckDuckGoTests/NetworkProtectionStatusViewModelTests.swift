@@ -217,6 +217,65 @@ import Subscription
         await fulfillment(of: [expectation], timeout: 20)
     }
 
+    // MARK: - Strict routing pill
+
+    func testShowsStrictRoutingPillWhenEnabledAndAvailable() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
+        model.isNetPEnabled = true
+        XCTAssertTrue(model.showStrictRoutingPill)
+    }
+
+    func testHidesStrictRoutingPillWhenUnavailable() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: false)
+        model.isNetPEnabled = true
+        XCTAssertFalse(model.showStrictRoutingPill)
+    }
+
+    func testHidesStrictRoutingPillWhenVPNOff() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
+        model.isNetPEnabled = false
+        XCTAssertFalse(model.showStrictRoutingPill)
+    }
+
+    func testHeaderMessageWarnsWhenStrictRoutingOff() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
+        model.isNetPEnabled = true
+        model.enforceRoutes = false
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageStrictRoutingOff)
+    }
+
+    func testHeaderMessageReflectsOnStateWhenStrictRoutingOn() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
+        model.isNetPEnabled = true
+        model.enforceRoutes = true
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOn)
+    }
+
+    func testHeaderMessageReflectsOnStateWhenStrictRoutingUnavailable() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: false)
+        model.isNetPEnabled = true
+        model.enforceRoutes = false
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOn)
+    }
+
+    private func makeStrictRoutingViewModel(isStrictRoutingAvailable: Bool) -> NetworkProtectionStatusViewModel {
+        // Use an isolated defaults suite so setting `enforceRoutes` doesn't leak into the shared
+        // app-group defaults and pollute other tests.
+        let suiteName = "test.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        return NetworkProtectionStatusViewModel(tunnelController: MockTunnelController(),
+                                                settings: VPNSettings(defaults: defaults),
+                                                statusObserver: MockConnectionStatusObserver(),
+                                                serverInfoObserver: MockConnectionServerInfoObserver(),
+                                                locationListRepository: MockNetworkProtectionLocationListRepository(),
+                                                enablesUnifiedFeedbackForm: false,
+                                                isStrictRoutingAvailable: isStrictRoutingAvailable)
+    }
+
     private func serverAttributes() -> NetworkProtectionServerInfo.ServerAttributes {
         let json = """
         {

@@ -87,6 +87,12 @@ final class VPNNotificationsObserver {
                 self?.showConnectedNotification(serverLocation: serverLocation)
             }.store(in: &cancellables)
 
+        distributedNotificationCenter.publisher(for: .showStrictRoutingReminderNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.showStrictRoutingReminderNotification()
+            }.store(in: &cancellables)
+
         distributedNotificationCenter.publisher(for: .showIssuesNotResolvedNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -126,6 +132,13 @@ final class VPNNotificationsObserver {
     func showConnectedNotification(serverLocation: String?) {
         Logger.networkProtection.info("Presenting reconnected notification")
         notificationsPresenter.showConnectedNotification(serverLocation: serverLocation, snoozeEnded: false)
+    }
+
+    /// Displays a notice reminding the user to turn Strict routing back on, shown right after the
+    /// connected notification while Strict routing is off.
+    func showStrictRoutingReminderNotification() {
+        Logger.networkProtection.info("Presenting strict routing reminder notification")
+        notificationsPresenter.showStrictRoutingReminderNotification()
     }
 
     /// Displays a notification indicating the VPN is attempting to reconnect.

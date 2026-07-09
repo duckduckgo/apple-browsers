@@ -39,6 +39,11 @@ struct NetworkProtectionStatusView: View {
     @ObservedObject
     public var feedbackFormModel: UnifiedFeedbackFormViewModel
 
+    /// Drives the push to VPN settings when the Strict routing pill is tapped. A hidden `NavigationLink`
+    /// attached to a list row (rather than the section header) performs the push, which is the reliable
+    /// placement in a grouped `List`.
+    @State private var isShowingVPNSettings = false
+
     var tipsModel: VPNTipsModel {
         statusModel.tipsModel
     }
@@ -57,8 +62,6 @@ struct NetworkProtectionStatusView: View {
             toggle()
 
             locationDetails()
-
-            strictRoutingNotice()
 
             if statusModel.isNetPEnabled && statusModel.hasServerInfo && !statusModel.isSnoozing {
                 connectionDetails()
@@ -122,6 +125,12 @@ struct NetworkProtectionStatusView: View {
                 .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
             }
             .padding([.top, .bottom], 2)
+            .background(
+                NavigationLink(destination: NetworkProtectionVPNSettingsView(), isActive: $isShowingVPNSettings) {
+                    EmptyView()
+                }
+                .opacity(0)
+            )
 
             snooze()
 
@@ -171,7 +180,12 @@ struct NetworkProtectionStatusView: View {
                     .daxTitle2()
                     .multilineTextAlignment(.center)
                     .foregroundColor(.init(designSystemColor: .textPrimary))
-                Text(statusModel.isNetPEnabled ? UserText.netPStatusHeaderMessageOn : UserText.netPStatusHeaderMessageOff)
+
+                if statusModel.showStrictRoutingPill {
+                    strictRoutingPill()
+                }
+
+                Text(statusModel.headerMessage)
                     .daxFootnoteRegular()
                     .multilineTextAlignment(.center)
                     .foregroundColor(.init(designSystemColor: .textSecondary))
@@ -259,39 +273,24 @@ struct NetworkProtectionStatusView: View {
             }
     }
 
-    /// A state-driven notice prompting the user to turn Strict routing back on. Shown only while the
-    /// VPN is on and Strict routing is off; it disappears as soon as Strict routing is enabled.
+    /// A compact status pill shown under the header while the VPN is on. It reflects the current Strict
+    /// routing state — green when on, amber when off — and pushes the VPN settings when tapped.
     @ViewBuilder
-    private func strictRoutingNotice() -> some View {
-        if statusModel.isStrictRoutingAvailable,
-           statusModel.isNetPEnabled,
-           !statusModel.enforceRoutes {
-            Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .top, spacing: 12) {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.shield)
+    private func strictRoutingPill() -> some View {
+        Button {
+            isShowingVPNSettings = true
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 10, weight: .bold))
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(UserText.netPStrictRoutingNoticeTitle)
-                                .daxBodyBold()
-                                .foregroundColor(.init(designSystemColor: .textPrimary))
-
-                            Text(UserText.netPStrictRoutingNoticeMessage)
-                                .daxFootnoteRegular()
-                                .foregroundColor(.init(designSystemColor: .textSecondary))
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-
-                    Button(UserText.netPStrictRoutingNoticeActionTitle) {
-                        statusModel.enforceRoutes = true
-                    }
-                    .buttonStyle(PrimaryButtonStyle(compact: true))
-                }
-                .padding(.vertical, 4)
+                Text(statusModel.enforceRoutes
+                     ? UserText.netPStrictRoutingPillOn
+                     : UserText.netPStrictRoutingPillOff)
+                    .daxFootnoteSemibold()
             }
-            .listRowBackground(Color(designSystemColor: .surface))
         }
+        .buttonStyle(StrictRoutingPillButtonStyle(isStrictRoutingOn: statusModel.enforceRoutes))
     }
 
     @ViewBuilder
@@ -589,5 +588,27 @@ extension NetworkProtectionDNSSettings {
     var usesCustomDNS: Bool {
         guard case .custom(let servers) = self, !servers.isEmpty else { return false }
         return true
+    }
+}
+
+/// Renders the Strict routing pill as a coloured capsule and darkens it while pressed.
+private struct StrictRoutingPillButtonStyle: ButtonStyle {
+
+    let isStrictRoutingOn: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundColor(isStrictRoutingOn ? .white : .black.opacity(0.84))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                Capsule()
+                    .fill(isStrictRoutingOn
+                          ? Color(designSystemColor: .alertGreen)
+                          : Color(designSystemColor: .alertYellow))
+                    .overlay(
+                        Capsule().fill(Color.black.opacity(configuration.isPressed ? 0.15 : 0))
+                    )
+            )
     }
 }

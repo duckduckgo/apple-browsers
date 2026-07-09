@@ -447,6 +447,22 @@ public final class TunnelControllerViewModel: ObservableObject {
         }
     }
 
+    /// Whether the Strict routing status pill should be shown under the header. It reflects the current
+    /// Strict routing state whenever the VPN is on, in both the on and off positions.
+    var showStrictRoutingPill: Bool {
+        isStrictRoutingAvailable && isConnectedOrConnecting
+    }
+
+    /// The message shown under the header. While the VPN is on but Strict routing is off it warns that
+    /// some traffic may bypass the VPN; otherwise it reflects the plain on/off state.
+    var headerMessage: String {
+        if isConnectedOrConnecting, isStrictRoutingAvailable, !enforceRoutes {
+            return UserText.networkProtectionStatusHeaderMessageStrictRoutingOff
+        }
+
+        return isToggleOn.wrappedValue ? UserText.networkProtectionStatusHeaderMessageOn : UserText.networkProtectionStatusHeaderMessageOff
+    }
+
     // MARK: - Server Information
 
     var showServerDetails: Bool {
@@ -579,6 +595,12 @@ public final class TunnelControllerViewModel: ObservableObject {
     func showLocationSettings() {
         Task { @MainActor in
             await uiActionHandler.showVPNLocations()
+        }
+    }
+
+    func showVPNSettings() {
+        Task { @MainActor in
+            await uiActionHandler.showVPNSettings()
         }
     }
 

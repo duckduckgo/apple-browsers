@@ -186,6 +186,22 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         }
     }
 
+    /// Whether the Strict routing status pill should be shown under the header. It reflects the current
+    /// Strict routing state whenever the VPN is on, in both the on and off positions.
+    public var showStrictRoutingPill: Bool {
+        isStrictRoutingAvailable && isNetPEnabled
+    }
+
+    /// The message shown under the header. While the VPN is on but Strict routing is off it warns that
+    /// some traffic may bypass the VPN; otherwise it reflects the plain on/off state.
+    public var headerMessage: String {
+        if isNetPEnabled, isStrictRoutingAvailable, !enforceRoutes {
+            return UserText.netPStatusHeaderMessageStrictRoutingOff
+        }
+
+        return isNetPEnabled ? UserText.netPStatusHeaderMessageOn : UserText.netPStatusHeaderMessageOff
+    }
+
     public let enablesUnifiedFeedbackForm: Bool
 
     public init(tunnelController: (TunnelController & TunnelSessionProvider),
@@ -196,6 +212,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 timeLapsedFormatter: VPNTimeFormatting = VPNTimeFormatter(),
                 locationListRepository: NetworkProtectionLocationListRepository,
                 enablesUnifiedFeedbackForm: Bool,
+                isStrictRoutingAvailable: Bool = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.vpnStrictRoutingToggle),
                 featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.tunnelController = tunnelController
         self.settings = settings
@@ -212,7 +229,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.preferredLocation = NetworkProtectionLocationStatusModel(selectedLocation: settings.selectedLocation)
 
         self.dnsSettings = settings.dnsSettings
-        self.isStrictRoutingAvailable = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+        self.isStrictRoutingAvailable = isStrictRoutingAvailable
         self.enforceRoutes = settings.enforceRoutes
 
         self.tipsModel = VPNTipsModel(

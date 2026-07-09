@@ -116,6 +116,12 @@ public final class VPNNotificationsPresenter: NSObject, VPNNotificationsPresenti
         showNotification(.connected, content)
     }
 
+    public func showStrictRoutingReminderNotification() {
+        let content = notificationContent(title: UserText.vpnStrictRoutingReminderNotificationTitle,
+                                          subtitle: UserText.vpnStrictRoutingReminderNotificationSubtitle)
+        showNotification(.strictRoutingReminder, content)
+    }
+
     public func showReconnectingNotification() {
         let content = notificationContent(title: UserText.vpnConnectionInterruptedNotificationTitle,
                                           subtitle: UserText.vpnConnectionInterruptedNotificationSubtitle)
@@ -181,6 +187,7 @@ public enum VPNNotificationIdentifier: String {
     case expiredEntitlement = "ddg-vpn.notification.expired-entitlement"
     case test = "ddg-vpn.notification.test"
     case debug = "ddg-vpn.notification.debug"
+    case strictRoutingReminder = "ddg-vpn.notification.strict-routing-reminder"
 }
 
 extension VPNNotificationsPresenter: UNUserNotificationCenterDelegate {

@@ -117,8 +117,6 @@ public struct TunnelControllerView: View {
 
             locationView()
 
-            strictRoutingNoticeView()
-
             if model.showServerDetails {
                 connectionStatusView()
                     .disabled(on: !isEnabled)
@@ -136,24 +134,6 @@ public struct TunnelControllerView: View {
         }
     }
 
-    // MARK: - Security
-
-    /// A state-driven notice prompting the user to turn Strict routing back on. Shown only while the
-    /// VPN is on and Strict routing is off; it disappears as soon as Strict routing is enabled.
-    @ViewBuilder
-    private func strictRoutingNoticeView() -> some View {
-        if model.isStrictRoutingAvailable,
-           model.isConnectedOrConnecting,
-           !model.enforceRoutes {
-
-            StrictRoutingNoticeView {
-                model.enforceRoutes = true
-            }
-            .padding(.horizontal, 9)
-            .padding(.bottom, 6)
-        }
-    }
-
     // MARK: - Composite Views
 
     /// Main image, feature ON/OFF and feature description
@@ -168,7 +148,15 @@ public struct TunnelControllerView: View {
                 .padding([.top], 8)
                 .multilineText()
 
-            Text(model.isToggleOn.wrappedValue ? UserText.networkProtectionStatusHeaderMessageOn : UserText.networkProtectionStatusHeaderMessageOff)
+            if model.showStrictRoutingPill {
+                StrictRoutingPillView(isStrictRoutingOn: model.enforceRoutes) {
+                    model.showVPNSettings()
+                    dismiss()
+                }
+                .padding(.top, 8)
+            }
+
+            Text(model.headerMessage)
                 .multilineText()
                 .multilineTextAlignment(.center)
                 .applyDescriptionAttributes()

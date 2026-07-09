@@ -763,9 +763,9 @@ public struct UserText {
     static let netPStatusViewConnectionDetails = NSLocalizedString("network.protection.status.view.connection.details", value: "Connection Details", comment: "Connection details label shown in NetworkProtection's status view.")
     static let netPStatusViewCustomDNS = NSLocalizedString("network.protection.status.view.custom.dns", value: "DNS Server", comment: "Custom DNS label shown in NetworkProtection's status view.")
     static let netPStatusViewSettingsSectionTitle = NSLocalizedString("network.protection.status.view.settings.section.title", value: "Manage", comment: "Label shown on the title of the settings section in NetworkProtection's status view.")
-    static let netPStrictRoutingNoticeTitle = NSLocalizedString("network.protection.status.view.strict.routing.notice.title", value: "Allow DuckDuckGo VPN to Enforce Strict Routing", comment: "Title for the notice prompting the user to turn the VPN Strict routing setting back on")
-    static let netPStrictRoutingNoticeMessage = NSLocalizedString("network.protection.status.view.strict.routing.notice.message", value: "Enforce Strict Routing is off. Turning it on strengthens protection against traffic leaks on untrusted networks.", comment: "Message for the notice prompting the user to turn the VPN Strict routing setting back on")
-    static let netPStrictRoutingNoticeActionTitle = NSLocalizedString("network.protection.status.view.strict.routing.notice.action", value: "Turn On Strict Routing", comment: "Action button title for the notice prompting the user to turn the VPN Strict routing setting back on")
+    static let netPStrictRoutingPillOn = NSLocalizedString("network.protection.status.view.strict.routing.pill.on", value: "Strict routing on", comment: "Label for the status pill shown while the VPN's Strict routing setting is on")
+    static let netPStrictRoutingPillOff = NSLocalizedString("network.protection.status.view.strict.routing.pill.off", value: "Strict routing off", comment: "Label for the status pill shown while the VPN's Strict routing setting is off")
+    static let netPStatusHeaderMessageStrictRoutingOff = NSLocalizedString("network.protection.status.header.message.strict.routing.off", value: "Some traffic may bypass the VPN on untrusted networks.", comment: "Status view message shown while the VPN is on but Strict routing is off")
     static let netPVPNSettingsTitle = NSLocalizedString("network.protection.vpn.settings.title", value: "VPN Settings", comment: "Title for the VPN Settings screen.")
     static let netPVPNSettingsFAQ = NSLocalizedString("network.protection.vpn.settings.faq", value: "FAQs and Support", comment: "Title for the FAQ row in the VPN status screen.")
     static let netPVPNSettingsShareFeedback = NSLocalizedString("network.protection.vpn.settings.share-feedback", value: "Share VPN Feedback", comment: "Title for the feedback row in the VPN status screen.")
@@ -1453,6 +1453,8 @@ public struct UserText {
     // MARK: VPN
 
     static let networkProtectionNotificationsTitle = NSLocalizedString("network.protection.notification.title", value: "DuckDuckGo", comment: "The title of the notifications shown from VPN")
+    static let networkProtectionStrictRoutingReminderNotificationTitle = NSLocalizedString("network.protection.strict.routing.reminder.notification.title", value: "Allow DuckDuckGo VPN to Enforce Strict Routing", comment: "The title of the notification reminding the user to turn the VPN Strict routing setting back on")
+    static let networkProtectionStrictRoutingReminderNotificationBody = NSLocalizedString("network.protection.strict.routing.reminder.notification.body", value: "Enforce Strict Routing is off. Turning it on strengthens protection against traffic leaks on untrusted networks.", comment: "The body of the notification reminding the user to turn the VPN Strict routing setting back on")
     static let networkProtectionConnectionSuccessNotificationBody = NSLocalizedString("network.protection.success.notification.body", value: "DuckDuckGo VPN is On. Your location and online activity are protected.", comment: "The body of the notification shown when VPN reconnects successfully")
     static func networkProtectionConnectionSuccessNotificationBody(serverLocation: String) -> String {
         let localized = NSLocalizedString(

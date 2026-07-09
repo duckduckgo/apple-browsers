@@ -58,6 +58,11 @@ public enum SharedDesignSystemColor {
     // Shield
     case shieldPrivacy
 
+    // VPN
+    case vpnStrictRoutingActive
+    case vpnStrictRoutingInactive
+    case vpnStrictRoutingInactiveText
+
     // Buttons/Primary
     case buttonsPrimaryDefault
     case buttonsPrimaryPressed

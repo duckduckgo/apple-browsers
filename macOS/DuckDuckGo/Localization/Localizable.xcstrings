@@ -114695,55 +114695,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Es wird empfohlen, diese Option zu deaktivieren, damit dein gesamter Datenverkehr über das VPN läuft. Falls du Probleme beim Verbinden mit Onlinediensten hast, versuche, diese einzuschalten."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Recommended off so all your traffic goes through the VPN. If you have problems connecting to online services, try turning it on."
+            "value" : "Bypass the VPN for carrier services, such as Wi-Fi calling and voicemail."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Se recomienda desactivarlo para que todo tu tráfico pase por la VPN. Si tienes problemas para conectarte a los servicios en línea, prueba a activarlo."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Désactivation recommandée pour que tout votre trafic passe par le VPN. Si vous rencontrez des problèmes pour vous connecter aux services en ligne, essayez de l'activer."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Si consiglia di lasciare questa opzione disattivata affinché tutto il traffico passi attraverso la VPN. Se riscontri problemi di connessione ai servizi online, prova ad attivarla."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Het wordt aangeraden om deze optie uit te schakelen, zodat al je internetverkeer via de VPN loopt. Probeer deze optie in te schakelen als je problemen hebt met het verbinden met onlinediensten."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Zalecamy wyłączyć, aby cały Twój ruch przechodził przez VPN. Jeśli masz problemy z połączeniem się z usługami online, spróbuj włączyć tę opcję."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Recomendamos desativá-la para que todo o teu tráfego passe pela VPN. Se tiveres problemas a ligar-te a serviços online, experimenta ativá-la."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Рекомендуется выключить, чтобы весь ваш трафик проходил через VPN. Если у вас возникли проблемы с подключением к онлайн-сервисам, попробуйте включить эту опцию."
           }
         }
@@ -115355,55 +115355,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Striktes Routing"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Strict routing"
+            "value" : "Enforce Strict Routing (recommended)"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Enrutamiento estricto"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Routage strict"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Routing rigido"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Strikte routering"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ścisły routing"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Encaminhamento estrito"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Строгая маршрутизация"
           }
         }

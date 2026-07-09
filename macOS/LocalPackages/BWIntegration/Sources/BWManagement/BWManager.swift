@@ -192,6 +192,7 @@ final class BWManager: BWManagement, ObservableObject {
 
         // Kill switch: fall back to the legacy fixed 1s retry when hardening is remotely disabled
         let interval = isConnectionHardeningEnabled() ? connectionRetryInterval.next() : BWRetryInterval.initialInterval
+        Logger.bitWarden.log("BWManager: Scheduling connection attempt in \(interval, privacy: .public)s (status: \(String(describing: self.status), privacy: .public))")
         connectionAttemptTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             self?.connectionAttemptTimer?.invalidate()
             self?.connectionAttemptTimer = nil
@@ -245,6 +246,7 @@ final class BWManager: BWManagement, ObservableObject {
     // MARK: - Handling Incoming Messages
 
     private func handleCommand(_ command: BWCommand) {
+        Logger.bitWarden.log("BWManager: Received command: \(String(describing: command), privacy: .public)")
         switch command {
         case .connected:
             let sharedKey: Base64EncodedString?

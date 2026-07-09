@@ -97,7 +97,7 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
         }
 
         try process.run()
-        Logger.bitWarden.log("NativeMessagingCommunicator: Proxy process running")
+        Logger.bitWarden.log("NativeMessagingCommunicator: Proxy process running (pid: \(process.processIdentifier, privacy: .public))")
 
         self.process = ProcessWrapper(process: process, readingHandle: outHandle, writingHandle: inputHandle)
     }
@@ -125,7 +125,7 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
     }
 
     private func processDidTerminate(_ process: Process) {
-        Logger.bitWarden.log("NativeMessagingCommunicator: Proxy process terminated")
+        Logger.bitWarden.log("NativeMessagingCommunicator: Proxy process terminated (pid: \(process.processIdentifier, privacy: .public))")
 
         DispatchQueue.main.async { [weak self] in
             guard let self, let processWrapper = self.process, processWrapper.process == process else {
@@ -181,6 +181,7 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
         if newData.isEmpty && stopMonitoringAtEOF {
             // Empty data means EOF (the proxy process exited). Stop monitoring,
             // otherwise the readability handler keeps firing and pegs a CPU core.
+            Logger.bitWarden.log("NativeMessagingCommunicator: Pipe EOF, monitoring stopped")
             fileHandle.readabilityHandler = nil
             return
         }

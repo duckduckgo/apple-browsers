@@ -46,25 +46,25 @@
         "description": "Fired when the subscription promo card is displayed on the Fire Window home page",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource", "freeTrial"]
+        "parameters": ["appVersion", "pixelSource", "channel", "freeTrial"]
     },
     "m_mac_fire_window_subscription_promo_viewed": {
         "description": "Fired each time the user views the subscription promo card on the Fire Window home page, including repeat views when switching back to a tab with the promo",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource", "freeTrial"]
+        "parameters": ["appVersion", "pixelSource", "channel", "freeTrial"]
     },
     "m_mac_fire_window_subscription_promo_cta_actioned": {
         "description": "Fired when the user taps the CTA button (Try for Free / Learn More) on the Fire Window subscription promo",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource", "freeTrial"]
+        "parameters": ["appVersion", "pixelSource", "channel", "freeTrial"]
     },
     "m_mac_fire_window_subscription_promo_dismissed": {
         "description": "Fired when the user clicks the close (x) button on the Fire Window subscription promo",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource", "freeTrial"]
+        "parameters": ["appVersion", "pixelSource", "channel", "freeTrial"]
     },
     "m_mac_firewindow_opened": {
         "description": "Aggregate daily pixel — fires once per user per day on any Fire Window open (manual or automatic).",

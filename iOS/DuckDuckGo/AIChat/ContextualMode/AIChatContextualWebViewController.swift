@@ -145,7 +145,7 @@ final class AIChatContextualWebViewController: UIViewController {
          isFireTab: Bool = false,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          downloadHandler: DownloadHandling,
-         getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?,
+         getPageContext: PageContextAsyncProvider?,
          pixelHandler: AIChatContextualModePixelFiring,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
@@ -261,7 +261,9 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func startNewChat() {
-        aiChatContentHandler.submitStartChatAction()
+        Task { @MainActor in
+            await aiChatContentHandler.submitStartChatAction()
+        }
     }
 
     func pushPageContext(_ context: AIChatPageContextData?) {

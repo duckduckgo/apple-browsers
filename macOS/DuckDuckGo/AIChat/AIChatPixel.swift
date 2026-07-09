@@ -348,6 +348,10 @@ enum AIChatPixel: PixelKitEvent {
     /// `suggestionId` is the FE's fixed catalog key; `pageType` is the FE's coarse page classification.
     case aiChatSuggestionSelected(suggestionId: String, pageType: String)
 
+    /// Event Trigger: The Duck.ai sidebar presents page-suggestion chips to the user.
+    /// `isSmart` indicates whether the suggestions were smart (page-tailored); `pageType` is the FE's coarse page classification.
+    case aiChatSuggestionsViewed(isSmart: Bool, pageType: String)
+
     // MARK: - Onboarding
 
     /// Event Trigger: User enables the Duck.ai toggle during onboarding
@@ -648,6 +652,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_sent_prompt_ongoing_chat"
         case .aiChatSuggestionSelected:
             return "aichat_suggestion_selected"
+        case .aiChatSuggestionsViewed:
+            return "aichat_suggestions_viewed"
         case .aiChatOpenDuckAiMainMenu:
             return "aichat_open_duck_ai_main_menu"
         case .aiChatNewChatMainMenu:
@@ -862,6 +868,8 @@ enum AIChatPixel: PixelKitEvent {
             return ["reason": reason.rawValue]
         case .aiChatSuggestionSelected(let suggestionId, let pageType):
             return ["suggestionId": suggestionId, "pageType": pageType]
+        case .aiChatSuggestionsViewed(let isSmart, let pageType):
+            return ["isSmart": String(isSmart), "pageType": pageType]
         }
     }
 
@@ -957,6 +965,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatMetricStartNewConversation,
                 .aiChatMetricSentPromptOngoingChat,
                 .aiChatSuggestionSelected,
+                .aiChatSuggestionsViewed,
                 .aiChatTermsAcceptedDuplicateSyncOff,
                 .aiChatTermsAcceptedDuplicateSyncOn,
                 .aiChatReportMetricDecodeError,

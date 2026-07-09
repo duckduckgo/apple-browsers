@@ -35,6 +35,11 @@ protocol BrowserChromeDelegate: AnyObject {
     var barsMaxHeight: CGFloat { get }
     var isInMinimalChromeLayout: Bool { get }
 
+    /// Height (from the screen bottom) obscured by the visible bottom chrome at the given chrome
+    /// visibility fraction, used to resize the floating web view so page-fixed footers pin to the top
+    /// of whatever is on screen (toolbar -> capsule -> safe area).
+    func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat
+
     var omniBar: any OmniBar { get }
     var tabBarContainer: UIView { get }
 }

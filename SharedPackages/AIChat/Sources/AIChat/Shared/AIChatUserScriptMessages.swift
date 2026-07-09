@@ -103,5 +103,8 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     /// Pushed to the duck.ai page to open the Duck.ai Settings modal.
     case submitOpenSettingsAction
+
+    /// Posted by the native-customize-modal placement when the user dismisses the Customize Responses card.
+    case customizeResponsesModalClosed
 }
 // swiftlint:enable inclusive_language

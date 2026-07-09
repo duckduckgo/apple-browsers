@@ -135,6 +135,11 @@ final class AIChatOmnibarController {
         featureFlagger.isFeatureOn(.aiChatOmnibarWebSearch)
     }
 
+    /// Whether the Customize Responses tool is available in the omnibar tools menu.
+    var isCustomizeResponsesEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatCustomizeResponses)
+    }
+
     /// Whether the reasoning effort picker is available.
     var isReasoningEffortEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarReasoningEffort)
@@ -922,6 +927,12 @@ final class AIChatOmnibarController {
     func viewAllChats() {
         PixelKit.fire(AIChatPixel.aiChatViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+    }
+
+    /// Fallback when no window can host the modal: opens the customize URL in a tab.
+    func openCustomizeResponses() {
+        let url = AIChatURLParameters.nativeCustomizeModalURL(from: AIChatRemoteSettings().aiChatURL)
+        aiChatTabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
     }
 
     func submit() {

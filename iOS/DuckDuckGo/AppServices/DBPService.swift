@@ -93,22 +93,19 @@ final class DBPService: NSObject {
                         UIApplication.shared.open(quickLinkURL)
                     }
 
-                    if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                       SubscriptionPurchaseFlowPath.contains(components.path) {
-                        guard appDependencies.subscriptionManager.isSubscriptionPurchaseEligible else {
-                            openQuickLink()
-                            return
-                        }
-
+                    switch FreemiumDBPPurchaseURLRouter().route(
+                        for: url,
+                        isPurchaseEligible: appDependencies.subscriptionManager.isSubscriptionPurchaseEligible
+                    ) {
+                    case .subscriptionPurchaseFlow(let components):
                         NotificationCenter.default.post(
                             name: .dataBrokerProtectionOpenSubscriptionFlow,
                             object: nil,
                             userInfo: [DataBrokerProtectionSubscriptionFlowParameter.redirectURLComponents: components]
                         )
-                        return
+                    case .quickLink:
+                        openQuickLink()
                     }
-
-                    openQuickLink()
                 },
                 feedbackViewCreator: {
                     let viewModel = UnifiedFeedbackFormViewModel(

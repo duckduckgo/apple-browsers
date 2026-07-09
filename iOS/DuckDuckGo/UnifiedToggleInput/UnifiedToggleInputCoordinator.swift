@@ -2261,19 +2261,20 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func makeAttachmentMenu() -> UIMenu? {
-        attachmentPresenter.makeAttachmentMenu(
+        let pageContextActionHandler = isContextualChatState ? onPageContextAttachRequested : nil
+        return attachmentPresenter.makeAttachmentMenu(
             presenterProvider: { [weak self] in
                 self?.attachmentPresenterViewController
             },
             photoSelectionLimit: attachmentPolicy.canAttachImages ? remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,
             allowedFileTypes: allowedFileUTTypes,
-            pageContextActionHandler: onPageContextAttachRequested
+            pageContextActionHandler: pageContextActionHandler
         )
     }
 
     func updateAttachButtonPresentation() {
-        let supportsPageContextAttachment = onPageContextAttachRequested != nil
+        let supportsPageContextAttachment = isContextualChatState && onPageContextAttachRequested != nil
         let supportsAttachments = selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment
         let hasAvailableAttachmentAction = attachmentPolicy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment
         let canAttachMore = hasAvailableAttachmentAction && !viewController.isGenerating

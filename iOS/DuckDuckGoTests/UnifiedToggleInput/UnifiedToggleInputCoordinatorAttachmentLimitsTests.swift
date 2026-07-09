@@ -239,7 +239,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
     }
 
     func testWhenPageContextActionAvailableThenAttachmentMenuShowsAskAboutPageAction() {
-        let sut = makeCoordinator()
+        let sut = makeCoordinator(host: .contextualChat)
         var attachCallCount = 0
         sut.onPageContextAttachRequested = { attachCallCount += 1 }
         sut.updateImageButtonVisibility()
@@ -261,8 +261,23 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         }
     }
 
+    func testWhenPageContextActionAvailableOutsideContextualChatThenAttachmentMenuDoesNotShowAskAboutPageAction() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(host: .omnibar, preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.onPageContextAttachRequested = {}
+        sut.showExpanded()
+        sut.updateImageButtonVisibility()
+
+        let menuTitles = attachmentMenuTitles(for: sut)
+        XCTAssertTrue(menuTitles.contains(UserText.aiChatAttachmentOptionAttachPhoto))
+        XCTAssertTrue(menuTitles.contains(UserText.aiChatAttachmentOptionAttachFile))
+        XCTAssertFalse(menuTitles.contains(UserText.aiChatAttachmentOptionAskAboutPage))
+    }
+
     func testWhenPageContextActionAvailableThenAttachmentMenuKeepsFixedRawOrder() {
-        let sut = makeCoordinator()
+        let sut = makeCoordinator(host: .contextualChat)
         sut.onPageContextAttachRequested = {}
         sut.updateImageButtonVisibility()
 
@@ -279,7 +294,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
     func testWhenPageContextAndOtherAttachmentsAvailableThenAskAboutPageIsLast() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"
-        let sut = makeCoordinator(preferences: prefs)
+        let sut = makeCoordinator(host: .contextualChat, preferences: prefs)
         sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
         sut.onPageContextAttachRequested = {}
         sut.updateImageButtonVisibility()
@@ -674,11 +689,12 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeCoordinator(preferences: AIChatPreferencesPersisting = StubAIChatPreferences(),
+    private func makeCoordinator(host: UnifiedToggleInputHost = .omnibar,
+                                 preferences: AIChatPreferencesPersisting = StubAIChatPreferences(),
                                  duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil) -> UnifiedToggleInputCoordinator {
         let coordinator = UnifiedToggleInputCoordinator(
-            host: .omnibar,
-            isToggleEnabled: true,
+            host: host,
+            isToggleEnabled: host == .omnibar,
             preferences: preferences,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation)
         coordinator.modelStore.attachmentLimits = makeLimits()

@@ -29,7 +29,7 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
             showsBasicNativeInput: false
         )
         sut.loadViewIfNeeded()
-        sut.updateQuickActions(with: [.askAboutPage])
+        sut.updateStartActions(suggestions: [], quickActions: [.askAboutPage])
         sut.view.frame = CGRect(x: 0, y: 0, width: 390, height: 180)
 
         sut.view.setNeedsLayout()

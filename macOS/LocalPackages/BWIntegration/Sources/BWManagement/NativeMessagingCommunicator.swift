@@ -147,7 +147,9 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
 
     private func write(messageData: Data) {
         guard let process = process else {
-            assertionFailure("Process not running")
+            // Expected transiently: teardown is asynchronous, so a status refresh or
+            // credential request can race the proxy's termination
+            Logger.bitWarden.log("NativeMessagingCommunicator: Dropping message, proxy process isn't running")
             return
         }
 

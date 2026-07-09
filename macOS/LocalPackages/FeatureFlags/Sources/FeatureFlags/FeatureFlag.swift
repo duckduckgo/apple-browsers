@@ -85,9 +85,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715515023
     case autofillPartialFormSaves
 
-    /// Kill switch for the hardened Bitwarden desktop integration (desktop_proxy binary,
-    /// reconnect backoff, pipe-EOF cleanup). On by default; disable remotely to restore
-    /// the legacy connection behavior.
+    /// Kill switch for the riskier parts of the hardened Bitwarden integration. On by default;
+    /// disable remotely to restore the main-app-binary proxy path, the fixed 1s reconnect
+    /// interval, and EOF-tolerant pipe monitoring. Teardown/lifecycle bug fixes stay active.
     /// https://app.asana.com/1/137249556945/project/1204912272578138/task/1216409281175249
     case bitwardenConnectionHardening
 

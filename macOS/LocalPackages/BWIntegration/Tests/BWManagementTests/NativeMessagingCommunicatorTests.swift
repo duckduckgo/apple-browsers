@@ -25,11 +25,16 @@ final class NativeMessagingCommunicatorTests: XCTestCase {
         NativeMessagingCommunicator(appPathProvider: { "/usr/bin/true" }, arguments: [])
     }
 
+    // The installed handlers are inert and removed in defer: a live handler would
+    // race the test's own blocking availableData read, and a handler left installed
+    // on an EOF'd pipe keeps a dispatch source spinning for the rest of the test run.
+
     func testWhenPipeReachesEOFThenReadabilityHandlerIsUninstalled() throws {
         let communicator = makeCommunicator()
         let pipe = Pipe()
         let readingHandle = pipe.fileHandleForReading
-        readingHandle.readabilityHandler = { communicator.receiveData($0) }
+        readingHandle.readabilityHandler = { _ in }
+        defer { readingHandle.readabilityHandler = nil }
 
         // Closing the write end puts the read end at EOF
         try pipe.fileHandleForWriting.close()
@@ -42,7 +47,8 @@ final class NativeMessagingCommunicatorTests: XCTestCase {
         let communicator = makeCommunicator()
         let pipe = Pipe()
         let readingHandle = pipe.fileHandleForReading
-        readingHandle.readabilityHandler = { communicator.receiveData($0) }
+        readingHandle.readabilityHandler = { _ in }
+        defer { readingHandle.readabilityHandler = nil }
 
         // A well-formed native messaging frame: 4-byte length prefix + payload
         var messageLength = UInt32(1)
@@ -58,6 +64,7 @@ final class NativeMessagingCommunicatorTests: XCTestCase {
         let pipe = Pipe()
         let readingHandle = pipe.fileHandleForReading
         readingHandle.readabilityHandler = { _ in }
+        defer { readingHandle.readabilityHandler = nil }
 
         try pipe.fileHandleForWriting.close()
         communicator.receiveData(readingHandle, stopMonitoringAtEOF: false)

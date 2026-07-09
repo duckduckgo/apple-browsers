@@ -86,6 +86,7 @@ final class BWManager: BWManagement, ObservableObject {
     let installationService: BWInstallationService = LocalBitwardenInstallationService()
 
     func openBitwarden() {
+        expediteConnectionRetry()
         installationService.openBitwarden()
     }
 
@@ -214,6 +215,20 @@ final class BWManager: BWManagement, ObservableObject {
         scheduleConnectionAttempt()
     }
 
+    // Restarts the backoff and replaces a pending long retry with a quick one.
+    // Called on user actions (setup flow, status UI) where a stale backed-off
+    // timer would make the integration look broken.
+    private func expediteConnectionRetry() {
+        lastScheduledConnectionStatus = nil
+        connectionRetryInterval.reset()
+
+        if connectionAttemptTimer != nil {
+            connectionAttemptTimer?.invalidate()
+            connectionAttemptTimer = nil
+            scheduleConnectionAttempt()
+        }
+    }
+
     // MARK: - Status Refreshing
 
     private var statusRefreshingTimer: Timer?
@@ -241,10 +256,6 @@ final class BWManager: BWManagement, ObservableObject {
     private func handleCommand(_ command: BWCommand) {
         switch command {
         case .connected:
-            // A working proxy connection means occasional future failures
-            // should retry quickly again rather than continue backing off
-            lastScheduledConnectionStatus = nil
-
             let sharedKey: Base64EncodedString?
             do {
                 sharedKey = try keyStorage.retrieveSharedKey()
@@ -486,6 +497,8 @@ final class BWManager: BWManagement, ObservableObject {
     lazy var messageIdGenerator = BWMessageIdGenerator()
 
     func sendHandshake() {
+        expediteConnectionRetry()
+
         guard let publicKey = generateKeyPair() else {
             Logger.bitWarden.fault("BWManager: Public key is missing")
             assertionFailure("BWManager: Public key is missing")
@@ -633,11 +646,19 @@ final class BWManager: BWManagement, ObservableObject {
             return
         }
 
+        // A full encrypted round-trip succeeded, so future failures should retry
+        // quickly rather than continue any backoff. Deliberately not keyed on the
+        // initial `connected` frame, which a crash-looping proxy can still emit.
+        lastScheduledConnectionStatus = nil
+
         let vault = BWVault(id: id, email: email, status: status, active: true)
         self.status = .connected(vault: vault)
     }
 
     func refreshStatusIfNeeded() {
+        // The user is looking at status UI, so make any pending retry quick again
+        expediteConnectionRetry()
+
         switch status {
         case .connected, .error: sendStatus()
         default: return

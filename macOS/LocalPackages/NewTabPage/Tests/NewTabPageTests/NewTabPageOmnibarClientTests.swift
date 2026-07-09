@@ -64,12 +64,14 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         configProvider.isAIChatShortcutEnabled = true
         configProvider.isAIChatSettingVisible = false
         configProvider.isWebSearchEnabled = true
+        configProvider.isCustomizeResponsesEnabled = true
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
         XCTAssertEqual(config.mode, configProvider.mode)
         XCTAssertEqual(config.enableAi, configProvider.isAIChatShortcutEnabled)
         XCTAssertEqual(config.showAiSetting, configProvider.isAIChatSettingVisible)
         XCTAssertEqual(config.enableWebSearch, configProvider.isWebSearchEnabled)
+        XCTAssertEqual(config.enableCustomizeResponses, configProvider.isCustomizeResponsesEnabled)
     }
 
     // MARK: - setConfig
@@ -406,6 +408,18 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
         let action = NewTabPageDataModel.OpenSuggestionAction(suggestion: suggestion, target: .newTab)
         try await messageHelper.handleMessageExpectingNilResponse(named: .openSuggestion, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    // MARK: - openCustomizeResponses
+
+    func testOpenCustomizeResponsesIsForwardedToHandler() async throws {
+        let expectation = expectation(description: "openCustomizeResponsesCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openCustomizeResponsesHandler = {
+            expectation.fulfill()
+        }
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openCustomizeResponses)
         await fulfillment(of: [expectation], timeout: 1)
     }
 

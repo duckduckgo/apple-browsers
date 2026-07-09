@@ -22,7 +22,7 @@ import XCTest
 final class NativeMessagingCommunicatorTests: XCTestCase {
 
     private func makeCommunicator() -> NativeMessagingCommunicator {
-        NativeMessagingCommunicator(appPathProvider: { "/usr/bin/true" }, arguments: [])
+        NativeMessagingCommunicator(appPath: "/usr/bin/true", arguments: [])
     }
 
     // The installed handlers are inert and removed in defer: a live handler would

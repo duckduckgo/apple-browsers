@@ -34,6 +34,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var mockPreferences: MockAIChatPreferences!
     private var mockToggleModeStorage: MockToggleModeStorage!
     private var mockSubmissionMetrics: MockSwitchBarSubmissionMetrics!
+    private var retainedBridgeReadyWebView: WKWebView?
+    private var retainedBridgeReadyBroker: UserScriptMessageBroker?
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
@@ -59,6 +61,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockPreferences = nil
         mockToggleModeStorage = nil
         mockSubmissionMetrics = nil
+        retainedBridgeReadyWebView = nil
+        retainedBridgeReadyBroker = nil
         super.tearDown()
     }
 
@@ -2520,6 +2524,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         let userScript = makeTestUserScript()
         let webView = WKWebView()
         let broker = UserScriptMessageBroker(context: "test", requiresRunInPageContentWorld: true)
+        retainedBridgeReadyWebView = webView
+        retainedBridgeReadyBroker = broker
         userScript.with(broker: broker)
         userScript.webView = webView
         return userScript

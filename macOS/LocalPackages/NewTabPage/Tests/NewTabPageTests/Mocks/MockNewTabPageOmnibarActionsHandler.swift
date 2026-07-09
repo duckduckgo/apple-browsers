@@ -56,4 +56,9 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     func viewAllAiChats(target: NewTabPage.NewTabPageDataModel.OpenTarget) {
 
     }
+
+    @MainActor
+    func openCustomizeResponses() {
+
+    }
 }

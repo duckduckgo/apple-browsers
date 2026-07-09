@@ -43,6 +43,9 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isWebSearchEnabled: Bool { get }
 
+    /// Whether the "Customize Responses" tool is shown in the NTP omnibar Tools menu.
+    var isCustomizeResponsesEnabled: Bool { get }
+
     /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
     /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
     /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.

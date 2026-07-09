@@ -56,6 +56,8 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isWebSearchEnabled: Bool = false
 
+    var isCustomizeResponsesEnabled: Bool = false
+
     @Published var isAttachTabsEnabled: Bool = false
 
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {

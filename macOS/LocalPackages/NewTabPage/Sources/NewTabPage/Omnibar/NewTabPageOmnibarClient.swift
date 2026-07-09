@@ -34,6 +34,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case getAiChats = "omnibar_getAiChats"
         case openAiChat = "omnibar_openAiChat"
         case viewAllAIChats = "omnibar_viewAllAIChats"
+        case openCustomizeResponses = "omnibar_openCustomizeResponses"
         case getOpenTabs = "omnibar_getOpenTabs"
         case getTabContent = "omnibar_getTabContent"
     }
@@ -99,6 +100,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.getAiChats.rawValue: { [weak self] in try await self?.getAiChats(params: $0, original: $1) },
             MessageName.openAiChat.rawValue: { [weak self] in try await self?.openAiChat(params: $0, original: $1) },
             MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) },
+            MessageName.openCustomizeResponses.rawValue: { [weak self] in try await self?.openCustomizeResponses(params: $0, original: $1) },
             MessageName.getOpenTabs.rawValue: { [weak self] in try await self?.getOpenTabs(params: $0, original: $1) },
             MessageName.getTabContent.rawValue: { [weak self] in try await self?.getTabContent(params: $0, original: $1) }
         ])
@@ -117,6 +119,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             enableImageGeneration: configProvider.isImageGenerationEnabled,
             enableWebSearch: configProvider.isWebSearchEnabled,
+            enableCustomizeResponses: configProvider.isCustomizeResponsesEnabled,
             enableVoiceChatAccess: configProvider.isVoiceChatAccessEnabled,
             enableAskAiSuggestion: configProvider.showAskAiSuggestion,
             selectedModelId: configProvider.selectedModelId,
@@ -192,6 +195,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             enableImageGeneration: configProvider.isImageGenerationEnabled,
             enableWebSearch: configProvider.isWebSearchEnabled,
+            enableCustomizeResponses: configProvider.isCustomizeResponsesEnabled,
             enableVoiceChatAccess: configProvider.isVoiceChatAccessEnabled,
             enableAskAiSuggestion: configProvider.showAskAiSuggestion,
             selectedModelId: configProvider.selectedModelId,
@@ -319,6 +323,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             return nil
         }
         await actionHandler.viewAllAiChats(target: action.target)
+        return nil
+    }
+
+    @MainActor
+    private func openCustomizeResponses(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        actionHandler.openCustomizeResponses()
         return nil
     }
 

@@ -114,6 +114,9 @@ public extension NewTabPageDataModel {
         let enableAiChatTools: Bool?
         let enableImageGeneration: Bool?
         let enableWebSearch: Bool?
+        /// When true, the omnibar shows the "Customize Responses" tool in the Tools menu. Selecting
+        /// it sends `omnibar_openCustomizeResponses` so native opens the Customize Responses modal.
+        let enableCustomizeResponses: Bool?
         /// When true, the omnibar shows a 1-click voice-chat button. Driven by the native
         /// `aiChatOmnibarVoiceChatAccess` feature flag and reactive over `omnibar_onConfigUpdate`
         /// so the affordance appears/disappears without a page reload when the flag flips.

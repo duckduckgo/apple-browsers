@@ -34,6 +34,9 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKitEvent) -> Void
 
+    /// Retains the Customize Responses modal host while it is presented over the NTP window.
+    private var customizeResponsesModal: CustomizeResponsesModalController?
+
     init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
          windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
          tabsPreferences: TabsPreferences,
@@ -238,6 +241,19 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
 
         tabOpener.openNewAIChat(in: behavior)
+    }
+
+    @MainActor
+    func openCustomizeResponses() {
+        guard let mainWindowController = windowControllersManager.lastKeyMainWindowController,
+              let window = mainWindowController.window else {
+            Logger.newTabPageOmnibar.error("Failed to get key window in openCustomizeResponses")
+            return
+        }
+        let modal = CustomizeResponsesModalController(burnerMode: mainWindowController.mainViewController.tabCollectionViewModel.burnerMode)
+        modal.onClose = { [weak self] in self?.customizeResponsesModal = nil }
+        customizeResponsesModal = modal
+        modal.present(over: window)
     }
 
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {

@@ -236,6 +236,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpWebSearch)
     }
 
+    var isCustomizeResponsesEnabled: Bool {
+        // Gated by the dedicated Customize Responses flag, matching the native omnibar entry point.
+        featureFlagger.isFeatureOn(.aiChatCustomizeResponses)
+    }
+
     var isAttachTabsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpAttachMoreTabs)
     }

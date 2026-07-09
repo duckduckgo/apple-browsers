@@ -118,6 +118,8 @@ protocol XPCServerInterface {
     func checkForEmailConfirmationData()
     func runEmailConfirmationOperations(showWebView: Bool)
     func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void)
+    func startDebugServer(completion: @escaping (Bool) -> Void)
+    func stopDebugServer()
 }
 
 protocol DataBrokerProtectionIPCServer: IPCClientInterface, XPCServerInterface {
@@ -216,5 +218,16 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
             let metaData = await serverDelegate?.getDebugMetadata()
             completion(metaData)
         }
+    }
+
+    func startDebugServer(completion: @escaping (Bool) -> Void) {
+        Task {
+            let didStart = await serverDelegate?.startDebugServer() ?? false
+            completion(didStart)
+        }
+    }
+
+    func stopDebugServer() {
+        serverDelegate?.stopDebugServer()
     }
 }

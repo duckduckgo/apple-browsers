@@ -1045,7 +1045,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
 
     func makeDuckAiChatsEntry() -> BrowsingMenuEntry? {
-        guard isNativeChatHistoryAvailable else { return nil }
+        guard shouldShowAIChatInMenu, isNativeChatHistoryAvailable else { return nil }
         return buildDuckAiChatsEntry(withSmallIcon: false)
     }
 

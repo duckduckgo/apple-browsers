@@ -179,6 +179,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageButtonLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet weak var zoomButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var zoomButtonHeightConstraint: NSLayoutConstraint!
 
     /// Width of the left buttons container (Privacy Dashboard button, Permissions buttons…)
@@ -251,6 +252,16 @@ final class AddressBarButtonsViewController: NSViewController {
 
     var shouldShowDaxLogInAddressBar: Bool {
         self.tabViewModel?.tab.content == .newtab && theme.addressBarStyleProvider.shouldShowNewSearchIcon
+    }
+
+    /// Drop this subview when `.appRebranding` ships
+    var trailingButtonsBackgroundColor: NSColor? {
+        get {
+            trailingButtonsBackground.backgroundColor
+        }
+        set {
+            trailingButtonsBackground.backgroundColor = newValue
+        }
     }
 
     private var isInPopUpWindow: Bool {
@@ -1294,6 +1305,7 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyShieldButtonWidthConstraint.constant = addressBarButtonSize
         privacyShieldButtonHeightConstraint.constant = addressBarButtonSize
         zoomButtonHeightConstraint.constant = addressBarButtonSize
+        zoomButtonWidthConstraint.constant = addressBarButtonSize
         permissionCenterButtonWidthConstraint.constant = addressBarButtonSize
         permissionCenterButtonHeightConstraint.constant = addressBarButtonSize
         youTubeAdBlockButtonWidthConstraint.constant = addressBarButtonSize
@@ -2194,11 +2206,19 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func setupSearchModeToggleControl() {
-        let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 70, height: 32))
-        toggleControl.translatesAutoresizingMaskIntoConstraints = false
+        let toggleFrame: CGRect = themeManager.isAppRebranded ? NSRect(x: 0, y: 0, width: 82, height: 30) : NSRect(x: 0, y: 0, width: 70, height: 32)
+        let toggleControl = CustomToggleControl(frame: toggleFrame)
 
-        toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.searchFindToggle, forSegment: 0)
-        toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.aiChatToggle, forSegment: 1)
+        toggleControl.translatesAutoresizingMaskIntoConstraints = false
+        toggleControl.collapsedWidth = toggleFrame.width
+
+        if themeManager.isAppRebranded {
+            toggleControl.setSelectedImage(DesignSystemImages.Glyphs.Size16.searchFind, forSegment: 0)
+            toggleControl.setSelectedImage(DesignSystemImages.Glyphs.Size16.aiChat, forSegment: 1)
+        } else {
+            toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.searchFindToggle, forSegment: 0)
+            toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.aiChatToggle, forSegment: 1)
+        }
 
         toggleControl.setToolTip(UserText.aiChatSearchTheWebTooltip, forSegment: 0)
         toggleControl.setToolTip(UserText.aiChatChatWithAITooltip, forSegment: 1)
@@ -2229,10 +2249,10 @@ final class AddressBarButtonsViewController: NSViewController {
         trailingButtonsContainer.addArrangedSubview(toggleControl)
         toggleControl.isHidden = true
 
-        let widthConstraint = toggleControl.widthAnchor.constraint(equalToConstant: toggleControl.collapsedWidth)
+        let widthConstraint = toggleControl.widthAnchor.constraint(equalToConstant: toggleFrame.width)
         NSLayoutConstraint.activate([
             widthConstraint,
-            toggleControl.heightAnchor.constraint(equalToConstant: 32)
+            toggleControl.heightAnchor.constraint(equalToConstant: toggleFrame.height)
         ])
 
         self.searchModeToggleWidthConstraint = widthConstraint
@@ -2337,7 +2357,10 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
-        toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
+        let backgroundColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .controlsSubtleFillSecondary) : NSColor(designSystemColor: .controlsRaisedBackdrop)
+        let selectionBorder = themeManager.isAppRebranded ? NSColor(designSystemColor: .shadowPrimary) : NSColor(designSystemColor: .shadowSecondary)
+
+        toggleControl.backgroundColor = backgroundColor
         toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
 
@@ -2349,8 +2372,12 @@ final class AddressBarButtonsViewController: NSViewController {
             toggleControl.outerBorderColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         }
 
+        let styleProvider = themeManager.theme.addressBarStyleProvider
+        toggleControl.indicatorGap = styleProvider.addressBarToggleIndicatorGap
+        toggleControl.indicatorHorizontalInset = styleProvider.addressBarToggleIndicatorHorizontalInset
+
         toggleControl.outerBorderWidth = 2.0
-        toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .shadowSecondary)
+        toggleControl.selectionInnerBorderColor = selectionBorder
 
         toggleControl.leftImage = DesignSystemImages.Glyphs.Size16.findSearch.tinted(with: themeManager.theme.colorsProvider.iconsColor)
         toggleControl.rightImage = DesignSystemImages.Glyphs.Size16.aiChat.tinted(with: themeManager.theme.colorsProvider.iconsColor)

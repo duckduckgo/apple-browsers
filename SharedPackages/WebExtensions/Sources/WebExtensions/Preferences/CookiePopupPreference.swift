@@ -26,6 +26,19 @@ public enum CookiePopupPreference: String, Codable, CaseIterable, Sendable {
     public var isBlockingEnabled: Bool {
         self != .off
     }
+
+    public var isAutoManageCookiePopupsEnabled: Bool {
+        isBlockingEnabled
+    }
+
+    public var isPopUpsWithoutOptOutsEnabled: Bool {
+        self == .max
+    }
+
+    public static func preference(autoManageEnabled: Bool, popUpsWithoutOptOutsEnabled: Bool) -> CookiePopupPreference {
+        guard autoManageEnabled else { return .off }
+        return popUpsWithoutOptOutsEnabled ? .max : .default
+    }
 }
 
 public extension AutoconsentPreferencesProviding {

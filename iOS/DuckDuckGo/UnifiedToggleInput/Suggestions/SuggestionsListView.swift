@@ -27,10 +27,13 @@ struct SuggestionsListView: View {
 
     @ObservedObject var viewModel: SuggestionsListViewModel
     let isAddressBarAtBottom: Bool
+    var isFloatingPopover: Bool = false
 
     private enum Metrics {
         /// Per Figma: the list table sits 6pt below the top-positioned input's bottom margin.
         static let listTopInset: CGFloat = 6
+        static let popoverVerticalInset: CGFloat = 12
+        static let popoverSectionSpacing: CGFloat = 10
         /// Per Figma: single-line rows use 15pt top/bottom padding; rows with a subtitle use 14pt
         static let rowVerticalPaddingSingleLine: CGFloat = 15
         static let rowVerticalPaddingWithSubtitle: CGFloat = 14
@@ -53,11 +56,13 @@ struct SuggestionsListView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .modifier(CompactSectionSpacingModifier())
+            .modifier(SectionSpacingModifier(isFloatingPopover: isFloatingPopover,
+                                             popoverSpacing: Metrics.popoverSectionSpacing))
             // Replace insetGrouped's variable top margin with the design's list top inset (6pt below the
             // input on the top bar; 0 on the bottom bar, where the input sits below the list).
-            .modifier(ListTopContentMarginModifier(top: isAddressBarAtBottom ? 0 : Metrics.listTopInset,
-                                                   horizontal: Metrics.listHorizontalContentMargin))
+            .modifier(ListContentMarginsModifier(top: isFloatingPopover ? Metrics.popoverVerticalInset : (isAddressBarAtBottom ? 0 : Metrics.listTopInset),
+                                                 bottom: isFloatingPopover ? Metrics.popoverVerticalInset : nil,
+                                                 horizontal: Metrics.listHorizontalContentMargin))
             .hideScrollContentBackground()
             .background(Color(designSystemColor: .background))
             .scrollDismissesKeyboardIfAvailable()
@@ -111,7 +116,8 @@ struct SuggestionsListView: View {
     /// the rows aligned with the input's text + X clear button.
     private func rowInsets(for row: SuggestionRow) -> EdgeInsets {
         let vertical = row.subtitle == nil ? Metrics.rowVerticalPaddingSingleLine : Metrics.rowVerticalPaddingWithSubtitle
-        return EdgeInsets(top: vertical, leading: Metrics.rowLeftInset, bottom: vertical, trailing: Metrics.rowRightInset)
+        let trailing = isFloatingPopover ? Metrics.rowLeftInset : Metrics.rowRightInset
+        return EdgeInsets(top: vertical, leading: Metrics.rowLeftInset, bottom: vertical, trailing: trailing)
     }
 
     @ViewBuilder
@@ -129,23 +135,49 @@ struct SuggestionsListView: View {
 /// insetGrouped reserves a large variable top inset above the first section; replace it with the
 /// design's `top` inset, and set the `horizontal` content margin (the cell edge) explicitly so the
 /// rows align with the escape hatch and favorites grid in every orientation.
-private struct ListTopContentMarginModifier: ViewModifier {
+private struct ListContentMarginsModifier: ViewModifier {
     let top: CGFloat
+    let bottom: CGFloat?
     let horizontal: CGFloat
+
+    @ViewBuilder
     func body(content: Content) -> some View {
         if #available(iOS 17, *) {
-            content
-                .contentMargins(.top, top, for: .scrollContent)
-                .contentMargins(.horizontal, horizontal, for: .scrollContent)
+            applyMargins(to: content)
         } else {
             content
         }
     }
+
+    @available(iOS 17, *)
+    @ViewBuilder
+    private func applyMargins(to content: Content) -> some View {
+        let base = content
+            .contentMargins(.top, top, for: .scrollContent)
+            .contentMargins(.horizontal, horizontal, for: .scrollContent)
+        if let bottom {
+            base.contentMargins(.bottom, bottom, for: .scrollContent)
+        } else {
+            base
+        }
+    }
 }
 
-private struct CompactSectionSpacingModifier: ViewModifier {
+private struct SectionSpacingModifier: ViewModifier {
+    let isFloatingPopover: Bool
+    let popoverSpacing: CGFloat
+
+    @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 17, *) { content.listSectionSpacing(.compact) } else { content }
+        if #available(iOS 17, *) {
+            if isFloatingPopover {
+                content.listSectionSpacing(popoverSpacing)
+            } else {
+                content.listSectionSpacing(.compact)
+            }
+        } else {
+            content
+        }
     }
 }
 

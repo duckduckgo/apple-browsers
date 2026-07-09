@@ -424,6 +424,10 @@ public extension DesignSystemImages {
                     ? .init(resource: .announcement96)
                     : .init(resource: .announcement96Legacy)
             }
+            public static var browserWarn: DesignSystemImage {
+                .init(resource: .browserWarn96)
+            }
+            public static var cookieCheckFeature: DesignSystemImage { .init(resource: .cookieCheckFeature96) }
             public static var daxDuckAIStacked: DesignSystemImage { .init(resource: .daxDuckAIStacked96) }
             public static var duckAIDDGHero: DesignSystemImage { .init(resource: .duckAIDDGHeroColor96) }
             public static var duckAI: DesignSystemImage { .init(resource: .duckAI96) }
@@ -459,6 +463,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .desktopSyncPasswords96)
                     : .init(resource: .syncPasswordsDesktop96Legacy)
             }
+            public static var youtubeClean: DesignSystemImage { .init(resource: .youTubeClean96) }
         }
 
         public enum Size128 {

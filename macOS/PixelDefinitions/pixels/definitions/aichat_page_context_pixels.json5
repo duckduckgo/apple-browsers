@@ -11,8 +11,7 @@
             {
                 "key": "automaticEnabled",
                 "description": "Whether the automatic page context collection is enabled in AI Features settings",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             "channel"
         ]
@@ -28,8 +27,7 @@
             {
                 "key": "automaticEnabled",
                 "description": "Whether the automatic page context collection is enabled in AI Features settings",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             "channel"
         ]

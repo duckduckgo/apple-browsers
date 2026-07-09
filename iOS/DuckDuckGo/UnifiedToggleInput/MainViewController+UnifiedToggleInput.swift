@@ -154,6 +154,9 @@ extension MainViewController {
 
     /// Hides the bottom UTI input bar when FE asks to hide the chat input. Idempotent.
     func reconcileAIChatInputChromeForCurrentTab() {
+        // Only AI tabs have an AI chat input to reconcile. For a non-AI tabs this can
+        //  cause glitches in the positioning of the bars.
+        guard currentTab?.isAITab == true else { return }
         viewCoordinator.setAITabBottomChromeHidden(isAIChatInputHiddenForCurrentTab)
     }
 
@@ -222,15 +225,6 @@ extension MainViewController {
         guard unifiedToggleInputFeature.isAvailable,
               let coordinator = unifiedToggleInputCoordinator else {
             return
-        }
-
-        // Capture the current tab's screen snapshot regardless of which refresh branch we
-        // take — `.unbindInactiveNonAITab` early-returns without falling through, but we
-        // still want a fresh snapshot for the swipe overlay every time the tab becomes the
-        // active one. `captureCurrentTabScreenSnapshotIfPossible` defers to the next runloop
-        // so any layout changes the branches apply have settled by capture time.
-        defer {
-            captureCurrentTabScreenSnapshotIfPossible(tabUID: tab.tabModel.uid)
         }
 
         coordinator.activateForTab(tab.tabModel.uid)

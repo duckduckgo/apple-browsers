@@ -101,8 +101,15 @@ extension TabViewController {
         rootView.addSubview(containerStackView)
 
         let safeArea = rootView.safeAreaLayoutGuide
+        // In floating UI mode the web view spans full-screen and underflows the glass chrome, so its
+        // top is pinned to the screen edge rather than the safe area. The chrome-obscured region is
+        // instead communicated to WebKit via `additionalSafeAreaInsets` (see updateFloatingUISafeAreaInsets)
+        // so that page `position: fixed` elements rest below the omnibar / above the toolbar.
+        let containerStackViewTop = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+            ? containerStackView.topAnchor.constraint(equalTo: rootView.topAnchor)
+            : containerStackView.topAnchor.constraint(equalTo: safeArea.topAnchor)
         NSLayoutConstraint.activate([
-            containerStackView.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            containerStackViewTop,
             containerStackView.leadingAnchor.constraint(equalTo: rootView.leadingAnchor),
             containerStackView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor),
             containerStackView.bottomAnchor.constraint(equalTo: rootView.bottomAnchor)
@@ -158,10 +165,15 @@ extension TabViewController {
         errorInfoImage = UIImageView(image: UIImage(rebrandable: "Dax-Accident"))
         errorInfoImage.contentMode = .scaleAspectFit
         errorInfoImage.translatesAutoresizingMaskIntoConstraints = false
+        errorInfoImage.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            errorInfoImage.widthAnchor.constraint(equalToConstant: 296),
+            errorInfoImage.heightAnchor.constraint(equalToConstant: 188)
+        ])
 
         let labelsStack = UIStackView()
         labelsStack.axis = .vertical
-        labelsStack.alignment = .fill
+        labelsStack.alignment = .center
         labelsStack.spacing = 11
         labelsStack.translatesAutoresizingMaskIntoConstraints = false
 
@@ -207,6 +219,7 @@ extension TabViewController {
             errorContentStack.bottomAnchor.constraint(lessThanOrEqualTo: error.bottomAnchor),
 
             labelsStack.widthAnchor.constraint(lessThanOrEqualToConstant: 400),
+            errorMessage.widthAnchor.constraint(lessThanOrEqualTo: errorHeader.widthAnchor),
             errorActionButtonFillWidthConstraint,
             errorActionButton.widthAnchor.constraint(lessThanOrEqualToConstant: 360),
             errorActionButton.heightAnchor.constraint(equalToConstant: 50),

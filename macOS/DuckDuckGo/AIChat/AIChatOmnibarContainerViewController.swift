@@ -51,10 +51,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private enum Constants {
         static let clipMaskBottomOffset: CGFloat = 14
-        static let shadowOverlapHeight: CGFloat = 11
+        static let shadowOverlapHeight: CGFloat = 21
+        static let legacyShadowOverlapHeight: CGFloat = 12
         static let submitButtonSize: CGFloat = 28
         static let submitButtonCornerRadius: CGFloat = 14
-        static let submitButtonTrailingInset: CGFloat = 13
+        static let submitButtonTrailingInset: CGFloat = 8
+        static let legacySubmitButtonTrailingInset: CGFloat = 13
         static let submitButtonBottomInset: CGFloat = 8
         static let toolButtonSize: CGFloat = 28
         static let toolButtonLeadingInset: CGFloat = 11
@@ -78,6 +80,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         /// Total panel height the carousel + below-spacing reserves when populated.
         static let attachmentsCarouselTotalPanelReservation: CGFloat = AIChatAttachmentsCarouselView.expandedHeight + (attachmentsCarouselBottomSpacing - AIChatAttachmentsCarouselView.shadowMargin)
         static let suggestionsBottomPadding: CGFloat = 4
+        static let containerTopPadding: CGFloat = 5
+        static let legacyContainerTopPadding: CGFloat = 0
+        static let contentLeadingInset: CGFloat = 2
+        static let legacyContentLeadingInset: CGFloat = 0
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -135,6 +141,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     let themeManager: ThemeManaging
     let omnibarController: AIChatOmnibarController
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     private var textChangeCancellable: AnyCancellable?
@@ -153,7 +160,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private lazy var historyCleaner: HistoryCleaning = HistoryCleaner(
         featureFlagger: NSApp.delegateTyped.featureFlagger,
         privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
-        nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+        nativeStorageHandler: duckAiNativeStorageHandler,
         featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: NSApp.delegateTyped.featureFlagger)
     )
 
@@ -260,7 +267,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Extra height needed beyond text and suggestions for dynamic content like attachments.
     /// This must be added to the container height calculation by the parent.
     var additionalContentHeight: CGFloat {
-        attachmentRowReservation
+        let containerTopPadding = themeManager.isAppRebranded ? Constants.containerTopPadding : Constants.legacyContainerTopPadding
+        return attachmentRowReservation + containerTopPadding
     }
 
     /// Calculates the total height that should be passthrough for the text container view.
@@ -295,9 +303,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         fatalError("AIChatOmnibarContainerViewController: Bad initializer")
     }
 
-    required init(themeManager: ThemeManaging, omnibarController: AIChatOmnibarController) {
+    required init(themeManager: ThemeManaging,
+                  omnibarController: AIChatOmnibarController,
+                  duckAiNativeStorageHandler: DuckAiNativeStorageHandling?) {
         self.themeManager = themeManager
         self.omnibarController = omnibarController
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -477,7 +488,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     // MARK: - Tool Button Visibility
 
     private var shouldShowToolsButton: Bool {
-        omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible)
+        omnibarController.isOmnibarToolsEnabled && (isImageGenerationItemVisible || isWebSearchItemVisible || isCustomizeResponsesItemVisible)
     }
 
     private var isImageGenerationItemVisible: Bool {
@@ -486,6 +497,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private var isWebSearchItemVisible: Bool {
         omnibarController.isWebSearchEnabled && omnibarController.selectedModelSupportsWebSearch
+    }
+
+    private var isCustomizeResponsesItemVisible: Bool {
+        omnibarController.isCustomizeResponsesEnabled
     }
 
     private var shouldShowWebSearchChip: Bool {
@@ -635,10 +650,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         innerBorderView.borderWidth = 1
         backgroundView.addSubview(innerBorderView)
 
-        shadowView.shadowColor = .suggestionsShadow
+        shadowView.shadowColor = themeManager.theme.colorsProvider.addressBarShadowColor
         shadowView.shadowOpacity = 1
         shadowView.shadowOffset = CGSize(width: 0, height: 0)
-        shadowView.shadowRadius = 20
+        shadowView.shadowRadius = themeManager.theme.addressBarStyleProvider.suggestionShadowRadius
         shadowView.shadowSides = [.left, .right, .bottom]
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -678,7 +693,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         toolsButton.target = self
         toolsButton.action = #selector(toolsButtonClicked)
         toolsButton.image = DesignSystemImages.Glyphs.Size16.options
-        toolsButton.keepIconLeadingAligned = true
+        toolsButton.keepIconLeadingAligned = !themeManager.isAppRebranded
         toolsButton.label = UserText.aiChatToolsButtonLabel
         toolsButton.toolTip = UserText.aiChatToolsButtonLabel
         toolsButton.setAccessibilityLabel(UserText.aiChatToolsButtonLabel)
@@ -774,6 +789,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // this point, so seed manually from whatever the active tab already has.
         applyPanelAttachmentsFromSharedState(omnibarController.activePanelAttachments)
 
+        let isAppRebranded = themeManager.isAppRebranded
+        let contentLeadingInset = isAppRebranded ? Constants.contentLeadingInset : Constants.legacyContentLeadingInset
+        let submitButtonTrailingInset = isAppRebranded ? Constants.submitButtonTrailingInset : Constants.legacySubmitButtonTrailingInset
+
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -790,7 +809,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
-            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.submitButtonTrailingInset),
+            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -submitButtonTrailingInset),
             // Bottom constraint is set in setupSuggestionsView() to be above suggestions
             submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize),
             submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
@@ -801,7 +820,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             reasoningPickerButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
             reasoningPickerButton.trailingAnchor.constraint(equalTo: modelPickerButton.leadingAnchor, constant: -Constants.toolButtonSpacing),
 
-            imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset),
+            imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset + contentLeadingInset),
             imageUploadButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
             imageUploadButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
 
@@ -819,7 +838,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // The unified attachments carousel sits directly above the tools row. It contains the
             // image attachments view (leading) and the tab cards (trailing) — both flow into one
             // horizontally-scrollable strip.
-            attachmentsCarouselView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset),
+            attachmentsCarouselView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset + contentLeadingInset),
             attachmentsCarouselView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.attachmentsLeadingInset),
             // The carousel's bottom shadow-margin band already accounts for part of the visual
             // gap to the tools row; the constraint adds the remainder so the visible card-to-tools
@@ -870,9 +889,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             modelPickerButton.bottomAnchor.constraint(equalTo: suggestionsView.topAnchor, constant: -Constants.toolButtonBottomInset)
         ])
 
-        // Tools button chains after image upload button, or aligns to container when upload is hidden
+        // Tools button chains after image upload button, or aligns to container when upload is hidden.
+        // The container is edge to edge, so re-apply the leading inset here to match imageUploadButton.
+        let contentLeadingInset = themeManager.isAppRebranded ? Constants.contentLeadingInset : Constants.legacyContentLeadingInset
         toolsLeadingToUploadButton = toolsButton.leadingAnchor.constraint(equalTo: imageUploadButton.trailingAnchor, constant: Constants.toolButtonSpacing)
-        toolsLeadingToContainer = toolsButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset)
+        toolsLeadingToContainer = toolsButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset + contentLeadingInset)
         toolsLeadingToUploadButton?.isActive = true
         toolsLeadingToContainer?.isActive = false
 
@@ -1047,7 +1068,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
 
         /// Do not overlap shadow of main address bar
-        frame.size.height -= Constants.shadowOverlapHeight
+        frame.size.height -= themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
 
         shadowView.frame = frame
     }
@@ -1108,6 +1129,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 webSearchItem.state = .on
             }
             menu.addItem(webSearchItem)
+        }
+
+        if isCustomizeResponsesItemVisible {
+            let store = CustomizeResponsesStore(storageHandler: duckAiNativeStorageHandler)
+            let state = store.currentState(clarifiesLabel: UserText.aiChatCustomizeResponsesClarifies)
+            let subtitle = (state.hasCustomization ? state.subLabel : nil) ?? UserText.aiChatCustomizeResponsesToolSubtitle
+            let rowView = CustomizeResponsesMenuRowView(
+                title: UserText.aiChatCustomizeResponsesButtonLabel,
+                subtitle: subtitle,
+                icon: DesignSystemImages.Glyphs.Size16.glasses,
+                showsToggle: state.hasCustomization,
+                isActive: state.isActive,
+                onOpen: {},
+                onToggle: { active in store.setActive(active) }
+            )
+            let customizeItem = NSMenuItem()
+            customizeItem.view = rowView
+            menu.addItem(customizeItem)
         }
 
         return menu
@@ -1883,6 +1922,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         NSAppearance.withAppAppearance {
+            shadowView.shadowColor = colorsProvider.addressBarShadowColor
             imageUploadButton.hoverBackgroundColor = .buttonMouseOver
             imageUploadButton.pressedBackgroundColor = .buttonMouseDown
             modelPickerButton.hoverBackgroundColor = .buttonMouseOver
@@ -2003,5 +2043,27 @@ private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
     /// user actually picked or removed something during this session.
     func markDidMutate() {
         didMutateDuringSession = true
+    }
+}
+
+// MARK: - Customize Responses state (native storage bridge)
+
+final class CustomizeResponsesStore {
+
+    private let storageHandler: DuckAiNativeStorageHandling?
+
+    init(storageHandler: DuckAiNativeStorageHandling?) {
+        self.storageHandler = storageHandler
+    }
+
+    func currentState(clarifiesLabel: String) -> CustomizeResponsesState {
+        guard let storageHandler else { return .none }
+        let customization = (try? storageHandler.getEntry(key: CustomizeResponsesStorageKey.customization)) ?? nil
+        let active = (try? storageHandler.getEntry(key: CustomizeResponsesStorageKey.active)) ?? nil
+        return CustomizeResponsesState.make(customizationValue: customization, activeValue: active, clarifiesLabel: clarifiesLabel)
+    }
+
+    func setActive(_ active: Bool) {
+        try? storageHandler?.putEntry(key: CustomizeResponsesStorageKey.active, value: active ? "true" : "false")
     }
 }

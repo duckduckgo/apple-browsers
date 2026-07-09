@@ -18,7 +18,6 @@
 
 import AppKit
 import Combine
-import FeatureFlags
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -29,10 +28,8 @@ extension Preferences {
     struct CookiePopupProtectionView: View {
         @ObservedObject var model: CookiePopupProtectionPreferences
 
-        private let featureFlagger = NSApp.delegateTyped.featureFlagger
-
-        private var isCookiePopupPreferenceSettingEnabled: Bool {
-            featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting)
+        private var isAutoManageEnabled: Bool {
+            model.cookiePopupPreference.isAutoManageCookiePopupsEnabled
         }
 
         var body: some View {
@@ -53,33 +50,29 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 3: Cookie Pop-up Preference
+                // SECTION 3: Cookie Pop-up Settings
                 PreferencePaneSection {
-                    if isCookiePopupPreferenceSettingEnabled {
-                        Picker(UserText.cookiePopupPreferenceTitle, selection: $model.cookiePopupPreference) {
-                            ForEach(CookiePopupPreference.allCases, id: \.self) { preference in
-                                Text(preference.displayName).tag(preference)
-                            }
+                    SpacedCheckbox {
+                        ToggleMenuItemWithDescription(
+                            UserText.autoManageCookiePopupsTitle,
+                            UserText.autoManageCookiePopupsExplanation,
+                            isOn: model.autoManageCookiePopupsEnabledBinding,
+                            spacing: 12
+                        )
+                    }
+
+                    if isAutoManageEnabled {
+                        SpacedCheckbox {
+                            ToggleMenuItemWithDescription(
+                                UserText.popUpsWithoutOptOutsTitle,
+                                UserText.popUpsWithoutOptOutsExplanation,
+                                isOn: model.popUpsWithoutOptOutsEnabledBinding,
+                                spacing: 12
+                            )
                         }
-                        TextMenuItemCaption(UserText.cookiePopupPreferenceExplanation)
-                    } else {
-                        ToggleMenuItem(UserText.autoconsentCheckboxTitle, isOn: $model.isAutoconsentEnabled)
                     }
                 }
             }
-        }
-    }
-}
-
-private extension CookiePopupPreference {
-    var displayName: String {
-        switch self {
-        case .max:
-            return UserText.cookiePopupPreferenceBlockAll
-        case .default:
-            return UserText.cookiePopupPreferenceBlockStandard
-        case .off:
-            return UserText.cookiePopupPreferenceDoNotBlock
         }
     }
 }

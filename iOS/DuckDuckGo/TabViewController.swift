@@ -324,12 +324,6 @@ class TabViewController: UIViewController {
     var urlPublisher: AnyPublisher<URL?, Never> {
         urlSubject.eraseToAnyPublisher()
     }
-
-    /// Emits the URL of the underlying tab each time a navigation finishes loading. Unlike
-    /// `urlPublisher` (which fires at didCommit, before the new DOM is ready), this is the
-    /// reliable signal for "the new page's content is available to query." Replays the last
-    /// finished URL on subscribe so late subscribers (e.g. a contextual chat opened after
-    /// the page already loaded) still see the current page.
     private let didFinishURLSubject = CurrentValueSubject<URL?, Never>(nil)
     var didFinishURLPublisher: AnyPublisher<URL?, Never> {
         didFinishURLSubject.eraseToAnyPublisher()
@@ -898,39 +892,42 @@ class TabViewController: UIViewController {
             webViewBottomAnchorConstraint?.constant = 0
         }
         if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            webViewBottomAnchorConstraint?.constant = 0
+            // Physically resize the web view so its bottom edge sits at the top of the visible bottom
+            // chrome (toolbar -> capsule -> safe area). Resizing the frame lays out page `position: fixed`
+            // footers reliably, including on load, unlike `additionalSafeAreaInsets` which WebKit only
+            // reflows on a subsequent scroll. AI tabs with the unified toggle input keep the full-bleed
+            // web view since that feature owns its own bottom layout.
+            let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
+            let bottomObscuredHeight = isUnifiedToggleInputAffectingLayout
+                ? 0
+                : (chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0)
+            webViewBottomAnchorConstraint?.constant = -bottomObscuredHeight
             borderView.bottomAlpha = 0
             borderView.isHidden = true
             borderView.isTopVisible = false
             borderView.isBottomVisible = false
-            updateFloatingTopContentInset(for: barsVisibilityPercent)
+            updateFloatingUISafeAreaInsets()
         } else {
             borderView.isHidden = false
             borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         }
     }
 
-    /// In floating top mode the web content spans the full height behind the glass omnibar. Inset
-    /// the scroll view so content rests below the bar at rest and underflows it on scroll. The inset
-    /// scales with `barsVisibilityPercent` so it collapses to zero in lock-step as the bar hides.
-    private func updateFloatingTopContentInset(for barsVisibilityPercent: CGFloat) {
-        let topInset: CGFloat
-        // AI tabs with the unified toggle input manage their own top layout (the content container
-        // stays anchored below the chrome), so adding a top inset there would double-offset.
-        let isUnifiedToggleInputAffectingTopLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        if FloatingUILayoutPolicy.shouldApplyFloatingTopContentInset(
-            isFloatingUIEnabled: true,
+    /// In floating UI mode the web view underflows the top glass chrome, so communicate the top
+    /// omnibar-obscured region to WebKit via `additionalSafeAreaInsets` (top only). The bottom obscured
+    /// region is handled by resizing the web view instead (see `updateWebViewBottomAnchor`), which pins
+    /// bottom `position: fixed` elements reliably on load.
+    private func updateFloatingUISafeAreaInsets() {
+        // AI tabs with the unified toggle input manage their own top/bottom layout (the content
+        // container stays anchored to the chrome), so adding insets there would double-offset.
+        let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
+        let insets = FloatingUILayoutPolicy.webViewAdditionalSafeAreaInsets(
             addressBarPosition: appSettings.currentAddressBarPosition,
-            isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingTopLayout
-        ) {
-            let omniBarHeight = chromeDelegate?.omniBar.barView.expectedHeight ?? 0
-            topInset = omniBarHeight * barsVisibilityPercent
-        } else {
-            topInset = 0
-        }
-        guard webView.scrollView.contentInset.top != topInset else { return }
-        webView.scrollView.contentInset.top = topInset
-        webView.scrollView.verticalScrollIndicatorInsets.top = topInset
+            isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingLayout,
+            omniBarHeight: chromeDelegate?.omniBar.barView.expectedHeight ?? 0
+        )
+        guard additionalSafeAreaInsets != insets else { return }
+        additionalSafeAreaInsets = insets
     }
 
     private func observeNetPConnectionStatusChanges() {
@@ -1032,6 +1029,7 @@ class TabViewController: UIViewController {
             webView.scrollView.clipsToBounds = false
             webView.clipsToBounds = false
             outerContainer.clipsToBounds = false
+            webViewContainer.clipsToBounds = false
         }
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)
@@ -1046,9 +1044,6 @@ class TabViewController: UIViewController {
         webView.uiDelegate = self
 
         webViewContainer.addSubview(webView)
-        if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            webViewContainer.clipsToBounds = false
-        }
         webView.translatesAutoresizingMaskIntoConstraints = false
         webViewBottomAnchorConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
         NSLayoutConstraint.activate([
@@ -1505,11 +1500,20 @@ class TabViewController: UIViewController {
         error.isHidden = false
         setErrorInfoImage()
         errorHeader.text = defaultErrorHeaderText
-        errorMessage.text = message
+        errorMessage.text = formattedErrorMessage(message)
         errorActionButton.isHidden = true
         errorReportBrokenSiteButton.isHidden = true
         safariRedirectLoopErrorURL = nil
         error.layoutIfNeeded()
+    }
+
+    private func formattedErrorMessage(_ message: String) -> String {
+        // The English NSURLErrorCannotFindHost description wraps awkwardly; break it after
+        // "hostname" so it reads as two balanced lines.
+        return message.replacingOccurrences(
+            of: "A server with the specified hostname could not be found",
+            with: "A server with the specified hostname\ncould not be found"
+        )
     }
 
     private func hideErrorMessage() {
@@ -1845,6 +1849,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        safariRedirectHandler.reset()
         webView.stopLoading()
         wasLoadingStoppedExternally = true
 
@@ -1947,11 +1952,6 @@ extension TabViewController: WKNavigationDelegate {
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
 
-        if aiChatContextualSheetCoordinator.hasActiveSheet {
-            Task { [weak self] in
-                await self?.aiChatContextualSheetCoordinator.notifyPageChanged()
-            }
-        }
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {

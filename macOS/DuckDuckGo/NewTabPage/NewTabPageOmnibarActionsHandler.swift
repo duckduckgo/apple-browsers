@@ -245,6 +245,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
     @MainActor
     func openCustomizeResponses() {
+        guard customizeResponsesModal == nil else { return }
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController,
               let window = mainWindowController.window else {
             Logger.newTabPageOmnibar.error("Failed to get key window in openCustomizeResponses")

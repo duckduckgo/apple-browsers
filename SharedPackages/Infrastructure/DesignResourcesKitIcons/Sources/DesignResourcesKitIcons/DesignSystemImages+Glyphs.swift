@@ -189,6 +189,7 @@ public extension DesignSystemImages {
             public static var bookmarkSolid: DesignSystemImage { .init(resource: .bookmarkSolid16) }
             public static var bookmarksSolid: DesignSystemImage { .init(resource: .bookmarksSolid16) }
             public static var browser: DesignSystemImage { .init(resource: .browser16) }
+            public static var camera: DesignSystemImage { .init(resource: .camera16) }
             public static var calendarWeek: DesignSystemImage { .init(resource: .calendarWeek16) }
             public static var check: DesignSystemImage { .init(resource: .check16) }
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle16) }
@@ -337,6 +338,7 @@ public extension DesignSystemImages {
             public static var sync: DesignSystemImage { .init(resource: .sync16) }
             public static var systemTheme: DesignSystemImage { .init(resource: .systemTheme16) }
             public static var tabCloseAlt: DesignSystemImage { .init(resource: .tabCloseAlt16) }
+            public static var tabContent: DesignSystemImage { .init(resource: .tabContent16) }
             public static var tabDesktop: DesignSystemImage { .init(resource: .tabDesktop16) }
             public static var tabMobile: DesignSystemImage { .init(resource: .tabMobile16) }
             public static var tabReopen: DesignSystemImage { .init(resource: .tabReopen16) }

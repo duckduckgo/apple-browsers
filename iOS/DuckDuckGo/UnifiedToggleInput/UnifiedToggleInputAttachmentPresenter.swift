@@ -60,7 +60,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         let actions = [
             UIAction(
                 title: UserText.aiChatAttachmentOptionTakePhoto,
-                image: DesignSystemImages.Glyphs.Size24.camera,
+                image: DesignSystemImages.Glyphs.Size16.camera,
                 attributes: canTakePhoto ? [] : .disabled
             ) { [weak self] _ in
                 guard canTakePhoto else { return }
@@ -69,7 +69,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             },
             UIAction(
                 title: UserText.aiChatAttachmentOptionAttachPhoto,
-                image: DesignSystemImages.Glyphs.Size24.image,
+                image: DesignSystemImages.Glyphs.Size16.image,
                 attributes: canAttachPhoto ? [] : .disabled
             ) { [weak self] _ in
                 guard canAttachPhoto else { return }
@@ -78,7 +78,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             },
             UIAction(
                 title: UserText.aiChatAttachmentOptionAttachFile,
-                image: DesignSystemImages.Glyphs.Size24.folder,
+                image: DesignSystemImages.Glyphs.Size16.folder,
                 attributes: canAttachAllowedFile ? [] : .disabled
             ) { [weak self] _ in
                 guard canAttachAllowedFile else { return }
@@ -87,7 +87,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             },
             UIAction(
                 title: UserText.aiChatAttachmentOptionAskAboutPage,
-                image: DesignSystemImages.Glyphs.Size24.documentNew,
+                image: DesignSystemImages.Glyphs.Size16.tabContent,
                 attributes: canAttachPageContext ? [] : .disabled
             ) { _ in
                 guard canAttachPageContext else { return }

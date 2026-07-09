@@ -115,6 +115,40 @@ final class IPadOmnibarToolPickerControllerTests: XCTestCase {
         XCTAssertNil(sut.selectedToolsForSubmission)
     }
 
+    // MARK: - Selected tool (drives the iPad badge)
+
+    func testWhenNoToolSelectedThenSelectedToolIsNil() {
+        store.models = [makeModel(id: "gpt-5.2", supportedTools: [.webSearch])]
+
+        XCTAssertNil(sut.selectedTool)
+    }
+
+    func testWhenToolSelectedThenSelectedToolReflectsIt() {
+        store.models = [makeModel(id: "gpt-5.2", supportedTools: [.webSearch, .imageGeneration])]
+
+        sut.handleToolSelection(.imageGeneration)
+
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+    }
+
+    func testWhenSelectedToolToggledOffThenSelectedToolIsNil() {
+        store.models = [makeModel(id: "gpt-5.2", supportedTools: [.webSearch])]
+
+        sut.handleToolSelection(.webSearch)
+        sut.handleToolSelection(.webSearch)
+
+        XCTAssertNil(sut.selectedTool)
+    }
+
+    func testWhenResetSelectionThenSelectedToolIsNil() {
+        store.models = [makeModel(id: "gpt-5.2", supportedTools: [.webSearch])]
+        sut.handleToolSelection(.webSearch)
+
+        sut.resetSelection()
+
+        XCTAssertNil(sut.selectedTool)
+    }
+
     // MARK: - Reasoning picker interaction
 
     func testWhenImageGenerationSelectedThenHidesReasoningPicker() {
@@ -236,6 +270,7 @@ private final class StubToolPreferences: AIChatPreferencesPersisting {
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
+@MainActor
 private final class StubModelsService: AIChatModelsProviding {
     var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
 

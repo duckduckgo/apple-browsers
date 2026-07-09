@@ -21,6 +21,7 @@ import AIChat
 import BrowserServicesKit
 import Combine
 import Common
+import ConcurrencyExtensions
 import FoundationExtensions
 import Core
 import os.log
@@ -85,6 +86,7 @@ final class AIChatContextualSheetCoordinator {
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
     private let isFireTab: Bool
+    static let contextualContextCollectionTimeout: TimeInterval = 5
 
     /// Handler for page context - single source of truth.
     let pageContextHandler: AIChatPageContextHandling
@@ -95,6 +97,7 @@ final class AIChatContextualSheetCoordinator {
     private var didFinishURLCancellable: AnyCancellable?
     private var currentPageURL: URL?
     private var persistentUTIHost: AIChatContextualUTIHost?
+    private var latestDidFinishURL: URL?
 
     /// Handles all pixel firing for contextual mode.
     let pixelHandler: AIChatContextualModePixelFiring
@@ -178,8 +181,9 @@ final class AIChatContextualSheetCoordinator {
             }
         self.didFinishURLCancellable = tabURLPublishers.didFinish
             .dropFirst()
-            .sink { [weak self] _ in
+            .sink { [weak self] url in
                 Task { [weak self] in
+                    self?.latestDidFinishURL = url
                     await self?.notifyPageChanged()
                 }
             }
@@ -196,6 +200,12 @@ final class AIChatContextualSheetCoordinator {
         startObservingContextUpdates()
 
         if sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
+            if sessionState.showsSuggestionsStartSurface {
+                sessionState.beginLoadingSuggestions()
+            }
+            pageContextHandler.triggerContextCollection()
+        } else if shouldCollectSignalsOnly {
+            sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection()
         }
 
@@ -245,6 +255,9 @@ final class AIChatContextualSheetCoordinator {
         sessionState.notifyPageChanged()
 
         if sessionState.shouldTriggerAutoCollect() {
+            if sessionState.showsSuggestionsStartSurface {
+                sessionState.beginLoadingSuggestions()
+            }
             let didTrigger = pageContextHandler.triggerContextCollection()
             if !didTrigger {
                 sessionState.clearProcessingNavigationFlag()
@@ -252,6 +265,11 @@ final class AIChatContextualSheetCoordinator {
         } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             sessionState.notifyFrontendOfMultiContextNavigation()
             sessionState.clearProcessingNavigationFlag()
+        } else if shouldCollectSignalsOnly {
+            sessionState.markPendingSignalsOnlyCollection()
+            if !pageContextHandler.triggerContextCollection() {
+                sessionState.clearProcessingNavigationFlag()
+            }
         } else {
             sessionState.clearProcessingNavigationFlag()
         }
@@ -260,6 +278,12 @@ final class AIChatContextualSheetCoordinator {
     /// Returns true if the contextual sheet has been shown.
     var hasActiveSheet: Bool {
         sheetViewController != nil
+    }
+
+    private var shouldCollectSignalsOnly: Bool {
+        featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+            && !sessionState.hasActiveChat
+            && !sessionState.shouldAutoCollectContext
     }
 }
 
@@ -378,6 +402,46 @@ private extension AIChatContextualSheetCoordinator {
         sessionState.updateContext(context)
     }
 
+    func collectFreshContextAndWait(timeout: TimeInterval) async -> AIChatPageContextData? {
+        let expectedURL = latestDidFinishURL
+        let firstResult = AsyncStream<AIChatPageContextData?> { continuation in
+            let cancellable = pageContextHandler.contextPublisher
+                .dropFirst()
+                .first(where: { context in
+                    guard let expectedURL,
+                          let context,
+                          let emittedURL = URL(string: context.contextData.url) else { return true }
+                    return emittedURL.equals(expectedURL, by: .sameDocument)
+                })
+                .sink { context in
+                    continuation.yield(context?.contextData)
+                    continuation.finish()
+                }
+            continuation.onTermination = { _ in cancellable.cancel() }
+
+            if !pageContextHandler.triggerContextCollection() {
+                sessionState.cancelManualAttach()
+                continuation.yield(nil)
+                continuation.finish()
+            }
+        }
+
+        // Await with `timeout` so this FE bridge call never hangs if the JS collection never responds
+        // (web view torn down, navigation mid-request, JS error). On timeout the push still delivers.
+        do {
+            return try await withTimeout(timeout) {
+                for await result in firstResult {
+                    return result
+                }
+                return nil
+            }
+        } catch {
+            // Timed out (or cancelled) before JS published
+            sessionState.cancelManualAttach()
+            return nil
+        }
+    }
+
     func deliverPageContext(_ context: AIChatPageContextData?, targets: PageContextDeliveryTargets) {
         if let host = persistentUTIHost, targets.contains(.utiChip) {
             deliverToUTIChip(context, host: host)
@@ -430,12 +494,21 @@ private extension AIChatContextualSheetCoordinator {
             getPageContext: { [weak self] reason in
                 guard let self else { return nil }
                 guard reason == .userAction else { return nil }
-                self.sessionState.beginManualAttach(fromFrontend: true)
-                let didTrigger = self.pageContextHandler.triggerContextCollection()
-                if !didTrigger {
-                    self.sessionState.cancelManualAttach()
+
+                guard self.featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else {
+                    self.sessionState.beginManualAttach(fromFrontend: true)
+                    if !self.pageContextHandler.triggerContextCollection() {
+                        self.sessionState.cancelManualAttach()
+                    }
+                    return nil
                 }
-                return nil
+
+                if let cached = self.sessionState.latestContext?.contextData,
+                   cached.attached != false, !cached.content.isEmpty {
+                    return cached
+                }
+                self.sessionState.beginManualAttach(fromFrontend: true)
+                return await self.collectFreshContextAndWait(timeout: Self.contextualContextCollectionTimeout)
             },
             pixelHandler: pixelHandler,
             utiHostInstaller: { [weak self] contextualChatViewController in
@@ -511,7 +584,13 @@ private extension AIChatContextualSheetCoordinator {
         sessionState.resetToNoChat()
         persistentUTIHost?.prepareForNewChat()
 
-        Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
+        if shouldCollectSignalsOnly {
+            Logger.aiChat.debug("[PageContext] New chat - collecting signals-only")
+            sessionState.markPendingSignalsOnlyCollection()
+        } else {
+            Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
+            sessionState.beginLoadingSuggestions()
+        }
         pageContextHandler.triggerContextCollection()
 
         delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)

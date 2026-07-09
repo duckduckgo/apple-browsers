@@ -98,31 +98,25 @@ struct CookiePopupProtectionOptInView: View {
         .shadow(color: .black.opacity(0.18), radius: 18, y: 6)
     }
 
-    /// macOS-style titlebar: logo pinned left, NEW badge + header centered, hairline separator below.
+    /// macOS-style titlebar: logo + brand name pinned left, NEW badge pinned right, hairline separator below.
     private var titlebar: some View {
         VStack(spacing: 0) {
-            ZStack {
-                HStack {
-                    Image("OnboardingDax")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 28, height: 28)
-                    Spacer()
-                }
+            HStack(spacing: 12) {
+                Image("Logo-Horizontal-Registered")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 102, height: 28)
+                    .padding(.top, 2)
 
-                HStack(spacing: 8) {
-                    Text(UserText.cookiePopupProtectionOptInBadge.uppercased())
-                        .font(.system(size: 11, weight: .bold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color(designSystemColor: .alertYellow))
-                        .foregroundColor(.black)
-                        .cornerRadius(8)
-                    Text(UserText.cookiePopupProtectionOptInHeader.uppercased())
-                        .font(.system(size: 11, weight: .semibold))
-                        .tracking(0.5)
-                        .foregroundColor(Color(designSystemColor: .textPrimary))
-                }
+                Spacer(minLength: 8)
+
+                Text(UserText.cookiePopupProtectionOptInBadge.uppercased())
+                    .font(.system(size: 11, weight: .bold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color(designSystemColor: .alertYellow))
+                    .foregroundColor(.black)
+                    .cornerRadius(8)
             }
             .frame(height: 52)
             .padding(.horizontal, 16)

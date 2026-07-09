@@ -691,6 +691,9 @@ struct UserText {
     static let aiChatImageGenToolSubtitle = NSLocalizedString("aichat.image-gen-tool.subtitle", value: "Turn text into images", comment: "Subtitle for Create Image tool in the tools dropdown menu")
     static let aiChatWebSearchButtonLabel = NSLocalizedString("aichat.web-search-button.label", value: "Web Search", comment: "Label for the web search tool button in AI chat omnibar")
     static let aiChatWebSearchToolSubtitle = NSLocalizedString("aichat.web-search-tool.subtitle", value: "Source answers from the web", comment: "Subtitle for Web Search tool in the tools dropdown menu")
+    static let aiChatCustomizeResponsesButtonLabel = NotLocalizedString("aichat.customize-responses-button.label", value: "Customize Responses", comment: "Label for the Customize Responses tool in the AI chat omnibar tools menu")
+    static let aiChatCustomizeResponsesToolSubtitle = NotLocalizedString("aichat.customize-responses-tool.subtitle", value: "Set tone, length and behavior", comment: "Subtitle for the Customize Responses tool in the tools dropdown menu")
+    static let aiChatCustomizeResponsesClarifies = NotLocalizedString("aichat.customize-responses.clarifies", value: "Clarifies", comment: "Sub-label fragment shown in the Customize Responses row when clarifying questions are enabled")
     static let aiChatWebSearchDeactivateTooltip = NSLocalizedString("aichat.web-search-button.deactivate-tooltip", value: "Deactivate web search", comment: "Tooltip for the web search button when web search mode is active")
     static let aiChatImageGenPlaceholder = NSLocalizedString("aichat.omnibar.image-gen-placeholder", value: "Describe the image you want to create", comment: "Placeholder text in AI chat input when image generation mode is active")
     static let aiChatImageGenWithAttachmentPlaceholder = NSLocalizedString("aichat.omnibar.image-gen-with-attachment-placeholder", value: "Describe changes based on the image", comment: "Placeholder text in AI chat input when image generation mode is active and an image is attached")
@@ -1817,8 +1820,7 @@ struct UserText {
     static let autoconsentModalDenyButton = NSLocalizedString("autoconsent.modal.cta.deny", value: "No Thanks", comment: "Deny button for modal asking the user to auto manage cookies")
 
     // MARK: - Cookie Pop-up Protection Opt-In Dialog
-    static let cookiePopupProtectionOptInBadge = NSLocalizedString("cookie-popup-protection.opt-in.badge", value: "New", comment: "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header")
-    static let cookiePopupProtectionOptInHeader = NSLocalizedString("cookie-popup-protection.opt-in.header", value: "Cookie Pop-up Protection", comment: "Header of the Cookie Pop-up Protection opt-in dialog")
+    static let cookiePopupProtectionOptInBadge = NSLocalizedString("cookie-popup-protection.opt-in.badge", value: "New", comment: "Small 'NEW' badge shown in the titlebar of the Cookie Pop-up Protection opt-in dialog")
     static let cookiePopupProtectionOptInConfirm = NSLocalizedString("cookie-popup-protection.opt-in.confirm", value: "Confirm", comment: "Confirm button in the Cookie Pop-up Protection opt-in dialog")
     static let cookiePopupProtectionOptInFooter = NSLocalizedString("cookie-popup-protection.opt-in.footer", value: "You can always adjust later in:\n**Settings** > **Cookie Pop-Up Protection**.", comment: "Footer text in the Cookie Pop-up Protection opt-in dialog, shown across two lines. The text between ** ** is rendered bold; \\n is an explicit line break.")
     static let cookiePopupProtectionOptInEnabledTitle = NSLocalizedString("cookie-popup-protection.opt-in.enabled.title", value: "Tired of cookie pop-ups that don't let you opt out?", comment: "Title of the opt-in dialog when cookie pop-up protection is already enabled")

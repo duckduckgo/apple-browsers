@@ -116,20 +116,25 @@ public extension SERPSettingsProviding {
     ///
     /// - Returns: Encoded settings blob, or an empty JSON object if no data exists, or `nil` if an error occurs
     func getSERPSettings() -> Encodable? {
+        let storedString: String?
         do {
-            if let stringData = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? String,
-                let data = stringData.data(using: .utf8) {
-                let dict = try JSONDecoder().decode([String: String].self, from: data)
-                return dict
-            } else {
-                // First-time access: return empty JSON object
-                return EmptyPayload()
-            }
+            storedString = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? String
         } catch {
-            eventMapper?.fire(.keyValueStoreReadError, error: error)
+            eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.storeRead.pixelParameters)
+            return nil
         }
 
-        return nil
+        guard let storedString, let data = storedString.data(using: .utf8) else {
+            // First-time access: return empty JSON object
+            return EmptyPayload()
+        }
+
+        do {
+            return try JSONDecoder().decode([String: String].self, from: data)
+        } catch {
+            eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.decode.pixelParameters)
+            return nil
+        }
     }
 
     /// Stores SERP settings in a thread-safe manner.
@@ -264,14 +269,22 @@ public extension SERPSettingsProviding {
     // MARK: - Blob read/write helpers
 
     private func readSERPSettingsDictionary() -> [String: String]? {
+        let storedString: String?
         do {
-            guard let stringData = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? String,
-                  let data = stringData.data(using: .utf8) else {
-                return nil
-            }
+            storedString = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? String
+        } catch {
+            eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.storeRead.pixelParameters)
+            return nil
+        }
+
+        guard let storedString, let data = storedString.data(using: .utf8) else {
+            return nil
+        }
+
+        do {
             return try JSONDecoder().decode([String: String].self, from: data)
         } catch {
-            eventMapper?.fire(.keyValueStoreReadError, error: error)
+            eventMapper?.fire(.keyValueStoreReadError, error: error, parameters: SERPSettingsReadFailure.decode.pixelParameters)
             return nil
         }
     }

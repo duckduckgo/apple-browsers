@@ -17,8 +17,7 @@
             {
                 "key": "automaticPageContext",
                 "description": "Whether the automatic page context collection is enabled in AI Features settings",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "minutesSinceSidebarHidden",
@@ -108,6 +107,45 @@
                 "key": "suggestionId",
                 "description": "Catalog key of the selected suggestion (e.g. summarize-page, translate-page, ask-about-page). Bounded and PII-free.",
                 "type": "string"
+            },
+            {
+                "key": "pageType",
+                "description": "Coarse page-type bucket the frontend computes from page-type signals. Never a URL, domain or page content.",
+                "type": "string",
+                "enum": [
+                    "recipe",
+                    "product",
+                    "article",
+                    "video",
+                    "job",
+                    "book",
+                    "event",
+                    "place",
+                    "forum",
+                    "code",
+                    "course",
+                    "review",
+                    "person",
+                    "howto",
+                    "faq",
+                    "none"
+                ]
+            },
+            "channel"
+        ]
+    },
+    "m_mac_aichat_suggestions_viewed": {
+        "description": "Fired when the Duck.ai sidebar presents page-suggestion chips to the user",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "isSmart",
+                "description": "Whether the shown suggestions were smart (page-tailored) rather than generic.",
+                "type": "boolean"
             },
             {
                 "key": "pageType",

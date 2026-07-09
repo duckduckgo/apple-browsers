@@ -557,8 +557,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return strip
     }()
 
-    let aiChatTextView: UITextView = {
-        let textView = UITextView()
+    let aiChatTextView: ResignSuppressingTextView = {
+        let textView = ResignSuppressingTextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.isHidden = true
         textView.backgroundColor = .clear
@@ -2104,6 +2104,20 @@ extension DefaultOmniBarView {
         } else {
             updateMaskLayer()
         }
+    }
+}
+
+/// A `UITextView` that can be prevented from resigning first responder,
+final class ResignSuppressingTextView: UITextView {
+
+    /// When true, prevents the text view from resigning first responder.
+    /// Used during device rotation to keep the keyboard visible.
+    var suppressResignFirstResponder: Bool = false
+
+    @discardableResult
+    override func resignFirstResponder() -> Bool {
+        if suppressResignFirstResponder { return false }
+        return super.resignFirstResponder()
     }
 }
 

@@ -187,7 +187,9 @@ struct SettingsSubscriptionView: View {
         .disabled(true)
 
         SettingsCustomCell(content: {
-            Text(UserText.settingsPProFreemiumDBPFreeScanCTA)
+            Text(settingsViewModel.hasCompletedFreemiumScan
+                 ? UserText.settingsPProFreemiumDBPShowResultsCTA
+                 : UserText.settingsPProFreemiumDBPFreeScanCTA)
                 .daxBodyRegular()
                 .foregroundColor(Color(designSystemColor: .accentPrimary))
                 .padding(.leading, 32.0)

@@ -500,6 +500,7 @@ extension MainViewController {
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
                                                   freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                                   profileStateManager: profileStateManager,
+                                                  freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,

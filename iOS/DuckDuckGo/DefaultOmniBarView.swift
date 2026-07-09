@@ -1081,8 +1081,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             activeOutlineView.layer.borderColor = fireMode
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor
-        } else {
+        } else if isFloatingUIEnabled {
             setFieldBackgroundColor(opaqueFieldBackgroundColor)
+            activeOutlineView.layer.borderColor = fireMode
+                ? UIColor(singleUseColor: .fireModeAccent).cgColor
+                : UIColor(designSystemColor: .accentPrimary).cgColor
+        } else {
+            // Floating UI off (production): preserve the original fire-mode fill so the
+            // fire-mode omnibar colour is unchanged from `main`.
+            setFieldBackgroundColor(fireMode
+                ? UIColor(singleUseColor: .fireModeCardBackground)
+                : restingFieldBackgroundColor)
             activeOutlineView.layer.borderColor = fireMode
                 ? UIColor(singleUseColor: .fireModeAccent).cgColor
                 : UIColor(designSystemColor: .accentPrimary).cgColor

@@ -2346,10 +2346,9 @@ class MainViewController: UIViewController {
         updateScrollInteractionIfNeeded()
     }
 
-    var bottomBarInteraction: UIInteraction?
-    var bottomCapsuleInteraction: UIInteraction?
-    var topBarInteraction: UIInteraction?
-    var topCapsuleInteraction: UIInteraction?
+    /// iOS 26 scroll-edge chrome interactions, tracked together so they can be torn down and
+    /// reattached as a unit whenever the visible page changes (see `updateScrollInteractionIfNeeded`).
+    private var scrollEdgeInteractions: [UIInteraction] = []
 
     private func addToContentContainer(controller: UIViewController) {
         viewCoordinator.contentContainer.isHidden = false
@@ -4611,43 +4610,30 @@ extension MainViewController: OmniBarDelegate {
         guard #available(iOS 26, *) else { return }
         guard floatingUIManager.isFloatingUIEnabled else { return }
 
-        if let topBarInteraction {
-            omniBar.barView.removeInteraction(topBarInteraction)
-            self.topBarInteraction = nil
-        }
-        if let topCapsuleInteraction {
-            floatingDomainCapsuleController.button.removeInteraction(topCapsuleInteraction)
-            self.topCapsuleInteraction = nil
-        }
-        if let bottomBarInteraction {
-            viewCoordinator.toolbar.removeInteraction(bottomBarInteraction)
-            self.bottomBarInteraction = nil
-        }
-        if let bottomCapsuleInteraction {
-            floatingDomainCapsuleController.button.removeInteraction(bottomCapsuleInteraction)
-            self.bottomCapsuleInteraction = nil
-        }
+        // Detach any existing interactions from whatever views they're currently installed in.
+        scrollEdgeInteractions.forEach { $0.view?.removeInteraction($0) }
+        scrollEdgeInteractions.removeAll()
 
         // The scroll-edge chrome must track the currently visible scroll view. On the NTP (or any
         // tab without a web view) there's no scroll view to track, so we leave the interactions
         // detached rather than pointing them at a dismissed tab's scroll view.
         guard let scrollView = currentTab?.webView?.scrollView else { return }
 
-        func attach(to view: UIView, onEdge edge: UIRectEdge) -> UIInteraction {
+        func attach(to view: UIView, onEdge edge: UIRectEdge) {
             let interaction = UIScrollEdgeElementContainerInteraction()
             interaction.scrollView = scrollView
             interaction.edge = edge
             view.addInteraction(interaction)
-            return interaction
+            scrollEdgeInteractions.append(interaction)
         }
 
         if appSettings.currentAddressBarPosition == .top {
-            topBarInteraction = attach(to: omniBar.barView, onEdge: .top)
-            topCapsuleInteraction = attach(to: floatingDomainCapsuleController.button, onEdge: .top)
+            attach(to: omniBar.barView, onEdge: .top)
+            attach(to: floatingDomainCapsuleController.button, onEdge: .top)
         } else {
-            bottomCapsuleInteraction = attach(to: floatingDomainCapsuleController.button, onEdge: .bottom)
+            attach(to: floatingDomainCapsuleController.button, onEdge: .bottom)
         }
-        bottomBarInteraction = attach(to: viewCoordinator.toolbar, onEdge: .bottom)
+        attach(to: viewCoordinator.toolbar, onEdge: .bottom)
     }
 
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {

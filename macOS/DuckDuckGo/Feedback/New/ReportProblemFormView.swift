@@ -51,6 +51,8 @@ final class ReportProblemFormViewController: NSHostingController<ReportProblemFo
 struct ReportProblemFormFlowView: View {
     @StateObject private var viewModel: ReportProblemFormViewModel
 
+    let isAppRebranded: Bool
+
     var onClose: () -> Void
     var onSeeWhatsNew: () -> Void
     var onResize: (CGFloat, CGFloat) -> Void
@@ -60,6 +62,7 @@ struct ReportProblemFormFlowView: View {
         onReportBrokenSite: (() -> Void)?,
         preselectedCategory: ProblemCategory? = nil,
         preselectedSubCategory: SubCategory? = nil,
+        isAppRebranded: Bool,
         onClose: @escaping () -> Void,
         onSeeWhatsNew: @escaping () -> Void,
         onResize: @escaping (CGFloat, CGFloat) -> Void
@@ -70,6 +73,7 @@ struct ReportProblemFormFlowView: View {
             preselectedCategory: preselectedCategory,
             preselectedSubCategory: preselectedSubCategory
         ))
+        self.isAppRebranded = isAppRebranded
         self.onClose = onClose
         self.onSeeWhatsNew = onSeeWhatsNew
         self.onResize = onResize
@@ -112,6 +116,7 @@ struct ReportProblemFormFlowView: View {
             } else if viewModel.isShowingCategorySelection {
                 ProblemCategoriesView(
                     viewModel: viewModel,
+                    isAppRebranded: isAppRebranded,
                     onClose: onClose
                 )
                 .onAppear {
@@ -131,6 +136,7 @@ struct ReportProblemFormFlowView: View {
 
 struct ProblemCategoriesView: View {
     @ObservedObject var viewModel: ReportProblemFormViewModel
+    let isAppRebranded: Bool
     var onClose: () -> Void
 
     var body: some View {
@@ -145,7 +151,7 @@ struct ProblemCategoriesView: View {
 
     private func header() -> some View {
         HStack(spacing: 12) {
-            Image(.feedbackAsk)
+            Image(isAppRebranded ? .feedbackNegative56 : .feedbackAsk)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(UserText.reportBrowserProblem)

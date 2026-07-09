@@ -45,6 +45,7 @@ final class RequestNewFeatureFormViewController: NSHostingController<RequestNewF
 
 struct RequestNewFeatureFormFlowView: View {
     @State private var showThankYou = false
+    let isAppRebranded: Bool
     var onClose: () -> Void
     var onSeeWhatsNew: () -> Void
     var onResize: (CGFloat, CGFloat) -> Void
@@ -66,6 +67,7 @@ struct RequestNewFeatureFormFlowView: View {
                 }
             } else {
                 RequestNewFeatureFormView(
+                    isAppRebranded: isAppRebranded,
                     onSubmit: {
                         showThankYou = true
                     },
@@ -87,6 +89,8 @@ struct RequestNewFeatureFormFlowView: View {
 
 struct RequestNewFeatureFormView: View {
     @ObservedObject var viewModel: RequestNewFeatureViewModel = .init()
+
+    let isAppRebranded: Bool
 
     var onSubmit: () -> Void
     var onClose: () -> Void
@@ -152,7 +156,7 @@ struct RequestNewFeatureFormView: View {
 
     private func header() -> some View {
         HStack(spacing: 12) {
-            Image(.feedbackAsk)
+            Image(isAppRebranded ? .feedbackPositive56 : .feedbackAsk)
 
             VStack(alignment: .leading, spacing: 8) {
 

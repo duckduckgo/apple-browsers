@@ -380,7 +380,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.updateContext(makeTestContext(title: "Page A", url: pageURL.absoluteString))
         sessionState.handleSheetDismissed()
 
-        let didClear = sessionState.clearPreSubmitManualContextIfStale(for: pageURL)
+        let didClear = sessionState.clearManualContextIfStale(for: pageURL)
 
         XCTAssertFalse(didClear)
         if case .attached(let attachedContext) = sessionState.chipState {
@@ -398,7 +398,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.updateContext(makeTestContext(title: "Page A", url: attachedURL.absoluteString))
         sessionState.handleSheetDismissed()
 
-        let didClear = sessionState.clearPreSubmitManualContextIfStale(for: currentPageURL)
+        let didClear = sessionState.clearManualContextIfStale(for: currentPageURL)
 
         XCTAssertFalse(didClear)
         if case .attached(let attachedContext) = sessionState.chipState {
@@ -416,7 +416,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.updateContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
         sessionState.handleSheetDismissed()
 
-        let didClear = sessionState.clearPreSubmitManualContextIfStale(for: pageBURL)
+        let didClear = sessionState.clearManualContextIfStale(for: pageBURL)
 
         XCTAssertTrue(didClear)
         XCTAssertEqual(sessionState.chipState, .placeholder)
@@ -425,7 +425,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
-    func testManualAttachWithAutoAttachOffDoesNotClearActiveChatOnDifferentPageReopen() {
+    func testManualAttachWithAutoAttachOffClearsActiveChatOnDifferentPageReopen() {
         let pageAURL = URL(string: "https://example.com/page-a")!
         let pageBURL = URL(string: "https://example.com/page-b")!
         mockSettings.isAutomaticContextAttachmentEnabled = false
@@ -434,14 +434,11 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.beginChatForUTISubmission()
         sessionState.handleSheetDismissed()
 
-        let didClear = sessionState.clearPreSubmitManualContextIfStale(for: pageBURL)
+        let didClear = sessionState.clearManualContextIfStale(for: pageBURL)
 
-        XCTAssertFalse(didClear)
-        if case .attached(let attachedContext) = sessionState.chipState {
-            XCTAssertEqual(attachedContext.title, "Page A")
-        } else {
-            XCTFail("Expected active chat context to survive sheet dismiss")
-        }
+        XCTAssertTrue(didClear)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+        XCTAssertNil(sessionState.latestContext)
     }
 
     func testCancelManualAttach() {

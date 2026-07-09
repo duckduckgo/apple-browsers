@@ -199,7 +199,7 @@ final class AIChatContextualSheetCoordinator {
                       restoreURL: URL? = nil) async {
         sessionState.refreshAutoAttachSetting()
         sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
-        clearStalePreSubmitManualContextIfNeeded()
+        clearStaleManualContextIfNeeded()
 
         startObservingContextUpdates()
 
@@ -454,8 +454,8 @@ private extension AIChatContextualSheetCoordinator {
         }
     }
 
-    func clearStalePreSubmitManualContextIfNeeded() {
-        guard sessionState.clearPreSubmitManualContextIfStale(for: currentPageURL) else { return }
+    func clearStaleManualContextIfNeeded() {
+        guard sessionState.clearManualContextIfStale(for: currentPageURL) else { return }
         pageContextHandler.clearAttachedContext()
         persistentUTIHost?.clearAttachedContext()
     }

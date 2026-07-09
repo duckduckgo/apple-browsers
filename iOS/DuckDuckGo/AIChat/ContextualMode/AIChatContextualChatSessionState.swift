@@ -477,12 +477,11 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
-    /// Clears pre-submit manual context when reopening on a different page.
+    /// Clears manual context when reopening on a different page.
     /// Auto-attach-off manual context remains sticky while the sheet is open, including across
     /// navigation and same-page reopen, but it should not leak into another page's sheet session.
-    func clearPreSubmitManualContextIfStale(for currentPageURL: URL?) -> Bool {
+    func clearManualContextIfStale(for currentPageURL: URL?) -> Bool {
         guard !shouldAutoCollectContext,
-              frontendState == .noChat,
               case .attached(let context) = chipState,
               let currentPageURL,
               let attachedURL = URL(string: context.contextData.url),
@@ -494,7 +493,7 @@ final class AIChatContextualChatSessionState {
         latestContext = nil
         userDowngradedToPlaceholder = false
         rebuildViewState()
-        Logger.aiChat.debug("[SessionState] Cleared stale pre-submit manual context on sheet present")
+        Logger.aiChat.debug("[SessionState] Cleared stale manual context on sheet present")
         return true
     }
 

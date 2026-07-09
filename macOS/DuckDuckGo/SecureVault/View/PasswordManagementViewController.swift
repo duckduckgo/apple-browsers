@@ -1331,7 +1331,7 @@ extension PasswordManagementViewController: ThemeUpdateListening {
             emptyStateImportButton.wantsLayer = true
             emptyStateSyncButton.wantsLayer = true
 
-            emptyStateImportButton.contentTintColor = .white
+            emptyStateImportButton.contentTintColor = palette.accentContentPrimary
             emptyStateSyncButton.contentTintColor = palette.textPrimary
 
             emptyStateImportButton.layer?.backgroundColor = palette.accentPrimary.cgColor

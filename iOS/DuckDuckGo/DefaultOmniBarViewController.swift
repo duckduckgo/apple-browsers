@@ -343,7 +343,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         omniBarView.setLayoutMode(newMode, animated: isExpandedPhone)
 
-        let clearButtonHidden = isClearButtonHidden(for: state)
+        let clearButtonHidden = shouldHideClearButton(for: state)
         omniBarView.isClearButtonHidden = clearButtonHidden
 
         let hasTrailingAccessory = state.showAIChatButton || state.showAIChatModeToggle
@@ -354,7 +354,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     /// Whether the clear button should be hidden for `state`.
-    func isClearButtonHidden(for state: any OmniBarState) -> Bool {
+    func shouldHideClearButton(for state: any OmniBarState) -> Bool {
         if omniBarView.isSearchAreaExpanded {
             return (omniBarView.aiChatTextView.text ?? "").isEmpty
         }

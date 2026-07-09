@@ -274,6 +274,9 @@
                     }
                 }
             }
+        },
+        "context": {
+            "name": ["funnel_default_macos"]
         }
     }
 }

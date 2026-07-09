@@ -3,7 +3,7 @@
     "description": "Sent at the end of a data clearing (Fire) flow, capturing the overall outcome plus per-action timing, status, and errors for each data category cleared. The journey resolves to SUCCESS when clearing completes, or UNKNOWN when it is orphaned and resolved on a later launch.",
     "$comment": "{\"owners\":[\"hanyutang-sandra\"]}",
     "type": "object",
-    "required": ["meta", "global", "feature", "app"],
+    "required": ["meta", "global", "feature", "app", "context"],
     "additionalProperties": false,
     "properties": {
         "meta": {
@@ -1490,6 +1490,12 @@
                     }
                 }
             }
+        },
+        "context": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": { "name": { "type": "string", "description": "Context name for the event", "enum": ["funnel_default_ios"] } }
         }
     }
 }

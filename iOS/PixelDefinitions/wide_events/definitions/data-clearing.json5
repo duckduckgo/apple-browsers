@@ -257,6 +257,9 @@
                     }
                 }
             }
+        },
+        "context": {
+            "name": ["funnel_default_ios"]
         }
     }
 }

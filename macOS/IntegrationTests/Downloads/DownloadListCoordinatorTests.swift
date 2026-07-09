@@ -480,6 +480,123 @@ final class DownloadListCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.downloads(sortedBy: \.modified, ascending: true).count, 1)
     }
 
+    // When a retry task is created with .resume(dest, temp) but fails with "no space left"
+    // before start() is called, failDestination is invoked while state is still
+    // .initial(.resume(dest, temp)). finish(isRetryable:false) can then read
+    // state.destinationFilePresenter and state.tempFilePresenter and pass them to
+    // cleanupNonRetryableDownload, which deletes both files immediately.
+    @MainActor
+    func testWhenRetryFailsNonRetryablyThenOldTempFilesAreCleaned() {
+        let (download, task, id) = setUpCoordinatorAndAddDownload()
+
+        // 1. First failure — retryable; files are kept on disk for the retry.
+        let firstFailed = expectation(description: "first failure")
+        let c1 = coordinator.updates.sink { update in
+            guard case .updated = update.kind, update.item.error != nil else { return }
+            firstFailed.fulfill()
+        }
+        task.download(download.asWKDownload(), didFailWithError: TestError(), resumeData: .resumeData)
+        waitForExpectations(timeout: 5)
+        c1.cancel()
+
+        XCTAssertTrue(fm.fileExists(atPath: destURL.path), "dest placeholder must survive a retryable failure")
+        XCTAssertTrue(fm.fileExists(atPath: tempURL.path), ".duckload must survive a retryable failure")
+
+        // 2. Restart — coordinator calls resumeDownload and provides .resume(dest, temp).
+        //    start() is intentionally NOT called so the task stays in .initial(.resume(dest, temp)),
+        //    representing the case where disk space is exhausted before writing begins.
+        var retryTask: WebKitDownloadTask?
+
+        webView.resumeDownloadBlock = { _ in WKDownloadMock(url: .duckDuckGo) }
+        webView.startDownloadBlock = { _ in XCTFail("unexpected startDownload"); return nil }
+
+        downloadManager.addDownloadBlock = { [unowned self] download, _, destination in
+            let t = WebKitDownloadTask(download: download, destination: destination, fireWindowSession: nil)
+            retryTask = t
+            self.downloadManager.downloadAddedSubject.send(t)
+            // start() deliberately omitted — task stays in .initial(.resume(dest, temp))
+            return t
+        }
+
+        let retryStarted = expectation(description: "retry started — error cleared")
+        let c2 = coordinator.updates.sink { update in
+            guard case .updated = update.kind, update.item.error == nil else { return }
+            retryStarted.fulfill()
+        }
+        coordinator.restart(downloadWithIdentifier: id)
+        waitForExpectations(timeout: 5)
+        c2.cancel()
+
+        guard let retryTask else {
+            XCTFail("retry task was not created")
+            return
+        }
+
+        // 3. Disk full — failDestination is valid here because state is still .initial.
+        //    finish(isRetryable:false) reads state.destinationFilePresenter / tempFilePresenter
+        //    from .initial(.resume(dest, temp)) and passes them to cleanupNonRetryableDownload.
+        let retryFailed = expectation(description: "retry failed non-retryably")
+        var c3: AnyCancellable?
+        c3 = coordinator.updates.sink { update in
+            guard case .updated = update.kind,
+                  let error = update.item.error else { return }
+            XCTAssertFalse(error.isRetryable)
+            retryFailed.fulfill()
+            c3?.cancel()
+        }
+        retryTask.failDestination(with: CocoaError(.fileWriteOutOfSpace))
+        waitForExpectations(timeout: 5)
+        c3 = nil
+
+        let filesDeleted = XCTNSPredicateExpectation(predicate: NSPredicate { [fm, destURL, tempURL] _, _ in
+            !fm.fileExists(atPath: destURL!.path) && !fm.fileExists(atPath: tempURL!.path)
+        }, object: nil)
+        wait(for: [filesDeleted], timeout: 5)
+
+        XCTAssertFalse(fm.fileExists(atPath: destURL.path),
+                       "Destination placeholder must be deleted when a retry fails with no space left")
+        XCTAssertFalse(fm.fileExists(atPath: tempURL.path),
+                       "Temp .duckload file must be deleted when a retry fails with no space left")
+    }
+
+    // When the user removes a retryably-failed download, both its .duckload temp file and
+    // zero-byte destination placeholder must be deleted by cleanupTempFiles.
+    @MainActor
+    func testWhenFailedDownloadRemovedThenTempFilesAreDeleted() {
+        let (download, task, id) = setUpCoordinatorAndAddDownload()
+
+        let failed = expectation(description: "retryable failure")
+        let c1 = coordinator.updates.sink { update in
+            guard case .updated = update.kind, update.item.error != nil else { return }
+            failed.fulfill()
+        }
+        task.download(download.asWKDownload(), didFailWithError: TestError(), resumeData: .resumeData)
+        waitForExpectations(timeout: 5)
+        c1.cancel()
+
+        XCTAssertTrue(fm.fileExists(atPath: destURL.path))
+        XCTAssertTrue(fm.fileExists(atPath: tempURL.path))
+
+        let removed = expectation(description: "item removed")
+        let c2 = coordinator.updates.sink { update in
+            guard case .removed = update.kind else { return }
+            removed.fulfill()
+        }
+        _=coordinator.remove(downloadWithIdentifier: id)
+        waitForExpectations(timeout: 5)
+        c2.cancel()
+
+        let filesDeleted = XCTNSPredicateExpectation(predicate: NSPredicate { [fm, destURL, tempURL] _, _ in
+            !fm.fileExists(atPath: destURL!.path) && !fm.fileExists(atPath: tempURL!.path)
+        }, object: nil)
+        wait(for: [filesDeleted], timeout: 5)
+
+        XCTAssertFalse(fm.fileExists(atPath: destURL.path),
+                       "Destination placeholder must be deleted when a retryable-failed download is removed")
+        XCTAssertFalse(fm.fileExists(atPath: tempURL.path),
+                       "Temp .duckload file must be deleted when a retryable-failed download is removed")
+    }
+
     @MainActor
     func testWhenDownloadRestartedWithoutResumeDataThenDownloadIsStarted() throws {
         var item: DownloadListItem = .testFailedItem

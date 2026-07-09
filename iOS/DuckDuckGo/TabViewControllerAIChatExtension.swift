@@ -92,7 +92,9 @@ extension TabViewController: AITabController {
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction() {
-        aiChatContentHandler.submitStartChatAction()
+        Task { @MainActor in
+            await aiChatContentHandler.submitStartChatAction()
+        }
     }
 
     /// Submits an open settings action to open the AI Chat settings.

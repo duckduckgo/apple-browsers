@@ -117,6 +117,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// App rebranding feature flag
     case appRebranding
 
+    /// New Tab Page rebranding feature flag
+    case newTabPageRebranding
+
     /// Remote kill switch for native unsupported-OS messaging (launch alert, About/Feedback info box).
     /// Enabled by default; set to `disabled` in privacy config to suppress the messaging.
     case osSupportWarning
@@ -319,6 +322,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215816968312844?focus=true
     case staleFaviconCleanup
+
+    /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
+    case searchTokenExperiment
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -412,6 +419,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case sidebarSuggestedPrompts
 
+    /// Context-aware page suggestions shown in the iOS contextual Duck.ai sheet
+    case contextualSuggestedPrompts
+
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 
@@ -460,6 +470,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// regardless of the user's `Settings → Address Bar → Show Duck.ai Toggle` preference. Lets us
     /// roll out the new Duck.ai-tab nav UI (no toggle on chat) independently of the master flag.
     case aiChatTabHideToggle
+
+    /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
+    case contextualUnifiedToggleInput
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
@@ -515,9 +528,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables voice chat shortcut in the focused address bar
     case voiceShortcut
-
-    /// Enables improved contextual sheet UX (welcome message, ask about page, etc.)
-    case contextualSheetImprovements
 
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
@@ -592,6 +602,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the native Duck.ai bar controls (model picker) in the iPad address bar's
     /// expanded Duck.ai input area.
     case iPadDuckAIBarControls
+
+    /// Enables the macOS native "Customize Responses" UI (omnibar + New Tab Page entry points).
+    case customizeResponses
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -604,6 +617,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
+
+    /// Global switch to disable advanced card ordering for the Next Steps List widget
+    case nextStepsListAdvancedCardOrdering
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -698,6 +714,7 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case filterlist
     case heuristicAction
     case cookiePopupPreferenceSetting
+    case cookiePopupOptInDialog
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
@@ -715,6 +732,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
+    case subscriptionExpirationReminderNotification
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

@@ -90,10 +90,10 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         // With Unified Toggle Input on, the Duck.ai "Chats" row moves into its own Duck.ai cluster below.
         let duckAIItems = entryBuilder.makeDuckAIMenuItems()
         let shortcutsItems: [BrowsingMenuModel.Entry] = [
-            .init(duckAIItems.isEmpty ? entryBuilder.makeDuckAiChatsEntry() : nil),
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
-            .init(entryBuilder.makeDownloadsEntry())
+            .init(entryBuilder.makeDownloadsEntry()),
+            .init(duckAIItems.isEmpty ? entryBuilder.makeDuckAiChatsEntry() : nil)
         ].compactMap { $0 }
 
         // MARK: Privacy group
@@ -181,10 +181,10 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         // With Unified Toggle Input on, the Duck.ai "Chats" row moves into its own Duck.ai cluster below.
         let duckAIItems = entryBuilder.makeDuckAIMenuItems()
         let shortcutItems: [BrowsingMenuModel.Entry] = [
-            .init(duckAIItems.isEmpty ? entryBuilder.makeDuckAiChatsEntry() : nil),
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
-            .init(entryBuilder.makeDownloadsEntry())
+            .init(entryBuilder.makeDownloadsEntry()),
+            .init(duckAIItems.isEmpty ? entryBuilder.makeDuckAiChatsEntry() : nil)
         ].compactMap { $0 }
 
         appendSection(shortcutItems, to: &sections)

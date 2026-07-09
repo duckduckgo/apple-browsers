@@ -189,7 +189,8 @@ jobs:
           {"test-tag":"device_info","exclude-tags":"ipad","device-model":"iPhone-16","device":"iphone"},
           {"test-tag":"device_info","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},
           {"test-tag":"duckplayer_classic","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},
-          {"test-tag":"duckai_chrome_shortcut","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"}
+          {"test-tag":"duckai_chrome_shortcut","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"},
+          {"test-tag":"ipad_duckai","exclude-tags":"iphone","device-model":"iPad-10th-generation","device":"ipad"}
         ]'
         # Comma-separated suite tags from dispatch -> trimmed JSON array; empty = all suites.
         tags=$(jq -nc --arg s "$input_tags" '$s | split(",") | map(gsub("^\\s+|\\s+$";"")) | map(select(length > 0))')

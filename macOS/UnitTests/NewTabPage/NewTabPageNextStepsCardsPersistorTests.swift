@@ -332,4 +332,38 @@ final class NewTabPageNextStepsCardsPersistorTests: XCTestCase {
         try keyValueStore.set(3, forKey: "new.tab.page.next.steps.ntp.impression.count")
         XCTAssertEqual(persistor.ntpImpressionCount, 3)
     }
+
+    // MARK: - Daily Visible Stack Tests
+
+    func testWhenNoValuesAreStoredThenDailyVisibleStackIsNil() {
+        XCTAssertNil(persistor.dailyVisibleStack)
+    }
+
+    func testWhenNoValuesAreStoredThenVisibleStackDayIdentifierIsNil() {
+        XCTAssertNil(persistor.visibleStackDayIdentifier)
+    }
+
+    func testWhenDailyVisibleStackIsSetThenValueIsStored() throws {
+        persistor.dailyVisibleStack = [.personalizeBrowser, .sync, .emailProtection]
+        XCTAssertEqual(
+            try keyValueStore.object(forKey: "new.tab.page.next.steps.daily.visible.stack") as? [String],
+            ["personalizeBrowser", "sync", "emailProtection"]
+        )
+    }
+
+    func testWhenVisibleStackDayIdentifierIsSetThenValueIsStored() throws {
+        persistor.visibleStackDayIdentifier = 3
+        XCTAssertEqual(
+            try keyValueStore.object(forKey: "new.tab.page.next.steps.visible.stack.day.identifier") as? Int,
+            3
+        )
+    }
+
+    func testWhenClearIsCalledThenDailyVisibleStackAndDayIdentifierAreRemoved() {
+        persistor.dailyVisibleStack = [.sync]
+        persistor.visibleStackDayIdentifier = 2
+        persistor.clear()
+        XCTAssertNil(persistor.dailyVisibleStack)
+        XCTAssertNil(persistor.visibleStackDayIdentifier)
+    }
 }

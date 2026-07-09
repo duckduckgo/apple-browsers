@@ -8986,66 +8986,6 @@
         }
       }
     },
-    "autoconsent.checkbox.title" : {
-      "comment" : "Autoconsent settings checkbox title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cookie-Pop-ups automatisch verwalten"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Automatically handle cookie pop-ups"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gestionar automáticamente las ventanas emergentes de cookies"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gérer automatiquement les fenêtres contextuelles des cookies"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gestisci automaticamente i pop-up dei cookie"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatisch afhandelen van cookiepop-ups"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatycznie zajmij się wyskakującymi okienkami dotyczącymi plików cookie"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lidar automaticamente com pop-ups de cookies"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Автоматически обрабатывать всплывающие окна куки"
-          }
-        }
-      }
-    },
     "autoconsent.explanation" : {
       "comment" : "Autoconsent feature explanation in settings",
       "extractionState" : "extracted_with_value",
@@ -9059,7 +8999,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "DuckDuckGo will try to select the most private settings available and hide these pop-ups for you."
+            "value" : "DuckDuckGo can auto-manage cookie preferences to maximize privacy, minimize cookies, and close these pop-ups."
           }
         },
         "es" : {
@@ -22712,62 +22652,146 @@
         }
       }
     },
-    "cookie.popup.preference.block-all" : {
-      "comment" : "Cookie pop-up preference option",
+    "cookie-popup-protection.opt-in.badge" : {
+      "comment" : "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Reject, Hide, or Accept"
+            "value" : "New"
           }
         }
       }
     },
-    "cookie.popup.preference.block-standard" : {
-      "comment" : "Cookie pop-up preference option",
+    "cookie-popup-protection.opt-in.confirm" : {
+      "comment" : "Confirm button in the Cookie Pop-up Protection opt-in dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Reject or Hide"
+            "value" : "Confirm"
           }
         }
       }
     },
-    "cookie.popup.preference.do-not-block" : {
-      "comment" : "Cookie pop-up preference option",
+    "cookie-popup-protection.opt-in.disabled.body" : {
+      "comment" : "Body of the opt-in dialog when cookie pop-up protection is off",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Off"
+            "value" : "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you."
           }
         }
       }
     },
-    "cookie.popup.preference.explanation" : {
-      "comment" : "Explanation below cookie pop-up preference picker in settings",
+    "cookie-popup-protection.opt-in.disabled.primary-option" : {
+      "comment" : "Primary option when cookie pop-up protection is off",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Some cookie pop-ups don't have a 'reject' option. By default, we won't block them. Choose **Reject, Hide, or Accept** to let us handle these — we may need to accept some cookies when necessary."
+            "value" : "Manage or accept cookies for me"
           }
         }
       }
     },
-    "cookie.popup.preference.title" : {
-      "comment" : "Title for cookie pop-up preference picker in settings",
+    "cookie-popup-protection.opt-in.disabled.secondary-option" : {
+      "comment" : "Secondary option when cookie pop-up protection is off",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pop-up Setting"
+            "value" : "I'll keep handling them myself"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.disabled.title" : {
+      "comment" : "Title of the opt-in dialog when cookie pop-up protection is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tired of cookie pop-ups that won't leave you alone?"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.enabled.body" : {
+      "comment" : "Body of the opt-in dialog when cookie pop-up protection is already enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We can save you a click and accept these cookies for you."
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.enabled.primary-option" : {
+      "comment" : "Primary option when cookie pop-up protection is already enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Accept no-opt-out cookies for me"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.enabled.secondary-option" : {
+      "comment" : "Secondary option when cookie pop-up protection is already enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I'll keep handling them myself"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.enabled.title" : {
+      "comment" : "Title of the opt-in dialog when cookie pop-up protection is already enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tired of cookie pop-ups that don't let you opt out?"
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.footer" : {
+      "comment" : "Footer text in the Cookie Pop-up Protection opt-in dialog, shown across two lines. The text between ** ** is rendered bold; \\n is an explicit line break.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can always adjust later in:\n**Settings** > **Cookie Pop-Up Protection**."
+          }
+        }
+      }
+    },
+    "cookie-popup-protection.opt-in.header" : {
+      "comment" : "Header of the Cookie Pop-up Protection opt-in dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cookie Pop-up Protection"
           }
         }
       }
@@ -101488,6 +101512,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Запрашивать подтверждение перед закрытием при нажатии ⌘Q"
+          }
+        }
+      }
+    },
+    "settings.cookie.auto-manage.explanation" : {
+      "comment" : "Explanation below the auto-manage cookie pop-ups toggle in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We'll aim to only select the most private cookie options available for you, then close these pop-ups."
+          }
+        }
+      }
+    },
+    "settings.cookie.auto-manage.title" : {
+      "comment" : "Title for the auto-manage cookie pop-ups toggle in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Auto-Manage Cookie Pop-Ups"
+          }
+        }
+      }
+    },
+    "settings.cookie.popups-without-opt-outs.explanation" : {
+      "comment" : "Explanation below the pop-ups without opt-outs toggle in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Also let DuckDuckGo save you a click by accepting cookies on your behalf to close pop-ups that don’t let you opt out."
+          }
+        }
+      }
+    },
+    "settings.cookie.popups-without-opt-outs.title" : {
+      "comment" : "Title for the pop-ups without opt-outs toggle in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pop-Ups Without Opt-Outs"
           }
         }
       }

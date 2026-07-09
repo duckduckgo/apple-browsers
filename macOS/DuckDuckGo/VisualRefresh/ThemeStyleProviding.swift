@@ -93,7 +93,7 @@ struct ThemeStyle: ThemeStyleProviding {
             addressBarStyleProvider: AddressBarStyleProvidingFactory.buildStyleProvider(featureFlagger: featureFlagger),
             navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(),
             tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette),
-            colorsProvider: NewColorsProviding(palette: palette),
+            colorsProvider: ColorsProvidingFactory.buildColorsProvider(featureFlagger: featureFlagger, palette: palette),
             iconsProvider: CurrentIconsProvider(),
             fireButtonSize: 32,
             navigationToolbarButtonsSpacing: 2,

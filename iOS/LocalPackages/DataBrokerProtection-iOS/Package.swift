@@ -45,6 +45,7 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
+                .product(name: "DataBrokerProtectionDebugServer", package: "DataBrokerProtectionCore"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),

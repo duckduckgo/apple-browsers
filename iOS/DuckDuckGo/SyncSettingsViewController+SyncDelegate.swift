@@ -173,6 +173,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
                     return
                 }
+                if useSimplifiedLayoutV2 {
+                    optionsViewModel.connectingSheetPhase = .connecting
+                }
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                 let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                 try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
@@ -184,13 +187,20 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
 
-                let didShowPrompt = optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
-                if didShowPrompt {
-                    optionsViewModel.scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
+                if useSimplifiedLayoutV2 {
+                    optionsViewModel.showSyncWithAnotherDeviceInConnectingSheet()
                 } else {
-                    self.showSimplifiedSyncEnabledToast()
+                    let didShowPrompt = optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
+                    if didShowPrompt {
+                        optionsViewModel.scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
+                    } else {
+                        self.showSimplifiedSyncEnabledToast()
+                    }
                 }
             } catch {
+                if useSimplifiedLayoutV2 {
+                    optionsViewModel.connectingSheetPhase = nil
+                }
                 self.firePixelIfNeededFor(event: .syncSignupError, error: error)
                 ActionMessageView.present(message: UserText.simplifiedSyncSetupFailedToast)
             }
@@ -454,6 +464,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         controller.sheetPresentationController?.detents = [.large()]
         navigationController.present(controller, animated: true, completion: completion)
     }
+
 
     @MainActor
     func performDeferredPreservedAccountCleanupIfNeeded() async -> Bool {

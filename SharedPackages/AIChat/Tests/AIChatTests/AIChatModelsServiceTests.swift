@@ -19,6 +19,7 @@
 import XCTest
 import AIChat
 
+@MainActor
 final class AIChatModelsServiceTests: XCTestCase {
 
     // MARK: - JSON Decoding Tests
@@ -810,6 +811,7 @@ final class AIChatModelsServiceTests: XCTestCase {
 
 // MARK: - Mocks
 
+@MainActor
 private final class MockCookieProvider: AIChatCookieProviding {
     var cookiesToReturn: [HTTPCookie] = []
 

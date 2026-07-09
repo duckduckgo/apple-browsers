@@ -301,6 +301,7 @@ extension AppDelegate {
             },
             preselectedCategory: category,
             preselectedSubCategory: subcategory,
+            isAppRebranded: Application.appDelegate.themeManager.isAppRebranded,
             onClose: {
                 window?.close()
             },
@@ -349,6 +350,7 @@ extension AppDelegate {
         var window: NSWindow?
 
         let formView = RequestNewFeatureFormFlowView(
+            isAppRebranded: Application.appDelegate.themeManager.isAppRebranded,
             onClose: {
                 window?.close()
             },

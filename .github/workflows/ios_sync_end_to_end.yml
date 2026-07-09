@@ -155,7 +155,7 @@ jobs:
         mode: start
 
     - name: Create test account for Sync and return the recovery code
-      uses: duckduckgo/sync_crypto/action@main
+      uses: duckduckgo/sync_crypto/action@chore/github-action-node24-runtime
       id: sync-recovery-code
       with:
         debug: true

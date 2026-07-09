@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "onboarding.browsers.features.cookiePopupsAndAds.title" : {
+      "comment" : "Message to highlight how the browser allows you to block cookie pop-ups and ads",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Block targeted ads & cookie pop-ups"
+          }
+        }
+      }
+    },
     "onboarding.browsers.features.privateSearch.title" : {
       "comment" : "Message to highlight browser capability of private searches",
       "extractionState" : "extracted_with_value",

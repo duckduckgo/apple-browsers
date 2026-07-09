@@ -71,8 +71,7 @@ extension RebrandedComparisonTableModel {
         Feature(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available),
         Feature(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.privateAIChat, competitorAvailability: .unavailable, ddgAvailability: .available),
         Feature(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.blockTrackers, competitorAvailability: .partial, ddgAvailability: .available),
-        Feature(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.blockCookies, competitorAvailability: .unavailable, ddgAvailability: .available),
-        Feature(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.blockAds, competitorAvailability: .unavailable, ddgAvailability: .available),
+        Feature(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.blockCookiesAndAds, competitorAvailability: .unavailable, ddgAvailability: .available),
         Feature(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.blockYouTubeAds, competitorAvailability: .unavailable, ddgAvailability: .available),
     ]
 
@@ -84,8 +83,7 @@ extension RebrandedComparisonTableModel.Feature {
         case privateSearch
         case privateAIChat
         case blockTrackers
-        case blockCookies
-        case blockAds
+        case blockCookiesAndAds
         case blockYouTubeAds
         case eraseData
 
@@ -97,10 +95,8 @@ extension RebrandedComparisonTableModel.Feature {
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateAIChat
             case .blockTrackers:
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.trackerBlockers
-            case .blockCookies:
-                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopups
-            case .blockAds:
-                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.creepyAds
+            case .blockCookiesAndAds:
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopupsAndAds
             case .blockYouTubeAds:
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.duckplayer
             case .eraseData:
@@ -116,9 +112,7 @@ extension RebrandedComparisonTableModel.Feature {
                 OnboardingRebrandingImages.Comparison.privateAIChatIcon
             case .blockTrackers:
                 OnboardingRebrandingImages.Comparison.shieldIcon
-            case .blockCookies:
-                OnboardingRebrandingImages.Comparison.blockCookiesIcon
-            case .blockAds:
+            case .blockCookiesAndAds:
                 OnboardingRebrandingImages.Comparison.blockAdsIcon
             case .blockYouTubeAds:
                 OnboardingRebrandingImages.Comparison.blockYouTubeAdsIcon

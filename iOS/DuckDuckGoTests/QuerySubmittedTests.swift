@@ -130,6 +130,47 @@ class QuerySubmittedTests: XCTestCase {
         XCTAssertFalse(mock.wasOnOmniQuerySubmittedCalled)
     }
 
+    // MARK: - Clear button visibility (iPad duck.ai expanded panel)
+
+    func testWhenSearchAreaExpandedAndDuckAIFieldEmptyThenClearButtonIsHidden() throws {
+        sut.loadViewIfNeeded()
+        let expandable = try XCTUnwrap(sut.expandableBarView, "iPad omni bar should expose an expandable bar view")
+
+        expandable.aiChatTextView.text = ""
+        expandable.setSearchAreaExpanded(true, animated: false)
+
+        // A text-editing state reports showClear == true; before the fix the clear button followed
+        // the state machine and lingered over the empty duck.ai field (the reported bug).
+        let textEditingState = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(), isLoading: false)
+        XCTAssertTrue(textEditingState.showClear)
+        XCTAssertTrue(sut.isClearButtonHidden(for: textEditingState))
+    }
+
+    func testWhenSearchAreaExpandedAndDuckAIFieldHasTextThenClearButtonIsVisible() throws {
+        sut.loadViewIfNeeded()
+        let expandable = try XCTUnwrap(sut.expandableBarView)
+
+        expandable.aiChatTextView.text = "best places to visit in japan"
+        expandable.setSearchAreaExpanded(true, animated: false)
+
+        let textEditingState = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(), isLoading: false)
+        XCTAssertFalse(sut.isClearButtonHidden(for: textEditingState))
+    }
+
+    func testWhenSearchAreaNotExpandedThenClearButtonFollowsStateShowClear() throws {
+        sut.loadViewIfNeeded()
+        let expandable = try XCTUnwrap(sut.expandableBarView)
+
+        // Not expanded: the search text field governs, so the state machine's showClear is
+        // authoritative regardless of the (unused) aiChatTextView content.
+        expandable.aiChatTextView.text = "stale text"
+        expandable.setSearchAreaExpanded(false, animated: false)
+
+        let dependencies = MockOmnibarDependency()
+        XCTAssertFalse(sut.isClearButtonHidden(for: LargeOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: false)))
+        XCTAssertTrue(sut.isClearButtonHidden(for: LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false)))
+    }
+
     // MARK: - Helper Methods
 
     private func assertQuerySubmission(query: String, expected: String) {

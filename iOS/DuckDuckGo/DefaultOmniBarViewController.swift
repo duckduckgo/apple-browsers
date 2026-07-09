@@ -343,11 +343,22 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         omniBarView.setLayoutMode(newMode, animated: isExpandedPhone)
 
+        let clearButtonHidden = isClearButtonHidden(for: state)
+        omniBarView.isClearButtonHidden = clearButtonHidden
+
         let hasTrailingAccessory = state.showAIChatButton || state.showAIChatModeToggle
-        let hasAdjacentButton = state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showCustomizableButton
+        let hasAdjacentButton = !clearButtonHidden || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showCustomizableButton
         omniBarView.isShowingSeparator = hasTrailingAccessory && hasAdjacentButton
 
         updateShadowAppearanceByApplyingLayerMask()
+    }
+
+    /// Whether the clear button should be hidden for `state`.
+    func isClearButtonHidden(for state: any OmniBarState) -> Bool {
+        if omniBarView.isSearchAreaExpanded {
+            return (omniBarView.aiChatTextView.text ?? "").isEmpty
+        }
+        return !state.showClear
     }
 
     override func useSmallTopSpacing() {

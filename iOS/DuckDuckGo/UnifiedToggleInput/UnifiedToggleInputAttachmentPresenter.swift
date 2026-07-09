@@ -49,15 +49,16 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         photoSelectionLimit: Int,
         canAttachFile: Bool,
         allowedFileTypes: [UTType],
+        showsPageContextAction: Bool = false,
         pageContextActionHandler: (() -> Void)? = nil
     ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
         let canTakePhoto = canAttachPhoto && UIImagePickerController.isSourceTypeAvailable(.camera)
         let canAttachAllowedFile = canAttachFile && !allowedFileTypes.isEmpty
         let canAttachPageContext = pageContextActionHandler != nil
-        guard canTakePhoto || canAttachPhoto || canAttachAllowedFile || canAttachPageContext else { return nil }
+        guard canTakePhoto || canAttachPhoto || canAttachAllowedFile || showsPageContextAction else { return nil }
 
-        let actions = [
+        var actions = [
             UIAction(
                 title: UserText.aiChatAttachmentOptionTakePhoto,
                 image: DesignSystemImages.Glyphs.Size16.camera,
@@ -84,16 +85,21 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                 guard canAttachAllowedFile else { return }
                 guard let presenter = presenterProvider() else { return }
                 self?.presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
-            },
-            UIAction(
-                title: UserText.aiChatAttachmentOptionAskAboutPage,
-                image: DesignSystemImages.Glyphs.Size16.tabContent,
-                attributes: canAttachPageContext ? [] : .disabled
-            ) { _ in
-                guard canAttachPageContext else { return }
-                pageContextActionHandler?()
             }
         ]
+
+        if showsPageContextAction {
+            actions.append(
+                UIAction(
+                    title: UserText.aiChatAttachmentOptionAskAboutPage,
+                    image: DesignSystemImages.Glyphs.Size16.tabContent,
+                    attributes: canAttachPageContext ? [] : .disabled
+                ) { _ in
+                    guard canAttachPageContext else { return }
+                    pageContextActionHandler?()
+                }
+            )
+        }
 
         return UIMenu(children: actions)
     }

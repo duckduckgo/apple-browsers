@@ -2269,6 +2269,7 @@ private extension UnifiedToggleInputCoordinator {
             photoSelectionLimit: attachmentPolicy.canAttachImages ? remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,
             allowedFileTypes: allowedFileUTTypes,
+            showsPageContextAction: isContextualChatState,
             pageContextActionHandler: pageContextActionHandler
         )
     }

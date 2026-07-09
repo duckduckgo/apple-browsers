@@ -152,7 +152,7 @@ private struct Buttons: View {
                     model.save()
                 }
                 .disabled(!model.isDirty || !model.isCardValid)
-                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardValid))
+                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardValid, topPadding: 4, bottomPadding: 4))
                 .keyboardShortcut(.defaultAction)
 
             } else {

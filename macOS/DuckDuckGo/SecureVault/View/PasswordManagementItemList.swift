@@ -83,7 +83,8 @@ struct PasswordManagementItemListView: View {
 
             Divider()
 
-            PasswordManagementAddButton()
+            PasswordManagementAddButton(style: style)
+                .environmentObject(themeManager)
                 .padding()
 
         }
@@ -469,32 +470,43 @@ private struct PasswordManagementSortButton: View {
 private struct PasswordManagementAddButton: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
+    @EnvironmentObject var themeManager: ThemeManager
+    let style: PasswordManagementStyle
 
     var body: some View {
 
         switch model.sortDescriptor.category {
         case .allItems:
-            ZStack {
-                // Setting Menu label to empty string and overlaying with this as Menu will not allow the image + text to be centered
-                Text(UserText.pmAddItem)
-
-                Menu {
-                    createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.keyLogin),
-                                   text: UserText.pmNewLogin,
-                                   category: .logins)
-                    createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.profile),
-                                   text: UserText.pmNewIdentity,
-                                   category: .identities)
-                    createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.creditCard),
-                                   text: UserText.pmNewCard,
-                                   category: .cards)
-                } label: {
-                    Text("")
+            Text(UserText.pmAddItem)
+                .frame(maxWidth: .infinity, /*minHeight: 24, maxHeight: 24,*/ alignment: .center)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: style.buttonCornerRadius)
+                        .fill(Color(designSystemColor: .controlsFillPrimary))
+                )
+                .overlay {
+                    Menu {
+                        createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.keyLogin),
+                                       text: UserText.pmNewLogin,
+                                       category: .logins)
+                        createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.profile),
+                                       text: UserText.pmNewIdentity,
+                                       category: .identities)
+                        createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.creditCard),
+                                       text: UserText.pmNewCard,
+                                       category: .cards)
+                    } label: {
+                        Color.clear
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .contentShape(RoundedRectangle(cornerRadius: style.buttonCornerRadius))
+                    }
+                    .menuStyle(.borderlessButton)
+                    .buttonStyle(.plain)
+                    .modifier(HideMenuIndicatorModifier())
+                    .modifier(FlexibleButtonSizingModifier())
                 }
-                .modifier(HideMenuIndicatorModifier())
-                .modifier(FlexibleButtonSizingModifier())
-            }
-            .padding(.vertical, -4)
+                .padding(.vertical, -5)
         case .logins:
             createButton(text: UserText.pmAddLogin, category: model.sortDescriptor.category)
         case .identities:
@@ -506,7 +518,6 @@ private struct PasswordManagementAddButton: View {
     }
 
     private func createMenuItem(image: Image, text: String, category: SecureVaultSorting.Category) -> some View {
-
         Button {
             model.onAddItemClickedFor(category)
         } label: {
@@ -515,20 +526,23 @@ private struct PasswordManagementAddButton: View {
                 Text(text)
             }
         }
-
+        .background(Color(designSystemColor: .controlsFillPrimary))
     }
 
     private func createButton(text: String, category: SecureVaultSorting.Category) -> some View {
-
         Button {
             model.onAddItemClickedFor(category)
         } label: {
             Text(text)
                 .frame(maxWidth: .infinity)
-                .offset(y: 1)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: style.buttonCornerRadius)
+                        .fill(Color(designSystemColor: .controlsFillPrimary))
+                )
         }
-        .padding(.vertical, -4)
-
+        .buttonStyle(.plain)
+        .padding(.vertical, -5)
     }
 }
 
@@ -561,6 +575,7 @@ private struct FlexibleButtonSizingModifier: ViewModifier {
 struct PasswordManagementStyle {
     let backgroundColor: Color
     let backgroundCornerRadius: CGFloat
+    let buttonCornerRadius: CGFloat
     let textColor: Color
     let selectedBackgroundColor: Color
     let selectedTextColor: Color
@@ -579,10 +594,20 @@ struct PasswordManagementStyle {
         let controlTextColor = Color(NSColor.controlTextColor)
 
         guard isAppRebranded else {
-            return PasswordManagementStyle(backgroundColor: clearBackgroundColor, backgroundCornerRadius: 3, textColor: controlTextColor, selectedBackgroundColor: .accentColor, selectedTextColor: .white)
+            return PasswordManagementStyle(backgroundColor: clearBackgroundColor,
+                                           backgroundCornerRadius: 3,
+                                           buttonCornerRadius: 3,
+                                           textColor: controlTextColor,
+                                           selectedBackgroundColor: .accentColor,
+                                           selectedTextColor: .white)
         }
 
         let selectedBackgroundColor = Color(theme.palette.controlsFillTertiary)
-        return PasswordManagementStyle(backgroundColor: clearBackgroundColor, backgroundCornerRadius: 12, textColor: controlTextColor, selectedBackgroundColor: selectedBackgroundColor, selectedTextColor: controlTextColor)
+        return PasswordManagementStyle(backgroundColor: clearBackgroundColor,
+                                       backgroundCornerRadius: 12,
+                                       buttonCornerRadius: 12,
+                                       textColor: controlTextColor,
+                                       selectedBackgroundColor: selectedBackgroundColor,
+                                       selectedTextColor: controlTextColor)
     }
 }

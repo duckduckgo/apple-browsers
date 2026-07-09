@@ -203,6 +203,7 @@ struct ProblemCategoriesView: View {
         VStack(spacing: 0) {
             ForEach(Array(viewModel.availableCategories.enumerated()), id: \.element.id) { _, category in
                 ProblemCategoryView(
+                    isAppRebranded: isAppRebranded,
                     category: category,
                     shouldShowDivider: shouldShowDivider(for: category),
                     isTopCategory: category.id == viewModel.availableCategories.first?.id,
@@ -220,7 +221,7 @@ struct ProblemCategoriesView: View {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: isAppRebranded ? 16 : 6)
                 .stroke(Color.divider, lineWidth: 1)
         )
         .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
@@ -229,10 +230,10 @@ struct ProblemCategoriesView: View {
 
     private func footer() -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            Divider()
-                .background(Color.divider)
-                .frame(maxWidth: .infinity)
+            Rectangle()
+                .fill(Color(.separatorColor))
                 .frame(height: 1)
+                .frame(maxWidth: .infinity)
 
             Text(UserText.feedbackDisclaimer)
                 .caption2()
@@ -255,6 +256,7 @@ struct ProblemCategoriesView: View {
 // MARK: - Problem Category Row View
 
 struct ProblemCategoryView: View {
+    let isAppRebranded: Bool
     let category: ProblemCategory
     let shouldShowDivider: Bool
     let isTopCategory: Bool
@@ -282,20 +284,22 @@ struct ProblemCategoryView: View {
         .buttonStyle(.plain)
         .background(isHovered ? Color.controlsFillPrimary : Color.clear)
         .if(isTopCategory) { view in
-            view.cornerRadius(6, corners: [.topLeft, .topRight])
+            view.cornerRadius(isAppRebranded ? 16 : 6, corners: [.topLeft, .topRight])
         }
         .if(isLastCategory) { view in
-            view.cornerRadius(6, corners: [.bottomLeft, .bottomRight])
+            view.cornerRadius(isAppRebranded ? 16 : 6, corners: [.bottomLeft, .bottomRight])
         }
         .onHover { hovering in
             isHovered = hovering
             onHoverChanged(category.id, hovering)
         }
 
-        Rectangle()
-            .stroke(shouldShowDivider ? Color.divider : Color.clear, lineWidth: 1)
-            .frame(height: 1)
-            .padding(.horizontal, 8)
+        if !isLastCategory {
+            Rectangle()
+                .fill(shouldShowDivider ? Color.divider : Color.clear)
+                .frame(height: 1)
+                .padding(.horizontal, 8)
+        }
     }
 }
 
@@ -429,10 +433,10 @@ struct ProblemDetailFormView: View {
 
     private func footer() -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            Divider()
-                .background(Color.divider)
-                .frame(maxWidth: .infinity)
+            Rectangle()
+                .fill(Color(.separatorColor))
                 .frame(height: 1)
+                .frame(maxWidth: .infinity)
 
             Text(UserText.feedbackDisclaimer)
                 .caption2()

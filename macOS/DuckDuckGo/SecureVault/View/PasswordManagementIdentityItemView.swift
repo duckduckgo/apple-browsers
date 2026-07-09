@@ -75,7 +75,7 @@ struct PasswordManagementIdentityItemView: View {
 
                     Buttons()
                         .padding(.top, editMode ? 4 : 10)
-                        .padding(.bottom, editMode ? 12 : 3)
+                        .padding(.bottom, editMode ? 12 : 1)
                         .padding(.horizontal)
 
                 }

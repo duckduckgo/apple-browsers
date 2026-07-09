@@ -73,7 +73,7 @@ struct PasswordManagementCreditCardItemView: View {
 
                     Buttons()
                         .padding(.top, model.isInEditMode ? 12 : 10)
-                        .padding(.bottom, model.isInEditMode ? 12 : 3)
+                        .padding(.bottom, model.isInEditMode ? 12 : 1)
 
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

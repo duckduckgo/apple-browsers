@@ -31,7 +31,16 @@ final class BWManager: BWManagement, ObservableObject {
     static let bundleId = "com.bitwarden.desktop"
     static let applicationName = "Bitwarden"
     static let applicationPath = "/Applications/Bitwarden.app/Contents/MacOS/Bitwarden"
+    static let desktopProxyPath = "/Applications/Bitwarden.app/Contents/MacOS/desktop_proxy"
     static let arguments = ["chrome-extension://bitwarden"]
+
+    // Bitwarden 2024.9+ ships a dedicated native messaging helper which, unlike
+    // the main app binary, has no Dock presence. The main binary remains as
+    // a fallback for older versions. Resolved on every launch attempt because
+    // Bitwarden can be updated while the browser is running.
+    static func proxyProcessPath(fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }) -> String {
+        fileExists(desktopProxyPath) ? desktopProxyPath : applicationPath
+    }
 
     private let pixelFiring: PixelFiring?
     private let isBitwardenPasswordManagerProvider: () -> Bool
@@ -43,7 +52,7 @@ final class BWManager: BWManagement, ObservableObject {
          pixelFiring: PixelFiring? = PixelKit.shared,
          isBitwardenPasswordManagerProvider: @escaping () -> Bool = { false },
          showRestartBitwardenAlert: @escaping (@escaping () -> Void) -> Void = { _ in }) {
-        self.communicator = communicator ?? NativeMessagingCommunicator(appPath: Self.applicationPath, arguments: Self.arguments)
+        self.communicator = communicator ?? NativeMessagingCommunicator(appPathProvider: { Self.proxyProcessPath() }, arguments: Self.arguments)
         self.pixelFiring = pixelFiring
         self.isBitwardenPasswordManagerProvider = isBitwardenPasswordManagerProvider
         self.showRestartBitwardenAlert = showRestartBitwardenAlert

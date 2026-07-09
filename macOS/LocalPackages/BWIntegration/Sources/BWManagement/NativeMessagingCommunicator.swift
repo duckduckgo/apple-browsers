@@ -40,7 +40,7 @@ protocol NativeMessagingCommunication: AnyObject {
 
 final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication {
 
-    let appPath: String
+    let appPathProvider: () -> String
     let arguments: [String]
 
     weak var delegate: NativeMessagingCommunicatorDelegate?
@@ -55,8 +55,8 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
 
     private var process: ProcessWrapper?
 
-    init(appPath: String, arguments: [String]) {
-        self.appPath = appPath
+    init(appPathProvider: @escaping () -> String, arguments: [String]) {
+        self.appPathProvider = appPathProvider
         self.arguments = arguments
     }
 
@@ -74,7 +74,7 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
         let inputPipe = Pipe()
         let inputHandle = inputPipe.fileHandleForWriting
 
-        process.executableURL = URL(fileURLWithPath: appPath)
+        process.executableURL = URL(fileURLWithPath: appPathProvider())
         process.arguments = arguments
         process.standardOutput = outputPipe
         process.standardInput = inputPipe

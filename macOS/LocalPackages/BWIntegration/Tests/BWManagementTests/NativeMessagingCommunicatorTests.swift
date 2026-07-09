@@ -22,7 +22,7 @@ import XCTest
 final class NativeMessagingCommunicatorTests: XCTestCase {
 
     private func makeCommunicator() -> NativeMessagingCommunicator {
-        NativeMessagingCommunicator(appPath: "/usr/bin/true", arguments: [])
+        NativeMessagingCommunicator(appPathProvider: { "/usr/bin/true" }, arguments: [])
     }
 
     func testWhenPipeReachesEOFThenReadabilityHandlerIsUninstalled() throws {

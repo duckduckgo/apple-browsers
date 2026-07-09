@@ -81,12 +81,8 @@ jobs:
 
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}
+      asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
-
-    outputs:
-      upload-to: ${{ steps.is-official-release.outputs.upload-to }}
-      app-version: ${{ steps.prepare-dsyms.outputs.app-version }}
-      dsym-s3-path: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
 
     steps:
 
@@ -156,7 +152,6 @@ jobs:
       run: bundle exec fastlane build_${{ env.destination }}
 
     - name: Prepare dSYMs
-      id: prepare-dsyms
       run: |
         case "${{ env.destination }}" in
           testflight_review)
@@ -180,7 +175,6 @@ jobs:
         echo "dsym-path=${dsym_path}" >> $GITHUB_ENV
         echo "app-version=${version}.${build_number}" >> $GITHUB_ENV
         echo "app-dsym-name=${app_dsym_name}" >> $GITHUB_ENV
-        echo "app-version=${version}.${build_number}" >> $GITHUB_OUTPUT
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -208,6 +202,20 @@ jobs:
         echo "dsym-s3-path=${DSYM_S3_PATH}" >> $GITHUB_OUTPUT
         aws s3 cp ${{ env.dsym-path }} ${{ env.DSYM_S3_PATH }}
 
+    - name: Report success
+      env:
+        DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
+        TAG: ${{ env.app-version }}
+        WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+      if: steps.upload-dsyms-to-s3.conclusion == 'success' && env.asana-task-url != ''
+      run: |
+        bundle exec fastlane run asana_log_message \
+          task_url:"${{ env.asana-task-url }}" \
+          template_name:"debug-symbols-uploaded" \
+          github_handle:"${{ github.actor }}" \
+          is_scheduled_release:"${{ github.event_name == 'schedule' }}"
+
   upload:
     name: Upload App Store Connect Release
 
@@ -223,9 +231,7 @@ jobs:
 
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}
-      asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
-      upload-to: ${{ needs.build.outputs.upload-to }}
 
     steps:
 
@@ -254,20 +260,6 @@ jobs:
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
       run: bundle exec fastlane upload_${{ env.destination }}
-
-    - name: Report success
-      env:
-        DSYM_S3_PATH: ${{ needs.build.outputs.dsym-s3-path }}
-        TAG: ${{ needs.build.outputs.app-version }}
-        WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      if: steps.upload-app-to-appstore.conclusion == 'success' && env.asana-task-url != ''
-      run: |
-        bundle exec fastlane run asana_log_message \
-          task_url:"${{ env.asana-task-url }}" \
-          template_name:"debug-symbols-uploaded" \
-          github_handle:"${{ github.actor }}" \
-          is_scheduled_release:"${{ github.event_name == 'schedule' }}"
 
     - name: Send Mattermost message
       if: success() || failure() # Don't execute when cancelled

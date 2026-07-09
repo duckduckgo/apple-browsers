@@ -603,8 +603,8 @@ struct PasswordManagementStyle {
 
         let selectedBackgroundColor = Color(theme.palette.controlsFillTertiary)
         return PasswordManagementStyle(backgroundColor: clearBackgroundColor,
-                                       backgroundCornerRadius: 12,
-                                       buttonCornerRadius: 12,
+                                       backgroundCornerRadius: 5,
+                                       buttonCornerRadius: 5,
                                        textColor: controlTextColor,
                                        selectedBackgroundColor: selectedBackgroundColor,
                                        selectedTextColor: controlTextColor)

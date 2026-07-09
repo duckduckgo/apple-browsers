@@ -52,12 +52,14 @@ final class BWManager: BWManagement, ObservableObject {
     func initCommunication() {
         communicator.delegate = self
 
+        lastScheduledConnectionStatus = nil
         connectToBitwardenProcess()
     }
 
     func cancelCommunication() {
         connectionAttemptTimer?.invalidate()
         connectionAttemptTimer = nil
+        lastScheduledConnectionStatus = nil
         status = .disabled
         communicator.terminateProxyProcess()
         try? keyStorage.cleanSharedKey()
@@ -162,6 +164,8 @@ final class BWManager: BWManagement, ObservableObject {
     }
 
     private var connectionAttemptTimer: Timer?
+    private var connectionRetryInterval = BWRetryInterval()
+    private var lastScheduledConnectionStatus: BWStatus?
 
     // Disables communicator (kills the proxy process)
     // and schedules future attempt to connect
@@ -171,7 +175,15 @@ final class BWManager: BWManagement, ObservableObject {
             return
         }
 
-        connectionAttemptTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] _ in
+        // Back off while the same failure keeps repeating. A different status means
+        // the situation changed (app installed, launched, integration approved, …)
+        // and the next attempt should happen quickly again.
+        if status != lastScheduledConnectionStatus {
+            connectionRetryInterval.reset()
+        }
+        lastScheduledConnectionStatus = status
+
+        connectionAttemptTimer = Timer.scheduledTimer(withTimeInterval: connectionRetryInterval.next(), repeats: false) { [weak self] _ in
             self?.connectionAttemptTimer?.invalidate()
             self?.connectionAttemptTimer = nil
 
@@ -212,6 +224,10 @@ final class BWManager: BWManagement, ObservableObject {
     private func handleCommand(_ command: BWCommand) {
         switch command {
         case .connected:
+            // A working proxy connection means occasional future failures
+            // should retry quickly again rather than continue backing off
+            lastScheduledConnectionStatus = nil
+
             let sharedKey: Base64EncodedString?
             do {
                 sharedKey = try keyStorage.retrieveSharedKey()

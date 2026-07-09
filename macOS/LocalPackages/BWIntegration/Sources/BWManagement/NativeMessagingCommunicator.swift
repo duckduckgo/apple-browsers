@@ -87,8 +87,20 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
     }
 
     func terminateProxyProcess() {
-        process?.process.terminate()
+        guard let processWrapper = process else {
+            return
+        }
         process = nil
+
+        // Uninstall the readability handler before releasing the handle. The handler's
+        // dispatch source keeps the handle alive and keeps firing at EOF otherwise.
+        processWrapper.readingHandle.readabilityHandler = nil
+        processWrapper.process.terminate()
+
+        // Drop any partial message so it can't misframe the next proxy's messages
+        dataQueue.async {
+            self.accumulatedData = Data()
+        }
     }
 
     private func processDidTerminate(_ process: Process) {
@@ -135,6 +147,14 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
 
     func receiveData(_ fileHandle: FileHandle) {
         let newData = fileHandle.availableData
+
+        guard !newData.isEmpty else {
+            // Empty data means EOF (the proxy process exited). Stop monitoring,
+            // otherwise the readability handler keeps firing and pegs a CPU core.
+            fileHandle.readabilityHandler = nil
+            return
+        }
+
         dataQueue.async {
             self.accumulatedData.append(newData)
             self.processAccumulatedData()

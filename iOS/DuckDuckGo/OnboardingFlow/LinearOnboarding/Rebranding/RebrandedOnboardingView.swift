@@ -612,6 +612,7 @@ extension OnboardingRebranding {
                 animationName: base.animationName,
                 size: size,
                 position: .left(bottomPadding: bottomPadding, xOffset: xOffset),
+                largeScreenPosition: .left(bottomPadding: bottomPadding, xOffset: 200.0),
                 entranceOffset: base.entranceOffset,
                 exitOffset: base.exitOffset.map { CGPoint(x: -size.width, y: $0.y) },
                 exitDuration: base.exitDuration,

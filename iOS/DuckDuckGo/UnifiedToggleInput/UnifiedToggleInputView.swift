@@ -1214,11 +1214,11 @@ final class UnifiedToggleInputView: UIView {
         let hasInvalidAttachment = isAIChatMode && attachmentsStrip.attachments.contains(where: \.isInvalid)
 
         toolsToolbar.isSubmitEnabled = !hasInvalidAttachment && (hasText || hasValidAttachment)
-        updateNewPromptSubmitStyle()
+        updateSubmitButtonStyle()
     }
 
-    private func updateNewPromptSubmitStyle() {
-        toolsToolbar.usesNewPromptSubmitStyle = handler.submitsAIChatOnKeyboardReturn
+    private func updateSubmitButtonStyle() {
+        toolsToolbar.usesNewPromptSubmitStyle = handler.usesReturnKeySubmitButtonStyle
     }
 
     private func submitCurrentInput() {
@@ -1580,10 +1580,10 @@ private extension UnifiedToggleInputView {
             }
             .store(in: &cancellables)
 
-        handler.submitsAIChatOnKeyboardReturnPublisher
+        handler.usesReturnKeySubmitButtonStylePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.updateNewPromptSubmitStyle()
+                self?.updateSubmitButtonStyle()
             }
             .store(in: &cancellables)
 

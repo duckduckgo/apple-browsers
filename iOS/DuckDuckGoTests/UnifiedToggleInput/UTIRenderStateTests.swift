@@ -225,6 +225,7 @@ final class UTIRenderStateTests: XCTestCase {
     func test_omnibarNewAIChat_submitsAIChatOnKeyboardReturn() {
         sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .top)
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertTrue(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
     }
 
     func test_contextualChat_submitsAIChatOnKeyboardReturn() {
@@ -235,6 +236,7 @@ final class UTIRenderStateTests: XCTestCase {
         )
 
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
     }
 
     func test_contextualChat_keepsSubmittingAIChatOnKeyboardReturnAfterSubmit() {
@@ -247,11 +249,13 @@ final class UTIRenderStateTests: XCTestCase {
         _ = sut.prepareExternalPromptSubmission()
 
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
     }
 
     func test_aiTabNewChat_usesNormalKeyboardReturn() {
         sut.showExpanded(inputMode: .aiChat)
         XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
     }
 
     func test_omnibarSearch_doesNotUseFloatingReturnKeyOrKeyboardReturnSubmit() {
@@ -261,6 +265,7 @@ final class UTIRenderStateTests: XCTestCase {
 
         XCTAssertFalse(state.isFloatingReturnKeyVisible)
         XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
     }
 
     func test_deactivateToOmnibar_clearsNewPromptInputBehavior() {
@@ -268,11 +273,13 @@ final class UTIRenderStateTests: XCTestCase {
         sut.setText("how")
         XCTAssertTrue(sut.computeRenderState().isFloatingReturnKeyVisible)
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertTrue(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
 
         sut.deactivateToOmnibar()
 
         XCTAssertFalse(sut.computeRenderState().isFloatingReturnKeyVisible)
         XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
     }
 
     // MARK: - Content Input Mode

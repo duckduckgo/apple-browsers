@@ -339,6 +339,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isOmnibarNewAIChatPrompt || isContextualChatState
     }
 
+    private var usesReturnKeySubmitButtonStyle: Bool {
+        isOmnibarNewAIChatPrompt
+    }
+
     private var usesFloatingReturnKey: Bool {
         displayState == .omnibar(.active) && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt
     }
@@ -2375,6 +2379,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func syncInputBehaviorToHandler() {
         viewController.handler.submitsAIChatOnKeyboardReturn = submitsAIChatPromptOnKeyboardReturn
+        viewController.handler.usesReturnKeySubmitButtonStyle = usesReturnKeySubmitButtonStyle
     }
 
     func resetSessionState() {

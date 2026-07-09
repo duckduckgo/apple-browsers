@@ -214,7 +214,8 @@ extension NewTabPageActionsManager {
                 customBackgroundProvider: customizationProvider,
                 linkOpener: NewTabPageLinkOpener(),
                 eventMapper: NewTabPageConfigurationEventHandler(),
-                stateProvider: stateProvider
+                stateProvider: stateProvider,
+                isRebrandEnabled: featureFlagger.isFeatureOn(.newTabPageRebranding)
             ),
             NewTabPageCustomBackgroundClient(model: customizationProvider),
             NewTabPageRMFClient(remoteMessageProvider: activeRemoteMessageModel),

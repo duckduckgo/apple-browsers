@@ -270,13 +270,29 @@ final class MainWindowController: NSWindowController {
 
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
+    private var didMoveTabBarForFireAnimation = false
 
     private func subscribeToBurningData() {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher
             .dropFirst()
             .removeDuplicates()
             .sink { [weak self] burningData in
-                self?.moveTabBarView(toTitlebarView: burningData == nil)
+                guard let self else { return }
+                // The tab bar is only moved out of the titlebar so the fire animation can cover it.
+                // Site-level burns (e.g. from the New Tab Page) don't play the full-screen animation, so
+                // we're leaving the tab bar in place to avoid a flash from needlessly reparenting it.
+                if let burningData, burningData.shouldPlayFireAnimation(decider: fireViewModel.fire.visualizeFireAnimationDecider) {
+                    moveTabBarView(toTitlebarView: false)
+                    // The titlebar has an opaque background (see applyThemeStyle) and sits above the
+                    // full-window fire animation. With the tab bar moved out, that leaves a blank bar
+                    // over the animation — clear it so the animation shows through, and restore it after.
+                    setTitlebarBackgroundColor(.clear)
+                    didMoveTabBarForFireAnimation = true
+                } else if burningData == nil, didMoveTabBarForFireAnimation {
+                    moveTabBarView(toTitlebarView: true)
+                    setTitlebarBackgroundColor(theme.colorsProvider.baseBackgroundColor)
+                    didMoveTabBarForFireAnimation = false
+                }
             }
     }
 
@@ -338,6 +354,17 @@ final class MainWindowController: NSWindowController {
         NSLayoutConstraint.activate(constraints)
     }
 
+    /// Sets the titlebar view's layer background color on Liquid Glass, where the titlebar has an
+    /// opaque background (see `applyThemeStyle`). Used both to apply the theme background and to
+    /// clear it during the fire animation so the full-window animation shows through the titlebar.
+    private func setTitlebarBackgroundColor(_ color: NSColor) {
+        guard AppVersion.isLiquidGlassSupported, let titlebarView = window?.titlebarView else { return }
+        titlebarView.wantsLayer = true
+        titlebarView.effectiveAppearance.performAsCurrentDrawingAppearance {
+            titlebarView.layer?.backgroundColor = color.cgColor
+        }
+    }
+
     override func showWindow(_ sender: Any?) {
         window?.makeKeyAndOrderFront(sender)
         register()
@@ -380,12 +407,7 @@ extension MainWindowController: ThemeUpdateListening {
         // leaving a thin strip above it that shows through to whatever is behind the titlebarView.
         // In fullscreen the titlebarView lives in an auxiliary window whose contentView is opaque
         // white, so coloring the titlebarView's layer itself is the only way to fill that strip.
-        if AppVersion.isLiquidGlassSupported, let titlebarView = window?.titlebarView {
-            titlebarView.wantsLayer = true
-            titlebarView.effectiveAppearance.performAsCurrentDrawingAppearance {
-                titlebarView.layer?.backgroundColor = theme.colorsProvider.baseBackgroundColor.cgColor
-            }
-        }
+        setTitlebarBackgroundColor(theme.colorsProvider.baseBackgroundColor)
     }
 }
 

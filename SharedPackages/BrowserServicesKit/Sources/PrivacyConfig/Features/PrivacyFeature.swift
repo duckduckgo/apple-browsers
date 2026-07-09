@@ -117,6 +117,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// App rebranding feature flag
     case appRebranding
 
+    /// New Tab Page rebranding feature flag
+    case newTabPageRebranding
+
     /// Remote kill switch for native unsupported-OS messaging (launch alert, About/Feedback info box).
     /// Enabled by default; set to `disabled` in privacy config to suppress the messaging.
     case osSupportWarning
@@ -319,6 +322,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215816968312844?focus=true
     case staleFaviconCleanup
+
+    /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
+    case searchTokenExperiment
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -725,6 +732,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
+    case subscriptionExpirationReminderNotification
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

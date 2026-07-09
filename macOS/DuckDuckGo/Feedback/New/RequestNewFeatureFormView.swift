@@ -236,7 +236,7 @@ struct RequestNewFeatureFormView: View {
 
             TextEditor(text: $viewModel.customFeatureText)
                 .systemLabel()
-                .frame(minHeight: 80)
+                .frame(height: 64)
                 .padding(8)
                 .background(Color(.textBackgroundColor))
                 .cornerRadius(isAppRebranded ? 16 : 6)
@@ -257,7 +257,8 @@ struct RequestNewFeatureFormView: View {
                                     }
                                     Spacer()
                                 }
-                                .padding(11)
+                                .padding(.top, 8)
+                                .padding(.leading, 12)
                             }
                         }
                     }

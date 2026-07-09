@@ -1287,13 +1287,19 @@ final class PasswordManagementViewController: NSViewController {
         emptyStateImportButton.isHidden = hideImportButton
         emptyStateSyncButton.isHidden = hideSyncButton || !syncButtonModel.shouldShowSyncButton
         emptyStateMessageContainer.isHidden = hideMessage
-        if hideImportButton {
-            // Setting title to empty string when hidden since there is a width constraint dependency between the import and sync buttons
-            emptyStateImportButton.title = ""
-        } else {
-            emptyStateImportButton.title = listModel?.emptyStateImportButtonText ?? UserText.pmEmptyStateDefaultButtonTitle
+
+        // Setting title to empty string when hidden since there is a width constraint dependency between the import and sync buttons
+        let importTitle = hideImportButton ? "" : (listModel?.emptyStateImportButtonText ?? UserText.pmEmptyStateDefaultButtonTitle)
+        let syncTitle = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitlePasswords
+
+        emptyStateImportButton.title = importTitle
+        emptyStateSyncButton.title = syncTitle
+
+        /// themeManager.isAppRebranded
+        if themeManager.isAppRebranded {
+            emptyStateImportButton.layer?.cornerRadius = 14
+            emptyStateSyncButton.layer?.cornerRadius = 14
         }
-        emptyStateSyncButton.title = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitlePasswords
     }
 
     private func requestSync() {
@@ -1316,6 +1322,21 @@ extension PasswordManagementViewController: ThemeUpdateListening {
         searchField.borderColor = palette.controlsBorderPrimary
         searchField.borderHighlightColor = palette.accentPrimary
         searchField.innerBackgroundColor = palette.surfaceTertiary
+
+        guard themeManager.isAppRebranded else {
+            return
+        }
+
+        NSAppearance.withAppAppearance {
+            emptyStateImportButton.wantsLayer = true
+            emptyStateSyncButton.wantsLayer = true
+
+            emptyStateImportButton.contentTintColor = .white
+            emptyStateSyncButton.contentTintColor = palette.textPrimary
+
+            emptyStateImportButton.layer?.backgroundColor = palette.accentPrimary.cgColor
+            emptyStateSyncButton.layer?.backgroundColor = palette.controlsFillPrimary.cgColor
+        }
     }
 }
 

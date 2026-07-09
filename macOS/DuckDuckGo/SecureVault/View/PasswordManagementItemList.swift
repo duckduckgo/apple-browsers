@@ -71,7 +71,6 @@ struct PasswordManagementItemListView: View {
             ScrollView {
                 ScrollViewReader { proxy in
                     PasswordManagementItemListStackView(style: style)
-                        .environmentObject(themeManager)
                         .onChange(of: model.selected?.id) { itemId in
                             if let id = itemId {
                                 selectItem(id: id, proxy: proxy)

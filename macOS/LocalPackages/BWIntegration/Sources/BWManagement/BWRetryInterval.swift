@@ -25,7 +25,7 @@ struct BWRetryInterval {
     static let initialInterval: TimeInterval = 1
     static let maximumInterval: TimeInterval = 16
 
-    private(set) var current: TimeInterval = BWRetryInterval.initialInterval
+    private var current: TimeInterval = BWRetryInterval.initialInterval
 
     /// Returns the interval to wait before the next attempt and advances the backoff
     mutating func next() -> TimeInterval {

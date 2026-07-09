@@ -42,6 +42,7 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
 
     let appPathProvider: () -> String
     let arguments: [String]
+    let stopsMonitoringAtEOF: () -> Bool
 
     weak var delegate: NativeMessagingCommunicatorDelegate?
 
@@ -55,9 +56,12 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
 
     private var process: ProcessWrapper?
 
-    init(appPathProvider: @escaping () -> String, arguments: [String]) {
+    init(appPathProvider: @escaping () -> String,
+         arguments: [String],
+         stopsMonitoringAtEOF: @escaping () -> Bool = { true }) {
         self.appPathProvider = appPathProvider
         self.arguments = arguments
+        self.stopsMonitoringAtEOF = stopsMonitoringAtEOF
     }
 
     func runProxyProcess() throws {
@@ -69,7 +73,12 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
 
         let outputPipe = Pipe()
         let outHandle = outputPipe.fileHandleForReading
-        outHandle.readabilityHandler = receiveData(_:)
+        // The kill switch is sampled once per launch so the EOF behavior can't change
+        // mid-connection and the flag is never read off the main thread
+        let stopMonitoringAtEOF = stopsMonitoringAtEOF()
+        outHandle.readabilityHandler = { [weak self] fileHandle in
+            self?.receiveData(fileHandle, stopMonitoringAtEOF: stopMonitoringAtEOF)
+        }
 
         let inputPipe = Pipe()
         let inputHandle = inputPipe.fileHandleForWriting
@@ -80,6 +89,13 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
         process.standardInput = inputPipe
         process.terminationHandler = processDidTerminate(_:)
 
+        // Enqueued ahead of any data callback, so the new handle is active
+        // before the first message arrives
+        dataQueue.async {
+            self.accumulatedData = Data()
+            self.activeReadingHandle = outHandle
+        }
+
         try process.run()
         Logger.bitWarden.log("NativeMessagingCommunicator: Proxy process running")
 
@@ -87,18 +103,23 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
     }
 
     func terminateProxyProcess() {
-        guard let processWrapper = process else {
+        guard let process = process else {
             return
         }
-        process = nil
+        self.process = nil
 
+        stopMonitoring(process)
+        process.process.terminate()
+    }
+
+    private func stopMonitoring(_ processWrapper: ProcessWrapper) {
         // Uninstall the readability handler before releasing the handle. The handler's
         // dispatch source keeps the handle alive and keeps firing at EOF otherwise.
         processWrapper.readingHandle.readabilityHandler = nil
-        processWrapper.process.terminate()
 
         // Drop any partial message so it can't misframe the next proxy's messages
         dataQueue.async {
+            self.activeReadingHandle = nil
             self.accumulatedData = Data()
         }
     }
@@ -106,15 +127,14 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
     private func processDidTerminate(_ process: Process) {
         Logger.bitWarden.log("NativeMessagingCommunicator: Proxy process terminated")
 
-        if let runningProcess = self.process?.process {
-            if process != runningProcess {
-                // Terminated to run another process
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let processWrapper = self.process, processWrapper.process == process else {
+                // Intentionally terminated or already replaced by a new proxy process
                 return
             }
-        }
+            self.process = nil
+            self.stopMonitoring(processWrapper)
 
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
             self.delegate?.nativeMessagingCommunicatorProcessDidTerminate(self)
         }
     }
@@ -136,19 +156,27 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
         let messagePrefix = Data(bytes: &messageDataCount, count: MemoryLayout.size(ofValue: messageDataCount))
         let finalMessage = messagePrefix + messageData
 
-        process.writingHandle.write(finalMessage)
+        do {
+            try process.writingHandle.write(contentsOf: finalMessage)
+        } catch {
+            // The proxy process can die between termination and its async delegate
+            // notification; the legacy non-throwing write would crash here
+            Logger.bitWarden.error("NativeMessagingCommunicator: Writing to the proxy process failed")
+        }
     }
 
     // MARK: - Receiving Messages
 
     private let realisticMessageLength = 200000
     private var accumulatedData = Data()
+    // Only accessed on dataQueue; identifies which pipe is allowed to feed accumulatedData
+    private var activeReadingHandle: FileHandle?
     private let dataQueue = DispatchQueue(label: "NativeMessagingCommunicator.queue")
 
-    func receiveData(_ fileHandle: FileHandle) {
+    func receiveData(_ fileHandle: FileHandle, stopMonitoringAtEOF: Bool = true) {
         let newData = fileHandle.availableData
 
-        guard !newData.isEmpty else {
+        if newData.isEmpty && stopMonitoringAtEOF {
             // Empty data means EOF (the proxy process exited). Stop monitoring,
             // otherwise the readability handler keeps firing and pegs a CPU core.
             fileHandle.readabilityHandler = nil
@@ -156,6 +184,10 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
         }
 
         dataQueue.async {
+            guard fileHandle === self.activeReadingHandle else {
+                // Late data from an already replaced proxy process
+                return
+            }
             self.accumulatedData.append(newData)
             self.processAccumulatedData()
         }

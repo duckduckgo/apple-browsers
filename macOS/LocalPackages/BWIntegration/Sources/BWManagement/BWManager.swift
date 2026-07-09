@@ -44,6 +44,7 @@ final class BWManager: BWManagement, ObservableObject {
 
     private let pixelFiring: PixelFiring?
     private let isBitwardenPasswordManagerProvider: () -> Bool
+    private let isConnectionHardeningEnabled: () -> Bool
     private let showRestartBitwardenAlert: (@escaping () -> Void) -> Void
 
     private let communicator: NativeMessagingCommunication
@@ -51,10 +52,15 @@ final class BWManager: BWManagement, ObservableObject {
     init(communicator: NativeMessagingCommunication? = nil,
          pixelFiring: PixelFiring? = PixelKit.shared,
          isBitwardenPasswordManagerProvider: @escaping () -> Bool = { false },
+         isConnectionHardeningEnabled: @escaping () -> Bool = { true },
          showRestartBitwardenAlert: @escaping (@escaping () -> Void) -> Void = { _ in }) {
-        self.communicator = communicator ?? NativeMessagingCommunicator(appPathProvider: { Self.proxyProcessPath() }, arguments: Self.arguments)
+        self.communicator = communicator ?? NativeMessagingCommunicator(
+            appPathProvider: { isConnectionHardeningEnabled() ? Self.proxyProcessPath() : Self.applicationPath },
+            arguments: Self.arguments,
+            stopsMonitoringAtEOF: isConnectionHardeningEnabled)
         self.pixelFiring = pixelFiring
         self.isBitwardenPasswordManagerProvider = isBitwardenPasswordManagerProvider
+        self.isConnectionHardeningEnabled = isConnectionHardeningEnabled
         self.showRestartBitwardenAlert = showRestartBitwardenAlert
     }
 
@@ -192,7 +198,9 @@ final class BWManager: BWManagement, ObservableObject {
         }
         lastScheduledConnectionStatus = status
 
-        connectionAttemptTimer = Timer.scheduledTimer(withTimeInterval: connectionRetryInterval.next(), repeats: false) { [weak self] _ in
+        // Kill switch: fall back to the legacy fixed 1s retry when hardening is remotely disabled
+        let interval = isConnectionHardeningEnabled() ? connectionRetryInterval.next() : BWRetryInterval.initialInterval
+        connectionAttemptTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             self?.connectionAttemptTimer?.invalidate()
             self?.connectionAttemptTimer = nil
 
@@ -263,11 +271,13 @@ final class BWManager: BWManagement, ObservableObject {
                 // Other part of the code is responsible for sending the handshake message
             }
         case .disconnected:
-            // Bitwarden application isn't running
-            cancelConnectionAndScheduleNextAttempt()
+            // Bitwarden application isn't running.
+            // Status is set first so the connection attempt is scheduled
+            // (and backed off) against the actual failure state.
             if status != .disabled {
                 status = .notRunning
             }
+            cancelConnectionAndScheduleNextAttempt()
         default:
             Logger.bitWarden.fault("BWManager: Wrong handler")
             assertionFailure("BWManager: Wrong handler")
@@ -719,9 +729,11 @@ extension BWManager: NativeMessagingCommunicatorDelegate {
 extension BWIntegrationFactory: BWManagementFactory {
 
     public static func makeManager(isBitwardenPasswordManagerProvider: @escaping () -> Bool,
+                                   isConnectionHardeningEnabled: @escaping () -> Bool,
                                    showRestartBitwardenAlert: @escaping (@escaping () -> Void) -> Void) -> BWManagement {
         BWManager(pixelFiring: PixelKit.shared,
                   isBitwardenPasswordManagerProvider: isBitwardenPasswordManagerProvider,
+                  isConnectionHardeningEnabled: isConnectionHardeningEnabled,
                   showRestartBitwardenAlert: showRestartBitwardenAlert)
     }
 

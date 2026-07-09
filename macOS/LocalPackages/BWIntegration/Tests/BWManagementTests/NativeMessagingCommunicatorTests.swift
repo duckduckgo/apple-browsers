@@ -29,7 +29,7 @@ final class NativeMessagingCommunicatorTests: XCTestCase {
         let communicator = makeCommunicator()
         let pipe = Pipe()
         let readingHandle = pipe.fileHandleForReading
-        readingHandle.readabilityHandler = communicator.receiveData(_:)
+        readingHandle.readabilityHandler = { communicator.receiveData($0) }
 
         // Closing the write end puts the read end at EOF
         try pipe.fileHandleForWriting.close()
@@ -42,13 +42,25 @@ final class NativeMessagingCommunicatorTests: XCTestCase {
         let communicator = makeCommunicator()
         let pipe = Pipe()
         let readingHandle = pipe.fileHandleForReading
-        readingHandle.readabilityHandler = communicator.receiveData(_:)
+        readingHandle.readabilityHandler = { communicator.receiveData($0) }
 
         // A well-formed native messaging frame: 4-byte length prefix + payload
         var messageLength = UInt32(1)
         let header = Data(bytes: &messageLength, count: 4)
         try pipe.fileHandleForWriting.write(contentsOf: header + Data([0x42]))
         communicator.receiveData(readingHandle)
+
+        XCTAssertNotNil(readingHandle.readabilityHandler)
+    }
+
+    func testWhenEOFMonitoringIsDisabledThenReadabilityHandlerStaysInstalled() throws {
+        let communicator = makeCommunicator()
+        let pipe = Pipe()
+        let readingHandle = pipe.fileHandleForReading
+        readingHandle.readabilityHandler = { _ in }
+
+        try pipe.fileHandleForWriting.close()
+        communicator.receiveData(readingHandle, stopMonitoringAtEOF: false)
 
         XCTAssertNotNil(readingHandle.readabilityHandler)
     }

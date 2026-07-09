@@ -21,7 +21,7 @@ import XCTest
 
 final class BWRetryIntervalTests: XCTestCase {
 
-    func testIntervalDoublesUpToMaximum() {
+    func testWhenNextIsCalledRepeatedlyThenIntervalDoublesUpToMaximum() {
         var interval = BWRetryInterval()
 
         XCTAssertEqual(interval.next(), 1)
@@ -32,7 +32,7 @@ final class BWRetryIntervalTests: XCTestCase {
         XCTAssertEqual(interval.next(), 16)
     }
 
-    func testResetRestartsFromInitialInterval() {
+    func testWhenResetThenIntervalRestartsFromInitialInterval() {
         var interval = BWRetryInterval()
         _ = interval.next()
         _ = interval.next()

@@ -1257,7 +1257,7 @@ final class PasswordManagementViewController: NSViewController {
 
     private func showEmptyState(category: SecureVaultSorting.Category) {
         let isAppRebranded = themeManager.isAppRebranded
-        var passwordsAddImage: NSImage = isAppRebranded ? .passwordsAdd128 : .passwordsAddLegacy128
+        let passwordsAddImage: NSImage = isAppRebranded ? .passwordsAdd128 : .passwordsAddLegacy128
 
         switch category {
         case .allItems:
@@ -1299,6 +1299,11 @@ final class PasswordManagementViewController: NSViewController {
         if themeManager.isAppRebranded {
             emptyStateImportButton.layer?.cornerRadius = 14
             emptyStateSyncButton.layer?.cornerRadius = 14
+        } else {
+            emptyStateImportButton.isBordered = true
+            emptyStateSyncButton.isBordered = true
+            emptyStateImportButton.bezelStyle = .rounded
+            emptyStateSyncButton.bezelStyle = .rounded
         }
     }
 

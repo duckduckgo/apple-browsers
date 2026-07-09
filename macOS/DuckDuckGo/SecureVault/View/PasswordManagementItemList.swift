@@ -478,7 +478,7 @@ private struct PasswordManagementAddButton: View {
         switch model.sortDescriptor.category {
         case .allItems:
             Text(UserText.pmAddItem)
-                .frame(maxWidth: .infinity, /*minHeight: 24, maxHeight: 24,*/ alignment: .center)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
                 .background(

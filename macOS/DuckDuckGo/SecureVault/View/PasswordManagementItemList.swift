@@ -470,7 +470,6 @@ private struct PasswordManagementSortButton: View {
 private struct PasswordManagementAddButton: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
-    @EnvironmentObject var themeManager: ThemeManager
     let style: PasswordManagementStyle
 
     var body: some View {

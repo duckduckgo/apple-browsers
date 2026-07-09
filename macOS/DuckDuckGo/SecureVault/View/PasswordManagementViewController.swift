@@ -1295,7 +1295,6 @@ final class PasswordManagementViewController: NSViewController {
         emptyStateImportButton.title = importTitle
         emptyStateSyncButton.title = syncTitle
 
-        /// themeManager.isAppRebranded
         if themeManager.isAppRebranded {
             emptyStateImportButton.layer?.cornerRadius = 14
             emptyStateSyncButton.layer?.cornerRadius = 14

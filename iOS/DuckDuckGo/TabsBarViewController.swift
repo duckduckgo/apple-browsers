@@ -66,9 +66,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         case currentMode
     }
     
-    @IBOutlet weak var collectionView: UICollectionView!
-    @IBOutlet weak var buttonsStack: UIStackView!
-    @IBOutlet weak var buttonsBackground: UIView!
+    private(set) var collectionView: UICollectionView!
+    private(set) var buttonsStack: UIStackView!
+    private(set) var buttonsBackground: UIView!
 
     lazy var fireButton: UIButton = {
         createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
@@ -125,12 +125,65 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         return tabsModel?.currentIndex
     }
 
-    static func createFromXib() -> TabsBarViewController {
-        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar") { coder in
-            TabsBarViewController(coder: coder)
-        }
-        return controller
+    init() {
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    static func create() -> TabsBarViewController {
+        TabsBarViewController()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        let view = UIView()
+
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.minimumLineSpacing = 0
+        layout.minimumInteritemSpacing = 0
+        layout.sectionInset = .zero
+
+        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.isDirectionalLockEnabled = true
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.showsVerticalScrollIndicator = false
+
+        buttonsBackground = UIView()
+        buttonsBackground.translatesAutoresizingMaskIntoConstraints = false
+
+        buttonsStack = UIStackView()
+        buttonsStack.translatesAutoresizingMaskIntoConstraints = false
+        buttonsStack.axis = .horizontal
+        buttonsStack.setContentHuggingPriority(.required, for: .horizontal)
+        buttonsStack.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        view.addSubview(collectionView)
+        view.addSubview(buttonsBackground)
+        view.addSubview(buttonsStack)
+
+        NSLayoutConstraint.activate([
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.leadingInset),
+            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            buttonsBackground.leadingAnchor.constraint(equalTo: collectionView.trailingAnchor),
+            buttonsBackground.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            buttonsBackground.topAnchor.constraint(equalTo: view.topAnchor),
+            buttonsBackground.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            buttonsStack.leadingAnchor.constraint(equalTo: collectionView.trailingAnchor, constant: Constants.leadingInset),
+            buttonsStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.leadingInset),
+            buttonsStack.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            buttonsStack.topAnchor.constraint(greaterThanOrEqualTo: view.topAnchor),
+            buttonsStack.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+
+        self.view = view
     }
     
     override func viewDidLoad() {
@@ -151,8 +204,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         // Prefetching can drop a still-visible cell during a fast scroll and not re-display it
         // (a gap). Prefetching gains are marginal here and on top of that we're not handling it properly (no willDisplay).
         collectionView.isPrefetchingEnabled = false
-
-        collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.leadingInset).isActive = true
+        collectionView.register(TabsBarCell.self, forCellWithReuseIdentifier: TabsBarCell.reuseIdentifier)
 
         addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
         fireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid, for: .normal)
@@ -243,7 +295,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         aiChatChip.setSheetState(isContextualSheetPresented ? .open : .closed)
     }
 
-    @IBAction func onFireButtonPressed() {
+    @objc private func onFireButtonPressed() {
         
         func showClearDataAlert() {
             guard let tabManager, let daxDialogsManager else {
@@ -272,7 +324,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         }
     }
 
-    @IBAction func onNewTabPressed() {
+    @objc private func onNewTabPressed() {
         DailyPixel.fireDailyAndCount(pixel: .tabBarNewTab)
         requestNewTab(type: .currentMode)
     }
@@ -629,7 +681,7 @@ extension TabsBarViewController: UICollectionViewDataSource {
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Tab", for: indexPath) as? TabsBarCell else {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TabsBarCell.reuseIdentifier, for: indexPath) as? TabsBarCell else {
             fatalError("Unable to create TabBarCell")
         }
         

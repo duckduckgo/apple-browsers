@@ -94,7 +94,7 @@ struct ThemeStyle: ThemeStyleProviding {
             navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(),
             tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette),
             colorsProvider: ColorsProvidingFactory.buildColorsProvider(featureFlagger: featureFlagger, palette: palette),
-            iconsProvider: CurrentIconsProvider(),
+            iconsProvider: IconsProvidingFactory.buildColorsProvider(featureFlagger: featureFlagger),
             fireButtonSize: 32,
             navigationToolbarButtonsSpacing: 2,
             tabBarButtonSize: 30,

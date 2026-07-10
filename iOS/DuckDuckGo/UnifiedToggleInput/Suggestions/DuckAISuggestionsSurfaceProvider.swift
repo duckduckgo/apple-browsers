@@ -175,8 +175,7 @@ final class DuckAISuggestionsSurfaceProvider {
         )
         .map { [weak chatManager, weak urlLoader, weak self] hasRecents, _, _ -> UnifiedSuggestionsInputsMerger.DuckAIState in
             let query = self?.switchBarHandler.currentText ?? ""
-            let settled = chatManager?.lastCompletedFetchQuery == query
-                && urlLoader?.lastCompletedFetchQuery == query
+            let settled = self?.isSettled(forQuery: query, chatManager: chatManager, urlLoader: urlLoader) ?? false
             return .init(hasRecents: hasRecents, settled: settled)
         }
         .sink { [weak self] state in self?.stateSubject.send(state) }
@@ -197,9 +196,8 @@ final class DuckAISuggestionsSurfaceProvider {
                 || !(urlLoader?.topURLs.isEmpty ?? true)
                 || !(self?.switchBarHandler.currentText.isEmpty ?? true)
         }
-        hasSettledReader = { [weak chatManager, weak urlLoader] query in
-            chatManager?.lastCompletedFetchQuery == query
-                && urlLoader?.lastCompletedFetchQuery == query
+        hasSettledReader = { [weak chatManager, weak urlLoader, weak self] query in
+            self?.isSettled(forQuery: query, chatManager: chatManager, urlLoader: urlLoader) ?? false
         }
         refreshRecentsAction = { [weak chatManager, weak self] in
             guard let self, self.aiChatSettings.isChatSuggestionsEnabled else { return }
@@ -230,6 +228,17 @@ final class DuckAISuggestionsSurfaceProvider {
         refreshCachesAction = nil
         recentsCountReader = nil
         chatDeleteAction = nil
+    }
+
+    /// A sub-source gated off (its toggle disabled) never fetches, so it's trivially settled;
+    /// an active one is settled once its loader has caught up to `query`.
+    private func isSettled(forQuery query: String,
+                           chatManager: AIChatHistoryManager?,
+                           urlLoader: DuckAIURLSuggestionsLoader?) -> Bool {
+        let gate = builtSettingsGate ?? currentSettingsGate
+        let chatSettled = !gate.chatEnabled || chatManager?.lastCompletedFetchQuery == query
+        let urlSettled = !gate.searchEnabled || urlLoader?.lastCompletedFetchQuery == query
+        return chatSettled && urlSettled
     }
 
     private func select(rowID id: String, source: DuckAISuggestionsSource) {

@@ -23,6 +23,7 @@ import VPN
 import Lottie
 import os.log
 import TipKit
+import DesignResourcesKitIcons
 
 public struct TunnelControllerView: View {
 
@@ -159,7 +160,9 @@ public struct TunnelControllerView: View {
 
     @ViewBuilder
     private func headerAnimationView() -> some View {
-        if colorScheme == .light {
+        if AppRebrand.isAppRebranded() {
+            headerAnimationView("vpn-animation")
+        } else if colorScheme == .light {
             headerAnimationView("vpn-light-mode")
         } else {
             headerAnimationView("vpn-dark-mode")

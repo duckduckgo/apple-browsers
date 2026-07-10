@@ -123,45 +123,27 @@ final class SubscriptionPromoExistingUserCoordinatorTests: XCTestCase {
 
     // MARK: - Onboarding gating (per-coordinator gate via isEligibleToPresent)
 
-    func testIsEligibleToPresentWhenOnboardingSeenAndNotStillOnboarding() {
-        mockDaxDialogs.hasSeenOnboarding = true
-        mockDaxDialogs.isStillOnboardingResult = false
-
+    func testIsEligibleToPresentWhenOnboardingComplete() {
         XCTAssertTrue(sut.isEligibleToPresent(isOnboardingComplete: true))
     }
 
-    func testIsEligibleToPresentWhenOnboardingNotSeenButNoContextualDialogsPending() {
-        // single-tab user: linear onboarding done, no NTP dialog pending
-        mockDaxDialogs.hasSeenOnboarding = false
-        mockDaxDialogs.isStillOnboardingResult = false
+    func testIsEligibleToPresentWhenOnboardingNotCompleteAndNoDialogVisible() {
+        mockDaxDialogs.isShowingContextualOnboardingDialog = false
 
         XCTAssertTrue(sut.isEligibleToPresent(isOnboardingComplete: false))
     }
 
-    func testIsNotEligibleWhenContextualOnboardingIsStillInProgress() {
-        // e.g. "Try a Search" or "Try Visiting a Site" dialog still pending
-        mockDaxDialogs.hasSeenOnboarding = false
-        mockDaxDialogs.isStillOnboardingResult = true
-
-        XCTAssertFalse(sut.isEligibleToPresent(isOnboardingComplete: false))
-    }
-
-    func testIsEligibleToPresentWhenOnboardingSeenEvenIfStillOnboarding() {
-        // isDismissed=true (isOnboardingComplete=true) short-circuits the ||
-        mockDaxDialogs.hasSeenOnboarding = true
-        mockDaxDialogs.isStillOnboardingResult = true
-
-        XCTAssertTrue(sut.isEligibleToPresent(isOnboardingComplete: true))
-    }
-
-    func testIsNotEligibleWhenNotStillOnboardingButContextualDialogCurrentlyVisible() {
-        // Race condition: "Try Visiting a Site" dialog visible — flags already set so
-        // isStillOnboarding()=false, but currentHomeSpec is non-nil
-        mockDaxDialogs.hasSeenOnboarding = false
-        mockDaxDialogs.isStillOnboardingResult = false
+    func testIsNotEligibleWhenContextualDialogCurrentlyVisible() {
         mockDaxDialogs.isShowingContextualOnboardingDialog = true
 
         XCTAssertFalse(sut.isEligibleToPresent(isOnboardingComplete: false))
+    }
+
+    func testIsEligibleToPresentWhenOnboardingCompleteEvenIfContextualDialogVisible() {
+        // isOnboardingComplete=true short-circuits the || regardless of dialog state
+        mockDaxDialogs.isShowingContextualOnboardingDialog = true
+
+        XCTAssertTrue(sut.isEligibleToPresent(isOnboardingComplete: true))
     }
 
     // MARK: - markLaunchPromptPresented
@@ -314,11 +296,8 @@ final class SubscriptionPromoExistingUserCoordinatorTests: XCTestCase {
 
 private final class MockDaxOnboardingGating: ContextualDaxDialogStatusProvider & SubscriptionPromotionCoordinating {
     var hasSeenOnboarding: Bool = true
-    var isStillOnboardingResult: Bool = false
     var isShowingContextualOnboardingDialog: Bool = false
     var isShowingSubscriptionPromotion: Bool = false
     var subscriptionPromotionDialogSeen: Bool = false
     var subscriptionPromotionPending: Bool = false
-
-    func isStillOnboarding() -> Bool { isStillOnboardingResult }
 }

@@ -47,7 +47,6 @@ protocol ContextualDaxDialogDisabling {
 
 protocol ContextualDaxDialogStatusProvider {
     var hasSeenOnboarding: Bool { get }
-    func isStillOnboarding() -> Bool
     /// `true` while a contextual onboarding NTP dialog is currently visible on screen —
     /// i.e. a home-screen spec has been returned but `setDaxDialogDismiss()` has not yet been called.
     var isShowingContextualOnboardingDialog: Bool { get }

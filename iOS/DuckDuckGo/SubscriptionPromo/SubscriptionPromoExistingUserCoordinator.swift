@@ -58,9 +58,9 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
     // MARK: - Eligibility
 
     /// Softer onboarding gate: eligible when onboarding is fully complete, or when no contextual
-    /// onboarding dialog is either pending (`isStillOnboarding`) or currently visible on screen
-    /// (`isShowingContextualOnboardingDialog`) — preventing the promo from appearing on top of
-    /// an active "Try a Search", "Try Visiting a Site", or fire tutorial dialog on cold launch.
+    /// onboarding dialog is currently visible on screen (`isShowingContextualOnboardingDialog`) —
+    /// preventing the promo from appearing on top of an active "Try a Search",
+    /// "Try Visiting a Site", or fire tutorial dialog on cold launch.
     func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool {
         isOnboardingComplete || !daxDialogs.isShowingContextualOnboardingDialog
     }

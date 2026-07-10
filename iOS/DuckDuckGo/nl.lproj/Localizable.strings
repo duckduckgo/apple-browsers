@@ -103,6 +103,9 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Annuleren";
 
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Chats";
+
 /* Copy action */
 "action.title.copy" = "Kopiëren";
 
@@ -247,24 +250,6 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI-functies";
 
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Chat";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Transcript";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.voice" = "Voicechat";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.untitledChat" = "Nieuwe chat";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening" = "Luisteren …";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Luisteren…";
-
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Chats";
 
@@ -337,6 +322,45 @@
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Nieuwe spraakchat";
 
+/* Title of the confirmation shown when the user taps Fire in Duck.ai chat history to delete all chats; the number is the chat count. Do not translate - stringsdict entry */
+"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Duck.ai openen";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Geen recente chats";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Er is iets misgegaan bij het laden van je Duck.ai-chats. Probeer het later opnieuw.";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Kon chats niet laden";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Geen overeenkomsten gevonden";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Zoeken";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Vastgezet";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Recent";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Chat verwijderen";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Chat downloaden";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Chat vastzetten";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Chat loskoppelen";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Voor analytische taken";
 
@@ -375,6 +399,24 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Krijg toegang tot je chats op al je apparaten met Sync & Backup.";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Chat";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transcript";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
+"aiChat.tabSwitcher.card.chip.voice" = "Voicechat";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
+"aiChat.tabSwitcher.card.untitledChat" = "Nieuwe chat";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
+"aiChat.tabSwitcher.card.voice.listening" = "Luisteren …";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Luisteren…";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Stel toon, lengte en gedrag in";
@@ -1410,6 +1452,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Tik op **Een besturingselement toevoegen** onderaan het scherm";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Nieuw";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Bevestigen";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "We proberen de meest privacyvriendelijke cookie-opties te selecteren en deze voor je te sluiten. Als afmelden niet mogelijk is, besparen we je een klik en accepteren we deze cookies voor je.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Beheer of accepteer cookies voor mij";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Ik blijf ze zelf beheren";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Ben je de cookiepop-ups zat die je maar blijven lastigvallen?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "We kunnen je een klik besparen en deze cookies voor je accepteren.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Accepteer cookies zonder afmeldoptie voor me";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ik blijf ze zelf beheren";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Ben je de cookiepop-ups zat waarbij je je niet kunt afmelden?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Je kunt dit altijd later aanpassen in\n**Instellingen** > **Bescherming tegen cookiepop-ups**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Crashrapporten altijd verzenden";
@@ -3691,6 +3766,9 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Alles verwijderen";
 
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Chats verwijderen";
+
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Tabblad verwijderen";
 
@@ -3857,7 +3935,7 @@
 "settings.aifeatures.assist.sometimes" = "Soms";
 
 /* Title of the native Search Assist setting control */
-"settings.aifeatures.assist.title" = "Zoek Assist";
+"settings.aifeatures.assist.title" = "Search Assist";
 
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Pagina-inhoud automatisch naar Duck.ai verzenden";
@@ -3869,7 +3947,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Chatsuggesties";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "DuckDuckGo gebruiken zonder AI";
+"settings.aifeatures.disable.all" = "Gebruik DuckDuckGo zonder AI";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Schakelt Duck.ai uit, verbergt door AI ondersteunde antwoorden in zoekresultaten en filtert bekende AI-spamwebsites in zoekresultaten voor afbeeldingen.";
@@ -4009,14 +4087,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Je instelling voltooien";
 
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "We proberen alleen de meest privacyvriendelijke cookie-opties voor je te selecteren en sluiten daarna deze pop-ups.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Cookiepop-ups automatisch beheren";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Bescherming tegen cookiepop-ups";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo zal proberen de meest privacyvriendelijke instellingen te selecteren en deze pop-ups voor je verbergen.\n[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan cookievoorkeuren automatisch beheren om je privacy te maximaliseren, het aantal cookies te minimaliseren en deze pop-ups te sluiten.\n[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Cookiepop-ups beheren";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Laat DuckDuckGo je ook een klik besparen door namens jou cookies te accepteren om pop-ups te sluiten waarbij je je niet kunt afmelden.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Pop-ups zonder afmeldmogelijkheid";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Tabbladen en gegevens verwijderen";
@@ -5332,52 +5422,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Wat wil je importeren?";
 
-
-/* No comment provided by engineer. */
-"No matches for \"%@\"" = "Geen resultaten voor \"%@\"";
-
-
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Chats";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Geen recente chats";
-
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Duck.ai openen";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Zoeken";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Vastgezet";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Recent";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Geen overeenkomsten gevonden";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Kon chats niet laden";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Er is iets misgegaan bij het laden van je Duck.ai-chats. Probeer het later opnieuw.";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Chat verwijderen";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Chat downloaden";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Chat vastzetten";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Chat loskoppelen";
-
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Chats verwijderen";
-
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";

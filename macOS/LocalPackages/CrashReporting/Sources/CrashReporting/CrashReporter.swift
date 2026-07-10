@@ -94,7 +94,6 @@ public final class CrashReporter: CrashReporting {
 
         if internalUserDecider.isInternalUser {
             await send(crashReports)
-            return
         } else if await promptForConsent(latest) {
             await send(crashReports)
         }

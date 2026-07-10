@@ -241,6 +241,9 @@ extension BrowserChromeButton {
         let button = BrowserChromeButton(.toolbar)
         if let image {
             button.setImage(image)
+        } else {
+            // Text buttons (no icon) render `title` as their visible label; icon buttons use it only for accessibility.
+            button.setTitle(title, for: .normal)
         }
 
         if let action {

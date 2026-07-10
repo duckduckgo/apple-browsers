@@ -112,7 +112,6 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: nil, fixedWidth: nil) { [weak self] in
             self?.onDoneButtonTapped?()
         }
-        (item.customView as? BrowserChromeButton)?.setTitle(UserText.navigationTitleDone, for: .normal)
         Self.applyTextConstraints(to: item)
         return item
     }()

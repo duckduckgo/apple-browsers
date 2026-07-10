@@ -312,7 +312,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.browserComparisonContent
+            let result = sut.setDefaultBrowserContent
 
             // THEN
             #expect(result.title == expectedTitle)
@@ -327,7 +327,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.browserComparisonContent
+            let result = sut.setDefaultBrowserContent
 
             // THEN
             #expect(result.primaryCTA == UserText.Onboarding.BrowsersComparison.cta)
@@ -342,10 +342,25 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.browserComparisonContent
+            let result = sut.setDefaultBrowserContent
 
             // THEN
             #expect(result.secondaryCTA == UserText.onboardingSkip)
+        }
+
+        @Test(
+            "Check browser comparison has no sub-header",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkBrowserComparisonHasNoSubHeader(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.subHeader == nil)
         }
 
         @Test(
@@ -357,7 +372,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.browserComparisonContent
+            let result = sut.setDefaultBrowserContent
 
             // THEN
             #expect(result.features == RebrandedComparisonTableModel.defaultBrowserFeatures)
@@ -366,7 +381,7 @@ struct OnboardingIntroContentProviderTests {
     }
 
     @Suite("AI Comparison Content")
-    struct AIComparisonContent {
+    struct AIIntroContent {
 
         @Test(
             "Check AI comparison title is correct",
@@ -377,7 +392,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.aiComparisonContent
+            let result = sut.aiIntroContent
 
             // THEN
             #expect(result.title == UserText.Onboarding.DuckAICPP.AIComparison.title)
@@ -392,10 +407,25 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.aiComparisonContent
+            let result = sut.aiIntroContent
 
             // THEN
             #expect(result.subHeader == UserText.Onboarding.DuckAICPP.AIComparison.subHeader)
+        }
+
+        @Test(
+            "Check AI comparison has no secondary CTA",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func checkAIComparisonHasNoSecondaryCTA(flow: OnboardingFlowType) {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.aiIntroContent
+
+            // THEN
+            #expect(result.secondaryCTA == nil)
         }
 
         @Test(
@@ -407,7 +437,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.aiComparisonContent
+            let result = sut.aiIntroContent
 
             // THEN
             #expect(result.primaryCTA == UserText.Onboarding.DuckAICPP.AIComparison.cta)
@@ -422,7 +452,7 @@ struct OnboardingIntroContentProviderTests {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
 
             // WHEN
-            let result = sut.aiComparisonContent
+            let result = sut.aiIntroContent
 
             // THEN
             #expect(result.features == RebrandedComparisonTableModel.defaultAIFeatures)
@@ -857,16 +887,16 @@ struct OnboardingIntroContentProviderTests {
         )
         func browserComparisonDaxAnimation(flow: OnboardingFlowType) {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
-            #expect(sut.browserComparisonContent.daxAnimation == .wingBottom)
+            #expect(sut.setDefaultBrowserContent.daxAnimation == .wingBottom)
         }
 
         @Test(
             "Check AI comparison uses wingBottom animation",
             arguments: [.default, .duckAI] as [OnboardingFlowType]
         )
-        func aiComparisonDaxAnimation(flow: OnboardingFlowType) {
+        func aiIntroDaxAnimation(flow: OnboardingFlowType) {
             let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
-            #expect(sut.aiComparisonContent.daxAnimation == .wingBottom)
+            #expect(sut.aiIntroContent.daxAnimation == .wingBottom)
         }
 
         @Test(

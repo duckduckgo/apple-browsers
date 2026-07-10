@@ -66,9 +66,11 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         case currentMode
     }
     
-    private(set) var collectionView: UICollectionView!
-    private(set) var buttonsStack: UIStackView!
-    private(set) var buttonsBackground: UIView!
+    private let tabsBarView = TabsBarView()
+
+    var collectionView: UICollectionView { tabsBarView.collectionView }
+    var buttonsStack: UIStackView { tabsBarView.buttonsStack }
+    var buttonsBackground: UIView { tabsBarView.buttonsBackground }
 
     lazy var fireButton: UIButton = {
         createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
@@ -139,51 +141,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     override func loadView() {
-        let view = UIView()
-
-        let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .horizontal
-        layout.minimumLineSpacing = 0
-        layout.minimumInteritemSpacing = 0
-        layout.sectionInset = .zero
-
-        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.isDirectionalLockEnabled = true
-        collectionView.showsHorizontalScrollIndicator = false
-        collectionView.showsVerticalScrollIndicator = false
-
-        buttonsBackground = UIView()
-        buttonsBackground.translatesAutoresizingMaskIntoConstraints = false
-
-        buttonsStack = UIStackView()
-        buttonsStack.translatesAutoresizingMaskIntoConstraints = false
-        buttonsStack.axis = .horizontal
-        buttonsStack.setContentHuggingPriority(.required, for: .horizontal)
-        buttonsStack.setContentCompressionResistancePriority(.required, for: .horizontal)
-
-        view.addSubview(collectionView)
-        view.addSubview(buttonsBackground)
-        view.addSubview(buttonsStack)
-
-        NSLayoutConstraint.activate([
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.leadingInset),
-            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            buttonsBackground.leadingAnchor.constraint(equalTo: collectionView.trailingAnchor),
-            buttonsBackground.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            buttonsBackground.topAnchor.constraint(equalTo: view.topAnchor),
-            buttonsBackground.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            buttonsStack.leadingAnchor.constraint(equalTo: collectionView.trailingAnchor, constant: Constants.leadingInset),
-            buttonsStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.leadingInset),
-            buttonsStack.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            buttonsStack.topAnchor.constraint(greaterThanOrEqualTo: view.topAnchor),
-            buttonsStack.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
-
-        self.view = view
+        view = tabsBarView
     }
     
     override func viewDidLoad() {
@@ -495,12 +453,13 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard let path = collectionView.indexPathForItem(at: touch.location(in: collectionView)),
-              let cell = collectionView.cellForItem(at: path) as? TabsBarCell else {
+              let cell = collectionView.cellForItem(at: path) as? TabsBarCell,
+              let removeButton = cell.removeButton else {
             return true
         }
 
         // Don't recognize if pressing delete button
-        return cell.removeButton.hitTest(touch.location(in: cell.removeButton), with: nil) == nil
+        return removeButton.hitTest(touch.location(in: removeButton), with: nil) == nil
     }
 
     private func releasePressedCell() {

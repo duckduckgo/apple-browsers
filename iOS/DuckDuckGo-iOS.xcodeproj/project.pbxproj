@@ -909,6 +909,7 @@
 		8586A10D24CBA7070049720E /* FindInPageActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8586A10C24CBA7070049720E /* FindInPageActivity.swift */; };
 		8586A10E24CBAF5B0049720E /* Core.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F143C2E41E4A4CD400CFDE3A /* Core.framework */; };
 		8586A11024CCCD040049720E /* TabsBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8586A10F24CCCD040049720E /* TabsBarViewController.swift */; };
+		7A23F00D30A0BEEF00000002 /* TabsBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A23F00D30A0BEEF00000001 /* TabsBarView.swift */; };
 		8588026624E420BD00C24AB6 /* LargeOmniBarStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588026424E4209900C24AB6 /* LargeOmniBarStateTests.swift */; };
 		8588026A24E424EE00C24AB6 /* AppWidthObserverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588026824E424AF00C24AB6 /* AppWidthObserverTests.swift */; };
 		858E45532FEC713D0078B671 /* FloatingDomainCapsuleController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858E45522FEC713D0078B671 /* FloatingDomainCapsuleController.swift */; };
@@ -3575,6 +3576,7 @@
 		858650DA246B111900C36F8A /* DaxOnboarding.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = DaxOnboarding.xcassets; sourceTree = "<group>"; };
 		8586A10C24CBA7070049720E /* FindInPageActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInPageActivity.swift; sourceTree = "<group>"; };
 		8586A10F24CCCD040049720E /* TabsBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsBarViewController.swift; sourceTree = "<group>"; };
+		7A23F00D30A0BEEF00000001 /* TabsBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsBarView.swift; sourceTree = "<group>"; };
 		8588026424E4209900C24AB6 /* LargeOmniBarStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeOmniBarStateTests.swift; sourceTree = "<group>"; };
 		8588026824E424AF00C24AB6 /* AppWidthObserverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppWidthObserverTests.swift; sourceTree = "<group>"; };
 		858E45522FEC713D0078B671 /* FloatingDomainCapsuleController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingDomainCapsuleController.swift; sourceTree = "<group>"; };
@@ -10888,6 +10890,7 @@
 				80EB2C4E2F56980700C5AE23 /* EscapeHatchView.swift */,
 				9872D204247DCAC100CEF398 /* TabPreviewsSource.swift */,
 				85DFEDF824CF3D0E00973FE7 /* TabsBarCell.swift */,
+				7A23F00D30A0BEEF00000001 /* TabsBarView.swift */,
 				8586A10F24CCCD040049720E /* TabsBarViewController.swift */,
 				3119AA092E84A1B100A1C001 /* DuckAIChromeChipView.swift */,
 				8569E16F2D52C993004A3CB7 /* TabSwitcherBarsStateHandler.swift */,
@@ -13900,6 +13903,7 @@
 				C1EA26662EB5725A006A863C /* AutofillExtensionSettingsActivationView.swift in Sources */,
 				C1EA26672EB5725A006A863C /* AutofillExtensionSettingsViewController.swift in Sources */,
 				F4F6DFB626E6B71300ED7E12 /* BookmarkFoldersTableViewController.swift in Sources */,
+				7A23F00D30A0BEEF00000002 /* TabsBarView.swift in Sources */,
 				8586A11024CCCD040049720E /* TabsBarViewController.swift in Sources */,
 				3119AA0A2E84A1B100A1C001 /* DuckAIChromeChipView.swift in Sources */,
 				CBB4A84F2FD301AA00A65956 /* SuggestionRowView.swift in Sources */,

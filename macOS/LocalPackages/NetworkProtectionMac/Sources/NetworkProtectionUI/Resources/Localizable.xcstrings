@@ -3035,6 +3035,30 @@
         }
       }
     },
+    "network.protection.status.view.strict.routing.pill.tooltip.off" : {
+      "comment" : "Tooltip shown when hovering the status pill while the VPN's Strict routing setting is off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some traffic may bypass the VPN on untrusted networks. Turn Strict routing on in VPN settings."
+          }
+        }
+      }
+    },
+    "network.protection.status.view.strict.routing.pill.tooltip.on" : {
+      "comment" : "Tooltip shown when hovering the status pill while the VPN's Strict routing setting is on",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "All your traffic is being protected. Manage Strict routing in VPN settings."
+          }
+        }
+      }
+    },
     "network.protection.subscription.expired.resubscribe.button" : {
       "comment" : "Button for the prompt that takes the user to the page to resubscribe.",
       "extractionState" : "extracted_with_value",

@@ -135,6 +135,7 @@ let package = Package(
                 "VPNAppState",
                 "VPNPixels",
                 .product(name: "VPN", package: "VPN"),
+                .product(name: "VPNUI", package: "VPN"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
                 .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),

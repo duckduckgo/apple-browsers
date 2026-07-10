@@ -26,6 +26,7 @@ import SwiftUI
 import TipKit
 import UIComponents
 import VPN
+import VPNUI
 
 struct NetworkProtectionStatusView: View {
 
@@ -281,7 +282,7 @@ struct NetworkProtectionStatusView: View {
             isShowingVPNSettings = true
         } label: {
             HStack(spacing: statusModel.enforceRoutes ? 6 : 4) {
-                Image(uiImage: DesignSystemImages.Color.Size24.lock)
+                (statusModel.enforceRoutes ? VPNUIImages.strictRoutingLockOn : VPNUIImages.strictRoutingLockOff)
                     .resizable()
                     .frame(width: 12, height: 12)
 
@@ -597,6 +598,7 @@ extension NetworkProtectionDNSSettings {
 private struct StrictRoutingPillButtonStyle: ButtonStyle {
 
     private static let cornerRadius: CGFloat = 12
+    private static let height: CGFloat = 24
 
     let isStrictRoutingOn: Bool
 
@@ -604,19 +606,20 @@ private struct StrictRoutingPillButtonStyle: ButtonStyle {
         configuration.label
             .foregroundColor(textColor)
             .padding(padding)
-            .background(RoundedRectangle(cornerRadius: Self.cornerRadius).fill(fillColor))
+            .frame(height: Self.height)
+            .background(RoundedRectangle(cornerRadius: Self.cornerRadius).fill(fillColor(isPressed: configuration.isPressed)))
             .contentShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
-            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 
     private var textColor: Color {
         isStrictRoutingOn ? .white : Color(designSystemColor: .vpnStrictRoutingInactiveText).opacity(0.9)
     }
 
-    private var fillColor: Color {
-        isStrictRoutingOn
-            ? Color(designSystemColor: .vpnStrictRoutingActive)
-            : Color(designSystemColor: .vpnStrictRoutingInactive)
+    private func fillColor(isPressed: Bool) -> Color {
+        if isStrictRoutingOn {
+            return Color(designSystemColor: isPressed ? .vpnStrictRoutingActivePressed : .vpnStrictRoutingActive)
+        }
+        return Color(designSystemColor: isPressed ? .vpnStrictRoutingInactivePressed : .vpnStrictRoutingInactive)
     }
 
     private var padding: EdgeInsets {

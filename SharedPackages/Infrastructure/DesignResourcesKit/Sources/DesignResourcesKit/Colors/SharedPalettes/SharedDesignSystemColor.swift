@@ -60,7 +60,9 @@ public enum SharedDesignSystemColor {
 
     // VPN
     case vpnStrictRoutingActive
+    case vpnStrictRoutingActivePressed
     case vpnStrictRoutingInactive
+    case vpnStrictRoutingInactivePressed
     case vpnStrictRoutingInactiveText
 
     // Buttons/Primary

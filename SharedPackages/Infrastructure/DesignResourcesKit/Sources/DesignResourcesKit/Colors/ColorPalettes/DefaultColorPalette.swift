@@ -233,12 +233,17 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .shieldPrivacy: return shieldPrivacy
+        // Per design, the Strict routing pill uses the same colours in light and dark mode.
         case .vpnStrictRoutingActive:
-            return DynamicColor(lightColor: RebrandingColor.Green.green50, darkColor: RebrandingColor.Green.green80)
+            return DynamicColor(staticColor: RebrandingColor.Green.green50)
+        case .vpnStrictRoutingActivePressed:
+            return DynamicColor(staticColor: RebrandingColor.Green.green60)
         case .vpnStrictRoutingInactive:
-            return DynamicColor(lightColor: Color(0xFFF0C2), darkColor: Color(0xC18010).opacity(0.16))
+            return DynamicColor(staticColor: Color(0xFFF0C2))
+        case .vpnStrictRoutingInactivePressed:
+            return DynamicColor(staticColor: Color(0xFFE8A3))
         case .vpnStrictRoutingInactiveText:
-            return DynamicColor(lightColor: Color(0x92540C), darkColor: RebrandingColor.Pollen.pollen20)
+            return DynamicColor(staticColor: Color(0x92540C))
         case .border: return border
         case .accentTextPrimary: return accentTextPrimary
         case .textPlaceholder: return textPlaceholder

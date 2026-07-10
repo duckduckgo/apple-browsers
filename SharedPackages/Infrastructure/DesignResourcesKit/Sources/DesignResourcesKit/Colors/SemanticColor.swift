@@ -88,7 +88,9 @@ public enum DesignSystemColor {
 
     // VPN
     case vpnStrictRoutingActive
+    case vpnStrictRoutingActivePressed
     case vpnStrictRoutingInactive
+    case vpnStrictRoutingInactivePressed
     case vpnStrictRoutingInactiveText
 
     // Icons

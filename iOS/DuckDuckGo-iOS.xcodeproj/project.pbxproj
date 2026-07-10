@@ -659,6 +659,7 @@
 		7BC16BAC2E72550A0016EE8E /* LoggingDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC16BAB2E72550A0016EE8E /* LoggingDebugViewController.swift */; };
 		7BC26C9E2DFC0CA000E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26C9D2DFC0CA000E52480 /* VPN */; };
 		7BC26CA02DFC0CAC00E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26C9F2DFC0CAC00E52480 /* VPN */; };
+		AADD1111DD0000000000AA01 /* VPNUI in Frameworks */ = {isa = PBXBuildFile; productRef = AADD1111DD0000000000AA02 /* VPNUI */; };
 		7BC26CA22DFC0CB800E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CA12DFC0CB800E52480 /* VPN */; };
 		7BC26CB22DFC155500E52480 /* VPNTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CB12DFC155500E52480 /* VPNTestUtils */; };
 		7BC26CB42DFC155E00E52480 /* VPNTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CB32DFC155E00E52480 /* VPNTestUtils */; };
@@ -5413,6 +5414,7 @@
 				9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */,
 				7B0752D92F21BFDB00ACA559 /* AutomationServer in Frameworks */,
 				7BC26CA02DFC0CAC00E52480 /* VPN in Frameworks */,
+				AADD1111DD0000000000AA01 /* VPNUI in Frameworks */,
 				316AC7872DC28DD1003D9770 /* UIComponents in Frameworks */,
 				4BC95E7D2D7416B2002FAB32 /* Onboarding in Frameworks */,
 				853273B624FFE0BB00E3C778 /* WidgetKit.framework in Frameworks */,
@@ -11789,6 +11791,7 @@
 				316AC7862DC28DD1003D9770 /* UIComponents */,
 				BB631D152DE0D9020099977D /* DesignResourcesKitIcons */,
 				7BC26C9F2DFC0CAC00E52480 /* VPN */,
+				AADD1111DD0000000000AA02 /* VPNUI */,
 				9F454D232E05489200B8CC5A /* SetDefaultBrowserCore */,
 				9FB6272D2E08251D00CBDEED /* SetDefaultBrowserUI */,
 				9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */,
@@ -18628,6 +18631,10 @@
 		7BC26C9F2DFC0CAC00E52480 /* VPN */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = VPN;
+		};
+		AADD1111DD0000000000AA02 /* VPNUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VPNUI;
 		};
 		7BC26CA12DFC0CB800E52480 /* VPN */ = {
 			isa = XCSwiftPackageProductDependency;

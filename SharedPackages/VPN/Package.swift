@@ -11,6 +11,7 @@ let package = Package(
     ],
     products: [
         .library(name: "VPN", targets: ["VPN"]),
+        .library(name: "VPNUI", targets: ["VPNUI"]),
         .library(name: "VPNTestUtils", targets: ["VPNTestUtils"]),
     ],
     dependencies: [
@@ -37,6 +38,13 @@ let package = Package(
         ),
 
         .target(name: "WireGuardC"),
+
+        .target(
+            name: "VPNUI",
+            resources: [
+                .process("Resources/Assets.xcassets")
+            ]
+        ),
 
         .target(
             name: "VPNTestUtils",

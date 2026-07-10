@@ -17,8 +17,8 @@
 //
 
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import SwiftUI
+import VPNUI
 
 /// A compact status pill shown under the VPN status header while the VPN is on. It reflects the current
 /// Strict routing state — green when on, amber when off — and takes the user to the relevant VPN setting
@@ -31,10 +31,14 @@ struct StrictRoutingPillView: View {
     /// Invoked when the user taps the pill, to take them to the Strict routing setting.
     let onTap: () -> Void
 
+    /// Whether the pointer is over the pill. Per the Figma spec the pill shows its interaction colour on
+    /// hover (desktop), so the fill is driven by this rather than by the press state alone.
+    @State private var isHovering = false
+
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: isStrictRoutingOn ? 6 : 4) {
-                Image(nsImage: DesignSystemImages.Color.Size24.lock)
+                (isStrictRoutingOn ? VPNUIImages.strictRoutingLockOn : VPNUIImages.strictRoutingLockOff)
                     .resizable()
                     .frame(width: 12, height: 12)
 
@@ -44,25 +48,31 @@ struct StrictRoutingPillView: View {
                     .font(.system(size: 11, weight: .medium))
             }
         }
-        .buttonStyle(StrictRoutingPillButtonStyle(isStrictRoutingOn: isStrictRoutingOn))
+        .buttonStyle(StrictRoutingPillButtonStyle(isStrictRoutingOn: isStrictRoutingOn, isHovering: isHovering))
+        .onHover { isHovering = $0 }
+        .help(isStrictRoutingOn
+              ? UserText.networkProtectionStrictRoutingPillTooltipOn
+              : UserText.networkProtectionStrictRoutingPillTooltipOff)
     }
 }
 
-/// Renders the pill as a coloured capsule. The design treats this as a badge with no pressed state, so
-/// pressing applies a simple dim as tap feedback.
+/// Renders the pill as a coloured capsule. On hover or press it shows the state's interaction colour —
+/// green60 when on, yellow-20 when off.
 private struct StrictRoutingPillButtonStyle: ButtonStyle {
 
     let isStrictRoutingOn: Bool
+    let isHovering: Bool
 
     private static let cornerRadius: CGFloat = 12
+    private static let height: CGFloat = 24
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundColor(textColor)
             .padding(padding)
-            .background(RoundedRectangle(cornerRadius: Self.cornerRadius).fill(fillColor))
+            .frame(height: Self.height)
+            .background(RoundedRectangle(cornerRadius: Self.cornerRadius).fill(fillColor(interactive: isHovering || configuration.isPressed)))
             .contentShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
-            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 
     private var padding: EdgeInsets {
@@ -75,9 +85,10 @@ private struct StrictRoutingPillButtonStyle: ButtonStyle {
         isStrictRoutingOn ? .white : Color(designSystemColor: .vpnStrictRoutingInactiveText).opacity(0.9)
     }
 
-    private var fillColor: Color {
-        isStrictRoutingOn
-            ? Color(designSystemColor: .vpnStrictRoutingActive)
-            : Color(designSystemColor: .vpnStrictRoutingInactive)
+    private func fillColor(interactive: Bool) -> Color {
+        if isStrictRoutingOn {
+            return Color(designSystemColor: interactive ? .vpnStrictRoutingActivePressed : .vpnStrictRoutingActive)
+        }
+        return Color(designSystemColor: interactive ? .vpnStrictRoutingInactivePressed : .vpnStrictRoutingInactive)
     }
 }

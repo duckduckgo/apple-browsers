@@ -84,6 +84,11 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
             })
         }
         if let _webView {
+            if let navigationDelegateProxy {
+                let navigationDelegateProxyKey = UnsafeRawPointer(bitPattern: "navigationDelegateProxyKey".hashValue)!
+                objc_setAssociatedObject(_webView, navigationDelegateProxyKey, navigationDelegateProxy, .OBJC_ASSOCIATION_RETAIN)
+            }
+
             // Save the pool before releasing the webView so we can call
             // _terminateAllWebContentProcesses on it after the webView is gone.
             let processPool = _webView.configuration.processPool

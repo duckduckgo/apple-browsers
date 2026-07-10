@@ -79,7 +79,7 @@ struct Launching: LaunchingHandling {
             featureFlagger.isFeatureOn(.appRebranding)
         }
 
-        DesignSystemPalette.current = featureFlagger.isFeatureOn(.appRebranding) ? .rebranded : .default
+        DesignSystemPalette.current = featureFlagger.isFeatureOn(.appRebranding) ? .default : .legacy
 
         favicons = Favicons(fireproofing: fireproofing)
 

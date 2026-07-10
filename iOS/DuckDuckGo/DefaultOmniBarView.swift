@@ -2111,26 +2111,22 @@ extension DefaultOmniBarView {
 final class RebrandPreviewOverride: ObservableObject {
     private let isRebranded: Bool
     private let previousAppRebrand: () -> Bool
-    private let previousDesignSystemRebrand: () -> Bool
     private let previousPalette: ColorPalette
 
     init(isRebranded: Bool) {
         self.isRebranded = isRebranded
         previousAppRebrand = AppRebrand.isAppRebranded
-        previousDesignSystemRebrand = DesignSystemRebrand.isAppRebranded
         previousPalette = DesignSystemPalette.current
         apply()
     }
 
     func apply() {
         AppRebrand.isAppRebranded = { [isRebranded] in isRebranded }
-        DesignSystemRebrand.isAppRebranded = { [isRebranded] in isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
+        DesignSystemPalette.current = isRebranded ? .default : .legacy
     }
 
     deinit {
         AppRebrand.isAppRebranded = previousAppRebrand
-        DesignSystemRebrand.isAppRebranded = previousDesignSystemRebrand
         DesignSystemPalette.current = previousPalette
     }
 }

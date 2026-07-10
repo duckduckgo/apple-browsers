@@ -173,8 +173,8 @@ final class PrivacyDashboardViewController: UIViewController {
 extension PrivacyDashboardViewController {
     
     private func decorate() {
-        // Enforce default color palette here until PrivacyDashboard can support different color sets
-        view.backgroundColor = UIColor(singleUseColor: .privacyDashboardBackground, palette: .default)
+        // Enforce the pre-2026 (legacy) color palette here until PrivacyDashboard can support different color sets
+        view.backgroundColor = UIColor(singleUseColor: .privacyDashboardBackground, palette: .legacy)
         privacyDashboardController.theme = .init(traitCollection)
     }
 

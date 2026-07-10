@@ -87,8 +87,8 @@ extension Preferences {
 
         /// Designated Initializer
         ///
-        init(themeName: ThemeName) {
-            themeColors = ThemeColors(themeName: themeName)
+        init(themeName: ThemeName, isAppRebranded: Bool) {
+            themeColors = ThemeColors(themeName: themeName, isAppRebranded: isAppRebranded)
         }
 
         var body: some View {
@@ -146,13 +146,14 @@ extension Preferences {
     struct ThemesPickerView: View {
         @EnvironmentObject var model: AppearancePreferences
         var theme: ThemeStyleProviding
+        let isAppRebranded: Bool
 
         var body: some View {
             SlidingPickerView(settings: .buildThemesPickerSettings(theme: theme),
                               allValues: ThemeName.allCasesSorted,
                               selectedValue: $model.themeName) { themeName in
                 AnyView(
-                    ThemeView(themeName: themeName)
+                    ThemeView(themeName: themeName, isAppRebranded: isAppRebranded)
                 )
             }
             .frame(height: 32)
@@ -200,7 +201,7 @@ extension Preferences {
                         .environmentObject(model)
                         .padding(.bottom, 16)
 
-                    ThemesPickerView(theme: themeManager.theme)
+                    ThemesPickerView(theme: themeManager.theme, isAppRebranded: themeManager.isAppRebranded)
                         .environmentObject(model)
                         .padding(.bottom, 16)
 

@@ -45,7 +45,7 @@ struct OmniBarNotification: View {
 
     @ViewBuilder
     private var background: some View {
-        if DesignSystemRebrand.isAppRebranded() {
+        if DesignSystemPalette.current.isRebranded {
             Capsule()
                 .foregroundColor(Constants.Colors.background)
                 .offset(x: textOffset)

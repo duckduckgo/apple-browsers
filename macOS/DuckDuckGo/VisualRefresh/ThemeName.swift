@@ -38,10 +38,10 @@ extension ThemeName {
         ]
     }
 
-    var designColorPalette: DesignResourcesKit.ColorPalette {
+    func designColorPalette(isAppRebranded: Bool) -> DesignResourcesKit.ColorPalette {
         switch self {
         case .default:
-            .default
+            isAppRebranded ? .default : .legacy
         case .coolGray:
             .coolGray
         case .desert:

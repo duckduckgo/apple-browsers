@@ -84,8 +84,8 @@ struct ThemeColors {
 
 extension ThemeColors {
 
-    init(themeName: ThemeName) {
-        let palette = themeName.designColorPalette
+    init(themeName: ThemeName, isAppRebranded: Bool) {
+        let palette = themeName.designColorPalette(isAppRebranded: isAppRebranded)
 
         accentAltContentPrimary = NSColor(designSystemColor: .accentAltContentPrimary, palette: palette)
         accentAltContentSecondary = NSColor(designSystemColor: .accentAltContentSecondary, palette: palette)

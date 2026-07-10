@@ -137,8 +137,8 @@ private extension ColorParityTests {
         var colors: [String: String] = [:]
 
         let palettes: [(name: String, palette: ColorPalette)] = [
-            ("default", .default),
-            ("rebranded", .rebranded)
+            ("legacy", .legacy),
+            ("default", .default)
         ]
 
         for (name, palette) in palettes {
@@ -182,29 +182,24 @@ private extension ColorParityTests {
 
 private extension ColorParityTests {
 
-    static var scenarios: [(name: String, palette: ColorPalette, rebranded: Bool)] {
+    static var scenarios: [(name: String, palette: ColorPalette)] {
         [
-            ("defaultRebranded", .default, true),
-            ("defaultLegacy", .default, false),
-            ("coolGray", .coolGray, true),
-            ("desert", .desert, true),
-            ("green", .green, true),
-            ("orange", .orange, true),
-            ("rose", .rose, true),
-            ("slateBlue", .slateBlue, true),
-            ("violet", .violet, true)
+            ("default", .default),
+            ("legacy", .legacy),
+            ("coolGray", .coolGray),
+            ("desert", .desert),
+            ("green", .green),
+            ("orange", .orange),
+            ("rose", .rose),
+            ("slateBlue", .slateBlue),
+            ("violet", .violet)
         ]
     }
 
     static func resolvedColors() -> [String: String] {
         var colors: [String: String] = [:]
 
-        let originalFlag = DesignSystemRebrand.isAppRebranded
-        defer { DesignSystemRebrand.isAppRebranded = originalFlag }
-
         for scenario in scenarios {
-            DesignSystemRebrand.isAppRebranded = { scenario.rebranded }
-
             for color in SharedDesignSystemColor.allCases {
                 record(&colors, "designSystem.\(color).\(scenario.name)", NSColor(designSystemColor: color, palette: scenario.palette))
             }

@@ -38,7 +38,7 @@ private final class RebrandPreviewOverride: ObservableObject {
         previousIsRebranded = AppRebrand.isAppRebranded
         previousPalette = DesignSystemPalette.current
         AppRebrand.isAppRebranded = { isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
+        DesignSystemPalette.current = isRebranded ? .default : .legacy
     }
 
     deinit {
@@ -63,7 +63,7 @@ struct RebrandedPreview<Content: View>: View {
     var body: some View {
         // Re-assert at body time so the flag is set before child views resolve their images.
         AppRebrand.isAppRebranded = { isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
+        DesignSystemPalette.current = isRebranded ? .default : .legacy
         return content
     }
 }

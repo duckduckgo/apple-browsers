@@ -820,7 +820,7 @@ final class RebrandPreviewOverride: ObservableObject {
         self.previousIsRebranded = AppRebrand.isAppRebranded
         self.previousPalette = DesignSystemPalette.current
         AppRebrand.isAppRebranded = { isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
+        DesignSystemPalette.current = isRebranded ? .default : .legacy
     }
 
     deinit {
@@ -843,7 +843,7 @@ public struct ButtonStylesGallery: View {
 
     private func applyRebrandOverride() {
         AppRebrand.isAppRebranded = { isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
+        DesignSystemPalette.current = isRebranded ? .default : .legacy
     }
 
     public var body: some View {

@@ -31,7 +31,7 @@ system tractable.
 | Axis | What picks it | Where |
 |---|---|---|
 | **① Palette / theme** | `DesignSystemPalette.current` | Set once at launch on iOS; on every theme switch on macOS. macOS also has 7 themes (Cool Gray … Violet); iOS has none. |
-| **② Legacy vs rebrand** | the 2026 rebrand flag | *Today:* `DesignSystemRebrand.isAppRebranded` (macOS) and `DesignSystemPalette.current == .rebranded` (iOS). *After Phase 2:* just a property of the selected palette (`.default` = rebranded, `.legacy` = pre-2026). *After the flag is removed:* gone entirely. |
+| **② Legacy vs rebrand** | a property of the selected palette | `DesignSystemPalette.current.isRebranded` on both platforms — `.default` = rebranded, `.legacy` = pre-2026. The host app selects the palette at launch from the 2026 rebrand flag. *After the flag is removed:* gone entirely (only `.default` remains). |
 | **③ Light vs dark** | the OS trait / appearance | Resolved lazily at render time from a `DynamicColor`'s light/dark pair (the `Utilities/` tier). Never branch on this yourself. |
 
 The rebrand flag (axis ②) is temporary. Everything legacy is quarantined so that removing the
@@ -99,10 +99,10 @@ Colors/
 │
 └── API/                 the public surface — signatures are frozen until Phase 6
     ├── ColorExtensions.swift         Color/UIColor/NSColor(designSystemColor:/singleUseColor:/baseColor:)
-    ├── ColorPalette.swift            DesignSystemPalette.current + the ColorPalette enum (selection)
+    ├── ColorPalette.swift            DesignSystemPalette.current + the ColorPalette enum (selection);
+    │                                 `.isRebranded` is the single rebrand switch since Phase 2
     ├── ColorPalette+BaseColors.swift iOS BaseColor resolver
-    ├── BaseColor.swift               the raw-ramp escape hatch (no semantic meaning)
-    └── DesignSystemRebrand.swift     the macOS rebrand flag. TEMPORARY: deleted in Phase 2.
+    └── BaseColor.swift               the raw-ramp escape hatch (no semantic meaning)
 ```
 
 ### The dependency rule

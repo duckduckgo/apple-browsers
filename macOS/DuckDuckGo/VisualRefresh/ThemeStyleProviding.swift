@@ -80,7 +80,7 @@ struct ThemeStyle: ThemeStyleProviding {
     let addToolbarShadow: Bool
 
     static func buildThemeStyle(themeName: ThemeName, featureFlagger: FeatureFlagger) -> ThemeStyle {
-        let palette = ThemeColors(themeName: themeName)
+        let palette = ThemeColors(themeName: themeName, isAppRebranded: featureFlagger.isFeatureOn(.appRebranding))
         return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger)
     }
 

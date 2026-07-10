@@ -653,7 +653,7 @@ private struct FireDialogStyle {
     }
 
     static var current: FireDialogStyle {
-        DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
+        DesignSystemPalette.current.isRebranded ? .rebranded : .default
     }
 }
 

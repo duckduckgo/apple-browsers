@@ -46,9 +46,9 @@ public enum AIChatURLParameters {
     public static let settingsName = "settings"
     public static let settingsOpenValue = "open"
 
-    /// Selects which Duck.ai shell the FE renders; `native-customize-modal` renders only the customize card.
-    public static let placementName = "placement"
-    public static let nativeCustomizeModalPlacementValue = "native-customize-modal"
+    /// Tells the Duck.ai FE to render only the Customize Responses card.
+    public static let forceCustomizeName = "forceCustomize"
+    public static let forceCustomizeValue = "true"
 
     /// Appends `?mode=voice` to the given base URL.
     public static func voiceModeURL(from baseURL: URL) -> URL {
@@ -70,9 +70,9 @@ public enum AIChatURLParameters {
         baseURL.addingOrReplacing(URLQueryItem(name: settingsName, value: settingsOpenValue))
     }
 
-    /// Appends `?placement=native-customize-modal` to the given base URL.
+    /// Appends `?forceCustomize=true` to the given base URL.
     public static func nativeCustomizeModalURL(from baseURL: URL) -> URL {
-        baseURL.addingOrReplacing(URLQueryItem(name: placementName, value: nativeCustomizeModalPlacementValue))
+        baseURL.addingOrReplacing(URLQueryItem(name: forceCustomizeName, value: forceCustomizeValue))
     }
 
     /// Appends `?native-input=true` to the given base URL.

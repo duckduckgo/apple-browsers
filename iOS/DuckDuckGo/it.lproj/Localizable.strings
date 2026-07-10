@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Tocca **Aggiungi un controllo** nella parte inferiore dello schermo";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Nuova";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Conferma";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Cercheremo di selezionare le opzioni sui cookie più riservate disponibili e di chiuderle per te. Se non sono previste opzioni di rifiuto, ti risparmieremo un clic accettando i cookie al posto tuo.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Gestisci o accetta i cookie per me";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Continuerò a occuparmene io";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Non vuoi più vedere popup sui cookie che non ti lasciano in pace?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Possiamo farti risparmiare un clic e accettare questi cookie per te.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Accetta per me i cookie che non prevedono il rifiuto";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Continuerò a occuparmene io";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Non vuoi più vedere pop-up sui cookie che non ti permettono di rifiutare?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Puoi sempre modificare questa scelta in un secondo momento in\n**Impostazioni** > **Protezione pop-up dei cookie**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Invia sempre segnalazioni di arresto anomalo";
 

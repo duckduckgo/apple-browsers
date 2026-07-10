@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "画面下部の**コントロールを追加**をタップします";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "新規";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "確認";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "選択可能な中で最もプライバシー保護を強化したCookieオプションが選択され、ポップアップは自動的に閉じます。オプトアウトできないCookieは、ユーザーがクリックしなくても、自動的に受け入れられます。";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "自動的にCookieを管理し、同意する";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "自分で継続的に管理する";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "しつこいCookieポップアップにうんざりしていませんか？";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "クリックしなくても、Cookieオプションを受け入れることができます。";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "オプトアウトできないCookieを受け入れる";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "自分で継続的に管理する";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "オプトアウトできないCookieポップアップにうんざりしていませんか？";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "後からいつでも **設定** > **Cookieポップアップ保護** で調整できます。";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "クラッシュレポートを常に送信";
 

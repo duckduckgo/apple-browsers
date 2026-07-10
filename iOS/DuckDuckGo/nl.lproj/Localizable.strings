@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Tik op **Een besturingselement toevoegen** onderaan het scherm";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Nieuw";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Bevestigen";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "We proberen de meest privacyvriendelijke cookie-opties te selecteren en deze voor je te sluiten. Als afmelden niet mogelijk is, besparen we je een klik en accepteren we deze cookies voor je.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Beheer of accepteer cookies voor mij";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Ik blijf ze zelf beheren";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Ben je de cookiepop-ups zat die je maar blijven lastigvallen?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "We kunnen je een klik besparen en deze cookies voor je accepteren.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Accepteer cookies zonder afmeldoptie voor me";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ik blijf ze zelf beheren";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Ben je de cookiepop-ups zat waarbij je je niet kunt afmelden?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Je kunt dit altijd later aanpassen in\n**Instellingen** > **Bescherming tegen cookiepop-ups**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Crashrapporten altijd verzenden";
 

@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Натиснете **Добавяне на управление** в долната част на екрана";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Ново";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Потвърждаване";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Ще се стремим да избираме възможно най-поверителните опции за бисквитки и да ги затваряме вместо Вас. Ако няма опция за отказ от тях, ще Ви спестим едно кликване и ще приемем тези бисквитки вместо Вас.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Управление или приемане на бисквитки вместо мен";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Ще продължа да ги управлявам самостоятелно";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Омръзнаха ли Ви изскачащите прозорци за бисквитки, които не Ви оставят на мира?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Можем да Ви спестим едно кликване и да приемем тези бисквитки вместо Вас.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Приемане на бисквитки без опция за отказ вместо мен";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ще продължа да ги управлявам самостоятелно";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Омръзнаха ли Ви изскачащите прозорци за бисквитки без опция за отказ?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Винаги можете да коригирате това по-късно в\n**Настройки** > **Защита от изскачащи прозорци за бисквитки**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Винаги да се изпращат доклади за сривове";
 

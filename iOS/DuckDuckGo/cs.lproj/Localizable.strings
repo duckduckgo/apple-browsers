@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Klepni na **Add a Control** [Přidat ovládací prvek] v dolní části obrazovky";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Novinka";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Potvrdit";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Pokusíme se vybrat ty možnosti cookies, které nejlépe chrání soukromí, a okna za tebe zavřeme. Pokud možnost odmítnutí neexistuje, ušetříme ti kliknutí a tyto cookies za tebe přijmeme.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Spravovat nebo přijímat cookies za mě";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Budu je dál řešit já";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Už tě nebaví vyskakovací okna o cookies, která ti nedají pokoj?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Můžeme ti ušetřit klikání a cookies přijímat za tebe.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Přijímat za mě cookies, které nelze odmítnout";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Budu je dál řešit já";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Štvou tě vyskakovací okna s cookies, která ti nedovolí je odmítnout?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Později to můžeš kdykoli upravit v **Nastavení** > **Ochrana před vyskakovacími okny o cookies**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Vždycky odesílat hlášení o selhání";
 

@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Tryk på **Tilføj en kontrol** nederst på skærmen";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Ny";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Bekræft";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Vi vil forsøge at vælge de mest private cookieindstillinger og lukke disse for dig. Hvis de ikke har fravalgsmuligheder, sparer vi dig for et klik og accepterer disse cookies for dig.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Administrer eller accepter cookies for mig";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Jeg vil fortsætte med at håndtere dem selv";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Er du træt af pop op-vinduer om cookies, der ikke vil lade dig være i fred?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Vi kan spare dig for et klik og acceptere disse cookies for dig.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Acceptér cookies uden fravalg for mig";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Jeg vil fortsætte med at håndtere dem selv";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Træt af cookie-pop-ups, der ikke lader dig fravælge?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Du kan altid justere det senere i\n**Indstillinger** > **Beskyttelse mod pop op-beskeder om cookies**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Send altid fejlrapporter";
 

@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Atinge **Adaugă un control** în partea de jos a ecranului";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Nou";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Confirmă";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Vom încerca să selectăm cele mai private opțiuni disponibile privind modulele cookie și să le închidem pentru tine. Dacă nu au opțiuni de renunțare, te vom scuti de un click și vom accepta aceste module cookie pentru tine.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Gestionează sau acceptă modulele cookie pentru mine";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Le voi gestiona în continuare personal";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Te-ai săturat de ferestrele pop-up privind modulele cookie care nu îți dau pace?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Te putem scuti de un click și putem accepta aceste module cookie pentru tine.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Accept modulele cookie fără opțiune de renunțare pentru mine";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Le voi gestiona în continuare personal";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Te-ai săturat de ferestrele pop-up cu module cookie care nu îți permit să renunți la ele?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Poți oricând să modifici ulterior din\n**Setări** > **Protecție pentru ferestre pop-up aferente modulelor cookie**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Trimite întotdeauna rapoarte de cădere";
 

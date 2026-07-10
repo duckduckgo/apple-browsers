@@ -23,7 +23,7 @@ import VPN
 import Lottie
 import os.log
 import TipKit
-import DesignResourcesKitIcons
+import DesignResourcesKit
 
 public struct TunnelControllerView: View {
 
@@ -38,7 +38,7 @@ public struct TunnelControllerView: View {
     @ObservedObject
     var model: TunnelControllerViewModel
 
-    private let isAppRebranded = AppRebrand.isAppRebranded()
+    private let isAppRebranded = DesignSystemRebrand.isAppRebranded()
 
     // MARK: - Initializers
 

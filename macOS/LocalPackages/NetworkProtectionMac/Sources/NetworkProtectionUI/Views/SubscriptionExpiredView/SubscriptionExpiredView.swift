@@ -19,7 +19,7 @@
 import Foundation
 import SwiftUI
 import SwiftUIExtensions
-import DesignResourcesKitIcons
+import DesignResourcesKit
 
 struct SubscriptionExpiredView: View {
     enum Constants {
@@ -35,7 +35,7 @@ struct SubscriptionExpiredView: View {
 
     init(subscribeButtonHandler: @escaping () -> Void,
          uninstallButtonHandler: @escaping () -> Void,
-         isAppRebranded: Bool = AppRebrand.isAppRebranded()) {
+         isAppRebranded: Bool = DesignSystemRebrand.isAppRebranded()) {
         self.subscribeButtonHandler = subscribeButtonHandler
         self.uninstallButtonHandler = uninstallButtonHandler
         self.isAppRebranded = isAppRebranded

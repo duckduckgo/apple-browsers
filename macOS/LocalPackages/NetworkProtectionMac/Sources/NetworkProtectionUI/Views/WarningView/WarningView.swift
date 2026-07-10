@@ -18,7 +18,7 @@
 
 import SwiftUI
 import SwiftUIExtensions
-import DesignResourcesKitIcons
+import DesignResourcesKit
 
 struct WarningView: View {
 
@@ -32,7 +32,7 @@ struct WarningView: View {
     /// Captured at init so it stays stable for the view's lifetime.
     let isAppRebranded: Bool
 
-    init(model: Model, isAppRebranded: Bool = AppRebrand.isAppRebranded()) {
+    init(model: Model, isAppRebranded: Bool = DesignSystemRebrand.isAppRebranded()) {
         self.model = model
         self.isAppRebranded = isAppRebranded
     }

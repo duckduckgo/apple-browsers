@@ -19,7 +19,7 @@
 import Foundation
 import SwiftUI
 import SwiftUIExtensions
-import DesignResourcesKitIcons
+import DesignResourcesKit
 
 fileprivate extension View {
     func applyStepTitleAttributes() -> some View {
@@ -52,7 +52,7 @@ struct PromptActionView: View {
 
     // MARK: - Initializers
 
-    init(model: Model, isAppRebranded: Bool = AppRebrand.isAppRebranded()) {
+    init(model: Model, isAppRebranded: Bool = DesignSystemRebrand.isAppRebranded()) {
         self.model = model
         self.isAppRebranded = isAppRebranded
     }

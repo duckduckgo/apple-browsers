@@ -42,7 +42,11 @@ struct CookiePopUpProtectionView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onForwardNavigationAppear {
-            Pixel.fire(pixel: .settingsAutoconsentShown)
+            if viewModel.isCookiePopupPreferenceSettingEnabled {
+                Pixel.fire(pixel: .autoconsentSettingsShown)
+            } else {
+                Pixel.fire(pixel: .settingsAutoconsentShown)
+            }
         }
     }
 }
@@ -51,31 +55,28 @@ struct CookiePopUpProtectionViewSettings: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
+    private var isAutoManageEnabled: Bool {
+        viewModel.autoManageCookiePopupsBinding.wrappedValue
+    }
+
     var body: some View {
-        if viewModel.featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting) {
-            Section(footer: Text(LocalizedStringKey(UserText.cookiePopupPreferenceExplanation))) {
-                SettingsPickerCellView(label: UserText.cookiePopupPreferenceTitle,
-                                       options: CookiePopupPreference.allCases,
-                                       selectedOption: viewModel.cookiePopupPreferenceBinding)
+        if viewModel.isCookiePopupPreferenceSettingEnabled {
+            Section(footer: Text(UserText.autoManageCookiePopupsExplanation)) {
+                SettingsCellView(label: UserText.autoManageCookiePopupsTitle,
+                                 accessory: .toggle(isOn: viewModel.autoManageCookiePopupsBinding))
+            }
+
+            if isAutoManageEnabled {
+                Section(footer: Text(UserText.popUpsWithoutOptOutsExplanation)) {
+                    SettingsCellView(label: UserText.popUpsWithoutOptOutsTitle,
+                                     accessory: .toggle(isOn: viewModel.popUpsWithoutOptOutsBinding))
+                }
             }
         } else {
             Section {
                 SettingsCellView(label: UserText.letDuckDuckGoManageCookieConsentPopups,
                                  accessory: .toggle(isOn: viewModel.autoconsentBinding))
             }
-        }
-    }
-}
-
-extension CookiePopupPreference: CustomStringConvertible {
-    public var description: String {
-        switch self {
-        case .max:
-            return UserText.cookiePopupPreferenceBlockAll
-        case .default:
-            return UserText.cookiePopupPreferenceBlockStandard
-        case .off:
-            return UserText.cookiePopupPreferenceDoNotBlock
         }
     }
 }

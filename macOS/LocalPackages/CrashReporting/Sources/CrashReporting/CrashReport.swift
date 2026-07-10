@@ -30,6 +30,9 @@ protocol CrashReport: CrashReportPresenting {
     var contentData: Data? { get }
     var appVersion: String? { get }
     var bundleID: String? { get }
+
+    /// The date the crash report file was created, used as a proxy for when the crash occurred.
+    var creationDate: Date? { get }
 }
 
 final class LegacyCrashReport: CrashReport {
@@ -88,6 +91,8 @@ final class LegacyCrashReport: CrashReport {
 
     let appVersion: String? = nil
     let bundleID: String? = nil
+
+    var creationDate: Date? { fileManager.fileCreationDate(url: url) }
 }
 
 final class JSONCrashReport: CrashReport {
@@ -166,4 +171,6 @@ final class JSONCrashReport: CrashReport {
         }
         return version
     }
+
+    var creationDate: Date? { fileManager.fileCreationDate(url: url) }
 }

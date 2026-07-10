@@ -79,6 +79,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let controlsFillSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.12), darkColor: xF9F9F9.opacity(0.18))
     private static let controlsFillTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.18), darkColor: xF9F9F9.opacity(0.24))
     private static let controlsRaisedBackdrop = DynamicColor(lightColor: x000000.opacity(0.09), darkColor: xFFFFFF.opacity(0.12))
+
     private static let controlsRaisedFillPrimary = DynamicColor(lightColor: .white, darkColor: xFFFFFF.opacity(0.18))
 
     // Icons
@@ -317,6 +318,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: x3D3D3D)
         case .unifiedToggleInputStopButtonBackground:
             return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
+        case .floatingAddressBarBackground:
+            return DynamicColor(lightColor: .shade(0.05), darkColor: .tint(0.08))
         case .unifiedToggleInputAttachmentErrorBannerBackground:
             return DynamicColor(lightColor: xF6CDD1, darkColor: x5A2A2A)
         case .unifiedToggleInputAttachmentErrorText:

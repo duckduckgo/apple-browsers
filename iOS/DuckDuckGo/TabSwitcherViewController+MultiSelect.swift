@@ -65,7 +65,19 @@ extension TabSwitcherViewController {
         })
     }
 
+    /// Toggles between grid and list (used by the legacy single toggle button).
     func onTabStyleChange() {
+        applyTabsStyleChange(enableGrid: !tabSwitcherSettings.isGridViewEnabled)
+    }
+
+    /// Sets a specific grid/list style (used by the floating chrome's Grid/List menu).
+    func setTabsStyle(_ style: TabsStyle) {
+        let enableGrid = style == .grid
+        guard tabSwitcherSettings.isGridViewEnabled != enableGrid else { return }
+        applyTabsStyleChange(enableGrid: enableGrid)
+    }
+
+    private func applyTabsStyleChange(enableGrid: Bool) {
         guard isProcessingUpdates == false else { return }
 
         isProcessingUpdates = true
@@ -77,7 +89,7 @@ extension TabSwitcherViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             guard let self else { return }
 
-            tabSwitcherSettings.isGridViewEnabled = !tabSwitcherSettings.isGridViewEnabled
+            tabSwitcherSettings.isGridViewEnabled = enableGrid
 
             if tabSwitcherSettings.isGridViewEnabled {
                 Pixel.fire(pixel: .tabSwitcherGridEnabled)
@@ -277,15 +289,12 @@ extension TabSwitcherViewController {
                                canDismissOnEmpty: canDismissOnEmpty)
         }
 
-        barsHandler.update(state)
-        barsHandler.configureButtonActions(tabsStyle: tabsStyle, canShowSelectionMenu: canShowSelectionMenu)
-
-        titleBarView.setCenterView(isEditing ? nil : segmentedPickerHostingController?.view)
-        titleBarView.setLeadingButtons(barsHandler.topBarLeftButtons)
-        titleBarView.setTrailingButtons(barsHandler.topBarRightButtons)
-        bottomToolbar.setToolbarButtons(barsHandler.bottomBarButtonViews)
-        bottomToolbar.isHidden = barsHandler.isBottomBarHidden
-        collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : bottomToolbar.frame.height
+        chrome.update(state: state,
+                      tabsStyle: tabsStyle,
+                      canShowSelectionMenu: canShowSelectionMenu,
+                      isEditing: isEditing)
+        chrome.applyCollectionContentInset(to: collectionView)
+        chrome.trackScrollEdge(of: collectionView)
     }
     
     func createMultiSelectionMenu() -> UIMenu {
@@ -353,7 +362,7 @@ extension TabSwitcherViewController {
 // MARK: Button configuration
 extension TabSwitcherViewController {
     // Button configuration is now handled in TabSwitcherBarsStateHandler
-    // via the setupBarButtonActions() method called in viewDidLoad()
+    // via the chrome's actions, configured in viewDidLoad() through makeChromeActions()
 }
 
 // MARK: Edit menu actions

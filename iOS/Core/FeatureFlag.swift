@@ -79,6 +79,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215960699028461?focus=true
     case cookiePopupPreferenceSetting
 
+    /// Cookie Pop-up Protection opt-in dialog
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654865?focus=true
+    case cookiePopupOptInDialog
+
     // Duckplayer 'Web based' UI
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609457246
     case duckPlayer
@@ -143,6 +147,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475
     case subscriptionPromoForReinstallers
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215316109166260?focus=true
+    case subscriptionExpirationReminderNotification
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
@@ -308,8 +315,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1213651297612976?focus=true
     case aiChatNativeChatHistory
 
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1213651262338059
-    case aiChatContextualSheetImprovements
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216111312217462?focus=true
+    case contextualSuggestedPrompts
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
     case showWhatsNewPromptOnDemand
@@ -329,6 +336,9 @@ public enum FeatureFlag: String {
     /// `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab`.
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1214995978971487?focus=true
     case aiChatTabHideToggle
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216049537026986
+    case aiChatContextualUnifiedToggleInput
 
     /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
@@ -496,11 +506,21 @@ public enum FeatureFlag: String {
     /// Gates the Simplified Sync Setup follow-up screens.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216075349711580
     case simplifiedSyncSetupV2
+
+    /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
+    case searchTokenExperiment
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     /// Test-only cohort for verifying UI test experiment override mechanism.
     public enum UITestExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Search-token experiment cohorts. Treatment devices signal the SERP to serve the faster combined response.
+    public enum SearchTokenExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -566,6 +586,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction))
         case .cookiePopupPreferenceSetting:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupPreferenceSetting))
+        case .cookiePopupOptInDialog:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog))
         case .duckPlayer:
             Config(source: .remoteReleasable(DuckPlayerSubfeature.enableDuckPlayer), supportsLocalOverriding: false)
         case .duckPlayerOpenInNewTab:
@@ -606,6 +628,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.privacyProOnboardingPromotion))
         case .subscriptionPromoForReinstallers:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForReinstallers))
+        case .subscriptionExpirationReminderNotification:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionExpirationReminderNotification))
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -714,8 +738,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled))
         case .aiChatNativeChatHistory:
             Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.nativeChatHistory))
-        case .aiChatContextualSheetImprovements:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualSheetImprovements))
+        case .contextualSuggestedPrompts:
+            Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .unifiedToggleInput:
@@ -726,6 +750,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                    supportsLocalOverriding: false)
         case .aiChatTabHideToggle:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
+        case .aiChatContextualUnifiedToggleInput:
+            Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .tabSwitcherTrackerCount:
@@ -742,6 +768,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .uiTestExperiment:
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
+        case .searchTokenExperiment:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperiment), cohortType: SearchTokenExperimentCohort.self)
         case .genericBackgroundTask:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionLimitCallStackTreeDepth:

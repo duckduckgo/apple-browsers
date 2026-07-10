@@ -218,6 +218,7 @@ private extension AIChatPageContextHandler {
         }
 
         let favicon = AIChatPageContextData.PageContextFavicon(href: faviconBase64, rel: "icon")
+        // Preserve pageTypeSignals/attached/tabId when re-building the context with an encoded favicon
         return AIChatPageContextData(
             title: context.title,
             favicon: [favicon],
@@ -225,7 +226,10 @@ private extension AIChatPageContextHandler {
             content: context.content,
             truncated: context.truncated,
             fullContentLength: context.fullContentLength,
-            attachable: context.attachable
+            attachable: context.attachable,
+            tabId: context.tabId,
+            pageTypeSignals: context.pageTypeSignals,
+            attached: context.attached
         )
     }
 

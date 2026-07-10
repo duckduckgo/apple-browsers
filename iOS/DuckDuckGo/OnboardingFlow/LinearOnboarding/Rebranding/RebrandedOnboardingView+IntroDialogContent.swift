@@ -26,43 +26,6 @@ extension OnboardingRebranding.OnboardingView {
     /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-31959
     struct IntroDialogContent: View {
 
-        /// Dax "Thumbs Up", sized inversely to the bubble height so the two never overlap.
-        /// Returns `nil` when Dax would shrink below `minDaxHeight`. `bubbleHeight = 0`
-        /// (no measurement yet) renders Dax at full size so the first frame doesn't blink.
-        static func daxAnimation(forBubbleHeight bubbleHeight: CGFloat = 0) -> DaxAnimation? {
-            let baseSize = CGSize(width: 258.0, height: 352.0)
-            let baseBottomPadding: CGFloat = 110.0
-            let baseEntranceXOffset: CGFloat = -20.0
-            let baseLargeScreenXOffset: CGFloat = 200.0
-            let baseLeftXOffset: CGFloat = -40.0
-            /// Threshold above which the bubble starts shrinking Dax 1:1.
-            let referenceBubbleHeight: CGFloat = 280.0
-            /// Below this height Dax is hidden entirely (per design).
-            let minDaxHeight: CGFloat = 170.0
-
-            let extraBubbleHeight = max(0, bubbleHeight - referenceBubbleHeight)
-            let targetHeight = baseSize.height - extraBubbleHeight
-            guard targetHeight >= minDaxHeight else { return nil }
-
-            let scale = targetHeight / baseSize.height
-            let size = CGSize(width: baseSize.width * scale, height: targetHeight)
-            // Scale the bottom inset with Dax so the screen-bottom relationship is preserved.
-            let bottomPadding = baseBottomPadding * scale
-
-            return DaxAnimation(
-                animationName: "Dax-ThumbUp",
-                size: size,
-                position: .left(bottomPadding: bottomPadding, xOffset: baseLeftXOffset),
-                largeScreenPosition: .left(bottomPadding: bottomPadding, xOffset: baseLargeScreenXOffset),
-                entranceOffset: CGPoint(x: baseEntranceXOffset, y: 0),
-                // Slide left by the full (scaled) width so exit fully clears the screen.
-                exitOffset: CGPoint(x: -size.width, y: 0),
-                exitDuration: 0.5,
-                fadeOut: true,
-                startDelay: 0.75
-            )
-        }
-
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

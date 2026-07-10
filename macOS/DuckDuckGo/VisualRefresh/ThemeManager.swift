@@ -60,14 +60,16 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     let isAppRebranded: Bool
 
     init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) {
+        let isAppRebranded = featureFlagger.isFeatureOn(.appRebranding)
+        AppRebrand.setupDuckRebrandedUX(isAppRebranded: isAppRebranded)
+
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
-        self.isAppRebranded = featureFlagger.isFeatureOn(.appRebranding)
+        self.isAppRebranded = isAppRebranded
         self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
         self.appearance = appearancePreferences.themeAppearance
         self.designColorPalette = appearancePreferences.themeName.designColorPalette
 
-        setupDuckRebrandedUX()
         switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
         subscribeToSystemAppearance()
@@ -109,8 +111,11 @@ private extension ThemeManager {
         DesignSystemPalette.current = palette
         designColorPalette = palette
     }
+}
 
-    func setupDuckRebrandedUX() {
+private extension AppRebrand {
+
+    static func setupDuckRebrandedUX(isAppRebranded: Bool) {
         AppRebrand.isAppRebranded = { [isAppRebranded] in
             isAppRebranded
         }

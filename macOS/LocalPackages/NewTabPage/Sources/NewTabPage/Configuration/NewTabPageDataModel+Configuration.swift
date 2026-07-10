@@ -87,6 +87,7 @@ extension NewTabPageDataModel {
 
         struct Settings: Encodable, Equatable {
             let customizerDrawer: Setting
+            let newTabPageRebranding: Setting
         }
 
         struct Setting: Encodable, Equatable {

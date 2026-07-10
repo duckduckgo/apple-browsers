@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Napauta **Lisää valvonta** näytön alareunasta.";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Uusi";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Vahvista";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Pyrimme valitsemaan käytettävissä olevista evästeasetuksista ne, jotka takaavat parhaan yksityisyyden, ja ottamaan ne käyttöön puolestasi. Jos sivustolla ei ole mahdollisuutta kieltäytyä evästeistä, säästämme sinulta yhden klikkauksen ja hyväksymme nämä evästeet puolestasi.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Hallinnoi evästeitä puolestani tai hyväksy ne";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Hoidan ne jatkossakin itse";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Oletko kyllästynyt evästeponnahdusikkunoihin, jotka eivät jätä sinua rauhaan?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Voimme säästää sinulta yhden klikkauksen ja hyväksyä nämä evästeet puolestasi.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Hyväksy puolestani evästeet, joista ei voi kieltäytyä";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Hoidan ne jatkossakin itse";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Oletko kyllästynyt evästeikkunoihin, joista ei voi kieltäytyä?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Voit muuttaa tätä myöhemmin kohdassa\n**Asetukset** > **Evästeiden ponnahdusikkuna -suojaus**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Lähetä aina virheraportit";
 

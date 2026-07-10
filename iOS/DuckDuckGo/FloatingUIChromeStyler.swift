@@ -30,8 +30,4 @@ struct FloatingUIChromeStyler {
         }
     }
 
-    func decorateTabSwitcherIfNeeded(manager: FloatingUIManaging, view: UIView) {
-        guard manager.isFloatingUIEnabled else { return }
-    }
-
 }

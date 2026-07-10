@@ -55,6 +55,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   eventsHandler: EventMapping<JobEvent>,
                                   applicationNameForUserAgentProvider: @escaping () -> String?,
                                   freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+                                  profileStateManager: DBPProfileStateManaging,
                                   isWebViewInspectable: Bool = false,
                                   freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil,
                                   contentBlocking: DBPWebViewContentBlocking) -> DataBrokerProtectionIOSManager? {
@@ -104,6 +105,12 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                         optOutRetryErrorFeatureFlagger: featureFlagger)
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
+        do {
+            profileStateManager.reconcileProfileState(hasSavedProfile: try database.fetchProfile() != nil)
+        } catch {
+            profileStateManager.recordProfileStateUnknown()
+            Logger.dataBrokerProtection.error("Error reconciling profile state, error: \(error.localizedDescription, privacy: .public)")
+        }
 
         let operationQueue = OperationQueue()
         let jobProvider = BrokerProfileJobProvider()
@@ -170,7 +177,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             eventsHandler: eventsHandler,
             isWebViewInspectable: isWebViewInspectable,
             freeTrialConversionService: freeTrialConversionService,
-            freemiumDBPUserStateManager: freemiumDBPUserStateManager
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: profileStateManager
         )
     }
 }

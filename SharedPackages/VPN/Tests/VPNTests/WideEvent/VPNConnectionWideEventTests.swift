@@ -17,7 +17,9 @@
 //
 
 import XCTest
+import Networking
 import PixelKit
+import Subscription
 @testable import VPN
 
 final class VPNConnectionWideEventTests: XCTestCase {
@@ -312,6 +314,25 @@ final class VPNConnectionWideEventTests: XCTestCase {
         // Second underlying error
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_domain2"], "Domain2")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_code2"], "2")
+    }
+
+    func testAddStepError_withSubscriptionManagerTokenRetrievalErrorIncludesWrappedUnderlyingError() {
+        let eventData = VPNConnectionWideEventData(
+            extensionType: .app,
+            startupMethod: .manualByMainApp,
+            contextData: WideEventContextData(name: "Test-Context")
+        )
+
+        let wrappedError = OAuthClientError.unauthenticated
+        let error = SubscriptionManagerError.errorRetrievingTokenContainer(error: wrappedError)
+        eventData.oauthError = WideEventErrorData(error: error)
+
+        let parameters = eventData.pixelParameters()
+
+        XCTAssertEqual(parameters["feature.data.ext.oauth_error.domain"], "com.duckduckgo.subscription.SubscriptionManagerError")
+        XCTAssertEqual(parameters["feature.data.ext.oauth_error.code"], "12001")
+        XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain"], "com.duckduckgo.networking.OAuthClientError")
+        XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_code"], "11002")
     }
 
     // MARK: - transformErrorKey

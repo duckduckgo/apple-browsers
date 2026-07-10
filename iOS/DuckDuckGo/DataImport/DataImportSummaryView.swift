@@ -327,8 +327,9 @@ struct DataImportSummaryView: View {
 
         var body: some View {
             LottieView(
-                lottieFile: "burst-blob-passwords",
-                isAnimating: $isAnimating
+                lottieFile: AppRebrand.isAppRebranded() ? "success" : "success-legacy",
+                isAnimating: $isAnimating,
+                contentSize: CGSize(width: 200, height: 128)
             )
             .frame(width: 200, height: 128)
         }

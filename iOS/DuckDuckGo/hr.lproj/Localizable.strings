@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Dodirni **Dodaj kontrolu** na dnu zaslona.";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Novo";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Potvrdi";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Pokušat ćemo za tebe odabrati najprivatnije dostupne opcije kolačića i zatvoriti ih. Ako nemaju mogućnost isključivanja, uštedjet ćemo ti klik i umjesto tebe prihvatiti te kolačiće.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Upravljaj kolačićima ili ih prihvati umjesto mene";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Nastavit ću njima upravljati sam";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Umoran si od skočnih prozora kolačića koji te ne ostavljaju na miru?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Možemo ti uštedjeti klik i prihvatiti ove kolačiće umjesto tebe.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Prihvati kolačiće bez mogućnosti isključivanja umjesto mene";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Nastavit ću njima upravljati sam";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Umoran si od skočnih prozora s kolačićima koji ti ne dopuštaju odjavu?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "To uvijek možeš prilagoditi kasnije opcijama\n**Postavke** > **Zaštita od skočnih prozora kolačića**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Uvijek šalji izvješća o padu programa";
 

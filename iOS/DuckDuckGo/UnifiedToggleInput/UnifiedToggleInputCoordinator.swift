@@ -2522,6 +2522,9 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.customizeResponsesButtonTappedPublisher
             .sink { [weak self] in
                 guard let self else { return }
+                if self.isContextualChatState {
+                    self.viewController.deactivateInput()
+                }
                 self.didPressCustomizeResponsesButton.send()
                 self.showCollapsed()
             }

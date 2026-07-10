@@ -133,13 +133,18 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         titleLabel.alphaValue = isInteractionPrevented ? 0.3 : 1
     }
 
-    /// Re-resolves this bookmark's favicon and shows it in place if a decoded image is now available.
+    /// Re-resolves this bookmark's favicon and shows it in place once a decoded image is available.
     ///
-    /// Never downgrades an already-shown favicon back to the placeholder.
+    /// Only ever shows the bookmark's own (URL-resolved) favicon. `Bookmark.favicon(_:)` already falls
+    /// back to the host favicon internally when the bookmark's URL has no favicon of its own, so this
+    /// deliberately does *not* add a separate host-favicon fallback: doing so downgraded the icon to the
+    /// host favicon during the brief off-main decode window of the URL favicon (`favicon(_:)` returns
+    /// `nil` while decoding), making a bookmark whose URL favicon differs from its host favicon flicker
+    /// between the two as `.faviconCacheUpdated` fired repeatedly. While the favicon isn't decoded yet
+    /// this is a no-op, leaving the currently shown icon untouched (never downgraded to a placeholder).
     func refreshDisplayedFavicon() {
-        guard let bookmark = representedObject as? Bookmark else { return }
-        let host = URL(string: bookmark.url)?.host ?? ""
-        guard let favicon = (bookmark.favicon(.small) ?? NSApp.delegateTyped.faviconManager.getCachedFavicon(for: host, sizeCategory: .small)?.image)?.copy() as? NSImage else {
+        guard let bookmark = representedObject as? Bookmark,
+              let favicon = bookmark.favicon(.small)?.copy() as? NSImage else {
             return
         }
         favicon.size = NSSize.faviconSize

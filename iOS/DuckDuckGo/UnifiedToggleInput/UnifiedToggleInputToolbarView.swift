@@ -548,30 +548,3 @@ private extension UnifiedToggleInputToolbarView {
     }
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
 }
-
-private extension AIChatRAGTool {
-
-    var toolbarChipIcon: DesignSystemImage? {
-        switch self {
-        case .webSearch:
-            return DesignSystemImages.Glyphs.Size24.globe
-        case .imageGeneration:
-            return DesignSystemImages.Glyphs.Size24.images
-        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
-            // Not surfaced in the unified-input tools menu — defensive fallback only.
-            return nil
-        }
-    }
-
-    var toolbarChipAccessibilityLabel: String? {
-        switch self {
-        case .webSearch:
-            return UserText.aiChatToolbarWebSearchToolTitle
-        case .imageGeneration:
-            return UserText.aiChatToolbarImageGenerationToolTitle
-        case .newsSearch, .videosSearch, .localSearch, .relatedSearchTerms, .weatherForecast:
-            // Not surfaced in the unified-input tools menu — defensive fallback only.
-            return nil
-        }
-    }
-}

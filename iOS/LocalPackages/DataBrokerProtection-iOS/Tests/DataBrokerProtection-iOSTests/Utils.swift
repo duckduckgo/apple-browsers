@@ -33,6 +33,7 @@ struct IOSManagerTestDependencies {
     let continuedProcessingCoordinator: MockContinuedProcessingCoordinator
     let authenticationManager: MockAuthenticationManager
     let freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager
+    let profileStateManager: DBPProfileStateManaging
 }
 
 @MainActor
@@ -83,6 +84,7 @@ enum DBPContinuedProcessingTestUtils {
         let jobDependencies = MockBrokerProfileJobDependencies()
         let authenticationManager = MockAuthenticationManager()
         let freemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
+        let profileStateManager = DefaultDBPProfileStateManager(keyValueStore: UserDefaults(suiteName: UUID().uuidString)!)
         let eventsHandler = MockOperationEventsHandler()
 
         init() {
@@ -116,7 +118,8 @@ enum DBPContinuedProcessingTestUtils {
                     eventsHandler: eventsHandler,
                     continuedProcessingCoordinator: continuedProcessingCoordinator,
                     authenticationManager: authenticationManager,
-                    freemiumDBPUserStateManager: freemiumDBPUserStateManager
+                    freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                    profileStateManager: profileStateManager
                 )
             )
         }
@@ -147,6 +150,7 @@ enum DBPContinuedProcessingTestUtils {
                 eventsHandler: eventsHandler,
                 engagementPixelsRepository: MockDataBrokerProtectionEngagementPixelsRepository(),
                 freemiumDBPUserStateManager: (freemiumDBPUserStateManagerOverride ?? freemiumDBPUserStateManager),
+                profileStateManager: profileStateManager,
                 continuedProcessingCoordinator: continuedProcessingCoordinator,
                 shouldRegisterBackgroundTaskHandler: false
             )

@@ -139,9 +139,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// attachments error label and cleared when the user next changes attachments or the model.
     private var lastAttachmentError: String?
 
+    private var customizeResponsesModal: CustomizeResponsesModalController?
+
     let themeManager: ThemeManaging
     let omnibarController: AIChatOmnibarController
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let burnerMode: BurnerMode
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     private var textChangeCancellable: AnyCancellable?
@@ -305,10 +308,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     required init(themeManager: ThemeManaging,
                   omnibarController: AIChatOmnibarController,
-                  duckAiNativeStorageHandler: DuckAiNativeStorageHandling?) {
+                  duckAiNativeStorageHandler: DuckAiNativeStorageHandling?,
+                  burnerMode: BurnerMode) {
         self.themeManager = themeManager
         self.omnibarController = omnibarController
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.burnerMode = burnerMode
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -1141,7 +1146,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 icon: DesignSystemImages.Glyphs.Size16.glasses,
                 showsToggle: state.hasCustomization,
                 isActive: state.isActive,
-                onOpen: {},
+                isEnabled: !omnibarController.isImageGenerationMode,
+                onOpen: { [weak self] in self?.presentCustomizeResponsesModal() },
                 onToggle: { active in store.setActive(active) }
             )
             let customizeItem = NSMenuItem()
@@ -1179,6 +1185,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             PixelKit.fire(AIChatPixel.aiChatAddressBarWebSearchActivated, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
         omnibarController.toggleWebSearchMode()
+    }
+
+    private func presentCustomizeResponsesModal() {
+        guard customizeResponsesModal == nil else { return }
+        guard let parentWindow = view.window else {
+            omnibarController.openCustomizeResponses()
+            return
+        }
+        let modal = CustomizeResponsesModalController(burnerMode: burnerMode)
+        modal.onClose = { [weak self] in self?.customizeResponsesModal = nil }
+        customizeResponsesModal = modal
+        modal.present(over: parentWindow)
     }
 
     /// Routes the attach-button click. When the omnibar tab picker is enabled, opens a menu

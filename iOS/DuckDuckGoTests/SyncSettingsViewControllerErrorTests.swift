@@ -419,6 +419,17 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         XCTAssertEqual(spyVC.askForPairingConfirmationCallCount, 1)
     }
 
+    func test_WhenSyncErrorMessageIsUpdateRequired_ThenDescriptionIsNilForTitleOnlyAlert() {
+        XCTAssertEqual(SyncErrorMessage.updateRequired.title, UserText.syncUpdateRequiredTitle)
+        XCTAssertEqual(SyncErrorMessage.updateRequired.buttonTitle, UserText.syncSetupErrorGotItButton)
+        XCTAssertNil(SyncErrorMessage.updateRequired.description)
+    }
+
+    func test_WhenSyncErrorMessageIsUnableToSyncWithDevice_ThenDescriptionIsPresent() {
+        XCTAssertEqual(SyncErrorMessage.unableToSyncWithDevice.title, UserText.syncFailedTitle)
+        XCTAssertEqual(SyncErrorMessage.unableToSyncWithDevice.description, UserText.syncFailedDescription)
+    }
+
     private func legacyPairingURL(for syncCode: SyncCode) throws -> URL {
         let base64Code = try syncCode.toJSON().base64EncodedString()
         return PairingInfo(base64Code: base64Code, deviceName: "Android")

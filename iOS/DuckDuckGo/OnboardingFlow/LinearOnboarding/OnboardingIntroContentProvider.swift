@@ -86,6 +86,7 @@ struct OnboardingIntroStepContent: Equatable {
     let secondaryCTA: String
     let restorePromptStepContent: RestorePromptStepContent
     let skipFlowStepContent: SkipFlowStepContent
+    let daxAnimation: DaxAnimation
 }
 
 extension OnboardingIntroContentProvider {
@@ -121,7 +122,8 @@ extension OnboardingIntroContentProvider {
             primaryCTA: UserText.Onboarding.Intro.continueCTA,
             secondaryCTA: UserText.Onboarding.Intro.skipCTA,
             restorePromptStepContent: restoreOnboardingContent,
-            skipFlowStepContent: skipOnboardingContent
+            skipFlowStepContent: skipOnboardingContent,
+            daxAnimation: .thumbUp
         )
     }
 
@@ -134,6 +136,7 @@ struct OnboardingBrowserComparisonContent: Equatable {
     let features: [RebrandedComparisonTableModel.Feature]
     let primaryCTA: String
     let secondaryCTA: String
+    let daxAnimation: DaxAnimation
 }
 
 extension OnboardingIntroContentProvider {
@@ -148,7 +151,8 @@ extension OnboardingIntroContentProvider {
             title: title,
             features: RebrandedComparisonTableModel.defaultBrowserFeatures,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
-            secondaryCTA: UserText.onboardingSkip
+            secondaryCTA: UserText.onboardingSkip,
+            daxAnimation: .wingBottom
         )
     }
 
@@ -161,6 +165,7 @@ struct OnboardingAIComparisonContent: Equatable {
     let subHeader: String
     let features: [RebrandedComparisonTableModel.Feature]
     let primaryCTA: String
+    let daxAnimation: DaxAnimation
 }
 
 extension OnboardingIntroContentProvider {
@@ -171,6 +176,7 @@ extension OnboardingIntroContentProvider {
             subHeader: UserText.Onboarding.DuckAICPP.AIComparison.subHeader,
             features: RebrandedComparisonTableModel.defaultAIFeatures,
             primaryCTA: UserText.Onboarding.DuckAICPP.AIComparison.cta,
+            daxAnimation: .wingBottom
         )
     }
 
@@ -190,6 +196,7 @@ struct OnboardingAddToDockContent: Equatable {
     let primaryCTA: String
     let secondaryCTA: String
     let tutorialStepContent: TutorialStepContent
+    let daxAnimation: DaxAnimation
 }
 
 extension OnboardingIntroContentProvider {
@@ -211,7 +218,8 @@ extension OnboardingIntroContentProvider {
             message: promoMessage,
             primaryCTA: UserText.AddToDockOnboarding.Buttons.tutorial,
             secondaryCTA: UserText.AddToDockOnboarding.Buttons.skip,
-            tutorialStepContent: tutorial
+            tutorialStepContent: tutorial,
+            daxAnimation: .wingLeft
         )
     }
 
@@ -223,6 +231,7 @@ struct OnboardingAppIconColorContent: Equatable {
     let title: String
     let message: String
     let primaryCTA: String
+    let daxAnimation: DaxAnimation
 }
 
 extension OnboardingIntroContentProvider {
@@ -231,7 +240,8 @@ extension OnboardingIntroContentProvider {
         OnboardingAppIconColorContent(
             title: UserText.Onboarding.AppIconSelection.title,
             message: UserText.Onboarding.AppIconSelection.message,
-            primaryCTA: UserText.Onboarding.AppIconSelection.cta
+            primaryCTA: UserText.Onboarding.AppIconSelection.cta,
+            daxAnimation: .wingRight
         )
     }
 
@@ -250,6 +260,7 @@ struct OnboardingAddressBarPositionContent: Equatable {
     let bottomOption: OptionContent
     let defaultIndicator: String
     let primaryCTA: String
+    let daxAnimation: DaxAnimation?
 }
 
 extension OnboardingIntroContentProvider {
@@ -266,7 +277,8 @@ extension OnboardingIntroContentProvider {
                 message: UserText.Onboarding.AddressBarPosition.bottomMessage
             ),
             defaultIndicator: UserText.Onboarding.AddressBarPosition.defaultOption,
-            primaryCTA: UserText.Onboarding.AddressBarPosition.cta
+            primaryCTA: UserText.Onboarding.AddressBarPosition.cta,
+            daxAnimation: nil // Dax-Floating is embedded in ScrollableOnboardingBackground
         )
     }
 
@@ -278,6 +290,7 @@ struct OnboardingSearchExperienceContent: Equatable {
     let title: String
     let footer: AttributedString
     let primaryCTA: String
+    let daxAnimation: DaxAnimation
 }
 
 extension OnboardingIntroContentProvider {
@@ -286,7 +299,8 @@ extension OnboardingIntroContentProvider {
         OnboardingSearchExperienceContent(
             title: UserText.Onboarding.SearchExperience.title,
             footer: AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()),
-            primaryCTA: UserText.Onboarding.SearchExperience.cta
+            primaryCTA: UserText.Onboarding.SearchExperience.cta,
+            daxAnimation: .wingLeft
         )
     }
 
@@ -298,8 +312,8 @@ struct OnboardingDuckAIQueryContent: Equatable {
     let title: String
     let searchPlaceholder: String
     let aiPlaceholder: String
-
     let isToggleVisible: Bool
+    let daxAnimation: DaxAnimation?
 }
 
 extension OnboardingIntroContentProvider {
@@ -316,7 +330,8 @@ extension OnboardingIntroContentProvider {
             title: title,
             searchPlaceholder: UserText.Onboarding.DuckAIQuery.searchPlaceholder,
             aiPlaceholder: UserText.Onboarding.DuckAIQuery.aiPlaceholder,
-            isToggleVisible: isToggleVisible
+            isToggleVisible: isToggleVisible,
+            daxAnimation: nil
         )
     }
 

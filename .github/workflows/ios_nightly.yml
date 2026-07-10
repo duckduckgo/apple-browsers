@@ -66,7 +66,7 @@ jobs:
 
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -86,7 +86,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-${{ matrix.user-mode }}-${{ env.cache_key_hash }}
@@ -134,7 +134,7 @@ jobs:
         device-id: ${{ steps.boot-simulator.outputs.device-id }}
 
     - name: Upload logs if workflow failed
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: ATBBuildLogs-${{ matrix.user-mode }}
@@ -145,7 +145,7 @@ jobs:
         retention-days: 7
 
     - name: Upload crash reports
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: ios-nightly-crash-reports-${{ matrix.user-mode }}
@@ -163,7 +163,7 @@ jobs:
         echo "atb:${{ matrix.user-mode }}" > failure-marker/marker.txt
     - name: Upload failure marker
       if: (failure() || cancelled()) && github.ref_name == 'main'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: failure-marker-atb-${{ matrix.user-mode }}
         path: failure-marker/
@@ -180,7 +180,7 @@ jobs:
         test-outcome: ${{ steps.run-unit-tests.outcome }}
 
     - name: Publish unit tests report
-      uses: mikepenz/action-junit-report@v3
+      uses: mikepenz/action-junit-report@v6
       if: always()
       with:
         report_paths: iOS/unittests.xml
@@ -216,7 +216,7 @@ jobs:
 
     - name: Create Asana task for production-mode failure
       if: steps.detect.outputs.has_production == 'true'
-      uses: duckduckgo/native-github-asana-sync@v1.1
+      uses: duckduckgo/native-github-asana-sync@v2.5.1
       with:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -226,7 +226,7 @@ jobs:
 
     - name: Create Asana task for internal-mode failure
       if: steps.detect.outputs.has_internal == 'true'
-      uses: duckduckgo/native-github-asana-sync@v1.1
+      uses: duckduckgo/native-github-asana-sync@v2.5.1
       with:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

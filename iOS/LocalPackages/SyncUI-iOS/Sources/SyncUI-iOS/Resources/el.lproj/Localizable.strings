@@ -235,8 +235,8 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Σύνδεση...";
 
-/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Διατήρησε ανοιχτό το «Sync & Backup» και στις δύο συσκευές";
+/* Instruction shown during sync setup flow. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Κρυπτογραφημένο από άκρο σε άκρο σε όλες τις συσκευές σας.";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Επιστρέψτε σε αυτή τη συσκευή αφού επικολλήσετε τον κωδικό.";

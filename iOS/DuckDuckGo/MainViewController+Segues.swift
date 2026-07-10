@@ -499,6 +499,7 @@ extension MainViewController {
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
                                                   freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                                  profileStateManager: profileStateManager,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,

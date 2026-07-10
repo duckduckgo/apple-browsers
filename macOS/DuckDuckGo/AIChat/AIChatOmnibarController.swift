@@ -929,6 +929,12 @@ final class AIChatOmnibarController {
         aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
     }
 
+    /// Fallback when no window can host the modal: opens the customize URL in a tab.
+    func openCustomizeResponses() {
+        let url = AIChatURLParameters.nativeCustomizeModalURL(from: AIChatRemoteSettings().aiChatURL)
+        aiChatTabOpener.openAIChatTab(with: .url(url), behavior: .newTab(selected: true))
+    }
+
     func submit() {
         guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return

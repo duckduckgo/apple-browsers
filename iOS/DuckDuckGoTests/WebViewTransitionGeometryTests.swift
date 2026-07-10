@@ -59,11 +59,19 @@ final class WebViewTransitionGeometryTests: XCTestCase {
         assertFinite(frame)
     }
 
-    func testPreviewFrameIsFiniteForNormalPreview() {
+    func testPreviewFrameReturnsExactFrameForNormalPreview() {
         let frame = WebViewTransitionGeometry.previewFrame(for: CGSize(width: 180, height: 240),
                                                            previewSize: CGSize(width: 300, height: 600),
                                                            isGridViewEnabled: true)
-        assertFinite(frame)
+        XCTAssertEqual(frame, CGRect(x: 4, y: 44, width: 172, height: 344))
+    }
+
+    func testPreviewFrameFillsCellBoundsWhenGridDisabled() {
+        let cellBounds = CGSize(width: 180, height: 240)
+        let frame = WebViewTransitionGeometry.previewFrame(for: cellBounds,
+                                                           previewSize: CGSize(width: 300, height: 600),
+                                                           isGridViewEnabled: false)
+        XCTAssertEqual(frame, CGRect(origin: .zero, size: cellBounds))
     }
 
     // MARK: - destinationImageFrame (crash regression guard)

@@ -641,12 +641,6 @@ extension DefaultOmniBarViewController {
         omniBarView.onSelectedToolClearTapped = { [weak self] in
             self?.toolPickerController?.resetSelection(isUserInitiated: true)
         }
-        omniBarView.onModelPickerMenuOpened = {
-            UnifiedToggleInputCoordinatorPixelHelper.fireModelPickerShownPixel(isAITabState: false)
-        }
-        omniBarView.onReasoningPickerMenuOpened = {
-            UnifiedToggleInputCoordinatorPixelHelper.fireReasoningPickerShownPixel(isAITabState: false)
-        }
 
         // The attach button shares the same store so its limits and accepted types track the selected
         // model. The strip view owns the pending attachments; the controller reads and mutates it.
@@ -703,7 +697,7 @@ extension DefaultOmniBarViewController {
         if let shortName = controller.currentModelLabel {
             omniBarView.aiChatModelName = shortName
         }
-        omniBarView.aiChatModelPickerMenu = controller.makeMenu { [weak self] modelId in
+        let menu = controller.makeMenu { [weak self] modelId in
             guard let self else { return }
             self.modelPickerController?.handleModelSelection(modelId)
             self.toolPickerController?.handleModelChanged()
@@ -713,6 +707,9 @@ extension DefaultOmniBarViewController {
             self.refreshToolPicker()
             self.refreshAttachButton()
         }
+        omniBarView.aiChatModelPickerMenu = menuFiringShownPixel(menu) {
+            UnifiedToggleInputCoordinatorPixelHelper.fireModelPickerShownPixel(isAITabState: false)
+        }
     }
 
     private func refreshReasoningPicker() {
@@ -721,11 +718,22 @@ extension DefaultOmniBarViewController {
         let hiddenByTool = toolPickerController?.selectedToolHidesReasoningPicker ?? false
         if controller.isReasoningPickerAvailable, !hiddenByTool {
             omniBarView.aiChatReasoningIcon = controller.currentReasoningMode?.unifiedToggleInputButtonImage
-            omniBarView.aiChatReasoningPickerMenu = controller.makeMenu()
+            omniBarView.aiChatReasoningPickerMenu = menuFiringShownPixel(controller.makeMenu()) {
+                UnifiedToggleInputCoordinatorPixelHelper.fireReasoningPickerShownPixel(isAITabState: false)
+            }
         } else {
             omniBarView.aiChatReasoningIcon = nil
             omniBarView.aiChatReasoningPickerMenu = nil
         }
+    }
+
+    private func menuFiringShownPixel(_ menu: UIMenu?, onShow: @escaping () -> Void) -> UIMenu? {
+        guard let menu else { return nil }
+        let deferred = UIDeferredMenuElement.uncached { completion in
+            onShow()
+            completion(menu.children)
+        }
+        return UIMenu(title: menu.title, options: menu.options, children: [deferred])
     }
 
     private func refreshToolPicker() {

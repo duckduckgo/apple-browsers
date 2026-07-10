@@ -664,7 +664,6 @@ class SettingsUINavigationController: UINavigationController {
         // Bail out to home instead of popping to the Settings root
         // when leaving the onboarding subscription flow without a purchase.
         if dismissesModalOnSubscriptionBailout,
-           viewControllers.count == 2,
            !didAcquireSubscription {
             dismiss(animated: true)
             return nil

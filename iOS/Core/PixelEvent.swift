@@ -1934,6 +1934,7 @@ extension Pixel {
         case subscriptionExpirationReminderSchedulingError
 
         // MARK: - Freemium Personal Information Removal
+        case freemiumPIRSettingsEntryPointImpression
         case freemiumPIRSettingsEntryPointClicked
 
         // MARK: - Data Broker Protection Notifications
@@ -3899,6 +3900,7 @@ extension Pixel.Event {
         case .subscriptionExpirationReminderSchedulingError: return "push-notification_subscription-expiration-reminder_scheduling-error"
 
         // MARK: Freemium Personal Information Removal
+        case .freemiumPIRSettingsEntryPointImpression: return "m_dbp_freemium_settings_entry_point_impression"
         case .freemiumPIRSettingsEntryPointClicked: return "m_dbp_freemium_settings_entry_point_clicked"
 
         // MARK: Data Broker Protection Notifications

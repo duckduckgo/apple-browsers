@@ -38,6 +38,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1216081727196784
     case appRebranding
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216394295428096?focus=true
+    case newTabPageRebranding
+
     /// Option to install Chrome extension during onboarding (DMG only)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216010708822357
     case onboardingChromeExtension
@@ -81,6 +84,12 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715515023
     case autofillPartialFormSaves
+
+    /// Kill switch for the riskier parts of the hardened Bitwarden integration. On by default;
+    /// disable remotely to restore the fixed 1s reconnect interval and EOF-tolerant pipe
+    /// monitoring. Teardown/lifecycle bug fixes stay active.
+    /// https://app.asana.com/1/137249556945/project/1204912272578138/task/1216409281175249
+    case bitwardenConnectionHardening
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
@@ -497,6 +506,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingRebranding))
         case .appRebranding:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
+        case .newTabPageRebranding:
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension))
         case .unknownUsernameCategorization:
@@ -523,6 +534,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, category: .updates)
         case .autofillPartialFormSaves:
             Config(source: .remoteReleasable(AutofillSubfeature.partialFormSaves))
+        case .bitwardenConnectionHardening:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.bitwardenConnectionHardening))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
         case .webExtensionLightweightReload:
@@ -688,7 +701,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSidebarFloating:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.sidebarFloating), category: .duckAI)
         case .sidebarSuggestedPrompts:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.sidebarSuggestedPrompts), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebarSuggestedPrompts), category: .duckAI)
         case .aiChatChromeSidebar:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.sidebar), category: .duckAI)
         case .webViewLookUpAction:

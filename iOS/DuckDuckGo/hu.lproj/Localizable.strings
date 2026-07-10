@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Koppints a képernyő alján található **Vezérlő hozzáadása** gombra";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Új";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Megerősítés";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Igyekszünk kiválasztani az elérhető legdiszkrétebb sütibeállításokat, és bezárni őket. Ha nincs lehetőség a leiratkozásra, egy kattintást megspórolva elfogadjuk helyetted ezeket a sütiket.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Sütik helyettem való kezelése, illetve elfogadása";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Továbbra is magam kezelem őket";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Eleged van már a folyton felugró sütiablakokból?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Egy kattintást megspórolva elfogadhatjuk helyetted ezeket a sütiket.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Nem letiltható sütik helyettem való elfogadása";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Továbbra is magam kezelem őket";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Eleged van már a folyton felugró sütiablakokból, amelyek nem tilthatók le?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Ezt később bármikor módosíthatod\na **Beállítások** > **Felugró sütiablak elleni védelem** alatt.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Mindig küldjön hibajelentést";
 

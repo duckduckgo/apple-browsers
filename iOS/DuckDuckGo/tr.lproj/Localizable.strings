@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Ekranın en altındaki **Kontrol Ekle** seçeneğine dokunun";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Yeni";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Onayla";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Mümkün olan en gizli çerez seçeneklerini belirlemeyi ve bunları sizin için kapatmayı hedefleyeceğiz. Devre dışı bırakma seçeneği yoksa, sizin için bu çerezleri otomatik olarak kabul edeceğiz.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Çerezleri benim için yönet veya kabul et";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Bunları kendim yönetmeye devam edeceğim";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Sizi rahat bırakmayan çerez bildirimlerinden bıktınız mı?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Sizi bir tıklama zahmetinden kurtarıp bu çerezleri sizin yerinize kabul edebiliriz.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Devre dışı bırakılamayan çerezleri benim için kabul et";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Bunları kendim yönetmeye devam edeceğim";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Çıkış yapmana izin vermeyen çerez açılır pencerelerinden bıktın mı?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Bunu daha sonra **Ayarlar** > **Çerez Açılır Pencere Engelleyici** kısmından her zaman değiştirebilirsiniz.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Kilitlenme Raporlarını Her Zaman Gönder";
 

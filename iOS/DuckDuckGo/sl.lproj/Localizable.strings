@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Tapnite **Dodaj kontrolnik** na dnu zaslona.";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Novo";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Potrdi";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Poskušali bomo izbrati najbolj zasebne možnosti piškotkov, ki so na voljo, in jih zapreti namesto vas. Če nimajo možnosti zavrnitve, vam bomo prihranili klik in te piškotke sprejeli namesto vas.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Upravljaj ali sprejmi piškotke zame";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Upravljanje bom še naprej urejal/-a sam/-a";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Vas motijo pojavna okna za piškotke, ki vam ne dajo miru?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Prihranimo vam lahko klik in te piškotke sprejmemo namesto vas.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Zame sprejmi piškotke brez možnosti zavrnitve";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Upravljanje bom še naprej urejal/-a sam/-a";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Ste naveličani pojavnih oken s piškotki, ki vam ne omogočajo, da jih zavrnete?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "To lahko pozneje kadar koli prilagodite v razdelku\n**Nastavitve** > **Zaščita pred pojavnimi okni piškotkov**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Vedno pošlji poročila o zrušitvah";
 

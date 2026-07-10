@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Ekrano apačioje bakstelėkite **Pridėti valdiklį**";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Naujas";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Patvirtinti";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Stengsimės parinkti privačiausias galimas slapukų parinktis ir jas už jus uždaryti. Jei nėra atsisakymo parinkčių, sutaupysime jums paspaudimą ir priimsime šiuos slapukus už jus.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Tvarkyti arba priimti slapukus už mane";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Aš ir toliau juos tvarkysiu";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Ar pavargote nuo slapukų iškylančiųjų langų, kurie niekaip neduoda ramybės?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Galime išlaisvinti jus nuo paspaudimo ir priimti šiuos slapukus už jus.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Priimti neatsisakomus slapukus už mane";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Aš ir toliau juos tvarkysiu";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Ar pavargote nuo slapukų iškylančiųjų langų, kurie neleidžia jų atsisakyti?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Vėliau visada galite pakoreguoti nuėję \n**Nustatymai** > **Apsauga nuo slapukų iškylančiųjų langų**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Visada siųsti strigčių ataskaitas";
 

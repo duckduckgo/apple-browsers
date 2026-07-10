@@ -303,7 +303,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         if scrollToSelected {
             DispatchQueue.main.async {
                 if let currentIndex = self.currentIndex {
-                    self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: .right, animated: true)
+                    self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: [], animated: true)
                 }
             }
         }
@@ -473,7 +473,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
         }
         DispatchQueue.main.async {
             if let currentIndex = self.currentIndex {
-                self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: .right, animated: true)
+                self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: [], animated: true)
             }
         }
     }

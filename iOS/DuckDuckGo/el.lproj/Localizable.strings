@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Πάτησε **Προσθήκη ελέγχου** στο κάτω μέρος της οθόνης";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Νέο";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Επιβεβαίωση";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Θα στοχεύσουμε στην επιλογή των πιο ιδιωτικών διαθέσιμων επιλογών cookie και θα τα κλείσουμε για εσένα. Εάν δεν έχουν εξαιρέσεις, θα σας γλιτώσουμε ένα κλικ και θα αποδεχτούμε αυτά τα cookie για εσάς.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Διαχειριστείτε ή αποδεχθείτε cookie για εμένα";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Θα συνεχίσω να τα διαχειρίζομαι εγώ προσωπικά";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Κουραστήκατε από τα αναδυόμενα παράθυρα για cookie που δεν σας αφήνουν σε ησυχία;";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Μπορούμε να σας γλιτώσουμε ένα κλικ και να αποδεχτούμε αυτά τα cookie για εσάς.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Αποδοχή cookie χωρίς δυνατότητα εξαίρεσης για μένα";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Θα συνεχίσω να τα διαχειρίζομαι εγώ προσωπικά";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Κουραστήκατε από τα αναδυόμενα παράθυρα για cookie που δεν σας επιτρέπουν να εξαιρεθείτε;";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Μπορείτε πάντα να κάνετε τις απαραίτητες ρυθμίσεις αργότερα\n **Ρυθμίσεις** > **Προστασία αναδυόμενων παραθύρων για cookie**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Να αποστέλλονται πάντα αναφορές σφαλμάτων";
 

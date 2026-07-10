@@ -305,7 +305,7 @@ private struct AIChatDebugSessionTimerEntryView: View {
 
 private struct AIChatStorageServerSection: View {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
-    @StateObject private var serverState = StorageServerState()
+    @ObservedObject private var serverState = StorageServerState.shared
 
     var body: some View {
         Section(header: Text(verbatim: "Native Storage Server")) {
@@ -339,19 +339,22 @@ private struct AIChatStorageServerSection: View {
     }
 }
 
+/// Owns the native-storage debug server for the app session.
 @MainActor
 private final class StorageServerState: ObservableObject {
+    /// Deliberate singleton: keeps the server alive across the debug view's lifecycle.
+    /// A DI-based owner would mean threading this through production code, which isn't
+    /// warranted for debug-only tooling.
+    static let shared = StorageServerState()
+
     @Published var errorMessage: String?
     @Published var localIPAddress: String?
 
     var isRunning: Bool { server != nil }
 
     @Published private var server: DuckAiStorageDebugServer?
-    private nonisolated(unsafe) var serverForDeinit: DuckAiStorageDebugServer?
 
-    deinit {
-        serverForDeinit?.stop()
-    }
+    private init() {}
 
     func start(handler: DuckAiNativeStorageHandling?) {
         guard let handler else {
@@ -368,7 +371,6 @@ private final class StorageServerState: ObservableObject {
             }
             try server.start()
             self.server = server
-            self.serverForDeinit = server
             self.errorMessage = nil
             self.localIPAddress = DebugServerNetworkInterface.wiFiAddress()
         } catch {
@@ -381,7 +383,6 @@ private final class StorageServerState: ObservableObject {
         case .failed(let message):
             errorMessage = message
             server = nil
-            serverForDeinit = nil
             localIPAddress = nil
         default:
             break
@@ -391,7 +392,6 @@ private final class StorageServerState: ObservableObject {
     func stop() {
         server?.stop()
         server = nil
-        serverForDeinit = nil
         localIPAddress = nil
     }
 }

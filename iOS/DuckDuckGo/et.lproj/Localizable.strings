@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Puuduta ekraani allosas nuppu **Lisa juhtelement**";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Uus";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Kinnita";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Püüame valida kõige privaatsemad saadaolevad küpsisevalikud ja sulgeda need sinu eest. Kui neil pole loobumisvõimalust, säästame sulle ühe klõpsu ja nõustume nende küpsistega sinu eest.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Halda või nõustu küpsistega minu eest";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Ma jätkan nende haldamist ise";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Oled väsinud küpsiste hüpikakendest, mis ei jäta sind rahule?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Saame säästa sind ühest klõpsust ja nõustuda nende küpsistega sinu eest.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Nõustu minu eest küpsistega, millest ei saa loobuda";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ma jätkan nende haldamist ise";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Oled väsinud küpsiste hüpikakendest, mis ei lase sul neist keelduda?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Saad seda hiljem alati muuta jaotises\n**Seaded** > **Küpsiste hüpikakna kaitse**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Saada krahhiaruanded alati";
 

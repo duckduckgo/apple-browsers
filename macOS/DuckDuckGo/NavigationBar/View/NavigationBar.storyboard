@@ -1139,6 +1139,7 @@
                         <outlet property="youTubeAdBlockButtonWidthConstraint" destination="ytb-03-ccc" id="ytb-O3-kkk"/>
                         <outlet property="zoomButton" destination="b30-aJ-fvG" id="24G-cW-Qmg"/>
                         <outlet property="zoomButtonHeightConstraint" destination="6TS-h0-8pK" id="dyK-lM-9fE"/>
+                        <outlet property="zoomButtonWidthConstraint" destination="JvZ-46-TUe" id="ESp-oo-WzP"/>
                     </connections>
                 </viewController>
                 <customObject id="PAh-HG-vQt" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>

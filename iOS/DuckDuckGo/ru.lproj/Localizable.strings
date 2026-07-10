@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Внизу экрана нажмите **Добавить элемент управления**.";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Новое";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Подтвердить";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Мы постараемся выбрать максимально конфиденциальные настройки файлов cookie и закроем эти окна за вас. Если во всплывающих окнах нет возможности отказаться от отслеживания, мы сэкономим ваше время и примем эти файлы cookie за вас.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Настраивать или принимать файлы cookie за меня";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Я продолжу управлять файлами cookie самостоятельно";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Устали от всплывающих окон с уведомлениями о файлах cookie, которые не дают вам покоя?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Мы можем сэкономить вам время и примем эти файлы cookie за вас.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Принимать за меня файлы cookie, от которых нельзя отказаться";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Я продолжу управлять файлами cookie самостоятельно";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Устали от всплывающих окон с уведомлениями о файлах cookie, от которых вы не можете отказаться?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Эту настройку всегда можно изменить позже в разделе\n**«Настройки»** > **«Защита от всплывающих окон cookie»**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Всегда отправлять отчеты о сбоях";
 

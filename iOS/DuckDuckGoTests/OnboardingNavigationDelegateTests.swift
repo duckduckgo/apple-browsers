@@ -70,6 +70,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             isUserAuthenticated: { false },
             isFreemiumEnabled: { false }
         )
+        let profileStateManager = DefaultDBPProfileStateManager(keyValueStore: freemiumDBPUserDefaults)
         
         let remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: db,
@@ -91,6 +92,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
                 freemiumPIRDebugSettings: freemiumPIRDebugSettings
             ),
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: profileStateManager,
             idleReturnEligibilityManager: MockIdleReturnEligibilityManager()
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter())

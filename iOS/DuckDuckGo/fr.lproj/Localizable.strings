@@ -1411,6 +1411,39 @@
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Appuyez sur **Ajouter un contrôle** en bas de l'écran";
 
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Nouveau";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Confirmer";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Nous nous efforcerons de sélectionner les options de cookies les plus respectueuses de la vie privée et de les désactiver pour vous. Si aucune option de désactivation n'est proposée, nous vous épargnerons un clic et accepterons ces cookies à votre place.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Gérer ou accepter les cookies à ma place";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Je les gérerai moi-même";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Vous en avez assez des fenêtres contextuelles sur les cookies qui ne vous laissent pas tranquille ?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Nous pouvons vous épargner un clic et accepter ces cookies à votre place.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Accepter les cookies sans option de désactivation pour moi";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Je les gérerai moi-même";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Vous en avez assez des fenêtres contextuelles de cookies qui ne vous permettent pas de refuser leur utilisation ?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Vous pouvez toujours modifier ces paramètres ultérieurement dans\n**Réglages** > **Protection contre les fenêtres contextuelles des cookies**.";
+
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Toujours envoyer des rapports de plantage";
 

@@ -500,7 +500,6 @@ public struct UserText {
 
     // MARK: - Cookie Pop-up Protection Opt-In Dialog
     public static let cookiePopupProtectionOptInBadge = NSLocalizedString("cookie-popup-protection.opt-in.badge", value: "New", comment: "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header")
-    public static let cookiePopupProtectionOptInHeader = NSLocalizedString("cookie-popup-protection.opt-in.header", value: "Cookie Pop-up Protection", comment: "Header of the Cookie Pop-up Protection opt-in dialog")
     public static let cookiePopupProtectionOptInConfirm = NSLocalizedString("cookie-popup-protection.opt-in.confirm", value: "Confirm", comment: "Confirm button in the Cookie Pop-up Protection opt-in dialog")
     public static let cookiePopupProtectionOptInFooter = NSLocalizedString("cookie-popup-protection.opt-in.footer", value: "You can always adjust later in\n**Settings** > **Cookie Pop-Up Protection**.", comment: "Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold.")
     // Variant shown when Cookie Pop-up Protection is already ON
@@ -976,6 +975,11 @@ public struct UserText {
     /// https://app.asana.com/1/137249556945/project/38424471409662/task/1211224788080468
     public static let inactivityNotificationTitle = NotLocalizedString("inactivity.notification.title", value: "Control your online experience", comment: "Title for inactivity notification. Used on for en_US locale only.")
     public static let inactivityNotificationBody = NotLocalizedString("inactivity.notification.body", value: "Use DuckDuckGo to avoid the ads that track you around the web and reduce your online footprint.", comment: "Body for inactivity notification. Used on for en_US locale only.")
+    public static func subscriptionExpirationReminderNotificationTitle(daysUntilTrialEnds: Int) -> String {
+        let unit = daysUntilTrialEnds == 1 ? "day" : "days"
+        return "Your trial ends in \(daysUntilTrialEnds) \(unit)"
+    }
+    public static let subscriptionExpirationReminderNotificationBody = NotLocalizedString("subscription.expiration-reminder.notification.body", value: "Try all your new premium protections before your trial ends!", comment: "Body for the Privacy Pro free-trial expiration reminder notification. Used for en_US locale only.")
 
     // MARK: Settings Screen
 

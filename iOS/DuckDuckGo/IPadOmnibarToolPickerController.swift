@@ -44,6 +44,11 @@ final class IPadOmnibarToolPickerController {
         toolsController.selectedTool != nil
     }
 
+    /// The currently selected tool, or `nil` when none is active. Drives the iPad selected-tool badge.
+    var selectedTool: AIChatRAGTool? {
+        toolsController.selectedTool
+    }
+
     var selectedToolHidesReasoningPicker: Bool {
         guard let tool = toolsController.selectedTool,
               let identifier = UTIToolsMenu.Item.Identifier(tool: tool) else { return false }
@@ -83,9 +88,12 @@ final class IPadOmnibarToolPickerController {
         onToolsUpdated?()
     }
 
-    func resetSelection() {
-        guard toolsController.selectedTool != nil else { return }
+    func resetSelection(isUserInitiated: Bool = false) {
+        guard let previousTool = toolsController.selectedTool else { return }
         toolsController.clearSelection()
+        if isUserInitiated {
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previousTool)
+        }
         onToolsUpdated?()
     }
 

@@ -154,6 +154,9 @@ extension MainViewController {
 
     /// Hides the bottom UTI input bar when FE asks to hide the chat input. Idempotent.
     func reconcileAIChatInputChromeForCurrentTab() {
+        // Only AI tabs have an AI chat input to reconcile. For a non-AI tabs this can
+        //  cause glitches in the positioning of the bars.
+        guard currentTab?.isAITab == true else { return }
         viewCoordinator.setAITabBottomChromeHidden(isAIChatInputHiddenForCurrentTab)
     }
 

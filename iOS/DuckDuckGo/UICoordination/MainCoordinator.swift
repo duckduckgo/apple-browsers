@@ -128,6 +128,7 @@ final class MainCoordinator {
          freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+         profileStateManager: DBPProfileStateManaging,
          modalPromptCoordinationService: ModalPromptCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
@@ -295,6 +296,7 @@ final class MainCoordinator {
                                         freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                         freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                         freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                                        profileStateManager: profileStateManager,
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
@@ -637,6 +639,10 @@ final class MainCoordinator {
 
     func segueToDuckDuckGoSubscription(origin: String?) {
         controller.segueToDuckDuckGoSubscription(origin: origin)
+    }
+
+    func segueToSubscriptionWelcome() {
+        controller.segueToSubscriptionWelcome()
     }
 
     func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {

@@ -516,6 +516,7 @@ extension DefaultOmniBarViewController {
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
                 DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted)
+                fireIPadUnifiedPromptSubmittedPixels(hasText: !query.isEmpty)
                 /// Collapse and resign instantly so a quick re-tap doesn't race the post-submit
                 /// collapse animation.
                 /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1215084286493408?focus=true
@@ -638,7 +639,13 @@ extension DefaultOmniBarViewController {
             self?.refreshReasoningPicker()
         }
         omniBarView.onSelectedToolClearTapped = { [weak self] in
-            self?.toolPickerController?.resetSelection()
+            self?.toolPickerController?.resetSelection(isUserInitiated: true)
+        }
+        omniBarView.onModelPickerMenuOpened = {
+            UnifiedToggleInputCoordinatorPixelHelper.fireModelPickerShownPixel(isAITabState: false)
+        }
+        omniBarView.onReasoningPickerMenuOpened = {
+            UnifiedToggleInputCoordinatorPixelHelper.fireReasoningPickerShownPixel(isAITabState: false)
         }
 
         // The attach button shares the same store so its limits and accepted types track the selected
@@ -736,6 +743,29 @@ extension DefaultOmniBarViewController {
     private func refreshAttachButton() {
         // A nil menu hides the button — i.e. when the selected model accepts no attachments.
         omniBarView.aiChatAttachmentMenu = attachmentController?.makeMenu()
+    }
+
+    private func fireIPadUnifiedPromptSubmittedPixels(hasText: Bool) {
+        guard modelPickerController != nil else { return }
+        let attachments = attachmentController?.pendingAttachments ?? []
+        let selectedTool = toolPickerController?.selectedTool
+        UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
+            hasText: hasText,
+            selectedTool: selectedTool,
+            attachments: attachments,
+            reasoningMode: iPadReasoningModeForSubmitPixel,
+            modelId: modelPickerController?.currentModelId
+        )
+        UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
+            selectedTool: selectedTool,
+            attachments: attachments
+        )
+    }
+
+    private var iPadReasoningModeForSubmitPixel: AIChatReasoningMode? {
+        if toolPickerController?.selectedToolHidesReasoningPicker == true { return nil }
+        guard reasoningPickerController?.isReasoningPickerAvailable == true else { return nil }
+        return reasoningPickerController?.currentReasoningMode
     }
 
     /// Called when the strip's attachments change (add / remove / clear): rebuilds the attach menu

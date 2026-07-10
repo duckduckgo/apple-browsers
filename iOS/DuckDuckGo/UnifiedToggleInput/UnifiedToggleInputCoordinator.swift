@@ -1565,7 +1565,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func fireModelSelectedPixel(modelId: String) {
-        Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId ])
+        UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId)
     }
 
     private func fireReasoningEffortSelectedPixel(mode: AIChatReasoningMode) {
@@ -1573,15 +1573,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func fireModelPickerShown() {
-        Pixel.fire(pixel: .unifiedToggleInputModelPickerShown, withAdditionalParameters: [
-            AttributionParameter.origin: UnifiedToggleInputCoordinatorPixelHelper.measurementOrigin(for: .modelPicker, isAITabState: isAITabState).rawValue
-        ])
+        UnifiedToggleInputCoordinatorPixelHelper.fireModelPickerShownPixel(isAITabState: isAITabState)
     }
 
     private func fireReasoningPickerShown() {
-        Pixel.fire(pixel: .unifiedToggleInputReasoningEffortPickerShown, withAdditionalParameters: [
-            AttributionParameter.origin: UnifiedToggleInputCoordinatorPixelHelper.measurementOrigin(for: .reasoningPicker, isAITabState: isAITabState).rawValue
-        ])
+        UnifiedToggleInputCoordinatorPixelHelper.fireReasoningPickerShownPixel(isAITabState: isAITabState)
     }
     
     private func requiredPublicTier(for mode: AIChatReasoningMode, model: AIChatModel) -> AIChatModelPublicAccessTier? {
@@ -1842,7 +1838,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             switchBarSubmissionMetrics.process(text, for: .aiChat)
             processSessionActivity(mode: .aiChat)
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
-                text: text,
+                hasText: !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                 selectedTool: toolsController.selectedTool,
                 attachments: viewController.currentAttachments,
                 reasoningMode: reasoningModeForSubmitPixel,

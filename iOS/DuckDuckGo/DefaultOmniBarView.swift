@@ -515,6 +515,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     /// Fired when the badge's clear (✕) button is tapped, so the host can deselect the tool.
     var onSelectedToolClearTapped: (() -> Void)?
 
+    var onModelPickerMenuOpened: (() -> Void)?
+
+    var onReasoningPickerMenuOpened: (() -> Void)?
+
     private var canShowToolPicker: Bool {
         isToolPickerEnabled && toolPickerButton.menu != nil
     }
@@ -592,6 +596,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     @objc private func selectedToolClearButtonTapped() {
         onSelectedToolClearTapped?()
+    }
+
+    @objc private func modelPickerButtonTouchedDown() {
+        guard modelPickerButton.menu != nil else { return }
+        onModelPickerMenuOpened?()
+    }
+
+    @objc private func reasoningPickerButtonTouchedDown() {
+        guard reasoningPickerButton.menu != nil else { return }
+        onReasoningPickerMenuOpened?()
     }
 
     let attachButton: UIButton = {
@@ -1155,6 +1169,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         aiChatLeftButton.addTarget(self, action: #selector(aiChatLeftButtonTap), for: .touchUpInside)
         aiChatSendButton.addTarget(self, action: #selector(aiChatSendButtonTap), for: .primaryActionTriggered)
+        modelPickerButton.addTarget(self, action: #selector(modelPickerButtonTouchedDown), for: .touchDown)
+        reasoningPickerButton.addTarget(self, action: #selector(reasoningPickerButtonTouchedDown), for: .touchDown)
     }
 
     private func updateFireModeAppearance() {

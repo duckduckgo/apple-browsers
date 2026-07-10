@@ -88,9 +88,12 @@ final class IPadOmnibarToolPickerController {
         onToolsUpdated?()
     }
 
-    func resetSelection() {
-        guard toolsController.selectedTool != nil else { return }
+    func resetSelection(isUserInitiated: Bool = false) {
+        guard let previousTool = toolsController.selectedTool else { return }
         toolsController.clearSelection()
+        if isUserInitiated {
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previousTool)
+        }
         onToolsUpdated?()
     }
 

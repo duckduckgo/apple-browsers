@@ -232,7 +232,6 @@ final class FaviconImageCache: FaviconImageCaching {
 
         Task { [storing] in
             let image: NSImage?
-            try await Task.sleep(nanoseconds: 1_000_000_000)
             do {
                 image = try await storing.loadImage(for: metadata.identifier)
             } catch FaviconStore.FaviconStoreError.imageDecodingFailed {

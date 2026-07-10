@@ -22,6 +22,8 @@ import Cocoa
 import Combine
 import Common
 import Configuration
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import FeatureFlags
 import LoginItems
 import Networking
@@ -504,6 +506,12 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         proxySettings.isOrphanProxyBypassEnabled = bypassEnabled
     }
 
+    private func setupAppRebrand() {
+        let isAppRebranded = featureFlagger.isFeatureOn(.appRebranding)
+        AppRebrand.isAppRebranded = { [isAppRebranded] in isAppRebranded }
+        DesignSystemRebrand.isAppRebranded = { [isAppRebranded] in isAppRebranded }
+    }
+
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
@@ -515,6 +523,9 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         configurationManager.start()
         // Load cached config (if any)
         privacyConfigurationManager.reload(etag: configurationStore.loadEtag(for: .privacyConfiguration), data: configurationStore.loadData(for: .privacyConfiguration))
+
+        // After privacy config load: `.appRebranding` is a remote flag.
+        setupAppRebrand()
 
         // It's important for this to be set-up after the privacy configuration is loaded
         // as it relies on it for the remote feature flag.

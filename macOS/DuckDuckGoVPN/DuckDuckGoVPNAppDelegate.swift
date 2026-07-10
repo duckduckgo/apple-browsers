@@ -23,7 +23,6 @@ import Combine
 import Common
 import Configuration
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import FeatureFlags
 import LoginItems
 import Networking
@@ -508,7 +507,6 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupAppRebrand() {
         let isAppRebranded = featureFlagger.isFeatureOn(.appRebranding)
-        AppRebrand.isAppRebranded = { [isAppRebranded] in isAppRebranded }
         DesignSystemRebrand.isAppRebranded = { [isAppRebranded] in isAppRebranded }
     }
 

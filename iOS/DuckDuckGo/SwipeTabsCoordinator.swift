@@ -859,6 +859,11 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
                 isExpandedPhone: coordinator.omniBar.isExpandedPhone,
                 tabCount: tabsModel.count
             )
+            // Minimal chrome (expanded phone) hides the toolbar, so template omnibars carry their
+            // own glass capsule too, matching the current tab's bar while swiping.
+            cell.omniBar?.barView.setFloatingMinimalChromeBar(
+                coordinator.omniBar.isExpandedPhone && floatingUIManager.isFloatingUIEnabled
+            )
             
             if tab?.isAITab == true {
                 cell.omniBar?.enterAIChatMode()

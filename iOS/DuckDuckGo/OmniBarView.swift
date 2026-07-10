@@ -133,6 +133,11 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     func makeGlass()
     func makeOpaque()
+
+    /// In floating UI minimal chrome (landscape iPhone) the toolbar is hidden, so the single
+    /// combined bar renders its own full-width glass capsule and the inner URL field becomes an
+    /// opaque pill. Pass `false` to restore the standard per-position appearance.
+    func setFloatingMinimalChromeBar(_ enabled: Bool)
 }
 
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.

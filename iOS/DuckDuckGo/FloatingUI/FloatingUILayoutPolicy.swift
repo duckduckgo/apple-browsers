@@ -67,8 +67,11 @@ enum FloatingUILayoutPolicy {
 
     static func shouldHostOmnibarInFloatingToolbar(isFloatingUIEnabled: Bool,
                                                    addressBarPosition: AddressBarPosition,
-                                                   isUnifiedToggleInputVisible: Bool) -> Bool {
-        isFloatingUIEnabled && addressBarPosition.isBottom && !isUnifiedToggleInputVisible
+                                                   isUnifiedToggleInputVisible: Bool,
+                                                   isMinimalChromeLayout: Bool) -> Bool {
+        // In minimal chrome the toolbar is hidden, so hosting the omnibar inside it would make the
+        // whole bar disappear; keep it in the navigation bar container instead.
+        isFloatingUIEnabled && addressBarPosition.isBottom && !isUnifiedToggleInputVisible && !isMinimalChromeLayout
     }
 
     static func shouldShowFloatingDomainCapsule(isFloatingUIEnabled: Bool,

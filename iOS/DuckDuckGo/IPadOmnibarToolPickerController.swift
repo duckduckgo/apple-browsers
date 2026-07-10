@@ -92,7 +92,7 @@ final class IPadOmnibarToolPickerController {
         guard let previousTool = toolsController.selectedTool else { return }
         toolsController.clearSelection()
         if isUserInitiated {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previousTool)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previousTool, surface: .addressBar)
         }
         onToolsUpdated?()
     }
@@ -110,10 +110,10 @@ final class IPadOmnibarToolPickerController {
     private func fireToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {
         guard previous != current else { return }
         if let previous, current == nil || current != previous {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previous)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previous, surface: .addressBar)
         }
         if let current {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: current)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: current, surface: .addressBar)
         }
     }
 }

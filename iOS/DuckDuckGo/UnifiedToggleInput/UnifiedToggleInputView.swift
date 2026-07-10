@@ -426,6 +426,10 @@ final class UnifiedToggleInputView: UIView {
     /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
     var aiTabFireButton: UIButton { aiTabCollapsedFireButton }
 
+    func setMenuAlertVisible(_ isVisible: Bool, animated: Bool) {
+        aiTabCollapsedMenuButton.setMenuAlertVisible(isVisible, animated: animated)
+    }
+
     private lazy var aiTabCollapsedMenuButton: UIButton = {
         let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.menuHamburger, traitCollection: traitCollection)
         button.isHidden = true

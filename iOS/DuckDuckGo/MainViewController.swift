@@ -151,6 +151,7 @@ class MainViewController: UIViewController {
     let toggleModeStorage: ToggleModeStoring
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
+    private var isDownloadMenuAlertVisible: Bool?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
     }
@@ -716,8 +717,10 @@ class MainViewController: UIViewController {
         registerForPageRefreshPatterns()
         registerForSyncFeatureFlagsUpdates()
         registerForAppBackgroundNotification()
+        registerForDownloadMenuAlertNotifications()
 
         decorate()
+        refreshDownloadMenuAlertState(animated: false)
 
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
@@ -1169,6 +1172,31 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarFireButton.addTarget(self, action: #selector(performCustomizationActionForToolbar), for: .touchUpInside)
 
         viewCoordinator.menuToolbarButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onMenuToolbarLongPressed)))
+    }
+
+    private func registerForDownloadMenuAlertNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(downloadMenuAlertStateDidChange),
+                                               name: .downloadStarted,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(downloadMenuAlertStateDidChange),
+                                               name: .downloadFinished,
+                                               object: nil)
+    }
+
+    @objc private func downloadMenuAlertStateDidChange() {
+        refreshDownloadMenuAlertState(animated: true)
+    }
+
+    private func refreshDownloadMenuAlertState(animated: Bool) {
+        let isVisible = AppDependencyProvider.shared.downloadManager.hasActiveDownloads
+        let shouldAnimate = animated && isDownloadMenuAlertVisible != isVisible
+        isDownloadMenuAlertVisible = isVisible
+
+        viewCoordinator.menuToolbarButton.setMenuAlertVisible(isVisible, animated: shouldAnimate)
+        viewCoordinator.omniBar.barView.menuButton.setMenuAlertVisible(isVisible, animated: shouldAnimate)
+        unifiedToggleInputCoordinator?.viewController.setMenuAlertVisible(isVisible, animated: shouldAnimate)
     }
 
     private func registerForPageRefreshPatterns() {

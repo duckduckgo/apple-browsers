@@ -70,6 +70,13 @@ protocol DownloadManaging {
     func stopMonitoringDownloadsDirectoryChanges()
 }
 
+extension DownloadManaging {
+    var hasActiveDownloads: Bool {
+        // `.downloadStarted` is posted just before the session flips to running.
+        downloadList.contains { !$0.temporary }
+    }
+}
+
 class DownloadManager: DownloadManaging {
 
     struct UserInfoKeys {

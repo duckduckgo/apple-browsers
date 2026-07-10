@@ -453,13 +453,12 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard let path = collectionView.indexPathForItem(at: touch.location(in: collectionView)),
-              let cell = collectionView.cellForItem(at: path) as? TabsBarCell,
-              let removeButton = cell.removeButton else {
+              let cell = collectionView.cellForItem(at: path) as? TabsBarCell else {
             return true
         }
 
         // Don't recognize if pressing delete button
-        return removeButton.hitTest(touch.location(in: removeButton), with: nil) == nil
+        return cell.removeButton.hitTest(touch.location(in: cell.removeButton), with: nil) == nil
     }
 
     private func releasePressedCell() {

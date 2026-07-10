@@ -42,12 +42,12 @@ class TabsBarCell: UICollectionViewCell {
         static let labelFontSize: CGFloat = 15
     }
 
-    private(set) var label: FadeOutLabel?
-    private(set) var removeButton: BrowserChromeButton?
-    private(set) var faviconImage: UIImageView?
-    private(set) var topBackgroundView: UIView?
-    private(set) var bottomBackgroundView: UIView?
-    private(set) var separatorView: UIView?
+    private let label = FadeOutLabel()
+    let removeButton = BrowserChromeButton(.tabSwitcher)
+    private let faviconImage = UIImageView()
+    private let topBackgroundView = UIView()
+    private let bottomBackgroundView = UIView()
+    private let separatorView = UIView()
 
     private let titleStackView = UIStackView()
     private let faviconContainerView = UIView()
@@ -76,13 +76,6 @@ class TabsBarCell: UICollectionViewCell {
     }
 
     private func setUpSubviews() {
-        let label = FadeOutLabel()
-        let removeButton = BrowserChromeButton(.tabSwitcher)
-        let faviconImage = UIImageView()
-        let topBackgroundView = UIView()
-        let bottomBackgroundView = UIView()
-        let separatorView = UIView()
-
         clipsToBounds = true
         contentView.clipsToBounds = true
 
@@ -170,13 +163,6 @@ class TabsBarCell: UICollectionViewCell {
             removeButton.heightAnchor.constraint(equalTo: contentView.heightAnchor),
             removeButton.widthAnchor.constraint(equalTo: removeButton.heightAnchor),
         ])
-
-        self.label = label
-        self.removeButton = removeButton
-        self.faviconImage = faviconImage
-        self.topBackgroundView = topBackgroundView
-        self.bottomBackgroundView = bottomBackgroundView
-        self.separatorView = separatorView
     }
 
     @objc private func onRemovePressed() {
@@ -205,16 +191,6 @@ class TabsBarCell: UICollectionViewCell {
                 isNextCurrent: Bool,
                 isFireModeEnabled: Bool,
                 withTheme theme: Theme) {
-        guard let label,
-              let removeButton,
-              let topBackgroundView,
-              let bottomBackgroundView,
-              let separatorView,
-              let labelRemoveButtonConstraint else {
-            assertionFailure("TabsBarCell subviews should be configured before update.")
-            return
-        }
-        
         accessibilityElements = [label, removeButton]
         
         self.model?.removeObserver(self)
@@ -233,7 +209,7 @@ class TabsBarCell: UICollectionViewCell {
             separatorView.backgroundColor = theme.tabsBarSeparatorColor
         }
 
-        labelRemoveButtonConstraint.isActive = isCurrent
+        labelRemoveButtonConstraint?.isActive = isCurrent
         separatorView.isHidden = isCurrent || isNextCurrent
         removeButton.isHidden = !isCurrent
         
@@ -246,17 +222,6 @@ class TabsBarCell: UICollectionViewCell {
     /// longer exists in the tabs model (e.g. during a desync between the layout and the model). The
     /// cell is left visually empty and non-interactive; a subsequent refresh replaces it.
     func configurePlaceholder(withTheme theme: Theme) {
-        guard let label,
-              let removeButton,
-              let faviconImage,
-              let topBackgroundView,
-              let bottomBackgroundView,
-              let separatorView,
-              let labelRemoveButtonConstraint else {
-            assertionFailure("TabsBarCell subviews should be configured before configuring placeholder state.")
-            return
-        }
-
         self.model?.removeObserver(self)
         self.model = nil
         onRemove = nil
@@ -270,19 +235,12 @@ class TabsBarCell: UICollectionViewCell {
         bottomBackgroundView.backgroundColor = .clear
         separatorView.backgroundColor = theme.tabsBarSeparatorColor
 
-        labelRemoveButtonConstraint.isActive = false
+        labelRemoveButtonConstraint?.isActive = false
         separatorView.isHidden = true
         removeButton.isHidden = true
     }
 
     private func applyModel(_ model: Tab) {
-        guard let label,
-              let removeButton,
-              let faviconImage else {
-            assertionFailure("TabsBarCell subviews should be configured before applying a model.")
-            return
-        }
-
         if model.link == nil {
             faviconImage.loadFavicon(forDomain: URL.ddg.host, usingCache: .tabs)
             updateEmptyTabLabel(for: model, label: label)

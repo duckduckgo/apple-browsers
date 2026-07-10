@@ -91,7 +91,7 @@ jobs:
       - name: Download stop_workflow flag artifact
         id: download-stop-workflow
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: stop_workflow
           path: .github
@@ -133,7 +133,7 @@ jobs:
         # Only look for the tag artifact when the tag input is empty
         if: github.event.inputs.tag == null || github.event.inputs.tag == ''
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: tag
           path: .github
@@ -258,7 +258,7 @@ jobs:
           echo "appcast-patch-name=${appcast_patch_name}" >> $GITHUB_OUTPUT
 
       - name: Upload appcast diff artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.appcast.outputs.appcast-patch-name }}
           path: ${{ env.SPARKLE_DIR }}/${{ steps.appcast.outputs.appcast-patch-name }}

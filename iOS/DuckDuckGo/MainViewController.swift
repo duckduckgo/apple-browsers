@@ -975,10 +975,9 @@ class MainViewController: UIViewController {
     func loadTabsBarIfNeeded() {
         guard isPad else { return }
 
-        let controller = TabsBarViewController.createFromXib()
+        let controller = TabsBarViewController.create()
 
         addChild(controller)
-        controller.view.frame = viewCoordinator.tabBarContainer.bounds
         controller.delegate = self
         controller.historyManager = historyManager
         controller.fireproofing = fireproofing
@@ -988,7 +987,14 @@ class MainViewController: UIViewController {
         controller.tabManager = tabManager
         controller.daxDialogsManager = daxDialogsManager
         controller.fireModeCapability = fireModeCapability
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
         viewCoordinator.tabBarContainer.addSubview(controller.view)
+        NSLayoutConstraint.activate([
+            controller.view.leadingAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.trailingAnchor),
+            controller.view.topAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.topAnchor),
+            controller.view.bottomAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.bottomAnchor),
+        ])
         tabsBarController = controller
         controller.didMove(toParent: self)
         bindAIChatChromeChipToCurrentTab()
@@ -3985,6 +3991,22 @@ extension MainViewController: BrowserChromeDelegate {
             bottomCapsuleObscuredHeight: floatingBottomCapsuleObscuredHeight,
             safeAreaBottom: view.safeAreaInsets.bottom
         )
+    }
+
+    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
+        UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
+                     left: 0,
+                     bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
+                     right: 0)
+    }
+
+    /// Height (from the screen top) obscured by the top chrome. Content rests below the status bar,
+    /// and below the omnibar too when the address bar is at the top. Constant for now (doesn't yet
+    /// shrink to the top capsule as the omnibar hides on scroll).
+    private func floatingWebViewTopObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
+        let safeAreaTop = view.safeAreaInsets.top
+        guard appSettings.currentAddressBarPosition == .top else { return safeAreaTop }
+        return safeAreaTop + omniBar.barView.expectedHeight
     }
 
     var minimalChromeBottomHeight: CGFloat {

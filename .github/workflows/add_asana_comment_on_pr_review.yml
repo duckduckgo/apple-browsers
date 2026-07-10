@@ -91,7 +91,7 @@ jobs:
             echo "text=${prefix} by @${REVIEWER} — see review: ${REVIEW_URL}" >> "$GITHUB_OUTPUT"
 
         - name: Post review comment
-          uses: duckduckgo/native-github-asana-sync@v2.4
+          uses: duckduckgo/native-github-asana-sync@v2.5.1
           with:
             action: 'post-comment-asana-task'
             asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -101,7 +101,7 @@ jobs:
 
         - name: Mark subtask complete on approve
           if: ${{ github.event.review.state == 'approved' }}
-          uses: duckduckgo/native-github-asana-sync@v2.4
+          uses: duckduckgo/native-github-asana-sync@v2.5.1
           with:
             action: 'mark-asana-task-complete'
             asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -112,7 +112,7 @@ jobs:
         # completed) and submits a non-approve review, reopen the subtask.
         - name: Mark subtask incomplete on non-approve review
           if: ${{ github.event.review.state != 'approved' }}
-          uses: duckduckgo/native-github-asana-sync@v2.4
+          uses: duckduckgo/native-github-asana-sync@v2.5.1
           with:
             action: 'mark-asana-task-complete'
             asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

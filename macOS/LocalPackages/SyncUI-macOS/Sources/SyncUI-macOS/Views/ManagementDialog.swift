@@ -77,13 +77,7 @@ public struct ManagementDialog: View {
                         }
                     )
                 } else {
-                    Alert(
-                        title: Text(errorTitle),
-                        message: Text(errorDescription),
-                        dismissButton: .default(Text(buttonTitle)) {
-                            model.endFlow()
-                        }
-                    )
+                    syncErrorAlert
                 }
             }
     }
@@ -135,5 +129,22 @@ public struct ManagementDialog: View {
         }
 
         return primary + "\n" + detail
+    }
+
+    private var syncErrorAlert: Alert {
+        let dismissButton = Alert.Button.default(Text(buttonTitle)) {
+            model.endFlow()
+        }
+        let errorDescription = errorDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !errorDescription.isEmpty else {
+            return Alert(title: Text(errorTitle), dismissButton: dismissButton)
+        }
+
+        return Alert(
+            title: Text(errorTitle),
+            message: Text(errorDescription),
+            dismissButton: dismissButton
+        )
     }
 }

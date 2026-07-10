@@ -47,11 +47,11 @@ struct ConfigurationStore: ConfigurationStoring {
         }
     }
     
-    mutating func saveData(_ data: Data, for configuration: Configuration) throws {
+    func saveData(_ data: Data, for configuration: Configuration) throws {
         try fileStore.persist(data, for: configuration)
     }
-    
-    mutating func saveEtag(_ etag: String, for configuration: Configuration) throws {
+
+    func saveEtag(_ etag: String, for configuration: Configuration) throws {
         etagStorage.saveEtag(etag, for: configuration)
     }
 

@@ -3984,6 +3984,22 @@ extension MainViewController: BrowserChromeDelegate {
         )
     }
 
+    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
+        UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
+                     left: 0,
+                     bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
+                     right: 0)
+    }
+
+    /// Height (from the screen top) obscured by the top chrome. Content rests below the status bar,
+    /// and below the omnibar too when the address bar is at the top. Constant for now (doesn't yet
+    /// shrink to the top capsule as the omnibar hides on scroll).
+    private func floatingWebViewTopObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
+        let safeAreaTop = view.safeAreaInsets.top
+        guard appSettings.currentAddressBarPosition == .top else { return safeAreaTop }
+        return safeAreaTop + omniBar.barView.expectedHeight
+    }
+
     var minimalChromeBottomHeight: CGFloat {
         toolbarHeight + view.safeAreaInsets.bottom
     }

@@ -892,24 +892,51 @@ class TabViewController: UIViewController {
             webViewBottomAnchorConstraint?.constant = 0
         }
         if FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled {
-            // Physically resize the web view so its bottom edge sits at the top of the visible bottom
-            // chrome (toolbar -> capsule -> safe area). Resizing the frame lays out page `position: fixed`
-            // footers reliably, including on load, unlike `additionalSafeAreaInsets` which WebKit only
-            // reflows on a subsequent scroll. AI tabs with the unified toggle input keep the full-bleed
-            // web view since that feature owns its own bottom layout.
-            let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-            let bottomObscuredHeight = isUnifiedToggleInputAffectingLayout
-                ? 0
-                : (chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0)
-            webViewBottomAnchorConstraint?.constant = -bottomObscuredHeight
             borderView.bottomAlpha = 0
             borderView.isHidden = true
             borderView.isTopVisible = false
             borderView.isBottomVisible = false
-            updateFloatingUISafeAreaInsets()
+
+            // AI tabs with the unified toggle input own their own bottom layout, so keep the web view
+            // full-bleed with no obscured region there.
+            let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
+            if #available(iOS 26, *) {
+                // Keep the web view full-bleed and reserve the chrome region via WebKit's public
+                // `obscuredContentInsets`, which positions page fixed/sticky elements and the layout
+                // viewport reliably (including on load) and lets content scroll behind the glass.
+                webViewBottomAnchorConstraint?.constant = 0
+                let obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
+                    ? .zero
+                    : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
+                webView?.obscuredContentInsets = obscuredInsets
+                // `obscuredContentInsets` does not adjust the scroll view's content/indicator insets in
+                // UIKit, so scrollable content would rest behind the bars. Feed the chrome region
+                // (beyond the device safe area, which the scroll view already accounts for) into
+                // `additionalSafeAreaInsets` so at-rest content and scroll indicators clear the bars too.
+                let deviceSafeArea = view.window?.safeAreaInsets ?? .zero
+                additionalSafeAreaInsets = UIEdgeInsets(
+                    top: max(0, obscuredInsets.top - deviceSafeArea.top),
+                    left: 0,
+                    bottom: max(0, obscuredInsets.bottom - deviceSafeArea.bottom),
+                    right: 0
+                )
+            } else {
+                // iOS 18 fallback: physically resize the web view so its bottom edge sits at the top of
+                // the visible bottom chrome (toolbar -> capsule -> safe area), and inset the top via
+                // `additionalSafeAreaInsets`.
+                let bottomObscuredHeight = isUnifiedToggleInputAffectingLayout
+                    ? 0
+                    : (chromeDelegate?.floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent) ?? 0)
+                webViewBottomAnchorConstraint?.constant = -bottomObscuredHeight
+                updateFloatingUISafeAreaInsets()
+            }
         } else {
             borderView.isHidden = false
             borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
+            // Defensive: clear any obscured insets left over if floating UI was toggled off at runtime.
+            if #available(iOS 26, *) {
+                webView?.obscuredContentInsets = .zero
+            }
         }
     }
 

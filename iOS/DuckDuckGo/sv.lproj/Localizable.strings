@@ -1430,7 +1430,7 @@
 "cookie-popup-protection.opt-in.disabled.title" = "Är du trött på att ständigt se popup-fönster för cookies?";
 
 /* Body of the opt-in dialog when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.body" = "Vi kan spara dig ett klick och acceptera dessa cookies år dig.";
+"cookie-popup-protection.opt-in.enabled.body" = "Vi kan spara dig ett klick och acceptera dessa cookies åt dig.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.primary-option" = "Acceptera cookies som inte kan väljas bort åt mig";

@@ -1412,7 +1412,7 @@
 "control.center.widget.education.paragraph.3" = "Внизу экрана нажмите **Добавить элемент управления**.";
 
 /* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
-"cookie-popup-protection.opt-in.badge" = "Создать";
+"cookie-popup-protection.opt-in.badge" = "Новое";
 
 /* Confirm button in the Cookie Pop-up Protection opt-in dialog */
 "cookie-popup-protection.opt-in.confirm" = "Подтвердить";

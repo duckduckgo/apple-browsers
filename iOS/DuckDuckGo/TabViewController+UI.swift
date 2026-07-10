@@ -102,14 +102,8 @@ extension TabViewController {
 
         let safeArea = rootView.safeAreaLayoutGuide
         let isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
-        // In floating UI mode the web view underflows the glass chrome vertically, so its top (and
-        // bottom) are pinned to the screen edges; the chrome-obscured region is communicated to WebKit
-        // via `additionalSafeAreaInsets` / `obscuredContentInsets` (see updateFloatingUISafeAreaInsets)
-        // so page `position: fixed` elements rest below the omnibar / above the toolbar.
-        //
-        // Horizontally it is pinned to the safe area so page content respects the landscape notch inset
-        // via layout, rather than relying on WebKit re-applying the horizontal safe area — which lags a
-        // navigation and left content starting at the screen edge until the first scroll.
+        // Floating UI: top/bottom pin to the screen edges so content underflows the glass chrome (via
+        // WebKit obscured insets); leading/trailing pin to the safe area so landscape respects the notch.
         let containerStackViewTop = isFloatingUIEnabled
             ? containerStackView.topAnchor.constraint(equalTo: rootView.topAnchor)
             : containerStackView.topAnchor.constraint(equalTo: safeArea.topAnchor)

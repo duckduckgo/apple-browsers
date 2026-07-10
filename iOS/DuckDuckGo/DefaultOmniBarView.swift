@@ -742,15 +742,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         isFloatingUIEnabled ? floatingGlassContentHostView : searchAreaContainerView
     }
 
-    /// Glass capsules shown behind the leading and trailing button groups in floating UI minimal
-    /// chrome, where the toolbar (and its capsule) is hidden. The address bar field carries its own
-    /// glass (see `makeGlass()`), so the three groups read as separate glass elements. Recreated on
-    /// the fly like `glassEffect` because `UIGlassEffect`'s tint is fixed at construction time.
+    /// Glass capsules behind the leading/trailing button groups in floating UI minimal chrome (the
+    /// field keeps its own glass); rebuilt on the fly since `UIGlassEffect`'s tint is fixed at init.
     private var leadingButtonsGlassView: UIVisualEffectView?
     private var trailingButtonsGlassView: UIVisualEffectView?
     private var isFloatingMinimalChromeBar = false
-    /// The fire-mode state the installed capsules were built with, so their fixed `UIGlassEffect`
-    /// tint is only rebuilt when fire mode actually changes.
+    /// Fire-mode state the capsules were built with, so their fixed tint is only rebuilt on change.
     private var minimalChromeGlassFireMode = false
 
     private let opaqueEffect: UIVisualEffectView = {
@@ -840,9 +837,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             NSLayoutConstraint.activate(floatingHostToGlassContentConstraints)
         }
 
-        // A glass field must be transparent so the effect shows through. Clear any opaque fill left
-        // behind from a prior `makeOpaque()` (e.g. bottom position, or the minimal-chrome toggle);
-        // otherwise the stale fill sits behind the translucent glass and reads as opaque.
+        // Clear any opaque fill left by a prior `makeOpaque()` so the glass shows through.
         setFieldBackgroundColor(.clear)
     }
 
@@ -869,8 +864,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         if enabled {
             installMinimalChromeButtonGlass()
-            // The address bar field is its own glass element (grouped separately from the button
-            // capsules), so it uses the top-position glass regardless of address bar position.
+            // The field is its own glass group, so use top-position glass regardless of position.
             makeGlass()
         } else {
             removeMinimalChromeButtonGlass()
@@ -902,8 +896,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         trailingButtonsGlassView = nil
     }
 
-    /// Replaces a button container in the stack with a glass view and reparents the container into the
-    /// glass `contentView`, so the buttons pick up the glass's content adaptation (matching the field).
+    /// Reparents a button container into a glass `contentView` so its buttons adapt to the glass.
     private func wrapButtonContainerInGlass(_ container: UIStackView) -> UIVisualEffectView? {
         guard let index = stackView.arrangedSubviews.firstIndex(of: container) else { return nil }
 
@@ -951,8 +944,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return view
     }
 
-    /// Rebuilds the minimal-chrome button glass so its (construction-fixed) `UIGlassEffect` tint
-    /// tracks the current fire-mode state. No-op when not installed or the tint is unchanged.
+    /// Rebuilds the button glass when fire mode changes, since `UIGlassEffect`'s tint is fixed at init.
     private func refreshMinimalChromeGlassTint() {
         guard isFloatingMinimalChromeBar,
               leadingButtonsGlassView != nil,
@@ -1664,8 +1656,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaView.layer.cornerRadius = cornerRadius
         activeOutlineView.layer.cornerRadius = cornerRadius + Metrics.activeBorderWidth
 
-        // iOS 26 uses `.capsule()` corner configuration; the pre-26 blur fallback needs an explicit
-        // radius that tracks each capsule's height.
+        // The pre-iOS 26 blur fallback needs an explicit capsule radius (iOS 26 uses `.capsule()`).
         if #unavailable(iOS 26.0) {
             for glass in [leadingButtonsGlassView, trailingButtonsGlassView].compactMap({ $0 }) {
                 glass.layer.cornerRadius = glass.bounds.height / 2
@@ -1675,8 +1666,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 }
 
 private extension DefaultOmniBarView {
-    /// Bottom omnibar uses small top spacing. Top position keeps regular spacing. In minimal chrome
-    /// the address bar field is its own glass group regardless of position.
+    /// True when the field itself is a glass surface: top position, or any position in minimal chrome.
     var shouldUseFloatingTopGlass: Bool {
         isFloatingUIEnabled && (isFloatingMinimalChromeBar || !isUsingSmallTopSpacing)
     }

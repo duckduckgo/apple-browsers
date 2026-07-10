@@ -2631,9 +2631,7 @@ class MainViewController: UIViewController {
                 }
             }
 
-            // Exiting minimal chrome to a bottom floating layout: the mid-transition rebuild in
-            // `tearDownMinimalChrome` runs against stale geometry (and the async width fix-ups can
-            // leave the bottom omnibar mis-hosted), so re-assert it now the rotation has settled.
+            // Re-assert the bottom floating layout now rotation has settled (the mid-transition rebuild used stale geometry).
             if isShowingToolbar, self.isFloatingUIEnabled, self.viewCoordinator.addressBarPosition.isBottom {
                 self.viewCoordinator.updateToolbarLayoutForAddressBarPosition(.bottom)
                 self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
@@ -2760,8 +2758,7 @@ class MainViewController: UIViewController {
         isInMinimalChromeLayout = enabled
         viewCoordinator.setMinimalChromeLayout(enabled)
         viewCoordinator.omniBar.isExpandedPhone = enabled
-        // In minimal chrome the toolbar (and its glass capsule) is hidden, so the single combined
-        // bar renders its own full-width glass capsule.
+        // Minimal chrome hides the toolbar capsule, so the single bar renders its own glass.
         viewCoordinator.omniBar.barView.setFloatingMinimalChromeBar(enabled && isFloatingUIEnabled)
     }
 
@@ -2789,10 +2786,8 @@ class MainViewController: UIViewController {
         viewCoordinator.navigationBarContainer.transform = .identity
         viewCoordinator.omniBar.barView.setLayoutMode(.compact, animated: false)
         viewCoordinator.resetMinimalChromeLayout()
-        // Entering minimal chrome detached a bottom omnibar from the (hidden) toolbar. Rebuild the
-        // full bottom layout so it returns to the floating toolbar capsule correctly hosted and
-        // positioned (a plain re-attach skips the field/content-anchor setup). Only the bottom
-        // position is affected — the top bar is never hosted in the toolbar.
+        // Minimal chrome detached the bottom omnibar from the toolbar; fully rebuild the bottom layout
+        // so it returns to the toolbar capsule correctly hosted (top is never toolbar-hosted).
         if isFloatingUIEnabled, appSettings.currentAddressBarPosition.isBottom {
             viewCoordinator.updateToolbarLayoutForAddressBarPosition(.bottom)
         }
@@ -2804,8 +2799,7 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbar.isHidden = true
         viewCoordinator.constraints.toolbarBottom.constant = minimalChromeBottomHeight
         setMinimalChromeMode(true)
-        // The toolbar is now hidden; a bottom omnibar hosted inside it would disappear with it, so
-        // return it to the navigation bar container where the single minimal-chrome bar is shown.
+        // The toolbar is now hidden, so move a toolbar-hosted bottom omnibar back to the nav container.
         viewCoordinator.returnOmnibarToNavigationContainerIfNeeded()
         viewCoordinator.omniBar.enterPhoneState()
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
@@ -2819,8 +2813,7 @@ class MainViewController: UIViewController {
 
         swipeTabsCoordinator?.isEnabled = true
 
-        // The bottom obscured inset depends on the address bar position; refresh it here so moving the
-        // bar to the top while already in landscape reclaims the bottom offset (not only on rotation).
+        // Refresh the obscured inset so moving the bar top/bottom in landscape updates it immediately.
         currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
     }
 
@@ -4006,9 +3999,8 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
-        // In minimal chrome the toolbar is hidden, so the toolbar slot must not be reserved. The only
-        // bottom chrome is the single combined bar, and only when the address bar sits at the bottom;
-        // reclaim its inset as it scrolls away. A top address bar leaves just the safe area.
+        // Minimal chrome hides the toolbar: reserve the single bar's height only for a bottom address
+        // bar (reclaimed as it scrolls away); a top address bar leaves just the safe area.
         if isInMinimalChromeLayout {
             guard viewCoordinator.addressBarPosition.isBottom else {
                 return view.safeAreaInsets.bottom
@@ -4031,10 +4023,8 @@ extension MainViewController: BrowserChromeDelegate {
                      right: 0)
     }
 
-    /// Height (from the screen top) obscured by the top chrome. Content rests below the status bar,
-    /// and below the omnibar too when the address bar is at the top. In minimal chrome the top bar
-    /// scrolls fully offscreen, so the omnibar portion of the inset is reclaimed as it hides;
-    /// otherwise the top omnibar stays put and the inset is constant.
+    /// Top region obscured by chrome: safe area, plus the omnibar for a top address bar. In minimal
+    /// chrome the top bar scrolls off, so its portion is reclaimed as it hides.
     private func floatingWebViewTopObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
         let safeAreaTop = view.safeAreaInsets.top
         guard appSettings.currentAddressBarPosition == .top else { return safeAreaTop }

@@ -69,8 +69,7 @@ enum FloatingUILayoutPolicy {
                                                    addressBarPosition: AddressBarPosition,
                                                    isUnifiedToggleInputVisible: Bool,
                                                    isMinimalChromeLayout: Bool) -> Bool {
-        // In minimal chrome the toolbar is hidden, so hosting the omnibar inside it would make the
-        // whole bar disappear; keep it in the navigation bar container instead.
+        // Excludes minimal chrome, where the toolbar is hidden and would take the omnibar with it.
         isFloatingUIEnabled && addressBarPosition.isBottom && !isUnifiedToggleInputVisible && !isMinimalChromeLayout
     }
 

@@ -323,9 +323,8 @@ class MainViewCoordinator {
         returnOmnibarToNavigationContainerIfNeeded()
     }
 
-    /// Detaches the bottom omnibar from the toolbar and returns ownership to the navigation bar
-    /// container. Used entering minimal chrome (where the toolbar is hidden and a toolbar-hosted
-    /// omnibar would vanish with it) and by the unified toggle input flow.
+    /// Detaches the bottom omnibar from the toolbar back into the nav container (used by minimal
+    /// chrome, where the toolbar is hidden, and the unified toggle input flow).
     func returnOmnibarToNavigationContainerIfNeeded() {
         guard isOmnibarInToolbar else { return }
         toolbar.setOmnibarView(nil, height: 0)

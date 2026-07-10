@@ -101,17 +101,28 @@ extension TabViewController {
         rootView.addSubview(containerStackView)
 
         let safeArea = rootView.safeAreaLayoutGuide
-        // In floating UI mode the web view spans full-screen and underflows the glass chrome, so its
-        // top is pinned to the screen edge rather than the safe area. The chrome-obscured region is
-        // instead communicated to WebKit via `additionalSafeAreaInsets` (see updateFloatingUISafeAreaInsets)
-        // so that page `position: fixed` elements rest below the omnibar / above the toolbar.
-        let containerStackViewTop = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        let isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        // In floating UI mode the web view underflows the glass chrome vertically, so its top (and
+        // bottom) are pinned to the screen edges; the chrome-obscured region is communicated to WebKit
+        // via `additionalSafeAreaInsets` / `obscuredContentInsets` (see updateFloatingUISafeAreaInsets)
+        // so page `position: fixed` elements rest below the omnibar / above the toolbar.
+        //
+        // Horizontally it is pinned to the safe area so page content respects the landscape notch inset
+        // via layout, rather than relying on WebKit re-applying the horizontal safe area — which lags a
+        // navigation and left content starting at the screen edge until the first scroll.
+        let containerStackViewTop = isFloatingUIEnabled
             ? containerStackView.topAnchor.constraint(equalTo: rootView.topAnchor)
             : containerStackView.topAnchor.constraint(equalTo: safeArea.topAnchor)
+        let containerStackViewLeading = isFloatingUIEnabled
+            ? containerStackView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor)
+            : containerStackView.leadingAnchor.constraint(equalTo: rootView.leadingAnchor)
+        let containerStackViewTrailing = isFloatingUIEnabled
+            ? containerStackView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor)
+            : containerStackView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor)
         NSLayoutConstraint.activate([
             containerStackViewTop,
-            containerStackView.leadingAnchor.constraint(equalTo: rootView.leadingAnchor),
-            containerStackView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor),
+            containerStackViewLeading,
+            containerStackViewTrailing,
             containerStackView.bottomAnchor.constraint(equalTo: rootView.bottomAnchor)
         ])
 

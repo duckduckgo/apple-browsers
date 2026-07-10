@@ -26,7 +26,7 @@
 		0F7978C4A0677C699DE8CF19 /* IPadOmnibarAttachmentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E57D32992B677C4C22600174 /* IPadOmnibarAttachmentController.swift */; };
 		10357EC5C05F09BDB3388E23 /* ReasoningModeAccessResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD00141E45DB79DEAE23EFC /* ReasoningModeAccessResolver.swift */; };
 		18EB298166184F06B6A87190 /* OnboardingSearchAIToggleGrey.lottie in Resources */ = {isa = PBXBuildFile; fileRef = 17BA504D98D84DB79BDE168D /* OnboardingSearchAIToggleGrey.lottie */; };
-		1AD965E390AC1B7FDE09D956 /* RebrandedOnboardingView+BrowsersComparisonContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8693FFCAC02CE4A85D0BD62C /* RebrandedOnboardingView+BrowsersComparisonContent.swift */; };
+		1AD965E390AC1B7FDE09D956 /* RebrandedOnboardingView+ComparisonContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8693FFCAC02CE4A85D0BD62C /* RebrandedOnboardingView+ComparisonContent.swift */; };
 		1CB7B82123CEA1F800AA24EA /* DateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CB7B82023CEA1F800AA24EA /* DateExtension.swift */; };
 		1CB7B82323CEA28300AA24EA /* DateExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CB7B82223CEA28300AA24EA /* DateExtensionTests.swift */; };
 		1D200C972BA3157A00108701 /* SettingsNextStepsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D200C962BA3157A00108701 /* SettingsNextStepsView.swift */; };
@@ -3674,7 +3674,7 @@
 		85F98F97296F4CB100742F4A /* SyncAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SyncAssets.xcassets; sourceTree = "<group>"; };
 		85F996CD2E54ADB9006B4641 /* OpenAIChatFromAddressBarHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIChatFromAddressBarHandling.swift; sourceTree = "<group>"; };
 		85F996CF2E54C260006B4641 /* OpenAIChatFromAddressBarHandlingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIChatFromAddressBarHandlingTests.swift; sourceTree = "<group>"; };
-		8693FFCAC02CE4A85D0BD62C /* RebrandedOnboardingView+BrowsersComparisonContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "RebrandedOnboardingView+BrowsersComparisonContent.swift"; sourceTree = "<group>"; };
+		8693FFCAC02CE4A85D0BD62C /* RebrandedOnboardingView+ComparisonContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "RebrandedOnboardingView+ComparisonContent.swift"; sourceTree = "<group>"; };
 		87D22C154C1851EFAB573AAE /* TabSwipeOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwipeOverlayView.swift; sourceTree = "<group>"; };
 		883AAA241504625A0E8455C1 /* IPadOmnibarReasoningPickerController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IPadOmnibarReasoningPickerController.swift; sourceTree = "<group>"; };
 		8C47244F2217A14B004C9B2D /* TabViewControllerSaveBookmarkExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerSaveBookmarkExtension.swift; sourceTree = "<group>"; };
@@ -8381,7 +8381,7 @@
 				81E935251F047CE4825824A5 /* RebrandedOnboardingView+AddressBarPositionContent.swift */,
 				4D434F523CEFF1B86C75ECC6 /* RebrandedOnboardingView+AddToDockContent.swift */,
 				EDB06E4C5FAE7E6BC7CDC6CC /* RebrandedOnboardingView+AppIconPickerContent.swift */,
-				8693FFCAC02CE4A85D0BD62C /* RebrandedOnboardingView+BrowsersComparisonContent.swift */,
+				8693FFCAC02CE4A85D0BD62C /* RebrandedOnboardingView+ComparisonContent.swift */,
 				9785D25DF2EA27126C8A33B8 /* RebrandedOnboardingView+IntroDialogContent.swift */,
 				DD503EBD506182525F5E8107 /* RebrandedOnboardingView+Landing.swift */,
 				9FADFC5F2F62384C00CA16F7 /* RebrandedOnboardingView+RestorePromptDialogContent.swift */,
@@ -14003,7 +14003,7 @@
 				35281034C485F1E15258BFD5 /* RebrandedOnboardingView+IntroDialogContent.swift in Sources */,
 				80879D572F7B5BA9000C2267 /* TabViewListCell.swift in Sources */,
 				FA58D524242AADCE97992F46 /* RebrandedOnboardingView+SkipOnboardingContent.swift in Sources */,
-				1AD965E390AC1B7FDE09D956 /* RebrandedOnboardingView+BrowsersComparisonContent.swift in Sources */,
+				1AD965E390AC1B7FDE09D956 /* RebrandedOnboardingView+ComparisonContent.swift in Sources */,
 				B57246112FB7A33F004EB481 /* SwipeActionView.swift in Sources */,
 				9FFABF2A543E444D8A9127DE /* RebrandedOnboardingView+DaxAnimationOverlay.swift in Sources */,
 				7B621DE3CBE23A6D2777C4C8 /* RebrandedOnboardingView+AddToDockContent.swift in Sources */,

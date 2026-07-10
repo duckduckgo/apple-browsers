@@ -22,8 +22,12 @@ import Foundation
 
 final class MockContextualOnboardingStatusProvider: ContextualDaxDialogStatusProvider {
     var hasSeenOnboarding: Bool = false
+    var isStillOnboardingResult: Bool = false
+    var isShowingContextualOnboardingDialog: Bool = false
 
     init(hasSeenOnboarding: Bool) {
         self.hasSeenOnboarding = hasSeenOnboarding
     }
+
+    func isStillOnboarding() -> Bool { isStillOnboardingResult }
 }

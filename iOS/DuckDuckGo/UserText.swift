@@ -2476,7 +2476,7 @@ public struct UserText {
             public static let skipCTA = NSLocalizedString("onboarding.intro.cta.skip", value: "I’ve been here before", comment: "Button to skip the onboarding process")
 
             enum Debug {
-                public static let skip = NotLocalizedString("onboarding.intro.debug.skip", value: "Skip", comment: "Button to skip the onboarding process")
+                public static let skip = NotLocalizedString("onboarding.intro.debug.skip", value: "Skip Onboarding", comment: "Button to skip the onboarding process")
             }
         }
 

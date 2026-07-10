@@ -1359,6 +1359,31 @@ extension Pixel {
          */
         case subscriptionSkippedOnboardingPromotionDismiss
 
+        /**
+         * Event Trigger: The subscription promotion modal is shown to an existing user (7+ days since install)
+         * who has never seen a subscription offer
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionImpression
+
+        /**
+         * Event Trigger: The user tapped the CTA on the existing-user subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionTap
+
+        /**
+         * Event Trigger: The user dismissed the existing-user subscription promotion modal
+         *
+         * Anomaly Investigation:
+         * - This should only be fired from `SubscriptionPromoExistingUserCoordinator`
+         */
+        case subscriptionExistingUserPromotionDismiss
+
         // Win-back Offer
         case subscriptionWinBackOfferLaunchPromptShown
         case subscriptionWinBackOfferLaunchPromptCTAClicked
@@ -3288,6 +3313,10 @@ extension Pixel.Event {
         case .subscriptionSkippedOnboardingPromotionImpression: return "m_privacy-pro_skipped_onboarding_promotion_impression"
         case .subscriptionSkippedOnboardingPromotionTap: return "m_privacy-pro_skipped_onboarding_promotion_tap"
         case .subscriptionSkippedOnboardingPromotionDismiss: return "m_privacy-pro_skipped_onboarding_promotion_dismiss"
+
+        case .subscriptionExistingUserPromotionImpression: return "m_privacy-pro_existing_user_promotion_impression"
+        case .subscriptionExistingUserPromotionTap: return "m_privacy-pro_existing_user_promotion_tap"
+        case .subscriptionExistingUserPromotionDismiss: return "m_privacy-pro_existing_user_promotion_dismiss"
 
         // Win-back Offer
         case .subscriptionWinBackOfferLaunchPromptShown: return "m_privacy-pro_winback_launch_prompt_shown"

@@ -734,6 +734,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
+    case subscriptionPromoForExistingUsers
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

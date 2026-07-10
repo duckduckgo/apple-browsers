@@ -961,10 +961,9 @@ class MainViewController: UIViewController {
     func loadTabsBarIfNeeded() {
         guard isPad else { return }
 
-        let controller = TabsBarViewController.createFromXib()
+        let controller = TabsBarViewController.create()
 
         addChild(controller)
-        controller.view.frame = viewCoordinator.tabBarContainer.bounds
         controller.delegate = self
         controller.historyManager = historyManager
         controller.fireproofing = fireproofing
@@ -974,7 +973,14 @@ class MainViewController: UIViewController {
         controller.tabManager = tabManager
         controller.daxDialogsManager = daxDialogsManager
         controller.fireModeCapability = fireModeCapability
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
         viewCoordinator.tabBarContainer.addSubview(controller.view)
+        NSLayoutConstraint.activate([
+            controller.view.leadingAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.trailingAnchor),
+            controller.view.topAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.topAnchor),
+            controller.view.bottomAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.bottomAnchor),
+        ])
         tabsBarController = controller
         controller.didMove(toParent: self)
         bindAIChatChromeChipToCurrentTab()

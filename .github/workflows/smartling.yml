@@ -25,6 +25,11 @@ on:
         description: "Smartling job ID"
         required: false
         type: string
+      allow-unfinished:
+        description: "Allow downloading unfinished (non-COMPLETED) translations"
+        required: false
+        type: boolean
+        default: false
   pull_request:
     types: [labeled]
 
@@ -56,6 +61,7 @@ jobs:
           INPUT_PLATFORM: ${{ github.event.inputs.platform }}
           INPUT_ACTION: ${{ github.event.inputs.action }}
           INPUT_JOB_ID: ${{ github.event.inputs['job-id'] }}
+          INPUT_ALLOW_UNFINISHED: ${{ github.event.inputs['allow-unfinished'] }}
         run: |
           if [[ "$EVENT_NAME" == "pull_request" ]]; then
             # Label trigger
@@ -80,6 +86,8 @@ jobs:
             fi
             echo "is_pr_trigger=true" >> $GITHUB_OUTPUT
             echo "branch=$HEAD_REF" >> $GITHUB_OUTPUT
+            # Label triggers never allow unfinished downloads
+            echo "allow_unfinished=false" >> $GITHUB_OUTPUT
           else
             # Manual workflow dispatch
             echo "platform=$INPUT_PLATFORM" >> $GITHUB_OUTPUT
@@ -87,6 +95,7 @@ jobs:
             echo "job_id=$INPUT_JOB_ID" >> $GITHUB_OUTPUT
             echo "is_pr_trigger=false" >> $GITHUB_OUTPUT
             echo "branch=$REF_NAME" >> $GITHUB_OUTPUT
+            echo "allow_unfinished=$INPUT_ALLOW_UNFINISHED" >> $GITHUB_OUTPUT
           fi
 
       - name: Assert not main or release branch
@@ -124,6 +133,7 @@ jobs:
           echo "PLATFORM=${{ steps.params.outputs.platform || steps.parse_comment.outputs.platform }}" >> $GITHUB_ENV
           echo "JOB_ID=${{ steps.params.outputs.job_id || steps.parse_comment.outputs.job_id }}" >> $GITHUB_ENV
           echo "BRANCH=${{ steps.params.outputs.branch }}" >> $GITHUB_ENV
+          echo "ALLOW_UNFINISHED=${{ steps.params.outputs.allow_unfinished }}" >> $GITHUB_ENV
           echo "WORKFLOW_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}" >> $GITHUB_ENV
 
       - name: Set Smartling credentials
@@ -190,7 +200,7 @@ jobs:
         if: ${{ env.ACTION == 'download' }}
         id: download
         run: |
-          ./scripts/smartling/smartling_download.sh "$JOB_ID" "$PLATFORM"
+          ./scripts/smartling/smartling_download.sh "$JOB_ID" "$PLATFORM" "$ALLOW_UNFINISHED"
           cat download_message.txt >> $GITHUB_STEP_SUMMARY
 
       - name: Check Status and Update Labels

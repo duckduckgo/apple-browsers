@@ -106,6 +106,34 @@ class CrashCollectionTests: XCTestCase {
         XCTAssertEqual(reportedPixelParameters.count, 1)
     }
 
+    func testFirstCrashFlagIsRetainedUntilAnInWindowCrashIsReported() {
+        let crashReportSender = CrashReportSender(platform: .iOS, pixelEvents: nil)
+        let crashCollection = CrashCollection(crashReportSender: crashReportSender,
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var reportedPixelParameters: [[CrashReportPixelParameter: String]] = []
+        crashCollection.start { pixelParameters, _, _ in
+            reportedPixelParameters = pixelParameters
+        }
+
+        // A batch of exclusively stale crashes fires no pixel and must not consume the first-crash flag.
+        let tenDaysAgo = Date().addingTimeInterval(-10 * 24 * 60 * 60)
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: tenDaysAgo)
+        ])
+        XCTAssertTrue(reportedPixelParameters.isEmpty)
+        XCTAssertTrue(crashCollection.isFirstCrash)
+
+        // A later in-window crash should still be reported as the first crash.
+        let oneDayAgo = Date().addingTimeInterval(-1 * 24 * 60 * 60)
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: oneDayAgo)
+        ])
+        XCTAssertEqual(reportedPixelParameters.count, 1)
+        XCTAssertEqual(reportedPixelParameters.first?[.first], "1")
+        XCTAssertFalse(crashCollection.isFirstCrash)
+    }
+
     func testCRCIDIsStoredWhenReceived() {
         let responseCRCIDValue = "CRCID Value"
 

@@ -82,11 +82,10 @@ public final class CrashCollection {
                                                       _ payloads: [Data],
                                                       _ uploadReports: @escaping () -> Void) -> Void,
                       didFinishHandlingResponse: @escaping (() -> Void) = {}) {
-        let first = isFirstCrash
-        isFirstCrash = false
-
         crashHandler.crashDiagnosticsPayloadHandler = { payloads in
             Logger.general.log("😵 loaded \(payloads.count, privacy: .public) diagnostic payloads")
+
+            let first = self.isFirstCrash
 
             // Exclude crash reports older than `maxCrashReportAgeForPixels` from crash pixels to
             // avoid skewing metrics with stale crashes. Uploads (`process` below) are unaffected.
@@ -111,6 +110,13 @@ public final class CrashCollection {
                     params[.bundle] = metadataJSON?["bundleIdentifier"] as? String
                     return params
                 }
+
+            // Only consume the first-crash flag once we've actually reported a crash pixel, so a
+            // batch of exclusively stale (age-filtered) crashes doesn't clear it before an in-window
+            // crash is reported.
+            if !pixelParameters.isEmpty {
+                self.isFirstCrash = false
+            }
 
             // Only process crash diagnostics
             let processedData = process(payloads.filter({ $0.crashDiagnostics?.isEmpty == false }))

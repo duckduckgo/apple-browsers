@@ -209,6 +209,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             ),
             freemiumPIRDebugSettings: freemiumPIRDebugSettings,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: DefaultDBPProfileStateManager(keyValueStore: freemiumDBPUserDefaults),
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),

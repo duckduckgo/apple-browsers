@@ -23,10 +23,10 @@ import SwiftUI
 // MARK: - Dax Animation Configuration
 
 /// Configuration for a Dax Lottie animation overlaid between the scrollable background and the dialog bubble.
-struct DaxAnimation {
+struct DaxAnimation: Equatable {
 
     /// Anchoring position relative to the view's bottom edge.
-    enum Position {
+    enum Position: Equatable {
         /// Bottom-leading anchor. `bottomPadding` lifts above the bottom; `xOffset` shifts right (+) / left (−).
         case left(bottomPadding: CGFloat = 0, xOffset: CGFloat = 0)
         /// Bottom-trailing anchor. `bottomPadding` lifts above the bottom; `xOffset` shifts left (+) / right (−).
@@ -101,6 +101,50 @@ struct DaxAnimation {
         self.fadeInTime = fadeInTime
         self.startDelay = startDelay
     }
+}
+
+// MARK: - Dax Animation Presets
+
+extension DaxAnimation {
+
+    /// Dax giving a thumbs up, at full base size.
+    static let thumbUp = DaxAnimation(
+        animationName: "Dax-ThumbUp",
+        size: CGSize(width: 258.0, height: 352.0),
+        position: .left(bottomPadding: 110.0, xOffset: -40.0),
+        largeScreenPosition: .left(bottomPadding: 110.0, xOffset: 200.0),
+        entranceOffset: CGPoint(x: -20.0, y: 0),
+        exitOffset: CGPoint(x: -258.0, y: 0),
+        exitDuration: 0.5,
+        fadeOut: true,
+        startDelay: 0.75
+    )
+
+    /// Dax waving from the bottom center of the screen.
+    static let wingBottom = DaxAnimation(
+        animationName: "Dax-WingBottom",
+        size: CGSize(width: 159.33, height: 180.33),
+        position: .bottom(),
+        twoStagesAnimation: 0.5,
+        exitDuration: 1.0
+    )
+
+    /// Dax waving from the left side of the screen.
+    static let wingLeft = DaxAnimation(
+        animationName: "Dax-WingLeft",
+        size: CGSize(width: 116, height: 208.33),
+        position: .left(bottomPadding: 70.0),
+        twoStagesAnimation: 0.5
+    )
+
+    /// Dax waving from the right side of the screen.
+    static let wingRight = DaxAnimation(
+        animationName: "Dax-WingRight",
+        size: CGSize(width: 116, height: 208.33),
+        position: .right(bottomPadding: 107.0),
+        twoStagesAnimation: 0.5,
+        exitDuration: 0.5
+    )
 }
 
 // MARK: - Dax Animation Overlay

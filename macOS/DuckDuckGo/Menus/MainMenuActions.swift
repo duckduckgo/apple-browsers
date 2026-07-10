@@ -537,6 +537,11 @@ extension AppDelegate {
     }
 
     @MainActor
+    @objc func debugClearFaviconsCache(_ sender: Any?) {
+        faviconManager.clearInMemoryFaviconCache()
+    }
+
+    @MainActor
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
         Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted

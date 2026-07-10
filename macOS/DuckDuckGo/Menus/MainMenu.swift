@@ -915,6 +915,7 @@ final class MainMenu: NSMenu {
             NSMenuItem.separator()
 
             // All items below will be automatically sorted alphabetically
+            NSMenuItem(title: "Clear In-Memory Favicons Cache", action: #selector(AppDelegate.debugClearFaviconsCache)).withAccessibilityIdentifier("MainMenu.clearFaviconsCache")
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
             NSMenuItem(title: "Inspect Favicons", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")

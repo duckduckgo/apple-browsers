@@ -22,12 +22,9 @@ import Core
 import Foundation
 import Subscription
 
-/// The UTI surface a pixel is fired from. Mirrors `DuckAIPromptWideEventData.EntryPoint`
-/// so pixel and wide-event attribution use the same taxonomy. Sent as the `surface`
-/// parameter (or, for `voice_tapped`, reuses the pre-existing `source` parameter).
+/// The UTI surface a pixel is fired from, sent as the `surface` param (`voice_tapped` reuses `source`).
 enum UnifiedToggleInputPixelSurface: String {
-    /// The address bar / omnibar (any omnibar surface that isn't the Duck.ai tab), matching the
-    /// `addressbar` bucket used by `SubscriptionFunnelOrigin`.
+    /// The address bar / omnibar (any omnibar surface that isn't the Duck.ai tab).
     case addressBar = "address_bar"
     /// The dedicated Duck.ai tab.
     case duckAI = "duck_ai"

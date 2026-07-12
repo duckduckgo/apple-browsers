@@ -311,16 +311,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState == .contextualChat
     }
 
-    /// Collapses the contextual sheet and the Duck.ai tab into a single "Duck.ai surface" bucket.
-    /// Used only for the subscription-funnel `origin` on the model/reasoning picker + upsell pixels,
-    /// where contextual intentionally counts as Duck.ai (keeps the funnel origin / redirect URL stable).
+    /// Folds contextual + Duck.ai tab into one "Duck.ai surface" bucket — used only for the funnel `origin`.
     var isDuckAISurfaceForAttribution: Bool {
         isAITabState || isContextualChatState
     }
 
-    /// The surface this coordinator is hosted on, for pixel attribution.
-    /// Distinguishes the contextual chat sheet from the Duck.ai tab and the omnibar/NTP for the
-    /// `surface` pixel parameter. (The funnel `origin` path uses `isDuckAISurfaceForAttribution` instead.)
+    /// The hosting surface for the `surface` pixel parameter (the funnel `origin` uses `isDuckAISurfaceForAttribution`).
     var pixelSurface: UnifiedToggleInputPixelSurface {
         if isContextualChatState { return .contextualChat }
         if isAITabState { return .duckAI }

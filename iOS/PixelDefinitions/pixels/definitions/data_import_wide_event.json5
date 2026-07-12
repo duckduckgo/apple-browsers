@@ -46,14 +46,14 @@
             },
             // Per-type status
             {
-                "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_status",
+                "keyPattern": "^feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_status$",
                 "type": "string",
                 "description": "Final status of each import type",
                 "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
             },
             // Per-type status reasons
             {
-                "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_status_reason",
+                "keyPattern": "^feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_status_reason$",
                 "type": "string",
                 "description": "Optional reason accompanying the per-type status",
                 "enum": ["partial_data", "timeout", "document_picker_cancelled"]

@@ -49,7 +49,7 @@ enum UniversalOmniBarState {
         let showCancel = false
 
         // MARK: meta
-        var name: String { String(describing: type(of: self)) }
+        var name: String { Type.name(self) }
 
         // MARK: state transitions
         var onEditingStoppedState: any OmniBarState { baseState.onEditingStoppedState }

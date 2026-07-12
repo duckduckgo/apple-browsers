@@ -40,7 +40,7 @@ struct SmallOmniBarState {
         let showSettings = false
         let showCancel = false
         let showDismiss = true
-        var name: String { return "Phone" + Type.name(self) }
+        var name: String { return "Phone" + String(describing: type(of: self)) }
         var onEditingStoppedState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
         var onTextClearedState: OmniBarState { return self }
@@ -79,7 +79,7 @@ struct SmallOmniBarState {
         let showCancel = false
         let showDismiss = true
         let showVoiceSearch = false
-        var name: String { return "Phone" + Type.name(self) }
+        var name: String { return "Phone" + String(describing: type(of: self)) }
         var onEditingStoppedState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
         var onTextClearedState: OmniBarState { return HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
@@ -117,7 +117,7 @@ struct SmallOmniBarState {
         let showSettings = false
         let showDismiss = false
         let showCancel = false
-        var name: String { return "Phone" + Type.name(self) }
+        var name: String { return "Phone" + String(describing: type(of: self)) }
         var onEditingStoppedState: OmniBarState { return self }
         var onEditingStartedState: OmniBarState { return HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onTextClearedState: OmniBarState { return HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
@@ -154,7 +154,7 @@ struct SmallOmniBarState {
         let showSettings = false
         let showCancel = false
         let showDismiss = true
-        var name: String { return "Phone" + Type.name(self) }
+        var name: String { return "Phone" + String(describing: type(of: self)) }
         var onEditingStoppedState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
         var onTextClearedState: OmniBarState { return self }
@@ -194,7 +194,7 @@ struct SmallOmniBarState {
         let showCancel = false
         let showDismiss = true
         let showVoiceSearch = false
-        var name: String { return "Phone" + Type.name(self) }
+        var name: String { return "Phone" + String(describing: type(of: self)) }
         var onEditingStoppedState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
         var onTextClearedState: OmniBarState { return BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
@@ -240,7 +240,7 @@ struct SmallOmniBarState {
         let showCancel = false
         let showVoiceSearch = false
         let showDismiss = false
-        var name: String { return "Phone" + Type.name(self) }
+        var name: String { return "Phone" + String(describing: type(of: self)) }
         var onEditingStoppedState: OmniBarState { return self }
         var onEditingStartedState: OmniBarState { return BrowsingTextEditingStartedState(dependencies: dependencies, isLoading: isLoading) }
         var onTextClearedState: OmniBarState { return BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
@@ -276,7 +276,7 @@ struct SmallOmniBarState {
         let showSettings = false
         let showDismiss = true
         let showCancel = false
-        var name: String { return "Phone" + Type.name(self) }
+        var name: String { return "Phone" + String(describing: type(of: self)) }
         var onEditingStoppedState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
         var onTextClearedState: OmniBarState { return BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
@@ -325,7 +325,7 @@ struct SmallOmniBarState {
         let showCancel = false
         let showVoiceSearch = false
         let showDismiss = false
-        var name: String { return "Phone" + Type.name(self) }
+        var name: String { return "Phone" + String(describing: type(of: self)) }
         var onEditingStoppedState: OmniBarState { return self }
         var onEditingStartedState: OmniBarState { return BrowsingTextEditingStartedState(dependencies: dependencies, isLoading: isLoading) }
         var onTextClearedState: OmniBarState { return BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
@@ -369,7 +369,7 @@ struct SmallOmniBarState {
         
         var allowCustomization = false
 
-        var name: String { "Phone" + Type.name(self) }
+        var name: String { "Phone" + String(describing: type(of: self)) }
 
         var onEditingStartedState: any OmniBarState { HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStoppedState: any OmniBarState { self }

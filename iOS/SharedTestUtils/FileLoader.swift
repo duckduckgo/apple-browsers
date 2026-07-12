@@ -34,8 +34,8 @@ class FileLoader {
 
         var path = bundle.path(forResource: baseName, ofType: ext)
         if path == nil {
-            let fileName = fileName.dropping(suffix: ext).dropping(suffix: ".")
-            path = bundle.path(forResource: fileName, ofType: ext)
+            let resourceName = (fileName as NSString).deletingPathExtension
+            path = bundle.path(forResource: resourceName, ofType: ext)
         }
         guard let path else { throw  FileError.unknownFile }
         let url = URL(fileURLWithPath: path)

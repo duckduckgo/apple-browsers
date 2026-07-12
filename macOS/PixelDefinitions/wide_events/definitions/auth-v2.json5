@@ -84,7 +84,7 @@
                     "adoption_source": {
                         "type": "string",
                         "description": "What caused the token to be adopted, when known.",
-                        "enum": ["web_restore", "vpn"]
+                        "enum": ["web_restore", "vpn", "test_change"]
                     },
                     "error": "errorParameters"
                 }

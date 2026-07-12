@@ -693,9 +693,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
                 continuation.resume(returning: false)
             })
-            alert.addAction(UIAlertAction(title: UserText.syncPairingV2ConfirmationAction, style: .default) { _ in
+            let confirmAction = UIAlertAction(title: UserText.syncPairingV2ConfirmationAction, style: .default) { _ in
                 continuation.resume(returning: true)
-            })
+            }
+            alert.addAction(confirmAction)
+            alert.preferredAction = confirmAction
 
             let viewControllerToPresentFrom = navigationController?.presentedViewController ?? presentedViewController ?? self
             viewControllerToPresentFrom.present(alert, animated: true)

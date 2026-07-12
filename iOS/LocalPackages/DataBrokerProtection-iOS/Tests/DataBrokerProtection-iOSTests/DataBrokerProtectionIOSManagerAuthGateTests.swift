@@ -83,6 +83,40 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testValidatePrerequisitesUsingCachedProfileState_authenticatedWithEntitlementAndCachedProfile_returnsTrueWhenDatabaseProfileIsMissing() async {
+        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
+        dependencies.database.profile = nil
+        dependencies.authenticationManager.isUserAuthenticatedValue = true
+        dependencies.authenticationManager.hasValidEntitlementValue = true
+
+        let result = await sut.validateRunPrerequisites(usingCachedProfileState: .hasProfile)
+
+        XCTAssertTrue(result)
+    }
+
+    func testValidatePrerequisitesUsingCachedProfileState_noProfile_returnsFalse() async {
+        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
+        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        dependencies.authenticationManager.isUserAuthenticatedValue = true
+        dependencies.authenticationManager.hasValidEntitlementValue = true
+
+        let result = await sut.validateRunPrerequisites(usingCachedProfileState: .noProfile)
+
+        XCTAssertFalse(result)
+    }
+
+    func testValidatePrerequisitesUsingCachedProfileState_unauthenticatedActivatedButFreemiumFlagOff_returnsFalse() async {
+        let featureFlagger = MockDBPFeatureFlagger(isFreemiumPIREnabled: false)
+        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = nil
+        dependencies.authenticationManager.isUserAuthenticatedValue = false
+        dependencies.freemiumDBPUserStateManager.didActivate = true
+
+        let result = await sut.validateRunPrerequisites(usingCachedProfileState: .hasProfile)
+
+        XCTAssertFalse(result)
+    }
+
     // MARK: - appDidBecomeActive
 
     func testAppDidBecomeActive_authenticatedWithProfile_startsScanOperations() async {

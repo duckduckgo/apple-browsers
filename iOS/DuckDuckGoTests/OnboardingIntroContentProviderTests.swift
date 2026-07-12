@@ -839,4 +839,81 @@ struct OnboardingIntroContentProviderTests {
 
     }
 
+    @Suite("Dax Animations")
+    struct DaxAnimations {
+
+        @Test(
+            "Check intro step uses thumbUp animation",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func introStepDaxAnimation(flow: OnboardingFlowType) {
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+            #expect(sut.introStepContent.daxAnimation == .thumbUp)
+        }
+
+        @Test(
+            "Check browser comparison uses wingBottom animation",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func browserComparisonDaxAnimation(flow: OnboardingFlowType) {
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+            #expect(sut.browserComparisonContent.daxAnimation == .wingBottom)
+        }
+
+        @Test(
+            "Check AI comparison uses wingBottom animation",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func aiComparisonDaxAnimation(flow: OnboardingFlowType) {
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+            #expect(sut.aiComparisonContent.daxAnimation == .wingBottom)
+        }
+
+        @Test(
+            "Check add to dock uses wingLeft animation",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func addToDockDaxAnimation(flow: OnboardingFlowType) {
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+            #expect(sut.addToDockContent.daxAnimation == .wingLeft)
+        }
+
+        @Test(
+            "Check app icon color uses wingRight animation",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func appIconColorDaxAnimation(flow: OnboardingFlowType) {
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+            #expect(sut.appIconColorContent.daxAnimation == .wingRight)
+        }
+
+        @Test(
+            "Check address bar position has no overlay animation (Dax is embedded in the background)",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func addressBarPositionDaxAnimation(flow: OnboardingFlowType) {
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+            #expect(sut.addressBarPositionContent.daxAnimation == nil)
+        }
+
+        @Test(
+            "Check search experience uses wingLeft animation",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func searchExperienceDaxAnimation(flow: OnboardingFlowType) {
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+            #expect(sut.searchExperienceContent.daxAnimation == .wingLeft)
+        }
+
+        @Test(
+            "Check duck.ai query has no animation",
+            arguments: [.default, .duckAI] as [OnboardingFlowType]
+        )
+        func duckAIQueryDaxAnimation(flow: OnboardingFlowType) {
+            let sut = OnboardingIntroContentProvider(flowType: flow, featureFlagger: MockFeatureFlagger())
+            #expect(sut.duckAIQueryContent.daxAnimation == nil)
+        }
+
+    }
+
 }

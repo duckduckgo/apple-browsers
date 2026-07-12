@@ -93,11 +93,10 @@ enum TabSwitcherChromeFactory {
 
     @MainActor
     static func makeChrome(isFloatingUIEnabled: Bool,
-                           toolbar: UIToolbar,
                            appSettings: AppSettings) -> TabSwitcherChrome {
         if isFloatingUIEnabled {
             return FloatingTabSwitcherChrome()
         }
-        return LegacyTabSwitcherChrome(toolbar: toolbar, appSettings: appSettings)
+        return LegacyTabSwitcherChrome(appSettings: appSettings)
     }
 }

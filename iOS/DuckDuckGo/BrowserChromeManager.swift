@@ -40,6 +40,10 @@ protocol BrowserChromeDelegate: AnyObject {
     /// of whatever is on screen (toolbar -> capsule -> safe area).
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat
 
+    /// Chrome-obscured insets (measured from the full-bleed web view's edges) for the given chrome
+    /// visibility, used to drive `WKWebView.obscuredContentInsets` on iOS 26.
+    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets
+
     var omniBar: any OmniBar { get }
     var tabBarContainer: UIView { get }
 }

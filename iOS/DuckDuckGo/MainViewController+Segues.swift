@@ -226,29 +226,22 @@ extension MainViewController {
             storageHandler: duckAiNativeStorageHandler
         )
 
-        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
-            TabSwitcherViewController(coder: coder,
-                                      bookmarksDatabase: self.bookmarksDatabase,
-                                      syncService: self.syncService,
-                                      featureFlagger: self.featureFlagger,
-                                      favicons: self.favicons,
-                                      tabManager: self.tabManager,
-                                      aiChatSettings: self.aiChatSettings,
-                                      appSettings: self.appSettings,
-                                      privacyStats: self.privacyStats,
-                                      productSurfaceTelemetry: self.productSurfaceTelemetry,
-                                      historyManager: self.historyManager,
-                                      fireproofing: self.fireproofing,
-                                      keyValueStore: self.keyValueStore,
-                                      daxDialogsManager: self.daxDialogsManager,
-                                      initialTrackerCountState: initialTrackerCountState,
-                                      duckAIGridContentProvider: duckAIGridContentProvider,
-                                      duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker)
-        }) else {
-            assertionFailure()
-            return
-        }
+        let controller = TabSwitcherViewController(bookmarksDatabase: self.bookmarksDatabase,
+                                                   syncService: self.syncService,
+                                                   featureFlagger: self.featureFlagger,
+                                                   favicons: self.favicons,
+                                                   tabManager: self.tabManager,
+                                                   aiChatSettings: self.aiChatSettings,
+                                                   appSettings: self.appSettings,
+                                                   privacyStats: self.privacyStats,
+                                                   productSurfaceTelemetry: self.productSurfaceTelemetry,
+                                                   historyManager: self.historyManager,
+                                                   fireproofing: self.fireproofing,
+                                                   keyValueStore: self.keyValueStore,
+                                                   daxDialogsManager: self.daxDialogsManager,
+                                                   initialTrackerCountState: initialTrackerCountState,
+                                                   duckAIGridContentProvider: duckAIGridContentProvider,
+                                                   duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker)
 
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
@@ -506,6 +499,7 @@ extension MainViewController {
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
                                                   freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                                  profileStateManager: profileStateManager,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
@@ -670,7 +664,6 @@ class SettingsUINavigationController: UINavigationController {
         // Bail out to home instead of popping to the Settings root
         // when leaving the onboarding subscription flow without a purchase.
         if dismissesModalOnSubscriptionBailout,
-           viewControllers.count == 2,
            !didAcquireSubscription {
             dismiss(animated: true)
             return nil

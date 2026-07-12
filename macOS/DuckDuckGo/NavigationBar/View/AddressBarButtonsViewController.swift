@@ -862,13 +862,13 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
 
-        if isDuckAiVoiceChatSystemMicDenied(forDomain: domain) {
+        if isDuckAiVoiceChatSystemMicDenied(forDomain: domain) && !isAIChatPanelActive {
             // While the OS denies mic access on duck.ai under the voice-chat flag, keep the
-            // shield as an anchor for `systemDisabledInfoPopover` regardless of the current
-            // address-bar state (focused text field, AI chat omnibar suppression). The check
-            // is derived from current OS state, so the shield stays available for the user to
-            // re-open the warning after dismissing it and clears as soon as the OS state
-            // changes or they navigate away.
+            // shield as an anchor for `systemDisabledInfoPopover` — but only while the omnibar
+            // is NOT in chat mode. In chat mode the user is prompting, not managing mic access,
+            // so parking the shield in the address bar is noise; suppress it and fall through.
+            // The voice-chat failure handler still surfaces the remediation popover (force-showing
+            // the shield transiently) when mic use is actually attempted and fails.
             permissionCenterButton.isShown = true
         } else if shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
             // On duck.ai, the mic permission is auto-granted by migration and the voice chat
@@ -2358,7 +2358,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
         let backgroundColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .controlsSubtleFillSecondary) : NSColor(designSystemColor: .controlsRaisedBackdrop)
-        let selectionBorder = themeManager.isAppRebranded ? NSColor(designSystemColor: .shadowPrimary) : NSColor(designSystemColor: .shadowSecondary)
+        let selectionBorder = themeManager.isAppRebranded ? NSColor(designSystemColor: .shadowTertiary) : NSColor(designSystemColor: .shadowSecondary)
 
         toggleControl.backgroundColor = backgroundColor
         toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)

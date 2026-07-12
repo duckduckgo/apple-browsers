@@ -85,6 +85,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715515023
     case autofillPartialFormSaves
 
+    /// Kill switch for the riskier parts of the hardened Bitwarden integration. On by default;
+    /// disable remotely to restore the fixed 1s reconnect interval and EOF-tolerant pipe
+    /// monitoring. Teardown/lifecycle bug fixes stay active.
+    /// https://app.asana.com/1/137249556945/project/1204912272578138/task/1216409281175249
+    case bitwardenConnectionHardening
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
 
@@ -528,6 +534,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, category: .updates)
         case .autofillPartialFormSaves:
             Config(source: .remoteReleasable(AutofillSubfeature.partialFormSaves))
+        case .bitwardenConnectionHardening:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.bitwardenConnectionHardening))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
         case .webExtensionLightweightReload:

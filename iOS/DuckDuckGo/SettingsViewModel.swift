@@ -85,6 +85,7 @@ final class SettingsViewModel: ObservableObject {
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     private let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
+    private let profileStateManager: DBPProfileStateManaging
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
@@ -202,9 +203,11 @@ final class SettingsViewModel: ObservableObject {
             && dataBrokerProtectionViewControllerProvider != nil
     }
 
-    var dbpMeetsProfileRunPrequisite: Bool {
-        get {
-            (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
+    var dbpProfileStatusIndicator: StatusIndicator? {
+        switch profileStateManager.profileState {
+        case .hasProfile: return .on
+        case .noProfile: return .off
+        case .unknown: return nil
         }
     }
 
@@ -1032,6 +1035,7 @@ final class SettingsViewModel: ObservableObject {
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+         profileStateManager: DBPProfileStateManaging,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -1075,6 +1079,7 @@ final class SettingsViewModel: ObservableObject {
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
+        self.profileStateManager = profileStateManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies

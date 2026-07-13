@@ -187,6 +187,11 @@
                 "description": "Surface from which voice chat was triggered, based on input mode at the time of tap.",
                 "type": "string",
                 "enum": ["address_bar", "duck_ai", "contextual_chat"]
+            },
+            {
+                "key": "has_pending_page_context",
+                "description": "Whether page context was attached but not yet submitted at the moment of the tap (contextual chat only; always false on other surfaces). Measures users tapping voice expecting the attached context to carry into the voice chat.",
+                "type": "boolean"
             }
         ]
     },

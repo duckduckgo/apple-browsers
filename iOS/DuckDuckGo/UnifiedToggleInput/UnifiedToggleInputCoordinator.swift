@@ -1716,6 +1716,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// must set this so the picker presents from the correct level.
     weak var attachmentPresentingViewController: UIViewController?
     var onPageContextAttachRequested: (() -> Void)?
+    /// Reports whether page context is attached but not yet submitted, for the voice-tap pixel. Host-injected; nil off the contextual sheet.
+    var hasPendingPageContextProvider: (() -> Bool)?
 
     var allowedFileUTTypes: [UTType] {
         selectedModelSupportedFileTypes.compactMap(Self.contentType(for:))
@@ -2563,9 +2565,13 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.aiVoiceChatButtonTappedPublisher
             .sink { [weak self] in
                 guard let self else { return }
+                let hasPendingPageContext = self.hasPendingPageContextProvider?() ?? false
                 DailyPixel.fireDailyAndCount(
                     pixel: .unifiedToggleInputVoiceTapped,
-                    withAdditionalParameters: ["source": self.pixelSurface.rawValue]
+                    withAdditionalParameters: [
+                        "source": self.pixelSurface.rawValue,
+                        "has_pending_page_context": hasPendingPageContext ? "true" : "false"
+                    ]
                 )
                 self.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
             }

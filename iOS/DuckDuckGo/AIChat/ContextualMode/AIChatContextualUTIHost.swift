@@ -86,6 +86,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.onPageContextAttachRequested = { [weak chipViewModel] in
             chipViewModel?.tapToAttach()
         }
+        coordinator.hasPendingPageContextProvider = { [weak chipViewModel] in
+            chipViewModel?.pendingAttachedContextData != nil
+        }
         coordinator.updateImageButtonVisibility()
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
         chipViewModel.onAttachActionRequested = { [weak self] in

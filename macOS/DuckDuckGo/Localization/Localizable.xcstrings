@@ -42793,6 +42793,18 @@
         }
       }
     },
+    "fire.dialog.more.options" : {
+      "comment" : "Accessibility label for the toolbar button that reveals more Fire dialog options",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "More Options"
+          }
+        }
+      }
+    },
     "fire.dialog.segment.everything" : {
       "comment" : "Segment label for Everything scope",
       "extractionState" : "extracted_with_value",

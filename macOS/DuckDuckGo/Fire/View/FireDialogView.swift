@@ -39,7 +39,8 @@ struct FireDialogView: ModalView {
     fileprivate enum Constants {
         static let viewSize = CGSize(width: 428, height: 592)
         static let footerReservedHeight: CGFloat = 52
-        static let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
+        static let toolbarHorizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
+        static let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 16
         static let bottomPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
         static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding }
     }
@@ -132,10 +133,9 @@ struct FireDialogView: ModalView {
     var body: some View {
         VStack(spacing: 16) {
             ZStack {
-                VStack(spacing: 16) {
-                    toolbarView
+                VStack(spacing: 24) {
                     headerView
-                        .padding(.top, 10) // presenter sheet crops the padding 🤷‍♂️
+                        .padding(.top, 14) // presenter sheet crops the padding 🤷‍♂️
                         .accessibilityHidden(isShowingSitesOverlay)
                     if viewModel.mode.shouldShowSegmentedControl {
                         segmentedControlView
@@ -147,6 +147,7 @@ struct FireDialogView: ModalView {
                     }
                 }
                 .padding(.horizontal, Constants.horizontalPadding)
+                .padding(.bottom, Constants.horizontalPadding)
 
                 // Sites Overlay
                 if isShowingSitesOverlay {
@@ -167,6 +168,9 @@ struct FireDialogView: ModalView {
                     .zIndex(10)
                     .transition(.move(edge: .bottom))
                 }
+            }
+            .background(alignment: .top) {
+                toolbarView
             }
             .animation(.easeOut(duration: NSAnimationContext.current.duration),
                        value: isAnimatingSitesOverlay)
@@ -210,7 +214,7 @@ struct FireDialogView: ModalView {
             Spacer()
 
             Button {
-                // TODO: present the "more options" menu once its contents are defined.
+                // Present the "more options" menu once its contents are defined.
             } label: {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.menuDots)
                     .resizable()
@@ -229,10 +233,11 @@ struct FireDialogView: ModalView {
             .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
         }
         .padding(.top, 16)
+        .padding(.horizontal, Constants.toolbarHorizontalPadding)
     }
 
     private var headerView: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             FirePictogramAnimation()
                 .frame(width: 72, height: 72)
                 .padding(.top, 8)

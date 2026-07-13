@@ -1164,6 +1164,18 @@ class MainViewController: UIViewController {
         return isAnyAITabUTIState
     }
 
+    /// True when the visible keyboard is being driven by the omnibar (address bar editing),
+    /// as opposed to a focused element in web content.
+    private var isKeyboardOwnedByOmnibar: Bool {
+        if omniBar.isTextFieldEditing { return true }
+        if unifiedToggleInputCoordinator?.isOmnibarSession == true { return true }
+        if let firstResponder = UIResponder.currentFirstResponder(),
+           firstResponder.isInViewHierarchy(of: viewCoordinator.omniBar.barView) {
+            return true
+        }
+        return false
+    }
+
     private func setUpToolbarButtonsActions() {
 
         viewCoordinator.toolbarBackButton.addTarget(self, action: #selector(onBackPressed), for: .touchUpInside)
@@ -1498,6 +1510,26 @@ class MainViewController: UIViewController {
         if !isNavigationBarEffectivelyAtBottom {
             if !isAITabCollapsed, let coordinator, coordinator.isOmnibarSession {
                 self.viewCoordinator.constraints.navigationBarContainerHeight.constant = baseInputHeight
+            }
+            return
+        }
+
+        let isStandardBottomOmnibar = appSettings.currentAddressBarPosition.isBottom
+            && !isAnyAITabUTIState
+            && unifiedToggleInputCoordinator?.isOmnibarSession != true
+            && !viewCoordinator.isOmnibarInToolbar
+
+        if isStandardBottomOmnibar, keyboardVisible, !isKeyboardOwnedByOmnibar {
+            // Keyboard is for web content: keep the address bar at its resting
+            // position so the keyboard covers it, instead of floating it above.
+            viewCoordinator.constraints.navigationBarContainerHeight.constant = omniBarHeight
+            if let currentTab {
+                currentTab.webView.scrollView.contentInset.bottom = 0
+                currentTab.borderView.bottomOffset = 0
+            }
+            UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
+                self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+                self.currentTab?.borderView.layoutIfNeeded()
             }
             return
         }

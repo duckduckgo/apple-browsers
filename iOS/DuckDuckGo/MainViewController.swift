@@ -2574,6 +2574,7 @@ class MainViewController: UIViewController {
   
     var orientationPixelWorker: DispatchWorkItem?
 
+    // swiftlint:disable:next cyclomatic_complexity
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         isUTIRotating = true

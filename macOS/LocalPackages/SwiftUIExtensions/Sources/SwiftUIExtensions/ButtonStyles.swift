@@ -52,7 +52,7 @@ public struct StandardButtonStyle: ButtonStyle {
 
     public init(fontSize: CGFloat? = nil, topPadding: CGFloat? = nil, bottomPadding: CGFloat? = nil, horizontalPadding: CGFloat? = nil, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil, cornerRadius: CGFloat? = nil, pillShape: Bool = false) {
         let metrics = ButtonMetrics.current
-        let colors = ButtonStateColors.currentStandardButtonColors
+        let colors = ButtonStateColors.legacyStandardButtonColors
 
         self.fontSize = fontSize ?? metrics.fontSize
         self.topPadding = topPadding ?? metrics.topPadding
@@ -312,7 +312,7 @@ public struct ButtonStateColors {
               pressedTextColor: Color.white.opacity(0.8))
     }
 
-    public static var currentStandardButtonColors: ButtonStateColors {
+    public static var legacyStandardButtonColors: ButtonStateColors {
         .init(backgroundColor: Color(.pwmButtonBackground),
               textColor: Color(.pwmButtonLabel),
               hoveredBackgroundColor: Color(.pwmButtonBackground),

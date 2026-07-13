@@ -355,13 +355,13 @@ private extension OnboardingIntroViewModel {
 
     func setViewState(introStep: OnboardingIntroStep) {
         func stepInfo() -> OnboardingIntroViewState.Intro.StepInfo {
-            // Remove interlude steps from counting the total number of steps as they're not rendered
-            let stepsWithoutInterludes = introSteps.filter { !$0.isInterlude }
+            // Count only steps that appear in the progress indicator (excludes the intro dialog, interludes, and the Download Screen).
+            let progressSteps = introSteps.filter(\.countsTowardProgress)
 
-            guard let currentStepIndex = stepsWithoutInterludes.firstIndex(of: introStep) else { return .hidden }
+            guard let currentStepIndex = progressSteps.firstIndex(of: introStep) else { return .hidden }
 
-            // Remove startOnboardingDialog from the count of total steps since we don't show the progress for that step.
-            return OnboardingIntroViewState.Intro.StepInfo(currentStep: currentStepIndex, totalSteps: stepsWithoutInterludes.count - 1)
+            // currentStep is 1-based (the first counted step shows as 1 / total).
+            return OnboardingIntroViewState.Intro.StepInfo(currentStep: currentStepIndex + 1, totalSteps: progressSteps.count)
         }
 
         func mapToViewState(renderableStep: OnboardingIntroStep.RenderableStep) -> OnboardingIntroViewState {

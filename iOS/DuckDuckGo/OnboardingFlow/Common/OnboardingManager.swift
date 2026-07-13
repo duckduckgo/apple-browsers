@@ -154,6 +154,7 @@ enum OnboardingIntroStep: Equatable {
 // Ergonomic factories so call sites can write `.setDefaultBrowser` instead of `.renderable(.setDefaultBrowser)`.
 // Mirror every new `RenderableStep` case here.
 extension OnboardingIntroStep {
+    static let downloadReason: Self = .renderable(.downloadReason)
     static let setDefaultBrowser: Self = .renderable(.setDefaultBrowser)
     static let aiIntro: Self = .renderable(.aiIntro)
     static let addToDockPromo: Self = .renderable(.addToDockPromo)
@@ -171,6 +172,7 @@ extension OnboardingIntroStep {
 
     enum RenderableStep: Equatable {
         case introDialog(isReturningUser: Bool)
+        case downloadReason // NA Experiment: Asks the user why they downloaded the app to tailor the remaining default-flow steps.
         case setDefaultBrowser
         case aiIntro
         case appIconSelection
@@ -197,6 +199,7 @@ extension OnboardingIntroStep {
     var resumeStep: OnboardingResumeStep? {
         switch self {
         case .renderable(.introDialog): return nil
+        case .renderable(.downloadReason): return .downloadReason
         case .renderable(.setDefaultBrowser): return .setDefaultBrowser
         case .renderable(.aiIntro): return .aiIntro
         case .renderable(.addToDockPromo): return .addToDockPromo
@@ -209,8 +212,26 @@ extension OnboardingIntroStep {
     }
 }
 
+extension OnboardingIntroStep {
+    /// Whether this step counts toward the onboarding progress indicator.
+    ///
+    /// Excludes steps that aren't part of the tracked sequence: the intro dialog, interludes
+    /// (which render no view state), and the Download Reason Screen. Consumed when computing the
+    /// current/total step counts shown in the progress bar.
+    var countsTowardProgress: Bool {
+        switch self {
+        case .renderable(.introDialog), .interlude, .renderable(.downloadReason):
+            return false
+        default:
+            return true
+        }
+    }
+}
+
 /// Persisted checkpoint allowing the onboarding flow to resume after an app relaunch.
 enum OnboardingResumeStep: String {
+    /// User reached the Motivation Screen but has not yet selected a download reason.
+    case downloadReason
     case setDefaultBrowser = "browserComparison"
     case aiIntro = "aiComparison"
     case addToDockPromo

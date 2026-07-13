@@ -37,7 +37,7 @@ struct FireDialogView: ModalView {
     }
 
     fileprivate enum Constants {
-        static let viewSize = CGSize(width: 440, height: 592)
+        static let viewSize = CGSize(width: 428, height: 592)
         static let footerReservedHeight: CGFloat = 52
         static let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
         static let bottomPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
@@ -133,6 +133,7 @@ struct FireDialogView: ModalView {
         VStack(spacing: 16) {
             ZStack {
                 VStack(spacing: 16) {
+                    toolbarView
                     headerView
                         .padding(.top, 10) // presenter sheet crops the padding 🤷‍♂️
                         .accessibilityHidden(isShowingSitesOverlay)
@@ -182,6 +183,52 @@ struct FireDialogView: ModalView {
         .background(Color(designSystemColor: .surfaceSecondary))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(viewModel.mode.dialogTitle)
+    }
+
+    private var toolbarView: some View {
+        HStack {
+            Button {
+                onConfirm?(.noAction)
+                dismiss()
+            } label: {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+            }
+            .buttonStyle(
+                StandardButtonStyle(topPadding: 4,
+                                    bottomPadding: 4,
+                                    horizontalPadding: 4,
+                                    backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+            )
+            .clipShape(Circle())
+            .accessibilityLabel(UserText.close)
+            .accessibilityIdentifier("FireDialogView.toolbarCloseButton")
+
+            Spacer()
+
+            Button {
+                // TODO: present the "more options" menu once its contents are defined.
+            } label: {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.menuDots)
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+            }
+            .buttonStyle(
+                StandardButtonStyle(topPadding: 4,
+                                    bottomPadding: 4,
+                                    horizontalPadding: 4,
+                                    backgroundColor: .clear,
+                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+            )
+            .clipShape(Circle())
+            .accessibilityLabel(UserText.fireDialogMoreOptions)
+            .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
+        }
+        .padding(.top, 16)
     }
 
     private var headerView: some View {

@@ -282,6 +282,7 @@ public extension DesignSystemImages {
             public static var location: DesignSystemImage { .init(resource: .location16) }
             public static var locationBlocked: DesignSystemImage { .init(resource: .locationBlocked16) }
             public static var locationSolid: DesignSystemImage { .init(resource: .locationSolid16) }
+            public static var menuDots: DesignSystemImage { .init(resource: .menuDots16) }
             public static var menuLines: DesignSystemImage { .init(resource: .menuLines16) }
             public static var menuLinesDot: DesignSystemImage { .init(resource: .menuLinesDot16) }
             public static var permissionMicrophone: DesignSystemImage { .init(resource: .microphone16) }

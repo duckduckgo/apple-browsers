@@ -181,6 +181,7 @@ public struct TransparentActionButtonStyle: ButtonStyle {
 
 public struct DismissActionButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) var colorScheme
+    @State private var isHovered: Bool = false
 
     public let stateColors: ButtonStateColors
     public let textColor: Color
@@ -197,7 +198,9 @@ public struct DismissActionButtonStyle: ButtonStyle {
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let backgroundColor = configuration.isPressed ? stateColors.pressedBackgroundColor : stateColors.backgroundColor
+        let backgroundColor = configuration.isPressed
+            ? stateColors.pressedBackgroundColor
+            : (isHovered ? stateColors.hoveredBackgroundColor : stateColors.backgroundColor)
         let outerShadowOpacity = colorScheme == .dark ? 0.8 : 0.0
 
         configuration.label
@@ -234,6 +237,9 @@ public struct DismissActionButtonStyle: ButtonStyle {
                 }
             )
             .foregroundColor(textColor)
+            .onHover { hovering in
+                isHovered = hovering
+            }
 
     }
 }
@@ -315,8 +321,8 @@ public struct ButtonStateColors {
     public static var themedDismissButton: ButtonStateColors {
         .init(backgroundColor: Color(designSystemColor: .controlsFillPrimary),
               textColor: Color(designSystemColor: .textPrimary),
-              hoveredBackgroundColor: Color(designSystemColor: .controlsFillPrimary),
-              pressedBackgroundColor: Color(designSystemColor: .controlsFillSecondary),
+              hoveredBackgroundColor: Color(designSystemColor: .controlsFillSecondary),
+              pressedBackgroundColor: Color(designSystemColor: .controlsFillTertiary),
               pressedTextColor: Color(designSystemColor: .textSecondary))
     }
 

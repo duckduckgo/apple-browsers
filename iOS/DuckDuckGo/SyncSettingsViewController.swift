@@ -508,10 +508,9 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey) async throws {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         mapDevices(registeredDevices)
-        Pixel.fire(pixel: .syncLogin,
+        try? await Pixel.fire(pixel: .syncLogin,
                    withAdditionalParameters: sourcePixelParameters,
-                   includedParameters: [.appVersion],
-                   onComplete: { _ in })
+                   includedParameters: [.appVersion])
         presentSyncCompletionAfterDelay()
     }
 

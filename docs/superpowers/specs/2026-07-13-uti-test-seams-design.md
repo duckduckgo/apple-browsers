@@ -1,53 +1,31 @@
-# UTI Test Seams & Persistence — Design
+# UTI Test Seams — assumptions & questions
 
-[Asana task](https://app.asana.com/1/137249556945/project/72649045549333/task/1215631257622242) · branch `jacek/uti-test-seams` (off current `main`) · DRI Jacek · PA Pete
+For the scoper. You know the task; below is only what's *new* — decisions I've made (assumptions)
+and things I need you to confirm (questions). [Asana](https://app.asana.com/1/137249556945/project/72649045549333/task/1215631257622242) · branch `jacek/uti-test-seams`.
 
-**Goal:** extract pure, tested decision functions for (1A) chrome/toolbar visibility and
-(1B) the persistence cleanup-race. Behaviour-preserving except one sanctioned 1B fix (§4).
-iPhone-only; iPad/non-UTI path stays intact; Architecture A untouched.
+## Assumptions (I'll proceed with these unless you object)
 
-## 1A — chrome/toolbar visibility
+- **A1.** The two named decisions (`ChromeVisibilityDecision` + `ToolbarVisibilityDecision`)
+  become **one** pure `resolve(inputs) -> ChromeState` in a new `UnifiedInputChromeState.swift`,
+  one dumb `apply`. Collapses the three `reconcile…` methods into one path. Still tested over
+  every tab type × state.
+- **A2.** Self-heal clamp (`+UnifiedToggleInput.swift:212–216`) is **kept** and pinned as an
+  explicit tested field (not deleted).
+- **A3.** 1B predicate = `isPerformingDismissCleanup && text.isEmpty` at
+  `Coordinator.swift:1895`. This **changes behaviour**: a genuine keystroke in the cleanup
+  window is now preserved instead of swallowed (this is your success criterion). Safe by
+  construction — only ever preserves more.
+- **A4.** Architecture A (`OmniBarEditingStateViewController`) excluded — doesn't share this
+  code, and it's retiring.
+- **A5.** Blocker (`jacek/refactor-uti-suggestions`) treated as moot — branch is at current
+  `main`, all needed infra already present.
 
-Today: three imperative `reconcile…` methods + an umbrella that exists only to herd them
-(`MainViewController+UnifiedToggleInput.swift:156–222`). Untested; source of recurring layout
-bugs (#5055, #4729, #4749, #5053).
+## Questions (need your call)
 
-**Plan:** one new file `UnifiedInputChromeState.swift` with a pure
-`resolve(inputs) -> ChromeState` (value-only inputs, no mocks), rendered by one dumb `apply`.
-Collapses the three reconciles into **one path**. Mirrors the existing tested seam
-`decideRefreshAction`. `ChromeState` carries toolbar visibility (`.hidden` /
-`.visible(healsClampConstant:)`), `hidesAIChatInput`, `voiceChromeActive`.
-
-The **self-heal clamp** (`:212–216`) is kept and pinned as an explicit tested field — meets
-"flip one branch → exactly one test red".
-
-## 1B — persistence cleanup-race
-
-Today the dismiss-cleanup gate (`UnifiedToggleInputCoordinator.swift:1895`) swallows **every**
-text change in the cleanup window, so a genuine keystroke there is lost. Replace with a pure
-predicate: `isPerformingDismissCleanup && text.isEmpty`. Only the empty cleanup blank is
-swallowed; real input is kept. Safe by construction (only ever preserves *more*).
-
-## Divergences from the card (please react to these)
-
-1. **Two named decisions → one `ChromeState`.** Cleaner single source of truth; still tested
-   over every tab type × state, so both named criteria are covered.
-2. **One sanctioned behaviour change:** the 1B fix above (the card's own criterion). Everything
-   else is behaviour-preserving; Maestro unchanged.
-3. **Deferred as follow-ups:** (a) single-writer toolbar constant that would *delete* the clamp
-   (behaviour-changing; the clamp is scaffolding for multiple writers); (b) chrome background
-   *coloring* consolidation (~10 call sites — it's coloring, not visibility, so out of the task
-   title). **← most likely thing to renegotiate if you meant coloring to be in scope.**
-
-## Sequencing (TDD, each step shippable)
-
-1. Toolbar visibility + clamp regression test. 2. Fold in AI-input-hidden + voice.
-3. 1B predicate + preservation test.
-
-## Notes
-
-- Blocker (`jacek/refactor-uti-suggestions`) is moot: branch is at current `main`; all needed
-  infra already present.
-- Named seam types don't pre-exist — this *creates* them (extends the *pattern*).
-- **Open planning item for you + Pete:** estimate is inconsistent (title 5d / body ~7d /
-  subtasks 5d) and due 2026-07-17 — flagging, doesn't affect the design.
+- **Q1 — the big one.** Did "chrome visibility" include the **background *coloring***
+  (`applyUnifiedInputChromeBackground`, ~10 call sites)? I've scoped it **out** as a follow-up
+  (it's coloring, not visibility). If you meant it in, the branch grows materially.
+- **Q2.** OK to file the **single-writer toolbar refactor that deletes the clamp** as a
+  separate follow-up (behaviour-changing), rather than doing it here?
+- **Q3.** Estimate is inconsistent (title 5d / body ~7d / subtasks 5d) and due 2026-07-17 —
+  which is real? (Planning only, doesn't affect the design.)

@@ -1183,6 +1183,10 @@ class MainViewController: UIViewController {
                                                selector: #selector(downloadMenuAlertStateDidChange),
                                                name: .downloadFinished,
                                                object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(downloadMenuAlertStateDidChange),
+                                               name: .downloadsSeen,
+                                               object: nil)
     }
 
     @objc private func downloadMenuAlertStateDidChange() {
@@ -1190,7 +1194,7 @@ class MainViewController: UIViewController {
     }
 
     private func refreshDownloadMenuAlertState(animated: Bool) {
-        let isVisible = AppDependencyProvider.shared.downloadManager.hasActiveDownloads
+        let isVisible = AppDependencyProvider.shared.downloadManager.hasDownloadsNeedingAttention
         let shouldAnimate = animated && isDownloadMenuAlertVisible != isVisible
         isDownloadMenuAlertVisible = isVisible
 

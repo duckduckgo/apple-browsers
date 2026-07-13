@@ -378,8 +378,8 @@ extension UIButton {
 
         addSubview(imageView)
         NSLayoutConstraint.activate([
-            imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            imageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            imageView.centerXAnchor.constraint(equalTo: centerXAnchor, constant: MenuAlertMetrics.dotXAdjustment),
+            imageView.centerYAnchor.constraint(equalTo: centerYAnchor, constant: MenuAlertMetrics.dotYAdjustment),
             imageView.widthAnchor.constraint(equalToConstant: MenuAlertMetrics.iconSize),
             imageView.heightAnchor.constraint(equalToConstant: MenuAlertMetrics.iconSize),
         ])
@@ -391,6 +391,8 @@ extension UIButton {
 private enum MenuAlertMetrics {
     static let dotViewTag = 0xDDBA7
     static let iconSize: CGFloat = 24
+    static let dotXAdjustment: CGFloat = -0.5
+    static let dotYAdjustment: CGFloat = 0.5
 }
 
 private var menuAlertButtonStateKey: UInt8 = 0

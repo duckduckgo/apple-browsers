@@ -249,7 +249,7 @@ extension TabViewController {
 
         return .regular(name: UserText.actionDownloads,
                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
-                        showNotificationDot: downloadManager.hasActiveDownloads || downloadManager.unseenDownloadsAvailable,
+                        showNotificationDot: downloadManager.hasDownloadsNeedingAttention,
                         action: { [weak self] in
             self?.onOpenDownloadsAction()
         })

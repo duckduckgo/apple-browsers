@@ -781,6 +781,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         aiChatHistoryCleaner: MockAIChatHistoryCleaner(),
         fireproofDomains: Application.appDelegate.fireproofDomains,
         faviconManagement: Application.appDelegate.faviconManager,
+        featureFlagger: Application.appDelegate.featureFlagger,
         tld: tld
     )
 
@@ -822,6 +823,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         aiChatHistoryCleaner: MockAIChatHistoryCleaner(),
         fireproofDomains: fireproofDomains,
         faviconManagement: faviconMock,
+        featureFlagger: Application.appDelegate.featureFlagger,
         clearingOption: .allData,
         tld: tld
     )

@@ -135,7 +135,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case fireDialogIndividualSitesLink
 
     // Simplified Fire dialog
-    // https://app.asana.com/1/137249556945/project/1208671677432066/task/1214715437711872?focus=true
+    // https://app.asana.com/1/137249556945/project/1211834678943996/task/1216512684334175
     case fireDialogSimplified
 
     /// Use WKDownload for favicon fetching to bypass App Transport Security restrictions on HTTP URLs

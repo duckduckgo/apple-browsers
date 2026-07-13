@@ -46,7 +46,7 @@ public enum FeatureFlag: String, CaseIterable {
     case onboardingChromeExtension
 
     /// Simplified Fire dialog
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1214715437711872?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216512684334175
     case fireDialogSimplified
 
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715698981

@@ -1,7 +1,7 @@
 //
-//  FireDialogView.swift
+//  LegacyFireDialogView.swift
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -29,12 +29,7 @@ import BrowserServicesKit
 import Combine
 
 @MainActor
-struct FireDialogView: ModalView {
-
-    enum Response {
-        case noAction
-        case burn(options: FireDialogResult?)
-    }
+struct LegacyFireDialogView: ModalView {
 
     fileprivate enum Constants {
         static let viewSize = CGSize(width: 440, height: 592)
@@ -774,7 +769,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
     }
 }
 @available(macOS 14.0, *)
-#Preview("Fire Dialog", traits: FireDialogView.Constants.viewSize.fixedLayout) {
+#Preview("Fire Dialog", traits: LegacyFireDialogView.Constants.viewSize.fixedLayout) {
     let tld = TLD()
     let vm = FireDialogViewModel(
         fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),
@@ -792,7 +787,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
 }
 
  @available(macOS 14.0, *)
-#Preview("Sites Overlay", traits: FireDialogView.Constants.viewSize.fixedLayout) {
+#Preview("Sites Overlay", traits: LegacyFireDialogView.Constants.viewSize.fixedLayout) {
     let tld = TLD()
     // Seed history with example domains
     let history = Application.appDelegate.historyCoordinator

@@ -115,6 +115,14 @@ final class FireCoordinator {
         self.visualizeFireAnimationDecider = OverridableVisualizeFireSettingsDecider(internalDecider: visualizeFireAnimationDecider)
 
         self.fireDialogViewFactory = fireDialogViewFactory ?? { config in
+            guard featureFlagger.isFeatureOn(.fireDialogSimplified) else {
+                let view = LegacyFireDialogView(
+                    viewModel: config.viewModel,
+                    showIndividualSitesLink: config.showIndividualSitesLink,
+                    onConfirm: config.onConfirm
+                )
+                return DefaultFireDialogPresenter(view: view)
+            }
             let view = FireDialogView(
                 viewModel: config.viewModel,
                 showIndividualSitesLink: config.showIndividualSitesLink,

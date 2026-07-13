@@ -24,10 +24,11 @@ import UIKit
 enum AppIcon: String, CaseIterable {
     case red = "AppIcon-red"
     case pink = "AppIcon-pink"
+    case purple = "AppIcon-purple"
+    case white = "AppIcon-white"
     case yellow = "AppIcon-yellow"
     case green = "AppIcon-green"
     case blue = "AppIcon-blue"
-    case purple = "AppIcon-purple"
     case black = "AppIcon-black"
 
     var accessibilityName: String {
@@ -35,6 +36,7 @@ enum AppIcon: String, CaseIterable {
         case .red: "red"
         case .pink: "pink"
         case .yellow: "yellow"
+        case .white: "white"
         case .green: "green"
         case .blue: "blue"
         case .purple: "purple"
@@ -55,6 +57,8 @@ enum AppIcon: String, CaseIterable {
             return UIImage(resource: .appIconPinkSmall)
         case .yellow:
             return UIImage(resource: .appIconYellowSmall)
+        case .white:
+            return UIImage(resource: .appIconWhiteSmall)
         case .green:
             return UIImage(resource: .appIconGreenSmall)
         case .blue:
@@ -75,6 +79,8 @@ enum AppIcon: String, CaseIterable {
             return UIImage(resource: .appIconPinkMedium)
         case .yellow:
             return UIImage(resource: .appIconYellowMedium)
+        case .white:
+            return UIImage(resource: .appIconWhiteMedium)
         case .green:
             return UIImage(resource: .appIconGreenMedium)
         case .blue:
@@ -89,19 +95,21 @@ enum AppIcon: String, CaseIterable {
     var color: Color {
         switch self {
         case .red:
-            return Color(0xDE5833)
+            return Color(0xF05F2B)
         case .pink:
-            return Color(0xE37089)
+            return Color(0xD577A5)
         case .yellow:
-            return Color(0xE2A412)
+            return Color(0xE8952D)
+        case .white:
+            return Color(0xE6E6E6)
         case .green:
-            return Color(0x4CBA3C)
+            return Color(0x247A64)
         case .blue:
-            return Color(0x3969EF)
+            return Color(0x1074CC)
         case .purple:
-            return Color(0x5132A9)
+            return Color(0x7D4794)
         case .black:
-            return .black
+            return Color(0x222222)
         }
     }
 }

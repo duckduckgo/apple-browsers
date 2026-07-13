@@ -2581,7 +2581,7 @@ class MainViewController: UIViewController {
     /// A chrome hide/show morph left in flight by a fling just before rotating would keep scrubbing
     /// the omnibar/capsule layout each frame against mid-rotation geometry, causing a flicker.
     /// Settle it to its committed state now; the completion block resets the bars as usual.
-    fileprivate func cancelMorphAnimatorIfNeedded() {
+    func cancelMorphAnimatorIfNeedded() {
         if chromeMorphAnimator.isAnimating {
             chromeMorphAnimator.cancel()
             applyBarsVisibilityState(lastChromeVisibilityPercent, postChromeVisibilityNotification: false)
@@ -2655,25 +2655,25 @@ class MainViewController: UIViewController {
                                                      isShowingToolbar: Bool) {
         toolbarSnapshot?.removeFromSuperview()
 
-        self.resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: isKeyboardShowing)
+        resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: isKeyboardShowing)
 
-        self.omniBar.barView.textField.suppressResignFirstResponder = false
+        omniBar.barView.textField.suppressResignFirstResponder = false
         if isKeyboardShowing {
-            self.omniBar.beginEditing(animated: false)
+            omniBar.beginEditing(animated: false)
         }
 
-        if self.isInMinimalChromeLayout {
-            self.viewCoordinator.constraints.toolbarBottom.constant = self.minimalChromeBottomHeight
-            if self.viewCoordinator.addressBarPosition.isBottom {
-                self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
+        if isInMinimalChromeLayout {
+            viewCoordinator.constraints.toolbarBottom.constant = minimalChromeBottomHeight
+            if viewCoordinator.addressBarPosition.isBottom {
+                currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
             }
         }
 
         // Re-assert the bottom floating layout now rotation has settled (the mid-transition rebuild used stale geometry).
-        if isShowingToolbar, self.isFloatingUIEnabled, self.viewCoordinator.addressBarPosition.isBottom {
-            self.viewCoordinator.updateToolbarLayoutForAddressBarPosition(.bottom)
-            self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
-            self.view.layoutIfNeeded()
+        if isShowingToolbar, isFloatingUIEnabled, viewCoordinator.addressBarPosition.isBottom {
+            viewCoordinator.updateToolbarLayoutForAddressBarPosition(.bottom)
+            currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
+            view.layoutIfNeeded()
         }
 
         ViewHighlighter.updatePositions()
@@ -2684,7 +2684,7 @@ class MainViewController: UIViewController {
         } completion: { _ in
             self.isUTIRotating = false
         }
-        self.updateFloatingReturnKeyVisibility()
+        updateFloatingReturnKeyVisibility()
     }
 
     private func resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: Bool) {

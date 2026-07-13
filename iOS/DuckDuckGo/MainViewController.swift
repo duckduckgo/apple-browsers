@@ -2754,14 +2754,16 @@ class MainViewController: UIViewController {
         newTabPageViewController?.widthChanged()
     }
     
-    private(set) var isInMinimalChromeLayout: Bool = false
+    /// Single source of truth lives on the coordinator; mutated via `setMinimalChromeMode(_:)`.
+    var isInMinimalChromeLayout: Bool {
+        viewCoordinator.isInMinimalChromeLayout
+    }
 
     var isUsingSingleBar: Bool {
         AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
     }
 
     private func setMinimalChromeMode(_ enabled: Bool) {
-        isInMinimalChromeLayout = enabled
         viewCoordinator.setMinimalChromeLayout(enabled)
         viewCoordinator.omniBar.isExpandedPhone = enabled
         // Minimal chrome hides the toolbar capsule, so the single bar renders its own glass.

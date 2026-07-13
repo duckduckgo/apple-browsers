@@ -266,6 +266,22 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
+    /// Handles the user's answer on the Download Screen: persists the reason, splices in the
+    /// resulting steps, and advances. Called from the Download Screen's primary CTA.
+    func selectDownloadReasonAction(_ reason: OnboardingDownloadReason) {
+        // Only valid on the Download Screen. A repeated tap is expected and benign (after the first
+        // tap we've already advanced past `.downloadReason`), so short-circuit the whole action —
+        // otherwise we'd advance a second time and skip a step.
+        guard currentIntroStep == .downloadReason else { return }
+
+        // TODO: pixel for the selected download reason.
+        let remainingSteps = onboardingManager.selectDownloadReason(reason)
+        if let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) {
+            introSteps.insert(contentsOf: remainingSteps, at: currentStepIndex + 1)
+        }
+        makeNextViewState()
+    }
+
     func selectDuckAIQueryAction(selection: DuckAIQueryMode) {
         switch selection {
         case .duckAI:
@@ -354,6 +370,13 @@ private extension OnboardingIntroViewModel {
                 return .onboarding(
                     .init(
                         type: .startOnboardingDialog(content: contentProvider.introStepContent, type: introDialogType(isReturningUser: isReturningUser)),
+                        step: .hidden
+                    )
+                )
+            case .downloadReason:
+                return .onboarding(
+                    .init(
+                        type: .downloadReasonDialog(content: contentProvider.downloadReasonContent),
                         step: .hidden
                     )
                 )
@@ -472,6 +495,8 @@ private extension OnboardingIntroViewModel {
             }
             currentIntroStep = .duckAIQuerySelection
 
+        case .downloadReason where introSteps.contains(.downloadReason):
+            currentIntroStep = .downloadReason
         case .setDefaultBrowser where introSteps.contains(.setDefaultBrowser):
             currentIntroStep = .setDefaultBrowser
         case .aiIntro where introSteps.contains(.aiIntro):
@@ -522,6 +547,8 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureSearchExperienceSelectionImpression()
         case .duckAIQueryDialog:
             pixelReporter.measureDuckAIQuerySelectionImpression()
+        case .downloadReasonDialog:
+            break // TODO: Download Screen impression pixel.
         }
     }
 

@@ -143,6 +143,7 @@ struct OnboardingDownloadReasonContent: Equatable {
     let message: String
     let options: [Option]
     let primaryCTA: String
+    let daxAnimation: DaxAnimation
 }
 
 extension OnboardingIntroContentProvider {
@@ -158,7 +159,8 @@ extension OnboardingIntroContentProvider {
                 .init(reason: .noAI, title: UserText.Onboarding.DownloadReason.removeAI),
                 .init(reason: .blockAds, title: UserText.Onboarding.DownloadReason.blockAds)
             ],
-            primaryCTA: UserText.Onboarding.DownloadReason.cta
+            primaryCTA: UserText.Onboarding.DownloadReason.cta,
+            daxAnimation: .wingBottom
         )
     }
 

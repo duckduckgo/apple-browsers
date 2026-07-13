@@ -457,6 +457,8 @@ extension OnboardingView {
             switch type {
             case let .startOnboardingDialog(content, dialogType):
                 introView(content: content, dialogType: dialogType)
+            case let .downloadReasonDialog(content):
+                downloadReasonView(content: content)
             case let .setDefaultBrowserDialog(content):
                 setDefaultBrowserView(content: content)
             case let .aiIntroDialog(content):
@@ -471,6 +473,22 @@ extension OnboardingView {
                 searchExperienceSelectionView(content: content)
             case let .duckAIQueryDialog(content, defaultMode):
                 duckAIQuerySelectionView(content: content, defaultMode: defaultMode)
+            }
+        }
+
+        // TODO: Replace with the designed Download Screen (separate UI task). Minimal placeholder
+        // so the flow runs end-to-end: tapping an option persists the reason and advances.
+        private func downloadReasonView(content: OnboardingDownloadReasonContent) -> some View {
+            VStack(spacing: 16) {
+                Text(content.title)
+                Text(content.message)
+                ForEach(content.options, id: \.reason) { option in
+                    Button(option.title) {
+                        animateContentTransition {
+                            model.selectDownloadReasonAction(option.reason)
+                        }
+                    }
+                }
             }
         }
 
@@ -562,6 +580,8 @@ extension OnboardingView {
             // bubble content swaps. Dax is scaled inversely to the bubble so they never overlap.
             case .startOnboardingDialog(let content, _):
                 return scaledThumbUpAnimation(forBubbleHeight: lockedIntroBubbleHeight, base: content.daxAnimation)
+            case .downloadReasonDialog(let content):
+                return content.daxAnimation
             case .setDefaultBrowserDialog(let content):
                 return content.daxAnimation
             case .aiIntroDialog(let content):
@@ -736,6 +756,12 @@ private extension OnboardingView {
                 tailDirection: .leading,
                 additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
                 isVisible: model.introState.showIntroViewContent
+            )
+        case .downloadReasonDialog:
+            return BubbleBackedDialogConfiguration(
+                tailOffset: tailLeadingOffset,
+                tailDirection: .leading,
+                isVisible: true
             )
         case .setDefaultBrowserDialog, .aiIntroDialog:
             return BubbleBackedDialogConfiguration(

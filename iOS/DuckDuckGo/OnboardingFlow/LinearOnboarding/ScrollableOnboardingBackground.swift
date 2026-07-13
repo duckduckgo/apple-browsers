@@ -218,7 +218,7 @@ private extension OnboardingIntroViewState.Intro.IntroType {
         switch self {
         case .startOnboardingDialog:
             return OnboardingRebrandingImages.Linear.introBackground
-        case .setDefaultBrowserDialog, .aiIntroDialog:
+        case .downloadReasonDialog, .setDefaultBrowserDialog, .aiIntroDialog:
             return OnboardingRebrandingImages.Linear.browsersComparisonBackground
         case .addToDockPromoDialog:
             return OnboardingRebrandingImages.Linear.addToDockBackground
@@ -241,7 +241,7 @@ private extension OnboardingIntroViewState.Intro.IntroType {
         switch self {
         case .startOnboardingDialog:
             return 404
-        case .setDefaultBrowserDialog, .aiIntroDialog:
+        case .downloadReasonDialog, .setDefaultBrowserDialog, .aiIntroDialog:
             return 216
         case .addToDockPromoDialog:
             return 286
@@ -271,7 +271,7 @@ private extension OnboardingIntroViewState.Intro.IntroType {
         switch self {
         case .startOnboardingDialog:
             return 320
-        case .setDefaultBrowserDialog, .aiIntroDialog:
+        case .downloadReasonDialog, .setDefaultBrowserDialog, .aiIntroDialog:
             return 380
         case .addToDockPromoDialog:
             return 194

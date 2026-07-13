@@ -52,7 +52,8 @@ extension OnboardingDownloadReasonContent {
             .init(reason: .noAI, title: "Remove AI from search results"),
             .init(reason: .blockAds, title: "Block ads and pop-ups")
         ],
-        primaryCTA: "Download Reason Primary"
+        primaryCTA: "Download Reason Primary",
+        daxAnimation: .wingBottom
     )
 }
 

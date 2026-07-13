@@ -52,6 +52,7 @@ extension OnboardingIntroViewState.Intro {
 
     enum IntroType: Equatable {
         case startOnboardingDialog(content: OnboardingIntroStepContent, type: IntroDialogType)
+        case downloadReasonDialog(content: OnboardingDownloadReasonContent)
         case setDefaultBrowserDialog(content: OnboardingComparisonContent)
         case aiIntroDialog(content: OnboardingComparisonContent)
         case addToDockPromoDialog(content: OnboardingAddToDockContent)

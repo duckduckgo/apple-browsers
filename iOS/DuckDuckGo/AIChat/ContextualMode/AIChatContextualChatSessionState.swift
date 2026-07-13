@@ -114,6 +114,11 @@ final class AIChatContextualChatSessionState {
     private(set) var contextualChatURL: URL?
     private(set) var latestContext: AIChatPageContext?
 
+    /// URL of the context that was actually included in the last submitted prompt.
+    /// Lets a late auto-attach re-collection for that same page be delivered to the UTI chip
+    /// as already-delivered instead of resurrecting it as pending.
+    private(set) var deliveredContextURL: URL?
+
     @Published private(set) var viewState = SheetViewState(
         content: .nativeInput,
         isExpandButtonEnabled: true,
@@ -226,6 +231,7 @@ final class AIChatContextualChatSessionState {
         case .attached(let context):
             contextData = context.contextData
             frontendState = .chatWithInitialContext
+            deliveredContextURL = URL(string: context.contextData.url)
             pixelHandler.firePromptSubmittedWithContext()
             Logger.aiChat.debug("[SessionState] Chat started WITH initial context (chip was attached)")
         case .placeholder:
@@ -252,8 +258,9 @@ final class AIChatContextualChatSessionState {
         }
 
         switch chipState {
-        case .attached:
+        case .attached(let context):
             frontendState = .chatWithInitialContext
+            deliveredContextURL = URL(string: context.contextData.url)
             pixelHandler.firePromptSubmittedWithContext()
             Logger.aiChat.debug("[SessionState] UTI chat started WITH initial context")
         case .placeholder:
@@ -270,6 +277,7 @@ final class AIChatContextualChatSessionState {
         frontendState = .noChat
         chipState = .placeholder
         contextualChatURL = nil
+        deliveredContextURL = nil
         userDowngradedToPlaceholder = false
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
@@ -506,6 +514,14 @@ final class AIChatContextualChatSessionState {
         guard isUnifiedToggleInputActive else { return false }
         guard context != nil || hasActiveChat || userDowngradedToPlaceholder else { return false }
         return true
+    }
+
+    /// Whether `context` is a re-collection of the page whose content was already included in
+    /// the last submitted prompt. Used so a late auto-attach emission for that same page doesn't
+    /// resurrect the UTI chip as pending — it's already been sent.
+    func isContextAlreadyDelivered(_ context: AIChatPageContextData?) -> Bool {
+        guard let context, let deliveredContextURL, let contextURL = URL(string: context.url) else { return false }
+        return contextURL.equals(deliveredContextURL, by: .sameDocument)
     }
 
     func shouldDeliverToFrontendBridge(_ context: AIChatPageContextData?) -> Bool {

@@ -484,7 +484,8 @@ private extension AIChatContextualSheetCoordinator {
             ? sessionState.latestContext
             : AIChatPageContext(contextData: context, favicon: nil)
         if let pageContext {
-            host.setAttachedContext(pageContext, deliveryState: .pendingSubmit)
+            let deliveryState: PageContextAttachmentDeliveryState = sessionState.isContextAlreadyDelivered(context) ? .delivered : .pendingSubmit
+            host.setAttachedContext(pageContext, deliveryState: deliveryState)
         }
     }
 

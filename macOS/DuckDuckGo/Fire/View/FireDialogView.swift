@@ -52,9 +52,8 @@ struct FireDialogView: ModalView {
         switch viewModel.clearingOption {
         case .currentTab:
             baseMessage = UserText.fireDialogCloseThisTab
-        case .currentWindow:
-            baseMessage = UserText.fireDialogCloseThisWindow
-        case .allData:
+        case .currentWindow, // current window is pending removal, not supported by the simplified fire dialog, and defaults to burning all data.
+                .allData:
             baseMessage = UserText.fireDialogCloseAllTabsWindows
         }
 
@@ -209,11 +208,10 @@ struct FireDialogView: ModalView {
             ),
             segments: [
                 .init(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogSegmentTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.tabDesktop)),
-                .init(id: FireDialogViewModel.ClearingOption.currentWindow.rawValue, title: UserText.fireDialogSegmentWindow, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.window)),
                 .init(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
             ],
-            containerBackground: Color(designSystemColor: .containerFillPrimary),
-            containerBorder: Color(designSystemColor: .containerBorderPrimary),
+            containerBackground: .clear,
+            containerBorder: .clear,
             containerCornerRadius: style.segmentedControlCornerRadius,
             segmentCornerRadius: style.segmentedControlItemCornerRadius,
             selectedForeground: Color(designSystemColor: .accentPrimary),

@@ -52,10 +52,10 @@ struct FireDialogView: ModalView {
         let baseMessage: String
         switch viewModel.clearingOption {
         case .currentTab:
-            baseMessage = UserText.fireDialogCloseThisTab
+            baseMessage = UserText.fireDialogCloseThisTabAfterDeleting
         case .currentWindow, // current window is pending removal, not supported by the simplified fire dialog, and defaults to burning all data.
                 .allData:
-            baseMessage = UserText.fireDialogCloseAllTabsWindows
+            baseMessage = UserText.fireDialogCloseAllTabsWindowsAfterDeleting
         }
 
         // Append pinned tabs message if applicable
@@ -210,6 +210,7 @@ struct FireDialogView: ModalView {
             .clipShape(Circle())
             .accessibilityLabel(UserText.close)
             .accessibilityIdentifier("FireDialogView.toolbarCloseButton")
+            .keyboardShortcut(.cancelAction)
 
             Spacer()
 
@@ -285,19 +286,6 @@ struct FireDialogView: ModalView {
 
     private var sectionsView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if viewModel.mode.shouldShowCloseTabsToggle {
-                sectionRow(
-                    icon: DesignSystemImages.Glyphs.Size16.windowsAndTabs,
-                    title: UserText.fireDialogTabsAndWindows,
-                    subtitle: tabsSubtitle,
-                    isOn: $viewModel.includeTabsAndWindows,
-                    roundedCorners: .top,
-                    toggleId: "FireDialogView.tabsToggle"
-                )
-                .accessibilityHidden(isShowingSitesOverlay)
-                sectionDivider()
-            }
-
             // Row 2: History
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.history,
@@ -607,31 +595,18 @@ struct FireDialogView: ModalView {
 
     private var footerView: some View {
         // Buttons
-        HStack(spacing: 8) {
-            Button {
-                onConfirm?(.noAction)
-                dismiss()
-            } label: {
-                Text(UserText.cancel)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 32)
-                    .background(
-                        Group {
-                            if AppVersion.isLiquidGlassSupported {
-                                Capsule(style: .continuous)
-                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
-                            } else {
-                                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
-                            }
-                        }
-                    )
+        HStack(spacing: 0) {
+            if viewModel.mode.shouldShowCloseTabsToggle {
+                Toggle("", isOn: $viewModel.includeTabsAndWindows)
+                    .toggleStyle(.checkbox)
+                    .tint(style.knobFillColor)
+                    .padding(.bottom, 2)
+                Text(tabsSubtitle)
+                    .font(.system(size: 11))
+                    .padding(.leading, 4)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(UserText.cancel)
-            .accessibilityIdentifier("FireDialogView.cancelButton")
-            .keyboardShortcut(.cancelAction)
+
+            Spacer(minLength: 8)
 
             Button {
                 let result = FireDialogResult(
@@ -665,6 +640,7 @@ struct FireDialogView: ModalView {
             .accessibilityLabel(UserText.delete)
             .keyboardShortcut(.defaultAction)
             .accessibilityIdentifier("FireDialogView.burnButton")
+            .frame(width: 156)
         }
         .padding(.horizontal, Constants.horizontalPadding)
         .padding(.top, 8)

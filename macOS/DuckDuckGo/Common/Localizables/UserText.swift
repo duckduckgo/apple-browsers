@@ -41,6 +41,8 @@ struct UserText {
     static let fireDialogCloseThisTab = NSLocalizedString("fire.dialog.close.this.tab", value: "Close this tab.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Tab’. Means: the currently active tab will be closed.")
     static let fireDialogCloseThisWindow = NSLocalizedString("fire.dialog.close.this.window", value: "Close this window.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Window’. Means: the current browser window (all tabs inside it) will be closed.")
     static let fireDialogCloseAllTabsWindows = NSLocalizedString("fire.dialog.close.all.tabs.windows", value: "Close all tabs and windows.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
+    static let fireDialogCloseThisTabAfterDeleting = NSLocalizedString("fire.dialog.close.this.tab.after.deleting", value: "Close this tab after deleting.", comment: "Checkbox caption for when the data clearing scope is ‘Tab’. Means: the currently active tab will be closed.")
+    static let fireDialogCloseAllTabsWindowsAfterDeleting = NSLocalizedString("fire.dialog.close.all.windows.after.deleting", value: "Close all tabs and windows after deleting.", comment: "Checkbox caption for when the data clearing scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
 
     static func fireDialogHistoryItemsSubtitle(_ count: Int) -> String {
         let template = NSLocalizedString(

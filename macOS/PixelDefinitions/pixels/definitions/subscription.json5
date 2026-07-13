@@ -795,7 +795,8 @@
                 "type": "string",
                 "description": "What caused the token to be adopted, when known",
                 "enum": ["web_restore", "vpn"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_store_privacy-pro_new_tab_page_next_steps_card_clicked": {

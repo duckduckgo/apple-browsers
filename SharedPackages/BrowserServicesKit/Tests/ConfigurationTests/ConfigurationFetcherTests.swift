@@ -386,4 +386,97 @@ final class ConfigurationFetcherTests: XCTestCase {
         XCTAssertEqual(MockURLProtocol.lastRequest?.url, expectedURL)
     }
 
+    // MARK: - Concurrency
+
+    // Regression for the ConfigurationStore.loadData use-after-free (Sentry 713934): concurrent
+    // fetches on one fetcher must not race on `store`. Under TSan this fails pre-fix, passes after.
+    func testConcurrentFetchesOnSharedFetcherDoNotRaceOnStore() async {
+        let sessionConfiguration = URLSessionConfiguration.ephemeral
+        sessionConfiguration.protocolClasses = [CannedURLProtocol.self]
+        let store = BoxedExistentialConfigurationStore(backing: LockedConfigurationBacking())
+        let fetcher = ConfigurationFetcher(store: store,
+                                           validator: NoopConfigurationValidator(),
+                                           sessionProvider: { URLSession(configuration: sessionConfiguration) },
+                                           configurationURLProvider: StaticConfigurationURLProvider())
+
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0..<500 {
+                group.addTask { try? await fetcher.fetch(.privacyConfiguration) }
+            }
+        }
+
+        XCTAssertEqual(store.loadData(for: .privacyConfiguration), CannedURLProtocol.responseData)
+        XCTAssertEqual(store.loadEtag(for: .privacyConfiguration), CannedURLProtocol.etag)
+    }
+
+}
+
+private struct StaticConfigurationURLProvider: ConfigurationURLProviding {
+    let endpoint = URL(string: "https://config.test.example")!
+    func url(for configuration: Configuration) -> URL { endpoint }
+}
+
+private struct NoopConfigurationValidator: ConfigurationValidating {
+    func validate(_ data: Data, for configuration: Configuration) throws {}
+}
+
+// Returns a fixed response with no shared mutable state, so concurrent requests can't race here.
+private final class CannedURLProtocol: URLProtocol {
+    static let responseData = Data("canned-config".utf8)
+    static let etag = "canned-etag"
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil,
+                                       headerFields: ["Etag": Self.etag])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Self.responseData)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {}
+}
+
+// Non-class protocol so the conforming struct is heap-boxed (like the real ConfigurationStore).
+private protocol ConfigurationBacking {
+    func loadData(for configuration: Configuration) -> Data?
+    func save(_ data: Data, for configuration: Configuration)
+    func loadEtag(for configuration: Configuration) -> String?
+    func saveEtag(_ etag: String, for configuration: Configuration)
+}
+
+private final class LockedConfigurationBacking: ConfigurationBacking {
+    private let lock = NSLock()
+    private var data: [Configuration: Data] = [:]
+    private var etags: [Configuration: String] = [:]
+
+    func loadData(for configuration: Configuration) -> Data? {
+        lock.lock(); defer { lock.unlock() }
+        return data[configuration]
+    }
+    func save(_ data: Data, for configuration: Configuration) {
+        lock.lock(); defer { lock.unlock() }
+        self.data[configuration] = data
+    }
+    func loadEtag(for configuration: Configuration) -> String? {
+        lock.lock(); defer { lock.unlock() }
+        return etags[configuration]
+    }
+    func saveEtag(_ etag: String, for configuration: Configuration) {
+        lock.lock(); defer { lock.unlock() }
+        etags[configuration] = etag
+    }
+}
+
+private struct BoxedExistentialConfigurationStore: ConfigurationStoring {
+    let backing: ConfigurationBacking
+
+    func loadData(for configuration: Configuration) -> Data? { backing.loadData(for: configuration) }
+    func loadEtag(for configuration: Configuration) -> String? { backing.loadEtag(for: configuration) }
+    func loadEmbeddedEtag(for configuration: Configuration) -> String? { nil }
+    func saveData(_ data: Data, for configuration: Configuration) throws { backing.save(data, for: configuration) }
+    func saveEtag(_ etag: String, for configuration: Configuration) throws { backing.saveEtag(etag, for: configuration) }
+    func fileUrl(for configuration: Configuration) -> URL { URL(fileURLWithPath: "/dev/null") }
 }

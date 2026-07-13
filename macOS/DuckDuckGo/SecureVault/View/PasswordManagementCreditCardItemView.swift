@@ -73,7 +73,7 @@ struct PasswordManagementCreditCardItemView: View {
 
                     Buttons()
                         .padding(.top, model.isInEditMode ? 12 : 10)
-                        .padding(.bottom, model.isInEditMode ? 12 : 3)
+                        .padding(.bottom, model.isInEditMode ? 12 : 1)
 
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -152,7 +152,7 @@ private struct Buttons: View {
                     model.save()
                 }
                 .disabled(!model.isDirty || !model.isCardValid)
-                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardValid))
+                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardValid, topPadding: 4, bottomPadding: 4))
                 .keyboardShortcut(.defaultAction)
 
             } else {
@@ -163,12 +163,9 @@ private struct Buttons: View {
                 Button(UserText.pmEdit) {
                     model.edit()
                 }
-
             }
-
         }
     }
-
 }
 
 private struct EditableCreditCardField: View {

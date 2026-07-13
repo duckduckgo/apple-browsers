@@ -20,6 +20,7 @@ import Foundation
 
 struct SyncPromoViewModel {
 
+    var isAppRebranded: Bool
     var touchpointType: SyncPromoManager.Touchpoint = .bookmarks
 
     var primaryButtonAction: (() -> Void)?

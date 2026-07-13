@@ -1472,6 +1472,21 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(sut.state, .onboarding(.init(type: .downloadReasonDialog(content: .mock), step: .hidden)))
     }
 
+    func testWhenResumeStepIsTailoredStepThenRestoresToThatStep() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection, .aiModelSelection, .toggleInputModeSelection]
+        let resumeStore = MockKeyValueStore()
+        let keyedResumeStore: any KeyedStoring<OnboardingStoringKeys> = resumeStore.keyedStoring()
+        keyedResumeStore.resumeStep = .aiModelSelection
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false), resumeStepStore: resumeStore)
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .aiModelDialog, step: .init(currentStep: 1, totalSteps: 2))))
+    }
+
     func makeSUT(
         currentOnboardingStep: OnboardingIntroStep = .introDialog(isReturningUser: false),
         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider(),

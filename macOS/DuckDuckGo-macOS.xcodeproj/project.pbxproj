@@ -2633,8 +2633,6 @@
 		84E9D4BC2E6B07D400E7CC5B /* FireproofDomainCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E9D4BB2E6B07D400E7CC5B /* FireproofDomainCellView.swift */; };
 		84E9D4BD2E6B07D400E7CC5B /* FireproofDomainCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E9D4BB2E6B07D400E7CC5B /* FireproofDomainCellView.swift */; };
 		84EFBCD02D817CC400706739 /* InlineSnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 84EFBCCF2D817CC400706739 /* InlineSnapshotTesting */; };
-		84F1C8CF2C7705B500716446 /* BookmarksBarMenuPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8CE2C7705B500716446 /* BookmarksBarMenuPopover.swift */; };
-		84F1C8D02C7705B500716446 /* BookmarksBarMenuPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8CE2C7705B500716446 /* BookmarksBarMenuPopover.swift */; };
 		84F1C8DE2C774D4200716446 /* NSTableViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8DD2C774D4200716446 /* NSTableViewExtension.swift */; };
 		84F1C8DF2C774D4200716446 /* NSTableViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8DD2C774D4200716446 /* NSTableViewExtension.swift */; };
 		84F950AF2F150D0200863D32 /* ApplicationTerminationDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F950AE2F150D0200863D32 /* ApplicationTerminationDecider.swift */; };
@@ -5914,7 +5912,6 @@
 		84E2FC472E0DB051000874F7 /* XCUIElementTypeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIElementTypeExtension.swift; sourceTree = "<group>"; };
 		84E4A4952E79BDDC00D6A1E7 /* FireMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireMock.swift; sourceTree = "<group>"; };
 		84E9D4BB2E6B07D400E7CC5B /* FireproofDomainCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireproofDomainCellView.swift; sourceTree = "<group>"; };
-		84F1C8CE2C7705B500716446 /* BookmarksBarMenuPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuPopover.swift; sourceTree = "<group>"; };
 		84F1C8DA2C774CA900716446 /* BookmarkListPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkListPopover.swift; sourceTree = "<group>"; };
 		84F1C8DD2C774D4200716446 /* NSTableViewExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSTableViewExtension.swift; sourceTree = "<group>"; };
 		84F950AE2F150D0200863D32 /* ApplicationTerminationDecider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationTerminationDecider.swift; sourceTree = "<group>"; };
@@ -9380,7 +9377,6 @@
 				4BE53369286912D40019DBFD /* BookmarksBarCollectionViewItem.xib */,
 				85774AFE2A713D3B00DE0561 /* BookmarksBarMenuFactory.swift */,
 				8B2C3D4E5F60718293A4B5C6 /* BookmarksBarMenuCustomPopover.swift */,
-				84F1C8CE2C7705B500716446 /* BookmarksBarMenuPopover.swift */,
 				7A1B2C3D4E5F60718293A4B5 /* BookmarksBarMenuPopoverPresenting.swift */,
 				848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */,
 				9E98C31C7349D34C0C8A569A /* BookmarksBarMenuWindow.swift */,
@@ -15164,7 +15160,6 @@
 				CA57DE500000000000000011 /* CustomizeResponsesMenuRowView.swift in Sources */,
 				CA57DE500000000000000021 /* CustomizeResponsesModalController.swift in Sources */,
 				4D5E6F708192A3B4C5D6E7F8 /* BookmarksBarMenuCustomPopover.swift in Sources */,
-				84F1C8D02C7705B500716446 /* BookmarksBarMenuPopover.swift in Sources */,
 				2B3C4D5E6F708192A3B4C5D6 /* BookmarksBarMenuPopoverPresenting.swift in Sources */,
 				7380BFFD4A203C992E79AD0B /* BookmarksBarMenuWindow.swift in Sources */,
 				3797C7A42C62C38800DA77FB /* NewTabPageCustomizationModel.swift in Sources */,
@@ -17838,7 +17833,6 @@
 				B57B12402F4CFAFD00B610F1 /* StartupMetricsBuckets.swift in Sources */,
 				B6B140882ABDBCC1004F8E85 /* HoverTrackingArea.swift in Sources */,
 				3C4D5E6F708192A3B4C5D6E7 /* BookmarksBarMenuCustomPopover.swift in Sources */,
-				84F1C8CF2C7705B500716446 /* BookmarksBarMenuPopover.swift in Sources */,
 				1A2B3C4D5E6F70819203A4B6 /* BookmarksBarMenuPopoverPresenting.swift in Sources */,
 				00D8FF2311AEAC102CCB6061 /* BookmarksBarMenuWindow.swift in Sources */,
 				BBF667FC2EE33E74003B9401 /* HomePageSetUpDependencies.swift in Sources */,

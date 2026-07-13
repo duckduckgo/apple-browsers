@@ -222,6 +222,19 @@ function isEventPattern(value) {
     return EVENT_PATH_PREFIXES.some((prefix) => withoutAnchor.startsWith(prefix.replaceAll('.', '\\.')));
 }
 
+// keyPattern fields are rendered as `/<pattern>/` in an issue's identity. Adding
+// or removing anchors (^ / $) does not change which source fields a pattern
+// matches, so anchored and unanchored forms must share one identity - otherwise
+// anchoring a pre-existing (grandfathered) pattern would read as a brand-new
+// issue. Plain (non-pattern) selectors are returned unchanged.
+function canonicalizeSelector(selector) {
+    if (selector.length >= 2 && selector.startsWith('/') && selector.endsWith('/')) {
+        const body = selector.slice(1, -1).replace(/^\^/, '').replace(/\$$/, '');
+        return `/${body}/`;
+    }
+    return selector;
+}
+
 function sortedValues(values) {
     return [...values].sort((lhs, rhs) => stableStringify(lhs).localeCompare(stableStringify(rhs)));
 }
@@ -351,7 +364,10 @@ function compareContracts(sourceDef, pixelObjs, propsDictionary, paramsDictionar
     const sourceFields = sourceContract(sourceDef, propsDictionary);
     const pixelFields = pixelContract(pixelObjs, paramsDictionary);
     const issues = new Map();
-    const addIssue = (kind, fieldPath, details) => issues.set(`${kind}|${fieldPath}`, { kind, fieldPath, details });
+    // Key issues by a canonical identity (anchor-insensitive for keyPattern
+    // selectors) so anchor-only edits are not mistaken for new issues, while the
+    // original fieldPath is kept for display.
+    const addIssue = (kind, fieldPath, details) => issues.set(`${kind}|${canonicalizeSelector(fieldPath)}`, { kind, fieldPath, details });
 
     for (const [fieldPath, sourceSchema] of sourceFields) {
         const applicablePixelFields = pixelFields.filter((field) => {

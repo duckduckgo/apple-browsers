@@ -115,6 +115,7 @@ struct ScanTabView: View {
                 QRScannerOverlay(topInset: instructionsHeight)
             } else {
                 Color(designSystemColor: .shadowSecondary).opacity(0.7)
+                    .allowsHitTesting(false)
             }
         }
     }

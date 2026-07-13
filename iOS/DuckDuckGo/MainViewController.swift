@@ -2574,17 +2574,21 @@ class MainViewController: UIViewController {
   
     var orientationPixelWorker: DispatchWorkItem?
 
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-        isUTIRotating = true
-
-        // A chrome hide/show morph left in flight by a fling just before rotating would keep scrubbing
-        // the omnibar/capsule layout each frame against mid-rotation geometry, causing a flicker.
-        // Settle it to its committed state now; the completion block resets the bars as usual.
+    /// A chrome hide/show morph left in flight by a fling just before rotating would keep scrubbing
+    /// the omnibar/capsule layout each frame against mid-rotation geometry, causing a flicker.
+    /// Settle it to its committed state now; the completion block resets the bars as usual.
+    fileprivate func cancelMorphAnimatorIfNeedded() {
         if chromeMorphAnimator.isAnimating {
             chromeMorphAnimator.cancel()
             applyBarsVisibilityState(lastChromeVisibilityPercent, postChromeVisibilityNotification: false)
         }
+    }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        isUTIRotating = true
+
+        cancelMorphAnimatorIfNeedded()
 
         let isKeyboardShowing = omniBar.isTextFieldEditing
         if isKeyboardShowing && !AppWidthObserver.shared.isPad {
@@ -2628,42 +2632,55 @@ class MainViewController: UIViewController {
             }
             self.swipeTabsCoordinator?.invalidateLayout()
             self.deferredFireOrientationPixel()
-        } completion: { _ in
-            toolbarSnapshot?.removeFromSuperview()
-
-            self.resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: isKeyboardShowing)
-
-            self.omniBar.barView.textField.suppressResignFirstResponder = false
-            if isKeyboardShowing {
-                self.omniBar.beginEditing(animated: false)
+        } completion: { [weak self] _ in
+            guard let self else {
+                assertionFailure()
+                return
             }
-
-            if self.isInMinimalChromeLayout {
-                self.viewCoordinator.constraints.toolbarBottom.constant = self.minimalChromeBottomHeight
-                if self.viewCoordinator.addressBarPosition.isBottom {
-                    self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
-                }
-            }
-
-            // Re-assert the bottom floating layout now rotation has settled (the mid-transition rebuild used stale geometry).
-            if isShowingToolbar, self.isFloatingUIEnabled, self.viewCoordinator.addressBarPosition.isBottom {
-                self.viewCoordinator.updateToolbarLayoutForAddressBarPosition(.bottom)
-                self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
-                self.view.layoutIfNeeded()
-            }
-
-            ViewHighlighter.updatePositions()
-            // iOS reframes the keyboard post-rotation with no animation, so the UTI height can only
-            // be corrected now; ease it so it settles into place instead of hard-snapping.
-            UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
-                self.recomputeNavigationBarContainerHeightIfNeeded()
-            } completion: { _ in
-                self.isUTIRotating = false
-            }
-            self.updateFloatingReturnKeyVisibility()
+            self.viewWillTransitionAnimationComplete(
+                toolbarSnapshot: toolbarSnapshot,
+                isKeyboardShowing: isKeyboardShowing,
+                isShowingToolbar: isShowingToolbar)
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
+    }
+
+    private func viewWillTransitionAnimationComplete(toolbarSnapshot: UIView?,
+                                                     isKeyboardShowing: Bool,
+                                                     isShowingToolbar: Bool) {
+        toolbarSnapshot?.removeFromSuperview()
+
+        self.resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: isKeyboardShowing)
+
+        self.omniBar.barView.textField.suppressResignFirstResponder = false
+        if isKeyboardShowing {
+            self.omniBar.beginEditing(animated: false)
+        }
+
+        if self.isInMinimalChromeLayout {
+            self.viewCoordinator.constraints.toolbarBottom.constant = self.minimalChromeBottomHeight
+            if self.viewCoordinator.addressBarPosition.isBottom {
+                self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
+            }
+        }
+
+        // Re-assert the bottom floating layout now rotation has settled (the mid-transition rebuild used stale geometry).
+        if isShowingToolbar, self.isFloatingUIEnabled, self.viewCoordinator.addressBarPosition.isBottom {
+            self.viewCoordinator.updateToolbarLayoutForAddressBarPosition(.bottom)
+            self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
+            self.view.layoutIfNeeded()
+        }
+
+        ViewHighlighter.updatePositions()
+        // iOS reframes the keyboard post-rotation with no animation, so the UTI height can only
+        // be corrected now; ease it so it settles into place instead of hard-snapping.
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
+            self.recomputeNavigationBarContainerHeightIfNeeded()
+        } completion: { _ in
+            self.isUTIRotating = false
+        }
+        self.updateFloatingReturnKeyVisibility()
     }
 
     private func resetBarsAfterTransitionAnimationIfNeeded(wasKeyboardShowing: Bool) {

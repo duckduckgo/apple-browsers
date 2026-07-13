@@ -87,10 +87,10 @@ struct OnboardingView: View {
                             switch state.type {
                             case .startOnboardingDialog(_, let dialogType):
                                 introView(dialogType: dialogType)
-                            case .browsersComparisonDialog:
-                                browsersComparisonView
-                            case .aiComparisonDialog:
-                                browsersComparisonView
+                            case .setDefaultBrowserDialog:
+                                setDefaultBrowserView
+                            case .aiIntroDialog:
+                                setDefaultBrowserView
                             case .addToDockPromoDialog:
                                 addToDockPromoView
                             case .chooseAppIconDialog:
@@ -156,7 +156,7 @@ struct OnboardingView: View {
                     isSkipped: $model.isSkipped,
                     startBrowsingAction: model.confirmSkipOnboardingAction,
                     resumeOnboardingAction: {
-                        animateBrowserComparisonViewState(isResumingOnboarding: true)
+                        animateSetDefaultBrowserViewState(isResumingOnboarding: true)
                     }
                 )
             )
@@ -172,7 +172,7 @@ struct OnboardingView: View {
                 isSkipped: $model.isSkipped,
                 restoreAction: {
                     model.restoreSyncAccountAction()
-                    animateBrowserComparisonViewState(isResumingOnboarding: false)
+                    animateSetDefaultBrowserViewState(isResumingOnboarding: false)
                 },
                 skipAction: {
                     model.restorePromptSkipAction()
@@ -192,7 +192,7 @@ struct OnboardingView: View {
                 showCTA: $model.introState.showIntroButton,
                 isSkipped: $model.isSkipped,
                 continueAction: {
-                    animateBrowserComparisonViewState(isResumingOnboarding: false)
+                    animateSetDefaultBrowserViewState(isResumingOnboarding: false)
                 },
                 skipAction: model.skipOnboardingAction,
                 onSkipOnboardingPresented: {
@@ -204,11 +204,11 @@ struct OnboardingView: View {
         }
     }
 
-    private var browsersComparisonView: some View {
+    private var setDefaultBrowserView: some View {
         BrowsersComparisonContent(
             title: UserText.Onboarding.BrowsersComparison.title,
-            animateText: $model.browserComparisonState.animateComparisonText,
-            showContent: $model.browserComparisonState.showComparisonButton,
+            animateText: $model.setDefaultBrowserState.animateComparisonText,
+            showContent: $model.setDefaultBrowserState.showComparisonButton,
             isSkipped: $model.isSkipped,
             setAsDefaultBrowserAction: model.setDefaultBrowserAction,
             cancelAction: model.cancelSetDefaultBrowserAction
@@ -280,7 +280,7 @@ struct OnboardingView: View {
         }
     }
 
-    private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
+    private func animateSetDefaultBrowserViewState(isResumingOnboarding: Bool) {
         // Hide content of Intro dialog before animating
         model.introState.showIntroViewContent = false
 
@@ -294,14 +294,14 @@ struct OnboardingView: View {
             withAnimation(animation) {
                 model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
             } completion: {
-                model.browserComparisonState.animateComparisonText = true
+                model.setDefaultBrowserState.animateComparisonText = true
             }
         } else {
             withAnimation(animation) {
                 model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
-                model.browserComparisonState.animateComparisonText = true
+                model.setDefaultBrowserState.animateComparisonText = true
             }
         }
     }
@@ -347,8 +347,8 @@ extension OnboardingView.ViewState.Intro {
 
     enum IntroType: Equatable {
         case startOnboardingDialog(content: OnboardingIntroStepContent, type: IntroDialogType)
-        case browsersComparisonDialog(content: OnboardingBrowserComparisonContent)
-        case aiComparisonDialog(content: OnboardingAIComparisonContent)
+        case setDefaultBrowserDialog(content: OnboardingComparisonContent)
+        case aiIntroDialog(content: OnboardingComparisonContent)
         case addToDockPromoDialog(content: OnboardingAddToDockContent)
         case chooseAppIconDialog(content: OnboardingAppIconColorContent)
         case chooseAddressBarPositionDialog(content: OnboardingAddressBarPositionContent)
@@ -413,7 +413,7 @@ struct OnboardingView_Previews: PreviewProvider {
     class MockOnboardingManager: OnboardingManaging {
         let currentOnboardingFlow: OnboardingFlowType = .default
 
-        let onboardingSteps: [OnboardingIntroStep] = [.introDialog(isReturningUser: true), .browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection, .searchExperienceSelection]
+        let onboardingSteps: [OnboardingIntroStep] = [.introDialog(isReturningUser: true), .setDefaultBrowser, .addToDockPromo, .appIconSelection, .addressBarPositionSelection, .searchExperienceSelection]
 
         let userHasSeenAddToDockPromoDuringOnboarding: Bool = false
 

@@ -61,7 +61,7 @@ struct StartupOnboardingDecision {
          resumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil) {
         let resumeStepStore: any KeyedStoring<OnboardingStoringKeys> = if let resumeStepStore { resumeStepStore } else { UserDefaults.app.keyedStoring() }
         switch resumeStepStore.resumeStep {
-        case .browserComparison, .aiComparison, .addToDockPromo, .appIconSelection,
+        case .setDefaultBrowser, .aiIntro, .addToDockPromo, .appIconSelection,
              .addressBarPositionSelection, .searchExperienceSelection,
              .duckAIQuerySelection, .interludeDuckAI:
             shouldShowOnboarding = true

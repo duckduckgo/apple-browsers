@@ -1,0 +1,403 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent at the end of a VPN connection journey, covering the browser start, controller start, OAuth, and tunnel start steps, until the connection succeeds, fails, or is orphaned by app/extension termination and resolved (or timed out) on a later launch.",
+    "$comment": "{\"owners\":[\"samsymons\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "macos-vpn-connection" }, "version": { "const": "1.2.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, PIR agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
+                    "enum": [
+                        "DuckDuckGo",
+                        "DuckDuckGo Alpha",
+                        "DuckDuckGo Review",
+                        "DuckDuckGo App Store",
+                        "DuckDuckGo VPN",
+                        "DuckDuckGo VPN Alpha",
+                        "DuckDuckGo VPN Review",
+                        "DuckDuckGo VPN App Store",
+                        "DuckDuckGo Personal Information Removal",
+                        "DuckDuckGo Personal Information Removal App Store",
+                        "NetworkProtectionAppExtension",
+                        "com.duckduckgo.macos.vpn.network-extension",
+                        "com.duckduckgo.macos.vpn.network-extension.debug",
+                        "com.duckduckgo.macos.vpn.network-extension.review",
+                        "com.duckduckgo.macos.vpn.network-extension.alpha",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+                    ]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["macOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["vpn-connection"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Reason accompanying an UNKNOWN outcome. `partial_data` = a pending flow was completed after app/extension launch without enough captured data to classify it; `timeout` = the connection did not complete within the 15 minute connection window; `retried` = a still-pending connection flow was superseded by a newer connection attempt before it completed.",
+                                    "enum": ["partial_data", "timeout", "retried"]
+                                },
+                                "extension_type": {
+                                    "type": "string",
+                                    "description": "Which network extension served the connection. `app` = the in-app (App Store) extension; `system` = the system extension; `unknown` = not yet determined.",
+                                    "enum": ["app", "system", "unknown"]
+                                },
+                                "startup_method": {
+                                    "type": "string",
+                                    "description": "How the tunnel was started. `automatic_on_demand` = started automatically by an on-demand rule; `manual_by_main_app` = started manually from the main app; `manual_by_the_system` = started manually by the system.",
+                                    "enum": ["automatic_on_demand", "manual_by_main_app", "manual_by_the_system"]
+                                },
+                                "is_setup": {
+                                    "type": "string",
+                                    "description": "Whether this connection is part of first-time VPN setup. `yes` = the VPN was not yet configured and this connection triggered setup (iOS: no tunnel configuration existed yet; macOS: onboarding not yet complete); `no` = the VPN was already set up before this connection began; `unknown` if it could not be determined.",
+                                    "enum": ["yes", "no", "unknown"]
+                                },
+                                "onboarding_status": {
+                                    "type": "string",
+                                    "description": "VPN onboarding state at connection time (macOS). `needs_to_allow_extension` and `needs_to_allow_vpn_configuration` mean onboarding was still incomplete; `completed` means onboarding had finished; `unknown` if it could not be determined.",
+                                    "enum": ["needs_to_allow_extension", "needs_to_allow_vpn_configuration", "completed", "unknown"]
+                                },
+                                "latency_ms": {
+                                    "type": "integer",
+                                    "description": "Overall time taken to establish the connection, in milliseconds."
+                                },
+                                "browser_start_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Time taken by the browser start step, in milliseconds."
+                                },
+                                "controller_start_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Time taken by the controller start step, in milliseconds."
+                                },
+                                "oauth_latency_ms": { "type": "integer", "description": "Time taken by the OAuth step, in milliseconds." },
+                                "tunnel_start_latency_ms": {
+                                    "type": "integer",
+                                    "description": "Time taken by the tunnel start step, in milliseconds."
+                                },
+                                "browser_start_error": {
+                                    "type": "object",
+                                    "description": "Shared wide-event error details for nested per-step errors (uses `description` rather than `error_description`)",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "controller_start_error": {
+                                    "type": "object",
+                                    "description": "Shared wide-event error details for nested per-step errors (uses `description` rather than `error_description`)",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "oauth_error": {
+                                    "type": "object",
+                                    "description": "Shared wide-event error details for nested per-step errors (uses `description` rather than `error_description`)",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "tunnel_start_error": {
+                                    "type": "object",
+                                    "description": "Shared wide-event error details for nested per-step errors (uses `description` rather than `error_description`)",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "error": {
+                                    "type": "object",
+                                    "description": "Shared wide-event error details",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "The top level error domain" },
+                                        "code": { "type": "integer", "description": "The top level error code" },
+                                        "error_description": { "type": "string", "description": "Additional error description" },
+                                        "underlying_domain": { "type": "string", "description": "The underlying error domain" },
+                                        "underlying_code": { "type": "integer", "description": "The underlying error code" },
+                                        "underlying_domain2": {
+                                            "type": "string",
+                                            "description": "The second nested underlying error domain"
+                                        },
+                                        "underlying_code2": { "type": "integer", "description": "The second nested underlying error code" },
+                                        "underlying_domain3": {
+                                            "type": "string",
+                                            "description": "The third nested underlying error domain"
+                                        },
+                                        "underlying_code3": { "type": "integer", "description": "The third nested underlying error code" },
+                                        "underlying_domain4": {
+                                            "type": "string",
+                                            "description": "The fourth nested underlying error domain"
+                                        },
+                                        "underlying_code4": { "type": "integer", "description": "The fourth nested underlying error code" },
+                                        "underlying_domain5": {
+                                            "type": "string",
+                                            "description": "The fifth nested underlying error domain"
+                                        },
+                                        "underlying_code5": { "type": "integer", "description": "The fifth nested underlying error code" },
+                                        "underlying_domain6": {
+                                            "type": "string",
+                                            "description": "The sixth nested underlying error domain"
+                                        },
+                                        "underlying_code6": { "type": "integer", "description": "The sixth nested underlying error code" },
+                                        "underlying_domain7": {
+                                            "type": "string",
+                                            "description": "The seventh nested underlying error domain"
+                                        },
+                                        "underlying_code7": {
+                                            "type": "integer",
+                                            "description": "The seventh nested underlying error code"
+                                        },
+                                        "underlying_domain8": {
+                                            "type": "string",
+                                            "description": "The eighth nested underlying error domain"
+                                        },
+                                        "underlying_code8": { "type": "integer", "description": "The eighth nested underlying error code" },
+                                        "underlying_domain9": {
+                                            "type": "string",
+                                            "description": "The ninth nested underlying error domain"
+                                        },
+                                        "underlying_code9": { "type": "integer", "description": "The ninth nested underlying error code" }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

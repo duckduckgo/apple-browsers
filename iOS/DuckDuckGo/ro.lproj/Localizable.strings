@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Am înțeles";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Ești deja asociat cu acest cont pe ambele dispozitive.";
+"alert.sync-already-paired-with-account-description" = "Aceste dispozitive sunt deja conectate la Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Deja asociat";
+"alert.sync-already-paired-with-account-title" = "Deja sincronizat.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Unele semne de carte sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Sincronizarea a fost anulată de pe celălalt dispozitiv.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "În browser, accesează duck.ai, Accesează Setări, apoi din secțiunea „Sync & Backup” selectează „Activează” și apoi „Sincronizează cu un alt dispozitiv”.";
+"alert.sync-code-only-compatible-with-duckai-description" = "În celălalt browser, accesează Duck.ai, mergi la Setări, apoi, din secțiunea „Sync & Backup”, selectează „Activează” și apoi „Sincronizează cu un alt dispozitiv”.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Scanează acest cod din Setările Duck.ai.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Scanează acest cod folosind un alt browser decât DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Unele parole sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Setări de sincronizare";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Încearcă din nou.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Sincronizarea nu a reușit.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Sincronizează acest dispozitiv dintr-un browser DuckDuckGo deja conectat pe un alt dispozitiv.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Sincronizarea este întreruptă";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Am înțeles";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Comută sincronizarea";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup sunt temporar indisponibile.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Acest cod nu este acceptat în versiunea existentă a aplicației.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Actualizează browserul DuckDuckGo și încearcă din nou.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Nu se poate elimina acest dispozitiv din Sincronizare și backup.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Ne pare rău, acest cod este nevalid. Asigură-te că ai completat sau scanat codul corect.";
+"alert.unable-to-scan-qr-code-description" = "Asigură-te că ai completat sau scanat codul corect.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Acesta nu este un cod de sincronizare corect.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nu se poate conecta la server.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Nu se poate sincroniza cu un alt dispozitiv.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nu se pot opri Sincronizare și backup.";
@@ -1410,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Atinge **Adaugă un control** în partea de jos a ecranului";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Nou";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Confirmă";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Vom încerca să selectăm cele mai private opțiuni disponibile privind modulele cookie și să le închidem pentru tine. Dacă nu au opțiuni de renunțare, te vom scuti de un click și vom accepta aceste module cookie pentru tine.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Gestionează sau acceptă modulele cookie pentru mine";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Le voi gestiona în continuare personal";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Te-ai săturat de ferestrele pop-up privind modulele cookie care nu îți dau pace?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Te putem scuti de un click și putem accepta aceste module cookie pentru tine.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Accept modulele cookie fără opțiune de renunțare pentru mine";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Le voi gestiona în continuare personal";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Te-ai săturat de ferestrele pop-up cu module cookie care nu îți permit să renunți la ele?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Poți oricând să modifici ulterior din\n**Setări** > **Protecție pentru ferestre pop-up aferente modulelor cookie**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Trimite întotdeauna rapoarte de cădere";
@@ -4781,7 +4822,7 @@
 "sync.remove-device.title" = "Elimini dispozitivul?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Dispozitivul a fost sincronizat!";
+"sync.simplified.device-synced.toast" = "A fost adăugat un dispozitiv nou!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup activat";

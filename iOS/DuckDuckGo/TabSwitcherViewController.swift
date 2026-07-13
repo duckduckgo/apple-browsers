@@ -92,8 +92,6 @@ class TabSwitcherViewController: UIViewController {
 
     }
 
-    @IBOutlet weak var toolbar: UIToolbar!
-
     private(set) var chrome: TabSwitcherChrome!
 
     private(set) var pagingScrollView: UIScrollView!
@@ -183,26 +181,25 @@ class TabSwitcherViewController: UIViewController {
         FireModeCapability.create()
     }
 
-    required init?(coder: NSCoder,
-                   bookmarksDatabase: CoreDataDatabase,
-                   syncService: DDGSyncing,
-                   featureFlagger: FeatureFlagger,
-                   favicons: FaviconManaging,
-                   tabManager: TabManager,
-                   aiChatSettings: AIChatSettingsProvider,
-                   appSettings: AppSettings,
-                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-                   privacyStats: PrivacyStatsProviding,
-                   productSurfaceTelemetry: ProductSurfaceTelemetry,
-                   historyManager: HistoryManaging,
-                   fireproofing: Fireproofing,
-                   keyValueStore: ThrowingKeyValueStoring,
-                   tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
-                   daxDialogsManager: DaxDialogsManaging,
-                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State,
-                   duckAIGridContentProvider: DuckAIGridContentProviding?,
-                   duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?,
-                   floatingUIManaging: FloatingUIManaging? = nil) {
+    init(bookmarksDatabase: CoreDataDatabase,
+         syncService: DDGSyncing,
+         featureFlagger: FeatureFlagger,
+         favicons: FaviconManaging,
+         tabManager: TabManager,
+         aiChatSettings: AIChatSettingsProvider,
+         appSettings: AppSettings,
+         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+         privacyStats: PrivacyStatsProviding,
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         historyManager: HistoryManaging,
+         fireproofing: Fireproofing,
+         keyValueStore: ThrowingKeyValueStoring,
+         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
+         daxDialogsManager: DaxDialogsManaging,
+         initialTrackerCountState: TabSwitcherTrackerCountViewModel.State,
+         duckAIGridContentProvider: DuckAIGridContentProviding?,
+         duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?,
+         floatingUIManaging: FloatingUIManaging? = nil) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -234,11 +231,12 @@ class TabSwitcherViewController: UIViewController {
                                                                  innerHorizontalPadding: 2),
                 scrollProgress: nil,
                 isScrollProgressDriven: true)
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
     }
 
+    @available(*, unavailable)
     required init?(coder: NSCoder) {
-        fatalError("Not implemented")
+        fatalError("init(coder:) has not been implemented")
     }
     
     private func setupModeToggle() {
@@ -302,12 +300,7 @@ class TabSwitcherViewController: UIViewController {
     private func makeChrome() -> TabSwitcherChrome {
         let isFloating = floatingUIManaging.isFloatingUIEnabled
         let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingUIEnabled: isFloating,
-                                                         toolbar: toolbar,
                                                          appSettings: appSettings)
-        if isFloating {
-            // The storyboard toolbar is unused in floating mode; the chrome provides its own bars.
-            toolbar?.removeFromSuperview()
-        }
         return chrome
     }
 
@@ -651,24 +644,12 @@ class TabSwitcherViewController: UIViewController {
         return .init(newCount: newCount, existingCount: tabs.count - newCount, urls: urls)
     }
 
-    @IBAction func onAddPressed(_ sender: UIBarButtonItem) {
-        addNewTab()
-    }
-
-    @IBAction func onDonePressed(_ sender: UIBarButtonItem) {
-        doneAction()
-    }
-
     func doneAction() {
         if isEditing {
             transitionFromMultiSelect()
         } else {
             dismissIfPossible()
         }
-    }
-
-    @IBAction func onFirePressed(sender: AnyObject) {
-        burn(sender: sender)
     }
 
     func forgetAll(_ fireRequest: FireRequest) {

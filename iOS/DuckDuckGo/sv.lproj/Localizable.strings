@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Jag förstår";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Du är redan kopplad till detta konto på båda enheterna.";
+"alert.sync-already-paired-with-account-description" = "Dessa enheter är redan anslutna till Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Redan kopplad";
+"alert.sync-already-paired-with-account-title" = "Redan synkroniserat.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Vissa bokmärken är felaktigt formaterade eller för långa och synkroniserades inte.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Synkroniseringen avbröts från din andra enhet.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Gå till duck.ai i din webbläsare, öppna Inställningar och under ”Sync & Backup” väljer du först ”Slå på” och sedan ”Synka med en annan enhet”.";
+"alert.sync-code-only-compatible-with-duckai-description" = "Gå till Duck.ai i din andra webbläsare och öppna Inställningar. Under Sync & Backup väljer du först Aktivera och sedan Synkronisera med en annan enhet.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Skanna den här koden i Duck.ai-inställningarna.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Skanna den här koden med en annan webbläsare än DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Vissa lösenord är felaktigt formaterade eller för långa och synkroniserades inte.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Synkronisera inställningar";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Försök igen.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Synkroniseringen misslyckades.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Synkronisera den här enheten från en redan ansluten DuckDuckGo-webbläsare på en annan enhet.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Synkroniseringen är pausad";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Jag förstår";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Byt synkronisering";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup är inte tillgängligt just nu.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Den här koden stöds inte i den nuvarande appversionen.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Uppdatera DuckDuckGo-webbläsaren och försök igen.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Det gick inte att ta bort denna enhet från synkronisering och säkerhetskopiering.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Denna kod är tyvärr ogiltig. Kontrollera att rätt kod har angetts eller skannats.";
+"alert.unable-to-scan-qr-code-description" = "Kontrollera att rätt kod har angetts eller skannats.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Det här är inte en giltig synkroniseringskod.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Det gick inte att ansluta till servern.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Det gick inte att synkronisera med en annan enhet.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Det gick inte att stänga av synkronisering och säkerhetskopiering.";
@@ -1410,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Tryck på **Lägg till en kontroll** längst ned på skärmen";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Ny";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Bekräfta";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Vi kommer att försöka välja de mest privata cookiealternativen som finns tillgängliga och stänga dessa åt dig. Om de inte har alternativ för att välja bort, sparar vi ett klick för dig och accepterar dessa cookies åt dig.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Hantera eller acceptera cookies åt mig";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Jag fortsätter att hantera dem själv";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Är du trött på att ständigt se popup-fönster för cookies?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Vi kan spara dig ett klick och acceptera dessa cookies åt dig.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Acceptera cookies som inte kan väljas bort åt mig";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Jag fortsätter att hantera dem själv";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Trött på popup-fönster för cookies som inte låter dig tacka nej?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Du kan alltid justera det här senare i\n**Inställningar** > **Skydd mot popup-fönster för cookies**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Skicka alltid kraschrapporter";
@@ -4781,7 +4822,7 @@
 "sync.remove-device.title" = "Vill du ta bort enheten?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Enheten har synkroniserats!";
+"sync.simplified.device-synced.toast" = "Ny enhet tillagd!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup aktiverad";

@@ -132,7 +132,7 @@ struct CookiePopupProtectionOptInView: View {
 
                     HStack(spacing: 8) {
                         BadgeView(text: UserText.cookiePopupProtectionOptInBadge)
-                        Text(UserText.cookiePopupProtectionOptInHeader.uppercased())
+                        Text(verbatim: "DuckDuckGo".uppercased())
                             .font(.system(size: 13, weight: .semibold))
                             .tracking(0.6)
                             .foregroundColor(Color(designSystemColor: .textSecondary))

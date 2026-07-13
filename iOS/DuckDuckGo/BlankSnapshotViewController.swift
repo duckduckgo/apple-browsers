@@ -133,7 +133,7 @@ class BlankSnapshotViewController: UIViewController {
 
     private func configureTabBar() {
         // featureFlagger / aiChatSettings intentionally nil — the Duck.ai pill stays hidden on the snapshot overlay.
-        let controller = TabsBarViewController.createFromXib()
+        let controller = TabsBarViewController.create()
         controller.view.frame = CGRect(x: 0, y: 24, width: view.frame.width, height: 40)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(controller.view)

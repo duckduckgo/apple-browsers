@@ -147,6 +147,68 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
 
         XCTAssertEqual(height, 70, accuracy: 0.001)
     }
+
+    func testWhenFloatingBottomAddressBarAndNotMinimalChromeThenOmnibarIsHostedInToolbar() {
+        XCTAssertTrue(FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .bottom,
+            isUnifiedToggleInputVisible: false,
+            isMinimalChromeLayout: false
+        ))
+    }
+
+    func testWhenMinimalChromeThenBottomOmnibarIsNotHostedInToolbar() {
+        // The toolbar is hidden in minimal chrome, so hosting the omnibar in it would hide the bar.
+        XCTAssertFalse(FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .bottom,
+            isUnifiedToggleInputVisible: false,
+            isMinimalChromeLayout: true
+        ))
+    }
+
+    func testWhenTopAddressBarThenOmnibarIsNotHostedInToolbarRegardlessOfMinimalChrome() {
+        for isMinimalChromeLayout in [false, true] {
+            XCTAssertFalse(FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+                isFloatingUIEnabled: true,
+                addressBarPosition: .top,
+                isUnifiedToggleInputVisible: false,
+                isMinimalChromeLayout: isMinimalChromeLayout
+            ))
+        }
+    }
+}
+
+final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
+
+    private func glassViewCount(in view: UIView) -> Int {
+        view.subviews.filter { $0 is UIVisualEffectView }.count
+            + view.subviews.reduce(0) { $0 + glassViewCount(in: $1) }
+    }
+
+    func testWhenFloatingMinimalChromeBarEnabledThenLeadingAndTrailingGlassGroupsAreAddedAndRemoved() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 700, height: 60)
+
+        // The address bar field already carries its own glass; enabling adds the two button groups.
+        let baseline = glassViewCount(in: barView)
+
+        barView.setFloatingMinimalChromeBar(true)
+        XCTAssertEqual(glassViewCount(in: barView), baseline + 2)
+
+        barView.setFloatingMinimalChromeBar(false)
+        XCTAssertEqual(glassViewCount(in: barView), baseline)
+    }
+
+    func testWhenFloatingUIDisabledThenMinimalChromeBarAddsNoGlassGroups() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        barView.frame = CGRect(x: 0, y: 0, width: 700, height: 60)
+
+        let baseline = glassViewCount(in: barView)
+        barView.setFloatingMinimalChromeBar(true)
+
+        XCTAssertEqual(glassViewCount(in: barView), baseline)
+    }
 }
 
 final class FloatingDomainCapsuleControllerTests: XCTestCase {

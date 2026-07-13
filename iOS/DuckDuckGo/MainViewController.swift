@@ -61,7 +61,7 @@ struct StartupOnboardingDecision {
          resumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil) {
         let resumeStepStore: any KeyedStoring<OnboardingStoringKeys> = if let resumeStepStore { resumeStepStore } else { UserDefaults.app.keyedStoring() }
         switch resumeStepStore.resumeStep {
-        case .browserComparison, .aiComparison, .addToDockPromo, .appIconSelection,
+        case .setDefaultBrowser, .aiIntro, .addToDockPromo, .appIconSelection,
              .addressBarPositionSelection, .searchExperienceSelection,
              .duckAIQuerySelection, .interludeDuckAI:
             shouldShowOnboarding = true
@@ -975,10 +975,9 @@ class MainViewController: UIViewController {
     func loadTabsBarIfNeeded() {
         guard isPad else { return }
 
-        let controller = TabsBarViewController.createFromXib()
+        let controller = TabsBarViewController.create()
 
         addChild(controller)
-        controller.view.frame = viewCoordinator.tabBarContainer.bounds
         controller.delegate = self
         controller.historyManager = historyManager
         controller.fireproofing = fireproofing
@@ -988,7 +987,14 @@ class MainViewController: UIViewController {
         controller.tabManager = tabManager
         controller.daxDialogsManager = daxDialogsManager
         controller.fireModeCapability = fireModeCapability
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
         viewCoordinator.tabBarContainer.addSubview(controller.view)
+        NSLayoutConstraint.activate([
+            controller.view.leadingAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.trailingAnchor),
+            controller.view.topAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.topAnchor),
+            controller.view.bottomAnchor.constraint(equalTo: viewCoordinator.tabBarContainer.bottomAnchor),
+        ])
         tabsBarController = controller
         controller.didMove(toParent: self)
         bindAIChatChromeChipToCurrentTab()
@@ -2572,6 +2578,14 @@ class MainViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
         isUTIRotating = true
 
+        // A chrome hide/show morph left in flight by a fling just before rotating would keep scrubbing
+        // the omnibar/capsule layout each frame against mid-rotation geometry, causing a flicker.
+        // Settle it to its committed state now; the completion block resets the bars as usual.
+        if chromeMorphAnimator.isAnimating {
+            chromeMorphAnimator.cancel()
+            applyBarsVisibilityState(lastChromeVisibilityPercent, postChromeVisibilityNotification: false)
+        }
+
         let isKeyboardShowing = omniBar.isTextFieldEditing
         if isKeyboardShowing && !AppWidthObserver.shared.isPad {
             omniBar.barView.textField.suppressResignFirstResponder = true
@@ -2629,6 +2643,13 @@ class MainViewController: UIViewController {
                 if self.viewCoordinator.addressBarPosition.isBottom {
                     self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
                 }
+            }
+
+            // Re-assert the bottom floating layout now rotation has settled (the mid-transition rebuild used stale geometry).
+            if isShowingToolbar, self.isFloatingUIEnabled, self.viewCoordinator.addressBarPosition.isBottom {
+                self.viewCoordinator.updateToolbarLayoutForAddressBarPosition(.bottom)
+                self.currentTab?.updateWebViewBottomAnchor(for: self.currentBarsVisibility)
+                self.view.layoutIfNeeded()
             }
 
             ViewHighlighter.updatePositions()
@@ -2741,15 +2762,20 @@ class MainViewController: UIViewController {
         newTabPageViewController?.widthChanged()
     }
     
-    private(set) var isInMinimalChromeLayout: Bool = false
+    /// Single source of truth lives on the coordinator; mutated via `setMinimalChromeMode(_:)`.
+    var isInMinimalChromeLayout: Bool {
+        viewCoordinator.isInMinimalChromeLayout
+    }
 
     var isUsingSingleBar: Bool {
         AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
     }
 
     private func setMinimalChromeMode(_ enabled: Bool) {
-        isInMinimalChromeLayout = enabled
+        viewCoordinator.setMinimalChromeLayout(enabled)
         viewCoordinator.omniBar.isExpandedPhone = enabled
+        // Minimal chrome hides the toolbar capsule, so the single bar renders its own glass.
+        viewCoordinator.omniBar.barView.setFloatingMinimalChromeBar(enabled && isFloatingUIEnabled)
     }
 
     private func applyLargeWidth() {
@@ -2776,6 +2802,11 @@ class MainViewController: UIViewController {
         viewCoordinator.navigationBarContainer.transform = .identity
         viewCoordinator.omniBar.barView.setLayoutMode(.compact, animated: false)
         viewCoordinator.resetMinimalChromeLayout()
+        // Minimal chrome detached the bottom omnibar from the toolbar; fully rebuild the bottom layout
+        // so it returns to the toolbar capsule correctly hosted (top is never toolbar-hosted).
+        if isFloatingUIEnabled, appSettings.currentAddressBarPosition.isBottom {
+            viewCoordinator.updateToolbarLayoutForAddressBarPosition(.bottom)
+        }
         currentTab?.borderView.isBottomVisible = true
     }
 
@@ -2784,6 +2815,9 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbar.isHidden = true
         viewCoordinator.constraints.toolbarBottom.constant = minimalChromeBottomHeight
         setMinimalChromeMode(true)
+        // The toolbar is now hidden, so move a toolbar-hosted bottom omnibar back to the nav container.
+        let didDetachOmnibarFromToolbar = viewCoordinator.isOmnibarInToolbar
+        viewCoordinator.returnOmnibarToNavigationContainerIfNeeded()
         viewCoordinator.omniBar.enterPhoneState()
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
@@ -2795,6 +2829,16 @@ class MainViewController: UIViewController {
         currentTab?.borderView.isBottomVisible = appSettings.currentAddressBarPosition.isBottom
 
         swipeTabsCoordinator?.isEnabled = true
+
+        // Detaching the shared bar view from the toolbar leaves it orphaned; the navigation `OmniBarCell`
+        // only re-adds it via its `omniBar` didSet, so reload the swipe tabs now to re-host it rather
+        // than relying on the deferred refresh (which can leave the address bar missing after rotation).
+        if didDetachOmnibarFromToolbar {
+            swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel)
+        }
+
+        // Refresh the obscured inset so moving the bar top/bottom in landscape updates it immediately.
+        currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
     }
 
     @discardableResult
@@ -3979,7 +4023,16 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
-        FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+        // Minimal chrome hides the toolbar: reserve the single bar's height only for a bottom address
+        // bar (reclaimed as it scrolls away); a top address bar leaves just the safe area.
+        if isInMinimalChromeLayout {
+            guard viewCoordinator.addressBarPosition.isBottom else {
+                return view.safeAreaInsets.bottom
+            }
+            let clampedPercent = max(0, min(1, barsVisibilityPercent))
+            return max(barsMaxHeight * clampedPercent, view.safeAreaInsets.bottom)
+        }
+        return FloatingUILayoutPolicy.webViewBottomObscuredHeight(
             barsVisibilityPercent: barsVisibilityPercent,
             toolbarSlotHeight: floatingToolbarSlotHeight,
             bottomCapsuleObscuredHeight: floatingBottomCapsuleObscuredHeight,
@@ -3994,12 +4047,15 @@ extension MainViewController: BrowserChromeDelegate {
                      right: 0)
     }
 
-    /// Height (from the screen top) obscured by the top chrome. Content rests below the status bar,
-    /// and below the omnibar too when the address bar is at the top. Constant for now (doesn't yet
-    /// shrink to the top capsule as the omnibar hides on scroll).
+    /// Top region obscured by chrome: safe area, plus the omnibar for a top address bar. In minimal
+    /// chrome the top bar scrolls off, so its portion is reclaimed as it hides.
     private func floatingWebViewTopObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
         let safeAreaTop = view.safeAreaInsets.top
         guard appSettings.currentAddressBarPosition == .top else { return safeAreaTop }
+        if isInMinimalChromeLayout {
+            let clampedPercent = max(0, min(1, barsVisibilityPercent))
+            return safeAreaTop + omniBar.barView.expectedHeight * clampedPercent
+        }
         return safeAreaTop + omniBar.barView.expectedHeight
     }
 

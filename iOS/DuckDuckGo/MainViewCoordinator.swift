@@ -72,6 +72,7 @@ class MainViewCoordinator {
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
     private var isFloatingUIEnabled = false
+    private(set) var isInMinimalChromeLayout = false
 
     var isNavigationBarContainerBottomKeyboardBased: Bool {
         isNavBarContainerBottomKeyboardBased
@@ -83,6 +84,10 @@ class MainViewCoordinator {
 
     func setFloatingUIEnabled(_ enabled: Bool) {
         isFloatingUIEnabled = enabled
+    }
+
+    func setMinimalChromeLayout(_ enabled: Bool) {
+        isInMinimalChromeLayout = enabled
     }
 
     // The default after creating the hiearchy is top
@@ -166,7 +171,8 @@ class MainViewCoordinator {
             guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
                 isFloatingUIEnabled: isFloatingUIEnabled,
                 addressBarPosition: position,
-                isUnifiedToggleInputVisible: isUnifiedToggleInputVisible
+                isUnifiedToggleInputVisible: isUnifiedToggleInputVisible,
+                isMinimalChromeLayout: isInMinimalChromeLayout
             ) else {
                 toolbar.setOmnibarView(nil, height: 0)
                 constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
@@ -194,7 +200,8 @@ class MainViewCoordinator {
         guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
             isFloatingUIEnabled: isFloatingUIEnabled,
             addressBarPosition: addressBarPosition,
-            isUnifiedToggleInputVisible: isUnifiedToggleInputVisible
+            isUnifiedToggleInputVisible: isUnifiedToggleInputVisible,
+            isMinimalChromeLayout: isInMinimalChromeLayout
         ) else { return }
         guard !toolbar.isHostingOmnibarView(omniBar.barView) else { return }
 
@@ -312,7 +319,14 @@ class MainViewCoordinator {
     }
 
     func ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded() {
-        guard isFloatingUIEnabled, addressBarPosition.isBottom, isOmnibarInToolbar else { return }
+        guard isFloatingUIEnabled, addressBarPosition.isBottom else { return }
+        returnOmnibarToNavigationContainerIfNeeded()
+    }
+
+    /// Detaches the bottom omnibar from the toolbar back into the nav container (used by minimal
+    /// chrome, where the toolbar is hidden, and the unified toggle input flow).
+    func returnOmnibarToNavigationContainerIfNeeded() {
+        guard isOmnibarInToolbar else { return }
         toolbar.setOmnibarView(nil, height: 0)
         constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
         navigationBarContainer.isHidden = false

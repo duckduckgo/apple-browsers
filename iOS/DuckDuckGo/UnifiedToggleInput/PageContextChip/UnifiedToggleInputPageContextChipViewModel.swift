@@ -56,10 +56,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     private(set) var attachedContext: AIChatPageContext?
     private var attachedURL: URL?
     private var originatingURL: URL?
-    /// Whether the current attachment is waiting to be included in a prompt or has already been
-    /// delivered. Presentation-only: this is set solely by what the session state pushes in via
-    /// `setAttached(_:deliveryState:)` — the chip never decides delivery itself. The session state
-    /// owns the pending→delivered transition and re-pushes `.delivered` on submit.
+    /// Presentation-only pending/delivered flag; set solely by `setAttached`, never decided by the chip.
     private var attachmentDeliveryState: PageContextAttachmentDeliveryState = .pendingSubmit
     private var isShowingAttachAffordance = false
     private var cancellables = Set<AnyCancellable>()

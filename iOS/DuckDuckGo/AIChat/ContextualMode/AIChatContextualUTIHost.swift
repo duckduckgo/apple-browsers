@@ -42,8 +42,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     var onAttachRequested: (() -> Void)?
     var onRemoveRequested: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
-    /// Fires on every prompt delivery (first and follow-up) so the session state can mark the
-    /// attached context delivered and re-render the chip. The chip no longer hides itself.
+    /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
 
@@ -144,9 +143,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.observeChatUpdates(publisher)
     }
 
-    /// Called when a prompt that carried page context has been delivered. Routes through the
-    /// session state (via `onPromptDelivered`), which owns the pending→delivered transition and
-    /// re-renders the chip — the chip is no longer told to hide itself directly.
+    /// Called when a prompt carrying page context is delivered; routes to the session state via `onPromptDelivered`.
     func notifyPromptDelivered() {
         onPromptDelivered?()
     }

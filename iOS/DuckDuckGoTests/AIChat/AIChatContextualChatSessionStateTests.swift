@@ -1040,125 +1040,115 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     /// not produce any delivery at all, so the chip stays untouched in its post-submit `.delivered`
     /// state.
     func testLateAutoAttachEchoAfterUTISubmissionDoesNotResurrectChip() {
-        // Given - auto-attach ON, UTI active, chip attached and submitted via UTI
+        // Given
         sessionState.updateUnifiedToggleInputActive(true)
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
         sessionState.beginChatForUTISubmission()
         XCTAssertEqual(sessionState.frontendState, .chatWithInitialContext)
 
-        // When - a second, late context emission arrives for the same page after submit, with no
-        // navigation in between (e.g. a JS auto-update as the DOM settles)
+        // When
         let delivered = utiDeliveryEffects {
             sessionState.updateContext(makeTestContext(title: "Article (updated)", url: "https://example.com/article"))
         }
 
-        // Then - no delivery at all, so the chip is never told to become pending again
+        // Then
         XCTAssertTrue(delivered.isEmpty)
     }
 
-    /// The pending-vs-delivered decision now belongs to the state owner, not the coordinator: a stale
-    /// same-page echo after submit resolves to `.delivered` (chip stays hidden), while any other
-    /// collection is a fresh `.pendingSubmit`.
     func testUTIChipDeliveryStateMarksStaleEchoDeliveredAndFreshContextPending() {
+        // Given
         sessionState.updateUnifiedToggleInputActive(true)
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
         sessionState.beginChatForUTISubmission()
 
-        // Same page, no navigation since submit -> stale echo -> delivered (stays hidden)
+        // Then
         let echo = makeTestContext(url: "https://example.com/article").contextData
         guard case .delivered = sessionState.utiChipDeliveryState(forDelivering: echo) else {
             return XCTFail("Expected stale echo of already-submitted page to be .delivered")
         }
 
-        // A different page is a fresh attachment -> pending (chip visible for the next prompt)
         let fresh = makeTestContext(url: "https://example.com/other").contextData
         guard case .pendingSubmit = sessionState.utiChipDeliveryState(forDelivering: fresh) else {
             return XCTFail("Expected fresh context to be .pendingSubmit")
         }
     }
 
-    /// SessionState is the sole owner of the pending→delivered transition: on submit it re-renders
-    /// the attached context to the UTI chip as delivered, and the same page no longer counts as a
-    /// fresh pending attach afterwards.
     func testMarkUTIContextDeliveredRerendersChipAndMarksPageDelivered() {
+        // Given
         sessionState.updateUnifiedToggleInputActive(true)
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
 
-        // When the prompt carrying the attached context is delivered
+        // When
         let delivered = utiDeliveryEffects {
             sessionState.markUTIContextDelivered()
         }
 
-        // Then the attached context is re-pushed to the UTI chip (which now hides it)...
+        // Then
         XCTAssertEqual(delivered.count, 1)
         XCTAssertEqual(delivered.first??.url, "https://example.com/article")
 
-        // ...and that same page is now delivered, so it won't ride the next prompt.
         let sameURL = makeTestContext(url: "https://example.com/article").contextData
         guard case .delivered = sessionState.utiChipDeliveryState(forDelivering: sameURL) else {
             return XCTFail("Expected the delivered page to be marked .delivered")
         }
     }
 
-    /// A manual re-attach of the same URL after submit must always be treated as a fresh, deliberate
-    /// attach — never suppressed by the stale-echo check, which only applies to passive auto-attach.
     func testManualReattachOfSameURLAfterSubmitStillDelivers() {
+        // Given
         sessionState.updateUnifiedToggleInputActive(true)
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
         sessionState.beginChatForUTISubmission()
 
-        // When - user explicitly taps "Attach" again for the same page, wanting it in the next message
+        // When
         sessionState.beginManualAttach()
         let delivered = utiDeliveryEffects {
             sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
         }
 
-        // Then - delivered as a fresh attachment, so it will actually be sent
+        // Then
         XCTAssertEqual(delivered.count, 1)
         XCTAssertEqual(delivered.first??.url, "https://example.com/article")
 
-        // ...and crucially the coordinator must push it PENDING, not delivered — otherwise the chip
-        // hides and the same page silently fails to ride the follow-up prompt. Stale-echo suppression
-        // is for passive auto re-collection only, never a deliberate manual re-attach.
         let reattached = makeTestContext(url: "https://example.com/article").contextData
         guard case .pendingSubmit = sessionState.utiChipDeliveryState(forDelivering: reattached) else {
             return XCTFail("Manual same-URL re-attach after submit must be .pendingSubmit, not suppressed as a stale echo")
         }
     }
 
-    /// A real navigation always resets the stale-echo tracking, so revisiting an already-submitted
-    /// URL is treated as fresh rather than silently suppressed.
     func testAutoAttachAfterNavigationBackToSameURLStillDelivers() {
+        // Given
         sessionState.updateUnifiedToggleInputActive(true)
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
         sessionState.beginChatForUTISubmission()
 
-        // When - user navigates away and back to the same URL
+        // When
         sessionState.notifyPageChanged()
         let delivered = utiDeliveryEffects {
             sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
         }
 
-        // Then - treated as fresh, not suppressed
+        // Then
         XCTAssertEqual(delivered.count, 1)
     }
 
-    /// A different URL is never mistaken for a stale echo, even without an intervening navigation.
     func testAutoAttachForDifferentURLAfterSubmitStillDelivers() {
+        // Given
         sessionState.updateUnifiedToggleInputActive(true)
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext(url: "https://example.com/page-a"))
         sessionState.beginChatForUTISubmission()
 
+        // When
         let delivered = utiDeliveryEffects {
             sessionState.updateContext(makeTestContext(url: "https://example.com/page-b"))
         }
 
+        // Then
         XCTAssertEqual(delivered.count, 1)
         XCTAssertEqual(delivered.first??.url, "https://example.com/page-b")
     }

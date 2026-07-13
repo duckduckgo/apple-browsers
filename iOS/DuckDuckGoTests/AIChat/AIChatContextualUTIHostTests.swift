@@ -157,7 +157,6 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
 
-        // A fresh push (e.g. a manual re-attach) re-arms the chip for the next prompt.
         sut.setAttachedContext(context)
 
         XCTAssertEqual(sut.chipViewModel.pendingAttachedContextData?.url, url.absoluteString)

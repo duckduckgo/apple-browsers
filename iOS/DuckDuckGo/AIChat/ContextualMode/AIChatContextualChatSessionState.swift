@@ -114,12 +114,7 @@ final class AIChatContextualChatSessionState {
     private(set) var contextualChatURL: URL?
     private(set) var latestContext: AIChatPageContext?
 
-    /// URL of the context that was actually included in the last submitted prompt, so long as no
-    /// navigation has happened since. Used only to recognize a passive auto-attach re-collection
-    /// (e.g. a late JS auto-update) for that same, already-submitted page as a stale echo — not
-    /// a fresh attach — so it doesn't resurrect the UTI chip. Cleared on navigation so a real page
-    /// change is always treated as fresh, and never consulted for manual attach, which is always
-    /// a deliberate user action.
+    /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
     private var deliveredContextURLWithNoNavigationSince: URL?
 
     @Published private(set) var viewState = SheetViewState(
@@ -522,19 +517,12 @@ final class AIChatContextualChatSessionState {
         return true
     }
 
-    /// The delivery state the UTI chip should adopt for `context`. A passive re-collection of the
-    /// context already submitted for this page (a stale echo) is `.delivered` so the chip stays
-    /// hidden; anything else is a fresh `.pendingSubmit` attachment. This keeps the pending-vs-delivered
-    /// decision with the state owner rather than the coordinator hardcoding `.pendingSubmit`.
+    /// `.delivered` when `context` is a stale echo of the already-submitted page (chip stays hidden); else `.pendingSubmit`.
     func utiChipDeliveryState(forDelivering context: AIChatPageContextData) -> PageContextAttachmentDeliveryState {
         isStaleEchoOfDeliveredContext(context) ? .delivered : .pendingSubmit
     }
 
-    /// Records that the currently-attached context has been delivered in a submitted prompt, so it
-    /// stops riding subsequent prompts and the UTI chip hides. This is the sole owner of the
-    /// pending→delivered transition: the chip no longer flips its own delivery state on submit —
-    /// it is re-rendered as delivered through the normal delivery pipeline. Safe to call on every
-    /// submit (first and follow-up); a no-op when nothing is attached.
+    /// Marks the attached context delivered on submit so it stops riding later prompts and the chip hides.
     func markUTIContextDelivered() {
         guard case .attached(let context) = chipState else { return }
         deliveredContextURLWithNoNavigationSince = URL(string: context.contextData.url)
@@ -574,10 +562,7 @@ private extension AIChatContextualChatSessionState {
         if isShowingNativeInput || isUnifiedToggleInputActive {
             chipState = .attached(context)
             userDowngradedToPlaceholder = false
-            // A deliberate manual attach is always a fresh pending attachment, even for a page
-            // already submitted this session. Clear the delivered marker so `utiChipDeliveryState`
-            // does not misclassify it as a stale echo and hide it — stale-echo suppression applies
-            // to passive auto re-collection only, never to an explicit user attach.
+            // A manual attach is always fresh: clear the delivered marker so it is not read as a stale echo.
             deliveredContextURLWithNoNavigationSince = nil
             Logger.aiChat.debug("[SessionState] Manually attached context")
         }
@@ -627,10 +612,7 @@ private extension AIChatContextualChatSessionState {
         }
     }
 
-    /// Whether `context` is a passive re-collection (e.g. a late JS auto-update) of the same page
-    /// already included in the last submitted prompt, with no navigation in between. Only consulted
-    /// from the auto-attach path — manual attach is always a deliberate user action and always
-    /// delivers as a fresh pending attachment regardless of URL.
+    /// Whether `context` is a passive same-page re-collection already submitted with no navigation since.
     func isStaleEchoOfDeliveredContext(_ context: AIChatPageContextData) -> Bool {
         guard let deliveredContextURLWithNoNavigationSince,
               let contextURL = URL(string: context.url) else { return false }

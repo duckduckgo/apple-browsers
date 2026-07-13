@@ -249,7 +249,6 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         sut.setAttached(makeContext(title: "Cat", url: url))
         XCTAssertTrue(sut.isVisible)
 
-        // Session state pushes the attachment as delivered on submit — the chip renders, it does not decide.
         sut.setAttached(makeContext(title: "Cat", url: url), deliveryState: .delivered)
         XCTAssertFalse(sut.isVisible)
         XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))

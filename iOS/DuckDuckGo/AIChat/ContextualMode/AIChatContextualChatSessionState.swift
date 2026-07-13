@@ -574,6 +574,11 @@ private extension AIChatContextualChatSessionState {
         if isShowingNativeInput || isUnifiedToggleInputActive {
             chipState = .attached(context)
             userDowngradedToPlaceholder = false
+            // A deliberate manual attach is always a fresh pending attachment, even for a page
+            // already submitted this session. Clear the delivered marker so `utiChipDeliveryState`
+            // does not misclassify it as a stale echo and hide it — stale-echo suppression applies
+            // to passive auto re-collection only, never to an explicit user attach.
+            deliveredContextURLWithNoNavigationSince = nil
             Logger.aiChat.debug("[SessionState] Manually attached context")
         }
 

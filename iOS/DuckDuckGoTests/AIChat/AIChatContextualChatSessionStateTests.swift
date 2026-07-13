@@ -1120,6 +1120,14 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         // Then - delivered as a fresh attachment, so it will actually be sent
         XCTAssertEqual(delivered.count, 1)
         XCTAssertEqual(delivered.first??.url, "https://example.com/article")
+
+        // ...and crucially the coordinator must push it PENDING, not delivered — otherwise the chip
+        // hides and the same page silently fails to ride the follow-up prompt. Stale-echo suppression
+        // is for passive auto re-collection only, never a deliberate manual re-attach.
+        let reattached = makeTestContext(url: "https://example.com/article").contextData
+        guard case .pendingSubmit = sessionState.utiChipDeliveryState(forDelivering: reattached) else {
+            return XCTFail("Manual same-URL re-attach after submit must be .pendingSubmit, not suppressed as a stale echo")
+        }
     }
 
     /// A real navigation always resets the stale-echo tracking, so revisiting an already-submitted

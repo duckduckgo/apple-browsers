@@ -400,6 +400,10 @@ class MainViewController: UIViewController {
     private(set) var darkReaderFeatureSettings: DarkReaderFeatureSettings
 
     let onboardingManager: OnboardingManaging
+    
+    private var searchTokenExperiment: SearchTokenExperiment {
+        SearchTokenExperiment(featureFlagger: featureFlagger, statisticsStore: statisticsStore)
+    }
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -6843,6 +6847,10 @@ extension MainViewController: OnboardingDelegate {
 
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
+
+        // Enrol new users into the Search Token experiment. Must run here (post-onboarding) so we only
+        // enrol new users; enrollIfEligible function additionally excludes returning users (reinstallers).
+        searchTokenExperiment.enrollIfEligible()
 
         appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
 

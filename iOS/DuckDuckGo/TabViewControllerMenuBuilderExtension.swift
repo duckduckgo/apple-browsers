@@ -111,7 +111,7 @@ extension TabViewController {
             entries.append(printEntry)
         }
 
-        if let domain = self.privacyInfo?.domain {
+        if let domain = Self.privacyProtectionToggleDomain(for: privacyInfo) {
             entries.append(self.buildToggleProtectionEntry(forDomain: domain))
         }
 
@@ -851,6 +851,19 @@ extension TabViewController {
         delegate?.tabDidRequestAIChatHistory(tab: self, source: .browserMenu)
     }
 
+    /// The domain the "Disable/Enable Privacy Protection" browsing-menu toggle applies to,
+    /// or `nil` when the toggle should not be offered.
+    ///
+    /// The toggle is suppressed on the DuckDuckGo SERP to match the Privacy Dashboard, which is
+    /// also unavailable there (see `MainViewController.onPrivacyIconPressed` and
+    /// `PrivacyIconLogic.privacyIcon(for:)`, which shows the Dax logo instead of a shield on the
+    /// SERP). Offering a way to disable protection with no dashboard to re-enable it from is
+    /// confusing, and DuckDuckGo Search does not track the user regardless.
+    static func privacyProtectionToggleDomain(for privacyInfo: PrivacyInfo?) -> String? {
+        guard let privacyInfo, !privacyInfo.url.isDuckDuckGoSearch else { return nil }
+        return privacyInfo.domain
+    }
+
     private func buildToggleProtectionEntry(forDomain domain: String, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
         let isProtected = !config.isUserUnprotected(domain: domain)
@@ -1132,7 +1145,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeToggleProtectionEntry() -> BrowsingMenuEntry? {
-        guard let domain = privacyInfo?.domain else { return nil }
+        guard let domain = Self.privacyProtectionToggleDomain(for: privacyInfo) else { return nil }
         return buildToggleProtectionEntry(forDomain: domain, useSmallIcon: false)
     }
     

@@ -18,6 +18,7 @@
 
 import XCTest
 import AIChat
+import WebKit
 import Combine
 import PrivacyConfig
 import FeatureFlags
@@ -344,6 +345,8 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var isImageGenerationEnabled: Bool = false
     var isWebSearchEnabled: Bool = false
     var isCustomizeResponsesEnabled: Bool = false
+    @MainActor
+    func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState { .none }
     var isAttachTabsEnabled: Bool = false
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var selectedModelId: String?

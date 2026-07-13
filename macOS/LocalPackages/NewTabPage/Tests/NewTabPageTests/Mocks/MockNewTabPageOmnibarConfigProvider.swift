@@ -18,6 +18,7 @@
 
 import Combine
 import NewTabPage
+import WebKit
 
 final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
@@ -57,6 +58,12 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     var isWebSearchEnabled: Bool = false
 
     var isCustomizeResponsesEnabled: Bool = false
+
+    var customizeResponsesStateResult = NewTabPageDataModel.OmnibarCustomizeResponsesState.none
+    @MainActor
+    func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState {
+        customizeResponsesStateResult
+    }
 
     @Published var isAttachTabsEnabled: Bool = false
 

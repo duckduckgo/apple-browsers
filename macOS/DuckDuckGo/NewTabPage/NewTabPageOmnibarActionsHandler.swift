@@ -257,6 +257,13 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         modal.present(over: window)
     }
 
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool) {
+        let burnerMode = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.burnerMode ?? .regular
+        let handler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+        CustomizeResponsesStore(storageHandler: handler).setActive(active)
+    }
+
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {
         switch target {
         case .sameTab:

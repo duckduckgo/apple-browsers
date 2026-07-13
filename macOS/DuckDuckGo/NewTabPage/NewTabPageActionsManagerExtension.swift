@@ -123,7 +123,8 @@ extension NewTabPageActionsManager {
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             featureFlagger: featureFlagger,
             aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
-            searchPreferences: NSApp.delegateTyped.searchPreferences
+            searchPreferences: NSApp.delegateTyped.searchPreferences,
+            windowControllersManager: windowControllersManager
         )
         let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
             featureFlagger: featureFlagger,

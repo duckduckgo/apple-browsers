@@ -45,4 +45,8 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     @MainActor
     func openCustomizeResponses()
 
+    /// Persists whether the stored response customization is applied (from the row's toggle).
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool)
+
 }

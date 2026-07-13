@@ -658,6 +658,17 @@ extension TabsBarViewController: UICollectionViewDataSource {
             guard let self = self, let model = model,
                 let tabIndex = self.tabsModel?.indexOf(tab: model)
                 else { return }
+
+            // Failsafe: if the tab isn't fully in view, only scroll it into view, don't close a tab
+            // the user can't fully see. A second tap, once it's visible, closes it.
+            let indexPath = IndexPath(item: tabIndex, section: 0)
+            let visibleRect = CGRect(origin: self.collectionView.contentOffset, size: self.collectionView.bounds.size)
+            if let attributes = self.collectionView.layoutAttributesForItem(at: indexPath),
+               !visibleRect.contains(attributes.frame) {
+                self.collectionView.scrollToItem(at: indexPath, at: [], animated: true)
+                return
+            }
+
             let tabState = tabIndex == self.currentIndex ? "active" : "inactive"
             DailyPixel.fireDailyAndCount(pixel: .tabBarTabClosed, withAdditionalParameters: [PixelParameters.tabState: tabState])
             self.delegate?.tabsBar(self, didRemoveTabAtIndex: tabIndex)

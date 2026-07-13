@@ -209,10 +209,10 @@ class TabsBarCell: UICollectionViewCell {
             separatorView.backgroundColor = theme.tabsBarSeparatorColor
         }
 
-        labelRemoveButtonConstraint?.isActive = isCurrent
+        labelRemoveButtonConstraint?.isActive = true
         separatorView.isHidden = isCurrent || isNextCurrent
-        removeButton.isHidden = !isCurrent
-        
+        removeButton.isHidden = false
+
         applyModel(model)
     }
 

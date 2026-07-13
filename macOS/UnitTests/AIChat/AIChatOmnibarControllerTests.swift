@@ -971,6 +971,197 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         XCTAssertFalse(controller.isWebSearchMode)
     }
 
+    // MARK: - Image Generation Model Support Tests
+
+    func testWhenModelsNotLoaded_ThenSelectedModelSupportsImageGenerationDefaultsToTrue() {
+        // Then — conservative default keeps the Tools menu item visible until we know otherwise
+        XCTAssertTrue(controller.models.isEmpty)
+        XCTAssertTrue(controller.selectedModelSupportsImageGeneration)
+    }
+
+    func testWhenSelectedModelSupportsGenerateImage_ThenSelectedModelSupportsImageGenerationReturnsTrue() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "img-model", supportedTools: ["GenerateImage"])
+        ]
+        mockPreferences.selectedModelId = "img-model"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertTrue(controller.selectedModelSupportsImageGeneration)
+    }
+
+    func testWhenSelectedModelDoesNotSupportGenerateImage_ThenSelectedModelSupportsImageGenerationReturnsFalse() async {
+        // Given — model advertises other tools but not GenerateImage
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "mistral", supportedTools: ["NewsSearch"])
+        ]
+        mockPreferences.selectedModelId = "mistral"
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertFalse(controller.selectedModelSupportsImageGeneration)
+    }
+
+    func testWhenSwitchingToUnsupportedModel_ThenImageGenerationModeIsDeactivated() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "img-supported", supportedTools: ["GenerateImage"]),
+            makeRemoteModel(id: "img-unsupported", supportedTools: [])
+        ]
+        mockPreferences.selectedModelId = "img-supported"
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.toggleImageGenerationMode()
+        XCTAssertTrue(controller.isImageGenerationMode)
+
+        // When
+        controller.updateSelectedModel("img-unsupported")
+
+        // Then
+        XCTAssertFalse(controller.isImageGenerationMode)
+    }
+
+    func testWhenSwitchingBetweenSupportingModels_ThenImageGenerationModeIsPreserved() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "img-a", supportedTools: ["GenerateImage"]),
+            makeRemoteModel(id: "img-b", supportedTools: ["GenerateImage"])
+        ]
+        mockPreferences.selectedModelId = "img-a"
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.toggleImageGenerationMode()
+        XCTAssertTrue(controller.isImageGenerationMode)
+
+        // When
+        controller.updateSelectedModel("img-b")
+
+        // Then
+        XCTAssertTrue(controller.isImageGenerationMode)
+    }
+
+    func testWhenFetchModelsRevealsUnsupportedPersistedModel_ThenImageGenerationModeIsDeactivated() async {
+        // Given — user toggled Create Image before models loaded (conservative default allowed it),
+        // persisted model turns out not to support it
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "no-img", supportedTools: [])
+        ]
+        mockPreferences.selectedModelId = "no-img"
+        controller.toggleImageGenerationMode()
+        XCTAssertTrue(controller.isImageGenerationMode)
+
+        // When
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertFalse(controller.isImageGenerationMode)
+    }
+
+    // MARK: - Image Generation Submission Parameter Tests
+
+    func testWhenImageGenerationModeWithCapableSelectedModel_ThenSubmissionUsesSelectedModelAndToolChoice() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "img-model", supportedTools: ["GenerateImage"])
+        ]
+        mockPreferences.selectedModelId = "img-model"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        controller.toggleImageGenerationMode()
+
+        // Then — explicit model + GenerateImage tool choice, no legacy mode handoff
+        XCTAssertEqual(controller.effectiveModelId, "img-model")
+        XCTAssertEqual(controller.effectiveToolChoice, [AIChatRAGTool.imageGeneration.rawValue])
+        XCTAssertNil(controller.effectiveMode)
+    }
+
+    func testWhenImageGenerationModeWithIncapableSelectedModel_ThenSubmissionFallsBackToFirstCapableModel() async {
+        // Given — image mode active with a non-capable model selected. Gating normally prevents
+        // this, but the tool mode can be restored from a tab's saved state, so submission must
+        // still resolve an image-capable model.
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "mistral", supportedTools: []),
+            makeRemoteModel(id: "premium-img", entityHasAccess: false, supportedTools: ["GenerateImage"]),
+            makeRemoteModel(id: "free-img", supportedTools: ["GenerateImage"])
+        ]
+        mockPreferences.selectedModelId = "mistral"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // When
+        controller.toggleImageGenerationMode()
+
+        // Then — inaccessible capable model is skipped, first accessible capable one wins
+        XCTAssertEqual(controller.effectiveModelId, "free-img")
+        XCTAssertEqual(controller.effectiveToolChoice, [AIChatRAGTool.imageGeneration.rawValue])
+        XCTAssertNil(controller.effectiveMode)
+    }
+
+    func testWhenImageGenerationModeAndModelsNotLoaded_ThenSubmissionFallsBackToModeHandoff() {
+        // Given — no models fetched
+
+        // When
+        controller.toggleImageGenerationMode()
+
+        // Then — legacy shape: duck.ai routes the request from the mode field
+        XCTAssertNil(controller.effectiveModelId)
+        XCTAssertNil(controller.effectiveToolChoice)
+        XCTAssertEqual(controller.effectiveMode, AIChatNativePrompt.imageGenerationMode)
+    }
+
+    func testWhenNotInImageGenerationMode_ThenModeAndImageToolChoiceAreNotSent() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "img-model", supportedTools: ["GenerateImage"])
+        ]
+        mockPreferences.selectedModelId = "img-model"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        // Then
+        XCTAssertEqual(controller.effectiveModelId, "img-model")
+        XCTAssertNil(controller.effectiveToolChoice)
+        XCTAssertNil(controller.effectiveMode)
+    }
+
+    func testWhenSubmitInImageGenerationMode_ThenPromptCarriesModelIdAndToolChoice() async {
+        // Given
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "img-model", supportedTools: ["GenerateImage"])
+        ]
+        mockPreferences.selectedModelId = "img-model"
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.toggleImageGenerationMode()
+        controller.updateText("a war potato")
+
+        // When
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled, "Submit opens the duck.ai tab")
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        guard case .query(let query) = prompt?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertEqual(query.prompt, "a war potato")
+        XCTAssertEqual(query.modelId, "img-model")
+        XCTAssertEqual(query.toolChoice, [AIChatRAGTool.imageGeneration.rawValue])
+        XCTAssertNil(query.mode)
+    }
+
     // MARK: - Reasoning Effort Tests
 
     func testWhenReasoningEffortFeatureFlagEnabled_ThenIsReasoningEffortEnabledIsTrue() {

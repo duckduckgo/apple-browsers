@@ -544,7 +544,7 @@ extension AutoconsentUserScript {
             consentRule: messageData.cmp,
             consentHeuristicEnabled: consentHeuristicEnabled
         )
-        if messageData.cmp == "HEURISTIC" {
+        if messageData.cmp.hasPrefix("HEURISTIC") {
             firePixel(pixel: .doneHeuristic)
         } else {
             firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)

@@ -18,7 +18,6 @@
 //
 
 import XCTest
-import UIKit
 @testable import DuckDuckGo
 
 @MainActor
@@ -26,14 +25,12 @@ final class TabSwitcherChromeFactoryTests: XCTestCase {
 
     func testWhenFloatingUIEnabledThenFloatingChromeIsCreated() {
         let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingUIEnabled: true,
-                                                         toolbar: UIToolbar(),
                                                          appSettings: AppSettingsMock())
         XCTAssertTrue(chrome is FloatingTabSwitcherChrome)
     }
 
     func testWhenFloatingUIDisabledThenLegacyChromeIsCreated() {
         let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingUIEnabled: false,
-                                                         toolbar: UIToolbar(),
                                                          appSettings: AppSettingsMock())
         XCTAssertTrue(chrome is LegacyTabSwitcherChrome)
     }

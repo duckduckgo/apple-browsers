@@ -178,7 +178,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
-        sut.measureBrowserComparisonImpression()
+        sut.measureSetDefaultBrowserImpression()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -225,12 +225,12 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
 
         // WHEN
-        sut.measureAiComparisonImpression()
+        sut.measureAiIntroImpression()
 
         // THEN
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.aiComparison(.shown)])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.aiIntro(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
         XCTAssertNil(sharedPixelHandlerMock.receivedVariant)
@@ -243,12 +243,12 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
 
         // WHEN
-        sut.measureAiComparisonCTAAction()
+        sut.measureAiIntroCTAAction()
 
         // THEN
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.aiComparison(.clicked(.engage))])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.aiIntro(.clicked(.engage))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
         XCTAssertNil(sharedPixelHandlerMock.receivedVariant)

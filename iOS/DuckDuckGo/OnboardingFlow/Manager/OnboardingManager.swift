@@ -66,13 +66,13 @@ final class OnboardingManager {
     private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
 
     private let iPhoneFlow: [OnboardingIntroStep] = [
-        .browserComparison,
+        .setDefaultBrowser,
         .addToDockPromo,
         .appIconSelection,
         .addressBarPositionSelection,
         .searchExperienceSelection
     ]
-    private let iPadFlow: [OnboardingIntroStep] = [.browserComparison, .appIconSelection]
+    private let iPadFlow: [OnboardingIntroStep] = [.setDefaultBrowser, .appIconSelection]
 
     var isNewUser: Bool {
 #if DEBUG || ALPHA
@@ -151,11 +151,11 @@ enum OnboardingIntroStep: Equatable {
     }
 }
 
-// Ergonomic factories so call sites can write `.browserComparison` instead of `.renderable(.browserComparison)`.
+// Ergonomic factories so call sites can write `.setDefaultBrowser` instead of `.renderable(.setDefaultBrowser)`.
 // Mirror every new `RenderableStep` case here.
 extension OnboardingIntroStep {
-    static let browserComparison: Self = .renderable(.browserComparison)
-    static let aiComparison: Self = .renderable(.aiComparison)
+    static let setDefaultBrowser: Self = .renderable(.setDefaultBrowser)
+    static let aiIntro: Self = .renderable(.aiIntro)
     static let addToDockPromo: Self = .renderable(.addToDockPromo)
     static let appIconSelection: Self = .renderable(.appIconSelection)
     static let addressBarPositionSelection: Self = .renderable(.addressBarPositionSelection)
@@ -171,8 +171,8 @@ extension OnboardingIntroStep {
 
     enum RenderableStep: Equatable {
         case introDialog(isReturningUser: Bool)
-        case browserComparison
-        case aiComparison
+        case setDefaultBrowser
+        case aiIntro
         case appIconSelection
         case addToDockPromo
         case addressBarPositionSelection
@@ -197,8 +197,8 @@ extension OnboardingIntroStep {
     var resumeStep: OnboardingResumeStep? {
         switch self {
         case .renderable(.introDialog): return nil
-        case .renderable(.browserComparison): return .browserComparison
-        case .renderable(.aiComparison): return .aiComparison
+        case .renderable(.setDefaultBrowser): return .setDefaultBrowser
+        case .renderable(.aiIntro): return .aiIntro
         case .renderable(.addToDockPromo): return .addToDockPromo
         case .renderable(.appIconSelection): return .appIconSelection
         case .renderable(.addressBarPositionSelection): return .addressBarPositionSelection
@@ -211,8 +211,8 @@ extension OnboardingIntroStep {
 
 /// Persisted checkpoint allowing the onboarding flow to resume after an app relaunch.
 enum OnboardingResumeStep: String {
-    case browserComparison
-    case aiComparison
+    case setDefaultBrowser = "browserComparison"
+    case aiIntro = "aiComparison"
     case addToDockPromo
     case appIconSelection
     case addressBarPositionSelection
@@ -351,7 +351,7 @@ private extension OnboardingManager {
     }
 
     func duckAITailoredFlowSteps() -> [OnboardingIntroStep] {
-        [.aiComparison, .duckAIQuerySelection, .interlude(.duckAI), .addToDockPromo, .browserComparison, .addressBarPositionSelection]
+        [.aiIntro, .duckAIQuerySelection, .interlude(.duckAI), .addToDockPromo, .setDefaultBrowser, .addressBarPositionSelection]
     }
 
 }

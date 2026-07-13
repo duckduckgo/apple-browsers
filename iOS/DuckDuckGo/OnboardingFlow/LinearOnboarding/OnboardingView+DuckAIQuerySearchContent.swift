@@ -128,7 +128,8 @@ extension OnboardingView {
                 title: UserText.Onboarding.DuckAIQuery.title,
                 searchPlaceholder: UserText.Onboarding.DuckAIQuery.searchPlaceholder,
                 aiPlaceholder: UserText.Onboarding.DuckAIQuery.aiPlaceholder,
-                isToggleVisible: true
+                isToggleVisible: true,
+                daxAnimation: nil
             ),
             defaultMode: DuckAIQueryMode,
             visualStyle: VisualStyle = .legacy,

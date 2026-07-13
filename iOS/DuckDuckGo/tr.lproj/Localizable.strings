@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Anladım";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Her iki cihazda da bu hesapla zaten eşleşme yapılmış.";
+"alert.sync-already-paired-with-account-description" = "Bu cihazlar zaten Sync & Backup'a bağlı.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Zaten Eşleştirilmiş";
+"alert.sync-already-paired-with-account-title" = "Zaten senkronize edildi.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Bazı yer işaretleri yanlış biçimlendirilmiş veya çok uzun olduğu için senkronize edilmedi.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Diğer cihazından senkronizasyon iptal edildi.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Tarayıcınızda duck.ai adresini ziyaret edin, Ayarlar'a gidin, ardından “Sync & Backup” altından “Aç” ve sonrasında “Başka bir cihazla senkronize et” seçeneğini belirleyin.";
+"alert.sync-code-only-compatible-with-duckai-description" = "Diğer tarayıcınızda Duck.ai adresini ziyaret edin, Ayarlar'a gidin, ardından \"Sync & Backup\" altında \"Aç\"ı ve \"Başka bir cihazla senkronize et\"i seçin.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Duck.ai ayarlarından bu kodu tarayın.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Bu kodu DuckDuckGo dışında bir tarayıcı kullanarak tarayın.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Bazı şifreler yanlış biçimlendirilmiş veya çok uzun olduğu için senkronize edilmedi.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Senkronizasyon Ayarları";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Lütfen tekrar deneyin.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Senkronizasyon başarısız oldu.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Lütfen bu cihazı, başka bir cihazda zaten bağlı olan bir DuckDuckGo tarayıcısından senkronize edin.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Senkronizasyon Duraklatıldı";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Anladım";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Senkronizasyonu Değiştir";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Senkronizasyon ve Yedekleme geçici olarak kullanılamıyor.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Bu kod mevcut uygulama sürümünde desteklenmiyor.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "DuckDuckGo tarayıcısını güncelleyin ve tekrar deneyin.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Bu cihaz Senkronizasyon ve Yedekleme'den kaldırılamıyor.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Üzgünüz, bu kod geçersiz. Lütfen doğru kodun girildiğinden veya tarandığından emin olun.";
+"alert.unable-to-scan-qr-code-description" = "Lütfen doğru kodun girildiğinden veya tarandığından emin olun.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Bu geçerli bir Senkronizasyon kodu değil.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Sunucuya bağlanılamıyor.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Başka bir cihazla senkronize edilemiyor.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Senkronizasyon ve Yedekleme kapatılamıyor.";
@@ -1410,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Ekranın en altındaki **Kontrol Ekle** seçeneğine dokunun";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Yeni";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Onayla";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Mümkün olan en gizli çerez seçeneklerini belirlemeyi ve bunları sizin için kapatmayı hedefleyeceğiz. Devre dışı bırakma seçeneği yoksa, sizin için bu çerezleri otomatik olarak kabul edeceğiz.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Çerezleri benim için yönet veya kabul et";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Bunları kendim yönetmeye devam edeceğim";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Sizi rahat bırakmayan çerez bildirimlerinden bıktınız mı?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Sizi bir tıklama zahmetinden kurtarıp bu çerezleri sizin yerinize kabul edebiliriz.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Devre dışı bırakılamayan çerezleri benim için kabul et";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Bunları kendim yönetmeye devam edeceğim";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Çıkış yapmana izin vermeyen çerez açılır pencerelerinden bıktın mı?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Bunu daha sonra **Ayarlar** > **Çerez Açılır Pencere Engelleyici** kısmından her zaman değiştirebilirsiniz.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Kilitlenme Raporlarını Her Zaman Gönder";
@@ -4781,7 +4822,7 @@
 "sync.remove-device.title" = "Cihaz Kaldırılsın mı?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Cihaz başarıyla senkronize edildi!";
+"sync.simplified.device-synced.toast" = "Yeni cihaz eklendi!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup etkin";

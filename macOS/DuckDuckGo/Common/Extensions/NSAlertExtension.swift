@@ -168,8 +168,8 @@ extension NSAlert {
         alert.messageText = UserText.syncPairingV2ConfirmationTitle
         alert.informativeText = message
         alert.alertStyle = .informational
-        alert.addButton(withTitle: UserText.cancel)
         alert.addButton(withTitle: UserText.syncPairingV2ConfirmationAction)
+        alert.addButton(withTitle: UserText.cancel)
         return alert
     }
 

@@ -68,6 +68,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         winBackOfferService: WinBackOfferService,
         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+        profileStateManager: DBPProfileStateManaging,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
@@ -81,6 +82,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate,
             freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: profileStateManager,
             idleReturnEligibilityManager: idleReturnEligibilityManager
         )
         let configFetcher = RemoteMessagingConfigFetcher(

@@ -31,10 +31,10 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureAutoRestoreOnboardingPromptShown = false
     private(set) var didCallMeasureAutoRestoreOnboardingRestoreTapped = false
     private(set) var didCallMeasureAutoRestoreOnboardingSkipTapped = false
-    private(set) var didCallMeasureBrowserComparisonImpression = false
+    private(set) var didCallMeasureSetDefaultBrowserImpression = false
     private(set) var didCallMeasureChooseBrowserCTAAction = false
-    private(set) var didCallMeasureAiComparisonImpression = false
-    private(set) var didCallMeasureAiComparisonCTAAction = false
+    private(set) var didCallMeasureAiIntroImpression = false
+    private(set) var didCallMeasureAiIntroCTAAction = false
     private(set) var didCallMeasureChooseAppIconImpression = false
     private(set) var didCallMeasureChooseAppIconColor = false
     private(set) var didCaptureAppIconColorSelection: AppIcon?
@@ -138,20 +138,20 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureAutoRestoreOnboardingSkipTapped = true
     }
 
-    func measureBrowserComparisonImpression() {
-        didCallMeasureBrowserComparisonImpression = true
+    func measureSetDefaultBrowserImpression() {
+        didCallMeasureSetDefaultBrowserImpression = true
     }
 
     func measureChooseBrowserCTAAction() {
         didCallMeasureChooseBrowserCTAAction = true
     }
 
-    func measureAiComparisonImpression() {
-        didCallMeasureAiComparisonImpression = true
+    func measureAiIntroImpression() {
+        didCallMeasureAiIntroImpression = true
     }
 
-    func measureAiComparisonCTAAction() {
-        didCallMeasureAiComparisonCTAAction = true
+    func measureAiIntroCTAAction() {
+        didCallMeasureAiIntroCTAAction = true
     }
 
     func measureChooseAppIconImpression() {

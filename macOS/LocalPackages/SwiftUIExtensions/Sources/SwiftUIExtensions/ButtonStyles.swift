@@ -182,20 +182,22 @@ public struct TransparentActionButtonStyle: ButtonStyle {
 public struct DismissActionButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) var colorScheme
 
+    public let stateColors: ButtonStateColors
     public let textColor: Color
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
     public let pillShape: Bool
 
-    public init(textColor: Color = .primary, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = false) {
-        self.textColor = textColor
+    public init(textColor: Color? = nil, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = false, stateColors: ButtonStateColors = .legacyDismissButton) {
+        self.stateColors = stateColors
+        self.textColor = textColor ?? stateColors.textColor
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
         self.pillShape = pillShape
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let backgroundColor = configuration.isPressed ? Color(.windowBackgroundColor) : Color(.controlColor)
+        let backgroundColor = configuration.isPressed ? stateColors.pressedBackgroundColor : stateColors.backgroundColor
         let outerShadowOpacity = colorScheme == .dark ? 0.8 : 0.0
 
         configuration.label
@@ -308,6 +310,22 @@ public struct ButtonStateColors {
               hoveredBackgroundColor: Color("PrimaryButtonHover", bundle: Bundle.module),
               pressedBackgroundColor: Color("PrimaryButtonPressed", bundle: Bundle.module),
               pressedTextColor: Color.white.opacity(0.8))
+    }
+
+    public static var themedDismissButton: ButtonStateColors {
+        .init(backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+              textColor: Color(designSystemColor: .textPrimary),
+              hoveredBackgroundColor: Color(designSystemColor: .controlsFillPrimary),
+              pressedBackgroundColor: Color(designSystemColor: .controlsFillSecondary),
+              pressedTextColor: Color(designSystemColor: .textSecondary))
+    }
+
+    public static var legacyDismissButton: ButtonStateColors {
+        .init(backgroundColor: Color(.controlColor),
+              textColor: .primary,
+              hoveredBackgroundColor: Color(.controlColor),
+              pressedBackgroundColor: Color(.windowBackgroundColor),
+              pressedTextColor: .primary)
     }
 }
 

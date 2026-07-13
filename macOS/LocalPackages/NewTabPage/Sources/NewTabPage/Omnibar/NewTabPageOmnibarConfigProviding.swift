@@ -52,6 +52,9 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     @MainActor
     func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState
 
+    /// Fires when the stored response customization changes, so the client re-pushes the config.
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> { get }
+
     /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
     /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
     /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.

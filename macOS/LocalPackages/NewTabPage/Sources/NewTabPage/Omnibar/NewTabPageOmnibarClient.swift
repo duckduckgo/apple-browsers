@@ -71,7 +71,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.selectedReasoningEffortPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.isVoiceChatAccessEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.showAskAiSuggestionPublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.isAttachTabsEnabledPublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.isAttachTabsEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.customizeResponsesStatePublisher.map { _ in () }.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in

@@ -65,6 +65,11 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         customizeResponsesStateResult
     }
 
+    let customizeResponsesStateSubject = PassthroughSubject<Void, Never>()
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> {
+        customizeResponsesStateSubject.eraseToAnyPublisher()
+    }
+
     @Published var isAttachTabsEnabled: Bool = false
 
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {

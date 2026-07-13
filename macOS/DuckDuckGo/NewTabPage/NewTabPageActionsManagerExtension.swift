@@ -126,6 +126,9 @@ extension NewTabPageActionsManager {
             searchPreferences: NSApp.delegateTyped.searchPreferences,
             windowControllersManager: windowControllersManager
         )
+        omnibarActionHandler.onCustomizeResponsesChanged = { [weak omnibarConfigProvider] in
+            omnibarConfigProvider?.notifyCustomizeResponsesChanged()
+        }
         let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
             featureFlagger: featureFlagger,
             configProvider: omnibarConfigProvider,

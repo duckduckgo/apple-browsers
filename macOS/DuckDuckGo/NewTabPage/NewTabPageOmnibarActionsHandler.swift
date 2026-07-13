@@ -34,6 +34,10 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKitEvent) -> Void
 
+    /// Called after the Customize Responses modal closes or the toggle is set, so the NTP config
+    /// (sub-label + toggle state) is re-pushed to open New Tab Pages.
+    var onCustomizeResponsesChanged: () -> Void = {}
+
     /// Retains the Customize Responses modal host while it is presented over the NTP window.
     private var customizeResponsesModal: CustomizeResponsesModalController?
 
@@ -252,7 +256,10 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             return
         }
         let modal = CustomizeResponsesModalController(burnerMode: mainWindowController.mainViewController.tabCollectionViewModel.burnerMode)
-        modal.onClose = { [weak self] in self?.customizeResponsesModal = nil }
+        modal.onClose = { [weak self] in
+            self?.customizeResponsesModal = nil
+            self?.onCustomizeResponsesChanged()
+        }
         customizeResponsesModal = modal
         modal.present(over: window)
     }
@@ -262,6 +269,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         let burnerMode = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.burnerMode ?? .regular
         let handler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? NSApp.delegateTyped.duckAiNativeStorageHandler
         CustomizeResponsesStore(storageHandler: handler).setActive(active)
+        onCustomizeResponsesChanged()
     }
 
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {

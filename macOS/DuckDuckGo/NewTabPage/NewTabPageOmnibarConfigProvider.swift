@@ -100,6 +100,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
+    private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
     @Published private var hasExcessChats = false
     private var aiChatsProviderCancellable: AnyCancellable?
 
@@ -252,6 +253,14 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         let handler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? NSApp.delegateTyped.duckAiNativeStorageHandler
         let state = CustomizeResponsesStore(storageHandler: handler).currentState(clarifiesLabel: UserText.aiChatCustomizeResponsesClarifies)
         return NewTabPageDataModel.OmnibarCustomizeResponsesState(subLabel: state.subLabel, hasCustomization: state.hasCustomization, active: state.isActive)
+    }
+
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> {
+        customizeResponsesChangedSubject.eraseToAnyPublisher()
+    }
+
+    func notifyCustomizeResponsesChanged() {
+        customizeResponsesChangedSubject.send(())
     }
 
     var isAttachTabsEnabled: Bool {

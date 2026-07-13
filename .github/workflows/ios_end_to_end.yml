@@ -38,7 +38,7 @@ jobs:
 
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -64,7 +64,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
@@ -81,7 +81,7 @@ jobs:
         preferred-versions: "26.4"
 
     - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-e2e
@@ -117,7 +117,7 @@ jobs:
 
     - name: Save Xcode Compilation Cache
       if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-e2e-${{ steps.compilation-cache-hash.outputs.hash }}
@@ -133,13 +133,13 @@ jobs:
           runner: ${{ env.RUNS_ON }}
 
     - name: Store Binary
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: duckduckgo-ios-app
         path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
 
     - name: Upload logs when workflow failed
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: BuildLogs
@@ -244,7 +244,7 @@ jobs:
         mode: start
 
     - name: Retrieve Binary
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: duckduckgo-ios-app
         path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
@@ -380,7 +380,7 @@ jobs:
         echo "e2e:${{ matrix.user-mode }}:${{ matrix.test-tag }}:${{ matrix.device }}" > failure-marker/marker.txt
     - name: Upload failure marker (e2e)
       if: (failure() || cancelled()) && github.ref_name == 'main'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: failure-marker-e2e-${{ matrix.user-mode }}-${{ matrix.test-tag }}-${{ matrix.device }}
         path: failure-marker/

@@ -59,7 +59,7 @@ jobs:
 
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -116,7 +116,7 @@ jobs:
         bundle exec fastlane sync_signing_ci
 
     - name: Download and unzip artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         path: macOS
 
@@ -131,7 +131,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
@@ -156,7 +156,7 @@ jobs:
         echo $! > log_stream.pid
 
     - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-perf-tests
@@ -189,7 +189,7 @@ jobs:
 
     - name: Save Xcode Compilation Cache
       if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-perf-tests-${{ steps.compilation-cache-hash.outputs.hash }}
@@ -275,7 +275,7 @@ jobs:
 
     - name: Upload memory metrics
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: memory-metrics
         path: macOS/insert-statements-memory.sql
@@ -283,7 +283,7 @@ jobs:
 
     - name: Upload startup metrics
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: startup-metrics
         path: macOS/insert-statements-startup-metrics.sql
@@ -326,7 +326,7 @@ jobs:
         xcbeautify --report junit --report-path . --junit-report-filename ui-tests.xml < ui-tests.log
 
     - name: Publish tests report
-      uses: mikepenz/action-junit-report@v4
+      uses: mikepenz/action-junit-report@v6
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       with:
         check_name: "Test Report ${{ matrix.runner }}"
@@ -334,7 +334,7 @@ jobs:
         check_retries: true
 
     - name: Upload xcresult files (passed on retry)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
         name: "xcresult-${{ matrix.runner }}"
@@ -342,7 +342,7 @@ jobs:
         retention-days: 1
 
     - name: Upload app console log (passed on retry)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
         name: "app-console-${{ matrix.runner }}-macos${{ matrix.os-version }}"
@@ -374,7 +374,7 @@ jobs:
         echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
 
     - name: Upload logs when workflow failed
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: "${{ env.ARCHIVE_NAME }}"
@@ -389,12 +389,12 @@ jobs:
 
     steps:
       - name: Download startup metrics
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: startup-metrics
 
       - name: Download memory metrics
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: memory-metrics
 
@@ -431,7 +431,7 @@ jobs:
         ref: ${{ inputs.branch || github.sha }}
 
     - name: Create Asana task when workflow failed
-      uses: duckduckgo/native-github-asana-sync@v1.1
+      uses: duckduckgo/native-github-asana-sync@v2.5.1
       with:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

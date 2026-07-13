@@ -42,6 +42,7 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
 
     func codeCollectionCancelled(source: CodeCollectionSource)
     func gotoSettings()
+    func requestCameraPermission(for model: ScanOrPasteCodeViewModel)
     func shareCode(_ code: String, source: CodeCollectionSource)
 
     func codeEntryScreenShown()
@@ -95,6 +96,10 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
 
     func cameraUnavailable() {
         showCamera = false
+    }
+
+    func introAnimationCompleted() {
+        delegate?.requestCameraPermission(for: self)
     }
 
     @MainActor

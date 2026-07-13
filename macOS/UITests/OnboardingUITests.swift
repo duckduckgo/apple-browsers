@@ -137,11 +137,11 @@ final class OnboardingUITests: UITestCase {
         XCTAssertFalse(optionsButton.isEnabled)
 
         // Get Started
-        XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Ready for a faster browser that keeps you protected?"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Ready for a faster browser that protects you and lets you decide when and how to use AI?"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         // The rebranded buttons have no aria-label/identifier, so WebKit exposes their text via `title` rather than `label`.
         let getStartedButton = welcomeWindow.webViews["Welcome"].buttons
-            .matching(NSPredicate(format: "title ==[c] %@", "Let’s do it!"))
+            .matching(NSPredicate(format: "title ==[c] %@", "Start browser setup"))
             .firstMatch
         XCTAssertTrue(getStartedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // Use coordinate tap to avoid overlay/hittability quirks

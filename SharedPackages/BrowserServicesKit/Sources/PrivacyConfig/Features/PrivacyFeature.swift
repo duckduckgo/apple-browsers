@@ -201,9 +201,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     case screenTimeCleaning
 
-    /// Enables the custom NSPanel-based bookmarks bar menu (replacing NSPopover) with NSGlassEffectView on macOS 26
-    case bookmarksBarMenusCustomWindow
-
     /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211806114021633?focus=true
     case onboardingRebranding
 
@@ -365,6 +362,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
     case autofillPasswordsStatusBar
+    case bitwardenConnectionHardening
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {

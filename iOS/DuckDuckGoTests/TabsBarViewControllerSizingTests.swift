@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import UIKit
 
 @testable import DuckDuckGo
 
@@ -52,5 +53,34 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
 
     func testZeroVisibleItemsReturnsZero() {
         XCTAssertEqual(itemWidth(900, 0, maxWidth: 300), 0, accuracy: accuracy)
+    }
+
+    @MainActor
+    func testCreateBuildsProgrammaticHierarchy() {
+        let controller = TabsBarViewController.create()
+
+        controller.loadViewIfNeeded()
+
+        XCTAssertNotNil(controller.collectionView)
+        XCTAssertNotNil(controller.buttonsBackground)
+        XCTAssertNotNil(controller.buttonsStack)
+        XCTAssertIdentical(controller.collectionView.delegate, controller)
+        XCTAssertIdentical(controller.collectionView.dataSource, controller)
+        XCTAssertEqual(controller.buttonsStack.spacing, TabsBarViewController.Constants.stackSpacing)
+        XCTAssertEqual(controller.buttonsStack.arrangedSubviews.count, 4)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[0], controller.addTabButton)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[1], controller.aiChatChip)
+        XCTAssertIdentical(controller.buttonsStack.arrangedSubviews[2], controller.fireButton)
+    }
+
+    @MainActor
+    func testCollectionViewRegistersTabsBarCell() {
+        let controller = TabsBarViewController.create()
+
+        controller.loadViewIfNeeded()
+
+        let cell = controller.collectionView.dequeueReusableCell(withReuseIdentifier: TabsBarCell.reuseIdentifier,
+                                                                 for: IndexPath(item: 0, section: 0))
+        XCTAssertTrue(cell is TabsBarCell)
     }
 }

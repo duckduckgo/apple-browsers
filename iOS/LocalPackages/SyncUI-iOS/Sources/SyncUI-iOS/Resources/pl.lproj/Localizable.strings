@@ -235,8 +235,8 @@
 /* Status text when connecting devices to sync */
 "sync.simplified.scan-or-view-code.connecting.status" = "Łączenie...";
 
-/* Instruction shown during sync setup flow. The curly quotes around 'Sync & Backup' refer to the name of the settings section and should be preserved. */
-"sync.simplified.scan-or-view-code.connecting.title" = "Zachowaj otwartą opcję „Sync & Backup” na obu urządzeniach";
+/* Instruction shown during sync setup flow. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Szyfrowanie end-to-end na wszystkich Twoich urządzeniach.";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Po wklejeniu kodu wróć do tego urządzenia.";

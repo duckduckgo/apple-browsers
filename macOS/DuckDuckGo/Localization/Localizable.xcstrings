@@ -4041,6 +4041,474 @@
         }
       }
     },
+    "aichat.customize-responses-button.label" : {
+      "comment" : "Label for the Customize Responses tool in the AI chat omnibar tools menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Customize Responses"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses-tool.subtitle" : {
+      "comment" : "Subtitle for the Customize Responses tool in the tools dropdown menu, shown when responses haven't been customized",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Control tone, length, and more"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.brainstorm-partner" : {
+      "comment" : "Customize Responses AI role option: brainstorm partner",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Brainstorm partner"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.career-coach" : {
+      "comment" : "Customize Responses AI role option: career coach",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Career coach"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.chef" : {
+      "comment" : "Customize Responses AI role option: chef",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chef"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.coding-coach" : {
+      "comment" : "Customize Responses AI role option: coding coach",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Coding coach"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.editor" : {
+      "comment" : "Customize Responses AI role option: editor",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Editor"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.entertainment-guide" : {
+      "comment" : "Customize Responses AI role option: entertainment guide",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Entertainment guide"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.fitness-trainer" : {
+      "comment" : "Customize Responses AI role option: fitness trainer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fitness trainer"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.gardener" : {
+      "comment" : "Customize Responses AI role option: gardener",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Gardener"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.homework-helper" : {
+      "comment" : "Customize Responses AI role option: homework helper",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Homework helper"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.language-tutor" : {
+      "comment" : "Customize Responses AI role option: language tutor",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Language tutor"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.life-coach" : {
+      "comment" : "Customize Responses AI role option: life coach",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Life coach"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.marketer" : {
+      "comment" : "Customize Responses AI role option: marketer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Marketer"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.product-manager" : {
+      "comment" : "Customize Responses AI role option: product manager",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Product manager"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.public-speaking-coach" : {
+      "comment" : "Customize Responses AI role option: public speaking coach",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Public speaking coach"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.social-media-copywriter" : {
+      "comment" : "Customize Responses AI role option: social media copywriter",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Social media copywriter"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.storyteller" : {
+      "comment" : "Customize Responses AI role option: storyteller",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Storyteller"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.summarizer" : {
+      "comment" : "Customize Responses AI role option: summarizer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Summarizer"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.teacher" : {
+      "comment" : "Customize Responses AI role option: teacher",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Teacher"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.tech-support-specialist" : {
+      "comment" : "Customize Responses AI role option: tech support specialist",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tech support specialist"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.translator" : {
+      "comment" : "Customize Responses AI role option: translator",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Translator"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.travel-guide" : {
+      "comment" : "Customize Responses AI role option: travel guide",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Travel guide"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.trivia-expert" : {
+      "comment" : "Customize Responses AI role option: trivia expert",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Trivia expert"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.writer" : {
+      "comment" : "Customize Responses AI role option: writer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Writer"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.clarifies" : {
+      "comment" : "Sub-label fragment shown in the Customize Responses row when clarifying questions are enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Clarifies"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.length.short" : {
+      "comment" : "Customize Responses length option: short",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Short"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.length.shortest" : {
+      "comment" : "Customize Responses length option: shortest",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shortest"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.casual" : {
+      "comment" : "Customize Responses tone option: casual",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Casual"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.ducky" : {
+      "comment" : "Customize Responses tone option: ducky (DuckDuckGo mascot personality)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ducky"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.empathetic" : {
+      "comment" : "Customize Responses tone option: empathetic",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Empathetic"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.friendly" : {
+      "comment" : "Customize Responses tone option: friendly",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Friendly"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.playful" : {
+      "comment" : "Customize Responses tone option: playful",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Playful"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.professional" : {
+      "comment" : "Customize Responses tone option: professional",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Professional"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.your-role.parent" : {
+      "comment" : "Customize Responses your-role option: parent",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Parent"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.your-role.professional" : {
+      "comment" : "Customize Responses your-role option: professional",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Professional"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.your-role.programmer" : {
+      "comment" : "Customize Responses your-role option: programmer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Programmer"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.your-role.student" : {
+      "comment" : "Customize Responses your-role option: student",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Student"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.your-role.writer" : {
+      "comment" : "Customize Responses your-role option: writer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Writer"
+          }
+        }
+      }
+    },
     "aichat.file-attachment.accessibility-format" : {
       "comment" : "Accessibility label for a file added to the AI chat omnibar — %@ is replaced with the filename",
       "extractionState" : "extracted_with_value",

@@ -30,6 +30,7 @@ import Subscription
 final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
     public let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+    public let profileStateManager: DBPProfileStateManaging
     public var dbpIOSPublicInterface: DBPIOSInterface.PublicInterface? {
         return dbpIOSManager
     }
@@ -49,6 +50,8 @@ final class DBPService: NSObject {
             isFreemiumEnabled: { [featureFlagger] in featureFlagger.isFreemiumPIREnabled }
         )
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        let profileStateManager = DefaultDBPProfileStateManager(keyValueStore: UserDefaults.dbp)
+        self.profileStateManager = profileStateManager
 
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
             self.dbpIOSManager = nil
@@ -110,6 +113,7 @@ final class DBPService: NSObject {
                 eventsHandler: eventsHandler,
                 applicationNameForUserAgentProvider: { DefaultUserAgentManager.shared.applicationNameForUserAgent },
                 freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                profileStateManager: profileStateManager,
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService,
                 contentBlocking: dbpContentBlocking)

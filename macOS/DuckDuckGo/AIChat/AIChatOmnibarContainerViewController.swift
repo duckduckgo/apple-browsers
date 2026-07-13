@@ -497,7 +497,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private var isImageGenerationItemVisible: Bool {
-        omnibarController.isImageGenerationEnabled
+        omnibarController.isImageGenerationEnabled && omnibarController.selectedModelSupportsImageGeneration
     }
 
     private var isWebSearchItemVisible: Bool {
@@ -1106,7 +1106,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        if omnibarController.isImageGenerationEnabled {
+        if isImageGenerationItemVisible {
             let createImageItem = NSMenuItem()
             createImageItem.attributedTitle = toolsMenuItemAttributedTitle(
                 title: UserText.aiChatImageGenButtonLabel,

@@ -147,14 +147,13 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
     }
 
     static func fireUnifiedPromptSubmittedPixel(
-        text: String,
+        hasText: Bool,
         selectedTool: AIChatRAGTool?,
         attachments: [UnifiedToggleInputAttachment],
         reasoningMode: AIChatReasoningMode?,
         modelId: String?
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
-        let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let reasoningEffort = reasoningMode?.rawValue ?? "none"
         let modelId = modelId ?? ""
 
@@ -173,6 +172,22 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
 
     static func fireShowModelPickerPixel() {
         DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputShowModelPicker)
+    }
+
+    static func fireModelSelectedPixel(modelId: String) {
+        Pixel.fire(pixel: .unifiedToggleInputModelSelected, withAdditionalParameters: ["model_id": modelId])
+    }
+
+    static func fireModelPickerShownPixel(isAITabState: Bool) {
+        Pixel.fire(pixel: .unifiedToggleInputModelPickerShown, withAdditionalParameters: [
+            AttributionParameter.origin: measurementOrigin(for: .modelPicker, isAITabState: isAITabState).rawValue
+        ])
+    }
+
+    static func fireReasoningPickerShownPixel(isAITabState: Bool) {
+        Pixel.fire(pixel: .unifiedToggleInputReasoningEffortPickerShown, withAdditionalParameters: [
+            AttributionParameter.origin: measurementOrigin(for: .reasoningPicker, isAITabState: isAITabState).rawValue
+        ])
     }
 
     static func fireSubmitChangeModelPixel(modelId: String) {

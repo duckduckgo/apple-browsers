@@ -365,6 +365,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case migrateKeychainAccessibility
     case autofillPasswordSearchPrioritizeDomain
     case autofillPasswordsStatusBar
+    case bitwardenConnectionHardening
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {

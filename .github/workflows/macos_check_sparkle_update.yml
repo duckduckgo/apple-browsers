@@ -54,7 +54,7 @@ jobs:
       - name: Create draft Pull Request
         id: create-pr
         if: steps.dedupe.outputs.should_create == 'true'
-        uses: peter-evans/create-pull-request@88bf0de51c7487d91e1abbb4899332e602c58bbf
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           commit-message: "Update Sparkle to ${{ steps.check.outputs.latest_version }}"
           committer: Dax the Duck <dax@duckduckgo.com>

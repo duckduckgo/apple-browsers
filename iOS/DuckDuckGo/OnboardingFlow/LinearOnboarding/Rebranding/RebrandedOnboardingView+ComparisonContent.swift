@@ -1,5 +1,5 @@
 //
-//  RebrandedOnboardingView+AIComparisonContent.swift
+//  RebrandedOnboardingView+ComparisonContent.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,33 +17,40 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingRebranding.OnboardingView {
 
-    struct AIComparisonContent: View {
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=7412-24499
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=7419-54020
+    struct ComparisonContent: View {
+
         @Environment(\.onboardingTheme) private var onboardingTheme
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         @Binding var isVisible: Bool
         @State private var shouldStartTyping = false
         @State private var showContent = false
-
-        private let content: OnboardingAIComparisonContent
-        private let continueAction: () -> Void
+        private let content: OnboardingComparisonContent
+        private let primaryAction: () -> Void
+        private let cancelAction: (() -> Void)?
 
         init(
-            content: OnboardingAIComparisonContent,
+            content: OnboardingComparisonContent,
             isVisible: Binding<Bool>,
-            continueAction: @escaping () -> Void,
+            primaryAction: @escaping () -> Void,
+            cancelAction: (() -> Void)? = nil
         ) {
             self.content = content
             self._isVisible = isVisible
-            self.continueAction = continueAction
+            self.primaryAction = primaryAction
+            self.cancelAction = cancelAction
         }
 
+        // Uses a custom layout instead of LinearDialogContentContainer because
+        // the comparison table has its own animated row reveal that needs `showContent`.
         var body: some View {
             VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                 TypingText(
@@ -63,25 +70,43 @@ extension OnboardingRebranding.OnboardingView {
 
                 VStack(spacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing) {
                     RebrandedOnboardingComparisonTableView(
-                        header: .textAndIcons(
-                            title: content.subHeader,
-                            leftIcon: OnboardingRebrandingImages.Comparison.popularAIsIcon,
-                            rightIcon: OnboardingRebrandingImages.Comparison.ddgIcon
-                        ),
+                        header: tableHeader,
                         features: content.features,
                         availableFeatureAnimation: .animated(startAnimation: showContent)
                     )
 
-                    Button(action: continueAction) {
-                        Text(content.primaryCTA)
-                    }
-                    .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                        Button(action: primaryAction) {
+                            Text(content.primaryCTA)
+                        }
+                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
 
+                        if let secondaryCTA = content.secondaryCTA, let cancelAction {
+                            Button(action: cancelAction) {
+                                Text(secondaryCTA)
+                            }
+                            .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                        }
+                    }
                 }
                 .opacity(showContent ? 1 : 0)
                 .animation(reduceMotion ? nil : .easeIn(duration: 0.25), value: showContent)
             }
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
+        }
+
+        private var tableHeader: RebrandedOnboardingComparisonTableView.Header {
+            if let subHeader = content.subHeader {
+                return .textAndIcons(
+                    title: subHeader,
+                    leftIcon: OnboardingRebrandingImages.Comparison.popularAIsIcon,
+                    rightIcon: OnboardingRebrandingImages.Comparison.ddgIcon
+                )
+            }
+            return .icons(
+                leftIcon: OnboardingRebrandingImages.Comparison.safariIcon,
+                rightIcon: OnboardingRebrandingImages.Comparison.ddgIcon
+            )
         }
 
     }

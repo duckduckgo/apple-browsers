@@ -2198,7 +2198,9 @@ extension TabViewController: WKNavigationDelegate {
             
             let size = CGSize(width: webView.frame.size.width,
                               height: webView.frame.size.height - webView.scrollView.contentInset.top - webView.scrollView.contentInset.bottom)
-            
+
+            guard size.width > 0, size.height > 0 else { completion(nil); return }
+
             let renderer = UIGraphicsImageRenderer(size: size)
             let image = renderer.image { context in
                 context.cgContext.translateBy(x: 0, y: -webView.scrollView.contentInset.top)

@@ -25,7 +25,7 @@ import MetricBuilder
 private enum BubbleBackedDialogMetrics {
     /// Extra top margin for the intro step; all other steps use 0.
     static let introAdditionalTopMargin: CGFloat = 40
-    static let browsersComparisonAdditionalTopMargin: CGFloat = 0
+    static let setDefaultBrowserAdditionalTopMargin: CGFloat = 0
     static let addressBarPositionAdditionalTopMargin: CGFloat = 0
     static let searchExperienceAdditionalTopMargin: CGFloat = 0
     static let addToDockAdditionalTopMargin: CGFloat = 0
@@ -382,11 +382,11 @@ extension OnboardingRebranding {
             }
         }
 
-        private func browsersComparisonView(content: OnboardingBrowserComparisonContent) -> some View {
-            BrowsersComparisonContent(
+        private func setDefaultBrowserView(content: OnboardingComparisonContent) -> some View {
+            ComparisonContent(
                 content: content,
                 isVisible: $showBubbleContent,
-                setAsDefaultBrowserAction: model.setDefaultBrowserAction,
+                primaryAction: model.setDefaultBrowserAction,
                 cancelAction: {
                     animateContentTransition {
                         model.cancelSetDefaultBrowserAction()
@@ -395,13 +395,13 @@ extension OnboardingRebranding {
             )
         }
 
-        private func aiComparisonView(content: OnboardingAIComparisonContent) -> some View {
-            AIComparisonContent(
+        private func aiIntroView(content: OnboardingComparisonContent) -> some View {
+            ComparisonContent(
                 content: content,
                 isVisible: $showBubbleContent,
-                continueAction: {
+                primaryAction: {
                     animateContentTransition {
-                        model.aiComparisonAction()
+                        model.aiIntroAction()
                     }
                 }
             )
@@ -468,10 +468,10 @@ extension OnboardingRebranding {
             switch type {
             case let .startOnboardingDialog(content, dialogType):
                 introView(content: content, dialogType: dialogType)
-            case let .browsersComparisonDialog(content):
-                browsersComparisonView(content: content)
-            case let .aiComparisonDialog(content):
-                aiComparisonView(content: content)
+            case let .setDefaultBrowserDialog(content):
+                setDefaultBrowserView(content: content)
+            case let .aiIntroDialog(content):
+                aiIntroView(content: content)
             case let .addToDockPromoDialog(content):
                 addToDockPromoView(content: content)
             case let .chooseAppIconDialog(content):
@@ -573,9 +573,9 @@ extension OnboardingRebranding {
             // bubble content swaps. Dax is scaled inversely to the bubble so they never overlap.
             case .startOnboardingDialog(let content, _):
                 return scaledThumbUpAnimation(forBubbleHeight: lockedIntroBubbleHeight, base: content.daxAnimation)
-            case .browsersComparisonDialog(let content):
+            case .setDefaultBrowserDialog(let content):
                 return content.daxAnimation
-            case .aiComparisonDialog(let content):
+            case .aiIntroDialog(let content):
                 return content.daxAnimation
             case .addToDockPromoDialog(let content):
                 return content.daxAnimation
@@ -750,7 +750,7 @@ private extension OnboardingRebranding.OnboardingView {
                 additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
                 isVisible: model.introState.showIntroViewContent
             )
-        case .browsersComparisonDialog, .aiComparisonDialog:
+        case .setDefaultBrowserDialog, .aiIntroDialog:
             return BubbleBackedDialogConfiguration(
                 tailOffset: tailTrailingOffset,
                 tailDirection: .leading,

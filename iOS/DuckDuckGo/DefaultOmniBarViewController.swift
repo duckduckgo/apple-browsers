@@ -516,6 +516,7 @@ extension DefaultOmniBarViewController {
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
                 DailyPixel.fireDailyAndCount(pixel: .aiChatIPadTogglePromptSubmitted)
+                fireIPadUnifiedPromptSubmittedPixels(hasText: !query.isEmpty)
                 /// Collapse and resign instantly so a quick re-tap doesn't race the post-submit
                 /// collapse animation.
                 /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1215084286493408?focus=true
@@ -638,7 +639,7 @@ extension DefaultOmniBarViewController {
             self?.refreshReasoningPicker()
         }
         omniBarView.onSelectedToolClearTapped = { [weak self] in
-            self?.toolPickerController?.resetSelection()
+            self?.toolPickerController?.resetSelection(isUserInitiated: true)
         }
 
         // The attach button shares the same store so its limits and accepted types track the selected
@@ -696,7 +697,7 @@ extension DefaultOmniBarViewController {
         if let shortName = controller.currentModelLabel {
             omniBarView.aiChatModelName = shortName
         }
-        omniBarView.aiChatModelPickerMenu = controller.makeMenu { [weak self] modelId in
+        let menu = controller.makeMenu { [weak self] modelId in
             guard let self else { return }
             self.modelPickerController?.handleModelSelection(modelId)
             self.toolPickerController?.handleModelChanged()
@@ -706,6 +707,9 @@ extension DefaultOmniBarViewController {
             self.refreshToolPicker()
             self.refreshAttachButton()
         }
+        omniBarView.aiChatModelPickerMenu = menuFiringShownPixel(menu) {
+            UnifiedToggleInputCoordinatorPixelHelper.fireModelPickerShownPixel(isAITabState: false)
+        }
     }
 
     private func refreshReasoningPicker() {
@@ -714,11 +718,22 @@ extension DefaultOmniBarViewController {
         let hiddenByTool = toolPickerController?.selectedToolHidesReasoningPicker ?? false
         if controller.isReasoningPickerAvailable, !hiddenByTool {
             omniBarView.aiChatReasoningIcon = controller.currentReasoningMode?.unifiedToggleInputButtonImage
-            omniBarView.aiChatReasoningPickerMenu = controller.makeMenu()
+            omniBarView.aiChatReasoningPickerMenu = menuFiringShownPixel(controller.makeMenu()) {
+                UnifiedToggleInputCoordinatorPixelHelper.fireReasoningPickerShownPixel(isAITabState: false)
+            }
         } else {
             omniBarView.aiChatReasoningIcon = nil
             omniBarView.aiChatReasoningPickerMenu = nil
         }
+    }
+
+    private func menuFiringShownPixel(_ menu: UIMenu?, onShow: @escaping () -> Void) -> UIMenu? {
+        guard let menu else { return nil }
+        let deferred = UIDeferredMenuElement.uncached { completion in
+            onShow()
+            completion(menu.children)
+        }
+        return UIMenu(title: menu.title, options: menu.options, children: [deferred])
     }
 
     private func refreshToolPicker() {
@@ -736,6 +751,29 @@ extension DefaultOmniBarViewController {
     private func refreshAttachButton() {
         // A nil menu hides the button — i.e. when the selected model accepts no attachments.
         omniBarView.aiChatAttachmentMenu = attachmentController?.makeMenu()
+    }
+
+    private func fireIPadUnifiedPromptSubmittedPixels(hasText: Bool) {
+        guard modelPickerController != nil else { return }
+        let attachments = attachmentController?.pendingAttachments ?? []
+        let selectedTool = toolPickerController?.selectedTool
+        UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
+            hasText: hasText,
+            selectedTool: selectedTool,
+            attachments: attachments,
+            reasoningMode: iPadReasoningModeForSubmitPixel,
+            modelId: modelPickerController?.currentModelId
+        )
+        UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
+            selectedTool: selectedTool,
+            attachments: attachments
+        )
+    }
+
+    private var iPadReasoningModeForSubmitPixel: AIChatReasoningMode? {
+        if toolPickerController?.selectedToolHidesReasoningPicker == true { return nil }
+        guard reasoningPickerController?.isReasoningPickerAvailable == true else { return nil }
+        return reasoningPickerController?.currentReasoningMode
     }
 
     /// Called when the strip's attachments change (add / remove / clear): rebuilds the attach menu

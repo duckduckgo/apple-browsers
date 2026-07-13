@@ -141,7 +141,12 @@ extension KeyedEncodingContainer {
         }
         var container = self.nestedContainer(keyedBy: JSONCodingKeys.self, forKey: key)
         for item in safeValue {
-            if let val = item.value as? Int {
+            // Booleans decoded from JSON bridge to NSNumber (CFBoolean). They must be matched
+            // BEFORE `Int`, because `NSNumber(true) as? Int` succeeds (== 1) and would otherwise
+            // re-encode `true`/`false` as `1`/`0`, corrupting boolean fields (e.g. `multiple`).
+            if let num = item.value as? NSNumber, CFGetTypeID(num) == CFBooleanGetTypeID() {
+                try container.encodeIfPresent(num.boolValue, forKey: JSONCodingKeys(stringValue: item.key)!)
+            } else if let val = item.value as? Int {
                 try container.encodeIfPresent(val, forKey: JSONCodingKeys(stringValue: item.key)!)
             } else if let val = item.value as? String {
                 try container.encodeIfPresent(val, forKey: JSONCodingKeys(stringValue: item.key)!)
@@ -190,7 +195,10 @@ extension UnkeyedEncodingContainer {
     mutating func encodeIfPresent(_ value: [String: Any]) throws {
         var container = self.nestedContainer(keyedBy: JSONCodingKeys.self)
         for item in value {
-            if let val = item.value as? Int {
+            // See note above: match CFBoolean before Int so booleans aren't re-encoded as 1/0.
+            if let num = item.value as? NSNumber, CFGetTypeID(num) == CFBooleanGetTypeID() {
+                try container.encodeIfPresent(num.boolValue, forKey: JSONCodingKeys(stringValue: item.key)!)
+            } else if let val = item.value as? Int {
                 try container.encodeIfPresent(val, forKey: JSONCodingKeys(stringValue: item.key)!)
             } else if let val = item.value as? String {
                 try container.encodeIfPresent(val, forKey: JSONCodingKeys(stringValue: item.key)!)

@@ -1057,6 +1057,52 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(delivered.isEmpty)
     }
 
+    /// The pending-vs-delivered decision now belongs to the state owner, not the coordinator: a stale
+    /// same-page echo after submit resolves to `.delivered` (chip stays hidden), while any other
+    /// collection is a fresh `.pendingSubmit`.
+    func testUTIChipDeliveryStateMarksStaleEchoDeliveredAndFreshContextPending() {
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
+        sessionState.beginChatForUTISubmission()
+
+        // Same page, no navigation since submit -> stale echo -> delivered (stays hidden)
+        let echo = makeTestContext(url: "https://example.com/article").contextData
+        guard case .delivered = sessionState.utiChipDeliveryState(forDelivering: echo) else {
+            return XCTFail("Expected stale echo of already-submitted page to be .delivered")
+        }
+
+        // A different page is a fresh attachment -> pending (chip visible for the next prompt)
+        let fresh = makeTestContext(url: "https://example.com/other").contextData
+        guard case .pendingSubmit = sessionState.utiChipDeliveryState(forDelivering: fresh) else {
+            return XCTFail("Expected fresh context to be .pendingSubmit")
+        }
+    }
+
+    /// SessionState is the sole owner of the pending→delivered transition: on submit it re-renders
+    /// the attached context to the UTI chip as delivered, and the same page no longer counts as a
+    /// fresh pending attach afterwards.
+    func testMarkUTIContextDeliveredRerendersChipAndMarksPageDelivered() {
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(url: "https://example.com/article"))
+
+        // When the prompt carrying the attached context is delivered
+        let delivered = utiDeliveryEffects {
+            sessionState.markUTIContextDelivered()
+        }
+
+        // Then the attached context is re-pushed to the UTI chip (which now hides it)...
+        XCTAssertEqual(delivered.count, 1)
+        XCTAssertEqual(delivered.first??.url, "https://example.com/article")
+
+        // ...and that same page is now delivered, so it won't ride the next prompt.
+        let sameURL = makeTestContext(url: "https://example.com/article").contextData
+        guard case .delivered = sessionState.utiChipDeliveryState(forDelivering: sameURL) else {
+            return XCTFail("Expected the delivered page to be marked .delivered")
+        }
+    }
+
     /// A manual re-attach of the same URL after submit must always be treated as a fresh, deliberate
     /// attach — never suppressed by the stale-echo check, which only applies to passive auto-attach.
     func testManualReattachOfSameURLAfterSubmitStillDelivers() {

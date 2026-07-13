@@ -522,6 +522,25 @@ final class AIChatContextualChatSessionState {
         return true
     }
 
+    /// The delivery state the UTI chip should adopt for `context`. A passive re-collection of the
+    /// context already submitted for this page (a stale echo) is `.delivered` so the chip stays
+    /// hidden; anything else is a fresh `.pendingSubmit` attachment. This keeps the pending-vs-delivered
+    /// decision with the state owner rather than the coordinator hardcoding `.pendingSubmit`.
+    func utiChipDeliveryState(forDelivering context: AIChatPageContextData) -> PageContextAttachmentDeliveryState {
+        isStaleEchoOfDeliveredContext(context) ? .delivered : .pendingSubmit
+    }
+
+    /// Records that the currently-attached context has been delivered in a submitted prompt, so it
+    /// stops riding subsequent prompts and the UTI chip hides. This is the sole owner of the
+    /// pending→delivered transition: the chip no longer flips its own delivery state on submit —
+    /// it is re-rendered as delivered through the normal delivery pipeline. Safe to call on every
+    /// submit (first and follow-up); a no-op when nothing is attached.
+    func markUTIContextDelivered() {
+        guard case .attached(let context) = chipState else { return }
+        deliveredContextURLWithNoNavigationSince = URL(string: context.contextData.url)
+        emitDeliveryIfNeeded(context.contextData)
+    }
+
     func shouldDeliverToFrontendBridge(_ context: AIChatPageContextData?) -> Bool {
         if isUnifiedToggleInputActive, context != nil {
             Logger.aiChat.debug("[SessionState] shouldDeliverToFrontendBridge=false (non-nil context delivered to UTI)")

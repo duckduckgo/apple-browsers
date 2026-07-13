@@ -42,6 +42,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
     var onAttachRequested: (() -> Void)?
     var onRemoveRequested: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
+    /// Fires on every prompt delivery (first and follow-up) so the session state can mark the
+    /// attached context delivered and re-render the chip. The chip no longer hides itself.
+    var onPromptDelivered: (() -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
 
     var attachedContextURL: URL? {
@@ -141,8 +144,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.observeChatUpdates(publisher)
     }
 
-    func markPromptSubmitted() {
-        chipViewModel.markPromptSubmitted()
+    /// Called when a prompt that carried page context has been delivered. Routes through the
+    /// session state (via `onPromptDelivered`), which owns the pending→delivered transition and
+    /// re-renders the chip — the chip is no longer told to hide itself directly.
+    func notifyPromptDelivered() {
+        onPromptDelivered?()
     }
 
     func setContextualChatViewController(_ contextualChatViewController: AIChatContextualWebViewController) {
@@ -252,7 +258,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
             onPromptSubmitted?()
             commitDeferredBindIfNeeded()
         }
-        chipViewModel.markPromptSubmitted()
+        onPromptDelivered?()
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String,
@@ -272,7 +278,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
                                                    pageContext: chipViewModel.pendingAttachedContextData,
                                                    reasoningEffort: reasoningEffort)
         commitDeferredBindIfNeeded()
-        chipViewModel.markPromptSubmitted()
+        onPromptDelivered?()
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}

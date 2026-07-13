@@ -149,19 +149,31 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(sut.chipViewModel.pendingAttachedContextData?.url, url.absoluteString)
     }
 
-    func test_setAttachedContextAfterPromptSubmittedWithSameURL_makesContextPendingAgain() {
+    func test_setAttachedContextWithSameURLAfterDelivered_makesContextPendingAgain() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
         let context = makeContext(title: "Page A", url: url.absoluteString)
-        makeSUT(initialAttachedContext: context, initialAttachmentDeliveryState: .pendingSubmit)
+        makeSUT(initialAttachedContext: context, initialAttachmentDeliveryState: .delivered)
 
-        sut.markPromptSubmitted()
         XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
 
+        // A fresh push (e.g. a manual re-attach) re-arms the chip for the next prompt.
         sut.setAttachedContext(context)
 
         XCTAssertEqual(sut.chipViewModel.pendingAttachedContextData?.url, url.absoluteString)
         XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
+    }
+
+    func test_notifyPromptDelivered_firesOnPromptDeliveredCallback() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .pendingSubmit)
+        var deliveredCount = 0
+        sut.onPromptDelivered = { deliveredCount += 1 }
+
+        sut.notifyPromptDelivered()
+
+        XCTAssertEqual(deliveredCount, 1)
     }
 
     func test_prepareForNewChat_clearsAttachedContextPresentation() {

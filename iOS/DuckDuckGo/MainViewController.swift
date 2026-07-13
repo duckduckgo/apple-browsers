@@ -1920,6 +1920,7 @@ class MainViewController: UIViewController {
                 tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
                 fireContext: .default(daxDialogsManager: daxDialogsManager),
+                isSingleTab: tabManager.currentTabsModel.count == 1,
                 browsingMode: tabManager.currentBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     guard let self else { return }

@@ -218,12 +218,6 @@ final class SettingsViewModel: ObservableObject {
         freemiumDBPUserStateManager.firstScanResult != nil
     }
 
-    var dbpMeetsProfileRunPrequisite: Bool {
-        get {
-            (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
-        }
-    }
-
     var isDefaultOmnibarModeEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
     }

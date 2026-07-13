@@ -421,12 +421,10 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public func showSyncWithAnotherDeviceInConnectingSheet() {
-        scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
         connectingSheetPhase = .syncAnotherDevice
     }
 
     public func syncAnotherDeviceFromConnectingSheet() {
-        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
         postConnectingSheetDismissAction = { [weak self] in self?.scanQRCode() }
         connectingSheetPhase = nil
     }
@@ -436,7 +434,6 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     public func recoverYourDataDoneFromConnectingSheet() {
-        postConnectingSheetDismissAction = { [weak self] in self?.syncWithAnotherDevicePromptDidDismiss() }
         connectingSheetPhase = nil
     }
 

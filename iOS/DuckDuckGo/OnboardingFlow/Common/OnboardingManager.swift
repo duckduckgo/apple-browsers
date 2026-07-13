@@ -53,7 +53,7 @@ protocol OnboardingFlowManaging: OnboardingFlowProviding {
     func configureOnboardingFlow(from url: URL?)
 }
 
-typealias OnboardingManaging = OnboardingStepsProvider & OnboardingAddToDockVisibilityManager & OnboardingFlowManaging
+typealias OnboardingManaging = OnboardingStepsProvider & OnboardingDownloadReasonHandling & OnboardingAddToDockVisibilityManager & OnboardingFlowManaging
 
 final class OnboardingManager {
     private let onboardingFlowEvaluator: OnboardingFlowEvaluating
@@ -251,10 +251,28 @@ protocol OnboardingStepsProvider: AnyObject {
     var onboardingSteps: [OnboardingIntroStep] { get }
 }
 
+/// Handles the user's answer on the Download Screen for the `onboardingFlowByDownloadReasonExperiment` experiment.
+protocol OnboardingDownloadReasonHandling: AnyObject {
+    /// Records the user's selected download reason and returns the steps that follow the Download Screen.
+    ///
+    /// Called by the view model when the user answers the Download Screen. The reason is persisted
+    /// (so the flow can resume after relaunch) and the returned steps are spliced into the live flow.
+    func selectDownloadReason(_ reason: OnboardingDownloadReason) -> [OnboardingIntroStep]
+}
+
 extension OnboardingManager: OnboardingStepsProvider {
 
     var onboardingSteps: [OnboardingIntroStep] {
         stepsForCurrentFlow()
+    }
+
+}
+
+extension OnboardingManager: OnboardingDownloadReasonHandling {
+
+    func selectDownloadReason(_ reason: OnboardingDownloadReason) -> [OnboardingIntroStep] {
+        tutorialSettings.onboardingDownloadReason = reason
+        return remainingDefaultFlowSteps(for: reason)
     }
 
 }
@@ -323,6 +341,9 @@ extension OnboardingManager: OnboardingFlowManaging {
         OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
 
         tutorialSettings.onboardingFlowType = resolvedFlow
+        // Enrol the user in the download reason experiment before sending pixels.
+        // Users enrolled in the experiment will override the flow type sent to the pixels to avoid polluting onboarding dashboards.
+        enrollInDownloadReasonExperimentIfNeeded(resolvedFlow: resolvedFlow)
         persistOnboardingPixelContext(flow: resolvedFlow, source: onboardingSource)
     }
 
@@ -350,19 +371,48 @@ extension OnboardingManager: OnboardingFlowManaging {
 
 private extension OnboardingManager {
 
+    var isEnrolledInDownloadReasonExperiment: Bool {
+        return downloadReasonExperimentCohort != nil
+    }
+
+    var downloadReasonExperimentCohort: FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort? {
+        featureFlagger.resolveCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
+    }
+
+    /// Enrolls default-flow users in the download-reason experiment.
+    func enrollInDownloadReasonExperimentIfNeeded(resolvedFlow: OnboardingFlowType) {
+        guard resolvedFlow == .default else { return }
+        _ = downloadReasonExperimentCohort
+    }
+
     /// Persist the flow and source for onboarding pixels based on the evaluated context.
     /// This must be called before onboarding is presented.
     func persistOnboardingPixelContext(flow: OnboardingFlowType, source: OnboardingSource) {
-        sharedPixelsStorage.onboardingFlow = OnboardingPixelParameter.Flow(flow)
+        /// Both download-reason experiment arms (control and treatment) are reported under the
+        /// `.tailoredByDownloadReason` pixel so the experiment population is excluded from the `.default`
+        /// onboarding dashboards. Reads the cohort assigned earlier by `enrollInDownloadReasonExperimentIfNeeded`.
+        func onboardingPixelFlow(for flow: OnboardingFlowType) -> OnboardingPixelParameter.Flow {
+            if flow == .default, isEnrolledInDownloadReasonExperiment {
+                return .tailoredByDownloadReason
+            }
+            return OnboardingPixelParameter.Flow(flow)
+        }
+
+        sharedPixelsStorage.onboardingFlow = onboardingPixelFlow(for: flow)
         sharedPixelsStorage.onboardingSource = OnboardingPixelParameter.Source(source)
     }
 
     func stepsForCurrentFlow() -> [OnboardingIntroStep] {
         let introStep = OnboardingIntroStep.introDialog(isReturningUser: !isNewUser)
         switch tutorialSettings.onboardingFlowType {
+        case .default where downloadReasonExperimentCohort == .treatment:
+            // Download-reason experiment, treatment arm.
+            return [introStep] + downloadReasonTreatmentSteps()
         case .none, .default:
+            // Not-yet-configured, un-enrolled, or control, show the standard default flow.
             return [introStep] + defaultFlowSteps(isIphone: isIphone)
         case .duckAI:
+            // Duck ai tailored flow for users installing the app from the Duck.ai CPP
             return [introStep] + duckAITailoredFlowSteps()
         }
     }
@@ -373,6 +423,35 @@ private extension OnboardingManager {
 
     func duckAITailoredFlowSteps() -> [OnboardingIntroStep] {
         [.aiIntro, .duckAIQuerySelection, .interlude(.duckAI), .addToDockPromo, .setDefaultBrowser, .addressBarPositionSelection]
+    }
+
+    /// The treatment-arm flow for the download-reason experiment.
+    ///
+    /// Before the user answers, only the Download Screen is known. Once a reason is persisted (via
+    /// `selectDownloadReason(_:)`), the reason-tailored steps are appended so the flow is complete
+    /// when resumed after a relaunch.
+    func downloadReasonTreatmentSteps() -> [OnboardingIntroStep] {
+        guard let reason = tutorialSettings.onboardingDownloadReason else {
+            return [.downloadReason]
+        }
+        return [.downloadReason] + remainingDefaultFlowSteps(for: reason)
+    }
+
+    /// The steps that follow the Download Screen for a given download reason.
+    func remainingDefaultFlowSteps(for reason: OnboardingDownloadReason) -> [OnboardingIntroStep] {
+        // TODO: tailor the step set per download reason. For now it matches the standard default flow
+        switch reason {
+        case .browserPrivately:
+            return defaultFlowSteps(isIphone: isIphone)// Return the linear steps for `.browserPrivately` variant
+        case .privateAIChat:
+            return defaultFlowSteps(isIphone: isIphone) // Return the linear steps for `.privateAIChat` variant
+        case .noAI:
+            return defaultFlowSteps(isIphone: isIphone) // Return the linear steps for `.noAI` variant
+        case .blockAds:
+            return defaultFlowSteps(isIphone: isIphone) // Return the linear steps for `.blockAds` variant
+        case .justExploring:
+            return defaultFlowSteps(isIphone: isIphone) // Return the linear steps for `.justExploring` variant
+        }
     }
 
 }

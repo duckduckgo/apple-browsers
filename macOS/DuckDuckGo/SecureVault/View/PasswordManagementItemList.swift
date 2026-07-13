@@ -85,7 +85,8 @@ struct PasswordManagementItemListView: View {
 
             PasswordManagementAddButton(style: style)
                 .environmentObject(themeManager)
-                .padding()
+                .padding(.vertical)
+                .padding(.horizontal, 10)
 
         }
     }

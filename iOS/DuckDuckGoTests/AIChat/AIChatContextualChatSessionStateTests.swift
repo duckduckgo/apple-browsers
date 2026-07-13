@@ -1438,8 +1438,6 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     var quickActionSummarizeSelectedFired = false
     var fireButtonTappedFired = false
     var fireButtonConfirmedFired = false
-    var pageContextPlaceholderShownFired = false
-    var pageContextPlaceholderTappedFired = false
     var pageContextAutoAttachedFired = false
     var pageContextUpdatedOnNavigationFired = false
     var pageContextManuallyAttachedNativeFired = false
@@ -1464,8 +1462,6 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() { fireButtonTappedFired = true }
     func fireFireButtonConfirmed() { fireButtonConfirmedFired = true }
-    func firePageContextPlaceholderShown() { pageContextPlaceholderShownFired = true }
-    func firePageContextPlaceholderTapped() { pageContextPlaceholderTappedFired = true }
     func firePageContextAutoAttached() { pageContextAutoAttachedFired = true }
     func firePageContextUpdatedOnNavigation(url: String) { pageContextUpdatedOnNavigationFired = true }
     func firePageContextManuallyAttachedNative() { pageContextManuallyAttachedNativeFired = true }
@@ -1488,8 +1484,6 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
         quickActionSummarizeSelectedFired = false
         fireButtonTappedFired = false
         fireButtonConfirmedFired = false
-        pageContextPlaceholderShownFired = false
-        pageContextPlaceholderTappedFired = false
         pageContextAutoAttachedFired = false
         pageContextUpdatedOnNavigationFired = false
         pageContextManuallyAttachedNativeFired = false

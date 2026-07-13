@@ -311,8 +311,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         displayState == .contextualChat
     }
 
+    /// Folds contextual + Duck.ai tab into one "Duck.ai surface" bucket — used only for the funnel `origin`.
     var isDuckAISurfaceForAttribution: Bool {
         isAITabState || isContextualChatState
+    }
+
+    /// The hosting surface for the `surface` pixel parameter (the funnel `origin` uses `isDuckAISurfaceForAttribution`).
+    var pixelSurface: UnifiedToggleInputPixelSurface {
+        if isContextualChatState { return .contextualChat }
+        if isAITabState { return .duckAI }
+        return .addressBar
     }
 
     /// True when the current display state corresponds to the expanded card layout.
@@ -451,6 +459,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
         viewController.delegate = self
+        attachmentPresenter.pixelSurfaceProvider = { [weak self] in
+            self?.pixelSurface ?? .addressBar
+        }
         attachmentPresenter.onExpandIfNeeded = { [weak self] in
             self?.expandIfOnExpandedInputHost()
         }
@@ -473,7 +484,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             }
             DailyPixel.fireDailyAndCount(
                 pixel: .unifiedToggleInputFileValidationFailed,
-                withAdditionalParameters: ["reason": reason.rawValue]
+                withAdditionalParameters: ["reason": reason.rawValue, "surface": self.pixelSurface.rawValue]
             )
             self.addInvalidFileAttachment(metadata: metadata, validationMessage: message)
         }
@@ -1457,7 +1468,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard isModelPickerForcedVisible, userScript.canDispatchBridgeMessages else {
             return
         }
-        UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPixel(modelId: modelId)
+        UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPixel(modelId: modelId, surface: pixelSurface)
     }
 
     /// Surfaces the native model picker on the **active** chat in response to the FE's
@@ -1477,7 +1488,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // expand animation before we ask the button to open its menu.
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            UnifiedToggleInputCoordinatorPixelHelper.fireShowModelPickerPixel()
+            UnifiedToggleInputCoordinatorPixelHelper.fireShowModelPickerPixel(surface: self.pixelSurface)
             if self.viewController.presentModelPickerMenu() {
                 self.fireModelPickerShown()
             }
@@ -1600,11 +1611,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func fireModelSelectedPixel(modelId: String) {
-        UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId)
+        UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId, surface: pixelSurface)
     }
 
     private func fireReasoningEffortSelectedPixel(mode: AIChatReasoningMode) {
-        Pixel.fire(pixel: .unifiedToggleInputReasoningEffortSelected, withAdditionalParameters: ["effort_level": mode.rawValue])
+        Pixel.fire(pixel: .unifiedToggleInputReasoningEffortSelected, withAdditionalParameters: ["effort_level": mode.rawValue, "surface": pixelSurface.rawValue])
     }
 
     private func fireModelPickerShown() {
@@ -1705,6 +1716,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// must set this so the picker presents from the correct level.
     weak var attachmentPresentingViewController: UIViewController?
     var onPageContextAttachRequested: (() -> Void)?
+    /// Reports whether page context is attached but not yet submitted, for the voice-tap pixel. Host-injected; nil off the contextual sheet.
+    var hasPendingPageContextProvider: (() -> Bool)?
 
     var allowedFileUTTypes: [UTType] {
         selectedModelSupportedFileTypes.compactMap(Self.contentType(for:))
@@ -1723,7 +1736,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if let validationError = attachmentPolicy.fileValidationError(for: fileAttachment) {
             DailyPixel.fireDailyAndCount(
                 pixel: .unifiedToggleInputFileValidationFailed,
-                withAdditionalParameters: ["reason": validationError.reason.rawValue]
+                withAdditionalParameters: ["reason": validationError.reason.rawValue, "surface": pixelSurface.rawValue]
             )
             viewController.addAttachment(.invalidFile(
                 UnifiedToggleInputInvalidFileAttachment(
@@ -1741,7 +1754,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return
         }
 
-        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileAttached)
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileAttached, withAdditionalParameters: ["surface": pixelSurface.rawValue])
         viewController.addAttachment(.file(fileAttachment))
         persistDraftToStore()
         clearAttachmentValidationErrorIfPossible()
@@ -1794,7 +1807,7 @@ extension UnifiedToggleInputCoordinator {
     
     func handleToolsMenuSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
         if case .customizeResponses = identifier {
-            UnifiedToggleInputCoordinatorPixelHelper.fireCustomizeResponsesSelectedPixel()
+            UnifiedToggleInputCoordinatorPixelHelper.fireCustomizeResponsesSelectedPixel(surface: pixelSurface)
             viewController.handler.customizeResponsesButtonTapped()
             return
         }
@@ -1817,10 +1830,10 @@ extension UnifiedToggleInputCoordinator {
     private func fireToolToggleTransitionPixel(previous: AIChatRAGTool?, current: AIChatRAGTool?) {
         guard previous != current else { return }
         if let previous, current == nil || current != previous {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previous)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previous, surface: pixelSurface)
         }
         if let current {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: current)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: current, surface: pixelSurface)
         }
     }
 }
@@ -1880,11 +1893,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 selectedTool: toolsController.selectedTool,
                 attachments: viewController.currentAttachments,
                 reasoningMode: reasoningModeForSubmitPixel,
-                modelId: modelStore.persistedModelId
+                modelId: modelStore.persistedModelId,
+                surface: pixelSurface
             )
             UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
                 selectedTool: toolsController.selectedTool,
-                attachments: viewController.currentAttachments
+                attachments: viewController.currentAttachments,
+                surface: pixelSurface
             )
 
             let configuration = promptSubmissionConfiguration
@@ -1978,14 +1993,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         let previousTool = toolsController.selectedTool
         clearSelectedTool()
         if let previousTool {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previousTool)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previousTool, surface: pixelSurface)
         }
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID, attachment: UnifiedToggleInputAttachment, isUserInitiated: Bool) {
         removeAttachment(id: id)
         if isUserInitiated {
-            UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment)
+            UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment, surface: pixelSurface)
         }
     }
 
@@ -2376,7 +2391,7 @@ private extension UnifiedToggleInputCoordinator {
         refreshToolsPresentation()
         syncHasSubmittedPromptToHandler()
         if wasInRecoveryPickerSession {
-            UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPromptSentPixel()
+            UnifiedToggleInputCoordinatorPixelHelper.fireSubmitChangeModelPromptSentPixel(surface: pixelSurface)
         }
     }
 
@@ -2503,8 +2518,9 @@ private extension UnifiedToggleInputCoordinator {
     func subscribeToStopGeneratingTap() {
         viewController.handler.stopGeneratingButtonTappedPublisher
             .sink { [weak self] in
-                Pixel.fire(pixel: .unifiedToggleInputStopGenerationTapped)
-                self?.didPressStopGeneratingButton.send()
+                guard let self else { return }
+                Pixel.fire(pixel: .unifiedToggleInputStopGenerationTapped, withAdditionalParameters: ["surface": self.pixelSurface.rawValue])
+                self.didPressStopGeneratingButton.send()
             }
             .store(in: &cancellables)
     }
@@ -2552,10 +2568,13 @@ private extension UnifiedToggleInputCoordinator {
         viewController.handler.aiVoiceChatButtonTappedPublisher
             .sink { [weak self] in
                 guard let self else { return }
-                let source = self.isDuckAISurfaceForAttribution ? "duck_ai" : "ntp"
+                let hasPendingPageContext = self.hasPendingPageContextProvider?() ?? false
                 DailyPixel.fireDailyAndCount(
                     pixel: .unifiedToggleInputVoiceTapped,
-                    withAdditionalParameters: ["source": source]
+                    withAdditionalParameters: [
+                        "source": self.pixelSurface.rawValue,
+                        "has_pending_page_context": hasPendingPageContext ? "true" : "false"
+                    ]
                 )
                 self.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
             }

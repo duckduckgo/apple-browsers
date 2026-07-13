@@ -39,6 +39,8 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     var onFilePicked: ((AIChatFileAttachment, FileMetadata) -> Void)?
     var onFileValidationFailed: ((String, FileMetadata) -> Void)?
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
+    /// Supplies the UTI surface for attachment pixels. Set by the coordinator; defaults to `.addressBar`.
+    var pixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface)?
 
     nonisolated static func recoverFileAttachment(from metadata: FileMetadata, id: UUID = UUID()) -> AIChatFileAttachment? {
         fileAttachment(from: metadata, id: id)
@@ -200,9 +202,10 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
                 guard let image = object as? UIImage else { return }
 
                 Task { @MainActor in
+                    let surface = self?.pixelSurfaceProvider?() ?? .addressBar
                     DailyPixel.fireDailyAndCount(
                         pixel: .unifiedToggleInputImageAttached,
-                        withAdditionalParameters: ["source": "photo_library"]
+                        withAdditionalParameters: ["source": "photo_library", "surface": surface.rawValue]
                     )
                     self?.onImagePicked?(image, suggestedName)
                 }
@@ -219,7 +222,7 @@ extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate
         guard let image = info[.originalImage] as? UIImage else { return }
         DailyPixel.fireDailyAndCount(
             pixel: .unifiedToggleInputImageAttached,
-            withAdditionalParameters: ["source": "camera"]
+            withAdditionalParameters: ["source": "camera", "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]
         )
         onImagePicked?(image, "photo")
     }

@@ -75,7 +75,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.hasActiveChat)
     }
 
-    func test_contextualChat_isDuckAISurfaceForAttributionButNotAITab() {
+    func test_contextualChat_pixelSurfaceIsContextualChatNotAITab() {
         sut = UnifiedToggleInputCoordinator(
             host: .contextualChat,
             isToggleEnabled: false,
@@ -85,7 +85,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         )
 
         XCTAssertFalse(sut.isAITabState)
-        XCTAssertTrue(sut.isDuckAISurfaceForAttribution)
+        XCTAssertEqual(sut.pixelSurface, .contextualChat)
     }
 
     // MARK: - Display State: showCollapsed

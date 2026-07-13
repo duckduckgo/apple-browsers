@@ -2578,6 +2578,14 @@ class MainViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
         isUTIRotating = true
 
+        // A chrome hide/show morph left in flight by a fling just before rotating would keep scrubbing
+        // the omnibar/capsule layout each frame against mid-rotation geometry, causing a flicker.
+        // Settle it to its committed state now; the completion block resets the bars as usual.
+        if chromeMorphAnimator.isAnimating {
+            chromeMorphAnimator.cancel()
+            applyBarsVisibilityState(lastChromeVisibilityPercent, postChromeVisibilityNotification: false)
+        }
+
         let isKeyboardShowing = omniBar.isTextFieldEditing
         if isKeyboardShowing && !AppWidthObserver.shared.isPad {
             omniBar.barView.textField.suppressResignFirstResponder = true

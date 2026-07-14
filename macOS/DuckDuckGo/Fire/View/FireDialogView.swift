@@ -214,24 +214,52 @@ struct FireDialogView: ModalView {
 
             Spacer()
 
+            moreOptionsMenu
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .accessibilityLabel(UserText.fireDialogMoreOptions)
+                .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
+        }
+        .padding(.top, 16)
+        .padding(.horizontal, Constants.toolbarHorizontalPadding)
+    }
+
+    private var moreOptionsMenuDotsIcon: some View {
+        Image(nsImage: DesignSystemImages.Glyphs.Size16.menuDots)
+            .resizable()
+            .frame(width: 16, height: 16)
+            .foregroundColor(Color(designSystemColor: .iconsSecondary))
+    }
+
+    @ViewBuilder
+    private var moreOptionsMenu: some View {
+        if #available(macOS 13.0, *) {
+            // `.button` menu style adopts the ambient button style, preserving the
+            // toolbar button's pressed state (see the sibling close button).
             Menu {
                 moreOptionsMenuItems
             } label: {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.menuDots)
-                    .resizable()
-                    .frame(width: 16, height: 16)
-                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                moreOptionsMenuDotsIcon
+            }
+            .menuStyle(.button)
+            .buttonStyle(
+                StandardButtonStyle(topPadding: 4,
+                                    bottomPadding: 4,
+                                    horizontalPadding: 4,
+                                    backgroundColor: .clear,
+                                    backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary))
+            )
+            .clipShape(Circle())
+        } else {
+            Menu {
+                moreOptionsMenuItems
+            } label: {
+                moreOptionsMenuDotsIcon
                     .padding(4)
                     .contentShape(Circle())
             }
             .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .accessibilityLabel(UserText.fireDialogMoreOptions)
-            .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
         }
-        .padding(.top, 16)
-        .padding(.horizontal, Constants.toolbarHorizontalPadding)
     }
 
     @ViewBuilder

@@ -40891,18 +40891,6 @@
         }
       }
     },
-    "fire.dialog.close.all.windows.after.deleting" : {
-      "comment" : "Checkbox caption for when the data clearing scope is ‘Everything’. Means: all browser tabs and windows will be closed.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Close all tabs and windows after deleting."
-          }
-        }
-      }
-    },
     "fire.dialog.close.this.tab" : {
       "comment" : "Subtitle shown under the Tabs and windows row when scope is ‘Tab’. Means: the currently active tab will be closed.",
       "extractionState" : "extracted_with_value",
@@ -40959,18 +40947,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрыть эту вкладку"
-          }
-        }
-      }
-    },
-    "fire.dialog.close.this.tab.after.deleting" : {
-      "comment" : "Checkbox caption for when the data clearing scope is ‘Tab’. Means: the currently active tab will be closed.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Close this tab after deleting."
           }
         }
       }
@@ -42813,18 +42789,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Удалить отдельные сайты и записи"
-          }
-        }
-      }
-    },
-    "fire.dialog.more.options" : {
-      "comment" : "Accessibility label for the toolbar button that reveals more Fire dialog options",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "More Options"
           }
         }
       }

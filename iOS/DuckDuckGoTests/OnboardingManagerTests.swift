@@ -23,6 +23,7 @@ import PersistenceTestingUtils
 import PrivacyConfig
 import Testing
 import class UIKit.UIDevice
+import protocol BrowserServicesKit.VariantManager
 @testable import Core
 @testable import DuckDuckGo
 
@@ -569,7 +570,10 @@ struct OnboardingDownloadReasonExperimentTests {
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
-            featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: Cohort.treatment),
+            featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: cohort),
+            variantManager: OnboardingManagerVariants.newUserVariantManagerMock,
+            isIphone: true,
+            regionAndLanguageProvider: Locale(identifier: "en_US"),
             tutorialSettings: tutorialSettings,
             sharedPixelsStorage: sharedPixelStorage
         )
@@ -680,6 +684,57 @@ struct OnboardingDownloadReasonExperimentTests {
         #expect(tutorialSettings.onboardingDownloadReason == reason)
     }
 
+    // MARK: - Eligibility (new installers, iPhone, en-US)
+
+    @Test("iPad users are not enrolled even in the treatment cohort")
+    func iPadUsersAreNotEnrolled() {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment, isIphone: false)
+
+        // THEN
+        #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false))
+    }
+
+    @Test("Returning users are not enrolled even in the treatment cohort")
+    func returningUsersAreNotEnrolled() {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment, variantManager: OnboardingManagerVariants.returningUserVariantManagerMock)
+
+        // THEN
+        #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true))
+    }
+
+    @Test("Non en-US users are not enrolled even in the treatment cohort")
+    func nonEnglishUSUsersAreNotEnrolled() {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment, locale: Locale(identifier: "en_GB"))
+
+        // THEN
+        #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false))
+    }
+
+    @Test("Ineligible users report the default pixel, not the tailored one")
+    func ineligibleUsersReportDefaultPixel() {
+        // GIVEN
+        let sharedPixelStorage = makePixelStore()
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: Cohort.treatment),
+            variantManager: OnboardingManagerVariants.newUserVariantManagerMock,
+            isIphone: true,
+            regionAndLanguageProvider: Locale(identifier: "en_GB"),
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
+        )
+
+        // WHEN
+        sut.configureOnboardingFlow(from: nil)
+
+        // THEN
+        #expect(sharedPixelStorage.onboardingFlow == .default)
+    }
+
     // MARK: - Helpers
 
     private func makeTutorialSettings() -> MockTutorialSettings {
@@ -688,12 +743,19 @@ struct OnboardingDownloadReasonExperimentTests {
         return tutorialSettings
     }
 
-    private func makeManager(cohort: Cohort?, tutorialSettings: MockTutorialSettings? = nil) -> OnboardingManager {
+    private func makeManager(
+        cohort: Cohort?,
+        isIphone: Bool = true,
+        variantManager: VariantManager = OnboardingManagerVariants.newUserVariantManagerMock,
+        locale: Locale = Locale(identifier: "en_US"),
+        tutorialSettings: MockTutorialSettings? = nil
+    ) -> OnboardingManager {
         OnboardingManager(
             appDefaults: AppSettingsMock(),
             featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: cohort),
-            variantManager: OnboardingManagerVariants.newUserVariantManagerMock,
-            isIphone: true,
+            variantManager: variantManager,
+            isIphone: isIphone,
+            regionAndLanguageProvider: locale,
             tutorialSettings: tutorialSettings ?? makeTutorialSettings()
         )
     }

@@ -61,6 +61,7 @@ final class OnboardingManager {
     private let featureFlagger: FeatureFlagger
     private let variantManager: VariantManager
     private let isIphone: Bool
+    private let regionAndLanguageProvider: OnboardingRegionAndLanguageProvider
     private let tutorialSettings: TutorialSettings
     private let sharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
     private let onboardingResumeStepStore: any KeyedStoring<OnboardingStoringKeys>
@@ -96,6 +97,7 @@ final class OnboardingManager {
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         variantManager: VariantManager = DefaultVariantManager(),
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone,
+        regionAndLanguageProvider: OnboardingRegionAndLanguageProvider = Locale.current,
         onboardingFlowEvaluator: OnboardingFlowEvaluating = AppStoreCustomProductPageEvaluator(),
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
         sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil,
@@ -105,6 +107,7 @@ final class OnboardingManager {
         self.featureFlagger = featureFlagger
         self.variantManager = variantManager
         self.isIphone = isIphone
+        self.regionAndLanguageProvider = regionAndLanguageProvider
         self.onboardingFlowEvaluator = onboardingFlowEvaluator
         self.tutorialSettings = tutorialSettings
         self.sharedPixelsStorage = if let sharedPixelsStorage { sharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
@@ -376,7 +379,9 @@ private extension OnboardingManager {
     }
 
     var downloadReasonExperimentCohort: FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort? {
-        featureFlagger.resolveCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
+        // The experiment targets new installers, on iPhone, in the en-US locale.
+        guard isIphone, isNewUser, regionAndLanguageProvider.isEnglishUS else { return nil }
+        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingFlowByDownloadReasonExperiment) as? FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
     }
 
     /// Enrolls default-flow users in the download-reason experiment.
@@ -478,5 +483,12 @@ private extension OnboardingPixelParameter.Flow {
         case .duckAI:
             self = .duckAI
         }
+    }
+}
+
+private extension OnboardingRegionAndLanguageProvider {
+    /// Whether the device is set to the en-US locale (English language, US region).
+    var isEnglishUS: Bool {
+        regionCode == "US" && languageCode == "en"
     }
 }

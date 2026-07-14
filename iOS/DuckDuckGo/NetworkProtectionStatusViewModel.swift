@@ -219,7 +219,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
             return UserText.netPStatusHeaderMessageStrictRoutingOff
         }
 
-        return isNetPEnabled ? UserText.netPStatusHeaderMessageOn : UserText.netPStatusHeaderMessageOff
+        return isVPNActiveOrReasserting ? UserText.netPStatusHeaderMessageOn : UserText.netPStatusHeaderMessageOff
     }
 
     public let enablesUnifiedFeedbackForm: Bool

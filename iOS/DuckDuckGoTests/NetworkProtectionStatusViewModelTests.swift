@@ -321,6 +321,28 @@ import Subscription
         XCTAssertTrue(model.showStrictRoutingPill)
     }
 
+    func testHeaderMessageReflectsOnStateWhileReassertingWithStrictRoutingOn() throws {
+        let statusObserver = MockConnectionStatusObserver()
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true, statusObserver: statusObserver)
+        model.enforceRoutes = true
+
+        statusObserver.subject.send(.reasserting)
+
+        try waitForPublisher(model.$isReasserting, toEmit: true)
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOn)
+    }
+
+    func testHeaderMessageWarnsWhileReassertingWithStrictRoutingOff() throws {
+        let statusObserver = MockConnectionStatusObserver()
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true, statusObserver: statusObserver)
+        model.enforceRoutes = false
+
+        statusObserver.subject.send(.reasserting)
+
+        try waitForPublisher(model.$isReasserting, toEmit: true)
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageStrictRoutingOff)
+    }
+
     func testHeaderMessageWarnsWhenStrictRoutingOff() {
         let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
         model.isNetPEnabled = true
@@ -333,6 +355,13 @@ import Subscription
         model.isNetPEnabled = true
         model.enforceRoutes = true
         XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOn)
+    }
+
+    func testHeaderMessageReflectsOffStateWhenVPNOff() {
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
+        model.isNetPEnabled = false
+        model.enforceRoutes = true
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOff)
     }
 
     func testHeaderMessageReflectsOnStateWhenStrictRoutingUnavailable() {

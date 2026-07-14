@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -117,7 +118,7 @@ extension Preferences {
                 .padding(.vertical, 2)
                 .background(Color(designSystemColor: .alertYellow))
                 .foregroundColor(.black)
-                .cornerRadius(4)
+                .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 9 : 4)
         }
     }
 
@@ -129,7 +130,7 @@ extension Preferences {
                 .padding(.vertical, 2)
                 .background(Color(designSystemColor: .alertYellow))
                 .foregroundColor(.black)
-                .cornerRadius(4)
+                .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 9 : 4)
         }
     }
 

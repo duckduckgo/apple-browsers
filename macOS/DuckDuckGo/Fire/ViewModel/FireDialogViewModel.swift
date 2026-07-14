@@ -25,6 +25,7 @@ import History
 import HistoryView
 import Persistence
 import PixelKit
+import PrivacyConfig
 
 struct FireDialogViewSettings: StoringKeys {
     let lastSelectedClearingOption = StorageKey<FireDialogViewModel.ClearingOption>(.fireDialogSelectedClearingOption)
@@ -147,6 +148,7 @@ final class FireDialogViewModel: ObservableObject {
          aiChatHistoryCleaner: AIChatHistoryCleaning,
          fireproofDomains: FireproofDomains,
          faviconManagement: FaviconManagement,
+         featureFlagger: FeatureFlagger,
          clearingOption: ClearingOption? = nil,
          includeTabsAndWindows: Bool? = nil,
          includeHistory: Bool? = nil,
@@ -162,6 +164,7 @@ final class FireDialogViewModel: ObservableObject {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.fireproofDomains = fireproofDomains
         self.faviconManagement = faviconManagement
+        self.featureFlagger = featureFlagger
         self.historyCoordinating = historyCoordinating
         self.aiChatHistoryCleaner = aiChatHistoryCleaner
 
@@ -179,8 +182,17 @@ final class FireDialogViewModel: ObservableObject {
         self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? self.settings.lastIncludeCookiesAndSiteDataState ?? true
         self.includeChatHistorySetting = includeChatHistory ?? self.settings.lastIncludeChatHistoryState ?? false
 
+        updateLastSelectedClearingOptionIfNeeded()
+
         // Initialize selectable/fireproofed lists so counts are available immediately
         updateItems(for: self.clearingOption)
+    }
+
+    private func updateLastSelectedClearingOptionIfNeeded() {
+        guard featureFlagger.isFeatureOn(.fireDialogSimplified), clearingOption == .currentWindow else {
+            return
+        }
+        self.clearingOption = .allData
     }
 
     private(set) var shouldShowPinnedTabsInfo: Bool = false
@@ -196,6 +208,7 @@ final class FireDialogViewModel: ObservableObject {
     private(set) weak var tabCollectionViewModel: TabCollectionViewModel?
     private let fireproofDomains: FireproofDomains
     private let faviconManagement: FaviconManagement
+    private let featureFlagger: FeatureFlagger
     private let historyCoordinating: HistoryCoordinating
     private let aiChatHistoryCleaner: AIChatHistoryCleaning
     let tld: TLD

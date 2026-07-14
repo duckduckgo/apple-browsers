@@ -147,7 +147,7 @@
         "description": "Error code for the failure, when applicable"
     },
     "wideEventUnderlyingErrorDomain": {
-        "keyPattern": "feature\\.data\\.ext\\.error\\.underlying_domain[0-9]?",
+        "keyPattern": "^feature\\.data\\.ext\\.error\\.underlying_domain[0-9]?$",
         "type": "string",
         "description": "Underlying error domain (supports optional numeric index for nested errors)"
     },
@@ -185,7 +185,7 @@
         ]
     },
     "wideEventUnderlyingErrorCode": {
-        "keyPattern": "feature\\.data\\.ext\\.error\\.underlying_code[0-9]?",
+        "keyPattern": "^feature\\.data\\.ext\\.error\\.underlying_code[0-9]?$",
         "type": "integer",
         "description": "Underlying error code (supports optional numeric index for nested errors)"
     },

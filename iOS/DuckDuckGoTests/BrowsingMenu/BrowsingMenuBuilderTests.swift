@@ -18,7 +18,9 @@
 //
 
 import Bookmarks
+import Core
 import PersistenceTestingUtils
+import PrivacyDashboard
 import UIKit
 import XCTest
 @testable import DuckDuckGo
@@ -70,6 +72,39 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             MockBrowsingMenuEntryBuilder.downloadsName,
             MockBrowsingMenuEntryBuilder.chatsName
         ])
+    }
+
+    // MARK: - Privacy Protection toggle SERP gating
+
+    func testToggleProtectionDomainIsNilOnSERP() {
+        // On the SERP the Privacy Dashboard is unavailable, so the browsing-menu toggle must be hidden too.
+        let privacyInfo = makePrivacyInfo(url: URL(string: "https://duckduckgo.com/?q=catfood&t=h_&ia=web")!)
+        XCTAssertTrue(privacyInfo.url.isDuckDuckGoSearch)
+        XCTAssertNil(TabViewController.privacyProtectionToggleDomain(for: privacyInfo))
+    }
+
+    func testToggleProtectionDomainIsResolvedForRegularSite() {
+        let privacyInfo = makePrivacyInfo(url: URL(string: "https://example.com")!)
+        XCTAssertEqual(TabViewController.privacyProtectionToggleDomain(for: privacyInfo), "example.com")
+    }
+
+    func testToggleProtectionDomainIsResolvedForDuckDuckGoHomepage() {
+        // The DuckDuckGo homepage is not a SERP, so the toggle (like the shield/dashboard) stays available.
+        let privacyInfo = makePrivacyInfo(url: URL(string: "https://duckduckgo.com")!)
+        XCTAssertFalse(privacyInfo.url.isDuckDuckGoSearch)
+        XCTAssertEqual(TabViewController.privacyProtectionToggleDomain(for: privacyInfo), "duckduckgo.com")
+    }
+
+    func testToggleProtectionDomainIsNilWithoutPrivacyInfo() {
+        XCTAssertNil(TabViewController.privacyProtectionToggleDomain(for: nil))
+    }
+
+    private func makePrivacyInfo(url: URL) -> PrivacyInfo {
+        PrivacyInfo(
+            url: url,
+            parentEntity: nil,
+            protectionStatus: ProtectionStatus(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false)
+        )
     }
 
     private func makeBuilder(entryBuilder: BrowsingMenuEntryBuilding) -> BrowsingMenuBuilder {

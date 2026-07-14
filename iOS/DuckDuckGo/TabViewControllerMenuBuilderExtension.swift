@@ -245,10 +245,12 @@ extension TabViewController {
     }
 
     private func buildDownloadsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
-        .regular(name: UserText.actionDownloads,
-                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
-                 showNotificationDot: AppDependencyProvider.shared.downloadManager.unseenDownloadsAvailable,
-                 action: { [weak self] in
+        let downloadManager = AppDependencyProvider.shared.downloadManager
+
+        return .regular(name: UserText.actionDownloads,
+                        image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
+                        showNotificationDot: downloadManager.hasDownloadsNeedingAttention,
+                        action: { [weak self] in
             self?.onOpenDownloadsAction()
         })
     }

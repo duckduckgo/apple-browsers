@@ -76,6 +76,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setOnboardingDimmed(dimmed)
     }
 
+    func setMenuAlertVisible(_ isVisible: Bool, animated: Bool) {
+        inputBarView.setMenuAlertVisible(isVisible, animated: animated)
+    }
+
     init(isToggleEnabled: Bool, isFireTab: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,

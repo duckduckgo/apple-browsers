@@ -103,6 +103,9 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Atšaukti";
 
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Pokalbiai";
+
 /* Copy action */
 "action.title.copy" = "Kopijuoti";
 
@@ -247,24 +250,6 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "DI funkcijos";
 
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Pokalbis";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Išklotinė";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.chip.voice" = "Balso pokalbis";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.untitledChat" = "Naujas pokalbis";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening" = "Klausomasi...";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Klausomasi...";
-
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Pokalbiai";
 
@@ -337,6 +322,45 @@
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Naujas balso pokalbis";
 
+/* Title of the confirmation shown when the user taps Fire in Duck.ai chat history to delete all chats; the number is the chat count. Do not translate - stringsdict entry */
+"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Atidaryti „Duck.ai“";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Nėra naujausių pokalbių";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Įkeliant „Duck.ai“ pokalbius įvyko klaida. Bandykite dar kartą vėliau.";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Nepavyko įkelti pokalbių";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Atitikmenų nerasta";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Paieška";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Prisegti";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Naujausi";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Trinti pokalbį";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Atsisiųsti pokalbį";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Prisegti pokalbį";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Atsegti pokalbį";
+
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Analitinėms užduotims";
 
@@ -375,6 +399,24 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Pasiek savo pokalbius visuose įrenginiuose – naudok „Sync & Backup“.";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Pokalbis";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Išklotinė";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
+"aiChat.tabSwitcher.card.chip.voice" = "Balso pokalbis";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
+"aiChat.tabSwitcher.card.untitledChat" = "Naujas pokalbis";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
+"aiChat.tabSwitcher.card.voice.listening" = "Klausomasi...";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Klausomasi...";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Nustatykite toną, ilgį ir elgseną";
@@ -540,8 +582,6 @@
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nepavyko prisijungti prie serverio.";
-
-/* Description for unable to sync with another device error */
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nepavyko išjungti sinchronizavimo ir atsarginės kopijos kūrimo.";
@@ -1426,10 +1466,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Patvirtinti";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Stengsimės parinkti privačiausias galimas slapukų parinktis ir jas už jus uždaryti. Jei nėra atsisakymo parinkčių, sutaupysime jums paspaudimą ir priimsime šiuos slapukus už jus.";
+"cookie-popup-protection.opt-in.disabled.body" = "Stengsimės atmesti kuo daugiau slapukų. Jei atmetimo parinkties nėra, sutaupysime tau paspaudimą ir šiuos slapukus priimsime už tave.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Tvarkyti arba priimti slapukus už mane";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Atmesti, kai įmanoma, arba priimti už mane";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Aš ir toliau juos tvarkysiu";
@@ -1441,10 +1481,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Galime išlaisvinti jus nuo paspaudimo ir priimti šiuos slapukus už jus.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Priimti neatsisakomus slapukus už mane";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Priimti slapukus, kurių negalima atmesti";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Aš ir toliau juos tvarkysiu";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ir toliau juos priimsiu pats";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Ar pavargote nuo slapukų iškylančiųjų langų, kurie neleidžia jų atsisakyti?";
@@ -3732,6 +3772,9 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Ištrinti viską";
 
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Trinti pokalbius";
+
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Ištrinti kortelę";
 
@@ -3898,7 +3941,7 @@
 "settings.aifeatures.assist.sometimes" = "Kartais";
 
 /* Title of the native Search Assist setting control */
-"settings.aifeatures.assist.title" = "„Assist“ paieška";
+"settings.aifeatures.assist.title" = "Search Assist";
 
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Automatiškai siųsti puslapio turinį į „Duck.ai“";
@@ -3910,7 +3953,7 @@
 "settings.aifeatures.chat.suggestions.title" = "Pokalbių pasiūlymai";
 
 /* Button that turns off all AI features */
-"settings.aifeatures.disable.all" = "Naudoti DuckDuckGo be DI";
+"settings.aifeatures.disable.all" = "Naudok „DuckDuckGo“ be DI";
 
 /* Footer text below the disable all AI features button */
 "settings.aifeatures.disable.all.footer" = "Išjungia „Duck.ai“, paieškoje paslepia DI parengtus atsakymus ir iš vaizdų paieškos rezultatų pašalina žinomas DI brukalų svetaines.";
@@ -4050,14 +4093,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Užbaik savo sąranką";
 
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Stengsimės parinkti tik didžiausią privatumą užtikrinančias slapukų parinktis ir uždaryti šiuos iškylančiuosius langus.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Automatiškai valdyti slapukų iššokančiuosius langus";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Apsauga nuo slapukų iškylančiųjų langų";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "„DuckDuckGo“ bandys pasirinkti didžiausią privatumą užtikrinančius nustatymus ir paslėpti šiuos iškylančiuosius langus.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "„DuckDuckGo“ gali automatiškai tvarkyti slapukų nuostatas, kad maksimaliai padidintų privatumą, sumažintų slapukų skaičių ir uždarytų šiuos iškylančiuosius langus.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Valdyti slapukų iššokančiuosius langus";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Taip pat leisti „DuckDuckGo“ išlaisvinti jus nuo paspaudimo priimant slapukus jūsų vardu, kad būtų uždaromi iškylantieji langai, kurie neleidžia jų atsisakyti.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Iššokantieji langai be atsisakymo galimybės";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Ištrinti skirtukus ir duomenis";
@@ -5373,52 +5428,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ką nori importuoti?";
 
-
-/* No comment provided by engineer. */
-"No matches for \"%@\"" = "Nėra atitikmenų pagal užklausą „%@“";
-
-
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Pokalbiai";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Nėra naujausių pokalbių";
-
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Atidaryti „Duck.ai“";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Paieška";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Prisegti";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Naujausi";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Atitikmenų nerasta";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Nepavyko įkelti pokalbių";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "Įkeliant „Duck.ai“ pokalbius įvyko klaida. Bandykite dar kartą vėliau.";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Trinti pokalbį";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Atsisiųsti pokalbį";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Prisegti pokalbį";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Atsegti pokalbį";
-
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Trinti pokalbius";
-
-/* Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";

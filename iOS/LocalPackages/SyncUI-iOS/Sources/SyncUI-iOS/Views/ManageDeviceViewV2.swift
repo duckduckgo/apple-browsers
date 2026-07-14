@@ -45,42 +45,26 @@ struct ManageDeviceViewV2: View {
     }
 
     var body: some View {
-        NavigationView {
-            List {
-                headerSection
+        List {
+            headerSection
 
-                if device.isThisDevice {
-                    nameSection
-                    syncToggleSection
-                } else {
-                    removeSection
-                }
-            }
-            .applyListStyle()
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    backButton
-                }
-            }
-            .onChange(of: model.isSyncEnabled) { isEnabled in
-                if !isEnabled {
-                    dismiss()
-                }
-            }
-            .onDisappear {
-                saveDeviceNameIfNeeded()
+            if device.isThisDevice {
+                nameSection
+                syncToggleSection
+            } else {
+                removeSection
             }
         }
-    }
-
-    private var backButton: some View {
-        Button {
-            dismiss()
-        } label: {
-            Image(systemName: "chevron.backward")
+        .applyListStyle()
+        .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: model.isSyncEnabled) { isEnabled in
+            if !isEnabled {
+                dismiss()
+            }
         }
-        .accessibilityLabel(UserText.backButton)
+        .onDisappear {
+            saveDeviceNameIfNeeded()
+        }
     }
 
     private var headerSection: some View {
@@ -221,37 +205,45 @@ private extension SyncSettingsViewModel {
 
 #Preview("Other Device – Desktop") {
     RebrandedPreview(isRebranded: true) {
-        ManageDeviceViewV2(
-            model: .managePreview(),
-            device: .init(id: "2", name: "macOS Ventura", type: "desktop", isThisDevice: false)
-        )
+        NavigationView {
+            ManageDeviceViewV2(
+                model: .managePreview(),
+                device: .init(id: "2", name: "macOS Ventura", type: "desktop", isThisDevice: false)
+            )
+        }
     }
 }
 
 #Preview("Other Device – Mobile") {
     RebrandedPreview(isRebranded: true) {
-        ManageDeviceViewV2(
-            model: .managePreview(),
-            device: .init(id: "3", name: "Pixel 8", type: "phone", isThisDevice: false)
-        )
+        NavigationView {
+            ManageDeviceViewV2(
+                model: .managePreview(),
+                device: .init(id: "3", name: "Pixel 8", type: "phone", isThisDevice: false)
+            )
+        }
     }
 }
 
 #Preview("This Device – Sync On") {
     RebrandedPreview(isRebranded: true) {
-        ManageDeviceViewV2(
-            model: .managePreview(isSyncEnabled: true),
-            device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
-        )
+        NavigationView {
+            ManageDeviceViewV2(
+                model: .managePreview(isSyncEnabled: true),
+                device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
+            )
+        }
     }
 }
 
 #Preview("This Device – Sync Off") {
     RebrandedPreview(isRebranded: true) {
-        ManageDeviceViewV2(
-            model: .managePreview(isSyncEnabled: false),
-            device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
-        )
+        NavigationView {
+            ManageDeviceViewV2(
+                model: .managePreview(isSyncEnabled: false),
+                device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
+            )
+        }
     }
 }
 

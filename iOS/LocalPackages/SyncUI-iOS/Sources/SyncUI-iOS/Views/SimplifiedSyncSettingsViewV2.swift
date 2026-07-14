@@ -66,9 +66,6 @@ public struct SimplifiedSyncSettingsViewV2: View {
                 })
             )
         }
-        .sheet(item: $selectedDevice) { device in
-            ManageDeviceViewV2(model: model, device: device)
-        }
         .sheet(item: $model.connectingSheetPhase, onDismiss: {
             model.connectingSheetDidDismiss()
         }, content: {_ in
@@ -463,6 +460,24 @@ extension SimplifiedSyncSettingsViewV2 {
             }
             .transition(.opacity)
             .accessibility(identifier: "device")
+            .background(
+                NavigationLink(isActive: manageDeviceBinding(for: device)) {
+                    ManageDeviceViewV2(model: model, device: device)
+                } label: {
+                    EmptyView()
+                }
+                .accessibilityHidden(true)
+            )
+        }
+    }
+
+    func manageDeviceBinding(for device: SyncSettingsViewModel.Device) -> Binding<Bool> {
+        Binding {
+            selectedDevice?.id == device.id
+        } set: { isActive in
+            if !isActive {
+                selectedDevice = nil
+            }
         }
     }
 

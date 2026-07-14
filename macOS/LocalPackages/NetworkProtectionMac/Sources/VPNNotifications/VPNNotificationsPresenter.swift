@@ -198,7 +198,17 @@ extension VPNNotificationsPresenter: UNUserNotificationCenterDelegate {
 
     public func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
 
-        try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showStatus)
+        // The strict-routing reminder is about a setting, so take the user to the VPN settings pane.
+        // Every other VPN notification opens the status view.
+        let command: VPNAppLaunchCommand
+        switch VPNNotificationIdentifier(rawValue: response.notification.request.identifier) {
+        case .strictRoutingReminder:
+            command = .showSettings
+        default:
+            command = .showStatus
+        }
+
+        try? await appLauncher.launchApp(withCommand: command)
     }
 
 }

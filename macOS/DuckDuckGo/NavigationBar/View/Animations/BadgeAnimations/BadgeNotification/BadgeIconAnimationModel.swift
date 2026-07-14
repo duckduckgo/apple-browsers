@@ -32,7 +32,7 @@ final class BadgeIconAnimationModel: ObservableObject {
     let secondPhaseDelay: CGFloat
     let halfDuration: CGFloat
     let addressBarIconsProvider: AddressBarCookiesIconsProviding
-    let isAppRedesigned: Bool
+    let isAppRebranded: Bool
 
     init(duration: CGFloat = AnimationDefaultConsts.totalDuration,
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager)
@@ -42,7 +42,7 @@ final class BadgeIconAnimationModel: ObservableObject {
         self.halfDuration = duration / 2.0
         self.secondPhaseDelay = self.halfDuration
         self.addressBarIconsProvider = iconsProvider.addressBarCookiesIconsProvider
-        self.isAppRedesigned = themeManager.isAppRebranded
+        self.isAppRebranded = themeManager.isAppRebranded
     }
 }
 

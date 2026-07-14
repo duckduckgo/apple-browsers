@@ -46,7 +46,7 @@ struct BadgeNotificationContentView: View {
         if useVideoPlayerIcon {
             return AnyView(VideoPlayerIconView())
         } else if useShieldIcon {
-            return AnyView(ShieldIconView(isAppRedesigned: badgeIconAnimationModel.isAppRedesigned))
+            return AnyView(ShieldIconView(isAppRebranded: badgeIconAnimationModel.isAppRebranded))
         } else {
             return AnyView(BadgeIconAnimationView(animationModel: badgeIconAnimationModel))
         }
@@ -235,10 +235,10 @@ private struct DotView: View {
 }
 
 struct ShieldIconView: View {
-    let isAppRedesigned: Bool
+    let isAppRebranded: Bool
 
     var body: some View {
-        if isAppRedesigned {
+        if isAppRebranded {
             Image(nsImage: DesignSystemImages.Color.Size24.shieldCheck)
                 .resizable()
                 .frame(width: 20, height: 20)

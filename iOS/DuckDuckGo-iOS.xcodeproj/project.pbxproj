@@ -2147,6 +2147,8 @@
 		CB27DAF530063B4A00EEEADB /* AITabChromeDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAF430063B4A00EEEADB /* AITabChromeDecision.swift */; };
 		CB27DAF730063B9100EEEADB /* ToolbarVisibilityDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAF630063B9100EEEADB /* ToolbarVisibilityDecisionTests.swift */; };
 		CB27DAF930063B9A00EEEADB /* AITabChromeDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAF830063B9A00EEEADB /* AITabChromeDecisionTests.swift */; };
+		CB27DAFB30064B5100EEEADB /* UnifiedInputTextChangeGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAFA30064B5100EEEADB /* UnifiedInputTextChangeGate.swift */; };
+		CB27DAFD30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAFC30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift */; };
 		CB2A7EEF283D185100885F67 /* RulesCompilationMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2A7EEE283D185100885F67 /* RulesCompilationMonitor.swift */; };
 		CB2A7EF128410DF700885F67 /* PixelEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2A7EF028410DF700885F67 /* PixelEvent.swift */; };
 		CB2A7EF4285383B300885F67 /* AppLastCompiledRulesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2A7EF3285383B300885F67 /* AppLastCompiledRulesStore.swift */; };
@@ -4845,6 +4847,8 @@
 		CB27DAF430063B4A00EEEADB /* AITabChromeDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AITabChromeDecision.swift; sourceTree = "<group>"; };
 		CB27DAF630063B9100EEEADB /* ToolbarVisibilityDecisionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarVisibilityDecisionTests.swift; sourceTree = "<group>"; };
 		CB27DAF830063B9A00EEEADB /* AITabChromeDecisionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AITabChromeDecisionTests.swift; sourceTree = "<group>"; };
+		CB27DAFA30064B5100EEEADB /* UnifiedInputTextChangeGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputTextChangeGate.swift; sourceTree = "<group>"; };
+		CB27DAFC30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedInputTextChangeGateTests.swift; sourceTree = "<group>"; };
 		CB29792D2AF6D5C1006C461D /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB2A7EEE283D185100885F67 /* RulesCompilationMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulesCompilationMonitor.swift; sourceTree = "<group>"; };
 		CB2A7EF028410DF700885F67 /* PixelEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelEvent.swift; sourceTree = "<group>"; };
@@ -9563,6 +9567,7 @@
 				C0A43FA34A9C65835FF48566 /* DuckAISubscriptionUpsellPresenter.swift */,
 				CB27DAF230063B4600EEEADB /* ToolbarVisibilityDecision.swift */,
 				CB27DAF430063B4A00EEEADB /* AITabChromeDecision.swift */,
+				CB27DAFA30064B5100EEEADB /* UnifiedInputTextChangeGate.swift */,
 			);
 			path = UnifiedToggleInput;
 			sourceTree = "<group>";
@@ -9600,6 +9605,7 @@
 				D9978912B1022C989EF9C224 /* IPadOmnibarAttachmentControllerTests.swift */,
 				CB27DAF630063B9100EEEADB /* ToolbarVisibilityDecisionTests.swift */,
 				CB27DAF830063B9A00EEEADB /* AITabChromeDecisionTests.swift */,
+				CB27DAFC30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift */,
 			);
 			path = UnifiedToggleInput;
 			sourceTree = "<group>";
@@ -13637,6 +13643,7 @@
 				84E341961E2F7EFB00BDBA6F /* AppDelegate.swift in Sources */,
 				65898D8C2D9C161800D5EC22 /* DuckPlayerDelayHandler.swift in Sources */,
 				9F254AAB2CF47DD50063B308 /* MaliciousSiteProtectionManager.swift in Sources */,
+				CB27DAFB30064B5100EEEADB /* UnifiedInputTextChangeGate.swift in Sources */,
 				310D091D2799F57200DC0060 /* Download.swift in Sources */,
 				B39FB0F42E25368100DF2C4E /* AutoconsentPixels.swift in Sources */,
 				65F4CB462D7A0EFF00E89416 /* DuckPlayerWebView.swift in Sources */,
@@ -14129,6 +14136,7 @@
 				CC3445752E6760D100019518 /* UserScriptErrorTests.swift in Sources */,
 				97C00D0C2F98EEE300593A53 /* UnifiedInputContentContainerViewControllerTests.swift in Sources */,
 				98E563EA2DE8B32D00E6E75F /* MockTextZoomCoordinator.swift in Sources */,
+				CB27DAFD30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift in Sources */,
 				98E563EC2DE8B32D00E6E75F /* MockWebsiteDataManager.swift in Sources */,
 				C1EA266A2EB572E1006A863C /* AutofillExtensionSettingsViewModelTests.swift in Sources */,
 				5B6D651F2FB4D30A00BDCF4D /* CompleteDownloadRowViewModelTests.swift in Sources */,

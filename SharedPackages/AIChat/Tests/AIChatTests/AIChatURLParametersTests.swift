@@ -116,10 +116,10 @@ final class AIChatURLParametersTests: XCTestCase {
 
     // MARK: - nativeCustomizeModalURL
 
-    func testNativeCustomizeModalURLAppendsForceCustomizeParam() {
+    func testNativeCustomizeModalURLAppendsCustomizeResponsesParam() {
         let baseURL = URL(string: "https://duck.ai")!
         let result = AIChatURLParameters.nativeCustomizeModalURL(from: baseURL)
-        XCTAssertEqual(result.absoluteString, "https://duck.ai?forceCustomize=true")
+        XCTAssertEqual(result.absoluteString, "https://duck.ai?customize-responses=full")
     }
 
     func testNativeCustomizeModalURLPreservesExistingQueryItems() {
@@ -129,7 +129,7 @@ final class AIChatURLParametersTests: XCTestCase {
         let components = URLComponents(url: result, resolvingAgainstBaseURL: false)!
         let queryItems = components.queryItems ?? []
         XCTAssertTrue(queryItems.contains(URLQueryItem(name: "q", value: "hello")))
-        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "forceCustomize", value: "true")))
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "customize-responses", value: "full")))
     }
 
     func testNativeInputURLAppendsNativeInputParameter() {

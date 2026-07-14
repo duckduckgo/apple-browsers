@@ -212,6 +212,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.showExpanded()
     }
 
+    func deactivateInput() {
+        coordinator.viewController.deactivateInput()
+    }
+
     func submitQuickActionPrompt(_ prompt: String) {
         coordinator.submitProgrammatic(text: prompt)
     }

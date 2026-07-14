@@ -1934,6 +1934,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
                 clearAttachments()
                 setText("")
+                dismissOmnibarKeyboard()
                 return
             }
 
@@ -1948,6 +1949,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 // showCollapsed has no dismiss hook; clear synchronously.
                 setText("")
                 showCollapsed()
+                if isContextualChatState {
+                    dismissOmnibarKeyboard()
+                }
             }
             if let userScript {
                 let didSendBridgeMessage = userScript.canDispatchBridgeMessages

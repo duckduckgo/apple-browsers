@@ -260,6 +260,7 @@ jobs:
           xcode-compilation-cache-${{ matrix.flavor }}-
 
     - name: Build for testing
+      id: build-for-testing
       run: |
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"
 

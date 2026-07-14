@@ -601,6 +601,8 @@ struct FireDialogView: ModalView {
                     .toggleStyle(.checkbox)
                     .tint(style.knobFillColor)
                     .padding(.bottom, 2)
+                    .accessibilityLabel("FireDialogView.tabsToggle")
+                    .accessibilityHidden(isShowingSitesOverlay)
                 Text(tabsSubtitle)
                     .font(.system(size: 11))
                     .padding(.leading, 4)

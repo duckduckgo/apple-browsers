@@ -273,6 +273,12 @@
               }
             },
             {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "display-p3:0.94118,0.75294,0.27843,1.00000"
+              }
+            },
+            {
               "appearance" : "tinted",
               "value" : {
                 "solid" : "gray:0.50000,1.00000"
@@ -292,9 +298,19 @@
           }
         },
         {
-          "fill" : {
-            "solid" : "gray:1.00000,1.00000"
-          },
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "gray:1.00000,1.00000"
+              }
+            }
+          ],
           "glass" : true,
           "hidden" : false,
           "image-name" : "Head and Ring.svg",

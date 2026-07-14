@@ -21,7 +21,30 @@ import Foundation
 import Bookmarks
 import Core
 import Onboarding
+import Persistence
+import WebExtensions
 import WidgetKit
+
+private enum CookiePopupProtectionStorageKeys: String, StorageKeyDescribing {
+    case cookiePopupPreference = "com_duckduckgo_ios_cookiePopupPreference"
+    case didMigrateCookiePopupPreference = "com_duckduckgo_ios_cookiePopupPreference_didMigrate"
+}
+
+private struct CookiePopupProtectionKeys: StoringKeys {
+    let cookiePopupPreference = StorageKey<String>(CookiePopupProtectionStorageKeys.cookiePopupPreference)
+    let didMigrateCookiePopupPreference = StorageKey<Bool>(CookiePopupProtectionStorageKeys.didMigrateCookiePopupPreference)
+}
+
+private enum AddressBarStorageKeys: String, StorageKeyDescribing {
+    case keepAddressBarVisibleOnIPad = "com_duckduckgo_ios_keepAddressBarVisibleOnIPad"
+}
+
+private struct AddressBarKeys: StoringKeys {
+    let keepAddressBarVisibleOnIPad = StorageKey<Bool>(
+        AddressBarStorageKeys.keepAddressBarVisibleOnIPad,
+        migrateLegacyKey: "com.duckduckgo.ios.keepaddressbarvisibleonipad"
+    )
+}
 
 public class AppUserDefaults: AppSettings {
     
@@ -37,6 +60,7 @@ public class AppUserDefaults: AppSettings {
         public static let didVerifyInternalUser = Notification.Name("com.duckduckgo.app.DidVerifyInternalUser")
         public static let inspectableWebViewsToggled = Notification.Name("com.duckduckgo.app.DidToggleInspectableWebViews")
         public static let addressBarPositionChanged = Notification.Name("com.duckduckgo.app.AddressBarPositionChanged")
+        public static let keepAddressBarVisibleOnIPadChanged = Notification.Name("com.duckduckgo.app.KeepAddressBarVisibleOnIPadChanged")
         public static let refreshButtonSettingsChanged = Notification.Name("com.duckduckgo.refreshButton.settings.changed")
         public static let customizationSettingsChanged = Notification.Name("com.duckduckgo.customization.settings.changed")
         public static let showsFullURLAddressSettingChanged = Notification.Name("com.duckduckgo.app.ShowsFullURLAddressSettingChanged")
@@ -258,6 +282,21 @@ public class AppUserDefaults: AppSettings {
             NotificationCenter.default.post(name: Notifications.addressBarPositionChanged, object: currentAddressBarPosition)
         }
     }
+
+    private var addressBarStorage: any KeyedStoring<AddressBarKeys> {
+        UserDefaults.app.keyedStoring()
+    }
+
+    var keepAddressBarVisibleOnIPad: Bool {
+        get {
+            addressBarStorage.keepAddressBarVisibleOnIPad ?? false
+        }
+
+        set {
+            addressBarStorage.keepAddressBarVisibleOnIPad = newValue
+            NotificationCenter.default.post(name: Notifications.keepAddressBarVisibleOnIPadChanged, object: newValue)
+        }
+    }
     
     var currentRefreshButtonPosition: RefreshButtonPosition {
         get {
@@ -421,29 +460,54 @@ public class AppUserDefaults: AppSettings {
         }
     }
 
-    var autoconsentEnabled: Bool {
+    var cookiePopupPreference: CookiePopupPreference {
         get {
-            // Use settings value if present
-            if let isEnabled = autoconsentEnabledSetting {
-                return isEnabled
+            migrateCookiePopupPreferenceIfNeeded()
+            guard let rawValue = cookiePopupStorage.cookiePopupPreference,
+                  let preference = CookiePopupPreference(rawValue: rawValue) else {
+                return .default
             }
-
-            // Use onByDefault rollout otherwise
-            return featureFlagger.isFeatureOn(.autoconsentOnByDefault)
+            return preference
         }
 
         set {
-            autoconsentEnabledSetting = newValue
+            migrateCookiePopupPreferenceIfNeeded()
+            cookiePopupStorage.cookiePopupPreference = newValue.rawValue
         }
+    }
+
+    var autoconsentEnabled: Bool {
+        get { cookiePopupPreference.isBlockingEnabled }
+        set { cookiePopupPreference = newValue ? .default : .off }
     }
 
     // Only for testing and `DebugViewController` purposes
     func clearAutoconsentUserSetting() {
         autoconsentEnabledSetting = nil
+        cookiePopupStorage.cookiePopupPreference = nil
+        cookiePopupStorage.didMigrateCookiePopupPreference = false
     }
 
     @UserDefaultsWrapper(key: .autoconsentEnabled, defaultValue: false)
     private var autoconsentEnabledSetting: Bool?
+
+    private var cookiePopupStorage: any KeyedStoring<CookiePopupProtectionKeys> {
+        UserDefaults.app.keyedStoring()
+    }
+
+    private func migrateCookiePopupPreferenceIfNeeded() {
+        guard cookiePopupStorage.didMigrateCookiePopupPreference != true else { return }
+
+        let migratedPreference: CookiePopupPreference
+        if autoconsentEnabledSetting == false {
+            migratedPreference = .off
+        } else {
+            migratedPreference = .default
+        }
+
+        cookiePopupStorage.cookiePopupPreference = migratedPreference.rawValue
+        cookiePopupStorage.didMigrateCookiePopupPreference = true
+    }
 
     var inspectableWebViewEnabled: Bool {
         get {

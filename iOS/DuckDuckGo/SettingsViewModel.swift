@@ -18,10 +18,12 @@
 //
 
 import Core
+import WebExtensions
 import BrowserServicesKit
 import Persistence
 import PrivacyConfig
 import SwiftUI
+import UIComponents
 import Common
 import FoundationExtensions
 import Combine
@@ -36,7 +38,6 @@ import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
 import SERPSettings
 import Networking
-import WebExtensions
 
 enum YouTubeAdBlockingStorageKeys: String, StorageKeyDescribing {
     case youTubeAdBlockingEnabled = "com_duckduckgo_ios_youTubeAdBlockingEnabled"
@@ -69,7 +70,9 @@ final class SettingsViewModel: ObservableObject {
     private(set) var historyManager: HistoryManaging
     let subscriptionDataReporter: SubscriptionDataReporting?
     let aiChatSettings: AIChatSettingsProvider
-    let serpSettings: SERPSettingsProviding
+    // `var` because the SERP setting accessors have mutating setters (non-class protocol);
+    // the conformer is a class, so writes go to the shared instance.
+    var serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     private let tabSwitcherSettings: TabSwitcherSettings
     private let autoplaySettings: AutoplaySettings
@@ -82,6 +85,7 @@ final class SettingsViewModel: ObservableObject {
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     private let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
+    private let profileStateManager: DBPProfileStateManaging
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
@@ -140,7 +144,7 @@ final class SettingsViewModel: ObservableObject {
     let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     
     // Properties
-    private lazy var isPad = UIDevice.current.userInterfaceIdiom == .pad
+    lazy var isPad = UIDevice.current.userInterfaceIdiom == .pad
     private var cancellables = Set<AnyCancellable>()
 
     // App Data State Notification Observer
@@ -199,14 +203,20 @@ final class SettingsViewModel: ObservableObject {
             && dataBrokerProtectionViewControllerProvider != nil
     }
 
-    var dbpMeetsProfileRunPrequisite: Bool {
-        get {
-            (try? runPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false
+    var dbpProfileStatusIndicator: StatusIndicator? {
+        switch profileStateManager.profileState {
+        case .hasProfile: return .on
+        case .noProfile: return .off
+        case .unknown: return nil
         }
     }
 
     var isDefaultOmnibarModeEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarDefaultPosition)
+    }
+
+    var isAIFeaturesNativeControlsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiFeaturesNativeControls)
     }
 
     var isTabSwitcherTrackerCountEnabled: Bool {
@@ -327,6 +337,19 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .top ? .settingsAddressBarTopSelected : .settingsAddressBarBottomSelected)
                 self.appSettings.currentAddressBarPosition = $0
                 self.state.addressBar.position = $0
+            }
+        )
+    }
+
+    var hideTabBarWhileScrollingOnIPadBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                !self.appSettings.keepAddressBarVisibleOnIPad
+            },
+            set: { hideWhileScrolling in
+                Pixel.fire(pixel: hideWhileScrolling ? .settingsHideTabBarWhileScrollingOn : .settingsHideTabBarWhileScrollingOff)
+                let keepVisible = !hideWhileScrolling
+                self.appSettings.keepAddressBarVisibleOnIPad = keepVisible
             }
         )
     }
@@ -518,6 +541,10 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var isCookiePopupPreferenceSettingEnabled: Bool {
+        featureFlagger.isFeatureOn(.cookiePopupPreferenceSetting)
+    }
+
     var autoconsentBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.autoconsentEnabled },
@@ -531,6 +558,38 @@ final class SettingsViewModel: ObservableObject {
                 }
             }
         )
+    }
+
+    var autoManageCookiePopupsBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.cookiePopupPreference.isAutoManageCookiePopupsEnabled },
+            set: { isEnabled in
+                let popUpsWithoutOptOuts = isEnabled ? self.state.cookiePopupPreference.isPopUpsWithoutOptOutsEnabled : false
+                self.setCookiePopupPreference(.preference(
+                    autoManageEnabled: isEnabled,
+                    popUpsWithoutOptOutsEnabled: popUpsWithoutOptOuts
+                ))
+                Pixel.fire(pixel: isEnabled ? .autoconsentSettingsOn : .autoconsentSettingsOff)
+            }
+        )
+    }
+
+    var popUpsWithoutOptOutsBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.cookiePopupPreference.isPopUpsWithoutOptOutsEnabled },
+            set: { isEnabled in
+                self.setCookiePopupPreference(.preference(
+                    autoManageEnabled: true,
+                    popUpsWithoutOptOutsEnabled: isEnabled
+                ))
+                Pixel.fire(pixel: isEnabled ? .autoconsentSettingsMax : .autoconsentSettingsDefault)
+            }
+        )
+    }
+
+    private func setCookiePopupPreference(_ preference: CookiePopupPreference) {
+        appSettings.cookiePopupPreference = preference
+        state.cookiePopupPreference = preference
     }
 
     var voiceSearchEnabledBinding: Binding<Bool> {
@@ -922,7 +981,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var cookiePopUpProtectionStatus: StatusIndicator {
-        return appSettings.autoconsentEnabled ? .on : .off
+        return appSettings.cookiePopupPreference.isBlockingEnabled ? .on : .off
     }
     
     var emailProtectionStatus: StatusIndicator {
@@ -976,6 +1035,7 @@ final class SettingsViewModel: ObservableObject {
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+         profileStateManager: DBPProfileStateManaging,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -1019,6 +1079,7 @@ final class SettingsViewModel: ObservableObject {
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.freemiumPIREligibilityChecker = freemiumPIREligibilityChecker
+        self.profileStateManager = profileStateManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
@@ -1084,7 +1145,7 @@ extension SettingsViewModel {
             mobileCustomization: mobileCustomization.state,
             forceWebsiteDarkMode: darkReaderFeatureSettings.isForceDarkModeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
-            autoconsentEnabled: appSettings.autoconsentEnabled,
+            cookiePopupPreference: appSettings.cookiePopupPreference,
             autoClearAIChatHistory: appSettings.autoClearAIChatHistory,
             applicationLock: privacyStore.authenticationEnabled,
             autocomplete: appSettings.autocomplete,
@@ -1593,6 +1654,7 @@ extension SettingsViewModel {
         case aiChat
         case privateSearch
         case subscriptionSettings
+        case subscriptionWelcome
         case customizeToolbarButton
         case customizeAddressBarButton
         case appearance
@@ -1611,6 +1673,7 @@ extension SettingsViewModel {
             case .aiChat: return "aiChat"
             case .privateSearch: return "privateSearch"
             case .subscriptionSettings: return "subscriptionSettings"
+            case .subscriptionWelcome: return "subscriptionWelcome"
             case .customizeToolbarButton: return "customizeToolbarButton"
             case .customizeAddressBarButton: return "customizeAddressButton"
             case .appearance: return "appearance"
@@ -1623,9 +1686,16 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general:
                 return .navigationLink
             }
+        }
+
+        // A subscription purchase flow launched from onboarding (carries the onboarding funnel origin).
+        var isOnboardingSubscriptionFlow: Bool {
+            guard case .subscriptionFlow(let redirectURLComponents) = self else { return false }
+            let origin = redirectURLComponents?.queryItems?.first { $0.name == AttributionParameter.origin }?.value
+            return origin == SubscriptionFunnelOrigin.onboarding.rawValue
         }
     }
 
@@ -1932,6 +2002,56 @@ extension SettingsViewModel {
                 self.aiChatSettings.setDefaultOmnibarMode(newValue)
             }
         )
+    }
+
+    var searchAssistFrequencyBinding: Binding<SearchAssistFrequency> {
+        Binding<SearchAssistFrequency>(
+            get: { self.serpSettings.searchAssistFrequency },
+            set: { newValue in
+                guard newValue != self.serpSettings.searchAssistFrequency else { return }
+                self.objectWillChange.send()
+                self.serpSettings.searchAssistFrequency = newValue
+                DailyPixel.fireDailyAndCount(pixel: Self.searchAssistPixel(for: newValue))
+            }
+        )
+    }
+
+    var hideAIImagesBinding: Binding<HideAIImagesOption> {
+        Binding<HideAIImagesOption>(
+            get: { HideAIImagesOption(hidden: self.serpSettings.hideAIGeneratedImages) },
+            set: { newValue in
+                guard newValue.hidden != self.serpSettings.hideAIGeneratedImages else { return }
+                self.objectWillChange.send()
+                self.serpSettings.hideAIGeneratedImages = newValue.hidden
+                DailyPixel.fireDailyAndCount(pixel: newValue.hidden ? .aiFeaturesHideImagesOn : .aiFeaturesHideImagesOff)
+            }
+        )
+    }
+
+    /// Maps a Search Assist frequency to its value-in-name AI Features pixel.
+    private static func searchAssistPixel(for frequency: SearchAssistFrequency) -> Pixel.Event {
+        switch frequency {
+        case .never: return .aiFeaturesSearchAssistNever
+        case .onDemand: return .aiFeaturesSearchAssistOnDemand
+        case .sometimes: return .aiFeaturesSearchAssistSometimes
+        case .often: return .aiFeaturesSearchAssistOften
+        }
+    }
+
+    /// True when Duck.ai is off and both SERP AI settings are at their most-restrictive values.
+    /// Hides the "Disable AI Features" button once everything is already disabled.
+    var isAllAIDisabled: Bool {
+        !aiChatSettings.isAIChatEnabled
+            && serpSettings.searchAssistFrequency == .never
+            && serpSettings.hideAIGeneratedImages
+    }
+
+    func disableAllAI() {
+        objectWillChange.send()
+        aiChatSettings.enableAIChat(enable: false)
+        serpSettings.searchAssistFrequency = .never
+        serpSettings.hideAIGeneratedImages = true
+        DailyPixel.fireDailyAndCount(pixel: .aiFeaturesDisabled)
     }
 
     var isChatSuggestionsEnabled: Binding<Bool> {

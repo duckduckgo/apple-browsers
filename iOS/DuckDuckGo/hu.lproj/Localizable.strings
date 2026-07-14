@@ -247,6 +247,24 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "AI funkciók";
 
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Csevegés";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Leirat";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Hangcsevegés";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Új csevegés";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Figyelek…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Figyelek…";
+
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Csevegések";
 
@@ -383,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Megvan";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Már mindkét eszközön hozzá vagy rendelve ehhez a fiókhoz.";
+"alert.sync-already-paired-with-account-description" = "Ezek az eszközök már csatlakoztatva vannak a Sync & Backup funkcióhoz.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Már párosítva";
+"alert.sync-already-paired-with-account-title" = "Már szinkronizálva.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Egyes könyvjelzők helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";
@@ -407,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "A szinkronizálás megszakítva a másik eszközödről.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Nyisd meg a böngésződben a duck.ai oldalt, menj a Beállításokba, majd a „Sync & Backup” alatt válaszd a „Bekapcsolás” lehetőséget, és válaszd a „Szinkronizálás másik eszközzel” opciót.";
+"alert.sync-code-only-compatible-with-duckai-description" = "A másik böngésződben nyisd meg a Duck.ai-t, lépj a Beállításokba, majd a „Sync & Backup” menüpontban válaszd a „Bekapcsolás”, majd a „Szinkronizálás másik eszközzel” lehetőséget.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Olvasd be ezt a kódot a Duck.ai beállításaiból.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Olvasd be ezt a kódot egy nem DuckDuckGo-böngészővel.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Egyes jelszavak helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";
@@ -436,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Beállítások szinkronizálása";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Kérjük, próbáld újra.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "A szinkronizálás sikertelen.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Kérjük, szinkronizáld ezt az eszközt egy másik eszközön már csatlakoztatott DuckDuckGo böngészőből.";
 
@@ -460,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "A szinkronizálás szünetel";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Értem";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Váltás másik szinkronizálási lehetőségre";
 
@@ -471,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "A szinkronizálás és biztonsági mentés átmenetileg nem érhető el.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Ez a kód az alkalmazás jelenlegi verziójában nem támogatott.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Frissítsd a DuckDuckGo böngészőt, és próbáld újra.";
@@ -509,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Az eszközt nem sikerült eltávolítani a Szinkronizálás és biztonsági mentés funkcióból.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Ez a kód sajnos érvénytelen. Győződj meg róla, hogy a helyes kódot adtad meg vagy olvastad be.";
+"alert.unable-to-scan-qr-code-description" = "Győződj meg róla, hogy a megfelelő kódot adtad meg vagy olvastad be.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Ez nem érvényes szinkronizálási kód.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nem sikerült csatlakozni a szerverhez.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Nem sikerült a másik eszközzel szinkronizálni.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nem sikerült kikapcsolni a Szinkronizálás és biztonsági mentés funkciót.";
@@ -525,6 +551,9 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Oldd fel a DuckDuckGo-t.";
+
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "A feloldáshoz koppints bárhová";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Bejelentkezés";
@@ -1060,12 +1089,6 @@
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Mented a jelszót?";
 
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Nem, köszönöm";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Most nem";
-
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "Tárold biztonságosan a jelszavaidat az eszközödön a DuckDuckGo Jelszavak és automatikus kitöltés funkciójával.";
 
@@ -1395,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Koppints a képernyő alján található **Vezérlő hozzáadása** gombra";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Új";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Megerősítés";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Igyekszünk kiválasztani az elérhető legdiszkrétebb sütibeállításokat, és bezárni őket. Ha nincs lehetőség a leiratkozásra, egy kattintást megspórolva elfogadjuk helyetted ezeket a sütiket.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Sütik helyettem való kezelése, illetve elfogadása";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Továbbra is magam kezelem őket";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Eleged van már a folyton felugró sütiablakokból?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Egy kattintást megspórolva elfogadhatjuk helyetted ezeket a sütiket.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Nem letiltható sütik helyettem való elfogadása";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Továbbra is magam kezelem őket";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Eleged van már a folyton felugró sütiablakokból, amelyek nem tilthatók le?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Ezt később bármikor módosíthatod\na **Beállítások** > **Felugró sütiablak elleni védelem** alatt.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Mindig küldjön hibajelentést";
@@ -2512,27 +2568,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "Fire lapok";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "Új";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Újdonság! Böngészés a helyi előzmények mentése nélkül, vagy bejelentkezés a webhelyekre másik fiókkal.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Most nem";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Fire lapok kipróbálása";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Fire lapok kipróbálása";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Próbáld ki a Fire lapok funkciót, hogy a helyi előzmények mentése nélkül böngészhess.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "Új: Fire lapok";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Fire lap";
 
@@ -3202,8 +3237,8 @@
 /* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
 "onboarding.duckai.contextual.end-of-journey.message" = "Indíts privát MI-beszélgetést a Duck.ai-jal, vagy válts a Keresésre a védett böngészéshez.\n\nA Duck.ai-t bárhol használhatod, ahol látod a beszélgetés ikonját: [[chat_icon]]";
 
-/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
-"onboarding.duckai.contextual.subscription.message" = "Előfizetéses csomagot is kínálunk, amely fejlett MI-modelleket, a GPT, a Claude és a Llama modelljeihez biztosított magasabb beszélgetési korlátokat, valamint biztonságos VPN-t és további funkciókat is tartalmaz.";
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Előfizetéses csomagot is kínálunk, amely fejlett MI-modelleket, a GPT és a Claude modelljeihez biztosított magasabb beszélgetési limiteket, valamint biztonságos VPN-t és további funkciókat is tartalmaz.";
 
 /* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
 "onboarding.duckai.duckAIQuery.title" = "Most próbálj ki egy privát MI-beszélgetést!";
@@ -3261,6 +3296,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Védelem aktiválva!";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "A címsor segítségével kereshetsz és látogathatsz meg webhelyeket, vagy a Duck.ai oldalra válthatsz a privát AI-csevegéshez.\n\nA Duck.ai-t bárhol használhatod, ahol látod a csevegés ikonját: [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "A privát AI csevegéseket bármikor törölheted a Fire Button segítségével. Próbáld ki! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Ez a Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Kérdezz bármit privátban";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Privát keresés";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Magyarázd el a tőzsdét úgy, mintha 10 éves lennék";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Tervezz meg egy tökéletes napot Londonban";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Milyen tíz lenyűgöző tényt tudnál említeni a tudomány, a természet és a történelem területéről?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Készen állsz a kezdésre?\nPróbálkozz kereséssel vagy AI-csevegéssel!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Kérdezd az AI-t";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Kihagyás";
@@ -3572,6 +3637,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Previews" = "Előnézetek";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Elsődleges/első művelet";
 
 /* No comment provided by engineer. */
@@ -3817,6 +3885,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Keresési asszisztens beállításai";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Soha";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Gyakran";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "Igény szerint";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Néha";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Keresési asszisztens";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Az oldal tartalmának automatikus küldése a Duck.ai részére";
 
@@ -3826,11 +3909,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Csevegési javaslatok";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "A DuckDuckGo használata AI nélkül";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Kikapcsolja a Duck.ai-t, elrejti az AI segítségével létrehozott válaszokat a keresésben, és kiszűri az ismert AI-spam-webhelyeket a képkeresési eredmények közül.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "Az AI jelenleg ki van kapcsolva a böngészőben, így a továbbiakban nem fogsz AI segítségével létrehozott válaszokat látni, és kevesebb AI által generált kép jelenik meg a képkeresési találatok között.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "AI által generált képek elrejtése";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Kiszűri az AI által generált képeket a képkeresési találatokból";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Ki";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Be";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Kiszűri az ismert AI-spam-webhelyeket a képkeresési találatok közül. [További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Mindig be van kapcsolva";
@@ -3840,6 +3941,12 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Címsor elhelyezkedése";
+
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Lapsáv elrejtése görgetés közben";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "A legtöbb webhelyen elérhető. A Duck.ai, a térképek és a játékok látható állapotban tarthatják a lapsávot.";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Hivatkozások megnyitása társított alkalmazásokban";
@@ -3947,7 +4054,7 @@
 "settings.cookie.pop-up-protection.protection" = "Felugró sütiablak elleni védelem";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "A DuckDuckGo megpróbálja kiválasztani a rendelkezésre álló leginkább privát beállításokat, és elrejteni az ilyen felugró ablakokat.\n[További részletek](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+"settings.cookie.pop.up.protection.explanation" = "A DuckDuckGo megpróbálja kiválasztani a rendelkezésre álló leginkább privát beállításokat, és elrejteni az ilyen felugró ablakokat.\n[További részletek](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Felugró sütiablakok kezelése";
@@ -4715,7 +4822,7 @@
 "sync.remove-device.title" = "Eszköz eltávolítása?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Az eszköz szinkronizálása sikeresen megtörtént!";
+"sync.simplified.device-synced.toast" = "Új eszköz hozzáadva!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup engedélyezve";
@@ -4734,15 +4841,6 @@
 
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Kikapcsolod a Sync & Backup funkciót?";
-
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Eltávolítás";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Az eszköz többé nem férhet hozzá a szinkronizált adatokhoz.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Szinkronizálás kikapcsolása?";
 
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Oldd fel az eszközt a Szinkronizálás és biztonsági mentés funkció beállításához";
@@ -5279,35 +5377,48 @@
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Nincs találat a következőre: „%@”";
 
-/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.highlights.duckAIQuery.completion.message" = "A címsor segítségével kereshetsz és látogathatsz meg webhelyeket, vagy a Duck.ai oldalra válthatsz a privát AI-csevegéshez.\n\nA Duck.ai-t bárhol használhatod, ahol látod a csevegés ikonját: [[chat_icon]]";
 
-/* Fire onboarding message shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.message" = "A privát AI csevegéseket bármikor törölheted a Fire Button segítségével. Próbáld ki! 🔥";
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Beszélgetések";
 
-/* Fire onboarding title shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.title" = "Ez a Duck.ai!";
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Nincsenek friss beszélgetések";
 
-/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.ai" = "Kérdezz bármit privátban";
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Duck.ai megnyitása";
 
-/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.search" = "Privát keresés";
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Keresés";
 
-/* First suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option1" = "Magyarázd el a tőzsdét úgy, mintha 10 éves lennék";
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Kitűzve";
 
-/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option2" = "Tervezz meg egy tökéletes napot Londonban";
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Legutóbbiak";
 
-/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Milyen tíz lenyűgöző tényt tudnál említeni a tudomány, a természet és a történelem területéről?";
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Nincs találat";
 
-/* Title for the onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.title" = "Készen állsz a kezdésre?\nPróbálkozz kereséssel vagy AI-csevegéssel!";
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Nem sikerült betölteni a beszélgetéseket";
 
-/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
-"onboarding.highlights.duckAIQuery.toggle.ai" = "Kérdezd az AI-t";
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Hiba történt a Duck.ai-beszélgetéseid betöltése során. Próbáld újra később.";
 
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Kód másolva";
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Beszélgetés törlése";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Beszélgetés letöltése";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Beszélgetés kitűzése";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Beszélgetés kitűzésének megszüntetése";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Beszélgetések törlése";
+
+/* Do not translate - stringsdict entry */
+"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";

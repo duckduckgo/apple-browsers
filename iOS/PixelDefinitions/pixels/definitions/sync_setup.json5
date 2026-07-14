@@ -1,4 +1,27 @@
 {
+    "m_sync_login": {
+        "description": "Fired when the app successfully logs in to an existing Sync account.",
+        "owners": ["amddg44", "frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The Sync entry point or promotion source that led to login, when known.",
+                "enum": [
+                    "sync-start",
+                    "sync-backup",
+                    "data_import_summary",
+                    "promotion_data_import_summary",
+                    "promotion_bookmarks",
+                    "promotion_passwords",
+                    "promotion_ai_chat"
+                ]
+            }
+        ]
+    },
     "sync_setup_barcode_screen_shown": {
         "description": "Fired when the Sync setup QR/code screen is shown.",
         "owners": ["amddg44"],
@@ -297,14 +320,39 @@
                 "type": "string",
                 "description": "The reason Sync setup failed, when it can be mapped safely.",
                 "enum": [
+                    "v1_failure",
                     "session_timeout",
-                    "transport_failure",
                     "invalid_credentials",
                     "already_upgraded",
                     "already_paired",
                     "account_creation_failed",
                     "account_upgrade_failed",
-                    "protocol_error"
+                    "protocol_error",
+                    "transport_failure",
+                    "unexpected_second_hello",
+                    "unexpected_event",
+                    "pairing_session_not_ready",
+                    "relay_channel_unavailable",
+                    "recovery_code_preparation_failed",
+                    "peer_recovery_code_unavailable",
+                    "unexpected_failure",
+                    "missing_3party_credential",
+                    "undecryptable_3party_credential",
+                    "account_extend_failed",
+                    "missing_3party_key",
+                    "local_storage_failed"
+                ]
+            },
+            {
+                "key": "timeout_stage",
+                "type": "string",
+                "description": "The last Pairing V2 stage before a session_timeout failure, when known.",
+                "enum": [
+                    "waiting_for_peer_hello",
+                    "waiting_for_peer_status",
+                    "waiting_for_confirmation",
+                    "waiting_for_recovery_code",
+                    "logging_in"
                 ]
             }
         ]

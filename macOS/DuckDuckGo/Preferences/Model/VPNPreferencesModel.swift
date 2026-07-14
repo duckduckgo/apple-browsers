@@ -133,7 +133,9 @@ final class VPNPreferencesModel: ObservableObject {
 
     private var onboardingStatus: OnboardingStatus {
         didSet {
-            showUninstallVPN = DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: Application.appDelegate.subscriptionManager).isInstalled
+            Task { @MainActor in
+                showUninstallVPN = await DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: Application.appDelegate.subscriptionManager).isInstalled
+            }
         }
     }
 

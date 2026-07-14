@@ -113,6 +113,10 @@ protocol OmniBarDelegate: AnyObject {
     // MARK: - iPad Expanded Omnibar
     func onOmniBarExpandedStateChanged(isExpanded: Bool)
 
+    /// Called when the expanded iPad omnibar changes height while staying expanded (e.g. an
+    /// attachment is added or removed), so an anchored popover can be repositioned to follow it.
+    func onOmniBarExpandedContentSizeChanged()
+
     /// Called when text changes in the AI Chat text view (iPad tab mode), for filtering chat history suggestions.
     func onAIChatQueryUpdated(_ query: String)
 
@@ -142,7 +146,6 @@ protocol OmniBarDelegate: AnyObject {
     func onDuckAIVoiceModeRequested()
 
     // MARK: - Fire Mode
-    func onTryFireModeRequested()
     func isCurrentTabFireTab() -> Bool
 
     // MARK: - AI Chat suggestions keyboard navigation (iPad)
@@ -241,6 +244,8 @@ extension OmniBarDelegate {
     }
 
     func onOmniBarExpandedStateChanged(isExpanded: Bool) {}
+
+    func onOmniBarExpandedContentSizeChanged() {}
 
     func onAIChatQueryUpdated(_ query: String) {}
 

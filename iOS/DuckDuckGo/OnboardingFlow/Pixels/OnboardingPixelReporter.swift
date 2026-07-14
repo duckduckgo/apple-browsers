@@ -55,10 +55,10 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureAutoRestoreOnboardingPromptShown()
     func measureAutoRestoreOnboardingRestoreCTAAction()
     func measureAutoRestoreOnboardingSkipCTAAction()
-    func measureBrowserComparisonImpression()
+    func measureSetDefaultBrowserImpression()
     func measureChooseBrowserCTAAction()
-    func measureAiComparisonImpression()
-    func measureAiComparisonCTAAction()
+    func measureAiIntroImpression()
+    func measureAiIntroCTAAction()
     func measureChooseAppIconImpression()
     func measureChooseAppIconColor(_ color: AppIcon)
     func measureAddressBarPositionSelectionImpression()
@@ -238,7 +238,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
                                 flow: sharedPixelsStorage.onboardingFlow)
     }
 
-    func measureBrowserComparisonImpression() {
+    func measureSetDefaultBrowserImpression() {
         fire(event: .onboardingIntroComparisonChartShownUnique, unique: true)
         sharedPixelHandler.fire(.setDefault(.shown),
                                 source: sharedPixelsStorage.onboardingSource,
@@ -252,14 +252,14 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
                                 flow: sharedPixelsStorage.onboardingFlow)
     }
 
-    func measureAiComparisonImpression() {
-        sharedPixelHandler.fire(.aiComparison(.shown),
+    func measureAiIntroImpression() {
+        sharedPixelHandler.fire(.aiIntro(.shown),
                                 source: sharedPixelsStorage.onboardingSource,
                                 flow: sharedPixelsStorage.onboardingFlow)
     }
 
-    func measureAiComparisonCTAAction() {
-        sharedPixelHandler.fire(.aiComparison(.clicked(.engage)),
+    func measureAiIntroCTAAction() {
+        sharedPixelHandler.fire(.aiIntro(.clicked(.engage)),
                                 source: sharedPixelsStorage.onboardingSource,
                                 flow: sharedPixelsStorage.onboardingFlow)
     }
@@ -323,18 +323,18 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     }
 
     func measureDuckAIQuerySelectionImpression() {
-        fire(event: .onboardingIntroDuckAIExperimentToggleImpressionUnique, unique: true)
+        fire(event: .onboardingIntroDuckAIToggleImpressionUnique, unique: true)
         sharedPixelHandler.fire(.searchChatToggle(.shown),
                                 source: sharedPixelsStorage.onboardingSource,
                                 flow: sharedPixelsStorage.onboardingFlow)
     }
 
     func measureDuckAIQueryChooseSearchOnly() {
-        fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedSearch, unique: false)
+        fire(event: .onboardingIntroDuckAIToggleContinuePressedSearch, unique: false)
     }
 
     func measureDuckAIQueryChooseAIChat() {
-        fire(event: .onboardingIntroDuckAIExperimentToggleContinuePressedAI, unique: false)
+        fire(event: .onboardingIntroDuckAIToggleContinuePressedAI, unique: false)
     }
 
     func measureDuckAIQuerySubmission(selection: DuckAIQueryMode, promptSource: DuckAIQueryPromptSource) {
@@ -532,15 +532,15 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     }
 
     func measureDuckAIFireButtonCTAAction() {
-        fire(event: .onboardingDuckAIExperimentFireButtonCTAPressed, unique: false)
+        fire(event: .onboardingDuckAIFireButtonCTAPressed, unique: false)
     }
 
     func measureDuckAIFireDialogImpression() {
-        fire(event: .onboardingDuckAIExperimentFireDialogShownUnique, unique: true)
+        fire(event: .onboardingDuckAIFireDialogShownUnique, unique: true)
     }
 
     func measureDuckAIFinalDialogImpression() {
-        fire(event: .onboardingDuckAIExperimentFinalDialogShownUnique, unique: true)
+        fire(event: .onboardingDuckAIFinalDialogShownUnique, unique: true)
     }
 
     func measureDuckAIFinalDialogCTAAction() {

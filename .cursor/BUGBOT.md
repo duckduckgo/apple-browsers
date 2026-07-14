@@ -85,6 +85,22 @@ However a `"key"` should NOT be specified when it doesn't actually occur in the 
 
 Flag any parameters defined with `"type": "string"` that have an enum containing ONLY "true" and/or "false".  They should just be redefined as type "boolean" instead with no enum.
 
+#### Wire Format vs Schema Type (do NOT flag)
+
+The pixel/wide-event transport stringifies every value when serializing to URL parameters. Tests therefore assert string values for parameters of every type. This is purely a transport detail — it has nothing to do with the declared schema type, and the ingest pipeline coerces values back to their declared types.
+
+Do NOT flag a `"type"` declaration as wrong on the basis that:
+- A test asserts the wire value as a string (e.g. `XCTAssertEqual(params["...free_trial_eligible"], "true")`, `XCTAssertEqual(params["...latency_ms_bucketed"], "5000")`).
+- The value appears as a string in a URL parameter, log, or pixel request.
+- The same conceptual field is defined with a different type in a different schema file (e.g. a legacy `pixels/definitions/*.json5` params definition uses `"type": "string"` with `enum: ["true", "false"]` while the corresponding `wide_events/definitions/*.json5` uses `"type": "boolean"`). The two schemas describe different layers and are allowed to diverge.
+
+The following non-string types are valid in both pixel parameter definitions and wide-event definitions even though the wire format stringifies them:
+- `"type": "boolean"` — values `true` / `false` (sent as `"true"` / `"false"`).
+- `"type": "integer"` — values like `5000` (sent as `"5000"`).
+- `"type": "number"` — values like `1.5` (sent as `"1.5"`).
+
+If you are tempted to flag a `boolean`/`integer`/`number` type because the value "is actually a string on the wire", do not flag it. Apply the same logic uniformly: if `account_creation_latency_ms_bucketed` is allowed to be `"type": "integer"` despite the test asserting `"5000"`, then `free_trial_eligible` is allowed to be `"type": "boolean"` despite the test asserting `"true"`.
+
 ### Flag duplication
 
 Pixels should not redefine existing params that are already defined in `params_dictionary.json5` or suffixes that are already defined in `suffixes_dictionary.json5`.  These should only be flagged if not just the type and enum are identical, but the description and name seem similar.  This is not a hard rule as it requires individual judgement, so frame this as a question to the developer rather than a requirement.
@@ -106,18 +122,19 @@ Only check expiry dates on definitions that are added or modified in the PR, not
 
 ### Wide Event Definitions
 
-A wide event has **two parallel definition files, and they must be kept in sync** - neither should be added, removed, or changed without the other:
+A wide event has **two parallel definition files, and their event payload formats must be kept in sync**. Pixel-only transport and documentation details may change independently:
 - The **pixel definition** (`{iOS,macOS}/PixelDefinitions/pixels/definitions/*.json5`) declares the wide-event pixel with `feature.data.ext.*` parameters or `keyPattern`s.
 - The **wide-event source definition** (`{iOS,macOS}/PixelDefinitions/wide_events/definitions/*.json5`) declares the schema and generates `wide_events/generated_schemas/<meta-type>-<version>.json`, which is what remote validation uses.
 
 These two files are paired by `meta.type` - every wide-event pixel def has a `{ "key": "meta.type", "enum": ["<meta-type>"] }` parameter whose enum value matches the wide-event source's `meta.type`. (The pixel side is transitional and will eventually be retired in favour of the dedicated wide-event source format; until then, treat keeping the pair in sync as the rule.)
 
-CI runs `node scripts/check_wide_event_consistency.mjs` and `node scripts/check_wide_event_schema_immutability.mjs` for both platforms. The consistency check exists to enforce that the pixel and source definitions stay in sync: (1) a wide event must have **both** files - a PR that adds (or removes) one side without the other fails, though pre-existing single-sided definitions are grandfathered, so back-filling the missing half of an older definition is fine and expected; and (2) when one definition changes, its **paired definition must change too** - this is compared per `meta.type` definition, so unrelated edits to other pixels that merely share a `.json5` file are not flagged. Reinforce these in review, and still flag the patterns below:
+CI runs `node scripts/check_wide_event_consistency.mjs` and `node scripts/check_wide_event_schema_immutability.mjs` for both platforms. The consistency check enforces that: (1) a wide event has **both** files - a PR that adds (or removes) one side without the other fails, though pre-existing single-sided definitions are grandfathered; and (2) the source's event-specific payload fields remain compatible with the paired pixel's keys, constraints, and `keyPattern`s. The comparison resolves shared dictionaries and ignores pixel-only transport/documentation changes such as `channel`, suffixes, owners, triggers, descriptions, and parameters outside the `feature.*`, `context.*`, and `journey.*` payload namespaces. Pre-existing field-level inconsistencies are grandfathered, but a PR may not introduce a new one. Reinforce these in review, and still flag the patterns below:
 
-- A PR changes one half of a paired wide event (the pixel definition's `feature.data.ext.*` parameters, or the matching source definition's schema) without the corresponding change in the other half. The pixel and source describe the same event and must be kept in sync - both should move together (and a `meta.version` bump in the source is required if the schema shape changed).
+- A PR changes the event payload format on one side (for example, a `feature.data.ext.*` field, type, enum, or constraint) without a compatible representation on the other side. An unchanged pixel `keyPattern` may already cover a new source field, in which case no redundant pixel edit is required. A `meta.version` bump in the source is still required if its schema shape changed.
 - A PR changes the **shape** of the wide-event source definition (renames / adds / removes a `feature.data.ext.*` field, changes a type or enum) without bumping that source definition's `meta.version`. Schema versions are immutable artifacts — the regenerator produces a new file per version, and editing an existing generated schema in place is forbidden.
 - A PR changes the **shape** of the Swift wide-event object/emitter (`WideEventData` stored properties that become `feature.data.ext.*`, `jsonParameters()` keys, status reasons, enum values, or field types) without bumping `WideEventMetadata.version` and the matching source definition's `meta.version`.
 - A PR modifies the Swift wide-event emitter (`jsonParameters()` keys, `WideEventMetadata.version`) and only one of the two definition files. All three (Swift emitter + pixel def + wide-event source) must agree.
+- A PR adds or edits a `keyPattern` that is not anchored with both `^` and `$` (e.g. `"feature\\.data\\.ext\\.(...)_status"` instead of `"^feature\\.data\\.ext\\.(...)_status$"`). `keyPattern`s are matched as unanchored substrings, so a missing trailing `$` lets a pattern over-match longer sibling keys that share its prefix — for instance a `_status` pattern also matches a `_status_reason` key and validates it against the wrong enum, rejecting valid values. Flag any unanchored `keyPattern` unless a partial match is clearly intended.
 
 **Never hand-edit anything under `wide_events/generated_schemas/`.** Those files are generated artifacts - the pixel validator regenerates each one from its `wide_events/definitions/*.json5` source, and the filename encodes the version, so every version bump produces a brand-new file and leaves the old ones untouched. The only correct way to change a generated schema is to edit the source definition and bump its `meta.version`. Any diff that modifies an existing `generated_schemas/*.json` file in place is wrong - flag it unconditionally. (`scripts/check_wide_event_schema_immutability.mjs` enforces this on CI, but call it out in review too.)
 
@@ -127,9 +144,12 @@ One more case to flag: a wide event added in Swift with no definition files at a
 
 - Changes to `TEMPLATE.json5` files (these are scaffolds with intentionally placeholder values).
 - Pixel definitions that reference dictionary entries (`params_dictionary.json5` or `suffixes_dictionary.json5`) by string key — this is the preferred pattern and does not need inline expansion.
+- Pixel-only transport parameters such as `channel` that do not alter the wide-event payload format.
 - Minor ordering differences in the `parameters` array.
 - Existing definitions in files touched by the PR that were not themselves modified.
 - Schema validation issues that CI tooling (`npm run validate-pixel-defs`) already covers.
+- `"type": "boolean" | "integer" | "number"` fields on the basis that tests or wire payloads show their values as strings — the transport stringifies all values; the schema type describes the typed JSON the pipeline coerces to. See "Wire Format vs Schema Type".
+- Generated schemas under `wide_events/generated_schemas/` — these are generated artifacts.
 
 ## Dependency Changes
 
@@ -178,3 +198,31 @@ then commit any changed `Package.resolved` files. This commonly appears on Depen
 - A `Package.swift` change that does not alter any dependency version (adding a target or product, source-only changes) - these need not produce a `Package.resolved` change.
 - Lockfile changes that differ **only** in the `originHash` field with no version or revision differences - `originHash` churns across Xcode versions and is not meaningful on its own.
 - A version change to a dependency that is not part of the app build graph (e.g. a test-only or tooling dependency in a package the apps do not link). If you cannot tell whether the dependency reaches the apps, frame the note as a question rather than a required change.
+
+## Embedded Privacy Config and Tracker Data
+
+The app bundles a snapshot of the remote privacy configuration and tracker data set (TDS) so it has a working fallback on first launch and when offline. These embedded files are **fetched from the remote CDN and regenerated** by `scripts/update_embedded.sh`; they are not meant to be edited by hand and are not the source of truth. Each file's hashes are recorded alongside it in a provider, and a guard test fails if a file and its recorded hash drift apart.
+
+### File pairs
+
+Each embedded data file is paired with a provider that records the file's `embeddedDataETag` (its md5) and `embeddedDataSHA` (its sha256). When the file changes, both constants must change with it.
+
+| Embedded data file | Paired provider (holds ETag + SHA) | Guard test |
+|---|---|---|
+| `iOS/Core/ios-config.json` | `iOS/Core/AppPrivacyConfigurationDataProvider.swift` | `AppPrivacyConfigurationTests` |
+| `iOS/Core/trackerData.json` | `iOS/Core/AppTrackerDataSetProvider.swift` | `EmbeddedTrackerDataTests` |
+| `macOS/DuckDuckGo/ContentBlocker/Resources/macos-config.json` | `macOS/DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift` | `AppPrivacyConfigurationTests` |
+| `macOS/DuckDuckGo/ContentBlocker/Resources/trackerData.json` | `macOS/DuckDuckGo/ContentBlocker/AppTrackerDataSetProvider.swift` | `EmbeddedTrackerDataTests` |
+
+Both guard tests are named `testWhenEmbeddedDataIsUpdatedThenUpdateSHAAndEtag` and assert that `sha256(file)` equals the provider's `embeddedDataSHA` constant.
+
+### What to flag
+
+- **A PR modifies an embedded data file (left column) without updating the `embeddedDataSHA` constant in its paired provider (right column) in the same PR.** The constant is the sha256 of the file, so if the file changes and the constant does not, the paired guard test fails on CI. This signature almost always means the file was hand-edited, because the only supported way to change it (`scripts/update_embedded.sh`) always rewrites the provider's `embeddedDataETag` and `embeddedDataSHA` in the same pass. Flag it, and ask the author to revert the hand-edit and regenerate via `scripts/update_embedded.sh` instead of patching the JSON directly.
+
+- **A PR hand-edits the content of an embedded config file (`ios-config.json` / `macos-config.json`) to add, remove, or change a feature or subfeature as part of a feature change.** Warn that **editing the embedded config does not apply the change to the remote configuration, and does not enable a flag for users.** The embedded file is only the local fallback snapshot: the app fetches the live config from the CDN at runtime, and the embedded copy is overwritten the next time `scripts/update_embedded.sh` runs. A flag added only to the embedded file is invisible to remote release management and disappears on the next regeneration. To actually ship a privacy-config change or roll out a feature flag, the change must land in the remote `privacy-configuration` repository (https://github.com/duckduckgo/privacy-configuration), which publishes to the CDN. Frame this as a reminder/question rather than a hard error, since there are occasional legitimate reasons to seed a default-off flag into the snapshot.
+
+### What NOT to flag
+
+- A wholesale embedded-file regeneration: the file is replaced and the paired provider's `embeddedDataETag` and `embeddedDataSHA` are updated together in the same PR (typically titled "Update embedded files", with no unrelated source changes). This is `scripts/update_embedded.sh` doing its job - do not flag it, and do not attach the "does not reach remote" reminder to it, because the new content came from the remote.
+- Changes to a provider Swift file that do not touch its `Constants` block (for example a refactor) when no embedded data file changed.

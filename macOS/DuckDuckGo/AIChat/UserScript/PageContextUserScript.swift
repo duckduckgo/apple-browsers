@@ -34,6 +34,10 @@ struct PageContextResponse: Codable {
     let pageContext: AIChatPageContextData?
 }
 
+struct SelectionContextResponse: Codable {
+    let selections: [AIChatSelectionContextData]
+}
+
 final class PageContextUserScript: NSObject, Subfeature {
     public let collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never>
     static public let featureName: String = "pageContext"

@@ -50,7 +50,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         var showContent = false
     }
 
-    struct BrowserComparisonState {
+    struct SetDefaultBrowserState {
         var showComparisonButton = false
         var animateComparisonText = false
     }
@@ -86,7 +86,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     @Published var addressBarPositionContentState = AddressBarPositionContentState()
     @Published var searchExperienceContentState = SearchExperienceContentState()
     @Published var addToDockState = AddToDockState()
-    @Published var browserComparisonState = BrowserComparisonState()
+    @Published var setDefaultBrowserState = SetDefaultBrowserState()
     @Published var introState = IntroState()
     @Published var restorePromptState = RestorePromptState()
 
@@ -227,8 +227,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
-    func aiComparisonAction() {
-        pixelReporter.measureAiComparisonCTAAction()
+    func aiIntroAction() {
+        pixelReporter.measureAiIntroCTAAction()
         makeNextViewState()
     }
 
@@ -357,17 +357,17 @@ private extension OnboardingIntroViewModel {
                         step: .hidden
                     )
                 )
-            case .browserComparison:
+            case .setDefaultBrowser:
                 return .onboarding(
                     .init(
-                        type: .browsersComparisonDialog(content: contentProvider.browserComparisonContent),
+                        type: .setDefaultBrowserDialog(content: contentProvider.setDefaultBrowserContent),
                         step: stepInfo()
                     )
                 )
-            case .aiComparison:
+            case .aiIntro:
                 return .onboarding(
                     .init(
-                        type: .aiComparisonDialog(content: contentProvider.aiComparisonContent),
+                        type: .aiIntroDialog(content: contentProvider.aiIntroContent),
                         step: stepInfo()
                     )
                 )
@@ -407,7 +407,7 @@ private extension OnboardingIntroViewModel {
                 let progressStep: OnboardingView.ViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
                 return .onboarding(
                     .init(
-                        type: .duckAIQueryExperimentDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
+                        type: .duckAIQueryDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
                         step: progressStep
                     )
                 )
@@ -472,10 +472,10 @@ private extension OnboardingIntroViewModel {
             }
             currentIntroStep = .duckAIQuerySelection
 
-        case .browserComparison where introSteps.contains(.browserComparison):
-            currentIntroStep = .browserComparison
-        case .aiComparison where introSteps.contains(.aiComparison):
-            currentIntroStep = .aiComparison
+        case .setDefaultBrowser where introSteps.contains(.setDefaultBrowser):
+            currentIntroStep = .setDefaultBrowser
+        case .aiIntro where introSteps.contains(.aiIntro):
+            currentIntroStep = .aiIntro
         case .addToDockPromo where introSteps.contains(.addToDockPromo):
             currentIntroStep = .addToDockPromo
         case .appIconSelection where introSteps.contains(.appIconSelection):
@@ -497,7 +497,7 @@ private extension OnboardingIntroViewModel {
 
     func persistPendingOnboardingStep(for step: OnboardingIntroStep) {
         if step == .duckAIQuerySelection {
-            onboardingResumeStepStore.resumeExperimentPrompt = nil
+            onboardingResumeStepStore.resumeDuckAIQueryPrompt = nil
         }
         onboardingResumeStepStore.resumeStep = step.resumeStep
     }
@@ -508,10 +508,10 @@ private extension OnboardingIntroViewModel {
         case .startOnboardingDialog(_, let dialogType):
             pixelReporter.measureOnboardingIntroImpression()
             measureAutoRestorePromptImpressionIfNeeded(dialogType: dialogType)
-        case .browsersComparisonDialog:
-            pixelReporter.measureBrowserComparisonImpression()
-        case .aiComparisonDialog:
-            pixelReporter.measureAiComparisonImpression()
+        case .setDefaultBrowserDialog:
+            pixelReporter.measureSetDefaultBrowserImpression()
+        case .aiIntroDialog:
+            pixelReporter.measureAiIntroImpression()
         case .addToDockPromoDialog:
             pixelReporter.measureAddToDockPromoImpression()
         case .chooseAppIconDialog:
@@ -520,7 +520,7 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureAddressBarPositionSelectionImpression()
         case .chooseSearchExperienceDialog:
             pixelReporter.measureSearchExperienceSelectionImpression()
-        case .duckAIQueryExperimentDialog:
+        case .duckAIQueryDialog:
             pixelReporter.measureDuckAIQuerySelectionImpression()
         }
     }

@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import Combine
 import VPN
 import NetworkExtension
 import VPNTestUtils
@@ -194,7 +195,79 @@ import Subscription
         }
     }
 
+    // MARK: - Controller (pre-session) errors
+
+    func testControllerError_message_setsErrorBannerWithExistingCopy() async {
+        let subject = CurrentValueSubject<String?, Never>(nil)
+        let viewModel = makeViewModel(controllerErrorPublisher: subject.eraseToAnyPublisher())
+
+        subject.send(UserText.vpnErrorAuthenticationFailed)
+
+        await waitFor(condition: viewModel.error != nil)
+        XCTAssertEqual(viewModel.error?.title, UserText.netPStatusViewErrorConnectionFailedTitle)
+        XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
+    }
+
+    func testControllerError_nil_clearsErrorBanner() async {
+        let subject = CurrentValueSubject<String?, Never>(nil)
+        let viewModel = makeViewModel(controllerErrorPublisher: subject.eraseToAnyPublisher())
+
+        subject.send(UserText.vpnErrorAuthenticationFailed)
+        await waitFor(condition: viewModel.error != nil)
+
+        subject.send(nil)
+        await waitFor(condition: viewModel.error == nil)
+        XCTAssertNil(viewModel.error)
+    }
+
+    func testControllerError_isNotClearedBySessionErrorObserverEmittingNil() async {
+        let controllerErrorSubject = CurrentValueSubject<String?, Never>(nil)
+        let errorObserver = MockConnectionErrorObserver()
+        let viewModel = makeViewModel(controllerErrorPublisher: controllerErrorSubject.eraseToAnyPublisher(),
+                                      errorObserver: errorObserver)
+
+        controllerErrorSubject.send(UserText.vpnErrorAuthenticationFailed)
+        await waitFor(condition: viewModel.error != nil)
+
+        // A session status change that resolves to no error must not clear a live controller start failure.
+        errorObserver.subject.send(nil)
+
+        // Give the sink a chance to run, then confirm the controller error is still showing.
+        await waitFor(condition: viewModel.error?.message == UserText.vpnErrorAuthenticationFailed)
+        XCTAssertEqual(viewModel.error?.title, UserText.netPStatusViewErrorConnectionFailedTitle)
+        XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
+    }
+
+    func testControllerError_takesPrecedenceOverLiveSessionError() async {
+        let controllerErrorSubject = CurrentValueSubject<String?, Never>(nil)
+        let errorObserver = MockConnectionErrorObserver()
+        let viewModel = makeViewModel(controllerErrorPublisher: controllerErrorSubject.eraseToAnyPublisher(),
+                                      errorObserver: errorObserver)
+
+        // A real (non-nil) session error is showing in the banner first.
+        errorObserver.subject.send("VPN disconnected due to expired subscription")
+        await waitFor(condition: viewModel.error?.message == UserText.vpnErrorSubscriptionExpired)
+
+        // With a controller (pre-session) start failure also present, the controller message wins.
+        controllerErrorSubject.send(UserText.vpnErrorAuthenticationFailed)
+        await waitFor(condition: viewModel.error?.message == UserText.vpnErrorAuthenticationFailed)
+        XCTAssertEqual(viewModel.error?.title, UserText.netPStatusViewErrorConnectionFailedTitle)
+        XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
+    }
+
     // MARK: - Helpers
+
+    private func makeViewModel(controllerErrorPublisher: AnyPublisher<String?, Never>,
+                               errorObserver: ConnectionErrorObserver = MockConnectionErrorObserver()) -> NetworkProtectionStatusViewModel {
+        NetworkProtectionStatusViewModel(tunnelController: tunnelController,
+                                         settings: VPNSettings(defaults: .networkProtectionGroupDefaults),
+                                         statusObserver: statusObserver,
+                                         serverInfoObserver: serverInfoObserver,
+                                         errorObserver: errorObserver,
+                                         controllerErrorPublisher: controllerErrorPublisher,
+                                         locationListRepository: MockNetworkProtectionLocationListRepository(),
+                                         enablesUnifiedFeedbackForm: false)
+    }
 
     private func whenStatusUpdate_connected() async {
         statusObserver.subject.send(.connected(connectedDate: Date()))

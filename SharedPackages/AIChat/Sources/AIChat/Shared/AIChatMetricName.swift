@@ -26,6 +26,8 @@ public enum AIChatMetricName: String, Codable {
     case userDidCreateNewChat
     case userDidTapKeyboardReturnKey
     case userDidAcceptTermsAndConditions
+    case userDidSelectSuggestion
+    case userDidViewSuggestions
 }
 
 // Model tier for AI Chat metrics
@@ -39,10 +41,20 @@ public enum AIChatModelTier: String, Codable {
 public struct AIChatMetric: Codable {
     public let metricName: AIChatMetricName
     public let modelTier: AIChatModelTier?
+    /// Fixed catalog key identifying the tapped suggestion (e.g. `summarize-page`). Carried by `userDidSelectSuggestion`.
+    public let suggestionId: String?
+    /// Coarse page classification the FE derived from JSON-LD/OpenGraph. Decoded as a plain string so a new FE
+    /// page type never breaks decoding. Carried by `userDidSelectSuggestion` and `userDidViewSuggestions`.
+    public let pageType: String?
+    /// Whether the shown suggestions were smart (page-tailored) rather than generic. Carried by `userDidViewSuggestions`.
+    public let isSmart: Bool?
 
-     public init(metricName: AIChatMetricName, modelTier: AIChatModelTier? = nil) {
+     public init(metricName: AIChatMetricName, modelTier: AIChatModelTier? = nil, suggestionId: String? = nil, pageType: String? = nil, isSmart: Bool? = nil) {
          self.metricName = metricName
          self.modelTier = modelTier
+         self.suggestionId = suggestionId
+         self.pageType = pageType
+         self.isSmart = isSmart
      }
 }
 

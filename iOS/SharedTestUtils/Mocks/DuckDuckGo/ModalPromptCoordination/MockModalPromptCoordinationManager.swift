@@ -25,6 +25,7 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     private(set) var didCallPresentModalPromptIfNeeded = false
     private(set) var capturedPresenter: ModalPromptPresenter?
     private(set) var callCount = 0
+    var didPresentModalPromptThisSession = false
 
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
         didCallPresentModalPromptIfNeeded = true

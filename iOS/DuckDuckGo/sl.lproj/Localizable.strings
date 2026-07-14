@@ -247,6 +247,24 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Lastnosti UI";
 
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Klepet";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Prepis";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Glasovni klepet";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Nov klepet";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Poslušam …";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Poslušanje …";
+
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Klepeti";
 
@@ -383,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Razumem";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "S tem računom ste že povezani na obeh napravah.";
+"alert.sync-already-paired-with-account-description" = "Te naprave so že povezane s Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Že seznanjeno";
+"alert.sync-already-paired-with-account-title" = "Že sinhronizirano.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Nekateri zaznamki so napačno oblikovani ali predolgi in niso bili sinhronizirani.";
@@ -407,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Sinhronizacija je bila preklicana iz vaše druge naprave.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "V brskalniku obiščite duck.ai, pojdite v Nastavitve, nato v razdelku »Sync & Backup« izberite »Vklopi« in nato »Sinhroniziraj z drugo napravo«.";
+"alert.sync-code-only-compatible-with-duckai-description" = "V drugem brskalniku obiščite Duck.ai, pojdite v Nastavitve, nato v razdelku »Sync & Backup« izberite »Vklopi« in nato »Sinhronizacija z drugo napravo«.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Optično preberite to kodo iz nastavitev Duck.ai.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Skenirajte to kodo z brskalnikom, ki ni DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Nekatera gesla so napačno oblikovana ali predolga in niso bila sinhronizirana.";
@@ -436,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Nastavitve sinhronizacije";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Poskusite znova.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Sinhronizacija ni uspela.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Sinhronizirajte to napravo iz že povezanega brskalnika DuckDuckGo na drugi napravi.";
 
@@ -460,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Sinhronizacija je začasno zaustavljena";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Razumem";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Preklop sinhronizacije";
 
@@ -471,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sinhronizacija in varnostno kopiranje sta začasno nedostopna.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Ta koda ni podprta v trenutni različici aplikacije.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Posodobite brskalnik DuckDuckGo in poskusite znova.";
@@ -509,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Te naprave ni bilo mogoče odstraniti iz sinhronizacije in varnostnega kopiranja.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Oprostite, ta koda je neveljavna. Prepričajte se, da je bila vnesena ali optično prebrana pravilna koda.";
+"alert.unable-to-scan-qr-code-description" = "Prepričajte se, da je bila vnesena ali optično prebrana pravilna koda.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "To ni veljavna koda za sinhronizacijo.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Ni bilo mogoče vzpostaviti povezave s strežnikom.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Ni bilo mogoče sinhronizirati z drugo napravo.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Sinhronizacije in varnostnega kopiranja ni bilo mogoče izklopiti.";
@@ -525,6 +551,9 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Odkleni DuckDuckGo.";
+
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Dotaknite se kjer koli, da odklenete";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Prijavite se";
@@ -1060,12 +1089,6 @@
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Želite shraniti to geslo?";
 
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Ne, hvala";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Ne zdaj";
-
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "S funkcijo DuckDuckGo Passwords & Autofill varno shranite geslo v napravo.";
 
@@ -1395,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Tapnite **Dodaj kontrolnik** na dnu zaslona.";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Novo";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Potrdi";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Poskušali bomo izbrati najbolj zasebne možnosti piškotkov, ki so na voljo, in jih zapreti namesto vas. Če nimajo možnosti zavrnitve, vam bomo prihranili klik in te piškotke sprejeli namesto vas.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Upravljaj ali sprejmi piškotke zame";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Upravljanje bom še naprej urejal/-a sam/-a";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Vas motijo pojavna okna za piškotke, ki vam ne dajo miru?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Prihranimo vam lahko klik in te piškotke sprejmemo namesto vas.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Zame sprejmi piškotke brez možnosti zavrnitve";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Upravljanje bom še naprej urejal/-a sam/-a";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Ste naveličani pojavnih oken s piškotki, ki vam ne omogočajo, da jih zavrnete?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "To lahko pozneje kadar koli prilagodite v razdelku\n**Nastavitve** > **Zaščita pred pojavnimi okni piškotkov**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Vedno pošlji poročila o zrušitvah";
@@ -2512,27 +2568,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "Zavihki Fire";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "Nov";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Novo! Brskajte brez shranjevanja lokalne zgodovine ali se prijavite na spletna mesta z drugim računom.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Ne zdaj";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Preizkusite zavihke Fire";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Preizkusite zavihke Fire";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Preizkusite zavihke Fire za brskanje brez shranjevanja lokalne zgodovine.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "Novo: zavihki Fire";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Zavihek Fire";
 
@@ -3202,8 +3237,8 @@
 /* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
 "onboarding.duckai.contextual.end-of-journey.message" = "Začni zasebni klepet z umetno inteligenco z Duck.ai ali preklopi na iskanje za zaščiteno brskanje.\n\nDuck.ai lahko uporabljate kjer koli, kjer vidite ikono klepeta [[chat_icon]]";
 
-/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
-"onboarding.duckai.contextual.subscription.message" = "Ponujamo tudi plačljivo naročnino z naprednimi modeli umetne inteligence z višjimi omejitvami klepeta GPT, Claude in Llama, varnim VPN in še več.";
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Ponujamo tudi plačljivo naročnino z naprednimi modeli umetne inteligence z višjimi omejitvami klepeta GPT in Claude, varnim VPN in še več.";
 
 /* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
 "onboarding.duckai.duckAIQuery.title" = "Zdaj pa preizkusite zasebni klepet z umetno inteligenco!";
@@ -3261,6 +3296,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Zaščite so aktivirane!";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Za iskanje in obisk spletnih mest uporabite naslovno vrstico ali preklopite na Duck.ai za zasebni klepet z umetno inteligenco.\n\nDuck.ai lahko uporabljate kjer koli, kjer vidite ikono klepeta [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Zasebni klepeti z umetno inteligenco, ki jih lahko kadar koli izbrišete z gumbom Fire Button. Preizkusite! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "To je Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Vprašajte kar koli zasebno";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Iščite zasebno";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Razloži mi borzo, kot da sem star 10 let";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Načrtuj popoln dan v Londonu";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Katerih je 10 zanimivih dejstev o znanosti, naravi in zgodovini?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Ste pripravljeni začeti?\nPreizkusite iskanje ali klepet z umetno inteligenco!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Vprašajte UI";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Preskoči";
@@ -3572,6 +3637,9 @@
 "preserveLogins.remove.all.ok" = "V REDU";
 
 /* No comment provided by engineer. */
+"Previews" = "Predogledi";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Primarni/prvi ukrep";
 
 /* No comment provided by engineer. */
@@ -3817,6 +3885,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavitve modula Search Assist";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Nikoli";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Pogosto";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "Na zahtevo";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Včasih";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Search Assist";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Vsebino strani samodejno pošljite Duck.ai";
 
@@ -3826,11 +3909,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Predlogi za klepet";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Uporabi DuckDuckGo brez umetne inteligence";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Onemogoči Duck.ai, skrije odgovore z uporabo umetne inteligence v rezultatih iskanja in iz rezultatov iskanja slik odstrani znana spletna mesta z neželeno vsebino, ustvarjeno z umetno inteligenco.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "Umetna inteligenca je v brskalniku trenutno onemogočena. Odgovori, ustvarjeni z umetno inteligenco, ne bodo več prikazani, med rezultati iskanja slik pa bo manj slik, ustvarjenih z umetno inteligenco.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skrij slike, ki jih ustvari umetna inteligenca";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Iz rezultatov iskanja slik odstrani slike, ki jih je ustvarila umetna inteligenca";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Izklopljeno";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Vklopljeno";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Iz rezultatov iskanja slik filtrira znane strani z neželenimi zadetki UI. [Več](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vedno vklopljeno";
@@ -3840,6 +3941,12 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Položaj naslovne vrstice";
+
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Skrij vrstico z zavihki med pomikanjem";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Na voljo na večini spletnih strani. Duck.ai, zemljevidi in igre lahko ohranijo vrstico z zavihki vidno.";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Odpri povezave v povezanih aplikacijah";
@@ -3947,7 +4054,7 @@
 "settings.cookie.pop-up-protection.protection" = "Zaščita pred pojavnimi okni piškotkov";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo bo poskusil izbrati najbolj zasebne nastavitve, ki so na voljo, in skriti ta pojavna okna za vas.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo bo poskusil izbrati najbolj zasebne nastavitve, ki so na voljo, in skriti ta pojavna okna za vas.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Upravljanje pojavnih oken za piškotke";
@@ -4715,7 +4822,7 @@
 "sync.remove-device.title" = "Želite odstraniti napravo?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Naprava je bila uspešno sinhronizirana";
+"sync.simplified.device-synced.toast" = "Nova naprava je bila dodana!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Funkcija Sync & Backup je omogočena";
@@ -4734,15 +4841,6 @@
 
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Želite izklopiti funkcijo Sync & Backup?";
-
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Odstrani";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Ta naprava ne bo več mogla dostopati do vaših sinhroniziranih podatkov.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Želite izklopiti sinhronizacijo?";
 
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Odklenite napravo, da nastavite funkcijo Sync & Backup (Sinhronizacija in varnostno kopiranje)";
@@ -5279,35 +5377,48 @@
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Ni zadetkov za »% @«";
 
-/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.highlights.duckAIQuery.completion.message" = "Za iskanje in obisk spletnih mest uporabite naslovno vrstico ali preklopite na Duck.ai za zasebni klepet z umetno inteligenco.\n\nDuck.ai lahko uporabljate kjer koli, kjer vidite ikono klepeta [[chat_icon]]";
 
-/* Fire onboarding message shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.message" = "Zasebni klepeti z umetno inteligenco, ki jih lahko kadar koli izbrišete z gumbom Fire Button. Preizkusite! 🔥";
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Klepeti";
 
-/* Fire onboarding title shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.title" = "To je Duck.ai!";
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Ni nedavnih pogovorov";
 
-/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.ai" = "Vprašajte kar koli zasebno";
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Odprite Duck.ai";
 
-/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.search" = "Iščite zasebno";
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Iskanje";
 
-/* First suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option1" = "Razloži mi borzo, kot da sem star 10 let";
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Pripeto";
 
-/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option2" = "Načrtuj popoln dan v Londonu";
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Nedavno";
 
-/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Katerih je 10 zanimivih dejstev o znanosti, naravi in zgodovini?";
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Ni zadetkov";
 
-/* Title for the onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.title" = "Ste pripravljeni začeti?\nPreizkusite iskanje ali klepet z umetno inteligenco!";
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Klepetov ni bilo mogoče naložiti";
 
-/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
-"onboarding.highlights.duckAIQuery.toggle.ai" = "Vprašajte UI";
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Pri nalaganju klepetov Duck.ai je prišlo do napake. Poskusite znova pozneje.";
 
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Koda je kopirana";
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Izbriši klepet";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Prenesi klepet";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Pripni klepet";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Odpni klepet";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Izbriši klepete";
+
+/* Do not translate - stringsdict entry */
+"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";

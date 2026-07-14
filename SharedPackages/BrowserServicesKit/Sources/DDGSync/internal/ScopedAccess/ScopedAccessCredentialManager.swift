@@ -19,6 +19,12 @@
 import CryptoKit
 import Foundation
 
+enum ScopedAccessCredentialError: Error, Equatable {
+    case missingThirdPartyCredential
+    case undecryptableThirdPartyCredential
+    case accountExtendFailed
+}
+
 /// Creates and recovers the scoped ("3party") access credential and its protected keys that let a limited client share a sync account.
 struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
 
@@ -33,29 +39,39 @@ struct ScopedAccessCredentialManager: ScopedAccessCredentialManaging {
             return nil
         }
         guard let encryptedCredential = thirdPartyCredential.encrypted3PartyCredential, !encryptedCredential.isEmpty else {
-            throw SyncError.invalidDataInResponse("3P access credential missing encrypted_3party_credential")
+            throw ScopedAccessCredentialError.missingThirdPartyCredential
         }
         let defaultCredentialMainKey = ScopedAccessKeyDerivation.mainKey(from: primaryKey, userID: userID)
-        return try scopedAccessCredentialEnvelope.decryptScopedPassword(from: encryptedCredential, using: defaultCredentialMainKey)
+        do {
+            return try scopedAccessCredentialEnvelope.decryptScopedPassword(from: encryptedCredential, using: defaultCredentialMainKey)
+        } catch {
+            throw ScopedAccessCredentialError.undecryptableThirdPartyCredential
+        }
     }
 
     func ensureThirdPartyScopedPassword(for account: SyncAccount,
                                         purpose: String,
                                         cachedScopedPassword: () throws -> Data?) async throws -> EnsuredThirdPartyCredential {
-        let accessCredentials = try await fetchAccessCredentials(account)
-        if let scopedPassword = try recoverScopedPassword(from: accessCredentials, primaryKey: account.primaryKey, userID: account.userId) {
-            return EnsuredThirdPartyCredential(scopedPassword: scopedPassword, protectedKeysToCache: [])
-        }
+        do {
+            let accessCredentials = try await fetchAccessCredentials(account)
+            if let scopedPassword = try recoverScopedPassword(from: accessCredentials, primaryKey: account.primaryKey, userID: account.userId) {
+                return EnsuredThirdPartyCredential(scopedPassword: scopedPassword, protectedKeysToCache: [])
+            }
 
-        let scopedPassword = try scopedPasswordForNewThirdPartyCredential(cachedScopedPassword: cachedScopedPassword)
-        let keyPreparation = try await protectedKeysForThirdPartyCredential(purpose: purpose,
-                                                                            account: account)
-        let ensuredScopedPassword = try await ensureThirdPartyAccessCredential(for: account,
-                                                                              scopedPassword: scopedPassword,
-                                                                              keys: keyPreparation.protectedKeys,
-                                                                              shouldUploadDefaultCredentialKeys: keyPreparation.shouldUploadDefaultCredentialKeys)
-        return EnsuredThirdPartyCredential(scopedPassword: ensuredScopedPassword,
-                                           protectedKeysToCache: keyPreparation.protectedKeysToCache)
+            let scopedPassword = try scopedPasswordForNewThirdPartyCredential(cachedScopedPassword: cachedScopedPassword)
+            let keyPreparation = try await protectedKeysForThirdPartyCredential(purpose: purpose,
+                                                                                account: account)
+            let ensuredScopedPassword = try await ensureThirdPartyAccessCredential(for: account,
+                                                                                  scopedPassword: scopedPassword,
+                                                                                  keys: keyPreparation.protectedKeys,
+                                                                                  shouldUploadDefaultCredentialKeys: keyPreparation.shouldUploadDefaultCredentialKeys)
+            return EnsuredThirdPartyCredential(scopedPassword: ensuredScopedPassword,
+                                               protectedKeysToCache: keyPreparation.protectedKeysToCache)
+        } catch let error as ScopedAccessCredentialError {
+            throw error
+        } catch {
+            throw ScopedAccessCredentialError.accountExtendFailed
+        }
     }
 
     func makeRecoveryCode(for account: SyncAccount, scopedPassword: Data) -> String? {

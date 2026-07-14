@@ -201,7 +201,6 @@ class SuggestionTrayViewController: UIViewController {
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let remoteMessagingImageLoader: RemoteMessagingImageLoading
         let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
-        let fireModePromotionEligibility: FireModePromotionCoordinating?
         let appSettings: AppSettings
         let subscriptionManager: any SubscriptionManager
         let internalUserCommands: URLBasedDebugCommands
@@ -380,10 +379,11 @@ class SuggestionTrayViewController: UIViewController {
     }
 
     func float(withWidth width: CGFloat) {
-        containerView.layer.cornerRadius = 24
+        let cornerRadius = Constant.popoverCornerRadius
+        containerView.layer.cornerRadius = cornerRadius
         containerView.layer.masksToBounds = true
 
-        backgroundView.layer.cornerRadius = 24
+        backgroundView.layer.cornerRadius = cornerRadius
         backgroundView.backgroundColor = UIColor(designSystemColor: .background)
         backgroundView.clipsToBounds = false
         backgroundView.applyActiveShadow()
@@ -486,7 +486,6 @@ class SuggestionTrayViewController: UIViewController {
             remoteMessagingActionHandler: dependencies.remoteMessagingActionHandler,
             remoteMessagingImageLoader: dependencies.remoteMessagingImageLoader,
             remoteMessagingPixelReporter: dependencies.remoteMessagingPixelReporter,
-            fireModePromotionEligibility: dependencies.fireModePromotionEligibility,
             appSettings: dependencies.appSettings,
             faviconsCache: dependencies.faviconsCache,
             subscriptionManager: dependencies.subscriptionManager,
@@ -838,6 +837,7 @@ private extension SuggestionTrayViewController {
         static let suggestionTrayInitialHeight = 380.0
         static let fillTopInset: CGFloat = 0
         static let floatingTopInset: CGFloat = 4
+        static let popoverCornerRadius: CGFloat = 36
     }
 
     func applyTopConstraintForLayoutMode() {

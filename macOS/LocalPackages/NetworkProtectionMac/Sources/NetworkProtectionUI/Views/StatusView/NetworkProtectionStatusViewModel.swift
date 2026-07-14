@@ -210,7 +210,9 @@ extension NetworkProtectionStatusView {
         }
 
         func refreshLoginItemStatus() {
-            self.loginItemNeedsApproval = agentLoginItem?.status == .requiresApproval
+            Task { @MainActor in
+                self.loginItemNeedsApproval = await self.agentLoginItem?.status() == .requiresApproval
+            }
         }
 
         func openLoginItemSettings() {

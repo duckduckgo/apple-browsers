@@ -59,10 +59,6 @@ final class BookmarksBarMenuViewController: NSViewController {
     private var submenuPopover: (any BookmarksBarMenuPopoverPresenting)?
     private(set) var preferredContentOffset: CGPoint = .zero
 
-    /// True when the enclosing popover is `BookmarksBarMenuCustomPopover` (which has no
-    /// window chrome, so this VC needs to provide its own backdrop / corner radius).
-    private let usesCustomWindowChrome: Bool
-
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var dataSource: BookmarkOutlineViewDataSource = {
@@ -99,7 +95,6 @@ final class BookmarksBarMenuViewController: NSViewController {
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
          rootFolder: BookmarkFolder? = nil,
-         usesCustomWindowChrome: Bool = false,
          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
@@ -109,7 +104,6 @@ final class BookmarksBarMenuViewController: NSViewController {
                                                      rootFolder: rootFolder,
                                                      isBookmarksBarMenu: true)
         self.themeManager = themeManager
-        self.usesCustomWindowChrome = usesCustomWindowChrome
         super.init(nibName: nil, bundle: nil)
         self.representedObject = rootFolder
     }
@@ -122,34 +116,29 @@ final class BookmarksBarMenuViewController: NSViewController {
 
     // MARK: View Lifecycle
     override func loadView() {
-        if usesCustomWindowChrome {
-            // Custom panel chrome (no NSPopover) — provide our own clipped corners and a
-            // `.menu` material backdrop. `NSGlassEffectView` was tried here on macOS 26 to
-            // match liquid-glass context menus but its `.regular` style samples the screen
-            // behind the panel and drifts dark over dark content; neither `tintColor`
-            // (any alpha) nor an in-window backdrop suppressed the sampling effectively.
-            view = NSView()
-            view.autoresizesSubviews = false
-            view.wantsLayer = true
-            view.layer?.cornerRadius = Self.popoverCornerRadius
-            view.layer?.masksToBounds = true
+        // Custom panel chrome (no NSPopover) — provide our own clipped corners and a
+        // `.menu` material backdrop. `NSGlassEffectView` was tried here on macOS 26 to
+        // match liquid-glass context menus but its `.regular` style samples the screen
+        // behind the panel and drifts dark over dark content; neither `tintColor`
+        // (any alpha) nor an in-window backdrop suppressed the sampling effectively.
+        view = NSView()
+        view.autoresizesSubviews = false
+        view.wantsLayer = true
+        view.layer?.cornerRadius = Self.popoverCornerRadius
+        view.layer?.masksToBounds = true
 
-            let backdrop = NSVisualEffectView()
-            backdrop.material = .popover
-            backdrop.blendingMode = .behindWindow
-            backdrop.state = .active
-            backdrop.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(backdrop)
-            NSLayoutConstraint.activate([
-                backdrop.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                backdrop.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                backdrop.topAnchor.constraint(equalTo: view.topAnchor),
-                backdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            ])
-        } else {
-            view = NSView()
-            view.autoresizesSubviews = false
-        }
+        let backdrop = NSVisualEffectView()
+        backdrop.material = .popover
+        backdrop.blendingMode = .behindWindow
+        backdrop.state = .active
+        backdrop.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(backdrop)
+        NSLayoutConstraint.activate([
+            backdrop.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backdrop.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backdrop.topAnchor.constraint(equalTo: view.topAnchor),
+            backdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.drawsBackground = false
@@ -263,8 +252,8 @@ final class BookmarksBarMenuViewController: NSViewController {
             }
             .store(in: &cancellables)
 
-        // Favicon images are decoded lazily; reload when an image becomes available for a bookmark
-        // currently shown in this menu so it isn't stuck on the letter placeholder.
+        // Favicon images are decoded lazily; when new favicons are available, refresh cells in place.
+        // We aren't calling `reloadData()` as a full reload would dismiss the submenu.
         NotificationCenter.default.publisher(for: .faviconCacheUpdated)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -273,7 +262,7 @@ final class BookmarksBarMenuViewController: NSViewController {
                    update.hosts.isDisjoint(with: self.bookmarkManager.allHosts()) {
                     return
                 }
-                self.reloadData()
+                self.refreshVisibleFavicons()
             }
             .store(in: &cancellables)
 
@@ -520,6 +509,20 @@ final class BookmarksBarMenuViewController: NSViewController {
         }
     }
 
+    /// Refresh favicons in place for the currently visible bookmark rows, without a full `reloadData()`.
+    private func refreshVisibleFavicons() {
+        let visibleRows = outlineView.rows(in: outlineView.visibleRect)
+        guard visibleRows.length > 0 else { return }
+        for row in visibleRows.location..<(visibleRows.location + visibleRows.length) {
+            guard let node = outlineView.item(atRow: row) as? BookmarkNode,
+                  let bookmark = node.representedObject as? Bookmark,
+                  let cell = outlineView.view(atColumn: 0, row: row, makeIfNecessary: false) as? BookmarkOutlineCellView else {
+                continue
+            }
+            cell.refreshFavicon(for: bookmark)
+        }
+    }
+
     private func updateHighlightedRowAfterReload(isChangingRootFolder: Bool) {
         DispatchQueue.main.async { [outlineView, weak self] in
             if outlineView.isMouseLocationInsideBounds() {
@@ -562,7 +565,7 @@ final class BookmarksBarMenuViewController: NSViewController {
         }
 
         // popover borders
-        let contentInsets = BookmarksBarMenuPopover.popoverInsets
+        let contentInsets = BookmarksBarMenuCustomPopover.popoverInsets
         // positioning rect in Screen coordinates
         let windowRect = positioningView.convert(positioningRect, to: nil)
         let screenPosRect = mainWindow.convertToScreen(windowRect)
@@ -609,7 +612,7 @@ final class BookmarksBarMenuViewController: NSViewController {
     }
 
     private func calculatePreferredContentSize() -> NSSize {
-        let contentInsets = BookmarksBarMenuPopover.popoverInsets
+        let contentInsets = BookmarksBarMenuCustomPopover.popoverInsets
         var contentSize = NSSize(width: 0, height: 20)
         for row in 0..<outlineView.numberOfRows {
             let node = outlineView.item(atRow: row) as? BookmarkNode
@@ -689,11 +692,7 @@ final class BookmarksBarMenuViewController: NSViewController {
             // reuse the popover for another folder
             submenuPopover.reloadData(withRootFolder: folder)
         } else {
-            if usesCustomWindowChrome {
-                submenuPopover = BookmarksBarMenuCustomPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
-            } else {
-                submenuPopover = BookmarksBarMenuPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
-            }
+            submenuPopover = BookmarksBarMenuCustomPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
             submenuPopover.bookmarksBarMenuDelegate = self
             self.submenuPopover = submenuPopover
         }

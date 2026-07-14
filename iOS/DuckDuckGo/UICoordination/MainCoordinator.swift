@@ -128,6 +128,7 @@ final class MainCoordinator {
          freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+         profileStateManager: DBPProfileStateManaging,
          modalPromptCoordinationService: ModalPromptCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
@@ -150,11 +151,9 @@ final class MainCoordinator {
         FireModeCapability.resolve(using: featureFlagger)
         UnifiedToggleInputFeature.resolve(using: featureFlagger)
         let fireModeCapability = FireModeCapability.create()
-        let fireModePromotionsCoordinator = FireModePromotionsCoordinator(fireModeCapability: fireModeCapability)
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
-                                                          fireModePromotionEligibility: fireModePromotionsCoordinator,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
@@ -218,7 +217,6 @@ final class MainCoordinator {
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
                                 toggleModeStorage: toggleModeStorage,
-                                fireModePromotionEligibility: fireModePromotionsCoordinator,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
@@ -298,6 +296,7 @@ final class MainCoordinator {
                                         freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                         freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                         freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                                        profileStateManager: profileStateManager,
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
@@ -311,8 +310,8 @@ final class MainCoordinator {
                                         whatsNewRepository: whatsNewRepository,
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
-                                        fireModePromotionEligibility: fireModePromotionsCoordinator,
-                                        onboardingManager: onboardingManager)
+                                        onboardingManager: onboardingManager,
+                                        recentModalPromptStatusProvider: modalPromptCoordinationService)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -642,6 +641,10 @@ final class MainCoordinator {
         controller.segueToDuckDuckGoSubscription(origin: origin)
     }
 
+    func segueToSubscriptionWelcome() {
+        controller.segueToSubscriptionWelcome()
+    }
+
     func presentNetworkProtectionStatusSettingsModal(origin: SubscriptionFunnelOrigin) {
         controller.presentNetworkProtectionStatusSettingsModal(origin: origin)
     }
@@ -731,7 +734,10 @@ extension MainCoordinator: URLHandling {
 
         fireMediumWidgetPixelIfNeeded(url: url)
 
-        if url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
+        let syncPairingInfo = featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls) ? PairingInfo(url: url) : nil
+
+        if syncPairingInfo == nil
+            && url.scheme != AppDeepLinkSchemes.openVPN.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme
             && url.scheme != AppDeepLinkSchemes.openAIVoiceChat.url.scheme {
             controller.clearNavigationStack()
@@ -767,8 +773,8 @@ extension MainCoordinator: URLHandling {
         case .customProductPage:
             AppStoreCustomProductPageDeepLinkHandler().handleDeepLink(url, on: controller)
         default:
-            if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
-                controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
+            if let syncPairingInfo {
+                controller.segueToSettingsSync(with: nil, pairingInfo: syncPairingInfo)
                 return true
             }
             return false

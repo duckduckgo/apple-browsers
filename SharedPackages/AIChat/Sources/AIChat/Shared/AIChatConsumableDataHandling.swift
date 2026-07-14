@@ -135,6 +135,23 @@ public final class AIChatPageContextHandler: AIChatConsumableDataHandling {
     }
 }
 
+/// Lightweight page-type signals read from page markup, used by the duck.ai web app to pick
+/// page-tailored suggested prompts ("shortcuts"). All fields are best-effort and may be empty.
+public struct AIChatPageTypeSignals: Codable, Equatable {
+    /// `@type` values from every <script type="application/ld+json"> block (incl. `@graph`), deduped. [] if none.
+    public let jsonLdType: [String]
+    /// Content of the first <meta property="og:type">, or nil if absent.
+    public let ogType: String?
+    /// The page's declared language (e.g. <html lang>); "" if none.
+    public let lang: String
+
+    public init(jsonLdType: [String], ogType: String?, lang: String) {
+        self.jsonLdType = jsonLdType
+        self.ogType = ogType
+        self.lang = lang
+    }
+}
+
 public struct AIChatPageContextData: Codable, Equatable {
     public let title: String
     public let favicon: [PageContextFavicon]
@@ -143,13 +160,20 @@ public struct AIChatPageContextData: Codable, Equatable {
     public let truncated: Bool
     public let fullContentLength: Int
     public let attachable: Bool?
+    /// Page-type signals for the duck.ai web app's page shortcuts. Sent in both the full-content
+    /// (auto-attach on) and signals-only (auto-attach off) payloads. Omitted (nil) when unavailable.
+    public let pageTypeSignals: AIChatPageTypeSignals?
+    /// Whether the page CONTENT is attached in this payload. Distinct from `attachable` (whether
+    /// content *can ever* be attached). Absent → treated as `true` (backward compatible). `false`
+    /// marks a signals-only payload: metadata + `pageTypeSignals`, no content.
+    public let attached: Bool?
     /// Discriminator for the duck.ai web app: presence marks a tab-picker context (e.g.
     /// picked via the sidebar `@` picker or the omnibar's "Add Page Content" menu); absence
     /// marks the current sidebar page. The omnibar strips this for the entry that matches
     /// the active tab so the discriminator's semantics hold end-to-end.
     public let tabId: String?
 
-    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil, tabId: String? = nil) {
+    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int, attachable: Bool? = nil, tabId: String? = nil, pageTypeSignals: AIChatPageTypeSignals? = nil, attached: Bool? = nil) {
         self.title = title
         self.favicon = favicon
         self.url = url
@@ -158,6 +182,8 @@ public struct AIChatPageContextData: Codable, Equatable {
         self.fullContentLength = fullContentLength
         self.attachable = attachable
         self.tabId = tabId
+        self.pageTypeSignals = pageTypeSignals
+        self.attached = attached
     }
 
     /// Returns a copy of this page context with the `tabId` field set to the given value.
@@ -172,7 +198,9 @@ public struct AIChatPageContextData: Codable, Equatable {
             truncated: truncated,
             fullContentLength: fullContentLength,
             attachable: attachable,
-            tabId: tabId
+            tabId: tabId,
+            pageTypeSignals: pageTypeSignals,
+            attached: attached
         )
     }
 
@@ -193,6 +221,62 @@ public struct AIChatPageContextData: Codable, Equatable {
     /// from this check.
     public func isEmpty() -> Bool {
         return title.isEmpty && favicon.isEmpty && content.isEmpty && fullContentLength == 0
+    }
+}
+
+// MARK: - Selection Context
+
+/// Accumulates user text selections attached to Duck.ai so a freshly-opened sidebar can pull the
+/// ones it missed (via `getAIChatSelectionContext`), mirroring how `AIChatPageContextHandler` backs
+/// `getAIChatPageContext`. Unlike the single-slot page-context handler, selections append and the
+/// list is read non-destructively (the FE dedupes by `id`); it's cleared when a prompt is submitted.
+public final class AIChatSelectionContextHandler {
+    private var selections: [AIChatSelectionContextData] = []
+
+    public init() {}
+
+    public func append(_ selection: AIChatSelectionContextData) {
+        selections.append(selection)
+    }
+
+    public func getAll() -> [AIChatSelectionContextData] {
+        selections
+    }
+
+    public func reset() {
+        selections = []
+    }
+}
+
+/// One user text selection attached to Duck.ai via "Attach to Duck.ai".
+///
+/// Selections live on their own dedicated channel (`submitAIChatSelectionContext`), independent of
+/// the single page-context slot: native appends items one at a time and the duck.ai web app owns the
+/// resulting list (chips, removal, max count, inclusion in the next prompt). `id` lets the FE address
+/// individual items.
+public struct AIChatSelectionContextData: Codable, Equatable {
+    public let id: String
+    public let title: String
+    /// The source page's favicon, base64-encoded the same way as `AIChatPageContextData.favicon`
+    /// (raw URLs get CSP-blocked in the sidebar). Empty when no favicon is cached.
+    public let favicon: [AIChatPageContextData.PageContextFavicon]
+    public let url: String
+    public let content: String
+    public let truncated: Bool
+    public let fullContentLength: Int
+    /// Word count of the *full* selection (before truncation), computed natively. The FE can't
+    /// derive this reliably from `content` because `content` is truncated, so native owns it.
+    public let wordCount: Int
+
+    public init(id: String, title: String, favicon: [AIChatPageContextData.PageContextFavicon] = [], url: String, content: String, truncated: Bool, fullContentLength: Int, wordCount: Int) {
+        self.id = id
+        self.title = title
+        self.favicon = favicon
+        self.url = url
+        self.content = content
+        self.truncated = truncated
+        self.fullContentLength = fullContentLength
+        self.wordCount = wordCount
     }
 }
 

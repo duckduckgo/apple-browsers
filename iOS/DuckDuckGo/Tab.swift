@@ -246,6 +246,10 @@ public class Tab: NSObject, NSCoding {
         return uid == other.uid
     }
     
+    public override var hash: Int {
+        return uid.hashValue
+    }
+
     func toggleDesktopMode() {
         isDesktop = !isDesktop
     }

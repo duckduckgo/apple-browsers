@@ -103,11 +103,6 @@
         "suffixes": [],
         "parameters": [
             "pixelSource",
-            {
-                "key": "osMajorVersion",
-                "type": "string",
-                "description": "Operating system major version"
-            },
             "appVersion",
             {
                 "key": "loadingTime",

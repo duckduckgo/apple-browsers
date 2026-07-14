@@ -916,7 +916,10 @@ final class MainMenu: NSMenu {
 
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
-            NSMenuItem(title: "Inspect Favicons", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")
+            NSMenuItem(title: "Favicons") {
+                NSMenuItem(title: "Clear In-Memory Cache", action: #selector(AppDelegate.debugClearFaviconsCache)).withAccessibilityIdentifier("MainMenu.clearFaviconsCache")
+                NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")
+            }
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "Performance Debugging") {
@@ -926,17 +929,23 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Reset Next Steps", action: #selector(AppDelegate.debugResetContinueSetup))
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.resetNextStepsMenuItem)
-                NSMenuItem(title: "Shift top card by 10 impressions", action: #selector(MainViewController.debugShiftCardImpression))
+                NSMenuItem(title: "Shift top card by \(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown) impressions", action: #selector(MainViewController.debugShiftCardImpression))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 shiftNextStepsDaysMenuItem
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem)
             }.withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu)
             NSMenuItem(title: "CPM") {
-                NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
-                NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
-                NSMenuItem(title: "Clear blockedCookiesPopoverSeen flag", action: #selector(AppDelegate.debugClearBlockedCookiesPopoverSeenFlag))
-                NSMenuItem(title: "Reset widgetNewLabelFirstShownDate", action: #selector(AppDelegate.debugResetWidgetNewLabelFirstShownDateKey))
-                NSMenuItem(title: "Set widgetNewLabelFirstShownDate to 10 days ago", action: #selector(AppDelegate.debugSetWidgetNewLabelFirstShownDateTo10DaysAgo))
+                NSMenuItem(title: "Opt-in dialog") {
+                    NSMenuItem(title: "Show opt-in dialog", action: #selector(MainViewController.debugShowCookiePopupProtectionOptInDialog))
+                    NSMenuItem(title: "Reset app launch flag", action: #selector(MainViewController.debugResetCookiePopupProtectionOptInLaunchFlag))
+                }
+                NSMenuItem(title: "NTP widget") {
+                    NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
+                    NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
+                    NSMenuItem(title: "Clear blockedCookiesPopoverSeen flag", action: #selector(AppDelegate.debugClearBlockedCookiesPopoverSeenFlag))
+                    NSMenuItem(title: "Reset widgetNewLabelFirstShownDate", action: #selector(AppDelegate.debugResetWidgetNewLabelFirstShownDateKey))
+                    NSMenuItem(title: "Set widgetNewLabelFirstShownDate to 10 days ago", action: #selector(AppDelegate.debugSetWidgetNewLabelFirstShownDateTo10DaysAgo))
+                }
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))

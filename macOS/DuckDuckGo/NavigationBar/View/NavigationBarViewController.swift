@@ -181,6 +181,7 @@ final class NavigationBarViewController: NSViewController {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
+    /// Deprecated: Remove when `appRebranding` Ships
     private var leftFocusSpacer: NSView?
     private var rightFocusSpacer: NSView?
 
@@ -341,7 +342,8 @@ final class NavigationBarViewController: NSViewController {
             autofillPopoverPresenter: autofillPopoverPresenter,
             vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
             pinningManager: pinningManager,
-            isBurner: tabCollectionViewModel.isBurner
+            isBurner: tabCollectionViewModel.isBurner,
+            isAppRebranded: themeManager.isAppRebranded
         )
 
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -550,7 +552,7 @@ final class NavigationBarViewController: NSViewController {
         updateNavigationBarForCurrentWidth()
     }
 
-    func resizeAddressBar(for sizeClass: AddressBarSizeClass, animated: Bool) {
+    func resizeAddressBar(for sizeClass: AddressBarSizeClass, allowsAsync: Bool = true, animated: Bool) {
         daxFadeInAnimation?.cancel()
         heightChangeAnimation?.cancel()
 
@@ -613,19 +615,28 @@ final class NavigationBarViewController: NSViewController {
                 performResize()
             }
         }
-        if let window = view.window, window.isVisible {
+
+        if let window = view.window, window.isVisible, allowsAsync {
             let dispatchItem = DispatchWorkItem(block: heightChange)
             DispatchQueue.main.async(execute: dispatchItem)
             self.heightChangeAnimation = dispatchItem
-        } else {
-            // update synchronously for off-screen view
-            prepareNavigationBar()
-            heightChange()
+            return
         }
+
+        // Update Synchronously
+        prepareNavigationBar()
+        heightChange()
     }
 
     private func resizeAddressBarWidth(isAddressBarFocused: Bool) {
-        if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
+        let styleProvider = theme.addressBarStyleProvider
+        if !styleProvider.shouldUseLegacyAddressBarSpacingMechanism {
+            addressBarViewController?.refreshAddressBarBackgroundWidth()
+            return
+        }
+
+        /// Will be removed when `.appRebranding` ships
+        if styleProvider.shouldShowNewSearchIcon {
             if !isAddressBarFocused {
                 if leftFocusSpacer == nil {
                     leftFocusSpacer = NSView()
@@ -2332,6 +2343,10 @@ extension NavigationBarViewController: MouseOverButtonDelegate {
 extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController) {
+        resizeAddressBarForHomePage(addressBarViewController, allowsAsync: true)
+    }
+
+    func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController, allowsAsync: Bool) {
         let addressBarSizeClass: AddressBarSizeClass
         if isInPopUpWindow {
             addressBarSizeClass = .popUpWindow
@@ -2342,7 +2357,7 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
         }
 
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
-            resizeAddressBar(for: addressBarSizeClass, animated: false)
+            resizeAddressBar(for: addressBarSizeClass, allowsAsync: allowsAsync, animated: false)
         }
     }
 

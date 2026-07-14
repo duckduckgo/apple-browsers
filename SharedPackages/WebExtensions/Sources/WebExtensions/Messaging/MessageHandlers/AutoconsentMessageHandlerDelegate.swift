@@ -22,6 +22,8 @@ import Foundation
 
 /// Represents the consent status information from the web extension
 public struct ConsentStatusInfo {
+    private static let maximumCPMErrorsLength = 255
+
     public let consentManaged: Bool
     public let cosmetic: Bool?
     public let optoutFailed: Bool?
@@ -29,6 +31,10 @@ public struct ConsentStatusInfo {
     public let consentReloadLoop: Bool?
     public let consentRule: String?
     public let consentHeuristicEnabled: Bool?
+    public let cpmStage: String?
+    public let cpmErrors: String?
+    public let cpmQueueSize: Int?
+    public let cpmConfigVersion: String?
 
     public init(
         consentManaged: Bool,
@@ -37,7 +43,11 @@ public struct ConsentStatusInfo {
         selftestFailed: Bool? = nil,
         consentReloadLoop: Bool? = nil,
         consentRule: String? = nil,
-        consentHeuristicEnabled: Bool? = nil
+        consentHeuristicEnabled: Bool? = nil,
+        cpmStage: String? = nil,
+        cpmErrors: String? = nil,
+        cpmQueueSize: Int? = nil,
+        cpmConfigVersion: String? = nil
     ) {
         self.consentManaged = consentManaged
         self.cosmetic = cosmetic
@@ -46,6 +56,10 @@ public struct ConsentStatusInfo {
         self.consentReloadLoop = consentReloadLoop
         self.consentRule = consentRule
         self.consentHeuristicEnabled = consentHeuristicEnabled
+        self.cpmStage = cpmStage
+        self.cpmErrors = cpmErrors.map(Self.cappedCPMErrors)
+        self.cpmQueueSize = cpmQueueSize
+        self.cpmConfigVersion = cpmConfigVersion
     }
 
     /// Initialize from web extension message parameters
@@ -61,6 +75,14 @@ public struct ConsentStatusInfo {
         self.consentReloadLoop = consentStatus["consentReloadLoop"] as? Bool
         self.consentRule = consentStatus["consentRule"] as? String
         self.consentHeuristicEnabled = consentStatus["consentHeuristicEnabled"] as? Bool
+        self.cpmStage = consentStatus["cpmStage"] as? String
+        self.cpmErrors = (consentStatus["cpmErrors"] as? String).map(Self.cappedCPMErrors)
+        self.cpmQueueSize = consentStatus["cpmQueueSize"] as? Int
+        self.cpmConfigVersion = consentStatus["cpmConfigVersion"] as? String
+    }
+
+    private static func cappedCPMErrors(_ errors: String) -> String {
+        String(errors.prefix(maximumCPMErrorsLength))
     }
 }
 

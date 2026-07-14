@@ -19,6 +19,7 @@
 
 import Core
 import SwiftUI
+import UIComponents
 import DesignResourcesKit
 
 struct ThreatProtectionView: View {

@@ -40,17 +40,25 @@ final class DuckAISuggestionsSource: SuggestionsSource {
     private let urlLoader: DuckAIURLSuggestionsLoader
     private let chatManager: AIChatHistoryManager
     private let query: () -> String
+    /// Gates the URL-hits sub-source only (the "Search Suggestions" setting); chat history is unaffected.
+    private let searchSuggestionsEnabled: () -> Bool
+    /// Gates the chat-history sub-source only (the "Chat Suggestions" setting); URL hits are unaffected.
+    private let chatSuggestionsEnabled: () -> Bool
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
          chatManager: AIChatHistoryManager,
          query: @escaping () -> String,
          deleteEnabled: @escaping () -> Bool = { false },
-         viewAllChatsEnabled: @escaping () -> Bool = { false }) {
+         viewAllChatsEnabled: @escaping () -> Bool = { false },
+         searchSuggestionsEnabled: @escaping () -> Bool = { true },
+         chatSuggestionsEnabled: @escaping () -> Bool = { true }) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.chatManager = chatManager
         self.query = query
+        self.searchSuggestionsEnabled = searchSuggestionsEnabled
+        self.chatSuggestionsEnabled = chatSuggestionsEnabled
 
         let pipeline = DuckAISuggestionsPipeline(
             chatsPublisher: chatViewModel.$filteredSuggestions.eraseToAnyPublisher(),
@@ -66,9 +74,18 @@ final class DuckAISuggestionsSource: SuggestionsSource {
     }
 
     func start(textPublisher: AnyPublisher<String, Never>) {
-        chatManager.subscribeToTextChanges(textPublisher)
-        urlLoader.subscribeToTextChanges(textPublisher)
-        chatManager.refreshSuggestions(query: query())
+        // Skipped entirely when "Chat Suggestions" is off, so chat history (incl. recents) is
+        // suppressed without touching URL hits.
+        if chatSuggestionsEnabled() {
+            chatManager.subscribeToTextChanges(textPublisher)
+            chatManager.refreshSuggestions(query: query())
+        }
+        // Empty when "Search Suggestions" is off, so URL hits are suppressed without touching chat history.
+        let urlTextPublisher = textPublisher
+            .map { [searchSuggestionsEnabled] text in searchSuggestionsEnabled() ? text : "" }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+        urlLoader.subscribeToTextChanges(urlTextPublisher)
     }
 
     func tearDown() {

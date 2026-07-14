@@ -218,7 +218,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
         switch self {
         case .startOnboardingDialog:
             return OnboardingRebrandingImages.Linear.introBackground
-        case .browsersComparisonDialog, .aiComparisonDialog:
+        case .setDefaultBrowserDialog, .aiIntroDialog:
             return OnboardingRebrandingImages.Linear.browsersComparisonBackground
         case .addToDockPromoDialog:
             return OnboardingRebrandingImages.Linear.addToDockBackground
@@ -228,7 +228,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
             return OnboardingRebrandingImages.Linear.addressBarPositionBackground
         case .chooseSearchExperienceDialog:
             return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
-        case .duckAIQueryExperimentDialog:
+        case .duckAIQueryDialog:
             return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
         }
     }
@@ -241,7 +241,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
         switch self {
         case .startOnboardingDialog:
             return 404
-        case .browsersComparisonDialog, .aiComparisonDialog:
+        case .setDefaultBrowserDialog, .aiIntroDialog:
             return 216
         case .addToDockPromoDialog:
             return 286
@@ -251,7 +251,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
             return 360
         case .chooseSearchExperienceDialog:
             return 294
-        case .duckAIQueryExperimentDialog:
+        case .duckAIQueryDialog:
             return 294
         }
     }
@@ -271,7 +271,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
         switch self {
         case .startOnboardingDialog:
             return 320
-        case .browsersComparisonDialog, .aiComparisonDialog:
+        case .setDefaultBrowserDialog, .aiIntroDialog:
             return 380
         case .addToDockPromoDialog:
             return 194
@@ -281,7 +281,7 @@ private extension OnboardingView.ViewState.Intro.IntroType {
             return 246
         case .chooseSearchExperienceDialog:
             return 164
-        case .duckAIQueryExperimentDialog:
+        case .duckAIQueryDialog:
             return 164
         }
     }

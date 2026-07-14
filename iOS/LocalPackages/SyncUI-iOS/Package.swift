@@ -35,8 +35,10 @@ let package = Package(
         .package(path: "../DuckUI"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/MetricBuilder"),
         .package(path: "../../../SharedPackages/UIComponents"),
         .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.2.1"),
+        .package(url: "https://github.com/airbnb/lottie-spm.git", exact: "4.5.2"),
     ],
     targets: [
         .target(
@@ -45,10 +47,22 @@ let package = Package(
                 .product(name: "DuckUI", package: "DuckUI"),
                 "DesignResourcesKit",
                 .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
-                .product(name: "UIComponents", package: "UIComponents")
+                .product(name: "MetricBuilder", package: "MetricBuilder"),
+                .product(name: "UIComponents", package: "UIComponents"),
+                .product(name: "Lottie", package: "lottie-spm")
+            ],
+            resources: [
+                .process("Resources/SyncMedia.xcassets"),
+                .copy("Resources/SyncScanQRCode.lottie")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .testTarget(
+            name: "SyncUI-iOSTests",
+            dependencies: [
+                "SyncUI-iOS"
             ]
         )
     ]

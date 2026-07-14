@@ -30,7 +30,7 @@ class AIChatMultilinePasteTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["aiChatOmnibarToggle": true])
+        app = XCUIApplication.setUp()
 
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
@@ -38,7 +38,6 @@ class AIChatMultilinePasteTests: UITestCase {
 
     override func tearDownWithError() throws {
         try super.tearDownWithError()
-        app = XCUIApplication.setUp(featureFlags: ["aiChatOmnibarToggle": false])
         app.terminate()
     }
 
@@ -75,7 +74,7 @@ class AIChatMultilinePasteTests: UITestCase {
         )
     }
 
-    /// Tests that pressing SHIFT + ENTER in the address bar toggles to Duck.ai mode when the aiChatOmnibarToggle feature flag is ON
+    /// Tests that pressing SHIFT + ENTER in the address bar toggles to Duck.ai mode when the Search/Duck.ai toggle setting is ON
     func test_shiftEnter_withToggleSettingON_togglesToDuckAIMode() throws {
         // Navigate to AI Chat settings and enable the Search/Duck.ai toggle
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)

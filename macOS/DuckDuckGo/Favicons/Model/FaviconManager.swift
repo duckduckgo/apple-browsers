@@ -458,7 +458,7 @@ final class FaviconManager: FaviconManagement {
 
                         return FetchedFavicon(link: faviconLink, data: data, image: image)
                     } catch {
-                        Logger.favicons.error("Error downloading Favicon from \(faviconUrl.absoluteString): \(error.localizedDescription)")
+                        Logger.favicons.error("Error downloading Favicon from \(faviconUrl.shortDescription): \(error.localizedDescription)")
                         return nil
                     }
                 }
@@ -744,5 +744,13 @@ extension FaviconManager: FaviconManagementDebugging {
     func deleteAllFavicons() async {
         await imageCache.removeAllFavicons()
         await referenceCache.removeAllReferences()
+    }
+
+    /// Debug: clears the in-memory decoded-image cache without deleting any stored favicons. Only the
+    /// lazy `FaviconImageCache` keeps a separate in-memory image cache, so this is a no-op on the eager
+    /// (non-lazy) path.
+    @MainActor
+    func clearInMemoryFaviconCache() {
+        (imageCache as? FaviconImageCache)?.clearInMemoryCache()
     }
 }

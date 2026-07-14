@@ -247,6 +247,24 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Функции с изкуствен интелект";
 
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Чат";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Препис";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Гласов чат";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Нов чат";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Слушам…";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Слушам…";
+
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Чатове";
 
@@ -383,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Разбрах";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Вече сте сдвоени с този акаунт и на двете устройства.";
+"alert.sync-already-paired-with-account-description" = "Тези устройства вече са свързани към „Sync & Backup“.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Вече е сдвоено";
+"alert.sync-already-paired-with-account-title" = "Вече е синхронизирано.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Някои отметки са форматирани неправилно или са твърде дълги и не бяха синхронизирани.";
@@ -407,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Синхронизирането е прекратено от другото ви устройство.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "В браузъра си посетете duck.ai, отидете в „Настройки“, след това под „Sync & Backup“ изберете „Включване“ и след това „Синхронизиране с друго устройство“.";
+"alert.sync-code-only-compatible-with-duckai-description" = "В другия браузър посетете Duck.ai, отидете в „Настройки“, след това под „Sync & Backup“ изберете „Включване“ и след това „Синхронизиране с друго устройство“.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Сканирайте този код от „Настройки“ на Duck.ai настройки.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Сканирайте този код с браузър, различен от DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Някои пароли са форматирани неправилно или са твърде дълги и не бяха синхронизирани.";
@@ -436,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Настройки за синхронизиране";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Моля, опитайте отново.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Синхронизацията не бе успешна.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Моля, синхронизирайте това устройство от вече свързан браузър DuckDuckGo на друго устройство.";
 
@@ -460,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Синхронизирането е на пауза";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Разбрах";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Превключване на синхронизирането";
 
@@ -471,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup временно не е налична.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Този код не се поддържа в текущата версия на приложението.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Актуализирайте браузъра DuckDuckGo и опитайте отново.";
@@ -509,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Това устройство не може да бъде премахнато от Синхронизиране и архивиране.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Съжаляваме, този код е невалиден. Моля, уверете се, че сте въвели или сканирали правилния код.";
+"alert.unable-to-scan-qr-code-description" = "Уверете се, че сте въвели или сканирали правилния код.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Това не е валиден код за синхронизация.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Не може да се осъществи връзка със сървъра.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Не може да се синхронизира с друго устройство.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Синхронизиране и архивиране не може да бъде изключено.";
@@ -525,6 +551,9 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Отключване на DuckDuckGo.";
+
+/* Instruction shown on authentication screen after authentication fails */
+"app.authentication.unlock.instructions" = "Докоснете някъде, за да отключите";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Влизане";
@@ -1060,12 +1089,6 @@
 /* Title displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.new-user.title" = "Запазване на тази парола?";
 
-/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
-"autofill.save-login.no-thanks.CTA" = "Не, благодаря";
-
-/* CTA displayed on modal allowing the user to dismiss the save login prompt for now */
-"autofill.save-login.not-now.CTA" = "Не сега";
-
 /* Message displayed on modal asking for the user to save the login for the first time */
 "autofill.save-login.security.message" = "С DuckDuckGo Passwords & Autofill можете да съхранявате паролата по сигурен начин на устройството.";
 
@@ -1395,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Натиснете **Добавяне на управление** в долната част на екрана";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Ново";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Потвърждаване";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Ще се стремим да избираме възможно най-поверителните опции за бисквитки и да ги затваряме вместо Вас. Ако няма опция за отказ от тях, ще Ви спестим едно кликване и ще приемем тези бисквитки вместо Вас.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Управление или приемане на бисквитки вместо мен";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Ще продължа да ги управлявам самостоятелно";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Омръзнаха ли Ви изскачащите прозорци за бисквитки, които не Ви оставят на мира?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Можем да Ви спестим едно кликване и да приемем тези бисквитки вместо Вас.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Приемане на бисквитки без опция за отказ вместо мен";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ще продължа да ги управлявам самостоятелно";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Омръзнаха ли Ви изскачащите прозорци за бисквитки без опция за отказ?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Винаги можете да коригирате това по-късно в\n**Настройки** > **Защита от изскачащи прозорци за бисквитки**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Винаги да се изпращат доклади за сривове";
@@ -2512,27 +2568,6 @@
 /* Title shown on the Fire Mode empty state screen */
 "fire.mode.empty.state.title" = "Раздели Fire";
 
-/* Badge label on the Fire Mode promotion entry in the browsing menu */
-"fire.mode.menu.promotion.badge" = "Нов";
-
-/* Description for the Fire Mode promotion card shown on the new tab page */
-"fire.mode.ntp.promotion.description" = "Ново! Можете да сърфирате, без да запазвате локална история или да влизате в сайтове с друг акаунт.";
-
-/* Dismiss button on the Fire Mode promotion card on the new tab page */
-"fire.mode.ntp.promotion.dismiss" = "Не сега";
-
-/* Primary action button on the Fire Mode promotion card that opens Fire Mode */
-"fire.mode.ntp.promotion.primary.action" = "Изпробвайте разделите Fire";
-
-/* Title for promotion element for pushing users to try fire mode. */
-"fire.mode.promotion.title" = "Изпробвайте разделите Fire";
-
-/* Description for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.description" = "Изпробвайте разделите Fire, в които сърфирате, без да запазвате локална история.";
-
-/* Title for the Fire Tabs popover tip shown on the tab switcher picker */
-"fire.mode.tab.switcher.tip.title" = "Ново: Раздели Fire";
-
 /* Title shown on the Fire tab empty state screen */
 "fire.tab.empty.state.title" = "Раздел Fire";
 
@@ -3202,8 +3237,8 @@
 /* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
 "onboarding.duckai.contextual.end-of-journey.message" = "Започни поверителен чат с AI с Duck.ai или превключи към „Търсене“ за защитено сърфиране.\n\nМожеш да използваш Duck.ai от всяко място, където видиш иконата за чат [[chat_icon]]";
 
-/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude', and 'Llama' are brand names and should not be translated. */
-"onboarding.duckai.contextual.subscription.message" = "Предлагаме и платен абонамент, включващ усъвършенствани AI модели с по-високи лимити за чат от GPT, Claude и Llama, защитена VPN и други.";
+/* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
+"onboarding.duckai.contextual.subscription.message" = "Предлагаме и платен абонамент с усъвършенствани AI модели с по-високи лимити за чат от GPT и Claude, защитена VPN и други.";
 
 /* Title shown on the Duck.ai query screen in the Duck.ai onboarding flow, prompting the user to try their first AI chat. */
 "onboarding.duckai.duckAIQuery.title" = "А сега изпробвай поверителен чат с AI!";
@@ -3261,6 +3296,36 @@
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Защитите са активирани!";
+
+/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
+"onboarding.highlights.duckAIQuery.completion.message" = "Използвайте адресната лента, за да търсите и посещавате сайтове, или превключете към Duck.ai за поверителен чат с AI.\n\nМожете да използвате Duck.ai от всяко място, където видите иконата за чат [[chat_icon]]";
+
+/* Fire onboarding message shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.message" = "Поверителни чатове с изкуствен интелект, които можете да изтриете по всяко време с Fire Button. Изпробвайте го! 🔥";
+
+/* Fire onboarding title shown after the first Duck.ai response. */
+"onboarding.highlights.duckAIQuery.fire.title" = "Това е Duck.ai!";
+
+/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.ai" = "Задайте въпрос поверително";
+
+/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.placeholder.search" = "Поверително търсене";
+
+/* First suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option1" = "Обясни ми фондовия пазар, така сякаш съм на 10 години";
+
+/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option2" = "Планирай перфектен ден в Лондон";
+
+/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Кажи ми 10 интересни факта от науката, природата и историята?";
+
+/* Title for the onboarding Duck.ai query selection screen. */
+"onboarding.highlights.duckAIQuery.title" = "Готови ли сте да започнете?\nОпитайте търсене или чат с изкуствен интелект!";
+
+/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
+"onboarding.highlights.duckAIQuery.toggle.ai" = "Питайте AI";
 
 /* The title of the fire button CTA to skip erasing the data. */
 "onboarding.highlights.fireDialog.cta.skip" = "Пропускане";
@@ -3572,6 +3637,9 @@
 "preserveLogins.remove.all.ok" = "ОК";
 
 /* No comment provided by engineer. */
+"Previews" = "Прегледи";
+
+/* No comment provided by engineer. */
 "Primary / First Action" = "Основно/първо действие";
 
 /* No comment provided by engineer. */
@@ -3817,6 +3885,21 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Настройки за Assist при търсене";
 
+/* Search Assist frequency option: never show AI-assisted answers */
+"settings.aifeatures.assist.never" = "Никога";
+
+/* Search Assist frequency option: often show AI-assisted answers */
+"settings.aifeatures.assist.often" = "Често";
+
+/* Search Assist frequency option: show AI-assisted answers on demand */
+"settings.aifeatures.assist.ondemand" = "При поискване";
+
+/* Search Assist frequency option: sometimes show AI-assisted answers */
+"settings.aifeatures.assist.sometimes" = "Понякога";
+
+/* Title of the native Search Assist setting control */
+"settings.aifeatures.assist.title" = "Assist при търсене";
+
 /* Settings screen cell subtitle for enabling automatic page content attachment */
 "settings.aifeatures.automatic.context.subtitle" = "Автоматично изпращане на съдържанието на страницата до Duck.ai";
 
@@ -3826,11 +3909,29 @@
 /* Settings screen cell title for enabling chat suggestions */
 "settings.aifeatures.chat.suggestions.title" = "Предложения за чат";
 
+/* Button that turns off all AI features */
+"settings.aifeatures.disable.all" = "Използвай DuckDuckGo без AI";
+
+/* Footer text below the disable all AI features button */
+"settings.aifeatures.disable.all.footer" = "Деактивира Duck.ai, скрива подпомогнатите от AI отговори в търсенето и филтрира известни спам AI сайтове в резултатите от търсенето на изображения.";
+
+/* Footer text shown once all AI features are already disabled */
+"settings.aifeatures.disable.all.footer.disabled" = "AI в момента е деактивиран в браузъра, затова вече няма да виждате подпомогнати от AI отговори и ще виждате по-малко генерирани от AI изображения в резултатите от търсенето на изображения.";
+
+/* Section header for the Duck.ai settings group on the AI Features screen */
+"settings.aifeatures.duckai.section.header" = "Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Скриване на изображения, генерирани от изкуствен интелект";
 
-/* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Филтрира в резултатите от търсенето изображенията, генерирани от изкуствен интелект";
+/* Hide AI-Generated Images option: off (images shown) */
+"settings.aifeatures.hide.ai.generated.images.off" = "Изключено";
+
+/* Hide AI-Generated Images option: on (images hidden) */
+"settings.aifeatures.hide.ai.generated.images.on" = "Включено";
+
+/* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Филтрира известни спам AI сайтове в резултатите от търсенето на изображения. [Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Винаги включено";
@@ -3840,6 +3941,12 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Позиция на адресната лента";
+
+/* Settings screen toggle (iPad only) that hides the tab bar and address bar while scrolling */
+"settings.appearance.hide.tab.bar.while.scrolling" = "Скриване на лентата с раздели при превъртане";
+
+/* Footer (iPad only) shown below the Hide Tab Bar While Scrolling toggle, explaining where the behavior applies */
+"settings.appearance.hide.tab.bar.while.scrolling.footer" = "Налична в повечето уебсайтове. Duck.ai, карти и игри може да поддържат лентата с раздели видима.";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Отваряне на връзките в свързаните приложения";
@@ -3947,7 +4054,7 @@
 "settings.cookie.pop-up-protection.protection" = "Защита от изскачащи прозорци за бисквитки";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo ще се опита да избере най-поверителните възможни настройки и ще скрие тези изскачащи прозорци вместо Вас.\n[Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo ще се опита да избере най-поверителните възможни настройки и ще скрие тези изскачащи прозорци вместо Вас.\n[Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Управление на прозорци за бисквитки";
@@ -4715,7 +4822,7 @@
 "sync.remove-device.title" = "Премахване на устройство?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Устройството е синхронизирано успешно!";
+"sync.simplified.device-synced.toast" = "Новото устройство е добавено!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Функцията Sync & Backup е активирана";
@@ -4734,15 +4841,6 @@
 
 /* Alert title when turning off sync */
 "sync.simplified.turn.off.title" = "Изключване на Sync & Backup?";
-
-/* Caption for a button to remove current device from Sync */
-"sync.turn.off.confirm.action" = "Премахване";
-
-/* Message for the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.message" = "Това устройство вече няма да има достъп до синхронизираните Ви данни.";
-
-/* Title of the dialog to confirm turning off Sync */
-"sync.turn.off.confirm.title" = "Изключване на синхронизирането?";
 
 /* Reason for auth when setting up Sync */
 "sync.user.auth.reason" = "Отключете устройството, за да настроите Sync & Backup.";
@@ -5279,35 +5377,48 @@
 /* No comment provided by engineer. */
 "No matches for \"%@\"" = "Не са намерени резултати за \"%@\"";
 
-/* Completion onboarding message shown after finishing Fire onboarding in Duck.ai flow. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.highlights.duckAIQuery.completion.message" = "Използвайте адресната лента, за да търсите и посещавате сайтове, или превключете към Duck.ai за поверителен чат с AI.\n\nМожете да използвате Duck.ai от всяко място, където видите иконата за чат [[chat_icon]]";
 
-/* Fire onboarding message shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.message" = "Поверителни чатове с изкуствен интелект, които можете да изтриете по всяко време с Fire Button. Изпробвайте го! 🔥";
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Чатове";
 
-/* Fire onboarding title shown after the first Duck.ai response. */
-"onboarding.highlights.duckAIQuery.fire.title" = "Това е Duck.ai!";
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Няма скорошни чатове";
 
-/* Placeholder for AI query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.ai" = "Задайте въпрос поверително";
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Отваряне на Duck.ai";
 
-/* Placeholder for search query input in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.placeholder.search" = "Поверително търсене";
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Търсене";
 
-/* First suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option1" = "Обясни ми фондовия пазар, така сякаш съм на 10 години";
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Закачени";
 
-/* Second suggestion chip label in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option2" = "Планирай перфектен ден в Лондон";
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Последни";
 
-/* Prompt submitted when user taps the third suggestion in onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.suggestion.option3.prompt" = "Кажи ми 10 интересни факта от науката, природата и историята?";
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Няма намерени съвпадения";
 
-/* Title for the onboarding Duck.ai query selection screen. */
-"onboarding.highlights.duckAIQuery.title" = "Готови ли сте да започнете?\nОпитайте търсене или чат с изкуствен интелект!";
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Неуспешно зареждане на чатове";
 
-/* Label for the AI Chat option in the Search/Ask AI toggle on the onboarding screen. */
-"onboarding.highlights.duckAIQuery.toggle.ai" = "Питайте AI";
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "Възникна грешка при зареждането на чатовете в Duck.ai. Моля, опитайте отново по-късно.";
 
-/* Toast message shown after copying sync code to clipboard */
-"sync.simplified.code.copied.toast" = "Кодът е копиран";
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Изтриване на чата";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Изтегляне на чата";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Закачане на чата";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Откачане на чата";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Изтриване на чатовете";
+
+/* Do not translate - stringsdict entry */
+"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";

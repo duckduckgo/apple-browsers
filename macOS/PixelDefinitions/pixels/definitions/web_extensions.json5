@@ -271,7 +271,8 @@
                 "key": "extension_type",
                 "type": "string",
                 "description": "The web extension type the scriptlets belong to"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_web_extension_scriptlet_validation_error": {
@@ -479,8 +480,7 @@
             "channel",
             {
                 "key": "extension_loaded",
-                "type": "string",
-                "enum": ["true", "false"],
+                "type": "boolean",
                 "description": "Whether the ad-blocking extension itself was loaded (true) or also missing (false)."
             }
         ]

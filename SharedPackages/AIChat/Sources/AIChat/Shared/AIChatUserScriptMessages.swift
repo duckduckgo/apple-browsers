@@ -39,6 +39,12 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     case getAIChatPageContext
     case submitAIChatPageContext
+    /// Pushed (native→FE) to append one user text selection to the duck.ai selection-context list.
+    /// Independent of the single page-context slot; the FE owns the resulting list of selections.
+    case submitAIChatSelectionContext
+    /// Pulled (FE→native) on chat init to fetch selections attached before the FE was ready to
+    /// receive pushes — mirrors `getAIChatPageContext`. Returns the current selection list.
+    case getAIChatSelectionContext
     case togglePageContextTelemetry
     case getAIChatOpenTabs
     case getAIChatTabContent
@@ -59,6 +65,11 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// voice session. Native uses this to decide whether to surface a system-permission
     /// remediation prompt (e.g. when the OS has denied microphone access to the app).
     case voiceChatStartFailed
+
+    /// Posted by the FE when `getUserMedia` rejects while attempting to start Duck.ai
+    /// dictation. Mirrors `voiceChatStartFailed` but drives dictation-specific remediation
+    /// copy on the system-permission prompt.
+    case dictationStartFailed
 
     /// Posted by the FE when a new chat is created in image-generation mode (e.g. the user
     /// tapped the sidebar's "New Image" entry). Native uses this to mirror the FE's active
@@ -92,5 +103,8 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     /// Pushed to the duck.ai page to open the Duck.ai Settings modal.
     case submitOpenSettingsAction
+
+    /// Posted by the native-customize-modal placement when the user dismisses the Customize Responses card.
+    case customizeResponsesModalClosed
 }
 // swiftlint:enable inclusive_language

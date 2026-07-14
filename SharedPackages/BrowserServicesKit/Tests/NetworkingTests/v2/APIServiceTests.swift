@@ -71,6 +71,7 @@ final class APIServiceTests: XCTestCase {
 
     // MARK: -
 
+    @available(iOS 16.0, *)
     func testQueryItems() async throws {
         let qItems: QueryItems = [
             (key: "qName1", value: "qValue1"),

@@ -44,6 +44,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
     func isEligibleForNTPAfterIdle() -> Bool { false }
     func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
     func idleThresholdSeconds() -> Int { 60 }
+    func ntpAfterIdleState() -> NTPAfterIdleState { .notEligible }
 }
 
  @MainActor
@@ -208,6 +209,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             ),
             freemiumPIRDebugSettings: freemiumPIRDebugSettings,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: DefaultDBPProfileStateManager(keyValueStore: freemiumDBPUserDefaults),
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()),

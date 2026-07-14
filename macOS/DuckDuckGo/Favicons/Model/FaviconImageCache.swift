@@ -160,7 +160,7 @@ final class FaviconImageCache: FaviconImageCaching {
             do {
                 await self.removeFaviconsFromStore(oldMetadata)
                 try await self.storing.save(favicons)
-                Logger.favicons.debug("Favicon saved successfully. URL: \(favicons.map(\.url.absoluteString).description)")
+                Logger.favicons.debug("Favicon saved successfully. URL: \(favicons.map(\.url.shortDescription).description)")
                 await MainActor.run {
                     NotificationCenter.default.postFaviconCacheUpdated(
                         faviconURLs: Set(favicons.map(\.url)),
@@ -205,7 +205,7 @@ final class FaviconImageCache: FaviconImageCaching {
         do {
             image = try await storing.loadImage(for: metadata.identifier)
         } catch FaviconStore.FaviconStoreError.imageDecodingFailed {
-            Logger.favicons.error("Favicon image undecodable for \(metadata.url.absoluteString); removing corrupt favicon")
+            Logger.favicons.error("Favicon image undecodable for \(metadata.url.shortDescription); removing corrupt favicon")
             // The stored image is corrupt and can't be decoded. Drop it from the store
             // and caches so the favicon is re-fetched on the next visit.
             await removeUndecodableFavicon(metadata)
@@ -213,7 +213,7 @@ final class FaviconImageCache: FaviconImageCaching {
         } catch {
             // A transient failure (e.g. a Core Data fetch error). Keep the favicon and
             // serve a nil image for now; it will be retried on a later request.
-            Logger.favicons.error("Loading favicon image failed for \(metadata.url.absoluteString): \(error.localizedDescription)")
+            Logger.favicons.error("Loading favicon image failed for \(metadata.url.shortDescription): \(error.localizedDescription)")
             image = nil
         }
         if let image {
@@ -235,7 +235,7 @@ final class FaviconImageCache: FaviconImageCaching {
             do {
                 image = try await storing.loadImage(for: metadata.identifier)
             } catch FaviconStore.FaviconStoreError.imageDecodingFailed {
-                Logger.favicons.error("Favicon image undecodable for \(metadata.url.absoluteString); removing corrupt favicon")
+                Logger.favicons.error("Favicon image undecodable for \(metadata.url.shortDescription); removing corrupt favicon")
                 _ = await MainActor.run {
                     self.inFlightImageLoads.remove(faviconUrl)
                 }
@@ -246,7 +246,7 @@ final class FaviconImageCache: FaviconImageCaching {
             } catch {
                 // A transient failure (e.g. a Core Data fetch error). Keep the favicon; it
                 // will be retried on a later request.
-                Logger.favicons.error("Loading favicon image failed for \(metadata.url.absoluteString): \(error.localizedDescription)")
+                Logger.favicons.error("Loading favicon image failed for \(metadata.url.shortDescription): \(error.localizedDescription)")
                 image = nil
             }
 
@@ -336,6 +336,16 @@ final class FaviconImageCache: FaviconImageCaching {
     @MainActor
     func removeAllFavicons() async {
         await deleteFaviconsAndNotify { _ in true }
+    }
+
+    /// Debug: drops every decoded favicon image from the in-memory `NSCache`, leaving the persisted
+    /// store, the metadata map, and references intact. Images re-decode lazily from the store on the
+    /// next `get(faviconUrl:)`. Posts `.faviconCacheUpdated` (no payload) so open UI re-resolves and
+    /// the reload is observable.
+    @MainActor
+    func clearInMemoryCache() {
+        imageCache.removeAllObjects()
+        NotificationCenter.default.post(name: .faviconCacheUpdated, object: nil)
     }
 
     /// Removes matching favicons. The set to delete is resolved from the store — the inspector's source
@@ -534,7 +544,7 @@ final class EagerFaviconImageCache: FaviconImageCaching {
             do {
                 await self.removeFaviconsFromStore(oldFavicons)
                 try await self.storing.save(favicons)
-                Logger.favicons.debug("Favicon saved successfully. URL: \(favicons.map(\.url.absoluteString).description)")
+                Logger.favicons.debug("Favicon saved successfully. URL: \(favicons.map(\.url.shortDescription).description)")
                 await MainActor.run {
                     NotificationCenter.default.postFaviconCacheUpdated(
                         faviconURLs: Set(favicons.map(\.url)),

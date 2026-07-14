@@ -237,19 +237,34 @@ private extension UIButton.Configuration {
 
 extension BrowserChromeButton {
 
-    static func createToolbarButtonItem(title: String, image: UIImage?, action: (() -> Void)? = nil) -> UIBarButtonItem {
+    static func createToolbarButton(title: String, image: UIImage?, fixedWidth: CGFloat? = 34, action: (() -> Void)? = nil) -> BrowserChromeButton {
         let button = BrowserChromeButton(.toolbar)
-        if let image = image {
+        if let image {
             button.setImage(image)
+        } else {
+            // Text buttons (no icon) render `title` as their visible label; icon buttons use it only for accessibility.
+            button.setTitle(title, for: .normal)
         }
 
-        if let action = action {
-            button.addAction(UIAction{ _ in
+        if let action {
+            button.addAction(UIAction { _ in
                 action()
             }, for: .touchUpInside)
         }
 
-        button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        button.accessibilityLabel = title
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        // Icon buttons use a fixed width; text buttons pass nil and size to their title (see applyTextConstraints).
+        if let fixedWidth {
+            button.widthAnchor.constraint(equalToConstant: fixedWidth).isActive = true
+        }
+
+        return button
+    }
+
+    static func createToolbarButtonItem(title: String, image: UIImage?, fixedWidth: CGFloat? = 34, action: (() -> Void)? = nil) -> UIBarButtonItem {
+        let button = createToolbarButton(title: title, image: image, fixedWidth: fixedWidth, action: action)
 
         let barItem = UIBarButtonItem(customView: button)
 

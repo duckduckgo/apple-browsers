@@ -50,7 +50,7 @@ jobs:
     timeout-minutes: 32
     steps:
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -123,7 +123,7 @@ jobs:
         bundle exec fastlane sync_signing_ci
 
     - name: Download and unzip artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
 
     - name: Set cache key hash
       run: |
@@ -136,7 +136,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
@@ -149,7 +149,7 @@ jobs:
         xcode-version: ${{ matrix.xcode-version }}
 
     - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-pir-e2e
@@ -210,7 +210,7 @@ jobs:
 
     - name: Save Xcode Compilation Cache
       if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-pir-e2e-${{ steps.compilation-cache-hash.outputs.hash }}
@@ -238,7 +238,7 @@ jobs:
         xcbeautify --report junit --report-path . --junit-report-filename pir-e2e-tests.xml < pir-e2e-tests.log
 
     - name: Publish tests report
-      uses: mikepenz/action-junit-report@v4
+      uses: mikepenz/action-junit-report@v6
       if: always()
       with:
         check_name: "Test Report ${{ matrix.runner }}"
@@ -251,7 +251,7 @@ jobs:
         log show --predicate 'processImagePath CONTAINS "DuckDuckGo Personal Information Removal"' --last 1h > pir-process.log 2>&1 || true
 
     - name: Upload logs when workflow failed
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: "BuildLogs ${{ matrix.runner }}"
@@ -271,7 +271,7 @@ jobs:
 
     steps:
     - name: Create Asana task when workflow failed
-      uses: duckduckgo/native-github-asana-sync@v1.1
+      uses: duckduckgo/native-github-asana-sync@v2.5.1
       with:
         action: create-asana-task
         asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

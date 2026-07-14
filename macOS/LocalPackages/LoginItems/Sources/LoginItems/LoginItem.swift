@@ -71,16 +71,27 @@ public struct LoginItem: Equatable, Hashable {
         }
     }
 
-    public var status: Status {
+    /// Reads the login item status.
+    ///
+    /// The underlying `SMAppService` read performs synchronous XPC to the Service Management
+    /// daemon, so it is dispatched onto a detached `Task` to keep it off the caller's thread
+    /// (notably the main thread during launch).
+    public func status() async -> Status {
+        let agentBundleID = agentBundleID
+        let logger = logger
         guard #available(macOS 13.0, *) else {
-            guard let job = ServiceManagement.copyAllJobDictionaries(kSMDomainUserLaunchd).first(where: {
-                $0["Label"] as? String == agentBundleID
-            }) else { return .notRegistered }
+            return await Task.detached {
+                guard let job = ServiceManagement.copyAllJobDictionaries(kSMDomainUserLaunchd).first(where: {
+                    $0["Label"] as? String == agentBundleID
+                }) else { return .notRegistered }
 
-            logger.debug("🟢 found login item job: \(job.debugDescription, privacy: .public)")
-            return job["OnDemand"] as? Bool == true ? .enabled : .requiresApproval
+                logger.debug("🟢 found login item job: \(job.debugDescription, privacy: .public)")
+                return job["OnDemand"] as? Bool == true ? .enabled : .requiresApproval
+            }.value
         }
-        return Status(SMAppService.loginItem(identifier: agentBundleID).status)
+        return await Task.detached {
+            Status(SMAppService.loginItem(identifier: agentBundleID).status)
+        }.value
     }
 
     public init(bundleId: String, defaults: UserDefaults, logger: Logger) {
@@ -90,31 +101,39 @@ public struct LoginItem: Equatable, Hashable {
         self.logger = logger
     }
 
-    public func enable() throws {
+    public func enable() async throws {
         logger.debug("🟢 registering login item \(self.debugDescription, privacy: .public)")
 
+        let agentBundleID = agentBundleID
         if #available(macOS 13.0, *) {
-            try SMAppService.loginItem(identifier: agentBundleID).register()
+            try await Task.detached {
+                try SMAppService.loginItem(identifier: agentBundleID).register()
+            }.value
         } else {
-            let success = SMLoginItemSetEnabled(agentBundleID as CFString, true)
-            if !success {
-                throw SMLoginItemSetEnabledError.failed
-            }
+            try await Task.detached {
+                if !SMLoginItemSetEnabled(agentBundleID as CFString, true) {
+                    throw SMLoginItemSetEnabledError.failed
+                }
+            }.value
         }
 
         launchInformation.updateLastEnabledTimestamp()
     }
 
-    public func disable() throws {
+    public func disable() async throws {
         logger.debug("🟢 unregistering login item \(self.debugDescription, privacy: .public)")
 
+        let agentBundleID = agentBundleID
         if #available(macOS 13.0, *) {
-            try SMAppService.loginItem(identifier: agentBundleID).unregister()
+            try await Task.detached {
+                try SMAppService.loginItem(identifier: agentBundleID).unregister()
+            }.value
         } else {
-            let success = SMLoginItemSetEnabled(agentBundleID as CFString, false)
-            if !success {
-                throw SMLoginItemSetEnabledError.failed
-            }
+            try await Task.detached {
+                if !SMLoginItemSetEnabled(agentBundleID as CFString, false) {
+                    throw SMLoginItemSetEnabledError.failed
+                }
+            }.value
         }
     }
 
@@ -122,13 +141,13 @@ public struct LoginItem: Equatable, Hashable {
     ///
     /// This call will only enable the login item if it was enabled to begin with.
     ///
-    public func restart() throws {
-        guard [.enabled].contains(status) else {
+    public func restart() async throws {
+        guard await status() == .enabled else {
             logger.debug("🟢 restart not needed for login item \(self.debugDescription, privacy: .public)")
             return
         }
-        try? disable()
-        try enable()
+        try? await disable()
+        try await enable()
     }
 
     public func forceStop() {
@@ -150,7 +169,7 @@ public struct LoginItem: Equatable, Hashable {
 extension LoginItem: CustomDebugStringConvertible {
 
     public var debugDescription: String {
-        "<LoginItem \(agentBundleID) isEnabled: \(status) isRunning: \(isRunning)>"
+        "<LoginItem \(agentBundleID) isRunning: \(isRunning)>"
     }
 
 }

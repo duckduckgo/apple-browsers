@@ -30,7 +30,7 @@ public protocol IPCClientInterface: AnyObject {
 }
 
 public protocol DBPLoginItemStatusChecker {
-    func doesHaveNecessaryPermissions() -> Bool
+    func doesHaveNecessaryPermissions() async -> Bool
     func isInCorrectDirectory() -> Bool
 }
 
@@ -179,6 +179,27 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
                 continuation.resume(returning: nil)
             })
         }
+    }
+
+    public func startDebugServer() async -> Bool {
+        await withCheckedContinuation { continuation in
+            xpc.execute(call: { server in
+                server.startDebugServer { didStart in
+                    continuation.resume(returning: didStart)
+                }
+            }, xpcReplyErrorHandler: { error in
+                Logger.dataBrokerProtection.error("Error \(error.localizedDescription)")
+                continuation.resume(returning: false)
+            })
+        }
+    }
+
+    public func stopDebugServer() {
+        xpc.execute(call: { server in
+            server.stopDebugServer()
+        }, xpcReplyErrorHandler: { error in
+            Logger.dataBrokerProtection.error("Error \(error.localizedDescription)")
+        })
     }
 }
 

@@ -206,6 +206,12 @@ struct Launching: LaunchingHandling {
             dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
             cache: RemoteMessagingImageLoader.defaultCache
         )
+        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
+            featureFlagger: featureFlagger,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+            isStillOnboarding: { daxDialogs.isStillOnboarding() }
+        )
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
                                                             appSettings: appSettings,
@@ -217,13 +223,15 @@ struct Launching: LaunchingHandling {
                                                             winBackOfferService: winBackOfferService,
                                                             freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                                             freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
+                                                            profileStateManager: dbpService.profileStateManager,
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                             remoteMessagingImageLoader: remoteMessagingImageLoader,
+                                                            idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
-        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
+        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager
@@ -312,6 +320,7 @@ struct Launching: LaunchingHandling {
                                               freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
                                               freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                               freemiumDBPUserStateManager: dbpService.freemiumDBPUserStateManager,
+                                              profileStateManager: dbpService.profileStateManager,
                                               modalPromptCoordinationService: modalPromptCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,

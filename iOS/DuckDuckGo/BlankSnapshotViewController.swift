@@ -83,6 +83,7 @@ class BlankSnapshotViewController: UIViewController {
                                                               aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
+                                                              floatingUIManager: FloatingUIManager(featureFlagger: featureFlagger),
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization)
         if addressBarPosition.isBottom {
@@ -99,7 +100,7 @@ class BlankSnapshotViewController: UIViewController {
                 configureTabBar()
             }
         } else {
-            viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+            viewCoordinator.toolbarHandler.setTabSwitcherView(tabSwitcherButton)
         }
 
         addTapInterceptor()
@@ -132,7 +133,7 @@ class BlankSnapshotViewController: UIViewController {
 
     private func configureTabBar() {
         // featureFlagger / aiChatSettings intentionally nil — the Duck.ai pill stays hidden on the snapshot overlay.
-        let controller = TabsBarViewController.createFromXib()
+        let controller = TabsBarViewController.create()
         controller.view.frame = CGRect(x: 0, y: 24, width: view.frame.width, height: 40)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(controller.view)
@@ -217,14 +218,13 @@ extension BlankSnapshotViewController {
         viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
 
-        viewCoordinator.toolbar.barTintColor = theme.barBackgroundColor
         viewCoordinator.toolbar.tintColor = theme.barTintColor
 
-        viewCoordinator.toolbarTabSwitcherButton.tintColor = theme.barTintColor
+        viewCoordinator.toolbarTabSwitcherView.tintColor = theme.barTintColor
 
         // We don't want this to appear as a real button to users using acessibility devices and our UI tests
-        viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = false
-        viewCoordinator.toolbarTabSwitcherButton.accessibilityLabel = nil
+        viewCoordinator.toolbarTabSwitcherView.isAccessibilityElement = false
+        viewCoordinator.toolbarTabSwitcherView.accessibilityLabel = nil
 
         viewCoordinator.logoText.tintColor = theme.ddgTextTintColor
      }

@@ -22,6 +22,7 @@ import Combine
 import SyncUI_iOS
 import DDGSync
 import Core
+import UniformTypeIdentifiers
 
 extension SyncSettingsViewController {
 
@@ -74,18 +75,30 @@ extension SyncSettingsViewController {
 
             let pdf = RecoveryCodeItem(data: data)
 
-            navigationController?.visibleViewController?.presentShareSheet(withItems: [pdf],
-                                                                           fromView: view,
-                                                                           additionalExcludedActivityTypes: recoveryPDFExcludedActivityTypes)
+            // Present from the top-most presented controller (e.g. the V2 connecting sheet) rather than
+            // the settings VC underneath, which would already be presenting and cause the share sheet to fail.
+            let presenter = topmostPresentedViewController
+            presenter?.presentShareSheet(withItems: [pdf],
+                                         fromView: presenter?.view ?? view,
+                                         additionalExcludedActivityTypes: recoveryPDFExcludedActivityTypes)
         }
+    }
+
+    private var topmostPresentedViewController: UIViewController? {
+        var presenter: UIViewController? = navigationController?.visibleViewController ?? self
+        while let presented = presenter?.presentedViewController {
+            presenter = presented
+        }
+        return presenter
     }
 
     func shareCode(_ code: String, source: CodeCollectionSource) {
 
-        navigationController?.visibleViewController?.presentShareSheet(withItems: [code],
-                                                                       fromView: view,
-                                                                       overrideInterfaceStyle: .dark,
-                                                                       additionalExcludedActivityTypes: recoveryCodeExcludedActivityTypes) { activity, didComplete, _, _  in
+        let presenter = topmostPresentedViewController
+        presenter?.presentShareSheet(withItems: [code],
+                                     fromView: presenter?.view ?? view,
+                                     overrideInterfaceStyle: .dark,
+                                     additionalExcludedActivityTypes: recoveryCodeExcludedActivityTypes) { activity, didComplete, _, _  in
             guard case .copyToPasteboard = activity, didComplete else {
                 return
             }
@@ -97,6 +110,10 @@ extension SyncSettingsViewController {
 
 private class RecoveryCodeItem: NSObject, UIActivityItemSource {
 
+    private enum Constants {
+        static let suggestedFileName = "Sync Data Recovery - DuckDuckGo.pdf"
+    }
+
     let data: Data
 
     init(data: Data) {
@@ -105,11 +122,18 @@ private class RecoveryCodeItem: NSObject, UIActivityItemSource {
     }
 
     func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
-        return URL(fileURLWithPath: "Sync Data Recovery - DuckDuckGo.pdf")
+        return URL(fileURLWithPath: Constants.suggestedFileName)
     }
 
-    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
-        data
+    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType _: UIActivity.ActivityType?) -> Any? {
+        let itemProvider = NSItemProvider(item: data as NSData, typeIdentifier: UTType.pdf.identifier)
+        itemProvider.suggestedName = Constants.suggestedFileName
+        return itemProvider
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController,
+                                dataTypeIdentifierForActivityType _: UIActivity.ActivityType?) -> String {
+        UTType.pdf.identifier
     }
 
 }

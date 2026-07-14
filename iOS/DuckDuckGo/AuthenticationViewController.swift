@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import DesignResourcesKit
 
 protocol AuthenticationViewControllerDelegate: AnyObject {
 
@@ -27,21 +28,36 @@ protocol AuthenticationViewControllerDelegate: AnyObject {
 
 class AuthenticationViewController: UIViewController {
 
+    private enum Constants {
+        static let unlockInstructionsNumberOfLines = 0
+        static let unlockInstructionsFontSize: CGFloat = 18
+        static let logoTopPadding: CGFloat = 48
+        static let unlockInstructionsHeight: CGFloat = 135
+        static let unlockInstructionsBottomOffset: CGFloat = -59
+        static let unlockImageSize: CGFloat = 56
+        static let unlockInstructionsLabelWidthOffset: CGFloat = -40
+        static let unlockInstructionsLabelTopPadding: CGFloat = 21
+        static let unlockInstructionsLabelBottomOffset: CGFloat = -20
+    }
+
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return ThemeManager.shared.currentTheme.statusBarStyle
     }
 
-    @IBOutlet weak var logo: UIImageView!
-    @IBOutlet weak var unlockInstructions: UIView!
+    private let logo: UIImageView = {
+        let imageView = UIImageView(image: UIImage(named: "LogoText"))
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
+
+    private let unlockInstructions = UIView()
 
     weak var delegate: AuthenticationViewControllerDelegate?
 
-    static func loadFromStoryboard() -> AuthenticationViewController {
-        let storyboard = UIStoryboard(name: "Authentication", bundle: nil)
-        guard let controller = storyboard.instantiateInitialViewController() as? AuthenticationViewController else {
-            fatalError("Failed to instantiate correct Authentication view controller")
-        }
-        return controller
+    override func loadView() {
+        view = UIView()
+        setupView()
     }
 
     override func viewDidLoad() {
@@ -54,10 +70,10 @@ class AuthenticationViewController: UIViewController {
         return .portrait
     }
 
-    @IBAction func onTap(_ sender: Any) {
+    @objc func onTap(_ sender: Any) {
         delegate?.authenticationViewController(authenticationViewController: self, didTapWithSender: sender)
     }
-
+    
     func hideUnlockInstructions() {
         unlockInstructions.isHidden = true
     }
@@ -68,7 +84,50 @@ class AuthenticationViewController: UIViewController {
 }
 
 extension AuthenticationViewController {
-    
+
+    private func setupView() {
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(onTap(_:)))
+        view.addGestureRecognizer(tapGestureRecognizer)
+
+        view.addSubview(logo)
+
+        unlockInstructions.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(unlockInstructions)
+
+        let unlockImageView = UIImageView(image: UIImage(named: "AuthRequired"))
+        unlockImageView.translatesAutoresizingMaskIntoConstraints = false
+        unlockInstructions.addSubview(unlockImageView)
+
+        let unlockInstructionsLabel = UILabel()
+        unlockInstructionsLabel.translatesAutoresizingMaskIntoConstraints = false
+        unlockInstructionsLabel.text = UserText.appUnlockInstructions
+        unlockInstructionsLabel.textAlignment = .center
+        unlockInstructionsLabel.numberOfLines = Constants.unlockInstructionsNumberOfLines
+        unlockInstructionsLabel.font = .systemFont(ofSize: Constants.unlockInstructionsFontSize)
+        unlockInstructionsLabel.textColor = UIColor(designSystemColor: .accentPrimary)
+        unlockInstructions.addSubview(unlockInstructionsLabel)
+
+        NSLayoutConstraint.activate([
+            logo.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            logo.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.logoTopPadding),
+
+            unlockInstructions.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            unlockInstructions.widthAnchor.constraint(equalTo: view.widthAnchor),
+            unlockInstructions.heightAnchor.constraint(equalToConstant: Constants.unlockInstructionsHeight),
+            unlockInstructions.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: Constants.unlockInstructionsBottomOffset),
+
+            unlockImageView.centerXAnchor.constraint(equalTo: unlockInstructions.centerXAnchor),
+            unlockImageView.widthAnchor.constraint(equalToConstant: Constants.unlockImageSize),
+            unlockImageView.heightAnchor.constraint(equalToConstant: Constants.unlockImageSize),
+
+            unlockInstructionsLabel.centerXAnchor.constraint(equalTo: unlockInstructions.centerXAnchor),
+            unlockInstructionsLabel.widthAnchor.constraint(equalTo: unlockInstructions.widthAnchor, constant: Constants.unlockInstructionsLabelWidthOffset),
+            unlockInstructionsLabel.topAnchor.constraint(equalTo: unlockImageView.bottomAnchor, constant: Constants.unlockInstructionsLabelTopPadding),
+            unlockInstructionsLabel.bottomAnchor.constraint(equalTo: unlockInstructions.bottomAnchor,
+                                                           constant: Constants.unlockInstructionsLabelBottomOffset)
+        ])
+    }
+
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
         view.backgroundColor = theme.backgroundColor

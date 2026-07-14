@@ -27,7 +27,6 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
 
     var sut: PreferencesPurchaseSubscriptionModel!
     var mockSubscriptionManager: SubscriptionManagerMock!
-    var mockFeatureFlagger: MockFeatureFlagger!
     var mockWinBackOfferManager: MockWinBackOfferVisibilityManager!
     var mockBlackFridayCampaignProvider: MockBlackFridayCampaignProvider!
     var userEvents: [PreferencesPurchaseSubscriptionModel.UserEvent] = []
@@ -37,7 +36,6 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
         super.setUp()
 
         mockSubscriptionManager = SubscriptionManagerMock()
-        mockFeatureFlagger = MockFeatureFlagger()
         mockWinBackOfferManager = MockWinBackOfferVisibilityManager()
         mockBlackFridayCampaignProvider = MockBlackFridayCampaignProvider()
         userEvents = []
@@ -49,7 +47,6 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
 
         sut = PreferencesPurchaseSubscriptionModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             winBackOfferVisibilityManager: mockWinBackOfferManager,
             userEventHandler: { [weak self] event in
                 self?.userEvents.append(event)
@@ -62,7 +59,6 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
     override func tearDown() {
         sut = nil
         mockSubscriptionManager = nil
-        mockFeatureFlagger = nil
         mockWinBackOfferManager = nil
         mockBlackFridayCampaignProvider = nil
         userEvents = []
@@ -75,7 +71,6 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
     func testPurchaseSectionHeader_WhenWinBackOfferAvailable_ReturnsWinBackText() {
         // Given
         mockWinBackOfferManager.isOfferAvailable = true
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         // When
         let header = sut.purchaseSectionHeader
@@ -87,7 +82,6 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
     func testPurchaseSectionHeader_WhenWinBackOfferNotAvailable_ReturnsDefaultText() {
         // Given
         mockWinBackOfferManager.isOfferAvailable = false
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         // When
         let header = sut.purchaseSectionHeader
@@ -99,7 +93,6 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
     func testPurchaseSectionHeader_WhenWinBackOfferNotAvailableAndPaidAIChatEnabled_ReturnsAIChatText() {
         // Given
         mockWinBackOfferManager.isOfferAvailable = false
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         // When
         let header = sut.purchaseSectionHeader
@@ -124,7 +117,6 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
     func testPurchaseSectionCaption_WhenWinBackOfferNotAvailable_ReturnsDefaultCaption() {
         // Given
         mockWinBackOfferManager.isOfferAvailable = false
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         // When
         let caption = sut.purchaseSectionCaption
@@ -164,7 +156,6 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
         // Given
         mockWinBackOfferManager.isOfferAvailable = false
         mockBlackFridayCampaignProvider.isCampaignEnabled = false
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         mockSubscriptionManager.isEligibleForFreeTrialResult = true
 
         // Force update eligibility
@@ -181,7 +172,6 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
         // Given
         mockWinBackOfferManager.isOfferAvailable = false
         mockBlackFridayCampaignProvider.isCampaignEnabled = false
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         // When
         let buttonTitle = sut.purchaseButtonTitle

@@ -440,7 +440,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     func testCurrentSubscriptionStateForAvailableSubscriptionFeatures() async throws {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
 
@@ -461,7 +460,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertTrue(model.currentSubscriptionState.isPaidAIChatAvailable)
     }
 
-    func testCurrentSubscriptionStateIsPaidAIChatEnabledIsFalseWhenFeatureFlagIsOff() async throws {
+    func testCurrentSubscriptionStateIsPaidAIChatEnabledIsFalseWithoutPaidAIChatFeature() async throws {
 
         mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration]
 
@@ -909,7 +908,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
     func testPaidAIChatStatusWhenBothSubscriptionAndAIFeaturesEnabled() async throws {
         // Given
         mockAIChatPreferences.isAIFeaturesEnabled = true
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 //        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]
@@ -927,7 +925,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
     func testPaidAIChatStatusWhenSubscriptionEnabledButAIFeaturesDisabled() async throws {
         // Given
         mockAIChatPreferences.isAIFeaturesEnabled = false
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 //        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]
@@ -945,7 +942,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
     func testPaidAIChatStatusWhenAIFeaturesEnabledButSubscriptionDisabled() async throws {
         // Given
         mockAIChatPreferences.isAIFeaturesEnabled = true
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 //        mockSubscriptionManager.enabledFeatures = [] // No paidAIChat
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         mockSubscriptionManager.resultFeatures = []
@@ -963,7 +959,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
     func testPaidAIChatStatusUpdatesWhenAIFeaturesDisabled() async throws {
         // Given - start with AI features enabled
         mockAIChatPreferences.isAIFeaturesEnabled = true
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 //        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]
@@ -996,7 +991,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
     func testPaidAIChatStatusUpdatesWhenAIFeaturesEnabled() async throws {
         // Given - start with AI features disabled
         mockAIChatPreferences.isAIFeaturesEnabled = false
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 //        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]
@@ -1029,7 +1023,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
     func testPaidAIChatSidebarItemEnabledWhenBothConditionsMet() async throws {
         // Given
         mockAIChatPreferences.isAIFeaturesEnabled = true
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 //        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]
@@ -1049,7 +1042,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
     func testPaidAIChatSidebarItemStaysEnabledWhenAIFeaturesOff() async throws {
         // Given
         mockAIChatPreferences.isAIFeaturesEnabled = false
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 //        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]

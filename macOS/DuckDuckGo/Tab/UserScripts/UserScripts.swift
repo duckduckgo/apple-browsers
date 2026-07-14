@@ -128,7 +128,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             urlSettings: aiChatDebugURLSettings,
             bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog
         )
-        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
+        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter()
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionManager,

@@ -74,7 +74,6 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
     @Published private(set) var featureSet: FeatureSet = FeatureSet(core: [], plus: [], isEligibleForFreeTrial: false)
 
     private let subscriptionManager: any SubscriptionManager
-    private let featureFlagger: FeatureFlagger
     private let upsellDismisser: any VPNUpsellDismissing
     private let urlOpener: @MainActor (URL) -> Void
     private let onDismiss: () -> Void
@@ -87,7 +86,6 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
     ]
 
     init(subscriptionManager: any SubscriptionManager,
-         featureFlagger: FeatureFlagger,
          upsellDismisser: any VPNUpsellDismissing,
          urlOpener: @escaping @MainActor (URL) -> Void = { @MainActor url in
             Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
@@ -96,7 +94,6 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
          pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) })
     {
         self.subscriptionManager = subscriptionManager
-        self.featureFlagger = featureFlagger
         self.upsellDismisser = upsellDismisser
         self.urlOpener = urlOpener
         self.onDismiss = onDismiss
@@ -109,25 +106,16 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
         Task {
             let isPIRFeatureEnabled = try? await subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)
             let isEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
-            let hasAIChatFeature = featureFlagger.isFeatureOn(.paidAIChat)
 
             updateFeatures(isEligibleForFreeTrial: isEligibleForFreeTrial,
-                           isPIRFeatureEnabled: isPIRFeatureEnabled ?? false,
-                           hasAIChatFeature: hasAIChatFeature)
+                           isPIRFeatureEnabled: isPIRFeatureEnabled ?? false)
         }
     }
 
     private func updateFeatures(isEligibleForFreeTrial: Bool,
-                                isPIRFeatureEnabled: Bool,
-                                hasAIChatFeature: Bool) {
+                                isPIRFeatureEnabled: Bool) {
 
-        var plusFeatures: [Feature] = []
-
-        if hasAIChatFeature {
-            plusFeatures.append(.aiChat)
-        }
-
-        plusFeatures.append(.identityTheftProtection)
+        var plusFeatures: [Feature] = [.aiChat, .identityTheftProtection]
 
         if isPIRFeatureEnabled {
             plusFeatures.append(.pir)

@@ -28,7 +28,6 @@ protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
 }
 
 final class UnifiedFeedbackFormViewModel: ObservableObject {
-    private let featureFlagger: FeatureFlagger
 
     enum ViewState {
         case feedbackPending
@@ -130,11 +129,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.selectFeature, .subscription]
 
     var availableSubscriptionSubcategories: [SubscriptionFeedbackSubcategory] {
-        var subcategories: [SubscriptionFeedbackSubcategory] = SubscriptionFeedbackSubcategory.allCases
-        if !featureFlagger.isFeatureOn(.allowProTierPurchase) {
-            subcategories = subcategories.filter { $0 != .unableToAccessFeatures }
-        }
-        return subcategories
+        SubscriptionFeedbackSubcategory.allCases
     }
 
     init(subscriptionManager: any SubscriptionManager,
@@ -142,7 +137,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
          dbpMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadataCollector: any UnifiedMetadataCollector = EmptyMetadataCollector(),
          feedbackSender: any UnifiedFeedbackSender = DefaultFeedbackSender(),
-         featureFlagger: FeatureFlagger,
          source: UnifiedFeedbackSource = .default) {
         self.viewState = .feedbackPending
 
@@ -151,7 +145,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.dbpMetadataCollector = dbpMetadataCollector
         self.defaultMetadataCollector = defaultMetadataCollector
         self.feedbackSender = feedbackSender
-        self.featureFlagger = featureFlagger
         self.source = source
 
         Task {
@@ -165,7 +158,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             if features.contains(.dataBrokerProtection) {
                 availableCategories.append(.pir)
             }
-            if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) {
+            if features.contains(.paidAIChat) {
                 availableCategories.append(.duckAi)
             }
             if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {

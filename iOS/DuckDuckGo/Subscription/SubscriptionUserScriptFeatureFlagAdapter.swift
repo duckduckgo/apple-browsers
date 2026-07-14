@@ -26,17 +26,9 @@ import FeatureFlags_iOS
 /// This follows the adapter pattern to avoid direct BSK dependencies in the Subscription module
 struct SubscriptionUserScriptFeatureFlagAdapter: SubscriptionUserScriptFeatureFlagProviding {
 
-    private let featureFlagger: FeatureFlagger
-
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
-
-    var usePaidDuckAi: Bool {
-        featureFlagger.isFeatureOn(.paidAIChat)
-    }
+    init(featureFlagger: FeatureFlagger) {}
 
     var useProTier: Bool {
-        featureFlagger.isFeatureOn(.allowProTierPurchase)
+        true
     }
 }

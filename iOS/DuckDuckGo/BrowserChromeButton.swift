@@ -287,7 +287,7 @@ extension UIButton {
         setMenuAlertIconTransform(.identity)
 
         let updateIcon = {
-            self.setMenuAlertImage(isVisible ? DesignSystemImages.Glyphs.Size24.menuHamburgerAlertRecolorable : DesignSystemImages.Glyphs.Size24.menuHamburger)
+            self.setMenuAlertImage(isVisible ? DesignSystemImages.Glyphs.Size24.menuHamburgerAlert : DesignSystemImages.Glyphs.Size24.menuHamburger)
             self.setMenuAlertDotHidden(!isVisible)
         }
 
@@ -369,7 +369,7 @@ extension UIButton {
             return menuAlertDotImageView
         }
 
-        let imageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabMobileAlertDot)
+        let imageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.menuHamburgerAlertDot)
         imageView.tag = MenuAlertMetrics.dotViewTag
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.isUserInteractionEnabled = false
@@ -378,8 +378,8 @@ extension UIButton {
 
         addSubview(imageView)
         NSLayoutConstraint.activate([
-            imageView.centerXAnchor.constraint(equalTo: centerXAnchor, constant: MenuAlertMetrics.dotXAdjustment),
-            imageView.centerYAnchor.constraint(equalTo: centerYAnchor, constant: MenuAlertMetrics.dotYAdjustment),
+            imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             imageView.widthAnchor.constraint(equalToConstant: MenuAlertMetrics.iconSize),
             imageView.heightAnchor.constraint(equalToConstant: MenuAlertMetrics.iconSize),
         ])
@@ -391,8 +391,6 @@ extension UIButton {
 private enum MenuAlertMetrics {
     static let dotViewTag = 0xDDBA7
     static let iconSize: CGFloat = 24
-    static let dotXAdjustment: CGFloat = -0.5
-    static let dotYAdjustment: CGFloat = 0.5
 }
 
 private var menuAlertButtonStateKey: UInt8 = 0

@@ -133,6 +133,10 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     func makeGlass()
     func makeOpaque()
+
+    /// In floating UI minimal chrome, wraps the button groups in their own glass capsules (the field
+    /// keeps its glass). Pass `false` to restore the standard per-position appearance.
+    func setFloatingMinimalChromeBar(_ enabled: Bool)
 }
 
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.

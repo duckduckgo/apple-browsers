@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Verstanden";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Du bist bereits auf beiden Geräten mit diesem Konto gekoppelt.";
+"alert.sync-already-paired-with-account-description" = "Diese Geräte sind bereits mit Sync & Backup verbunden.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Bereits gekoppelt";
+"alert.sync-already-paired-with-account-title" = "Bereits synchronisiert.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Einige Lesezeichen sind falsch formatiert oder zu lang und wurden nicht synchronisiert.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Die Synchronisierung auf deinem anderen Gerät wurde abgebrochen.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Besuche in deinem Browser duck.ai, gehe zu „Einstellungen“, wähle unter „Sync & Backup“ die Option „Aktivieren“ und anschließend „Mit anderem Gerät synchronisieren“.";
+"alert.sync-code-only-compatible-with-duckai-description" = "Besuche in deinem anderen Browser Duck.ai, gehe zu „Einstellungen“, wähle unter „Sync & Backup“ die Option „Aktivieren“ und anschließend „Mit anderem Gerät synchronisieren“.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Scanne diesen Code in den Duck.ai-Einstellungen.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Scanne diesen Code mit einem anderen Browser als DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Einige Passwörter sind falsch formatiert oder zu lang und wurden nicht synchronisiert.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Synchronisierungseinstellungen";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Bitte versuche es noch einmal.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Synchronisation fehlgeschlagen.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Bitte synchronisiere dieses Gerät mit einem bereits verbundenen DuckDuckGo-Browser auf einem anderen Gerät.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Synchronisierung angehalten";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Verstanden";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Synchronisierung wechseln";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup ist vorübergehend nicht verfügbar.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Dieser Code wird in der aktuellen App-Version nicht unterstützt.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Aktualisiere den DuckDuckGo-Browser und versuche es erneut.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Dieses Gerät kann nicht aus „Synchronisieren und sichern“ entfernt werden.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Sorry, dieser Code ist ungültig. Bitte stelle sicher, dass du den richtigen Code eingegeben oder gescannt hast.";
+"alert.unable-to-scan-qr-code-description" = "Bitte stelle sicher, dass du den richtigen Code eingegeben oder gescannt hast.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Dies ist kein gültiger Sync-Code.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Es kann keine Verbindung zum Server hergestellt werden.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Synchronisierung mit einem anderen Gerät nicht möglich.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "„Synchronisieren und sichern“ kann nicht deaktiviert werden.";
@@ -1410,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Tippe unten auf dem Bildschirm auf **Steuerelement hinzufügen**";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Neu";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Bestätigen";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Wir werden versuchen, die strengsten verfügbaren Cookie-Einstellungen auszuwählen und diese für dich zu deaktivieren. Falls es keine Opt-out-Möglichkeit gibt, ersparen wir dir einen Klick und akzeptieren diese Cookies für dich.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Verwalte oder akzeptiere Cookies für mich";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Ich kümmere mich weiter selbst darum";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Hast du genug von Cookie-Pop-ups, die dich nicht in Ruhe lassen?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Wir können dir einen Klick ersparen und diese Cookies für dich akzeptieren.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Akzeptiere für mich Cookies, bei denen kein Opt-out möglich ist";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ich kümmere mich weiter selbst darum";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Hast du genug von Cookie-Pop-ups, bei denen du dich nicht abmelden kannst?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Du kannst das später jederzeit unter **Einstellungen** > **Cookie-Pop-up-Schutz** anpassen.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Absturzberichte immer senden";
@@ -4781,7 +4822,7 @@
 "sync.remove-device.title" = "Gerät entfernen?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Gerät erfolgreich synchronisiert!";
+"sync.simplified.device-synced.toast" = "Neues Gerät hinzugefügt!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup aktiviert";

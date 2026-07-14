@@ -103,6 +103,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsRootView> {
 
     let useSimplifiedLayoutV2: Bool
 
+    private var sourcePixelParameters: [String: String] {
+        source.map { [PixelParameters.source: $0] } ?? [:]
+    }
+
     // For some reason, on iOS 14, the viewDidLoad wasn't getting called so do some setup here
     init(
         syncService: DDGSyncing,
@@ -504,7 +508,10 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey) async throws {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         mapDevices(registeredDevices)
-        Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncLogin,
+                   withAdditionalParameters: sourcePixelParameters,
+                   includedParameters: [.appVersion],
+                   onComplete: { _ in })
         presentSyncCompletionAfterDelay()
     }
 
@@ -592,8 +599,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool) {
-        let additionalParameters = source.map { ["source": $0] } ?? [:]
-        Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: sourcePixelParameters, includedParameters: [.appVersion])
 
         if shouldShowSyncEnabled {
             dismissVCAndShowDeviceSyncedToast()
@@ -661,7 +667,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery _: Bool, setupRole: SyncSetupRole) {
         mapDevices(registeredDevices)
-        Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
+        Pixel.fire(pixel: .syncLogin, withAdditionalParameters: sourcePixelParameters, includedParameters: [.appVersion])
         if case .receiver(.recovery, _) = setupRole {
             Task {
                 await connectionController.cancel()

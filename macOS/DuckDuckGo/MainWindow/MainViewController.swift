@@ -309,8 +309,7 @@ final class MainViewController: NSViewController {
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
             dragDropManager: bookmarkDragDropManager,
-            pinningManager: pinningManager,
-            featureFlagger: featureFlagger
+            pinningManager: pinningManager
         )
 
         // Create the shared AI Chat omnibar controller

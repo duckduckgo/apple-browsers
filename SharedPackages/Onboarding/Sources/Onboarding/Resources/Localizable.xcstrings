@@ -1,6 +1,168 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "onboarding.browsers.features.cookiePopupsAndAds.title" : {
+      "comment" : "Message to highlight how the browser allows you to block cookie pop-ups and ads",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокирайте целенасочените реклами и изскачащите прозорци за „бисквитки“"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuj cílené reklamy a vyskakovací okna ohledně cookies"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloker målrettede annoncer og pop op-vinduer om cookies"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gezielte Werbung und Cookie-Pop-ups blockieren"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Απόκλεισε στοχευμένες διαφημίσεις και αναδυόμενα παράθυρα cookie"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Block targeted ads & cookie pop-ups"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquea los anuncios segmentados y las ventanas emergentes de cookies"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokeeri sihitud reklaamid ja küpsiste hüpikaknad"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estä kohdennetut mainokset ja evästeponnahdusikkunat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquez les publicités ciblées et les fenêtres contextuelles de cookies"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokiraj ciljane oglase i skočne prozore kolačića"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Célzott hirdetések és felugró sütiablakok blokkolása"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca annunci mirati e pop-up dei cookie"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ターゲティング広告やCookieポップアップをブロック"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuok tikslinius skelbimus ir slapukų iškylančiuosius langus"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloķē mērķētās reklāmas un sīkfailu uznirstošos logus"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokker målrettede annonser og popup-vinduer om informasjonskapsler"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerichte advertenties en cookiepop-ups blokkeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuj ukierunkowane reklamy i wyskakujące okienka dotyczące plików cookie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueia anúncios segmentados e pop-ups de cookies"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blochează reclamele direcționate și ferestrele pop-up pentru module cookie"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка таргетированной рекламы и всплывающих окон с настройками файлов cookie"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuj cielené reklamy a vyskakovacie okná o súboroch cookie"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokirajte ciljane oglase in pojavna okna za piškotke"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blockera riktade annonser och cookie-popup-fönster"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hedefli reklamları ve çerez açılır pencerelerini engelleyin"
+          }
+        }
+      }
+    },
     "onboarding.browsers.features.privateSearch.title" : {
       "comment" : "Message to highlight browser capability of private searches",
       "extractionState" : "extracted_with_value",
@@ -782,7 +944,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odtwarzaj filmy w serwisie YouTube bez reklam"
+            "value" : "Odtwarzaj filmy na YouTube bez reklam"
           }
         },
         "pt" : {

@@ -143,7 +143,7 @@ final class BookmarkListViewController: NSViewController {
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
 
     private lazy var syncPromoViewHostingView: NSHostingView<SyncPromoView> = {
-        let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
+        let model = SyncPromoViewModel(isAppRebranded: themeManager.isAppRebranded, touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
             self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
         }, dismissButtonAction: { [weak self] in
             self?.syncPromoManager.dismissPromoFor(.bookmarks)

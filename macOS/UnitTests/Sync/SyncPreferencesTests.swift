@@ -65,6 +65,10 @@ class MockSyncFeatureFlagger: FeatureFlagger {
         return cohort
     }
 
+    func assignedCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        return cohort
+    }
+
     var allActiveExperiments: Experiments = [:]
 }
 

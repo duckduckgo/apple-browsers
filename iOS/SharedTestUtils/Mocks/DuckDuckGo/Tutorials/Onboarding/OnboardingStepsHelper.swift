@@ -23,7 +23,7 @@ struct OnboardingStepsHelper {
     static func expectedIPhoneSteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
         [
             .introDialog(isReturningUser: isReturningUser),
-            .browserComparison,
+            .setDefaultBrowser,
             .addToDockPromo,
             .appIconSelection,
             .addressBarPositionSelection,
@@ -34,7 +34,7 @@ struct OnboardingStepsHelper {
     static func expectedIPadSteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
         [
             .introDialog(isReturningUser: isReturningUser),
-            .browserComparison,
+            .setDefaultBrowser,
             .appIconSelection
         ]
     }
@@ -46,11 +46,11 @@ struct OnboardingStepsHelper {
     static func expectedDuckAISteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
         [
             .introDialog(isReturningUser: isReturningUser),
-            .aiComparison,
+            .aiIntro,
             .duckAIQuerySelection,
             .interlude(.duckAI),
             .addToDockPromo,
-            .browserComparison,
+            .setDefaultBrowser,
             .addressBarPositionSelection
         ]
     }

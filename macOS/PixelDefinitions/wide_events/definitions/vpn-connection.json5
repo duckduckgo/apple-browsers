@@ -1,0 +1,71 @@
+{
+    "macos-vpn-connection": {
+        "description": "Sent at the end of a VPN connection journey, covering the browser start, controller start, OAuth, and tunnel start steps, until the connection succeeds, fails, or is orphaned by app/extension termination and resolved (or timed out) on a later launch.",
+        "owners": ["samsymons"],
+        "meta": {
+            "type": "macos-vpn-connection",
+            "version": "2.0"
+        },
+        "feature": {
+            "name": "vpn-connection",
+            "status": ["SUCCESS", "FAILURE", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Reason accompanying an UNKNOWN outcome. `partial_data` = a pending flow was completed after app/extension launch without enough captured data to classify it; `timeout` = the connection did not complete within the 15 minute connection window; `retried` = a still-pending connection flow was superseded by a newer connection attempt before it completed.",
+                        "enum": ["partial_data", "timeout", "retried"]
+                    },
+                    "extension_type": {
+                        "type": "string",
+                        "description": "Which network extension served the connection. `app` = the in-app (App Store) extension; `system` = the system extension; `unknown` = not yet determined.",
+                        "enum": ["app", "system", "unknown"]
+                    },
+                    "startup_method": {
+                        "type": "string",
+                        "description": "How the tunnel was started. `automatic_on_demand` = started automatically by an on-demand rule; `manual_by_main_app` = started manually from the main app; `manual_by_the_system` = started manually by the system.",
+                        "enum": ["automatic_on_demand", "manual_by_main_app", "manual_by_the_system"]
+                    },
+                    "is_setup": {
+                        "type": "string",
+                        "description": "Whether this connection is part of first-time VPN setup. `yes` = the VPN was not yet configured and this connection triggered setup (iOS: no tunnel configuration existed yet; macOS: onboarding not yet complete); `no` = the VPN was already set up before this connection began; `unknown` if it could not be determined.",
+                        "enum": ["yes", "no", "unknown"]
+                    },
+                    "onboarding_status": {
+                        "type": "string",
+                        "description": "VPN onboarding state at connection time (macOS). `needs_to_allow_extension` and `needs_to_allow_vpn_configuration` mean onboarding was still incomplete; `completed` means onboarding had finished; `unknown` if it could not be determined.",
+                        "enum": ["needs_to_allow_extension", "needs_to_allow_vpn_configuration", "completed", "unknown"]
+                    },
+                    "latency_ms": {
+                        "type": "integer",
+                        "description": "Overall time taken to establish the connection, in milliseconds."
+                    },
+                    "browser_start_latency_ms": {
+                        "type": "integer",
+                        "description": "Time taken by the browser start step, in milliseconds."
+                    },
+                    "controller_start_latency_ms": {
+                        "type": "integer",
+                        "description": "Time taken by the controller start step, in milliseconds."
+                    },
+                    "oauth_latency_ms": {
+                        "type": "integer",
+                        "description": "Time taken by the OAuth step, in milliseconds."
+                    },
+                    "tunnel_start_latency_ms": {
+                        "type": "integer",
+                        "description": "Time taken by the tunnel start step, in milliseconds."
+                    },
+                    "browser_start_error": "stepErrorParameters",
+                    "controller_start_error": "stepErrorParameters",
+                    "oauth_error": "stepErrorParameters",
+                    "tunnel_start_error": "stepErrorParameters",
+                    "error": "errorParameters"
+                }
+            }
+        },
+        "context": {
+            "name": ["funnel_appsettings_macos", "funnel_agent_macos", "funnel_systemsettings_multiple", "funnel_others_multiple"]
+        }
+    }
+}

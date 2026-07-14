@@ -645,6 +645,7 @@ struct FireDialogView: ModalView {
             .accessibilityLabel(viewModel.includeTabsAndWindows ? UserText.fireDialogDeleteAndClose : UserText.delete)
             .keyboardShortcut(.defaultAction)
             .accessibilityIdentifier("FireDialogView.burnButton")
+            .accessibilityHidden(isShowingSitesOverlay)
             .frame(width: 156)
         }
         .padding(.horizontal, Constants.horizontalPadding)

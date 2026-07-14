@@ -25,6 +25,7 @@ import VPN
 import WidgetKit
 import BrowserServicesKit
 import Core
+import PrivacyConfig
 import Subscription
 import TipKit
 
@@ -92,7 +93,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         return formatter
     }()
 
-    private let featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let featureFlagger: FeatureFlagger
     private let tunnelController: (TunnelController & TunnelSessionProvider)
     private let statusObserver: ConnectionStatusObserver
     private let serverInfoObserver: ConnectionServerInfoObserver
@@ -220,7 +221,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 timeLapsedFormatter: VPNTimeFormatting = VPNTimeFormatter(),
                 locationListRepository: NetworkProtectionLocationListRepository,
                 enablesUnifiedFeedbackForm: Bool,
-                isStrictRoutingAvailable: Bool = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.vpnStrictRoutingToggle),
+                featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
                 featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.tunnelController = tunnelController
         self.settings = settings
@@ -230,6 +231,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.controllerErrorPublisher = controllerErrorPublisher
         self.timeLapsedFormatter = timeLapsedFormatter
         self.enablesUnifiedFeedbackForm = enablesUnifiedFeedbackForm
+        self.featureFlagger = featureFlagger
         self.featureDiscovery = featureDiscovery
 
         self.headerTitle = Self.titleText(status: statusObserver.recentValue)
@@ -238,7 +240,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.preferredLocation = NetworkProtectionLocationStatusModel(selectedLocation: settings.selectedLocation)
 
         self.dnsSettings = settings.dnsSettings
-        self.isStrictRoutingAvailable = isStrictRoutingAvailable
+        self.isStrictRoutingAvailable = featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
         self.enforceRoutes = settings.enforceRoutes
 
         self.tipsModel = VPNTipsModel(
@@ -267,6 +269,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         setUpLocationPublishers()
         setUpDNSSettingsPublisher()
         setUpEnforceRoutesPublisher()
+        setUpStrictRoutingAvailabilityPublisher()
         setUpThroughputRefreshTimer()
         setUpErrorPublishers()
         setUpControllerErrorPublisher()
@@ -545,6 +548,19 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         settings.enforceRoutesPublisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.enforceRoutes, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    /// Keeps the Strict routing availability in sync as the feature flag changes at runtime
+    /// (remote config update or a local override), so the pill and Security section
+    /// appear/disappear live, matching the behavior of VPN settings.
+    private func setUpStrictRoutingAvailabilityPublisher() {
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.isStrictRoutingAvailable = self.featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+            }
             .store(in: &cancellables)
     }
 

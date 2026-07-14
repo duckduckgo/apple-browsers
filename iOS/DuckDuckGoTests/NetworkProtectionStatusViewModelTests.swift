@@ -19,6 +19,7 @@
 
 import XCTest
 import Combine
+import Core
 import VPN
 import NetworkExtension
 import VPNTestUtils
@@ -331,7 +332,24 @@ import Subscription
         XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOn)
     }
 
+    func testStrictRoutingAvailabilityRefreshesWhenFeatureFlagChanges() throws {
+        let featureFlagger = MockFeatureFlagger()
+        let model = makeStrictRoutingViewModel(featureFlagger: featureFlagger)
+        XCTAssertFalse(model.isStrictRoutingAvailable)
+
+        featureFlagger.enabledFeatureFlags = [.vpnStrictRoutingToggle]
+        featureFlagger.triggerUpdate()
+
+        try waitForPublisher(model.$isStrictRoutingAvailable, toEmit: true)
+    }
+
     private func makeStrictRoutingViewModel(isStrictRoutingAvailable: Bool) -> NetworkProtectionStatusViewModel {
+        makeStrictRoutingViewModel(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isStrictRoutingAvailable ? [.vpnStrictRoutingToggle] : [])
+        )
+    }
+
+    private func makeStrictRoutingViewModel(featureFlagger: MockFeatureFlagger) -> NetworkProtectionStatusViewModel {
         // Use an isolated defaults suite so setting `enforceRoutes` doesn't leak into the shared
         // app-group defaults and pollute other tests.
         let suiteName = "test.\(UUID().uuidString)"
@@ -346,7 +364,7 @@ import Subscription
                                                 serverInfoObserver: MockConnectionServerInfoObserver(),
                                                 locationListRepository: MockNetworkProtectionLocationListRepository(),
                                                 enablesUnifiedFeedbackForm: false,
-                                                isStrictRoutingAvailable: isStrictRoutingAvailable)
+                                                featureFlagger: featureFlagger)
     }
 
     private func serverAttributes() -> NetworkProtectionServerInfo.ServerAttributes {

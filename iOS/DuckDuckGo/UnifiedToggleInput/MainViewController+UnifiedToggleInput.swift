@@ -188,35 +188,31 @@ extension MainViewController {
     /// opened from a Duck.ai tab counts as "tab-like" — keep the toolbar so the user has the
     /// standard browser controls while searching. Idempotent; safe with the feature flag off.
     func reconcileToolbarVisibilityForCurrentTab() {
-        let isFocusedOmnibarSession = unifiedToggleInputCoordinator?.isOmnibarSession == true
-        let wasHidden = viewCoordinator.toolbar.isHidden
-        if isCurrentTabUsingUnifiedInputAIChrome && !isFocusedOmnibarSession {
+        let inputs = UnifiedInputChromeResolverInputs(
+            isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
+            isFocusedOmnibarSession: unifiedToggleInputCoordinator?.isOmnibarSession == true,
+            isLargeWidth: AppWidthObserver.shared.isLargeWidth,
+            isInMinimalChromeLayout: isInMinimalChromeLayout,
+            currentToolbarIsHidden: viewCoordinator.toolbar.isHidden,
+            toolbarAlpha: viewCoordinator.toolbar.alpha,
+            toolbarBottomConstant: viewCoordinator.constraints.toolbarBottom.constant
+        )
+        applyToolbarVisibility(UnifiedInputChromeResolver.resolve(inputs))
+    }
+
+    /// Renders a resolved toolbar decision. The self-heal clamp restores a stale off-screen
+    /// constraint left by a transient AI-tab phase; bars recompute only when hidden flips.
+    private func applyToolbarVisibility(_ state: ChromeState) {
+        switch state.toolbar {
+        case .hidden:
             viewCoordinator.toolbar.isHidden = true
-        } else {
-            viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
-            // Self-heal a stale clamp. `updateToolbarConstant` deliberately pushes the
-            // toolbar's constraint off-screen whenever `toolbar.isHidden == true`. This
-            // is required for iPad and minimal-chrome layouts, where the toolbar is
-            // permanently hidden and its off-screen layout slot acts as a spacer.
-            //
-            // The UTI AI-tab phase reuses `isHidden = true` *transiently*. Any
-            // `setBarsVisibility(1)` call during that phase (refreshAITab, BarsAnimator,
-            // applyDuckAIFireChromeState, etc.) writes the same off-screen
-            // value via the clamp. When `isHidden` flips back to false here, nothing
-            // else recomputes the constant; the toolbar is unhidden but laid out
-            // off-screen. Snap it back to 0.
-            //
-            // `alpha == 1` excludes mid-scroll partial-hides. `BarsAnimator` writes
-            // matching `alpha` and `constant` values together, so they can only
-            // disagree when the clamp suppressed a write.
-            if !viewCoordinator.toolbar.isHidden
-                && viewCoordinator.toolbar.alpha == 1.0
-                && viewCoordinator.constraints.toolbarBottom.constant != 0 {
+        case .visible(let healsClampConstant):
+            viewCoordinator.toolbar.isHidden = false
+            if healsClampConstant {
                 viewCoordinator.constraints.toolbarBottom.constant = 0
             }
         }
-        // `toolbarBottom.constant` is derived from `isHidden`; recompute when it flips.
-        if wasHidden != viewCoordinator.toolbar.isHidden {
+        if state.recomputesBars {
             setBarsVisibility(currentBarsVisibility, animated: false, animationDuration: nil)
         }
     }

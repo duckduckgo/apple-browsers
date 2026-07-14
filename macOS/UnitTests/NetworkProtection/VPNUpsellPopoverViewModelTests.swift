@@ -30,7 +30,6 @@ import Subscription
 final class VPNUpsellPopoverViewModelTests: XCTestCase {
     var sut: VPNUpsellPopoverViewModel!
     var mockSubscriptionManager: SubscriptionManagerMock!
-    var mockFeatureFlagger: MockFeatureFlagger!
     var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
     var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager!
@@ -41,7 +40,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockSubscriptionManager = SubscriptionManagerMock()
-        mockFeatureFlagger = MockFeatureFlagger()
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
         firedPixels = []
@@ -62,7 +60,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
 
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
             urlOpener: { url in
                 self.lastReceivedURL = url
@@ -79,7 +76,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         sut = nil
         vpnUpsellVisibilityManager = nil
         mockSubscriptionManager = nil
-        mockFeatureFlagger = nil
         mockDefaultBrowserProvider = nil
         lastReceivedURL = nil
         firedPixels = []
@@ -162,7 +158,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
             onDismiss: {},
             pixelHandler: { pixel in
@@ -190,7 +185,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
             onDismiss: {},
             pixelHandler: { pixel in
@@ -217,7 +211,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
             onDismiss: {},
             pixelHandler: { pixel in
@@ -231,7 +224,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
     func testWhenListingPlusFeatures_AndAIChatIsEnabled_ItListsAIChat() throws {
         // Given
         let expectation = XCTestExpectation(description: "Feature set should be updated")
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         sut.$featureSet
             .dropFirst()
@@ -245,7 +237,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
             onDismiss: {},
             pixelHandler: { pixel in
@@ -274,7 +265,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
             onDismiss: {},
             pixelHandler: { pixel in
@@ -301,7 +291,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
             onDismiss: {},
             pixelHandler: { pixel in
@@ -330,7 +319,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
             onDismiss: {},
             pixelHandler: { pixel in

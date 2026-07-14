@@ -36,16 +36,13 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
 
     private var popover: VPNUpsellPopover?
     private let subscriptionManager: any SubscriptionManager
-    private let featureFlagger: FeatureFlagger
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
     private let pixelHandler: (SubscriptionPixel) -> Void
 
     init(subscriptionManager: any SubscriptionManager,
-         featureFlagger: FeatureFlagger,
          vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
          pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
         self.subscriptionManager = subscriptionManager
-        self.featureFlagger = featureFlagger
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.pixelHandler = pixelHandler
     }
@@ -70,7 +67,6 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
 
         let viewModel = VPNUpsellPopoverViewModel(
             subscriptionManager: subscriptionManager,
-            featureFlagger: featureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
             onDismiss: { [weak self] in
                 self?.dismiss()

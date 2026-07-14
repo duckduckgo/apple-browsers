@@ -160,9 +160,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470360367
     case autofillPasswordVariantCategorization
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611178534
-    case paidAIChat
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609800953
     case canInterceptSyncSetupUrls
 
@@ -258,9 +255,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203542?focus=true
-    case allowProTierPurchase
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208824174611454?focus=true
     case autofillExtensionSettings
@@ -636,8 +630,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         case .autofillPasswordVariantCategorization:
             Config(source: .remoteReleasable(AutofillSubfeature.passwordVariantCategorization))
-        case .paidAIChat:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.paidAIChat))
         case .canInterceptSyncSetupUrls:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canInterceptSyncSetupUrls))
         case .exchangeKeysToSyncWithAnotherDevice:
@@ -700,8 +692,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment))
         case .standaloneMigration:
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration))
-        case .allowProTierPurchase:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.allowProTierPurchase))
         case .autofillExtensionSettings:
             Config(source: .remoteReleasable(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:

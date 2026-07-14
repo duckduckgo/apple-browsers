@@ -1445,7 +1445,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         if features.contains(.dataBrokerProtection) {
             addItem(dataBrokerProtectionItem)
         }
-        if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) {
+        if features.contains(.paidAIChat) {
             addItem(paidAIChatItem)
         }
         if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {

@@ -292,7 +292,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
-        featureFlagger: featureFlagger,
         vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
     )
     let themeManager: ThemeManager
@@ -814,7 +813,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
             ),
             internalUserDecider: internalUserDecider,
-            featureFlagger: featureFlagger,
             pinningManager: pinningManager
         )
         tabsPreferences = TabsPreferences(

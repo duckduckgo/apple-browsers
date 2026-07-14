@@ -235,25 +235,11 @@ private extension RebrandedNewTabDaxDialogFactory {
             return AttributedString(fullText)
         }
 
-        func createSubscriptionPromoMessageDeprecated() -> AttributedString {
-            let fullText = String(
-                format: UserText.SubscriptionPromotionOnboarding.Promo.messageFormatDeprecated,
-                UserText.SubscriptionPromotionOnboarding.Promo.vpnAndTwoMoreBold,
-                UserText.SubscriptionPromotionOnboarding.Promo.optionalSubscriptionBoldDeprecated
-            )
-
-            return AttributedString(fullText)
-        }
-
         let isChatPath = daxDialogsFlowCoordinator.isChatFirstPath
         let title = UserText.SubscriptionPromotionOnboarding.Promo.title
         let message = switch onboardingFlowProvider.currentOnboardingFlow {
         case .default:
-            if featureFlagger.isFeatureOn(.paidAIChat){
-                createSubscriptionPromoMessage()
-            } else {
-                createSubscriptionPromoMessageDeprecated()
-            }
+            createSubscriptionPromoMessage()
         case .duckAI:
             AttributedString(UserText.Onboarding.DuckAICPP.Contextual.subscriptionMessage.preventWidows())
         }

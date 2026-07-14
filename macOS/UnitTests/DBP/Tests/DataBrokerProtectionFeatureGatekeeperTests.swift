@@ -168,7 +168,6 @@ private class MockFeatureAvailability: SubscriptionFeatureAvailability {
     var mockSubscriptionPurchaseAllowed: Bool = false
 
     var isSubscriptionPurchaseAllowed: Bool { mockSubscriptionPurchaseAllowed }
-    var isPaidAIChatEnabled = false
     var isProTierPurchaseEnabled = false
     var isSupportsAlternateStripePaymentFlowEnabled = false
 

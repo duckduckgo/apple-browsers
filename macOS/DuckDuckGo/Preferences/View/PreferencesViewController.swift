@@ -109,7 +109,6 @@ final class PreferencesViewController: NSViewController {
         let prefRootView = Preferences.RootViewV2(model: model,
                                                   subscriptionManager: Application.appDelegate.subscriptionManager,
                                                   subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
-                                                  featureFlagger: featureFlagger,
                                                   aiChatURLSettings: aiChatRemoteSettings,
                                                   wideEvent: Application.appDelegate.wideEvent,
                                                   pinningManager: pinningManager)

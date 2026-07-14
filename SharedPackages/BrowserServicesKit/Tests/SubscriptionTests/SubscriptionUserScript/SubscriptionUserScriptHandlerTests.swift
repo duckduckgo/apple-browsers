@@ -149,26 +149,6 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(response.accessToken, "")
     }
 
-    func testWhenPaidAIChatIsEnabledThenGetFeatureConfigReturnsTrue() async throws {
-        handler = .init(platform: .ios,
-                       subscriptionManager: subscriptionManager,
-                       featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: true),
-                       navigationDelegate: mockNavigationDelegate)
-
-        let response = try await handler.getFeatureConfig(params: [], message: MockUserScriptMessage())
-        XCTAssertTrue(response.usePaidDuckAi)
-    }
-
-    func testWhenPaidAIChatIsDisabledThenGetFeatureConfigReturnsFalse() async throws {
-        handler = .init(platform: .ios,
-                       subscriptionManager: subscriptionManager,
-                    featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: false),
-                       navigationDelegate: mockNavigationDelegate)
-
-        let response = try await handler.getFeatureConfig(params: [], message: MockUserScriptMessage())
-        XCTAssertFalse(response.usePaidDuckAi)
-    }
-
     func testWhenProTierIsEnabledThenGetFeatureConfigReturnsTrue() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
@@ -332,7 +312,6 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
 }
 
 struct MockFeatureFlagProvider: SubscriptionUserScriptFeatureFlagProviding {
-    var usePaidDuckAi: Bool = false
     var useProTier: Bool = false
 }
 

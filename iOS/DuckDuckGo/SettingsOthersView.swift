@@ -61,8 +61,6 @@ struct SettingsOthersView: View {
                 let formViewModel = UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                  vpnMetadataCollector: DefaultVPNMetadataCollector(),
                                                                  dbpMetadataCollector: DefaultDBPMetadataCollector(),
-                                                                 isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
-                                                                 isProTierPurchaseEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) },
                                                                  source: .settings)
                 NavigationLink {
                     UnifiedFeedbackCategoryView(UserText.subscriptionFeedback, options: UnifiedFeedbackFlowCategory.allCases, selection: $viewModel.selectedFeedbackFlow) {

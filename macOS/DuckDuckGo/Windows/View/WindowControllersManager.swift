@@ -109,12 +109,10 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     init(pinnedTabsManagerProvider: PinnedTabsManagerProviding,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          internalUserDecider: InternalUserDecider,
-         featureFlagger: FeatureFlagger,
          pinningManager: PinningManager) {
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.internalUserDecider = internalUserDecider
-        self.featureFlagger = featureFlagger
         self.pinningManager = pinningManager
     }
 
@@ -135,7 +133,6 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider
-    private let featureFlagger: FeatureFlagger
     private let pinningManager: PinningManager
 
     /// find Main Window Controller being currently interacted with even when ⌘-clicked in background
@@ -496,7 +493,7 @@ extension WindowControllersManager {
 
     /// Shows the Subscription feedback modal
     func showShareFeedbackModal(source: UnifiedFeedbackSource = .default) {
-        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source, featureFlagger: featureFlagger)
+        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source)
         let feedbackFormWindowController = feedbackFormViewController.wrappedInWindowController()
 
         guard let feedbackFormWindow = feedbackFormWindowController.window else {

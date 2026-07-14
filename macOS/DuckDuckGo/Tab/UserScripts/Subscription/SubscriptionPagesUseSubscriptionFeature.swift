@@ -45,7 +45,6 @@ public struct AccessTokenValue: Encodable {
 public struct GetFeatureValue: Encodable {
     let useUnifiedFeedback: Bool = true
     let useSubscriptionsAuthV2: Bool = true
-    let usePaidDuckAi: Bool
     let useAlternateStripePaymentFlow: Bool
     let useGetSubscriptionTierOptions: Bool = true
 }
@@ -226,9 +225,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureValue(usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
-                               useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
-        )
+        return GetFeatureValue(useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled)
     }
 
     // MARK: -
@@ -245,17 +242,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsRequested)
 
         let result = await subscriptionManager.subscriptionTierOptions(
-            includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled
+            includeProTier: true
         )
 
         switch result {
         case .success(let subscriptionTierOptions):
-            // TEMPORARY: Check if Pro tier was unexpectedly returned
-            let hasProTier = subscriptionTierOptions.products.contains { $0.tier == .pro }
-            if hasProTier && !subscriptionFeatureAvailability.isProTierPurchaseEnabled {
-                subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier)
-            }
-
             let origin = await originFrom(originalMessage: original)
             subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsSuccess(origin: origin))
 
@@ -326,7 +317,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                                                                      wideEvent: wideEvent)
             // 6: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
             Logger.subscription.log("[Purchase] Purchasing")
-            let purchaseResult = await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+            let purchaseResult = await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: true)
 
             switch purchaseResult {
             case .success(let result):

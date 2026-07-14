@@ -20,7 +20,6 @@ import AppKit
 import Subscription
 import struct Combine.AnyPublisher
 import enum Combine.Publishers
-import FeatureFlags
 import PrivacyConfig
 import os.log
 
@@ -83,7 +82,6 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     private let subscriptionManager: SubscriptionManager
     private let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
-    private let featureFlagger: FeatureFlagger
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let blackFridayCampaignProvider: BlackFridayCampaignProviding
 
@@ -96,7 +94,6 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     public init(subscriptionManager: SubscriptionManager,
-                featureFlagger: FeatureFlagger,
                 winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
                 userEventHandler: @escaping (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void,
                 sheetActionHandler: SubscriptionAccessActionHandlers,
@@ -104,7 +101,6 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.sheetActionHandler = sheetActionHandler
-        self.featureFlagger = featureFlagger
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.blackFridayCampaignProvider = blackFridayCampaignProvider
         self.subscriptionStorefrontRegion = currentStorefrontRegion()
@@ -145,7 +141,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     var isPaidAIChatEnabled: Bool {
-        featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManager
+        subscriptionManager is DefaultSubscriptionManager
     }
 
     /// Updates the user's eligibility for a free trial based on subscription manager checks.

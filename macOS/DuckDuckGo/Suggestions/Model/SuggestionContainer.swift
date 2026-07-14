@@ -259,11 +259,7 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
         if !isHistoryOpened {
             result.append(.init(title: UserText.mainMenuHistory, url: .history))
         }
-        result += PreferencePaneIdentifier.allCases.compactMap { pane in
-            // Skip Duck AI if feature flag is off
-            if pane == .paidAIChat && !featureFlagger.isFeatureOn(.paidAIChat) {
-                return nil
-            }
+        result += PreferencePaneIdentifier.allCases.map { pane in
             // preference panes URLs
             return .init(title: UserText.settings + " → " + pane.displayName, url: .settingsPane(pane))
         }

@@ -21,8 +21,6 @@ import PrivacyConfig
 import Subscription
 
 public enum SubscriptionPageFeatureFlag {
-    case paidAIChat
-    case proTierPurchase
     case supportsAlternateStripePaymentFlow
 }
 
@@ -32,7 +30,6 @@ public protocol SubscriptionPageFeatureFlagProviding {
 
 public protocol SubscriptionFeatureAvailability {
     var isSubscriptionPurchaseAllowed: Bool { get }
-    var isPaidAIChatEnabled: Bool { get }
     var isProTierPurchaseEnabled: Bool { get }
     /// Indicates whether the alternate Stripe payment flow is supported for subscriptions.
     var isSupportsAlternateStripePaymentFlowEnabled: Bool { get }
@@ -71,12 +68,8 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
         return isPurchaseAllowed || isInternalUser
     }
 
-    public var isPaidAIChatEnabled: Bool {
-        return featureFlagProvider.isEnabled(.paidAIChat)
-    }
-
     public var isProTierPurchaseEnabled: Bool {
-        return featureFlagProvider.isEnabled(.proTierPurchase)
+        return true
     }
 
     /// Indicates whether the alternate Stripe payment flow is supported for subscriptions.

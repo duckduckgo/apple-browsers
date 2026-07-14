@@ -44,10 +44,8 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     private var currentProductID: String?
 
     /// Returns the tier badge variant to display, or nil if badge should not be shown
-    /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
     var tierBadgeToDisplay: TierBadgeView.Variant? {
         guard let tier = subscriptionTier else { return nil }
-        guard tier == .pro || isProTierPurchaseEnabled() else { return nil }
         switch tier {
         case .plus: return .plus
         case .pro: return .pro
@@ -57,23 +55,20 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     /// Returns true if "View All Plans" option should be shown
     /// Requirements:
     /// - Subscription is active
-    /// - Pro tier purchase feature flag is enabled OR user has Pro tier subscription
     var shouldShowViewAllPlans: Bool {
         guard isSubscriptionActive else { return false }
-        return isProTierPurchaseEnabled() || subscriptionTier == .pro
+        return true
     }
 
     /// Returns true if "Upgrade" option should be shown
     /// Requirements:
     /// - Subscription is active
     /// - No pending plan (don't show upgrade if downgrade is scheduled)
-    /// - Pro tier purchase feature flag is enabled
     /// - There are available upgrades
     var shouldShowUpgrade: Bool {
         guard isSubscriptionActive else { return false }
         // Don't show upgrade if there's a pending plan (downgrade scheduled)
         guard pendingPlans?.isEmpty ?? true else { return false }
-        guard isProTierPurchaseEnabled() else { return false }
         return firstAvailableUpgradeTier != nil
     }
 
@@ -85,9 +80,7 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     }
 
     var subscriptionManageButtonText: String {
-        isProTierPurchaseEnabled()
-            ? UserText.managePaymentOrCancelButton
-            : UserText.updatePlanOrCancelButton
+        UserText.managePaymentOrCancelButton
     }
 
     @Published var email: String?
@@ -110,7 +103,6 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let blackFridayCampaignProvider: BlackFridayCampaignProviding
     private let userEventHandler: (PreferencesSubscriptionSettingsModel.UserEvent) -> Void
-    private let isProTierPurchaseEnabled: () -> Bool
     private let cancelPendingDowngradeHandler: ((String) async -> Void)?
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
@@ -141,14 +133,12 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
                 keyValueStore: ThrowingKeyValueStoring,
                 winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
                 blackFridayCampaignProvider: BlackFridayCampaignProviding,
-                isProTierPurchaseEnabled: @escaping () -> Bool,
                 cancelPendingDowngradeHandler: ((String) async -> Void)? = nil) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.keyValueStore = keyValueStore
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.blackFridayCampaignProvider = blackFridayCampaignProvider
-        self.isProTierPurchaseEnabled = isProTierPurchaseEnabled
         self.cancelPendingDowngradeHandler = cancelPendingDowngradeHandler
         Task {
             await self.updateSubscription(forceRefresh: false)

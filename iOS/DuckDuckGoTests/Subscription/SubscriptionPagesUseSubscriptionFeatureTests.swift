@@ -94,40 +94,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         super.tearDown()
     }
     
-    func testGetFeatureConfig_WhenPaidAIChatEnabled_ReturnsCorrectConfig() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true
-
-        // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
-
-        // Then
-        guard let featureValue = result as? GetFeatureConfigurationResponse else {
-            XCTFail("Expected GetFeatureValue type")
-            return
-        }
-        
-        XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.usePaidDuckAi)
-    }
-    
-    func testGetFeatureConfig_WhenPaidAIChatDisabled_ReturnsCorrectConfig() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = false
-
-        // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
-
-        // Then
-        guard let featureValue = result as? GetFeatureConfigurationResponse else {
-            XCTFail("Expected GetFeatureValue type")
-            return
-        }
-
-        XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertFalse(featureValue.usePaidDuckAi)
-    }
-    
     func testGetFeatureConfig_WhenStripeSupported_ReturnsCorrectConfig() async throws {
         // Given
         mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
@@ -162,9 +128,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
     }
 
-    func testGetFeatureConfig_WhenBothFeaturesEnabled_ReturnsCorrectConfig() async throws {
+    func testGetFeatureConfig_WhenStripeEnabled_ReturnsCorrectConfig() async throws {
         // Given
-        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true
         mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
 
         // When
@@ -177,28 +142,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.usePaidDuckAi)
         XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
         XCTAssertTrue(featureValue.useGetSubscriptionTierOptions)
-    }
-
-    func testGetFeatureConfig_WhenBothFeaturesDisabled_ReturnsCorrectConfig() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = false
-        mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = false
-
-        // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
-
-        // Then
-        guard let featureValue = result as? GetFeatureConfigurationResponse else {
-            XCTFail("Expected GetFeatureConfigurationResponse type")
-            return
-        }
-
-        XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertFalse(featureValue.usePaidDuckAi)
-        XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
     }
 
     // MARK: - GetSubscriptionTierOptions Tests

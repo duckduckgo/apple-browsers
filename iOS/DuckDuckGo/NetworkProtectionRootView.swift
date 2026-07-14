@@ -45,8 +45,6 @@ struct NetworkProtectionRootView: View {
             subscriptionManager: subscriptionManager,
             vpnMetadataCollector: DefaultVPNMetadataCollector(),
             dbpMetadataCollector: DefaultDBPMetadataCollector(),
-            isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
-            isProTierPurchaseEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) },
             source: .vpn))
     }
 

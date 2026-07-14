@@ -440,7 +440,7 @@ final class PreferencesSidebarModel: ObservableObject {
                             isNetworkProtectionRemovalAvailable: subscriptionFeatures.contains(.networkProtection),
                             isPersonalInformationRemovalAvailable: subscriptionFeatures.contains(.dataBrokerProtection),
                             isIdentityTheftRestorationAvailable: subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal),
-                            isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && subscriptionFeatures.contains(.paidAIChat))
+                            isPaidAIChatAvailable: subscriptionFeatures.contains(.paidAIChat))
                     } else {
                         updatedState = PreferencesSidebarSubscriptionState(shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)
                     }

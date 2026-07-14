@@ -29,11 +29,9 @@ public struct PreferencesSubscriptionSettingsView: View {
     @State private var showingInternalSubscriptionAlert = false
 
     @State private var manageSubscriptionSheet: ManageSubscriptionSheet?
-    private var isPaidAIChatOn: () -> Bool
 
-    public init(model: PreferencesSubscriptionSettingsModel, isPaidAIChatOn: @escaping (() -> Bool)) {
+    public init(model: PreferencesSubscriptionSettingsModel) {
         self.model = model
-        self.isPaidAIChatOn = isPaidAIChatOn
     }
 
     public var body: some View {
@@ -139,7 +137,7 @@ public struct PreferencesSubscriptionSettingsView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(.subscriptionExpiredIcon)
-                TextMenuItemCaption(model.subscriptionDetails ?? UserText.preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: isPaidAIChatOn()))
+                TextMenuItemCaption(model.subscriptionDetails ?? UserText.preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: true))
             }
             HStack {
                 Button(model.expiredSubscriptionPurchaseButtonTitle) { model.purchaseAction() }

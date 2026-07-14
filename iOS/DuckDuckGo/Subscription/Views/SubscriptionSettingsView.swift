@@ -406,8 +406,6 @@ struct SubscriptionSettingsViewV2: View {
 
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(), dbpMetadataCollector: DefaultDBPMetadataCollector(),
-                                                                                                    isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
-                                                                                                    isProTierPurchaseEnabled: { settingsViewModel.subscriptionFeatureAvailability.isProTierPurchaseEnabled },
                                                                                                     source: .ppro)),
                        isActive: $isShowingSupportView) {
             EmptyView()

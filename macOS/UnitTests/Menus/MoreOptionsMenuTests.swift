@@ -342,7 +342,6 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
@@ -358,30 +357,10 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenUserIsAuthenticatedWithPaidAIChatFeatureButFeatureFlagDisabledThenPaidAIChatItemDoesNotAppear() async throws {
-        // Given
-        mockAuthentication()
-        mockSubscriptionManager.resultFeatures = [.paidAIChat]
-        setupMoreOptionsMenu()
-
-        // When
-        let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
-        XCTAssertTrue(subscriptionItem.hasSubmenu, "Subscription item should have submenu when user is authenticated")
-
-        await waitForSubscriptionSubmenuBuilding()
-        let subscriptionSubmenu = try XCTUnwrap(subscriptionItem.submenu)
-
-        // Then
-        let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
-        XCTAssertNil(paidAIChatItem, "Paid AI Chat item should not appear when feature flag is disabled")
-    }
-
-    @MainActor
     func testWhenUserIsAuthenticatedWithoutPaidAIChatFeatureThenPaidAIChatItemDoesNotAppear() async throws {
         // Given
         mockAuthentication()
         mockSubscriptionManager.resultFeatures = []
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
@@ -401,7 +380,6 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
         moreOptionsMenu.actionDelegate = capturingActionDelegate
         let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })

@@ -226,6 +226,5 @@ final class SubscriptionUserScriptTests: XCTestCase {
 }
 
 struct MockSubscriptionFeatureFlagProvider: SubscriptionUserScriptFeatureFlagProviding {
-    var usePaidDuckAi: Bool = false
     var useProTier: Bool = false
 }

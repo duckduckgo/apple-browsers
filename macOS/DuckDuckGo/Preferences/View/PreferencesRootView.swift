@@ -59,7 +59,6 @@ enum Preferences {
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModel?
         let subscriptionManager: SubscriptionManager
         let subscriptionUIHandler: SubscriptionUIHandling
-        let featureFlagger: FeatureFlagger
         let showTab: @MainActor (Tab.TabContent) -> Void
         let aiChatURLSettings: AIChatRemoteSettingsProvider
         let wideEvent: WideEventManaging
@@ -75,7 +74,6 @@ enum Preferences {
             model: PreferencesSidebarModel,
             subscriptionManager: SubscriptionManager,
             subscriptionUIHandler: SubscriptionUIHandling,
-            featureFlagger: FeatureFlagger,
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
@@ -89,7 +87,6 @@ enum Preferences {
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
             self.showTab = showTab
-            self.featureFlagger = featureFlagger
             self.themeManager = themeManager
             self.aiChatURLSettings = aiChatURLSettings
             self.wideEvent = wideEvent
@@ -175,7 +172,7 @@ enum Preferences {
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
-                    SubscriptionUI.PreferencesSubscriptionSettingsView(model: subscriptionSettingsModel!, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
+                    SubscriptionUI.PreferencesSubscriptionSettingsView(model: subscriptionSettingsModel!)
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
@@ -248,7 +245,6 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
-                                                        featureFlagger: featureFlagger,
                                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler,
@@ -371,7 +367,6 @@ enum Preferences {
                                                         keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                         blackFridayCampaignProvider: blackFridayCampaignProvider,
-                                                        isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) },
                                                         cancelPendingDowngradeHandler: { [flowPerformer] productId in
                 _ = await flowPerformer.performTierChange(to: productId, changeType: nil, contextName: "CancelDowngradeButton")
             })

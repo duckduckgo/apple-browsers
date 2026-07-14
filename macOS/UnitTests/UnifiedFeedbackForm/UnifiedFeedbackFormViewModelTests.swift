@@ -30,8 +30,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender,
-                                                     featureFlagger: MockFeatureFlagger())
+                                                     feedbackSender: sender)
 
         XCTAssertEqual(viewModel.viewState, .feedbackPending)
     }
@@ -42,8 +41,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender,
-                                                     featureFlagger: MockFeatureFlagger())
+                                                     feedbackSender: sender)
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         let text = "Some feedback report text"
         viewModel.feedbackFormText = text
@@ -60,8 +58,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender,
-                                                     featureFlagger: MockFeatureFlagger())
+                                                     feedbackSender: sender)
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         let text = "Some feedback report text"
         viewModel.feedbackFormText = text
@@ -80,8 +77,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender,
-                                                     featureFlagger: MockFeatureFlagger())
+                                                     feedbackSender: sender)
         viewModel.delegate = delegate
 
         XCTAssertFalse(delegate.receivedDismissedViewCallback)
@@ -89,17 +85,14 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         XCTAssertTrue(delegate.receivedDismissedViewCallback)
     }
 
-    func disabledTestWhenDuckAiFeatureIsEnabledAndSubscriptionIncludesPaidAIChat_ThenDuckAiCategoryIsAvailable() async throws {
+    func testWhenSubscriptionIncludesPaidAIChat_ThenDuckAiCategoryIsAvailable() async throws {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.resultFeatures = [.paidAIChat]
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: MockVPNFeedbackSender(),
-                                                     featureFlagger: featureFlagger)
+                                                     feedbackSender: MockVPNFeedbackSender())
 
         let expectation = XCTestExpectation(description: "Wait for DuckAi category to become available")
         let pollingInterval: TimeInterval = 0.1
@@ -113,32 +106,14 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.availableCategories.contains(.duckAi))
     }
 
-    func testWhenDuckAiFeatureIsDisabled_ThenDuckAiCategoryIsNotAvailable() async throws {
-        let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.resultFeatures = [.paidAIChat]
-        let featureFlagger = MockFeatureFlagger()
-
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
-                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
-                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: MockVPNFeedbackSender(),
-                                                     featureFlagger: featureFlagger)
-
-        try await Task.sleep(nanoseconds: 500_000_000)
-        XCTAssertFalse(viewModel.availableCategories.contains(.duckAi))
-    }
-
     func testWhenSubscriptionDoesNotIncludePaidAIChat_ThenDuckAiCategoryIsNotAvailable() async throws {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.resultFeatures = []
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: MockVPNFeedbackSender(),
-                                                     featureFlagger: featureFlagger)
+                                                     feedbackSender: MockVPNFeedbackSender())
 
         try await Task.sleep(nanoseconds: 500_000_000)
         XCTAssertFalse(viewModel.availableCategories.contains(.duckAi))
@@ -149,7 +124,6 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: MockVPNFeedbackSender(),
-                                                     featureFlagger: MockFeatureFlagger(),
                                                      source: .duckAi)
 
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
@@ -161,8 +135,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: MockVPNFeedbackSender(),
-                                                     featureFlagger: MockFeatureFlagger())
+                                                     feedbackSender: MockVPNFeedbackSender())
 
         viewModel.selectedCategory = UnifiedFeedbackCategory.duckAi.rawValue
 
@@ -176,7 +149,6 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      defaultMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender,
-                                                     featureFlagger: MockFeatureFlagger(),
                                                      source: .ppro)
 
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
@@ -191,38 +163,17 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         XCTAssertEqual(sender.capturedSubcategory, "accessSubscriptionModels")
     }
 
-    func testWhenProTierPurchaseEnabled_ThenSubscriptionSubcategoriesIncludesUnableToAccessFeatures() {
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
-
+    func testSubscriptionSubcategoriesIncludesUnableToAccessFeatures() {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: MockVPNFeedbackSender(),
-                                                     featureFlagger: featureFlagger)
+                                                     feedbackSender: MockVPNFeedbackSender())
 
         let subcategories = viewModel.availableSubscriptionSubcategories
 
         XCTAssertTrue(subcategories.contains(.selectSubcategory))
         XCTAssertTrue(subcategories.contains(.otp))
         XCTAssertTrue(subcategories.contains(.unableToAccessFeatures))
-        XCTAssertTrue(subcategories.contains(.somethingElse))
-    }
-
-    func testWhenProTierPurchaseDisabled_ThenSubscriptionSubcategoriesExcludesUnableToAccessFeatures() {
-        let featureFlagger = MockFeatureFlagger()
-
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
-                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: MockVPNFeedbackSender(),
-                                                     featureFlagger: featureFlagger)
-
-        let subcategories = viewModel.availableSubscriptionSubcategories
-
-        XCTAssertTrue(subcategories.contains(.selectSubcategory))
-        XCTAssertTrue(subcategories.contains(.otp))
-        XCTAssertFalse(subcategories.contains(.unableToAccessFeatures))
         XCTAssertTrue(subcategories.contains(.somethingElse))
     }
 

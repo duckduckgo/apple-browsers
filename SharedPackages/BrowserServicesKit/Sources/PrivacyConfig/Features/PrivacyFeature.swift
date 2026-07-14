@@ -726,12 +726,10 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchaseStripe
     case useUnifiedFeedback
     case privacyProOnboardingPromotion
-    case paidAIChat
     case supportsAlternateStripePaymentFlow
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign
-    case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification

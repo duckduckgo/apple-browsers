@@ -46,14 +46,12 @@ final class UnifiedFeedbackFormViewController: NSViewController {
     private var cancellables = Set<AnyCancellable>()
 
     init(feedbackSender: UnifiedFeedbackSender = DefaultFeedbackSender(),
-         source: UnifiedFeedbackSource = .default,
-         featureFlagger: FeatureFlagger) {
+         source: UnifiedFeedbackSource = .default) {
         self.feedbackSender = feedbackSender
         self.viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: Application.appDelegate.subscriptionManager,
                                                       vpnMetadataCollector: DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionManager),
                                                       dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                       feedbackSender: feedbackSender,
-                                                      featureFlagger: featureFlagger,
                                                       source: source)
 
         super.init(nibName: nil, bundle: nil)

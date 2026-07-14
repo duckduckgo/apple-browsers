@@ -121,10 +121,8 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
 
     private func hasCooldownPassed() -> Bool {
         guard let installDate = statisticsStore.installDate else { return false }
-        // TODO: Revert to day-based check before shipping; 1-min override for easier manual testing
-        return Date().timeIntervalSince(installDate) >= 60
-//        let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: Date()).day ?? 0
-//        return daysSinceInstall >= Self.cooldownDays
+        let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: Date()).day ?? 0
+        return daysSinceInstall >= Self.cooldownDays
     }
 
     private var isReturningUser: Bool {

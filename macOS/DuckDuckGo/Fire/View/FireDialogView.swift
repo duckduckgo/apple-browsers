@@ -640,7 +640,7 @@ struct FireDialogView: ModalView {
                 )
             )
             .disabled(!isDeleteEnabled)
-            .accessibilityLabel(UserText.delete)
+            .accessibilityLabel(viewModel.includeTabsAndWindows ? UserText.fireDialogDeleteAndClose : UserText.delete)
             .keyboardShortcut(.defaultAction)
             .accessibilityIdentifier("FireDialogView.burnButton")
             .frame(width: 156)

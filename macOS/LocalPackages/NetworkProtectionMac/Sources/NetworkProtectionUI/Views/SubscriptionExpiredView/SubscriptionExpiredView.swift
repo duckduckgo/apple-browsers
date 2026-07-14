@@ -19,14 +19,31 @@
 import Foundation
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 struct SubscriptionExpiredView: View {
     enum Constants {
-        static let backgroundCornerRadius = 6.0
+        static let backgroundCornerRadius = 16.0
+        static let legacyBackgroundCornerRadius = 6.0
     }
 
     let subscribeButtonHandler: () -> Void
     let uninstallButtonHandler: () -> Void
+
+    /// Captured at init so it stays stable for the view's lifetime.
+    let isAppRebranded: Bool
+
+    init(subscribeButtonHandler: @escaping () -> Void,
+         uninstallButtonHandler: @escaping () -> Void,
+         isAppRebranded: Bool = DesignSystemRebrand.isAppRebranded()) {
+        self.subscribeButtonHandler = subscribeButtonHandler
+        self.uninstallButtonHandler = uninstallButtonHandler
+        self.isAppRebranded = isAppRebranded
+    }
+
+    private var cornerRadius: CGFloat {
+        isAppRebranded ? Constants.backgroundCornerRadius : Constants.legacyBackgroundCornerRadius
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -57,10 +74,10 @@ struct SubscriptionExpiredView: View {
         .padding(.horizontal, 10)
         .cornerRadius(8)
         .background(
-            RoundedRectangle(cornerRadius: Constants.backgroundCornerRadius, style: .circular)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .circular)
                 .stroke(Color(.onboardingStepBorder), lineWidth: 1)
                 .background(
-                    RoundedRectangle(cornerRadius: Constants.backgroundCornerRadius, style: .circular)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .circular)
                         .fill(Color(.onboardingStepBackground))
                 )
         )

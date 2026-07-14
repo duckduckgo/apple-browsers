@@ -94,10 +94,11 @@ extension SyncSettingsViewController {
 
     func shareCode(_ code: String, source: CodeCollectionSource) {
 
-        navigationController?.visibleViewController?.presentShareSheet(withItems: [code],
-                                                                       fromView: view,
-                                                                       overrideInterfaceStyle: .dark,
-                                                                       additionalExcludedActivityTypes: recoveryCodeExcludedActivityTypes) { activity, didComplete, _, _  in
+        let presenter = topmostPresentedViewController
+        presenter?.presentShareSheet(withItems: [code],
+                                     fromView: presenter?.view ?? view,
+                                     overrideInterfaceStyle: .dark,
+                                     additionalExcludedActivityTypes: recoveryCodeExcludedActivityTypes) { activity, didComplete, _, _  in
             guard case .copyToPasteboard = activity, didComplete else {
                 return
             }

@@ -50,9 +50,7 @@ final class BookmarksBarViewController: NSViewController {
     /// Monitor + saved state used while a bookmarks bar menu is open so cursor moves
     /// over the bar (now the parent of a key NSPanel popover) still trigger menu
     /// switching. The hover tracking areas in the bar items use `.activeInKeyWindow`,
-    /// which stops firing when our popover takes key focus. Only installed when the
-    /// `bookmarksBarMenusCustomWindow` flag is on — NSPopover doesn't take key focus,
-    /// so the legacy code path doesn't need it.
+    /// which stops firing when our popover takes key focus.
     private var bookmarksBarHoverMonitor: Any?
     private var savedAcceptsMouseMovedEvents: Bool?
 
@@ -62,7 +60,6 @@ final class BookmarksBarViewController: NSViewController {
     private let viewModel: BookmarksBarViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
     private let appereancePreferences: AppearancePreferencesPersistor
-    private let featureFlagger: FeatureFlagger
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -83,9 +80,9 @@ final class BookmarksBarViewController: NSViewController {
     @UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false)
     var bookmarksBarPromptShown: Bool
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager, pinningManager: PinningManager, featureFlagger: FeatureFlagger) -> BookmarksBarViewController {
+    static func create(tabCollectionViewModel: TabCollectionViewModel, bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager, pinningManager: PinningManager) -> BookmarksBarViewController {
         NSStoryboard(name: "BookmarksBar", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: pinningManager, featureFlagger: featureFlagger)
+            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: pinningManager)
         }!
     }
 
@@ -94,14 +91,12 @@ final class BookmarksBarViewController: NSViewController {
           bookmarkManager: BookmarkManager,
           dragDropManager: BookmarkDragDropManager,
           pinningManager: PinningManager,
-          featureFlagger: FeatureFlagger,
           appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
           themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.pinningManager = pinningManager
-        self.featureFlagger = featureFlagger
         self.appereancePreferences = appereancePreferences
         self.themeManager = themeManager
 
@@ -301,7 +296,6 @@ final class BookmarksBarViewController: NSViewController {
         guard let view, let folder, let cursorPosition = info?.draggingLocation else {
             dragDestination = nil
             // close all Bookmarks popovers including the Bookmarks Button popover
-            BookmarksBarMenuPopover.closeBookmarkListPopovers(shownIn: self.view.window)
             BookmarksBarMenuCustomPopover.closeBookmarkListPopovers(shownIn: self.view.window)
             return false
         }
@@ -527,14 +521,6 @@ private extension BookmarksBarViewController {
     }
 
     func showSubmenu(for folder: BookmarkFolder, from view: NSView) {
-        let useCustomWindow = featureFlagger.isFeatureOn(.bookmarksBarMenusCustomWindow)
-        // Discard the cached popover if the feature flag was toggled since it was created.
-        if let popover = self.bookmarkMenuPopover,
-           (popover is BookmarksBarMenuCustomPopover) != useCustomWindow {
-            popover.close()
-            self.bookmarkMenuPopover = nil
-        }
-
         let bookmarkMenuPopover: any BookmarksBarMenuPopoverPresenting
         if let popover = self.bookmarkMenuPopover {
             bookmarkMenuPopover = popover
@@ -546,20 +532,14 @@ private extension BookmarksBarViewController {
             }
             bookmarkMenuPopover.reloadData(withRootFolder: folder)
         } else {
-            if useCustomWindow {
-                bookmarkMenuPopover = BookmarksBarMenuCustomPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
-            } else {
-                bookmarkMenuPopover = BookmarksBarMenuPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
-            }
+            bookmarkMenuPopover = BookmarksBarMenuCustomPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
             bookmarkMenuPopover.bookmarksBarMenuDelegate = self
             self.bookmarkMenuPopover = bookmarkMenuPopover
         }
 
         view.window?.makeKeyAndOrderFront(nil)
         bookmarkMenuPopover.show(positionedBelow: view)
-        if bookmarkMenuPopover is BookmarksBarMenuCustomPopover {
-            startBookmarksBarHoverTracking()
-        }
+        startBookmarksBarHoverTracking()
 
         if view === clippedItemsIndicator {
             // display pressed state

@@ -3,7 +3,7 @@
     "description": "Sent at the end of a VPN connection journey, covering the browser start, controller start, OAuth, and tunnel start steps, until the connection succeeds, fails, or is orphaned by app/extension termination and resolved (or timed out) on a later launch.",
     "$comment": "{\"owners\":[\"samsymons\"]}",
     "type": "object",
-    "required": ["meta", "global", "feature", "app"],
+    "required": ["meta", "global", "feature", "app", "context"],
     "additionalProperties": false,
     "properties": {
         "meta": {
@@ -380,6 +380,18 @@
                             }
                         }
                     }
+                }
+            }
+        },
+        "context": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Context name for the event",
+                    "enum": ["funnel_appsettings_ios", "funnel_systemsettings_multiple", "funnel_others_multiple"]
                 }
             }
         }

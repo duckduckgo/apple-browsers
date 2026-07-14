@@ -953,7 +953,7 @@
                                         <rect key="frame" x="0.0" y="0.0" width="5" height="32"/>
                                         <subviews>
                                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="CtU-Gd-KHM" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                                <rect key="frame" x="0.0" y="8" width="1" height="16"/>
+                                                <rect key="frame" x="2" y="8" width="1" height="16"/>
                                                 <constraints>
                                                     <constraint firstAttribute="width" constant="1" id="Skm-Q0-ubi"/>
                                                     <constraint firstAttribute="height" constant="16" id="vnk-Hg-Wd7"/>
@@ -967,8 +967,8 @@
                                         </subviews>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="32" id="Dnx-hJ-3A9"/>
-                                            <constraint firstItem="CtU-Gd-KHM" firstAttribute="leading" secondItem="lbX-yW-2eM" secondAttribute="leading" id="WGB-lV-Voe"/>
-                                            <constraint firstAttribute="trailing" secondItem="CtU-Gd-KHM" secondAttribute="trailing" constant="4" id="WNS-7L-y5e"/>
+                                            <constraint firstItem="CtU-Gd-KHM" firstAttribute="leading" secondItem="lbX-yW-2eM" secondAttribute="leading" constant="2" id="WGB-lV-Voe"/>
+                                            <constraint firstAttribute="trailing" secondItem="CtU-Gd-KHM" secondAttribute="trailing" constant="2" id="WNS-7L-y5e"/>
                                             <constraint firstItem="CtU-Gd-KHM" firstAttribute="centerY" secondItem="lbX-yW-2eM" secondAttribute="centerY" id="bY5-af-X8A"/>
                                             <constraint firstAttribute="width" constant="5" id="plW-zK-Tdb"/>
                                         </constraints>
@@ -1178,7 +1178,7 @@
             <color red="1" green="1" blue="1" alpha="0.0" colorSpace="custom" customColorSpace="displayP3"/>
         </namedColor>
         <namedColor name="AddressBarSeparatorColor">
-            <color red="0.0" green="0.0" blue="0.0" alpha="0.11999999729999999" colorSpace="custom" customColorSpace="displayP3"/>
+            <color red="0.0" green="0.0" blue="0.0" alpha="0.11999999731779099" colorSpace="custom" customColorSpace="displayP3"/>
         </namedColor>
         <namedColor name="AddressBarShadowColor">
             <color red="0.0" green="0.0" blue="0.0" alpha="0.15000000596046448" colorSpace="custom" customColorSpace="displayP3"/>

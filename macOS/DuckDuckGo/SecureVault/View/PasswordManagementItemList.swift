@@ -39,6 +39,11 @@ struct PasswordManagementItemListView: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
     @State var autoSelected = false
+    @EnvironmentObject var themeManager: ThemeManager
+
+    private var style: PasswordManagementStyle {
+        PasswordManagementStyle.style(theme: themeManager.theme, isAppRebranded: themeManager.isAppRebranded)
+    }
 
     private func selectItem(id: String, proxy: ScrollViewProxy) {
         // Selection/scroll wont work until list is fully rendered
@@ -65,7 +70,7 @@ struct PasswordManagementItemListView: View {
 
             ScrollView {
                 ScrollViewReader { proxy in
-                    PasswordManagementItemListStackView()
+                    PasswordManagementItemListStackView(style: style)
                         .onChange(of: model.selected?.id) { itemId in
                             if let id = itemId {
                                 selectItem(id: id, proxy: proxy)
@@ -78,8 +83,10 @@ struct PasswordManagementItemListView: View {
 
             Divider()
 
-            PasswordManagementAddButton()
-                .padding()
+            PasswordManagementAddButton(style: style)
+                .environmentObject(themeManager)
+                .padding(.vertical)
+                .padding(.horizontal, 10)
 
         }
     }
@@ -133,9 +140,11 @@ struct PasswordManagementItemListStackView: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
 
+    let style: PasswordManagementStyle
+
     var body: some View {
         LazyVStack(alignment: .leading) {
-            PasswordManagementItemStackContentsView()
+            PasswordManagementItemStackContentsView(style: style)
         }
     }
 
@@ -144,9 +153,11 @@ struct PasswordManagementItemListStackView: View {
 private struct ExternalPasswordManagerItemSection: View {
     @ObservedObject var model: PasswordManagementItemListModel
 
+    let style: PasswordManagementStyle
+
     var body: some View {
         Section(header: Text(UserText.passwordManager).padding(.leading, 18).padding(.top, 0)) {
-            PasswordManagerItemView(model: model) {
+            PasswordManagerItemView(model: model, style: style) {
                 model.externalPasswordManagerSelected = true
             }
             .padding(.horizontal, 10)
@@ -157,9 +168,11 @@ private struct ExternalPasswordManagerItemSection: View {
 private struct SyncPromoItemSection: View {
     @ObservedObject var model: PasswordManagementItemListModel
 
+    let style: PasswordManagementStyle
+
     var body: some View {
         Section {
-            SyncPromoItemView(model: model) {
+            SyncPromoItemView(model: model, style: style) {
                 model.syncPromoSelected = true
             }
             .padding(.horizontal, 10)
@@ -170,6 +183,8 @@ private struct SyncPromoItemSection: View {
 private struct PasswordManagementItemStackContentsView: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
+
+    let style: PasswordManagementStyle
 
     private var shouldDisplayExternalPasswordManagerRow: Bool {
         model.passwordManagerCoordinator.isEnabled &&
@@ -197,16 +212,16 @@ private struct PasswordManagementItemStackContentsView: View {
         Spacer(minLength: 10)
 
         if shouldDisplayExternalPasswordManagerRow {
-            ExternalPasswordManagerItemSection(model: model)
+            ExternalPasswordManagerItemSection(model: model, style: style)
         } else if shouldDisplaySyncPromoRow {
-            SyncPromoItemSection(model: model)
+            SyncPromoItemSection(model: model, style: style)
         }
 
         ForEach(Array(model.displayedSections.enumerated()), id: \.offset) { index, section in
             Section(header: Text(section.title).padding(.leading, 18).padding(.top, index == 0 ? 0 : 10)) {
 
                 ForEach(section.items, id: \.id) { item in
-                    ItemView(item: item) {
+                    ItemView(item: item, style: style) {
                         model.selected(item: item)
                     }
                     .padding(.horizontal, 10)
@@ -221,6 +236,7 @@ private struct PasswordManagementItemStackContentsView: View {
 private struct PasswordManagerItemView: View {
     @ObservedObject var model: PasswordManagementItemListModel
 
+    let style: PasswordManagementStyle
     let action: () -> Void
 
     private var isLocked: Bool {
@@ -236,7 +252,7 @@ private struct PasswordManagerItemView: View {
     }
 
     var body: some View {
-        let textColor = selected ? .white : Color(NSColor.controlTextColor)
+        let textColor = style.textColor(selected: selected)
         let font = Font.system(size: 13)
 
         Button(action: action, label: {
@@ -264,17 +280,15 @@ private struct PasswordManagerItemView: View {
                 .padding(.leading, 4)
             }
         })
-            .frame(maxHeight: 48)
-            .buttonStyle(selected ?
-                         PasswordManagerItemButtonStyle(bgColor: Color.accentColor) :
-                            // Almost clear, so that whole view is clickable
-                         PasswordManagerItemButtonStyle(bgColor: Color(NSColor.windowBackgroundColor.withAlphaComponent(0.001))))
+        .frame(maxHeight: 48)
+        .buttonStyle(PasswordManagerItemButtonStyle(style: style, selected: selected))
     }
 }
 
 private struct SyncPromoItemView: View {
     @ObservedObject var model: PasswordManagementItemListModel
 
+    let style: PasswordManagementStyle
     let action: () -> Void
 
     private var selected: Bool {
@@ -282,7 +296,7 @@ private struct SyncPromoItemView: View {
     }
 
     var body: some View {
-        let textColor = selected ? .white : Color(NSColor.controlTextColor)
+        let textColor = style.textColor(selected: selected)
         let font = Font.system(size: 13)
 
         Button(action: action, label: {
@@ -304,11 +318,7 @@ private struct SyncPromoItemView: View {
             }
         })
         .frame(maxHeight: 48)
-        .buttonStyle(selected ?
-                     PasswordManagerItemButtonStyle(bgColor: Color.accentColor) :
-                        // Almost clear, so that whole view is clickable
-                     PasswordManagerItemButtonStyle(bgColor: Color(NSColor.windowBackground.withAlphaComponent(0.001))))
-
+        .buttonStyle(PasswordManagerItemButtonStyle(style: style, selected: selected))
     }
 }
 
@@ -317,7 +327,12 @@ private struct ItemView: View {
     @EnvironmentObject var model: PasswordManagementItemListModel
 
     let item: SecureVaultItem
+    let style: PasswordManagementStyle
     let action: () -> Void
+
+    private var selected: Bool {
+        model.selected == item
+    }
 
     func getIconLetters(account: SecureVaultModels.WebsiteAccount) -> String {
         if let title = account.title, !title.isEmpty {
@@ -327,9 +342,7 @@ private struct ItemView: View {
     }
 
     var body: some View {
-
-        let selected = model.selected == item
-        let textColor = selected ? .white : Color(NSColor.controlTextColor)
+        let textColor = style.textColor(selected: selected)
         let font = Font.system(size: 13)
 
         Button(action: action, label: {
@@ -377,27 +390,24 @@ private struct ItemView: View {
                 .padding(.leading, 4)
             }
         })
-            .frame(maxHeight: 48)
-            .buttonStyle(selected ?
-                         PasswordManagerItemButtonStyle(bgColor: Color.accentColor) :
-                            // Almost clear, so that whole view is clickable
-                         PasswordManagerItemButtonStyle(bgColor: Color(NSColor.windowBackground.withAlphaComponent(0.001))))
+        .frame(maxHeight: 48)
+        .buttonStyle(PasswordManagerItemButtonStyle(style: style, selected: selected))
     }
 
 }
 
 private struct PasswordManagerItemButtonStyle: ButtonStyle {
 
-    let bgColor: Color
+    let style: PasswordManagementStyle
+    let selected: Bool
 
     func makeBody(configuration: Self.Configuration) -> some View {
-
         configuration.label
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .truncationMode(.tail)
-            .background(RoundedRectangle(cornerRadius: 3, style: .continuous).fill(bgColor))
-
+            .background(RoundedRectangle(cornerRadius: style.backgroundCornerRadius, style: .continuous)
+            .fill(style.backgroundColor(selected: selected)))
     }
 }
 
@@ -461,32 +471,42 @@ private struct PasswordManagementSortButton: View {
 private struct PasswordManagementAddButton: View {
 
     @EnvironmentObject var model: PasswordManagementItemListModel
+    let style: PasswordManagementStyle
 
     var body: some View {
 
         switch model.sortDescriptor.category {
         case .allItems:
-            ZStack {
-                // Setting Menu label to empty string and overlaying with this as Menu will not allow the image + text to be centered
-                Text(UserText.pmAddItem)
-
-                Menu {
-                    createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.keyLogin),
-                                   text: UserText.pmNewLogin,
-                                   category: .logins)
-                    createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.profile),
-                                   text: UserText.pmNewIdentity,
-                                   category: .identities)
-                    createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.creditCard),
-                                   text: UserText.pmNewCard,
-                                   category: .cards)
-                } label: {
-                    Text("")
+            Text(UserText.pmAddItem)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: style.buttonCornerRadius)
+                        .fill(Color(designSystemColor: .controlsFillPrimary))
+                )
+                .overlay {
+                    Menu {
+                        createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.keyLogin),
+                                       text: UserText.pmNewLogin,
+                                       category: .logins)
+                        createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.profile),
+                                       text: UserText.pmNewIdentity,
+                                       category: .identities)
+                        createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.creditCard),
+                                       text: UserText.pmNewCard,
+                                       category: .cards)
+                    } label: {
+                        Color.clear
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .contentShape(RoundedRectangle(cornerRadius: style.buttonCornerRadius))
+                    }
+                    .menuStyle(.borderlessButton)
+                    .buttonStyle(.plain)
+                    .modifier(HideMenuIndicatorModifier())
+                    .modifier(FlexibleButtonSizingModifier())
                 }
-                .modifier(HideMenuIndicatorModifier())
-                .modifier(FlexibleButtonSizingModifier())
-            }
-            .padding(.vertical, -4)
+                .padding(.vertical, -5)
         case .logins:
             createButton(text: UserText.pmAddLogin, category: model.sortDescriptor.category)
         case .identities:
@@ -498,7 +518,6 @@ private struct PasswordManagementAddButton: View {
     }
 
     private func createMenuItem(image: Image, text: String, category: SecureVaultSorting.Category) -> some View {
-
         Button {
             model.onAddItemClickedFor(category)
         } label: {
@@ -507,20 +526,23 @@ private struct PasswordManagementAddButton: View {
                 Text(text)
             }
         }
-
+        .background(Color(designSystemColor: .controlsFillPrimary))
     }
 
     private func createButton(text: String, category: SecureVaultSorting.Category) -> some View {
-
         Button {
             model.onAddItemClickedFor(category)
         } label: {
             Text(text)
                 .frame(maxWidth: .infinity)
-                .offset(y: 1)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: style.buttonCornerRadius)
+                        .fill(Color(designSystemColor: .controlsFillPrimary))
+                )
         }
-        .padding(.vertical, -4)
-
+        .buttonStyle(.plain)
+        .padding(.vertical, -5)
     }
 }
 
@@ -548,4 +570,44 @@ private struct FlexibleButtonSizingModifier: ViewModifier {
 #endif
     }
 
+}
+
+struct PasswordManagementStyle {
+    let backgroundColor: Color
+    let backgroundCornerRadius: CGFloat
+    let buttonCornerRadius: CGFloat
+    let textColor: Color
+    let selectedBackgroundColor: Color
+    let selectedTextColor: Color
+
+    func backgroundColor(selected: Bool) -> Color {
+        selected ? selectedBackgroundColor : backgroundColor
+    }
+
+    func textColor(selected: Bool) -> Color {
+        selected ? selectedTextColor : textColor
+    }
+
+    static func style(theme: ThemeStyleProviding, isAppRebranded: Bool) -> PasswordManagementStyle {
+        // Almost clear, so that whole view is clickable
+        let clearBackgroundColor = Color(NSColor.windowBackgroundColor.withAlphaComponent(0.001))
+        let controlTextColor = Color(NSColor.controlTextColor)
+
+        guard isAppRebranded else {
+            return PasswordManagementStyle(backgroundColor: clearBackgroundColor,
+                                           backgroundCornerRadius: 3,
+                                           buttonCornerRadius: 3,
+                                           textColor: controlTextColor,
+                                           selectedBackgroundColor: .accentColor,
+                                           selectedTextColor: .white)
+        }
+
+        let selectedBackgroundColor = Color(theme.palette.controlsFillTertiary)
+        return PasswordManagementStyle(backgroundColor: clearBackgroundColor,
+                                       backgroundCornerRadius: 5,
+                                       buttonCornerRadius: 5,
+                                       textColor: controlTextColor,
+                                       selectedBackgroundColor: selectedBackgroundColor,
+                                       selectedTextColor: controlTextColor)
+    }
 }

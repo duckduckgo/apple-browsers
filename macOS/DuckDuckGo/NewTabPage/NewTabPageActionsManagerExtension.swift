@@ -123,8 +123,12 @@ extension NewTabPageActionsManager {
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             featureFlagger: featureFlagger,
             aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
-            searchPreferences: NSApp.delegateTyped.searchPreferences
+            searchPreferences: NSApp.delegateTyped.searchPreferences,
+            windowControllersManager: windowControllersManager
         )
+        omnibarActionHandler.onCustomizeResponsesChanged = { [weak omnibarConfigProvider] in
+            omnibarConfigProvider?.notifyCustomizeResponsesChanged()
+        }
         let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
             featureFlagger: featureFlagger,
             configProvider: omnibarConfigProvider,

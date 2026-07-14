@@ -63,6 +63,9 @@
                     "error": "errorParameters"
                 }
             }
+        },
+        "context": {
+            "name": ["funnel_appsettings_macos", "funnel_agent_macos", "funnel_systemsettings_multiple", "funnel_others_multiple"]
         }
     }
 }

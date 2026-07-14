@@ -311,6 +311,16 @@ import Subscription
         XCTAssertFalse(model.showStrictRoutingPill)
     }
 
+    func testShowsStrictRoutingPillWhileReasserting() throws {
+        let statusObserver = MockConnectionStatusObserver()
+        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true, statusObserver: statusObserver)
+
+        statusObserver.subject.send(.reasserting)
+
+        try waitForPublisher(model.$isReasserting, toEmit: true)
+        XCTAssertTrue(model.showStrictRoutingPill)
+    }
+
     func testHeaderMessageWarnsWhenStrictRoutingOff() {
         let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true)
         model.isNetPEnabled = true
@@ -343,13 +353,16 @@ import Subscription
         try waitForPublisher(model.$isStrictRoutingAvailable, toEmit: true)
     }
 
-    private func makeStrictRoutingViewModel(isStrictRoutingAvailable: Bool) -> NetworkProtectionStatusViewModel {
+    private func makeStrictRoutingViewModel(isStrictRoutingAvailable: Bool,
+                                            statusObserver: ConnectionStatusObserver = MockConnectionStatusObserver()) -> NetworkProtectionStatusViewModel {
         makeStrictRoutingViewModel(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isStrictRoutingAvailable ? [.vpnStrictRoutingToggle] : [])
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isStrictRoutingAvailable ? [.vpnStrictRoutingToggle] : []),
+            statusObserver: statusObserver
         )
     }
 
-    private func makeStrictRoutingViewModel(featureFlagger: MockFeatureFlagger) -> NetworkProtectionStatusViewModel {
+    private func makeStrictRoutingViewModel(featureFlagger: MockFeatureFlagger,
+                                            statusObserver: ConnectionStatusObserver = MockConnectionStatusObserver()) -> NetworkProtectionStatusViewModel {
         // Use an isolated defaults suite so setting `enforceRoutes` doesn't leak into the shared
         // app-group defaults and pollute other tests.
         let suiteName = "test.\(UUID().uuidString)"
@@ -360,7 +373,7 @@ import Subscription
 
         return NetworkProtectionStatusViewModel(tunnelController: MockTunnelController(),
                                                 settings: VPNSettings(defaults: defaults),
-                                                statusObserver: MockConnectionStatusObserver(),
+                                                statusObserver: statusObserver,
                                                 serverInfoObserver: MockConnectionServerInfoObserver(),
                                                 locationListRepository: MockNetworkProtectionLocationListRepository(),
                                                 enablesUnifiedFeedbackForm: false,

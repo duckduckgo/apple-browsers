@@ -32,6 +32,7 @@ struct PageContextExtractionPixelHandlerTests {
         return fired
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("success maps to the extraction-success pixel with no extra params", .timeLimit(.minutes(1)))
     func successMapsToSuccessPixel() {
         let pixel = capture(.success, trigger: .navigation, latency: .under1s)
@@ -41,6 +42,7 @@ struct PageContextExtractionPixelHandlerTests {
         #expect(pixel?.parameters?["latency"] == nil)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("failure(emptyContent) maps to failed pixel with reason, trigger, latency", .timeLimit(.minutes(1)))
     func emptyContentMapsToFailedWithParams() {
         let pixel = capture(.failure(.emptyContent), trigger: .auto, latency: .oneToFiveSeconds)
@@ -50,11 +52,13 @@ struct PageContextExtractionPixelHandlerTests {
         #expect(pixel?.parameters?["latency"] == "1_to_5s")
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("failure(deserializeFailed) maps to failed pixel with snake_case reason", .timeLimit(.minutes(1)))
     func deserializeFailedMapsToFailedWithReason() {
         #expect(capture(.failure(.deserializeFailed))?.parameters?["reason"] == "deserialize_failed")
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("failure without a latency omits the latency param", .timeLimit(.minutes(1)))
     func failureWithoutLatencyOmitsLatency() {
         let pixel = capture(.failure(.noWebView), trigger: .navigation, latency: nil)
@@ -62,6 +66,7 @@ struct PageContextExtractionPixelHandlerTests {
         #expect(pixel?.parameters?["latency"] == nil)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("prevented maps to prevented pixel with category, reason, trigger", .timeLimit(.minutes(1)))
     func preventedMapsToPreventedWithParams() {
         let pixel = capture(.prevented("pdf"), trigger: .tabContent)

@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Den er grei";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Kontoen din er allerede paret med begge enhetene.";
+"alert.sync-already-paired-with-account-description" = "Disse enhetene er allerede koblet til Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Allerede paret";
+"alert.sync-already-paired-with-account-title" = "Allerede synkronisert.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Noen bokmerker er formatert feil eller for lange og ble ikke synkronisert.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Synkronisering er avbrutt fra den andre enheten.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Gå til duck.ai på nettleseren din, gå til Innstillinger, og under «Sync & Backup» velger du «Slå på» og deretter «Synkroniser med en annen enhet».";
+"alert.sync-code-only-compatible-with-duckai-description" = "Gå inn på Duck.ai i den andre nettleseren, gå til «Innstillinger», og velg deretter «Slå på» under «Sync & Backup», før du velger «Synkroniser med en annen enhet».";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Skann denne koden fra Duck.ai-innstillingene.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Skann denne koden med en annen nettleser enn DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Noen passord er formatert feil eller for lange og ble ikke synkronisert.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Synkroniser innstillinger";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Prøv igjen.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Synkroniseringen mislyktes.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Synkroniser denne enheten fra en allerede tilkoblet DuckDuckGo-nettleser på en annen enhet.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Synkronisering er satt på pause";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Den er grei";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Bytt synkronisering";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup er midlertidig utilgjengelig.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Denne koden støttes ikke i den nåværende appversjonen.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Oppdater DuckDuckGo-nettleseren og prøv igjen.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Kan ikke fjerne denne enheten fra Synkronisering og sikkerhetskopiering.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Beklager, denne koden er ugyldig. Kontroller at riktig kode ble tastet inn eller skannet.";
+"alert.unable-to-scan-qr-code-description" = "Kontroller at riktig kode ble tastet inn eller skannet.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Dette er ikke en gyldig Sync-kode.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Kan ikke koble til serveren.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Kan ikke synkronisere med en annen enhet.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Kan ikke slå av Synkronisering og sikkerhetskopiering.";
@@ -4814,7 +4822,7 @@
 "sync.remove-device.title" = "Vil du fjerne enheten?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Enheten er synkronisert!";
+"sync.simplified.device-synced.toast" = "En ny enhet er lagt til!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup er aktivert";

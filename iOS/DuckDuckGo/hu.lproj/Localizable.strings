@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Megvan";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Már mindkét eszközön hozzá vagy rendelve ehhez a fiókhoz.";
+"alert.sync-already-paired-with-account-description" = "Ezek az eszközök már csatlakoztatva vannak a Sync & Backup funkcióhoz.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Már párosítva";
+"alert.sync-already-paired-with-account-title" = "Már szinkronizálva.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Egyes könyvjelzők helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "A szinkronizálás megszakítva a másik eszközödről.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Nyisd meg a böngésződben a duck.ai oldalt, menj a Beállításokba, majd a „Sync & Backup” alatt válaszd a „Bekapcsolás” lehetőséget, és válaszd a „Szinkronizálás másik eszközzel” opciót.";
+"alert.sync-code-only-compatible-with-duckai-description" = "A másik böngésződben nyisd meg a Duck.ai-t, lépj a Beállításokba, majd a „Sync & Backup” menüpontban válaszd a „Bekapcsolás”, majd a „Szinkronizálás másik eszközzel” lehetőséget.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Olvasd be ezt a kódot a Duck.ai beállításaiból.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Olvasd be ezt a kódot egy nem DuckDuckGo-böngészővel.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Egyes jelszavak helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Beállítások szinkronizálása";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Kérjük, próbáld újra.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "A szinkronizálás sikertelen.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Kérjük, szinkronizáld ezt az eszközt egy másik eszközön már csatlakoztatott DuckDuckGo böngészőből.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "A szinkronizálás szünetel";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Értem";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Váltás másik szinkronizálási lehetőségre";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "A szinkronizálás és biztonsági mentés átmenetileg nem érhető el.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Ez a kód az alkalmazás jelenlegi verziójában nem támogatott.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Frissítsd a DuckDuckGo böngészőt, és próbáld újra.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Az eszközt nem sikerült eltávolítani a Szinkronizálás és biztonsági mentés funkcióból.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Ez a kód sajnos érvénytelen. Győződj meg róla, hogy a helyes kódot adtad meg vagy olvastad be.";
+"alert.unable-to-scan-qr-code-description" = "Győződj meg róla, hogy a megfelelő kódot adtad meg vagy olvastad be.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Ez nem érvényes szinkronizálási kód.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nem sikerült csatlakozni a szerverhez.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Nem sikerült a másik eszközzel szinkronizálni.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nem sikerült kikapcsolni a Szinkronizálás és biztonsági mentés funkciót.";
@@ -4814,7 +4822,7 @@
 "sync.remove-device.title" = "Eszköz eltávolítása?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Az eszköz szinkronizálása sikeresen megtörtént!";
+"sync.simplified.device-synced.toast" = "Új eszköz hozzáadva!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup engedélyezve";

@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Razumem";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "S tem računom ste že povezani na obeh napravah.";
+"alert.sync-already-paired-with-account-description" = "Te naprave so že povezane s Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Že seznanjeno";
+"alert.sync-already-paired-with-account-title" = "Že sinhronizirano.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Nekateri zaznamki so napačno oblikovani ali predolgi in niso bili sinhronizirani.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Sinhronizacija je bila preklicana iz vaše druge naprave.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "V brskalniku obiščite duck.ai, pojdite v Nastavitve, nato v razdelku »Sync & Backup« izberite »Vklopi« in nato »Sinhroniziraj z drugo napravo«.";
+"alert.sync-code-only-compatible-with-duckai-description" = "V drugem brskalniku obiščite Duck.ai, pojdite v Nastavitve, nato v razdelku »Sync & Backup« izberite »Vklopi« in nato »Sinhronizacija z drugo napravo«.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Optično preberite to kodo iz nastavitev Duck.ai.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Skenirajte to kodo z brskalnikom, ki ni DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Nekatera gesla so napačno oblikovana ali predolga in niso bila sinhronizirana.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Nastavitve sinhronizacije";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Poskusite znova.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Sinhronizacija ni uspela.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Sinhronizirajte to napravo iz že povezanega brskalnika DuckDuckGo na drugi napravi.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Sinhronizacija je začasno zaustavljena";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Razumem";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Preklop sinhronizacije";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sinhronizacija in varnostno kopiranje sta začasno nedostopna.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Ta koda ni podprta v trenutni različici aplikacije.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Posodobite brskalnik DuckDuckGo in poskusite znova.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Te naprave ni bilo mogoče odstraniti iz sinhronizacije in varnostnega kopiranja.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Oprostite, ta koda je neveljavna. Prepričajte se, da je bila vnesena ali optično prebrana pravilna koda.";
+"alert.unable-to-scan-qr-code-description" = "Prepričajte se, da je bila vnesena ali optično prebrana pravilna koda.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "To ni veljavna koda za sinhronizacijo.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Ni bilo mogoče vzpostaviti povezave s strežnikom.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Ni bilo mogoče sinhronizirati z drugo napravo.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Sinhronizacije in varnostnega kopiranja ni bilo mogoče izklopiti.";
@@ -4814,7 +4822,7 @@
 "sync.remove-device.title" = "Želite odstraniti napravo?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Naprava je bila uspešno sinhronizirana";
+"sync.simplified.device-synced.toast" = "Nova naprava je bila dodana!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Funkcija Sync & Backup je omogočena";

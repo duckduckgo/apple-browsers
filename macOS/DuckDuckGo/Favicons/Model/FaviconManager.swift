@@ -745,4 +745,12 @@ extension FaviconManager: FaviconManagementDebugging {
         await imageCache.removeAllFavicons()
         await referenceCache.removeAllReferences()
     }
+
+    /// Debug: clears the in-memory decoded-image cache without deleting any stored favicons. Only the
+    /// lazy `FaviconImageCache` keeps a separate in-memory image cache, so this is a no-op on the eager
+    /// (non-lazy) path.
+    @MainActor
+    func clearInMemoryFaviconCache() {
+        (imageCache as? FaviconImageCache)?.clearInMemoryCache()
+    }
 }

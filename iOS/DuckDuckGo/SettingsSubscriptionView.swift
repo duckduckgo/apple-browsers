@@ -198,6 +198,9 @@ struct SettingsSubscriptionView: View {
                     .hidden()
                 )
             }
+            .onFirstAppear {
+                Pixel.fire(pixel: .freemiumPIRSettingsEntryPointImpression)
+            }
         }
     }
 

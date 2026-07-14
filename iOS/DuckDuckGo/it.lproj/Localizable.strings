@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Ho capito";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Sei già associato a questo account su entrambi i dispositivi.";
+"alert.sync-already-paired-with-account-description" = "Questi dispositivi sono già connessi a Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Già associato";
+"alert.sync-already-paired-with-account-title" = "Già sincronizzato.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Alcuni segnalibri sono formattati in modo errato o sono troppo lunghi e non sono stati sincronizzati.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Sincronizzazione annullata dall'altro dispositivo.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "Nel browser, visita duck.ai, vai su Impostazioni, quindi in “Sync & Backup” seleziona “Attiva” e poi “Sincronizza con un altro dispositivo”.";
+"alert.sync-code-only-compatible-with-duckai-description" = "Nell'altro tuo browser, visita Duck.ai, vai a Impostazioni, quindi in \"Sync & Backup\" seleziona \"Attiva\" e poi \"Sincronizza con un altro dispositivo\".";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Scansiona questo codice dalle impostazioni di Duck.ai.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Scansiona questo codice usando un browser diverso da DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Alcune password sono formattate in modo errato o sono troppo lunghe e non sono state sincronizzate.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Impostazioni Sync";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Riprova.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Sincronizzazione fallita.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Sincronizza questo dispositivo da un browser DuckDuckGo già connesso su un altro dispositivo.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Sync è in pausa";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Ho capito";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Cambia sincronizzazione";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup non è temporaneamente disponibile.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Questo codice non è supportato nella versione attuale dell'app.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Aggiorna il browser DuckDuckGo e riprova.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Impossibile rimuovere questo dispositivo da Sincronizzazione e backup.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Spiacenti, questo codice non è valido. Assicurati che sia stato inserito o scansionato il codice corretto.";
+"alert.unable-to-scan-qr-code-description" = "Assicurati che sia stato inserito o scansionato il codice corretto.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Questo non è un codice di sincronizzazione valido.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Impossibile connettersi al server.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Impossibile sincronizzare con un altro dispositivo.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Impossibile disattivare Sincronizzazione e backup.";
@@ -4814,7 +4822,7 @@
 "sync.remove-device.title" = "Rimuovere il dispositivo?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Dispositivo sincronizzato correttamente!";
+"sync.simplified.device-synced.toast" = "Nuovo dispositivo aggiunto.";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup abilitati";

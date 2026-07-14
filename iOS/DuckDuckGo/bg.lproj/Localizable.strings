@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Разбрах";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "Вече сте сдвоени с този акаунт и на двете устройства.";
+"alert.sync-already-paired-with-account-description" = "Тези устройства вече са свързани към „Sync & Backup“.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Вече е сдвоено";
+"alert.sync-already-paired-with-account-title" = "Вече е синхронизирано.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Някои отметки са форматирани неправилно или са твърде дълги и не бяха синхронизирани.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Синхронизирането е прекратено от другото ви устройство.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "В браузъра си посетете duck.ai, отидете в „Настройки“, след това под „Sync & Backup“ изберете „Включване“ и след това „Синхронизиране с друго устройство“.";
+"alert.sync-code-only-compatible-with-duckai-description" = "В другия браузър посетете Duck.ai, отидете в „Настройки“, след това под „Sync & Backup“ изберете „Включване“ и след това „Синхронизиране с друго устройство“.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Сканирайте този код от „Настройки“ на Duck.ai настройки.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Сканирайте този код с браузър, различен от DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Някои пароли са форматирани неправилно или са твърде дълги и не бяха синхронизирани.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Настройки за синхронизиране";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Моля, опитайте отново.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Синхронизацията не бе успешна.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Моля, синхронизирайте това устройство от вече свързан браузър DuckDuckGo на друго устройство.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Синхронизирането е на пауза";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Разбрах";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Превключване на синхронизирането";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Sync & Backup временно не е налична.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Този код не се поддържа в текущата версия на приложението.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Актуализирайте браузъра DuckDuckGo и опитайте отново.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Това устройство не може да бъде премахнато от Синхронизиране и архивиране.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Съжаляваме, този код е невалиден. Моля, уверете се, че сте въвели или сканирали правилния код.";
+"alert.unable-to-scan-qr-code-description" = "Уверете се, че сте въвели или сканирали правилния код.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Това не е валиден код за синхронизация.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Не може да се осъществи връзка със сървъра.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Не може да се синхронизира с друго устройство.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Синхронизиране и архивиране не може да бъде изключено.";
@@ -4814,7 +4822,7 @@
 "sync.remove-device.title" = "Премахване на устройство?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Устройството е синхронизирано успешно!";
+"sync.simplified.device-synced.toast" = "Новото устройство е добавено!";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Функцията Sync & Backup е активирана";

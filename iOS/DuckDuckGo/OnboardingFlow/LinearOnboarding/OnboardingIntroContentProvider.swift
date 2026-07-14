@@ -26,8 +26,8 @@ import PrivacyConfig
 protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
     var introStepContent: OnboardingIntroStepContent { get }
-    var browserComparisonContent: OnboardingBrowserComparisonContent { get }
-    var aiComparisonContent: OnboardingAIComparisonContent { get }
+    var setDefaultBrowserContent: OnboardingComparisonContent { get }
+    var aiIntroContent: OnboardingComparisonContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
     var appIconColorContent: OnboardingAppIconColorContent { get }
     var addressBarPositionContent: OnboardingAddressBarPositionContent { get }
@@ -129,26 +129,30 @@ extension OnboardingIntroContentProvider {
 
 }
 
-// MARK: - Content Provider + Browser Comparison (Protections activated!)
+// MARK: - Content Provider + Comparison Chart
 
-struct OnboardingBrowserComparisonContent: Equatable {
+struct OnboardingComparisonContent: Equatable {
     let title: String
+    /// When set, renders as a text-and-icons table header; absent for icon-only headers.
+    let subHeader: String?
     let features: [RebrandedComparisonTableModel.Feature]
     let primaryCTA: String
-    let secondaryCTA: String
+    /// When set, renders a secondary skip button below the primary CTA.
+    let secondaryCTA: String?
     let daxAnimation: DaxAnimation
 }
 
 extension OnboardingIntroContentProvider {
 
-    var browserComparisonContent: OnboardingBrowserComparisonContent {
+    var setDefaultBrowserContent: OnboardingComparisonContent {
         let title = switch flowType {
         case .default: UserText.Onboarding.BrowsersComparison.title
         case .duckAI: UserText.Onboarding.DuckAICPP.BrowserComparison.title
         }
 
-        return OnboardingBrowserComparisonContent(
+        return OnboardingComparisonContent(
             title: title,
+            subHeader: nil,
             features: RebrandedComparisonTableModel.defaultBrowserFeatures,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
@@ -156,26 +160,13 @@ extension OnboardingIntroContentProvider {
         )
     }
 
-}
-
-// MARK: - Content Provider + AI Comparison (AI Protections activated!)
-
-struct OnboardingAIComparisonContent: Equatable {
-    let title: String
-    let subHeader: String
-    let features: [RebrandedComparisonTableModel.Feature]
-    let primaryCTA: String
-    let daxAnimation: DaxAnimation
-}
-
-extension OnboardingIntroContentProvider {
-
-    var aiComparisonContent: OnboardingAIComparisonContent {
-        OnboardingAIComparisonContent(
+    var aiIntroContent: OnboardingComparisonContent {
+        OnboardingComparisonContent(
             title: UserText.Onboarding.DuckAICPP.AIComparison.title,
             subHeader: UserText.Onboarding.DuckAICPP.AIComparison.subHeader,
             features: RebrandedComparisonTableModel.defaultAIFeatures,
             primaryCTA: UserText.Onboarding.DuckAICPP.AIComparison.cta,
+            secondaryCTA: nil,
             daxAnimation: .wingBottom
         )
     }

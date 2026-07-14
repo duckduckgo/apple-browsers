@@ -527,8 +527,8 @@ struct OnboardingStepsForConfiguredFlow {
     func resumeStepMappingIsCorrect() {
         #expect(OnboardingIntroStep.introDialog(isReturningUser: false).resumeStep == nil)
         #expect(OnboardingIntroStep.introDialog(isReturningUser: true).resumeStep == nil)
-        #expect(OnboardingIntroStep.browserComparison.resumeStep == .browserComparison)
-        #expect(OnboardingIntroStep.aiComparison.resumeStep == .aiComparison)
+        #expect(OnboardingIntroStep.setDefaultBrowser.resumeStep == .setDefaultBrowser)
+        #expect(OnboardingIntroStep.aiIntro.resumeStep == .aiIntro)
         #expect(OnboardingIntroStep.addToDockPromo.resumeStep == .addToDockPromo)
         #expect(OnboardingIntroStep.appIconSelection.resumeStep == .appIconSelection)
         #expect(OnboardingIntroStep.addressBarPositionSelection.resumeStep == .addressBarPositionSelection)

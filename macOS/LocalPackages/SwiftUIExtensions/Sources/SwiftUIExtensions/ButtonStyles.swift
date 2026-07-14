@@ -29,16 +29,8 @@ private struct ButtonMetrics {
     let horizontalPadding: CGFloat
     let cornerRadius: CGFloat
 
-    private static var `default`: ButtonMetrics {
-        ButtonMetrics(fontSize: 13, topPadding: 2.5, bottomPadding: 3, horizontalPadding: 7.5, cornerRadius: 5)
-    }
-
-    private static var rebranded: ButtonMetrics {
-        ButtonMetrics(fontSize: 13, topPadding: 2.5, bottomPadding: 3, horizontalPadding: 7.5, cornerRadius: 24)
-    }
-
     static var current: ButtonMetrics {
-        DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
+        ButtonMetrics(fontSize: 13, topPadding: 2.5, bottomPadding: 3, horizontalPadding: 7.5, cornerRadius: 5)
     }
 }
 
@@ -47,6 +39,7 @@ public struct StandardButtonStyle: ButtonStyle {
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
     public let horizontalPadding: CGFloat
+    public let labelColor: Color
     public let backgroundColor: Color
     public let backgroundPressedColor: Color
     public let cornerRadius: CGFloat
@@ -59,20 +52,21 @@ public struct StandardButtonStyle: ButtonStyle {
 
     public init(fontSize: CGFloat? = nil, topPadding: CGFloat? = nil, bottomPadding: CGFloat? = nil, horizontalPadding: CGFloat? = nil, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil, cornerRadius: CGFloat? = nil, pillShape: Bool = false) {
         let metrics = ButtonMetrics.current
+        let colors = ButtonStateColors.legacyStandardButtonColors
 
         self.fontSize = fontSize ?? metrics.fontSize
         self.topPadding = topPadding ?? metrics.topPadding
         self.bottomPadding = bottomPadding ?? metrics.bottomPadding
         self.horizontalPadding = horizontalPadding ?? metrics.horizontalPadding
-        self.backgroundColor = backgroundColor ?? Color(.pwmButtonBackground)
-        self.backgroundPressedColor = backgroundPressedColor ?? Color(.pwmButtonBackgroundPressed)
+        self.labelColor = colors.textColor
+        self.backgroundColor = backgroundColor ?? colors.backgroundColor
+        self.backgroundPressedColor = backgroundPressedColor ?? colors.pressedBackgroundColor
         self.cornerRadius = cornerRadius ?? metrics.cornerRadius
         self.pillShape = pillShape
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
         let backgroundColor = configuration.isPressed ? backgroundPressedColor : backgroundColor
-        let labelColor = Color(.pwmButtonLabel)
 
         configuration.label
             .font(.system(size: fontSize))
@@ -181,21 +175,26 @@ public struct TransparentActionButtonStyle: ButtonStyle {
 
 public struct DismissActionButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) var colorScheme
+    @State private var isHovered: Bool = false
 
+    public let stateColors: ButtonStateColors
     public let textColor: Color
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
     public let pillShape: Bool
 
-    public init(textColor: Color = .primary, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = false) {
-        self.textColor = textColor
+    public init(textColor: Color? = nil, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = false, stateColors: ButtonStateColors = .legacyDismissButton) {
+        self.stateColors = stateColors
+        self.textColor = textColor ?? stateColors.textColor
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
         self.pillShape = pillShape
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let backgroundColor = configuration.isPressed ? Color(.windowBackgroundColor) : Color(.controlColor)
+        let backgroundColor = configuration.isPressed
+            ? stateColors.pressedBackgroundColor
+            : (isHovered ? stateColors.hoveredBackgroundColor : stateColors.backgroundColor)
         let outerShadowOpacity = colorScheme == .dark ? 0.8 : 0.0
 
         configuration.label
@@ -232,6 +231,9 @@ public struct DismissActionButtonStyle: ButtonStyle {
                 }
             )
             .foregroundColor(textColor)
+            .onHover { hovering in
+                isHovered = hovering
+            }
 
     }
 }
@@ -308,6 +310,30 @@ public struct ButtonStateColors {
               hoveredBackgroundColor: Color("PrimaryButtonHover", bundle: Bundle.module),
               pressedBackgroundColor: Color("PrimaryButtonPressed", bundle: Bundle.module),
               pressedTextColor: Color.white.opacity(0.8))
+    }
+
+    public static var legacyStandardButtonColors: ButtonStateColors {
+        .init(backgroundColor: Color(.pwmButtonBackground),
+              textColor: Color(.pwmButtonLabel),
+              hoveredBackgroundColor: Color(.pwmButtonBackground),
+              pressedBackgroundColor: Color(.pwmButtonBackgroundPressed),
+              pressedTextColor: Color(.pwmButtonLabel))
+    }
+
+    public static var themedDismissButton: ButtonStateColors {
+        .init(backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+              textColor: Color(designSystemColor: .textPrimary),
+              hoveredBackgroundColor: Color(designSystemColor: .controlsFillSecondary),
+              pressedBackgroundColor: Color(designSystemColor: .controlsFillTertiary),
+              pressedTextColor: Color(designSystemColor: .textSecondary))
+    }
+
+    public static var legacyDismissButton: ButtonStateColors {
+        .init(backgroundColor: Color(.controlColor),
+              textColor: .primary,
+              hoveredBackgroundColor: Color(.controlColor),
+              pressedBackgroundColor: Color(.windowBackgroundColor),
+              pressedTextColor: .primary)
     }
 }
 

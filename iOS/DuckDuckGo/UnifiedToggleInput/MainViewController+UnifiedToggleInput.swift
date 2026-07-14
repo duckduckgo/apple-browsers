@@ -152,17 +152,22 @@ extension MainViewController {
         return unifiedToggleInputCoordinator?.isVoiceSessionActive == true
     }
 
-    /// Single source of truth for the chrome/toolbar visibility decision. Each `reconcile…`
-    /// method renders only its own slice of this state, preserving per-call-site scope.
-    private func resolvedChromeState() -> ChromeState {
-        UnifiedInputChromeResolver.resolve(UnifiedInputChromeResolverInputs(
+    /// Toolbar visibility decision for the current tab, built from live chrome state.
+    private func toolbarVisibilityDecision() -> ToolbarVisibilityDecision {
+        ToolbarVisibilityDecision.resolve(.init(
             isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
             isFocusedOmnibarSession: unifiedToggleInputCoordinator?.isOmnibarSession == true,
             isLargeWidth: AppWidthObserver.shared.isLargeWidth,
             isInMinimalChromeLayout: isInMinimalChromeLayout,
             currentToolbarIsHidden: viewCoordinator.toolbar.isHidden,
             toolbarAlpha: viewCoordinator.toolbar.alpha,
-            toolbarBottomConstant: viewCoordinator.constraints.toolbarBottom.constant,
+            toolbarBottomConstant: viewCoordinator.constraints.toolbarBottom.constant
+        ))
+    }
+
+    /// AI-tab bottom-chrome decision for the current tab (native input bar + voice pill).
+    private func aiTabChromeDecision() -> AITabChromeDecision {
+        AITabChromeDecision.resolve(.init(
             isOnAITab: currentTab?.isAITab == true,
             isAIChatInputHiddenByFrontend: unifiedToggleInputCoordinator?.aiChatInputBoxVisibility == .hidden,
             isVoiceSessionActive: unifiedToggleInputCoordinator?.isVoiceSessionActive == true
@@ -174,12 +179,12 @@ extension MainViewController {
         // Only AI tabs have an AI chat input to reconcile. For a non-AI tabs this can
         //  cause glitches in the positioning of the bars.
         guard currentTab?.isAITab == true else { return }
-        viewCoordinator.setAITabBottomChromeHidden(resolvedChromeState().hidesAIChatInput)
+        viewCoordinator.setAITabBottomChromeHidden(aiTabChromeDecision().hidesInputBar)
     }
 
     /// Hides the header chats/compose pill while a voice session is in progress. Idempotent.
     func reconcileVoiceSessionChromeForCurrentTab() {
-        aiChatTabChatHeaderView?.setVoiceSessionActive(resolvedChromeState().voiceChromeActive)
+        aiChatTabChatHeaderView?.setVoiceSessionActive(aiTabChromeDecision().voiceChromeActive)
     }
 
     /// Applies both AI-chrome reconciles together — call from every refresh path so adding a new
@@ -205,13 +210,13 @@ extension MainViewController {
     /// opened from a Duck.ai tab counts as "tab-like" — keep the toolbar so the user has the
     /// standard browser controls while searching. Idempotent; safe with the feature flag off.
     func reconcileToolbarVisibilityForCurrentTab() {
-        applyToolbarVisibility(resolvedChromeState())
+        applyToolbarVisibility(toolbarVisibilityDecision())
     }
 
     /// Renders a resolved toolbar decision. The self-heal clamp restores a stale off-screen
     /// constraint left by a transient AI-tab phase; bars recompute only when hidden flips.
-    private func applyToolbarVisibility(_ state: ChromeState) {
-        switch state.toolbar {
+    private func applyToolbarVisibility(_ decision: ToolbarVisibilityDecision) {
+        switch decision.visibility {
         case .hidden:
             viewCoordinator.toolbar.isHidden = true
         case .visible(let healsClampConstant):
@@ -220,7 +225,7 @@ extension MainViewController {
                 viewCoordinator.constraints.toolbarBottom.constant = 0
             }
         }
-        if state.recomputesBars {
+        if decision.recomputesBars {
             setBarsVisibility(currentBarsVisibility, animated: false, animationDuration: nil)
         }
     }

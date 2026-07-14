@@ -33,7 +33,7 @@ struct EscapeHatchView: View {
 
             TabSwitcherPill(count: model.openTabCount,
                             isExpanded: !model.isReturnToTabCardVisible,
-                            showsEndArrow: !model.isHideShortcutEnabled,
+                            showsEndArrow: false,
                             onTap: model.onTabSwitcherTap)
                 .frame(maxWidth: model.isReturnToTabCardVisible ? TabSwitcherPill.compactSize : .infinity)
                 .frame(height: TabSwitcherPill.compactSize)

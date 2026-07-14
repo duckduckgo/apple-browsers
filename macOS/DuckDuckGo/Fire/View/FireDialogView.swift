@@ -214,27 +214,88 @@ struct FireDialogView: ModalView {
 
             Spacer()
 
-            Button {
-                // Present the "more options" menu once its contents are defined.
+            Menu {
+                moreOptionsMenuItems
             } label: {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.menuDots)
                     .resizable()
                     .frame(width: 16, height: 16)
                     .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                    .padding(4)
+                    .contentShape(Circle())
             }
-            .buttonStyle(
-                StandardButtonStyle(topPadding: 4,
-                                    bottomPadding: 4,
-                                    horizontalPadding: 4,
-                                    backgroundColor: .clear,
-                                    backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary))
-            )
-            .clipShape(Circle())
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
             .accessibilityLabel(UserText.fireDialogMoreOptions)
             .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
         }
         .padding(.top, 16)
         .padding(.horizontal, Constants.toolbarHorizontalPadding)
+    }
+
+    @ViewBuilder
+    private var moreOptionsMenuItems: some View {
+        Button {
+            openNewFireWindow()
+        } label: {
+            HStack {
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.fireWindow)
+                Text(UserText.newBurnerWindowMenuItem)
+            }
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.newFireWindow")
+
+        Divider()
+
+        Button {
+            viewModel.toggleCurrentSiteFireproofing()
+        } label: {
+            Text(viewModel.isCurrentSiteFireproof ? UserText.removeFireproofing : UserText.fireproofSite)
+        }
+        .disabled(!viewModel.canFireproofCurrentSite)
+        .accessibilityIdentifier("FireDialogView.moreOptions.fireproofSite")
+
+        Button {
+            presentManageFireproof()
+        } label: {
+            Text(UserText.manageFireproofSites)
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.manageFireproofSites")
+
+        Divider()
+
+        Button {
+            presentIndividualSites()
+        } label: {
+            Text(UserText.fireDialogMenuDeleteIndividualSites)
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.deleteIndividualSites")
+
+        Divider()
+
+        Button {
+            presentDataDeletionSettings()
+        } label: {
+            HStack {
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.settings)
+                Text(UserText.fireDialogMenuDataDeletionSettings)
+            }
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.dataDeletionSettings")
+    }
+
+    private func openNewFireWindow() {
+        dismiss()
+        Application.appDelegate.newBurnerWindow(nil)
+    }
+
+    private func presentDataDeletionSettings() {
+        // Close the dialog and open Settings → Data Clearing
+        if let window = NSApp.mainWindow {
+            window.endSheet(window.attachedSheet ?? window)
+        }
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .dataClearing)
     }
 
     private var headerView: some View {

@@ -421,4 +421,32 @@ final class FireDialogViewModel: ObservableObject {
         })
     }
 
+    // MARK: - More Options menu
+
+    /// Host of the currently selected tab's URL, or `nil` when it can't be fireproofed.
+    private var fireproofableCurrentHost: String? {
+        guard let url = tabCollectionViewModel?.selectedTabViewModel?.tab.url,
+              url.canFireproof, let host = url.host else { return nil }
+        return host
+    }
+
+    /// Whether the "Fireproof This Site" menu item should be enabled for the current site.
+    var canFireproofCurrentSite: Bool {
+        fireproofableCurrentHost != nil
+    }
+
+    /// Whether the currently selected site is already fireproofed.
+    var isCurrentSiteFireproof: Bool {
+        guard let host = fireproofableCurrentHost else { return false }
+        return fireproofDomains.isFireproof(fireproofDomain: host)
+    }
+
+    /// Toggles fireproofing for the currently selected site and refreshes the scope.
+    func toggleCurrentSiteFireproofing() {
+        guard let host = fireproofableCurrentHost else { return }
+        _ = fireproofDomains.toggle(domain: host)
+        // Refresh selectable/fireproofed lists and counts to reflect the change
+        updateItems(for: clearingOption)
+    }
+
 }

@@ -493,6 +493,8 @@ struct UserText {
     static let fireDialogManageIndividualSitesLink = NSLocalizedString("fire.dialog.manage.individual.sites", value: "Delete individual sites and history.", comment: "Link row text to manage per-site deletions")
     static let fireDialogMoreOptions = NotLocalizedString("fire.dialog.more.options", value: "More Options", comment: "Accessibility label for the toolbar button that reveals more Fire dialog options")
     static let fireDialogDeleteAndClose = NotLocalizedString("fire.dialog.delete.and.close", value: "Delete & Close", comment: "Caption for the Fire dialog action button for deleting data and closing tabs and windows")
+    static let fireDialogMenuDeleteIndividualSites = NotLocalizedString("fire.dialog.menu.delete.individual.sites", value: "Delete Individual Sites", comment: "More Options menu item in the Fire dialog that opens the per-site data deletion view")
+    static let fireDialogMenuDataDeletionSettings = NotLocalizedString("fire.dialog.menu.data.deletion.settings", value: "Data Deletion Settings…", comment: "More Options menu item in the Fire dialog that opens the Data Clearing settings pane")
 
     // MARK: - Fire dialog sites list sheet
     static let fireDialogSitesOverlayTitle = NSLocalizedString("fire.dialog.sites.overlay.title",

@@ -459,6 +459,18 @@ extension OnboardingView {
                 introView(content: content, dialogType: dialogType)
             case let .downloadReasonDialog(content):
                 downloadReasonView(content: content)
+            case .searchPrivacySettingsDialog:
+                placeholderView(title: "Search Privacy Settings", action: model.searchPrivacySettingsContinueAction)
+            case .aiSearchSettingsDialog:
+                placeholderView(title: "AI Search Settings", action: model.aiSearchSettingsContinueAction)
+            case .aiModelDialog:
+                placeholderView(title: "AI Model Preference", action: model.aiModelContinueAction)
+            case .toggleInputModeDialog:
+                placeholderView(title: "Toggle Input Default Mode", action: model.toggleInputModeContinueAction)
+            case .keepDuckAIDialog:
+                placeholderView(title: "Keep Duck.ai Setting", action: model.keepDuckAIContinueAction)
+            case .duckPlayerDialog:
+                placeholderView(title: "Duck Player Settings", action: model.duckPlayerContinueAction)
             case let .setDefaultBrowserDialog(content):
                 setDefaultBrowserView(content: content)
             case let .aiIntroDialog(content):
@@ -476,7 +488,7 @@ extension OnboardingView {
             }
         }
 
-        // TODO: Replace with the designed Download Screen (separate UI task). Minimal placeholder
+        // TODO: Replace with the designed Download Screen (separate UI task). Minimal placeholder https://app.asana.com/1/137249556945/task/1215563968127475
         // so the flow runs end-to-end: tapping an option persists the reason and advances.
         private func downloadReasonView(content: OnboardingDownloadReasonContent) -> some View {
             VStack(spacing: 16) {
@@ -487,6 +499,19 @@ extension OnboardingView {
                         animateContentTransition {
                             model.selectDownloadReasonAction(option.reason)
                         }
+                    }
+                }
+            }
+        }
+
+        // TODO: Shared placeholder for the reason-tailored steps until each screen is built (UI task).
+        // Tapping Next runs the step's own action (just advances for now) so the flow is walkable.
+        private func placeholderView(title: String, action: @escaping () -> Void) -> some View {
+            VStack(spacing: 16) {
+                Text(title)
+                Button("Next") {
+                    animateContentTransition {
+                        action()
                     }
                 }
             }
@@ -582,6 +607,9 @@ extension OnboardingView {
                 return scaledThumbUpAnimation(forBubbleHeight: lockedIntroBubbleHeight, base: content.daxAnimation)
             case .downloadReasonDialog(let content):
                 return content.daxAnimation
+            case .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
+                 .toggleInputModeDialog, .keepDuckAIDialog, .duckPlayerDialog:
+                return nil // TODO: dax animation for the reason-tailored steps (UI task).
             case .setDefaultBrowserDialog(let content):
                 return content.daxAnimation
             case .aiIntroDialog(let content):
@@ -757,7 +785,9 @@ private extension OnboardingView {
                 additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
                 isVisible: model.introState.showIntroViewContent
             )
-        case .downloadReasonDialog:
+        case .downloadReasonDialog,
+             .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
+             .toggleInputModeDialog, .keepDuckAIDialog, .duckPlayerDialog:
             return BubbleBackedDialogConfiguration(
                 tailOffset: tailLeadingOffset,
                 tailDirection: .leading,

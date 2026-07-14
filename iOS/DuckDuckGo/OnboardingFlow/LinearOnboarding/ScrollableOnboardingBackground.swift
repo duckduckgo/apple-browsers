@@ -213,13 +213,16 @@ private struct ExitingBackgroundView<Content: View>: View, Animatable {
 }
 
 private extension OnboardingIntroViewState.Intro.IntroType {
-
     var backgroundImage: Image {
         switch self {
         case .startOnboardingDialog:
             return OnboardingRebrandingImages.Linear.introBackground
         case .downloadReasonDialog, .setDefaultBrowserDialog, .aiIntroDialog:
             return OnboardingRebrandingImages.Linear.browsersComparisonBackground
+        case  .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog, .duckPlayerDialog:
+            return OnboardingRebrandingImages.Linear.addToDockBackground
+        case .toggleInputModeDialog, .keepDuckAIDialog:
+            return OnboardingRebrandingImages.Linear.addressBarSearchPreferenceBackground
         case .addToDockPromoDialog:
             return OnboardingRebrandingImages.Linear.addToDockBackground
         case .chooseAppIconDialog:
@@ -243,13 +246,13 @@ private extension OnboardingIntroViewState.Intro.IntroType {
             return 404
         case .downloadReasonDialog, .setDefaultBrowserDialog, .aiIntroDialog:
             return 216
-        case .addToDockPromoDialog:
+        case .addToDockPromoDialog, .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog, .duckPlayerDialog:
             return 286
         case .chooseAppIconDialog:
             return 272
         case .chooseAddressBarPositionDialog:
             return 360
-        case .chooseSearchExperienceDialog:
+        case .chooseSearchExperienceDialog, .toggleInputModeDialog, .keepDuckAIDialog:
             return 294
         case .duckAIQueryDialog:
             return 294
@@ -271,7 +274,10 @@ private extension OnboardingIntroViewState.Intro.IntroType {
         switch self {
         case .startOnboardingDialog:
             return 320
-        case .downloadReasonDialog, .setDefaultBrowserDialog, .aiIntroDialog:
+        case .downloadReasonDialog,
+             .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
+             .toggleInputModeDialog, .keepDuckAIDialog, .duckPlayerDialog,
+             .setDefaultBrowserDialog, .aiIntroDialog:
             return 380
         case .addToDockPromoDialog:
             return 194

@@ -274,11 +274,37 @@ final class OnboardingIntroViewModel: ObservableObject {
         // action — otherwise we'd advance a second time and skip a step.
         guard currentIntroStep == .downloadReasonSelection else { return }
 
-        // TODO: pixel for the selected download reason.
+        // TODO: pixel for the selected download reason. https://app.asana.com/1/137249556945/task/1216200647629938
         let remainingSteps = onboardingManager.selectDownloadReason(reason)
         if let currentStepIndex = introSteps.firstIndex(of: currentIntroStep) {
             introSteps.insert(contentsOf: remainingSteps, at: currentStepIndex + 1)
         }
+        makeNextViewState()
+    }
+
+    // NA Experiment: per-step actions for the reason-tailored screens. They only advance for now;
+    // the UI task adds each screen's real behaviour (persisting the setting, pixels, etc.).
+    func searchPrivacySettingsContinueAction() {
+        makeNextViewState()
+    }
+
+    func aiSearchSettingsContinueAction() {
+        makeNextViewState()
+    }
+
+    func aiModelContinueAction() {
+        makeNextViewState()
+    }
+
+    func toggleInputModeContinueAction() {
+        makeNextViewState()
+    }
+
+    func keepDuckAIContinueAction() {
+        makeNextViewState()
+    }
+
+    func duckPlayerContinueAction() {
         makeNextViewState()
     }
 
@@ -380,6 +406,19 @@ private extension OnboardingIntroViewModel {
                         step: .hidden
                     )
                 )
+            // NA Experiment: reason-tailored steps. View bodies/content are built in the UI task.
+            case .searchPrivacySettingsSelection:
+                return .onboarding(.init(type: .searchPrivacySettingsDialog, step: stepInfo()))
+            case .aiSearchSettingsSelection:
+                return .onboarding(.init(type: .aiSearchSettingsDialog, step: stepInfo()))
+            case .aiModelSelection:
+                return .onboarding(.init(type: .aiModelDialog, step: stepInfo()))
+            case .toggleInputModeSelection:
+                return .onboarding(.init(type: .toggleInputModeDialog, step: stepInfo()))
+            case .keepDuckAISelection:
+                return .onboarding(.init(type: .keepDuckAIDialog, step: stepInfo()))
+            case .duckPlayerSelection:
+                return .onboarding(.init(type: .duckPlayerDialog, step: stepInfo()))
             case .setDefaultBrowser:
                 return .onboarding(
                     .init(
@@ -509,6 +548,19 @@ private extension OnboardingIntroViewModel {
             currentIntroStep = .addressBarPositionSelection
         case .searchExperienceSelection where introSteps.contains(.searchExperienceSelection):
             currentIntroStep = .searchExperienceSelection
+        // NA Experiment: reason-tailored steps.
+        case .searchPrivacySettingsSelection where introSteps.contains(.searchPrivacySettingsSelection):
+            currentIntroStep = .searchPrivacySettingsSelection
+        case .aiSearchSettingsSelection where introSteps.contains(.aiSearchSettingsSelection):
+            currentIntroStep = .aiSearchSettingsSelection
+        case .aiModelSelection where introSteps.contains(.aiModelSelection):
+            currentIntroStep = .aiModelSelection
+        case .toggleInputModeSelection where introSteps.contains(.toggleInputModeSelection):
+            currentIntroStep = .toggleInputModeSelection
+        case .keepDuckAISelection where introSteps.contains(.keepDuckAISelection):
+            currentIntroStep = .keepDuckAISelection
+        case .duckPlayerSelection where introSteps.contains(.duckPlayerSelection):
+            currentIntroStep = .duckPlayerSelection
         case .duckAIAnswerStep:
             break // handled separately by restorePendingDuckAIAnswerStepIfNeeded in MainViewController
         case .interludeDuckAI where introSteps.contains(.interlude(.duckAI)):
@@ -548,7 +600,10 @@ private extension OnboardingIntroViewModel {
         case .duckAIQueryDialog:
             pixelReporter.measureDuckAIQuerySelectionImpression()
         case .downloadReasonDialog:
-            break // TODO: Download Screen impression pixel.
+            break // TODO: Download Screen impression pixel. https://app.asana.com/1/137249556945/task/1216200647629938
+        case .searchPrivacySettingsDialog, .aiSearchSettingsDialog, .aiModelDialog,
+             .toggleInputModeDialog, .keepDuckAIDialog, .duckPlayerDialog:
+            break // TODO: impression pixels for the reason-tailored steps (UI task).
         }
     }
 

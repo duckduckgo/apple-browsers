@@ -646,8 +646,7 @@ struct OnboardingDownloadReasonExperimentTests {
         let tutorialSettings = makeTutorialSettings()
         tutorialSettings.onboardingDownloadReason = .blockAds
         let sut = makeManager(cohort: .treatment, tutorialSettings: tutorialSettings)
-        let expected: [OnboardingIntroStep] = [.introDialog(isReturningUser: false), .downloadReasonSelection]
-            + [.setDefaultBrowser, .addToDockPromo, .appIconSelection, .addressBarPositionSelection, .searchExperienceSelection]
+        let expected: [OnboardingIntroStep] = [.introDialog(isReturningUser: false), .downloadReasonSelection] + sut.selectDownloadReason(.blockAds)
 
         // THEN
         #expect(sut.onboardingSteps == expected)
@@ -682,6 +681,34 @@ struct OnboardingDownloadReasonExperimentTests {
 
         // THEN
         #expect(tutorialSettings.onboardingDownloadReason == reason)
+    }
+
+    @Test(
+        "selectDownloadReason returns the reason-tailored steps",
+        arguments: zip(
+            [
+                .browserPrivately,
+                .privateAIChat,
+                .noAI,
+                .blockAds
+            ] as [OnboardingDownloadReason],
+            [
+                [.setDefaultBrowser, .searchPrivacySettingsSelection, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
+                [.setDefaultBrowser, .aiModelSelection, .toggleInputModeSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
+                [.setDefaultBrowser, .aiSearchSettingsSelection, .keepDuckAISelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
+                [.setDefaultBrowser, .duckPlayerSelection, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
+            ] as [[OnboardingIntroStep]]
+        )
+    )
+    func selectDownloadReasonReturnsTailoredSteps(_ reason: OnboardingDownloadReason, _ expected: [OnboardingIntroStep]) {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment)
+
+        // WHEN
+        let result = sut.selectDownloadReason(reason)
+
+        // THEN
+        #expect(result == expected)
     }
 
     // MARK: - Eligibility (new installers, iPhone, en-US)

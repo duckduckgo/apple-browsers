@@ -158,6 +158,12 @@ enum OnboardingIntroStep: Equatable {
 // Mirror every new `RenderableStep` case here.
 extension OnboardingIntroStep {
     static let downloadReasonSelection: Self = .renderable(.downloadReasonSelection)
+    static let searchPrivacySettingsSelection: Self = .renderable(.searchPrivacySettingsSelection)
+    static let aiSearchSettingsSelection: Self = .renderable(.aiSearchSettingsSelection)
+    static let aiModelSelection: Self = .renderable(.aiModelSelection)
+    static let toggleInputModeSelection: Self = .renderable(.toggleInputModeSelection)
+    static let keepDuckAISelection: Self = .renderable(.keepDuckAISelection)
+    static let duckPlayerSelection: Self = .renderable(.duckPlayerSelection)
     static let setDefaultBrowser: Self = .renderable(.setDefaultBrowser)
     static let aiIntro: Self = .renderable(.aiIntro)
     static let addToDockPromo: Self = .renderable(.addToDockPromo)
@@ -176,6 +182,12 @@ extension OnboardingIntroStep {
     enum RenderableStep: Equatable {
         case introDialog(isReturningUser: Bool)
         case downloadReasonSelection // NA Experiment: Asks the user why they downloaded the app to tailor the remaining default-flow steps.
+        case searchPrivacySettingsSelection  // NA Experiment Search Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-90387&m=dev
+        case aiSearchSettingsSelection // NA Experiment AI Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=437-33717&m=dev
+        case aiModelSelection // NA Experiment AI Model Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-77761&m=dev
+        case toggleInputModeSelection // NA Experiment Omnibar Input Mode Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-76416&m=dev
+        case keepDuckAISelection // NA Experiment Duck.ai Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=437-33810&m=dev
+        case duckPlayerSelection // NA Experiment Duck Player Personalisation: https://www.figma.com/design/vsuCJP9OGykRkk1iZIU0ek/Mobile-Onboarding---Segmented?node-id=426-83427&m=dev
         case setDefaultBrowser
         case aiIntro
         case appIconSelection
@@ -203,6 +215,12 @@ extension OnboardingIntroStep {
         switch self {
         case .renderable(.introDialog): return nil
         case .renderable(.downloadReasonSelection): return .downloadReasonSelection
+        case .renderable(.searchPrivacySettingsSelection): return .searchPrivacySettingsSelection
+        case .renderable(.aiSearchSettingsSelection): return .aiSearchSettingsSelection
+        case .renderable(.aiModelSelection): return .aiModelSelection
+        case .renderable(.toggleInputModeSelection): return .toggleInputModeSelection
+        case .renderable(.keepDuckAISelection): return .keepDuckAISelection
+        case .renderable(.duckPlayerSelection): return .duckPlayerSelection
         case .renderable(.setDefaultBrowser): return .setDefaultBrowser
         case .renderable(.aiIntro): return .aiIntro
         case .renderable(.addToDockPromo): return .addToDockPromo
@@ -235,6 +253,12 @@ extension OnboardingIntroStep {
 enum OnboardingResumeStep: String {
     /// User reached the Download Screen but has not yet selected a download reason.
     case downloadReasonSelection
+    case searchPrivacySettingsSelection // NA Experiment: reason-tailored step checkpoints.
+    case aiSearchSettingsSelection // NA Experiment: reason-tailored step checkpoints.
+    case aiModelSelection // NA Experiment: reason-tailored step checkpoints.
+    case toggleInputModeSelection // NA Experiment: reason-tailored step checkpoints.
+    case keepDuckAISelection // NA Experiment: reason-tailored step checkpoints.
+    case duckPlayerSelection // NA Experiment: reason-tailored step checkpoints.
     case setDefaultBrowser = "browserComparison"
     case aiIntro = "aiComparison"
     case addToDockPromo
@@ -444,19 +468,21 @@ private extension OnboardingManager {
 
     /// The steps that follow the Download Screen for a given download reason.
     func remainingDefaultFlowSteps(for reason: OnboardingDownloadReason) -> [OnboardingIntroStep] {
-        // TODO: tailor the step set per download reason. For now it matches the standard default flow
+        let commonSteps: [OnboardingIntroStep] = [.addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection]
+
+        let personalisationSteps: [OnboardingIntroStep]
         switch reason {
         case .browserPrivately:
-            return defaultFlowSteps(isIphone: isIphone)// Return the linear steps for `.browserPrivately` variant
+            personalisationSteps = [.searchPrivacySettingsSelection, .searchExperienceSelection]
         case .privateAIChat:
-            return defaultFlowSteps(isIphone: isIphone) // Return the linear steps for `.privateAIChat` variant
+            personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]
         case .noAI:
-            return defaultFlowSteps(isIphone: isIphone) // Return the linear steps for `.noAI` variant
+            personalisationSteps = [.aiSearchSettingsSelection, .keepDuckAISelection]
         case .blockAds:
-            return defaultFlowSteps(isIphone: isIphone) // Return the linear steps for `.blockAds` variant
-        case .justExploring:
-            return defaultFlowSteps(isIphone: isIphone) // Return the linear steps for `.justExploring` variant
+            personalisationSteps = [.duckPlayerSelection, .searchExperienceSelection]
         }
+
+        return [.setDefaultBrowser] + personalisationSteps + commonSteps
     }
 
 }

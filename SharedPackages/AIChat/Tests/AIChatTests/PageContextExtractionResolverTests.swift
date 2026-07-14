@@ -48,6 +48,22 @@ final class PageContextExtractionResolverTests: XCTestCase {
         XCTAssertNil(resolver.resolve(pageContext: nonEmptyContext()))
     }
 
+    // MARK: - Reset on navigation
+
+    func testWhenResetThenPendingCollectionsCleared() {
+        var resolver = PageContextExtractionResolver()
+        resolver.requested(trigger: .navigation)
+        resolver.requested(trigger: .userRequest)
+        XCTAssertTrue(resolver.hasPendingCollections)
+
+        resolver.reset()
+
+        XCTAssertFalse(resolver.hasPendingCollections)
+        // A previous page's result arriving after reset has nothing to pair with, so it can't
+        // mis-attribute the next page's telemetry.
+        XCTAssertNil(resolver.resolve(pageContext: nonEmptyContext()))
+    }
+
     // MARK: - Outcome derivation
 
     func testWhenNonEmptyContextThenSuccess() {

@@ -44,6 +44,13 @@ public struct PageContextExtractionResolver {
         pending.append(PendingCollection(trigger: trigger, startedAt: startedAt))
     }
 
+    /// Drops all outstanding collects without emitting any resolution. Call on navigation so a
+    /// previous page's slow or never-resolving collect can't pair (FIFO) with the next page's
+    /// result and mis-attribute its trigger/latency/outcome.
+    public mutating func reset() {
+        pending.removeAll()
+    }
+
     /// Returns `nil` when no request is outstanding (a duplicate or a collection we didn't initiate).
     public mutating func resolve(pageContext: AIChatPageContextData?, now: DispatchTime = .now()) -> Resolution? {
         guard !pending.isEmpty else { return nil }

@@ -50,9 +50,17 @@ final class PageContextTabExtension {
 
     private var extractionResolver = PageContextExtractionResolver()
 
-    /// How long to wait for a `collect()` result before reporting it as `.timeout`. Matches
-    /// `PageContextUserScript.collectAndWait`'s default.
-    private static let collectionTimeout: TimeInterval = 5
+    /// Safety-net window for a fire-and-forget `collect()` whose result never arrives (hung JS,
+    /// torn-down page). After it, `scheduleCollectionTimeout` fires `.timeout` and drops the pending
+    /// entry so the queue can't leak.
+    ///
+    /// Kept deliberately generous: a slow collect that resolves *after* this window is still
+    /// delivered to Duck.ai via `handle`, but its pending entry is already gone, so `resolve` finds
+    /// no match and it's mis-recorded as a `.timeout` with no offsetting success pixel. A high value
+    /// makes that late-success mislabeling rare while still bounding the queue (navigation also
+    /// clears it via `extractionResolver.reset()`). Independent of `collectAndWait`'s 5s default —
+    /// that's a separate, synchronous tab-picker path.
+    private static let collectionTimeout: TimeInterval = 30
 
     private let aiChatSessionStore: AIChatSessionStoring
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
@@ -150,6 +158,10 @@ final class PageContextTabExtension {
                     self.cachedPageContext = nil
                     // Selections are tied to the page they were made on — drop any not-yet-flushed ones.
                     self.pendingSelectionContexts = []
+                    // Drop the previous page's outstanding collects so a slow or never-resolving
+                    // collect can't pair (FIFO) with this page's result and mis-attribute its
+                    // extraction telemetry (trigger/latency/outcome).
+                    self.extractionResolver.reset()
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()

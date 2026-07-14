@@ -64,8 +64,15 @@ public final class VPNNotificationsPresenter: NSObject, VPNNotificationsPresenti
 
     // MARK: - Setup
 
-    public func requestAuthorization() {
+    /// Registers this presenter as the notification center's delegate so taps on delivered
+    /// notifications are routed to `didReceive`. Must be called before the app finishes launching,
+    /// and has no permission-prompt side effect. Safe to call repeatedly.
+    public func registerAsNotificationCenterDelegate() {
         userNotificationCenter.delegate = self
+    }
+
+    public func requestAuthorization() {
+        registerAsNotificationCenterDelegate()
         requestAlertAuthorization()
     }
 

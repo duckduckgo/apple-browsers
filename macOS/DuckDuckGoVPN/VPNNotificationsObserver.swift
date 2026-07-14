@@ -74,6 +74,10 @@ final class VPNNotificationsObserver {
     func startObservingVPNStatusChanges() {
         Logger.networkProtection.log("Register with sysex")
 
+        // Register the notification-center delegate at launch so taps on VPN notifications reach
+        // `didReceive`. The permission prompt stays gated on `.serverSelected` below.
+        notificationsPresenter.registerAsNotificationCenterDelegate()
+
         distributedNotificationCenter.publisher(for: .showIssuesStartedNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in

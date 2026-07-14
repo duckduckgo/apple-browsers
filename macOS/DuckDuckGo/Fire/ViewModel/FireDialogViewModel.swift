@@ -158,7 +158,9 @@ final class FireDialogViewModel: ObservableObject {
          settings: (any KeyedStoring<FireDialogViewSettings>)? = nil,
          scopeCookieDomains: Set<String>? = nil,
          scopeVisits: [Visit]? = nil,
-         tld: TLD) {
+         tld: TLD,
+         windowControllersManager: WindowControllersManagerProtocol,
+         dataClearingPreferences: DataClearingPreferences) {
 
         self.fireViewModel = fireViewModel
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -167,6 +169,8 @@ final class FireDialogViewModel: ObservableObject {
         self.featureFlagger = featureFlagger
         self.historyCoordinating = historyCoordinating
         self.aiChatHistoryCleaner = aiChatHistoryCleaner
+        self.windowControllersManager = windowControllersManager
+        self.dataClearingPreferences = dataClearingPreferences
 
         self.tld = tld
         self.mode = mode
@@ -211,6 +215,8 @@ final class FireDialogViewModel: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let historyCoordinating: HistoryCoordinating
     private let aiChatHistoryCleaner: AIChatHistoryCleaning
+    private let windowControllersManager: WindowControllersManagerProtocol
+    private let dataClearingPreferences: DataClearingPreferences
     let tld: TLD
     let mode: Mode
     private let scopeVisits: [Visit]?
@@ -422,6 +428,41 @@ final class FireDialogViewModel: ObservableObject {
     }
 
     // MARK: - More Options menu
+
+    /// Opens a new Fire window and dismisses the dialog.
+    func openNewFireWindow() {
+        dismissDialog()
+        windowControllersManager.openNewWindow(burnerMode: BurnerMode(isBurner: true))
+    }
+
+    /// Presents the Manage Fireproof Sites dialog stacked above the Fire dialog, then refreshes the scope.
+    func showManageFireproofSites() {
+        Task { @MainActor in
+            await dataClearingPreferences.presentManageFireproofSitesDialog()
+            // Refresh selectable/fireproofed lists in case fireproofing changed.
+            updateItems(for: clearingOption)
+        }
+    }
+
+    /// Dismisses the dialog and opens the per-site history/deletion view.
+    func deleteIndividualSites() {
+        dismissDialog()
+        windowControllersManager.lastKeyMainWindowController?
+            .mainViewController
+            .browserTabViewController
+            .openNewTab(with: .history(pane: .allSites))
+    }
+
+    /// Dismisses the dialog and opens Settings → Data Clearing.
+    func openDataDeletionSettings() {
+        dismissDialog()
+        windowControllersManager.showTab(with: .settings(pane: .dataClearing))
+    }
+
+    private func dismissDialog() {
+        guard let window = windowControllersManager.lastKeyMainWindowController?.window else { return }
+        window.endSheet(window.attachedSheet ?? window)
+    }
 
     /// Host of the currently selected tab's URL, or `nil` when it can't be fireproofed.
     private var fireproofableCurrentHost: String? {

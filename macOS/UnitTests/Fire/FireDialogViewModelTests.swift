@@ -40,6 +40,7 @@ final class FireDialogViewModelTests: XCTestCase {
     private var fireViewModel: FireViewModel!
     private var fireCoordinator: FireCoordinator!
     private var windowControllersManager: WindowControllersManagerMock!
+    private var dataClearingPreferences: DataClearingPreferences!
     private var aiChatHistoryCleaner: MockAIChatHistoryCleaner!
     private var schemeHandler: TestSchemeHandler!
 
@@ -56,6 +57,12 @@ final class FireDialogViewModelTests: XCTestCase {
         let permissionManager = PermissionManagerMock()
         let faviconManager = FaviconManagerMock()
         let featureFlagger = MockFeatureFlagger()
+
+        dataClearingPreferences = DataClearingPreferences(fireproofDomains: fireproofDomains,
+                                                          faviconManager: faviconManager,
+                                                          windowControllersManager: windowControllersManager,
+                                                          featureFlagger: featureFlagger,
+                                                          aiChatHistoryCleaner: aiChatHistoryCleaner)
 
         fire = Fire(cacheManager: manager,
                     historyCoordinating: historyCoordinator,
@@ -258,6 +265,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: faviconManager,
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // Validate openNewWindow NOT called (window is kept open with new tab)
@@ -327,6 +336,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: faviconManager,
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         viewModel.clearingOption = .currentWindow
@@ -362,6 +373,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
         vm.clearingOption = .currentTab
 
@@ -423,6 +436,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
         vm.clearingOption = .currentWindow
 
@@ -485,6 +500,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
         vm.clearingOption = .currentTab
 
@@ -535,6 +552,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
         vm.clearingOption = .currentWindow
 
@@ -584,6 +603,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
         vm.clearingOption = .allData
 
@@ -640,6 +661,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
         vm.clearingOption = .allData
 
@@ -696,6 +719,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
         vm.clearingOption = .currentTab
 
@@ -756,6 +781,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
         vm.clearingOption = .currentWindow
 
@@ -817,6 +844,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
         vm.clearingOption = .allData
 
@@ -876,6 +905,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // Validate openNewWindow NOT called (window is kept open with new tab)
@@ -942,6 +973,8 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // Validate openNewWindow NOT called (window is kept open with new tab)
@@ -1012,6 +1045,8 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // Initial update done in init for .allData
@@ -1398,7 +1433,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             scopeVisits: scopeVisits,  // Provided by coordinator
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // Verify: historyVisits uses provided scopeVisits
@@ -1435,7 +1472,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertTrue(viewModel.shouldShowChatHistoryToggle)
@@ -1467,7 +1506,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
-            tld: Application.appDelegate.tld
+            tld: Application.appDelegate.tld,
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // User makes selection to clear chat history.
@@ -1500,7 +1541,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // Check precondition
@@ -1527,7 +1570,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             clearingOption: .currentTab,
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // Check precondition (false for current tab)
@@ -1560,7 +1605,9 @@ final class FireDialogViewModelTests: XCTestCase {
             clearingOption: .allData,
             mode: .historyView(query: .rangeFilter(.today)),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertFalse(viewModel.shouldShowChatHistoryToggle)
@@ -1584,7 +1631,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         viewModel1.clearingOption = .allData
@@ -1601,7 +1650,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertEqual(viewModel2.clearingOption, .allData, "clearingOption should be loaded from mock settings")
@@ -1621,7 +1672,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertEqual(viewModel3.clearingOption, .currentWindow, "Updated clearingOption should persist in mock settings")
@@ -1643,7 +1696,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         viewModel1.includeTabsAndWindows = false
@@ -1659,7 +1714,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertFalse(viewModel2.includeTabsAndWindows, "includeTabsAndWindows should be loaded from mock settings")
@@ -1677,7 +1734,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertTrue(viewModel3.includeTabsAndWindows, "Updated includeTabsAndWindows should persist in mock settings")
@@ -1699,7 +1758,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         viewModel1.includeHistory = false
@@ -1715,7 +1776,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertFalse(viewModel2.includeHistory, "includeHistory should be loaded from mock settings")
@@ -1733,7 +1796,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertTrue(viewModel3.includeHistory, "Updated includeHistory should persist in mock settings")
@@ -1755,7 +1820,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         viewModel1.includeCookiesAndSiteData = false
@@ -1771,7 +1838,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertFalse(viewModel2.includeCookiesAndSiteData, "includeCookiesAndSiteData should be loaded from mock settings")
@@ -1789,7 +1858,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertTrue(viewModel3.includeCookiesAndSiteData, "Updated includeCookiesAndSiteData should persist in mock settings")
@@ -1812,7 +1883,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         viewModel1.includeChatHistorySetting = true
@@ -1829,7 +1902,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertTrue(viewModel2.includeChatHistorySetting, "includeChatHistorySetting should be loaded from mock settings")
@@ -1848,7 +1923,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertFalse(viewModel3.includeChatHistorySetting, "Updated includeChatHistorySetting should persist in mock settings")
@@ -1870,7 +1947,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // Change all settings
@@ -1897,7 +1976,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // Verify all settings were loaded from mock settings
@@ -1936,7 +2017,9 @@ final class FireDialogViewModelTests: XCTestCase {
             includeCookiesAndSiteData: true,
             includeChatHistory: false,
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // Verify explicit parameters override mock settings
@@ -1963,7 +2046,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         // Verify default values
@@ -1994,7 +2079,9 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             featureFlagger: featureFlagger,
             settings: mockSettings,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertEqual(viewModel.clearingOption, .allData, "currentWindow should fold to allData when the simplified dialog is enabled")
@@ -2018,7 +2105,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: featureFlagger,
             clearingOption: .currentWindow,
             settings: MockFireDialogViewSettings(),
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertEqual(viewModel.clearingOption, .allData, "currentWindow should fold to allData when the simplified dialog is enabled")
@@ -2041,7 +2130,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: featureFlagger,
             clearingOption: .currentWindow,
             settings: MockFireDialogViewSettings(),
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertEqual(viewModel.clearingOption, .currentWindow, "currentWindow should be preserved when the simplified dialog is disabled")
@@ -2064,7 +2155,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: featureFlagger,
             clearingOption: .currentTab,
             settings: MockFireDialogViewSettings(),
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertEqual(viewModel.clearingOption, .currentTab, "currentTab should be preserved when the simplified dialog is enabled")
@@ -2087,7 +2180,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: featureFlagger,
             clearingOption: .allData,
             settings: MockFireDialogViewSettings(),
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
 
         XCTAssertEqual(viewModel.clearingOption, .allData, "allData should be preserved when the simplified dialog is enabled")
@@ -2110,7 +2205,9 @@ final class FireDialogViewModelTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             clearingOption: clearingOption,
             scopeCookieDomains: scopeCookieDomains,
-            tld: TLD()
+            tld: TLD(),
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences
         )
     }
 

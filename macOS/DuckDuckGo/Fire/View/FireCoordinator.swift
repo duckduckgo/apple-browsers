@@ -245,7 +245,9 @@ extension FireCoordinator {
             settings: settings,
             scopeCookieDomains: scopeCookieDomains,
             scopeVisits: scopeVisits,
-            tld: tld
+            tld: tld,
+            windowControllersManager: self.windowControllersManager,
+            dataClearingPreferences: Application.appDelegate.dataClearingPreferences
         )
 
         let response: FireDialogView.Response = await withCheckedContinuation { (continuation: CheckedContinuation<FireDialogView.Response, Never>) in

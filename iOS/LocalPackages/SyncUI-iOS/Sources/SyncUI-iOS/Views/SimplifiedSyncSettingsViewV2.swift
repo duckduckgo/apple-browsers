@@ -56,6 +56,11 @@ public struct SimplifiedSyncSettingsViewV2: View {
         .animation(.easeInOut(duration: 0.3), value: model.devices.isEmpty)
         .applyListStyle()
         .environmentObject(model)
+        .onChange(of: model.isSyncEnabled) { isEnabled in
+            if !isEnabled {
+                selectedDevice = nil
+            }
+        }
         .alert(isPresented: $model.shouldShowPasscodeRequiredAlert) {
             Alert(
                 title: Text(UserText.syncPasscodeRequiredAlertTitle),

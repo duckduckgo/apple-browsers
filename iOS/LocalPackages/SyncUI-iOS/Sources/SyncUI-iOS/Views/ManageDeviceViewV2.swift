@@ -32,6 +32,7 @@ struct ManageDeviceViewV2: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var isShowingRemoveConfirmation = false
+    @State private var lastSavedDeviceName: String
 
     private let device: SyncSettingsViewModel.Device
 
@@ -40,6 +41,7 @@ struct ManageDeviceViewV2: View {
         self.model = model
         self.device = device
         _editModel = StateObject(wrappedValue: model.createEditDeviceModel(device))
+        _lastSavedDeviceName = State(initialValue: device.name)
     }
 
     var body: some View {
@@ -66,14 +68,14 @@ struct ManageDeviceViewV2: View {
                     dismiss()
                 }
             }
+            .onDisappear {
+                saveDeviceNameIfNeeded()
+            }
         }
     }
 
     private var backButton: some View {
         Button {
-            if device.isThisDevice {
-                editModel.save()
-            }
             dismiss()
         } label: {
             Image(systemName: "chevron.backward")
@@ -128,7 +130,7 @@ struct ManageDeviceViewV2: View {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .submitLabel(.done)
                 .onSubmit {
-                    editModel.save()
+                    saveDeviceNameIfNeeded()
                 }
                 .accessibility(identifier: "deviceName")
         }
@@ -161,6 +163,15 @@ struct ManageDeviceViewV2: View {
         }
     }
 
+    private func saveDeviceNameIfNeeded() {
+        guard device.isThisDevice,
+              model.isSyncEnabled,
+              editModel.name != lastSavedDeviceName else { return }
+
+        lastSavedDeviceName = editModel.name
+        editModel.save()
+    }
+
     private var removeSection: some View {
         Section {
             Button(role: .destructive) {
@@ -187,7 +198,7 @@ struct ManageDeviceViewV2: View {
     }
 }
 
-extension SyncSettingsViewModel.Device {
+private extension SyncSettingsViewModel.Device {
 
     var syncedIllustrationName: String {
         type == "desktop" ? "Desktop-Sync-Added-128" : "Mobile-Sync-Added-128"

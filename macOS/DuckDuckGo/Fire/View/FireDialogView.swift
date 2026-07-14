@@ -297,7 +297,7 @@ struct FireDialogView: ModalView {
                     viewModel.includeHistory = $0
                 },
                 isEnabled: isIncludeHistoryEnabled,
-                roundedCorners: viewModel.mode.shouldShowCloseTabsToggle ? .none : .top,
+                roundedCorners: .top,
                 toggleId: "FireDialogView.historyToggle"
             )
             .accessibilityHidden(isShowingSitesOverlay)

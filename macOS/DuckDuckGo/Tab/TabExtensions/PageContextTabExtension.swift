@@ -350,7 +350,7 @@ final class PageContextTabExtension {
         }
         pendingTrigger = nil
         pendingCollectStartedAt = nil
-        Logger.aiChat.log("📊 PageContext extraction outcome: \(String(describing: outcome), privacy: .public) trigger=\(trigger.rawValue, privacy: .public) latency=\(latency?.rawValue ?? "nil", privacy: .public)")
+        Logger.aiChat.debug("📊 PageContext extraction outcome: \(String(describing: outcome), privacy: .public) trigger=\(trigger.rawValue, privacy: .public) latency=\(latency?.rawValue ?? "nil", privacy: .public)")
         extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency)
     }
 
@@ -359,18 +359,18 @@ final class PageContextTabExtension {
             return
         }
         if let reason = preventedAttachReason(for: url) {
-            Logger.aiChat.log("🚫 PageContext gate: prevented attach (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
+            Logger.aiChat.debug("🚫 PageContext gate: prevented attach (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
             deliverPreventedContext(for: url, reason: reason, trigger: trigger)
             return
         }
         guard let pageContextUserScript, webView != nil else {
-            Logger.aiChat.log("⚠️ PageContext gate: no webview/user script, cannot collect host=\(url.host ?? "nil", privacy: .public)")
+            Logger.aiChat.debug("⚠️ PageContext gate: no webview/user script, cannot collect host=\(url.host ?? "nil", privacy: .public)")
             extractionPixelHandler.fire(.failure(.noWebView), trigger: trigger, latency: nil)
             return
         }
         pendingTrigger = trigger
         pendingCollectStartedAt = DispatchTime.now()
-        Logger.aiChat.log("✅ PageContext gate: attachable, collecting host=\(url.host ?? "nil", privacy: .public) trigger=\(trigger.rawValue, privacy: .public)")
+        Logger.aiChat.debug("✅ PageContext gate: attachable, collecting host=\(url.host ?? "nil", privacy: .public) trigger=\(trigger.rawValue, privacy: .public)")
         pageContextUserScript.collect()
     }
 
@@ -549,7 +549,7 @@ final class PageContextTabExtension {
             return
         }
         if let reason = preventedAttachReason(for: url) {
-            Logger.aiChat.log("🚫 PageContext gate (signals-only): prevented (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
+            Logger.aiChat.debug("🚫 PageContext gate (signals-only): prevented (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
             deliverPreventedContext(for: url, reason: reason, trigger: .tabContent)
             return
         }
@@ -611,7 +611,7 @@ extension PageContextTabExtension: NavigationResponder {
     func decidePolicy(for navigationResponse: NavigationResponse) async -> NavigationResponsePolicy? {
         guard !isLoadedInSidebar, navigationResponse.isForMainFrame else { return .next }
         lastMainFrameResponse = (navigationResponse.url, navigationResponse.response.mimeType)
-        Logger.aiChat.log("📄 PageContext MIME captured: \(navigationResponse.response.mimeType ?? "nil", privacy: .public) host=\(navigationResponse.url.host ?? "nil", privacy: .public)")
+        Logger.aiChat.debug("📄 PageContext MIME captured: \(navigationResponse.response.mimeType ?? "nil", privacy: .public) host=\(navigationResponse.url.host ?? "nil", privacy: .public)")
         return .next
     }
 }

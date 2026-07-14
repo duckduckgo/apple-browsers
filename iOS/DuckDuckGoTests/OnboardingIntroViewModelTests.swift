@@ -1415,8 +1415,8 @@ extension OnboardingIntroViewModelTests {
 
     func testWhenCurrentStepIsDownloadReasonThenViewStateIsDownloadReasonDialogWithHiddenProgress() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReason]
-        let sut = makeSUT(currentOnboardingStep: .downloadReason)
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection]
+        let sut = makeSUT(currentOnboardingStep: .downloadReasonSelection)
 
         // WHEN
         sut.onAppear()
@@ -1427,9 +1427,9 @@ extension OnboardingIntroViewModelTests {
 
     func testWhenSelectDownloadReasonThenPersistsReasonSplicesRemainingStepsAndAdvances() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReason]
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection]
         onboardingManagerMock.stubbedRemainingSteps = [.setDefaultBrowser, .appIconSelection]
-        let sut = makeSUT(currentOnboardingStep: .downloadReason)
+        let sut = makeSUT(currentOnboardingStep: .downloadReasonSelection)
         sut.onAppear()
 
         // WHEN
@@ -1444,7 +1444,7 @@ extension OnboardingIntroViewModelTests {
 
     func testWhenSelectDownloadReasonIsCalledOffTheDownloadScreenThenItIsANoOp() {
         // GIVEN — already advanced past the Download Screen (e.g. a repeated tap)
-        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReason, .setDefaultBrowser]
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection, .setDefaultBrowser]
         let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
         sut.onAppear()
         let stateBefore = sut.state
@@ -1459,10 +1459,10 @@ extension OnboardingIntroViewModelTests {
 
     func testWhenResumeStepIsDownloadReasonThenRestoresToDownloadReasonStep() {
         // GIVEN
-        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReason]
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection]
         let resumeStore = MockKeyValueStore()
         let keyedResumeStore: any KeyedStoring<OnboardingStoringKeys> = resumeStore.keyedStoring()
-        keyedResumeStore.resumeStep = .downloadReason
+        keyedResumeStore.resumeStep = .downloadReasonSelection
         let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false), resumeStepStore: resumeStore)
 
         // WHEN

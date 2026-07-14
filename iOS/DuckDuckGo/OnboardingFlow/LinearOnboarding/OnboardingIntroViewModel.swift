@@ -270,9 +270,9 @@ final class OnboardingIntroViewModel: ObservableObject {
     /// resulting steps, and advances. Called from the Download Screen's primary CTA.
     func selectDownloadReasonAction(_ reason: OnboardingDownloadReason) {
         // Only valid on the Download Screen. A repeated tap is expected and benign (after the first
-        // tap we've already advanced past `.downloadReason`), so short-circuit the whole action —
-        // otherwise we'd advance a second time and skip a step.
-        guard currentIntroStep == .downloadReason else { return }
+        // tap we've already advanced past `.downloadReasonSelection`), so short-circuit the whole
+        // action — otherwise we'd advance a second time and skip a step.
+        guard currentIntroStep == .downloadReasonSelection else { return }
 
         // TODO: pixel for the selected download reason.
         let remainingSteps = onboardingManager.selectDownloadReason(reason)
@@ -373,7 +373,7 @@ private extension OnboardingIntroViewModel {
                         step: .hidden
                     )
                 )
-            case .downloadReason:
+            case .downloadReasonSelection:
                 return .onboarding(
                     .init(
                         type: .downloadReasonDialog(content: contentProvider.downloadReasonContent),
@@ -495,8 +495,8 @@ private extension OnboardingIntroViewModel {
             }
             currentIntroStep = .duckAIQuerySelection
 
-        case .downloadReason where introSteps.contains(.downloadReason):
-            currentIntroStep = .downloadReason
+        case .downloadReasonSelection where introSteps.contains(.downloadReasonSelection):
+            currentIntroStep = .downloadReasonSelection
         case .setDefaultBrowser where introSteps.contains(.setDefaultBrowser):
             currentIntroStep = .setDefaultBrowser
         case .aiIntro where introSteps.contains(.aiIntro):

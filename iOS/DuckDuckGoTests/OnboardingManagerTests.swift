@@ -528,7 +528,7 @@ struct OnboardingStepsForConfiguredFlow {
     func resumeStepMappingIsCorrect() {
         #expect(OnboardingIntroStep.introDialog(isReturningUser: false).resumeStep == nil)
         #expect(OnboardingIntroStep.introDialog(isReturningUser: true).resumeStep == nil)
-        #expect(OnboardingIntroStep.downloadReason.resumeStep == .downloadReason)
+        #expect(OnboardingIntroStep.downloadReasonSelection.resumeStep == .downloadReasonSelection)
         #expect(OnboardingIntroStep.setDefaultBrowser.resumeStep == .setDefaultBrowser)
         #expect(OnboardingIntroStep.aiIntro.resumeStep == .aiIntro)
         #expect(OnboardingIntroStep.addToDockPromo.resumeStep == .addToDockPromo)
@@ -543,7 +543,7 @@ struct OnboardingStepsForConfiguredFlow {
     func countsTowardProgressExcludesNonProgressSteps() {
         #expect(OnboardingIntroStep.introDialog(isReturningUser: false).countsTowardProgress == false)
         #expect(OnboardingIntroStep.interlude(.duckAI).countsTowardProgress == false)
-        #expect(OnboardingIntroStep.downloadReason.countsTowardProgress == false)
+        #expect(OnboardingIntroStep.downloadReasonSelection.countsTowardProgress == false)
         #expect(OnboardingIntroStep.setDefaultBrowser.countsTowardProgress == true)
         #expect(OnboardingIntroStep.aiIntro.countsTowardProgress == true)
         #expect(OnboardingIntroStep.addToDockPromo.countsTowardProgress == true)
@@ -633,7 +633,7 @@ struct OnboardingDownloadReasonExperimentTests {
         let sut = makeManager(cohort: .treatment)
 
         // THEN
-        #expect(sut.onboardingSteps == [.introDialog(isReturningUser: false), .downloadReason])
+        #expect(sut.onboardingSteps == [.introDialog(isReturningUser: false), .downloadReasonSelection])
     }
 
     @Test("Treatment rebuilds the full flow once a reason is persisted (resume)")
@@ -642,7 +642,7 @@ struct OnboardingDownloadReasonExperimentTests {
         let tutorialSettings = makeTutorialSettings()
         tutorialSettings.onboardingDownloadReason = .blockAds
         let sut = makeManager(cohort: .treatment, tutorialSettings: tutorialSettings)
-        let expected: [OnboardingIntroStep] = [.introDialog(isReturningUser: false), .downloadReason]
+        let expected: [OnboardingIntroStep] = [.introDialog(isReturningUser: false), .downloadReasonSelection]
             + [.setDefaultBrowser, .addToDockPromo, .appIconSelection, .addressBarPositionSelection, .searchExperienceSelection]
 
         // THEN

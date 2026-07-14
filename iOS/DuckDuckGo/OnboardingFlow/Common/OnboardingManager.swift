@@ -154,7 +154,7 @@ enum OnboardingIntroStep: Equatable {
 // Ergonomic factories so call sites can write `.setDefaultBrowser` instead of `.renderable(.setDefaultBrowser)`.
 // Mirror every new `RenderableStep` case here.
 extension OnboardingIntroStep {
-    static let downloadReason: Self = .renderable(.downloadReason)
+    static let downloadReasonSelection: Self = .renderable(.downloadReasonSelection)
     static let setDefaultBrowser: Self = .renderable(.setDefaultBrowser)
     static let aiIntro: Self = .renderable(.aiIntro)
     static let addToDockPromo: Self = .renderable(.addToDockPromo)
@@ -172,7 +172,7 @@ extension OnboardingIntroStep {
 
     enum RenderableStep: Equatable {
         case introDialog(isReturningUser: Bool)
-        case downloadReason // NA Experiment: Asks the user why they downloaded the app to tailor the remaining default-flow steps.
+        case downloadReasonSelection // NA Experiment: Asks the user why they downloaded the app to tailor the remaining default-flow steps.
         case setDefaultBrowser
         case aiIntro
         case appIconSelection
@@ -199,7 +199,7 @@ extension OnboardingIntroStep {
     var resumeStep: OnboardingResumeStep? {
         switch self {
         case .renderable(.introDialog): return nil
-        case .renderable(.downloadReason): return .downloadReason
+        case .renderable(.downloadReasonSelection): return .downloadReasonSelection
         case .renderable(.setDefaultBrowser): return .setDefaultBrowser
         case .renderable(.aiIntro): return .aiIntro
         case .renderable(.addToDockPromo): return .addToDockPromo
@@ -220,7 +220,7 @@ extension OnboardingIntroStep {
     /// current/total step counts shown in the progress bar.
     var countsTowardProgress: Bool {
         switch self {
-        case .renderable(.introDialog), .interlude, .renderable(.downloadReason):
+        case .renderable(.introDialog), .renderable(.downloadReasonSelection), .interlude:
             return false
         default:
             return true
@@ -230,8 +230,8 @@ extension OnboardingIntroStep {
 
 /// Persisted checkpoint allowing the onboarding flow to resume after an app relaunch.
 enum OnboardingResumeStep: String {
-    /// User reached the Motivation Screen but has not yet selected a download reason.
-    case downloadReason
+    /// User reached the Download Screen but has not yet selected a download reason.
+    case downloadReasonSelection
     case setDefaultBrowser = "browserComparison"
     case aiIntro = "aiComparison"
     case addToDockPromo
@@ -432,9 +432,9 @@ private extension OnboardingManager {
     /// when resumed after a relaunch.
     func downloadReasonTreatmentSteps() -> [OnboardingIntroStep] {
         guard let reason = tutorialSettings.onboardingDownloadReason else {
-            return [.downloadReason]
+            return [.downloadReasonSelection]
         }
-        return [.downloadReason] + remainingDefaultFlowSteps(for: reason)
+        return [.downloadReasonSelection] + remainingDefaultFlowSteps(for: reason)
     }
 
     /// The steps that follow the Download Screen for a given download reason.

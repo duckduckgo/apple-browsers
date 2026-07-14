@@ -8993,7 +8993,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo wird versuchen, die privatesten Einstellungen zu wählen und diese Pop-ups für dich auszublenden."
+            "value" : "DuckDuckGo kann Cookie-Einstellungen automatisch verwalten, um die Privatsphäre zu maximieren, Cookies zu minimieren und diese Pop-ups zu schließen."
           }
         },
         "en" : {
@@ -9005,43 +9005,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo intentará seleccionar la configuración más privada disponible y ocultar estas ventanas emergentes por ti."
+            "value" : "DuckDuckGo puede gestionar automáticamente tus preferencias de cookies para maximizar la privacidad, minimizar las cookies y cerrar estas ventanas emergentes."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo essaiera de sélectionner les paramètres de confidentialité les plus élevés et de masquer ces fenêtres contextuelles pour vous."
+            "value" : "DuckDuckGo peut gérer automatiquement les préférences en matière de cookies pour maximiser la confidentialité, minimiser les cookies et fermer ces fenêtres contextuelles."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo cercherà di selezionare le impostazioni con la massima privacy e nasconderà questi popup per te."
+            "value" : "DuckDuckGo può gestire automaticamente le preferenze sui cookie per massimizzare la privacy, ridurre al minimo i cookie e chiudere questi popup."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo zal proberen de meest privacyvriendelijke instellingen te selecteren en deze pop-ups voor je verbergen."
+            "value" : "DuckDuckGo kan automatisch je cookievoorkeuren beheren om je privacy te maximaliseren, het aantal cookies te minimaliseren en deze pop-ups te sluiten."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo spróbuje wybrać najbardziej prywatne dostępne ustawienia i ukryć te wyskakujące okienka."
+            "value" : "DuckDuckGo może automatycznie zarządzać preferencjami dotyczącymi plików cookie, aby zmaksymalizować prywatność, zminimalizować liczbę plików cookie i zamknąć te wyskakujące okienka."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O DuckDuckGo vai tentar selecionar as definições mais privadas disponíveis e ocultar pop-ups."
+            "value" : "O DuckDuckGo pode gerir automaticamente as preferências de cookies para maximizar a privacidade, minimizar os cookies e fechar estes pop-ups."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo по возможности откажется от куки-файлов и скроет подобные окна."
+            "value" : "DuckDuckGo может автоматически управлять настройками файлов cookie, чтобы обеспечить максимальную конфиденциальность, минимизировать использование cookie и закрывать соответствующие всплывающие окна."
           }
         }
       }
@@ -22653,13 +22653,61 @@
       }
     },
     "cookie-popup-protection.opt-in.badge" : {
-      "comment" : "Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header",
+      "comment" : "Small 'NEW' badge shown in the titlebar of the Cookie Pop-up Protection opt-in dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neu"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "New"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuw"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowe"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новое"
           }
         }
       }
@@ -22668,10 +22716,58 @@
       "comment" : "Confirm button in the Cookie Pop-up Protection opt-in dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestätigen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Confirm"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conferma"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevestigen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potwierdź"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подтвердить"
           }
         }
       }
@@ -22680,10 +22776,58 @@
       "comment" : "Body of the opt-in dialog when cookie pop-up protection is off",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir werden versuchen, die strengsten verfügbaren Cookie-Einstellungen auszuwählen und diese für dich zu deaktivieren. Falls es keine Opt-out-Möglichkeit gibt, ersparen wir dir einen Klick und akzeptieren diese Cookies für dich."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intentaremos seleccionar las opciones de cookies más privadas disponibles y cerrarlas por ti. Si no permiten rechazarlas, te ahorraremos un clic y aceptaremos estas cookies por ti."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous nous efforcerons de sélectionner les options de cookies les plus respectueuses de la vie privée et de les désactiver pour vous. Si aucune option de désactivation n'est proposée, nous vous épargnerons un clic et accepterons ces cookies à votre place."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cercheremo di selezionare le opzioni sui cookie più riservate disponibili e di chiuderle per te. Se non sono previste opzioni di rifiuto, ti risparmieremo un clic accettando i cookie al posto tuo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We proberen de meest privacyvriendelijke cookie-opties te selecteren en deze voor je te sluiten. Als afmelden niet mogelijk is, besparen we je een klik en accepteren we deze cookies voor je."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Postaramy się wybrać najbardziej prywatne dostępne opcje plików cookie i zamknąć je za Ciebie. Jeśli nie mają opcji rezygnacji, zaoszczędzimy Ci kliknięcia i zaakceptujemy te pliki cookie za Ciebie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vamos tentar selecionar as opções de cookies mais privadas disponíveis e fechá-las por ti. Se não tiverem opções de exclusão, vamos poupar-te um clique e aceitar estes cookies por ti."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы постараемся выбрать максимально конфиденциальные настройки файлов cookie и закроем эти окна за вас. Если во всплывающих окнах нет возможности отказаться от отслеживания, мы сэкономим ваше время и примем эти файлы cookie за вас."
           }
         }
       }
@@ -22692,10 +22836,58 @@
       "comment" : "Primary option when cookie pop-up protection is off",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwalte oder akzeptiere Cookies für mich"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Manage or accept cookies for me"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestionar o aceptar las cookies por mí"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gérer ou accepter les cookies à ma place"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestisci o accetta i cookie per me"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beheer of accepteer cookies voor mij"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzaj plikami cookie lub zaakceptuj je za mnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerir ou aceitar cookies por mim"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настраивать или принимать файлы cookie за меня"
           }
         }
       }
@@ -22704,10 +22896,58 @@
       "comment" : "Secondary option when cookie pop-up protection is off",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich kümmere mich weiter selbst darum"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "I'll keep handling them myself"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seguiré gestionándolas por mi cuenta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je les gérerai moi-même"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuerò a occuparmene io"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik blijf ze zelf beheren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Będę się nimi zajmować samodzielnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prefiro continuar eu a geri-los"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Я продолжу управлять файлами cookie самостоятельно"
           }
         }
       }
@@ -22716,10 +22956,58 @@
       "comment" : "Title of the opt-in dialog when cookie pop-up protection is off",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hast du genug von Cookie-Pop-ups, die dich nicht in Ruhe lassen?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Tired of cookie pop-ups that won't leave you alone?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cansado de las ventanas emergentes de cookies que no te dejan en paz?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous en avez assez des fenêtres contextuelles sur les cookies qui ne vous laissent pas tranquille ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non vuoi più vedere popup sui cookie che non ti lasciano in pace?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ben je de cookiepop-ups zat die je maar blijven lastigvallen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masz dość wyskakujących okienek z informacją o plikach cookie, które nie dają ci spokoju?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cansado de pop-ups de cookies que não te deixam em paz?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Устали от всплывающих окон с уведомлениями о файлах cookie, которые не дают вам покоя?"
           }
         }
       }
@@ -22728,10 +23016,58 @@
       "comment" : "Body of the opt-in dialog when cookie pop-up protection is already enabled",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir können dir einen Klick ersparen und diese Cookies für dich akzeptieren."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "We can save you a click and accept these cookies for you."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podemos ahorrarte un clic y aceptar estas cookies por ti."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous pouvons vous épargner un clic et accepter ces cookies à votre place."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Possiamo farti risparmiare un clic e accettare questi cookie per te."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We kunnen je een klik besparen en deze cookies voor je accepteren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Możemy zaoszczędzić Ci kliknięcia i zaakceptować te pliki cookie za Ciebie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podemos poupar-te um clique e aceitar estes cookies por ti."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы можем сэкономить вам время и примем эти файлы cookie за вас."
           }
         }
       }
@@ -22740,10 +23076,58 @@
       "comment" : "Primary option when cookie pop-up protection is already enabled",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akzeptiere für mich Cookies, bei denen kein Opt-out möglich ist"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Accept no-opt-out cookies for me"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceptar cookies sin opción de rechazarlas por mí"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accepter les cookies sans option de désactivation pour moi"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accetta per me i cookie che non prevedono il rifiuto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accepteer cookies zonder afmeldoptie voor me"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akceptuj za mnie pliki cookie niewymagające rezygnacji"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceitar cookies sem opção de exclusão por mim"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Принимать за меня файлы cookie, от которых нельзя отказаться"
           }
         }
       }
@@ -22752,10 +23136,58 @@
       "comment" : "Secondary option when cookie pop-up protection is already enabled",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich kümmere mich weiter selbst darum"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "I'll keep handling them myself"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seguiré gestionándolas por mi cuenta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je les gérerai moi-même"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuerò a occuparmene io"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik blijf ze zelf beheren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Będę się nimi zajmować samodzielnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prefiro continuar eu a geri-los"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Я продолжу управлять файлами cookie самостоятельно"
           }
         }
       }
@@ -22764,10 +23196,58 @@
       "comment" : "Title of the opt-in dialog when cookie pop-up protection is already enabled",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hast du genug von Cookie-Pop-ups, bei denen du dich nicht abmelden kannst?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Tired of cookie pop-ups that don't let you opt out?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cansado de las ventanas emergentes de cookies que no te dejan rechazarlas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous en avez assez des fenêtres contextuelles de cookies qui ne vous permettent pas de refuser leur utilisation ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non vuoi più vedere pop-up sui cookie che non ti permettono di rifiutare?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ben je de cookiepop-ups zat waarbij je je niet kunt afmelden?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masz dość wyskakujących okienek z plikami cookie, z których nie możesz zrezygnować?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cansado de pop-ups de cookies sem opção de exclusão?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Устали от всплывающих окон с уведомлениями о файлах cookie, от которых вы не можете отказаться?"
           }
         }
       }
@@ -22776,22 +23256,118 @@
       "comment" : "Footer text in the Cookie Pop-up Protection opt-in dialog, shown across two lines. The text between ** ** is rendered bold; \\n is an explicit line break.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kannst das später jederzeit anpassen unter:\n**Einstellungen** > **Cookie-Pop-up-Schutz**."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "You can always adjust later in:\n**Settings** > **Cookie Pop-Up Protection**."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes ajustar esto más tarde en:\n**Ajustes** > **Protección contra ventanas emergentes de cookies**."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez toujours modifier ces paramètres ultérieurement dans :\n**Réglages** > **Protection contre les fenêtres contextuelles des cookies**."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puoi sempre modificare questa scelta in un secondo momento in:\n**Impostazioni** > **Protezione pop-up dei cookie**."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je kunt dit altijd later aanpassen in:\n**Instellingen** > **Bescherming tegen cookiepop-ups**."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Możesz to zawsze później zmienić, wybierając kolejno:\n**Ustawienia** > **Ochrona przed wyskakującymi okienkami dotyczącymi plików cookie**."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podes sempre ajustar mais tarde em:\n**Definições** > **Proteção contra pop-ups de cookies**."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эту настройку всегда можно изменить позже в разделе\n**«Настройки»** > **«Защита от всплывающих окон cookie»**."
           }
         }
       }
     },
     "cookie-popup-protection.opt-in.header" : {
       "comment" : "Header of the Cookie Pop-up Protection opt-in dialog",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookie-Pop-up-Schutz"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Cookie Pop-up Protection"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protección contra ventanas emergentes de cookies"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protection contre les fenêtres contextuelles des cookies"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protezione pop-up dei cookie"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bescherming tegen cookiepop-ups"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ochrona przed wyskakującymi okienkami dotyczącymi plików cookie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proteção contra pop-ups de cookies"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита от всплывающих окон cookie"
           }
         }
       }
@@ -79173,6 +79749,66 @@
         }
       }
     },
+    "pm.empty.default.identities.description.extended.v2" : {
+      "comment" : "Label for empty state description when the user has no identities saved",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identitäten werden sicher auf deinem Gerät gespeichert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Identities are stored securely on your device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las identidades se almacenan de forma segura en tu dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les identités sont stockées en toute sécurité sur votre appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le identità sono archiviate in modo sicuro sul dispositivo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identiteiten worden veilig opgeslagen op je apparaat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tożsamości są bezpiecznie przechowywane na Twoim urządzeniu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As identidades são armazenadas com segurança no teu dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Учетные данные надежно хранятся на вашем устройстве."
+          }
+        }
+      }
+    },
     "pm.empty.default.passwords.description.extended.v2" : {
       "comment" : "Label for default empty state description",
       "extractionState" : "extracted_with_value",
@@ -101520,10 +102156,58 @@
       "comment" : "Explanation below the auto-manage cookie pop-ups toggle in settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir werden versuchen, nur die privatesten verfügbaren Cookie-Optionen für dich auszuwählen und diese Pop-ups dann zu schließen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "We'll aim to only select the most private cookie options available for you, then close these pop-ups."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intentaremos seleccionar solo las opciones de cookies más privadas disponibles para ti y, a continuación, cerrar estas ventanas emergentes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous nous efforcerons de ne sélectionner que les options de cookies les plus respectueuses de la vie privée pour vous, puis de fermer ces fenêtres contextuelles."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cercheremo di selezionare solo le opzioni dei cookie più private disponibili per te, quindi di chiudere questi popup."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We proberen alleen de meest privacyvriendelijke cookie-opties voor je te selecteren en sluiten daarna deze pop-ups."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Postaramy się wybrać dla Ciebie tylko najbardziej prywatne dostępne opcje plików cookie, a następnie zamknąć te wyskakujące okienka."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vamos tentar selecionar apenas as opções de cookies mais privadas disponíveis por ti e, em seguida, fechar estes pop-ups."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы постараемся выбрать для вас только максимально конфиденциальные настройки файлов cookie, а затем закроем эти окна."
           }
         }
       }
@@ -101532,10 +102216,58 @@
       "comment" : "Title for the auto-manage cookie pop-ups toggle in settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookie-Pop-ups automatisch verwalten"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Auto-Manage Cookie Pop-Ups"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Administrar automáticamente las ventanas emergentes de cookies"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gérer automatiquement les fenêtres contextuelles (cookies)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestione automatica dei popup dei cookie"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookiepop-ups automatisch beheren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatycznie zarządzaj okienkami z prośbą o zgodę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerir automaticamente pop-ups de cookies"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматическое управление окнами выбора файлов cookie"
           }
         }
       }
@@ -101544,10 +102276,58 @@
       "comment" : "Explanation below the pop-ups without opt-outs toggle in settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lass DuckDuckGo dir außerdem einen Klick ersparen, indem Cookies in deinem Namen akzeptiert werden, um Pop-ups zu schließen, bei denen du dich nicht abmelden kannst."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Also let DuckDuckGo save you a click by accepting cookies on your behalf to close pop-ups that don’t let you opt out."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deja también que DuckDuckGo te ahorre un clic al aceptar las cookies en tu nombre para cerrar las ventanas emergentes que no te dejan rechazarlas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laissez aussi DuckDuckGo vous épargner un clic en acceptant les cookies en votre nom pour fermer les fenêtres contextuelles qui ne vous permettent pas de refuser leur utilisation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lascia inoltre che DuckDuckGo ti faccia risparmiare un clic accettando i cookie per tuo conto, per chiudere i pop-up che non ti permettono di rifiutare."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat DuckDuckGo je ook een klik besparen door namens jou cookies te accepteren om pop-ups te sluiten waarbij je je niet kunt afmelden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pozwól też DuckDuckGo zaoszczędzić Ci kliknięcie, akceptując w twoim imieniu pliki cookie, aby zamknąć wyskakujące okienka, z których nie możesz zrezygnować."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permite também que o DuckDuckGo te poupe um clique, aceitando cookies em teu nome para fechar pop-ups sem opção de exclusão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Также разрешите DuckDuckGo экономить вам время, принимая файлы cookie за вас, чтобы закрывать всплывающие окна без возможности отказа."
           }
         }
       }
@@ -101556,10 +102336,58 @@
       "comment" : "Title for the pop-ups without opt-outs toggle in settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups ohne Abmeldemöglichkeit"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Pop-Ups Without Opt-Outs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ventanas emergentes sin opción de rechazarlas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fenêtres contextuelles sans option de refus"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Popup senza possibilità di rifiutare"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups zonder afmeldmogelijkheid"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyskakujące okienka bez możliwości rezygnacji"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups sem opção de exclusão"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всплывающие окна без возможности отказа"
           }
         }
       }

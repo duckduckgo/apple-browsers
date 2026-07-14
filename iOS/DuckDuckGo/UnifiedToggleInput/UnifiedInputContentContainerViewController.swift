@@ -84,6 +84,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
+    private let isFloatingUIEnabled: Bool
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let aiChatSyncCleaner: AIChatSyncCleaning?
@@ -162,6 +163,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
+        self.isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
@@ -269,11 +271,24 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// (`viewWillAppear` only fires once), so without this, toggling the setting wouldn't take effect
     /// until the app restarts.
     private func syncDuckAISurfaceWithSettings() {
-        if featureFlagger.isFeatureOn(.aiChatSuggestions) && aiChatSettings.isChatSuggestionsEnabled {
-            attachDuckAISurfaceIfNeeded()
-        } else {
+        guard shouldAttachDuckAISurface else {
             detachDuckAISurfaceFromSingleHost()
+            return
         }
+        // Rebuild a stale surface so each sub-source's gate re-evaluates and content from a
+        // now-disabled sub-source is cleared; otherwise attach on first focus.
+        if let duckAISurface, !duckAISurface.reflectsCurrentSettings {
+            rebuildDuckAISuggestionsCoordinator()
+        } else {
+            attachDuckAISurfaceIfNeeded()
+        }
+    }
+
+    /// The surface hosts both Duck.ai sub-sources (chat recents + URL/search hits), so it attaches
+    /// when *either* toggle is on; each sub-source then gates itself independently.
+    private var shouldAttachDuckAISurface: Bool {
+        featureFlagger.isFeatureOn(.aiChatSuggestions)
+            && (aiChatSettings.isChatSuggestionsEnabled || appSettings.autocomplete)
     }
 
     /// The host's current content state, so the dismiss path can pick the right NTP handoff.
@@ -354,7 +369,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         addChild(hostingController)
         contentContainerView.addSubview(hostingController.view)
-        let top = hostingController.view.topAnchor.constraint(equalTo: contentContainerView.topAnchor, constant: pinnedChromeTopConstant)
+        // In floating UI, pin chrome to the safe-area guide for the top inset; otherwise it adds no inset.
+        let chromeTopAnchor = isFloatingUIEnabled ? contentContainerView.safeAreaLayoutGuide.topAnchor : contentContainerView.topAnchor
+        let top = hostingController.view.topAnchor.constraint(equalTo: chromeTopAnchor, constant: pinnedChromeTopConstant)
         chromeTopConstraint = top
         let height = hostingController.view.heightAnchor.constraint(equalToConstant: currentChromeReservedHeight)
         chromeHeightConstraint = height
@@ -480,7 +497,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func setUpContentContainer() {
         view.addSubview(contentContainerView)
         contentContainerView.translatesAutoresizingMaskIntoConstraints = false
-        let topAnchor: NSLayoutYAxisAnchor = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        let topAnchor: NSLayoutYAxisAnchor = isFloatingUIEnabled
             ? view.topAnchor
             : view.safeAreaLayoutGuide.topAnchor
 
@@ -689,8 +706,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func attachDuckAISurfaceIfNeeded() {
         guard duckAISurface == nil,
               let host = unifiedSuggestionsHost,
-              featureFlagger.isFeatureOn(.aiChatSuggestions),
-              aiChatSettings.isChatSuggestionsEnabled,
+              shouldAttachDuckAISurface,
               let dependencies = suggestionTrayDependencies else { return }
 
         let surface = DuckAISuggestionsSurfaceProvider(

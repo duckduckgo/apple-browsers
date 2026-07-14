@@ -22,7 +22,10 @@ final class CustomizeResponsesMenuRowView: NSView {
 
     private enum Layout {
         static let width: CGFloat = 300
-        static let height: CGFloat = 44
+        // Height matches the native two-line Tools-menu items (title + subtitle) so the hover
+        // highlight is the same size — the two-line text block (~32pt) plus the same ~6pt total
+        // padding the single-line AIChatTabPickerMenuRowView uses around its block.
+        static let height: CGFloat = 38
         static let leadingPadding: CGFloat = 16
         static let trailingPadding: CGFloat = 14
         static let iconSize: CGFloat = 16
@@ -35,17 +38,30 @@ final class CustomizeResponsesMenuRowView: NSView {
     private let titleLabel = NSTextField(labelWithString: "")
     private let subtitleLabel = NSTextField(labelWithString: "")
     private let switchControl = NSSwitch()
+    private let selectionView: NSVisualEffectView = {
+        let view = NSVisualEffectView()
+        view.material = .selection
+        view.blendingMode = .withinWindow
+        view.state = .active
+        view.isEmphasized = true
+        view.wantsLayer = true
+        view.layer?.cornerRadius = 5
+        view.layer?.masksToBounds = true
+        view.isHidden = true
+        return view
+    }()
     private var trackingArea: NSTrackingArea?
 
     private let showsToggle: Bool
+    private let isEnabled: Bool
     private let onOpen: () -> Void
     private let onToggle: (Bool) -> Void
 
     private var isHovering = false {
         didSet {
             guard oldValue != isHovering else { return }
+            selectionView.isHidden = !isHovering
             updateColors()
-            needsDisplay = true
         }
     }
 
@@ -56,13 +72,22 @@ final class CustomizeResponsesMenuRowView: NSView {
          icon: NSImage?,
          showsToggle: Bool,
          isActive: Bool,
+         isEnabled: Bool,
          onOpen: @escaping () -> Void,
          onToggle: @escaping (Bool) -> Void) {
         self.showsToggle = showsToggle
+        self.isEnabled = isEnabled
         self.onOpen = onOpen
         self.onToggle = onToggle
         super.init(frame: NSRect(x: 0, y: 0, width: Layout.width, height: Layout.height))
         autoresizesSubviews = true
+
+        // Native menu-selection background (vibrant, emphasized accent) shown on hover — an opaque
+        // selectedContentBackgroundColor fill reads brighter than the system menu highlight. Added
+        // first so it sits behind the icon/labels/switch.
+        selectionView.frame = bounds.insetBy(dx: 5, dy: 0)
+        selectionView.autoresizingMask = [.width, .height]
+        addSubview(selectionView)
 
         let iconY = (Layout.height - Layout.iconSize) / 2
         iconView.frame = NSRect(x: Layout.leadingPadding, y: iconY, width: Layout.iconSize, height: Layout.iconSize)
@@ -74,6 +99,7 @@ final class CustomizeResponsesMenuRowView: NSView {
 
         switchControl.state = isActive ? .on : .off
         switchControl.isHidden = !showsToggle
+        switchControl.isEnabled = isEnabled
         let switchSize = switchControl.intrinsicContentSize
         let switchX = Layout.width - Layout.trailingPadding - switchSize.width
         switchControl.frame = NSRect(x: switchX, y: (Layout.height - switchSize.height) / 2, width: switchSize.width, height: switchSize.height)
@@ -118,6 +144,12 @@ final class CustomizeResponsesMenuRowView: NSView {
     }
 
     private func updateColors() {
+        guard isEnabled else {
+            titleLabel.textColor = .disabledControlTextColor
+            iconView.contentTintColor = .disabledControlTextColor
+            subtitleLabel.textColor = .tertiaryLabelColor
+            return
+        }
         let foreground: NSColor = isHovering ? .alternateSelectedControlTextColor : .labelColor
         titleLabel.textColor = foreground
         iconView.contentTintColor = foreground
@@ -134,17 +166,8 @@ final class CustomizeResponsesMenuRowView: NSView {
         trackingArea = area
     }
 
-    override func mouseEntered(with event: NSEvent) { isHovering = true }
+    override func mouseEntered(with event: NSEvent) { guard isEnabled else { return }; isHovering = true }
     override func mouseExited(with event: NSEvent) { isHovering = false }
-
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        if isHovering {
-            let selectionRect = bounds.insetBy(dx: 5, dy: 0)
-            NSColor.selectedContentBackgroundColor.setFill()
-            NSBezierPath(roundedRect: selectionRect, xRadius: 5, yRadius: 5).fill()
-        }
-    }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
         let local = convert(point, from: superview)
@@ -154,6 +177,7 @@ final class CustomizeResponsesMenuRowView: NSView {
     override func mouseDown(with event: NSEvent) {}
 
     override func mouseUp(with event: NSEvent) {
+        guard isEnabled else { return }
         let point = convert(event.locationInWindow, from: nil)
         guard bounds.contains(point) else { return }
 

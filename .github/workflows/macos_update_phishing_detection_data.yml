@@ -26,7 +26,7 @@ jobs:
           echo "$PR_BODY_MACOS" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
       - name: Create PR for macOS
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         id: create-pr
         with:
           path: apple-monorepo/
@@ -42,14 +42,14 @@ jobs:
         id: asana-assignee
         if: failure() && github.event_name == 'schedule'
         continue-on-error: true  # Fall back to an unassigned task if the lookup fails.
-        uses: duckduckgo/native-github-asana-sync@v1.9
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
           action: get-asana-user-id
           github-username: alessandroboron
           github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
       - name: Create Asana task on failure
         if: failure() && github.event_name == 'schedule'
-        uses: duckduckgo/native-github-asana-sync@v1.9
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
           action: create-asana-task
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}

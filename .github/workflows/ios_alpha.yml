@@ -51,7 +51,7 @@ jobs:
         fi
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -71,7 +71,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
@@ -114,7 +114,7 @@ jobs:
       id: build-alpha
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: alpha-build-${{ steps.build-alpha.outputs.app_version }}-${{ steps.build-alpha.outputs.build_version }}
         path: |
@@ -142,7 +142,7 @@ jobs:
         submodules: recursive
 
     - name: Download build artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: alpha-build-${{ needs.build-alpha.outputs.app_version }}-${{ needs.build-alpha.outputs.build_version }}
         path: iOS/
@@ -162,7 +162,7 @@ jobs:
         bundle exec fastlane upload_alpha groups:["${{ env.destination }}"] ipa_path:"${{ needs.build-alpha.outputs.ipa_path }}"
 
     - name: Upload dSYMs artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DuckDuckGo-Alpha-dSYM-${{ needs.build-alpha.outputs.app_version }}
         path: ${{ needs.build-alpha.outputs.dsyms_path }}

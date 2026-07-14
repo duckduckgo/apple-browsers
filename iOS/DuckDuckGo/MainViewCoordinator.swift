@@ -72,6 +72,7 @@ class MainViewCoordinator {
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
     private var isFloatingUIEnabled = false
+    private(set) var isInMinimalChromeLayout = false
 
     var isNavigationBarContainerBottomKeyboardBased: Bool {
         isNavBarContainerBottomKeyboardBased
@@ -83,6 +84,10 @@ class MainViewCoordinator {
 
     func setFloatingUIEnabled(_ enabled: Bool) {
         isFloatingUIEnabled = enabled
+    }
+
+    func setMinimalChromeLayout(_ enabled: Bool) {
+        isInMinimalChromeLayout = enabled
     }
 
     // The default after creating the hiearchy is top
@@ -158,12 +163,16 @@ class MainViewCoordinator {
             navigationBarContainer.isHidden = false
             navigationBarContainer.alpha = 1
             navigationBarContainer.isUserInteractionEnabled = true
+            // Span content full-bleed to the main view bottom (behind the floating toolbar) so the
+            // web scroll edge sits at the screen bottom and content doesn't move when the bars hide.
+            setContentContainerBottomAnchorMode(preferredBottomContentAnchorModeForVisibleChrome())
             isOmnibarInToolbar = false
         case .bottom:
             guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
                 isFloatingUIEnabled: isFloatingUIEnabled,
                 addressBarPosition: position,
-                isUnifiedToggleInputVisible: isUnifiedToggleInputVisible
+                isUnifiedToggleInputVisible: isUnifiedToggleInputVisible,
+                isMinimalChromeLayout: isInMinimalChromeLayout
             ) else {
                 toolbar.setOmnibarView(nil, height: 0)
                 constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
@@ -191,7 +200,8 @@ class MainViewCoordinator {
         guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
             isFloatingUIEnabled: isFloatingUIEnabled,
             addressBarPosition: addressBarPosition,
-            isUnifiedToggleInputVisible: isUnifiedToggleInputVisible
+            isUnifiedToggleInputVisible: isUnifiedToggleInputVisible,
+            isMinimalChromeLayout: isInMinimalChromeLayout
         ) else { return }
         guard !toolbar.isHostingOmnibarView(omniBar.barView) else { return }
 
@@ -309,7 +319,14 @@ class MainViewCoordinator {
     }
 
     func ensureNavContainerOwnershipForUnifiedToggleInputIfNeeded() {
-        guard isFloatingUIEnabled, addressBarPosition.isBottom, isOmnibarInToolbar else { return }
+        guard isFloatingUIEnabled, addressBarPosition.isBottom else { return }
+        returnOmnibarToNavigationContainerIfNeeded()
+    }
+
+    /// Detaches the bottom omnibar from the toolbar back into the nav container (used by minimal
+    /// chrome, where the toolbar is hidden, and the unified toggle input flow).
+    func returnOmnibarToNavigationContainerIfNeeded() {
+        guard isOmnibarInToolbar else { return }
         toolbar.setOmnibarView(nil, height: 0)
         constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
         navigationBarContainer.isHidden = false
@@ -750,7 +767,7 @@ class MainViewCoordinator {
     /// Floating-bottom chrome is overlaid above the page surface, so content should extend to
     /// the safe area floor. Legacy and non-floating bottom chrome remains toolbar-anchored.
     private func preferredBottomContentAnchorModeForVisibleChrome() -> ContentContainerBottomAnchorMode {
-        if isFloatingUIEnabled, addressBarPosition.isBottom {
+        if isFloatingUIEnabled {
             return .safeArea
         }
         return .toolbar

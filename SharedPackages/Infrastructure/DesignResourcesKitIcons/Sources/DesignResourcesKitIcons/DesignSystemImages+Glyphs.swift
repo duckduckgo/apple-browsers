@@ -560,6 +560,8 @@ public extension DesignSystemImages {
             public static var menuDotsVertical: DesignSystemImage { .init(resource: .menuDotsVertical24) }
             public static var menuDotsHorizontal: DesignSystemImage { .init(resource: .menuDotsHorizontal24) }
             public static var menuHamburger: DesignSystemImage { .init(resource: .menuHamburger24) }
+            public static var menuHamburgerAlert: DesignSystemImage { .init(resource: .menuHamburgerAlert24) }
+            public static var menuHamburgerAlertDot: DesignSystemImage { .init(resource: .menuHamburgerAlertDot24) }
             public static var menuHamburgerAlertRecolorable: DesignSystemImage { .init(resource: .menuHamburgerAlertRecolorable24) }
             public static var microphone: DesignSystemImage { .init(resource: .microphone24) }
             public static var microphoneSolid: DesignSystemImage { .init(resource: .microphoneSolid24) }

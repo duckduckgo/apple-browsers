@@ -25,7 +25,7 @@ import MetricBuilder
 private enum BubbleBackedDialogMetrics {
     /// Extra top margin for the intro step; all other steps use 0.
     static let introAdditionalTopMargin: CGFloat = 40
-    static let browsersComparisonAdditionalTopMargin: CGFloat = 0
+    static let setDefaultBrowserAdditionalTopMargin: CGFloat = 0
     static let addressBarPositionAdditionalTopMargin: CGFloat = 0
     static let searchExperienceAdditionalTopMargin: CGFloat = 0
     static let addToDockAdditionalTopMargin: CGFloat = 0
@@ -382,11 +382,11 @@ extension OnboardingRebranding {
             }
         }
 
-        private func browsersComparisonView(content: OnboardingBrowserComparisonContent) -> some View {
-            BrowsersComparisonContent(
+        private func setDefaultBrowserView(content: OnboardingComparisonContent) -> some View {
+            ComparisonContent(
                 content: content,
                 isVisible: $showBubbleContent,
-                setAsDefaultBrowserAction: model.setDefaultBrowserAction,
+                primaryAction: model.setDefaultBrowserAction,
                 cancelAction: {
                     animateContentTransition {
                         model.cancelSetDefaultBrowserAction()
@@ -395,13 +395,13 @@ extension OnboardingRebranding {
             )
         }
 
-        private func aiComparisonView(content: OnboardingAIComparisonContent) -> some View {
-            AIComparisonContent(
+        private func aiIntroView(content: OnboardingComparisonContent) -> some View {
+            ComparisonContent(
                 content: content,
                 isVisible: $showBubbleContent,
-                continueAction: {
+                primaryAction: {
                     animateContentTransition {
-                        model.aiComparisonAction()
+                        model.aiIntroAction()
                     }
                 }
             )
@@ -468,10 +468,10 @@ extension OnboardingRebranding {
             switch type {
             case let .startOnboardingDialog(content, dialogType):
                 introView(content: content, dialogType: dialogType)
-            case let .browsersComparisonDialog(content):
-                browsersComparisonView(content: content)
-            case let .aiComparisonDialog(content):
-                aiComparisonView(content: content)
+            case let .setDefaultBrowserDialog(content):
+                setDefaultBrowserView(content: content)
+            case let .aiIntroDialog(content):
+                aiIntroView(content: content)
             case let .addToDockPromoDialog(content):
                 addToDockPromoView(content: content)
             case let .chooseAppIconDialog(content):
@@ -495,7 +495,7 @@ extension OnboardingRebranding {
                     // The background doesn't change here, so animateContentTransition is not called.
                     // Trigger the Dax exit manually: starts simultaneously with the tutorial transition,
                     // then removes the overlay once the exit animation completes.
-                    let exitDuration = AddToDockPromoContent.daxAnimation.effectiveExitDuration
+                    let exitDuration = content.daxAnimation.effectiveExitDuration
                     daxExiting = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + exitDuration) {
                         daxExiting = false
@@ -570,15 +570,55 @@ extension OnboardingRebranding {
             guard !dynamicTypeSize.isAccessibilitySize else { return nil }
             switch type {
             // `lockedIntroBubbleHeight` (not the live value) keeps Dax stable across intro
-            // bubble content swaps.
-            case .startOnboardingDialog: return IntroDialogContent.daxAnimation(forBubbleHeight: lockedIntroBubbleHeight)
-            case .browsersComparisonDialog, .aiComparisonDialog: return BrowsersComparisonContent.daxAnimation
-            case .addToDockPromoDialog: return AddToDockPromoContent.daxAnimation
-            case .chooseAppIconDialog: return AppIconPickerContent.daxAnimation
-            case .chooseAddressBarPositionDialog: return nil // Dax-Floating is embedded in ScrollableOnboardingBackground
-            case .chooseSearchExperienceDialog: return SearchExperienceContent.daxAnimation
-            case .duckAIQueryDialog: return nil
+            // bubble content swaps. Dax is scaled inversely to the bubble so they never overlap.
+            case .startOnboardingDialog(let content, _):
+                return scaledThumbUpAnimation(forBubbleHeight: lockedIntroBubbleHeight, base: content.daxAnimation)
+            case .setDefaultBrowserDialog(let content):
+                return content.daxAnimation
+            case .aiIntroDialog(let content):
+                return content.daxAnimation
+            case .addToDockPromoDialog(let content):
+                return content.daxAnimation
+            case .chooseAppIconDialog(let content):
+                return content.daxAnimation
+            case .chooseAddressBarPositionDialog(let content):
+                return content.daxAnimation
+            case .chooseSearchExperienceDialog(let content):
+                return content.daxAnimation
+            case .duckAIQueryDialog(let content, _):
+                return content.daxAnimation
             }
+        }
+
+        /// Scales `base` inversely to the bubble height so Dax and the bubble never overlap.
+        /// Returns `nil` when Dax would shrink below the minimum visible height.
+        /// Only `size`, `position` bottom padding, and `exitOffset` are adjusted; all other
+        /// params (animation name, entrance, timing) are taken from `base` unchanged.
+        private func scaledThumbUpAnimation(forBubbleHeight bubbleHeight: CGFloat, base: DaxAnimation) -> DaxAnimation? {
+            let referenceBubbleHeight: CGFloat = 280.0
+            let minDaxHeight: CGFloat = 170.0
+
+            let extraBubbleHeight = max(0, bubbleHeight - referenceBubbleHeight)
+            let targetHeight = base.size.height - extraBubbleHeight
+            guard targetHeight >= minDaxHeight else { return nil }
+
+            let scale = targetHeight / base.size.height
+            let size = CGSize(width: base.size.width * scale, height: targetHeight)
+
+            guard case .left(let baseBottomPadding, let xOffset) = base.position else { return nil }
+            let bottomPadding = baseBottomPadding * scale
+
+            return DaxAnimation(
+                animationName: base.animationName,
+                size: size,
+                position: .left(bottomPadding: bottomPadding, xOffset: xOffset),
+                largeScreenPosition: .left(bottomPadding: bottomPadding, xOffset: 200.0),
+                entranceOffset: base.entranceOffset,
+                exitOffset: base.exitOffset.map { CGPoint(x: -size.width, y: $0.y) },
+                exitDuration: base.exitDuration,
+                fadeOut: base.fadeOut,
+                startDelay: base.startDelay
+            )
         }
 
         /// Hide → action → show sequence prevents cross-fading between steps.
@@ -710,7 +750,7 @@ private extension OnboardingRebranding.OnboardingView {
                 additionalTopMargin: BubbleBackedDialogMetrics.introAdditionalTopMargin,
                 isVisible: model.introState.showIntroViewContent
             )
-        case .browsersComparisonDialog, .aiComparisonDialog:
+        case .setDefaultBrowserDialog, .aiIntroDialog:
             return BubbleBackedDialogConfiguration(
                 tailOffset: tailTrailingOffset,
                 tailDirection: .leading,

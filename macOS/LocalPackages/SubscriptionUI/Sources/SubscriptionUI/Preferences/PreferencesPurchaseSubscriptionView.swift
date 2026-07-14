@@ -55,7 +55,6 @@ public struct PreferencesPurchaseSubscriptionView: View {
         HStack(alignment: .top) {
             Image(.privacyPro)
                 .padding(4)
-                .background(Color("BadgeBackground", bundle: .module))
                 .cornerRadius(4)
 
             VStack(alignment: .leading, spacing: 8) {

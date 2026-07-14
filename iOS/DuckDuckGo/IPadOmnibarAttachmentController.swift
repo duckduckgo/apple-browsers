@@ -37,7 +37,14 @@ final class IPadOmnibarAttachmentController {
 
     /// The strip that renders and owns the pending attachments. Set by the omnibar view controller
     /// once its view is loaded.
-    weak var attachmentsStripView: UnifiedToggleInputAttachmentsStripView?
+    weak var attachmentsStripView: UnifiedToggleInputAttachmentsStripView? {
+        didSet {
+            attachmentsStripView?.onAttachmentRemoved = { _, attachment, isUserInitiated in
+                guard isUserInitiated else { return }
+                UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment)
+            }
+        }
+    }
 
     /// Supplies the view controller used to present the photo / camera / document pickers.
     var presenterProvider: (() -> UIViewController?)?
@@ -100,6 +107,10 @@ final class IPadOmnibarAttachmentController {
 
     var hasAttachments: Bool {
         !currentAttachments.isEmpty
+    }
+
+    var pendingAttachments: [UnifiedToggleInputAttachment] {
+        currentAttachments
     }
 
     /// Whether at least one pending attachment is valid (submittable). Mirrors the iPhone unified

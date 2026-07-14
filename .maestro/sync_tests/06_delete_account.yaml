@@ -41,5 +41,6 @@ name: 06_delete_account
 - assertVisible: Scan QR Code
 - tapOn: Manually Enter Code
 - tapOn: Paste
-- assertVisible: Sync & Backup Error
-- tapOn: OK
+- assertVisible: Sync failed.
+- assertVisible: Please try again.
+- tapOn: Got It

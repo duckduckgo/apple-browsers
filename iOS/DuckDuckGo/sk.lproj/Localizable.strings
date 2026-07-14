@@ -401,10 +401,10 @@
 "alert.sync-already-paired-with-account-button" = "Rozumiem";
 
 /* Description for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-description" = "S týmto účtom si už spárovaný/-á na oboch zariadeniach.";
+"alert.sync-already-paired-with-account-description" = "Tieto zariadenia sú už pripojené k Sync & Backup.";
 
 /* Title for Sync error shown when both devices are already paired with the same account */
-"alert.sync-already-paired-with-account-title" = "Už spárované";
+"alert.sync-already-paired-with-account-title" = "Už je to synchronizované.";
 
 /* Description for alert shown when sync error occurs because of bad bookmarks data */
 "alert.sync-bookmarks-bad-data-error-description" = "Niektoré záložky sú nesprávne naformátované alebo sú príliš dlhé, a neboli synchronizované.";
@@ -425,10 +425,10 @@
 "alert.sync-cancelled-from-other-device-title" = "Synchronizácia bola zrušená z tvojho druhého zariadenia.";
 
 /* Description for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-description" = "V tvojom prehliadači navštív duck.ai, prejdi do nastavení, potom v časti „Sync & Backup“ vyber „Zapnúť“ a potom „Synchronizovať s iným zariadením“.";
+"alert.sync-code-only-compatible-with-duckai-description" = "V inom prehliadači prejdi na stránku Duck.ai, prejdi do Nastavení, potom v časti „Sync & Backup“ vyber možnosť „Zapnúť“ a následne „Synchronizovať s iným zariadením“.";
 
 /* Title for Sync error shown when a third-party recovery code can only be used with Duck.ai */
-"alert.sync-code-only-compatible-with-duckai-title" = "Naskenuj tento kód v nastaveniach Duck.ai.";
+"alert.sync-code-only-compatible-with-duckai-title" = "Naskenuj tento kód pomocou iného prehliadača ako DuckDuckGo.";
 
 /* Description for alert shown when sync error occurs because of bad credentials data */
 "alert.sync-credentials-bad-data-error-description" = "Niektoré heslá sú nesprávne naformátované alebo sú príliš dlhé, a neboli synchronizované.";
@@ -454,6 +454,12 @@
 /* Sync error alert action button title, takes the user to the sync settings page. */
 "alert.sync-error-action" = "Nastavenia synchronizácie";
 
+/* Description for generic Sync setup failure alerts */
+"alert.sync-failed-description" = "Skús to znova.";
+
+/* Title for generic Sync setup failure alerts */
+"alert.sync-failed-title" = "Synchronizácia sa nepodarila.";
+
 /* Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential */
 "alert.sync-from-another-connected-device-description" = "Synchronizuj toto zariadenie z už pripojeného prehliadača DuckDuckGo na inom zariadení.";
 
@@ -478,6 +484,9 @@
 /* Title for alert shown when sync paused for an error */
 "alert.sync-paused-title" = "Synchronizácia bola pozastavená.";
 
+/* Button title for Sync setup error alerts */
+"alert.sync-setup-error-got-it-button" = "Rozumiem";
+
 /* Switch account button in alert */
 "alert.sync-switch-account-button" = "Prepnutie synchronizácie";
 
@@ -489,9 +498,6 @@
 
 /* Description for alert shown when sync error occurs because of too many requests */
 "alert.sync-too-many-requests-error-description" = "Služba Sync & Backup je dočasne nedostupná.";
-
-/* Description for Sync error shown when the app version does not support the scanned Sync code */
-"alert.sync-update-required-description" = "Tento kód nie je v aktuálnej verzii aplikácie podporovaný.";
 
 /* Title for Sync error shown when the app version does not support the scanned Sync code */
 "alert.sync-update-required-title" = "Aktualizuj prehliadač DuckDuckGo a skús to znova.";
@@ -527,13 +533,15 @@
 "alert.unable-to-remove-device-description" = "Toto zariadenie nie je možné odstrániť zo Synchronizácie a zálohovania.";
 
 /* Description for unable to scan qr code error */
-"alert.unable-to-scan-qr-code-description" = "Žiaľ, tento kód je neplatný. Skontrolujte, či bol zadaný alebo naskenovaný správny kód.";
+"alert.unable-to-scan-qr-code-description" = "Skontroluj, či bol zadaný alebo naskenovaný správny kód.";
+
+/* Title for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-title" = "Toto nie je platný kód pre Sync & Backup.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nie je možné sa pripojiť k serveru.";
 
 /* Description for unable to sync with another device error */
-"alert.unable-to-sync-with-other-device-description" = "Nedá sa synchronizovať s iným zariadením.";
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Synchronizácia a zálohovanie sa nedá vypnúť.";
@@ -1410,6 +1418,39 @@
 
 /* Third paragraph of the Control Center Widget Education screen */
 "control.center.widget.education.paragraph.3" = "Ťukni na tlačidlo **Pridať ovládací prvok** v spodnej časti obrazovky";
+
+/* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
+"cookie-popup-protection.opt-in.badge" = "Nové";
+
+/* Confirm button in the Cookie Pop-up Protection opt-in dialog */
+"cookie-popup-protection.opt-in.confirm" = "Potvrdiť";
+
+/* Body of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.body" = "Budeme sa snažiť vybrať dostupné možnosti súborov cookie s najväčšou ochranou súkromia a zatvoríme ich za teba. Ak neponúkajú možnosť odmietnutia, ušetríme ti kliknutie a tieto súbory cookie za teba prijmeme.";
+
+/* Primary (recommended) option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Spravuj alebo prijmi súbory cookie za mňa";
+
+/* Secondary option when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Budem ich naďalej spravovať sám/sama";
+
+/* Title of the opt-in dialog when cookie pop-up protection is off */
+"cookie-popup-protection.opt-in.disabled.title" = "Už ťa nebavia vyskakovacie okná o súboroch cookie, ktoré ti nedajú pokoj?";
+
+/* Body of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.body" = "Ušetríme ti kliknutie a tieto súbory cookie prijmeme za teba.";
+
+/* Primary (recommended) option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Prijímaj za mňa súbory cookie, ktoré nevyžadujú odhlásenie";
+
+/* Secondary option when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Budem ich naďalej spravovať sám/sama";
+
+/* Title of the opt-in dialog when cookie pop-up protection is already enabled */
+"cookie-popup-protection.opt-in.enabled.title" = "Už ťa unavujú vyskakovacie okná s cookies, ktoré ti neumožňujú nesúhlasiť?";
+
+/* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
+"cookie-popup-protection.opt-in.footer" = "Neskôr to môžeš kedykoľvek upraviť v časti **Nastavenia** > **Ochrana proti automatickému otváraniu okien o súboroch cookie**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Vždy odosielať správy o zlyhaní";
@@ -4781,7 +4822,7 @@
 "sync.remove-device.title" = "Odstrániť zariadenie?";
 
 /* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "Zariadenie bolo úspešne synchronizované!";
+"sync.simplified.device-synced.toast" = "Bolo pridané nové zariadenie.";
 
 /* Toast message shown after sync is successfully enabled */
 "sync.simplified.enabled.toast" = "Sync & Backup je povolené";

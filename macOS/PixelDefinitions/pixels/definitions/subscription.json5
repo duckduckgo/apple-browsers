@@ -148,6 +148,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "d",
                 "type": "string",
@@ -175,7 +176,7 @@
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     // Tier Options Pixels - App Store Distribution
@@ -184,14 +185,14 @@
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_store_subscription_tier-options_success": {
         "description": "Fired when subscription tier options are successfully retrieved (App Store distribution)",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
     },
     "m_mac_store_subscription_tier-options_failure": {
         "description": "Fired when subscription tier options fail to be retrieved (App Store distribution)",
@@ -201,6 +202,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "channel",
             {
                 "key": "d",
                 "type": "string",
@@ -228,7 +230,7 @@
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     // Plan Change Click Pixels - Direct Distribution
@@ -237,14 +239,14 @@
         "owners": ["SabrinaTardio"],
         "triggers": ["user_submitted"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_direct_subscription_settings_upgrade_click": {
         "description": "Fired when the user clicks 'Upgrade' button in subscription settings (direct distribution)",
         "owners": ["SabrinaTardio"],
         "triggers": ["user_submitted"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     // Plan Change Click Pixels - App Store Distribution
@@ -253,14 +255,14 @@
         "owners": ["SabrinaTardio"],
         "triggers": ["user_submitted"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_store_subscription_settings_upgrade_click": {
         "description": "Fired when the user clicks 'Upgrade' button in subscription settings (App Store distribution)",
         "owners": ["SabrinaTardio"],
         "triggers": ["user_submitted"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_direct_subscription_settings_cancel-pending-downgrade_click": {
         "description": "Fired when the user clicks to cancel a pending downgrade in subscription settings (direct distribution)",
@@ -283,28 +285,28 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "subscriptionEntryStatus"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionEntryStatus"]
     },
     "m_mac_store_subscription_appmenu_subscription_click": {
         "description": "Fired when the user clicks the Subscription menu item in MoreOptionsMenu. App Store distribution.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "subscriptionEntryStatus"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionEntryStatus"]
     },
     "m_mac_store_subscription_settings_impression": {
         "description": "Fired when the Subscription pane is shown to a non-subscriber in Preferences. App Store distribution.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_store_subscription_settings_subscription_click": {
         "description": "Fired when the user clicks the Subscribe button in the Subscription pane in Preferences. App Store distribution.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     // Subscription Funnel Entry-Point Pixels - Direct Distribution
@@ -313,28 +315,28 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "subscriptionEntryStatus"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionEntryStatus"]
     },
     "m_mac_direct_subscription_appmenu_subscription_click": {
         "description": "Fired when the user clicks the Subscription menu item in MoreOptionsMenu. Direct distribution.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "subscriptionEntryStatus"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionEntryStatus"]
     },
     "m_mac_direct_subscription_settings_impression": {
         "description": "Fired when the Subscription pane is shown to a non-subscriber in Preferences. Direct distribution.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_direct_subscription_settings_subscription_click": {
         "description": "Fired when the user clicks the Subscribe button in the Subscription pane in Preferences. Direct distribution.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     // Mid-funnel: offer page impression + Subscribe CTA click
@@ -343,28 +345,28 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
     },
     "m_mac_direct_privacy-pro_offer_screen_impression": {
         "description": "Fired when the subscription offer page is shown to the user (direct distribution). Mid-funnel pixel that closes the loop between an entry-point click and the purchase attempt.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
     },
     "m_mac_store_privacy-pro_terms-conditions_subscribe_click": {
         "description": "Fired when the user clicks the Subscribe CTA on the subscription offer page (App Store distribution). Mid-funnel pixel preceding the purchase attempt outcome.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
-        "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource", "subscriptionFunnelOrigin"]
+        "suffixes": ["legacy_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
     },
     "m_mac_direct_privacy-pro_terms-conditions_subscribe_click": {
         "description": "Fired when the user clicks the Subscribe CTA on the subscription offer page (direct distribution). Mid-funnel pixel preceding the purchase attempt outcome.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
-        "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource", "subscriptionFunnelOrigin"]
+        "suffixes": ["legacy_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
     },
 
     "m_mac_store_subscribe": {
@@ -372,14 +374,14 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "subscriptionFunnelOrigin", "locale", "freeTrial"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin", "locale", "freeTrial"]
     },
     "m_mac_direct_subscribe": {
         "description": "Fired when a subscription purchase is completed successfully on direct distribution. Used for attribution tracking.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "subscriptionFunnelOrigin", "locale", "freeTrial"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin", "locale", "freeTrial"]
     },
 
     "m_mac_store_privacy-pro_app_subscription-purchase_failure": {
@@ -795,7 +797,8 @@
                 "type": "string",
                 "description": "What caused the token to be adopted, when known",
                 "enum": ["web_restore", "vpn"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_store_privacy-pro_new_tab_page_next_steps_card_clicked": {

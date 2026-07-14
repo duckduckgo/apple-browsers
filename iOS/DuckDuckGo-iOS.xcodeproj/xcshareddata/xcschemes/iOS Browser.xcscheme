@@ -242,6 +242,16 @@
                ReferencedContainer = "container:DuckDuckGo-iOS.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SyncUI-iOSTests"
+               BuildableName = "SyncUI-iOSTests"
+               BlueprintName = "SyncUI-iOSTests"
+               ReferencedContainer = "container:LocalPackages/SyncUI-iOS">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

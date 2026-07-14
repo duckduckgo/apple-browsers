@@ -52,6 +52,7 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
          winBackOfferService: WinBackOfferService,
          freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+         profileStateManager: DBPProfileStateManaging,
          subscriptionDataReporter: SubscriptionDataReporting,
          remoteMessagingImageLoader: RemoteMessagingImageLoading,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
@@ -84,6 +85,7 @@ final class RemoteMessagingService: RemoteMessagingDebugHandling {
             winBackOfferService: winBackOfferService,
             freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: profileStateManager,
             idleReturnEligibilityManager: idleReturnEligibilityManager,
             dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate
         )

@@ -81,7 +81,7 @@ final class BookmarksBarViewControllerTests: XCTestCase {
     func testWhenThereAreBookmarks_ThenImportBookmarksButtonIsHidden() throws {
         // Given
         let boolmarkList = BookmarkList(topLevelEntities: [Bookmark(id: "test", url: "", title: "Something", isFavorite: false), Bookmark(id: "test", url: "", title: "Impori", isFavorite: false)])
-        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), bookmarkManager: bookmarksManager, dragDropManager: .init(bookmarkManager: bookmarksManager), pinningManager: MockPinningManager(), featureFlagger: MockFeatureFlagger())
+        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), bookmarkManager: bookmarksManager, dragDropManager: .init(bookmarkManager: bookmarksManager), pinningManager: MockPinningManager())
         _=vc.view
         vc.viewWillAppear()
         vc.viewDidAppear()
@@ -106,7 +106,7 @@ final class BookmarksBarViewControllerTests: XCTestCase {
     @MainActor
     func testWhenThereAreNoBookmarks_AndbookmarkListEmpty_ThenImportBookmarksButtonIsNotShown() throws {
         // Given
-        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), bookmarkManager: bookmarksManager, dragDropManager: .init(bookmarkManager: bookmarksManager), pinningManager: MockPinningManager(), featureFlagger: MockFeatureFlagger())
+        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), bookmarkManager: bookmarksManager, dragDropManager: .init(bookmarkManager: bookmarksManager), pinningManager: MockPinningManager())
         _=vc.view
         vc.viewWillAppear()
         vc.viewDidAppear()
@@ -119,7 +119,7 @@ final class BookmarksBarViewControllerTests: XCTestCase {
     func testWhenThereAreNoBookmarks_ThenImportBookmarksButtonIsShown() throws {
         // Given
         let boolmarkList = BookmarkList(topLevelEntities: [])
-        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), bookmarkManager: bookmarksManager, dragDropManager: .init(bookmarkManager: bookmarksManager), pinningManager: MockPinningManager(), featureFlagger: MockFeatureFlagger())
+        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), bookmarkManager: bookmarksManager, dragDropManager: .init(bookmarkManager: bookmarksManager), pinningManager: MockPinningManager())
         _=vc.view
         vc.viewWillAppear()
         vc.viewDidAppear()

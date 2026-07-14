@@ -293,6 +293,9 @@ struct NetworkProtectionStatusView: View {
             }
         }
         .buttonStyle(StrictRoutingPillButtonStyle(isStrictRoutingOn: statusModel.enforceRoutes))
+        .help(statusModel.enforceRoutes
+              ? UserText.netPStrictRoutingPillTooltipOn
+              : UserText.netPStrictRoutingPillTooltipOff)
     }
 
     @ViewBuilder

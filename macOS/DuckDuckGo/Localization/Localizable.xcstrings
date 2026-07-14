@@ -114882,7 +114882,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Recommended on networks you don’t trust, e.g. public wifi in hotels, bars, etc. If you have problems with features (like AirDrop, Sidecar, etc.) or connecting to other devices, try turning it off. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Block apps from bypassing the VPN. If you have problems with Wi-Fi features (such as AirDrop or iPhone Mirroring), turning it off may help. Strongly recommended on networks you don’t trust, such as public Wi-Fi. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)."
           }
         },
         "es" : {
@@ -115122,7 +115122,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Exclude carrier services"
+            "value" : "Exclude Carrier Services"
           }
         },
         "es" : {
@@ -115362,7 +115362,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Enforce Strict Routing (recommended)"
+            "value" : "Enforce Strict Routing (Recommended)"
           }
         },
         "es" : {

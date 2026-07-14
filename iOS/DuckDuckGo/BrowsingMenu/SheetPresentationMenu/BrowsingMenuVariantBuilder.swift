@@ -42,6 +42,7 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeChatEntry() -> BrowsingMenuEntry?
     func makeSettingsEntry() -> BrowsingMenuEntry
     func makeShareEntry() -> BrowsingMenuEntry
+    func makeCopyLinkEntry() -> BrowsingMenuEntry?
     func makePrintEntry() -> BrowsingMenuEntry
     func makeDownloadsEntry() -> BrowsingMenuEntry
     func makeAutoFillEntry() -> BrowsingMenuEntry?

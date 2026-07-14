@@ -76,6 +76,21 @@ final class LongPressBarMenuBuilderTests: XCTestCase {
         XCTAssertFalse(actions.contains(where: { $0.title == UserText.actionCopyCleanLink }))
     }
 
+    func testWhenPrivacyEnabledOnNonDuckDuckGoSiteThenCopyLinkTitleReturnsCopyCleanLink() {
+        let title = UserText.copyLinkTitle(for: URL(string: "https://example.com")!, isPrivacyProtectionEnabled: true)
+        XCTAssertEqual(title, UserText.actionCopyCleanLink)
+    }
+
+    func testWhenPrivacyDisabledOnNonDuckDuckGoSiteThenCopyLinkTitleReturnsCopyLink() {
+        let title = UserText.copyLinkTitle(for: URL(string: "https://example.com")!, isPrivacyProtectionEnabled: false)
+        XCTAssertEqual(title, UserText.actionCopyLink)
+    }
+
+    func testWhenPrivacyEnabledOnDuckDuckGoSiteThenCopyLinkTitleReturnsCopyLink() {
+        let title = UserText.copyLinkTitle(for: URL(string: "https://duckduckgo.com/?q=test")!, isPrivacyProtectionEnabled: true)
+        XCTAssertEqual(title, UserText.actionCopyLink)
+    }
+
     func testWhenPadThenMoveAddressBarActionHidden() {
         let menu = builder.makeOmniBarMenu(context: makeOmniBarContext(isPad: true))
         let actions = flatActions(from: menu)

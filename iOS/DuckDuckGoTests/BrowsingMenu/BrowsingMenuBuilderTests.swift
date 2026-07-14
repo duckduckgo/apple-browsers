@@ -141,6 +141,7 @@ private final class MockBrowsingMenuEntryBuilder: BrowsingMenuEntryBuilding {
     func makeDuckAIMenuItems() -> [BrowsingMenuEntry] { [] }
     func makeSettingsEntry() -> BrowsingMenuEntry { .named("Settings") }
     func makeShareEntry() -> BrowsingMenuEntry { .named("Share") }
+    func makeCopyLinkEntry() -> BrowsingMenuEntry? { nil }
     func makePrintEntry() -> BrowsingMenuEntry { .named("Print") }
     func makeDownloadsEntry() -> BrowsingMenuEntry { .named(Self.downloadsName) }
     func makeAutoFillEntry() -> BrowsingMenuEntry? { nil }

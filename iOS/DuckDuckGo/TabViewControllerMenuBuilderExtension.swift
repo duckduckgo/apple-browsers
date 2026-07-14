@@ -422,6 +422,20 @@ extension TabViewController {
         })
     }
 
+    private func buildCopyLinkEntry(for url: URL) -> BrowsingMenuEntry {
+        let title = UserText.copyLinkTitle(for: url, isPrivacyProtectionEnabled: privacyConfigurationManager.privacyConfig.isProtected(domain: url.host))
+        return BrowsingMenuEntry.regular(name: title,
+                                         image: DesignSystemImages.Glyphs.Size24.link,
+                                         action: { [weak self] in
+            guard let self else { return }
+            self.onCopyAction(forUrl: url)
+            Pixel.fire(pixel: .browsingMenuCopy)
+            let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
+            ActionMessageView.present(message: UserText.actionCopyMessage,
+                                      presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))
+        })
+    }
+
     private func onNewTabAction() {
         Pixel.fire(pixel: .browsingMenuNewTab, withAdditionalParameters: [
             PixelParameters.browsingMode: BrowsingMode.normal.pixelParamValue
@@ -1086,6 +1100,11 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     
     func makeShareEntry() -> BrowsingMenuEntry {
         buildShareEntry(useSmallIcon: false)
+    }
+
+    func makeCopyLinkEntry() -> BrowsingMenuEntry? {
+        guard let link = validLink else { return nil }
+        return buildCopyLinkEntry(for: link.url)
     }
     
     func makePrintEntry() -> BrowsingMenuEntry {

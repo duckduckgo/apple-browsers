@@ -3038,4 +3038,11 @@ public struct UserText {
     public static let omnibarLongPressMoveToTop = NSLocalizedString("omnibar.menu.move-to-top", value: "Move Address Bar to Top", comment: "Label for moving the address bar to the top of the screen")
     public static let actionCopyLink = NSLocalizedString("action.title.copy.link", value: "Copy Link", comment: "Copy link action")
     public static let actionCopyCleanLink = NSLocalizedString("action.title.copy.clean.link", value: "Copy Clean Link", comment: "Copy clean link action")
+
+    public static func copyLinkTitle(for url: URL, isPrivacyProtectionEnabled: Bool) -> String {
+        if !url.isDuckDuckGo, isPrivacyProtectionEnabled {
+            return actionCopyCleanLink
+        }
+        return actionCopyLink
+    }
 }

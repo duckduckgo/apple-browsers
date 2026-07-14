@@ -134,6 +134,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
                                               windowControllersManager: windowControllersManager,
+                                              dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
                                               pixelFiring: nil,
                                               wideEventManaging: WideEventMock(),
                                               historyProvider: MockHistoryViewDataProvider())

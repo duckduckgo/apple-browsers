@@ -49,6 +49,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
                                           fireproofDomains: MockFireproofDomains(),
                                           faviconManagement: FaviconManagerMock(),
                                           windowControllersManager: windowControllersManager,
+                                          dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
                                           pixelFiring: nil,
                                           historyProvider: MockHistoryViewDataProvider())
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)

@@ -67,20 +67,7 @@ public struct SimplifiedSyncSettingsViewV2: View {
             )
         }
         .sheet(item: $selectedDevice) { device in
-            Group {
-                if device.isThisDevice {
-                    EditDeviceView(model: model.createEditDeviceModel(device))
-                } else {
-                    RemoveDeviceView(model: model.createRemoveDeviceModel(device))
-                }
-            }
-            .modifier {
-                if #available(iOS 16.0, *) {
-                    $0.presentationDetents([.medium])
-                } else {
-                    $0
-                }
-            }
+            ManageDeviceViewV2(model: model, device: device)
         }
         .sheet(item: $model.connectingSheetPhase, onDismiss: {
             model.connectingSheetDidDismiss()
@@ -455,7 +442,11 @@ extension SimplifiedSyncSettingsViewV2 {
     var devicesList: some View {
         ForEach(model.devices) { device in
             Button {
-                selectedDevice = device
+                Task { @MainActor in
+                    if await model.commonAuthenticate() {
+                        selectedDevice = device
+                    }
+                }
             } label: {
                 HStack {
                     deviceTypeImage(device)

@@ -205,7 +205,7 @@ struct FireDialogView: ModalView {
                                     bottomPadding: 4,
                                     horizontalPadding: 4,
                                     backgroundColor: Color(designSystemColor: .controlsFillPrimary),
-                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+                                    backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary))
             )
             .clipShape(Circle())
             .accessibilityLabel(UserText.close)
@@ -227,7 +227,7 @@ struct FireDialogView: ModalView {
                                     bottomPadding: 4,
                                     horizontalPadding: 4,
                                     backgroundColor: .clear,
-                                    backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+                                    backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary))
             )
             .clipShape(Circle())
             .accessibilityLabel(UserText.fireDialogMoreOptions)
@@ -601,11 +601,13 @@ struct FireDialogView: ModalView {
                     .toggleStyle(.checkbox)
                     .tint(style.knobFillColor)
                     .padding(.bottom, 2)
-                    .accessibilityLabel("FireDialogView.tabsToggle")
+                    .accessibilityLabel(tabsSubtitle)
+                    .accessibilityIdentifier("FireDialogView.tabsToggle")
                     .accessibilityHidden(isShowingSitesOverlay)
                 Text(tabsSubtitle)
                     .font(.system(size: 11))
                     .padding(.leading, 4)
+                    .accessibilityHidden(true)
                     .onTapGesture {
                         viewModel.includeTabsAndWindows.toggle()
                     }

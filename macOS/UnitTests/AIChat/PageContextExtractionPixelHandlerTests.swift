@@ -32,7 +32,7 @@ struct PageContextExtractionPixelHandlerTests {
         return fired
     }
 
-    @Test("success maps to the extraction-success pixel with no extra params")
+    @Test("success maps to the extraction-success pixel with no extra params", .timeLimit(.minutes(1)))
     func successMapsToSuccessPixel() {
         let pixel = capture(.success, trigger: .navigation, latency: .under1s)
         #expect(pixel?.name == "aichat_page_context_extraction_success")
@@ -41,7 +41,7 @@ struct PageContextExtractionPixelHandlerTests {
         #expect(pixel?.parameters?["latency"] == nil)
     }
 
-    @Test("failure(emptyContent) maps to failed pixel with reason, trigger, latency")
+    @Test("failure(emptyContent) maps to failed pixel with reason, trigger, latency", .timeLimit(.minutes(1)))
     func emptyContentMapsToFailedWithParams() {
         let pixel = capture(.failure(.emptyContent), trigger: .auto, latency: .oneToFiveSeconds)
         #expect(pixel?.name == "aichat_page_context_extraction_failed")
@@ -50,19 +50,19 @@ struct PageContextExtractionPixelHandlerTests {
         #expect(pixel?.parameters?["latency"] == "1_to_5s")
     }
 
-    @Test("failure(deserializeFailed) maps to failed pixel with snake_case reason")
+    @Test("failure(deserializeFailed) maps to failed pixel with snake_case reason", .timeLimit(.minutes(1)))
     func deserializeFailedMapsToFailedWithReason() {
         #expect(capture(.failure(.deserializeFailed))?.parameters?["reason"] == "deserialize_failed")
     }
 
-    @Test("failure without a latency omits the latency param")
+    @Test("failure without a latency omits the latency param", .timeLimit(.minutes(1)))
     func failureWithoutLatencyOmitsLatency() {
         let pixel = capture(.failure(.noWebView), trigger: .navigation, latency: nil)
         #expect(pixel?.parameters?["reason"] == "no_webview")
         #expect(pixel?.parameters?["latency"] == nil)
     }
 
-    @Test("prevented maps to prevented pixel with category, reason, trigger")
+    @Test("prevented maps to prevented pixel with category, reason, trigger", .timeLimit(.minutes(1)))
     func preventedMapsToPreventedWithParams() {
         let pixel = capture(.prevented("pdf"), trigger: .tabContent)
         #expect(pixel?.name == "aichat_page_context_extraction_prevented")

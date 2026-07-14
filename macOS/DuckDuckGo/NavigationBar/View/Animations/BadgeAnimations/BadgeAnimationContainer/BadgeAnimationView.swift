@@ -294,9 +294,8 @@ private struct LeftRoundedRectangle: Shape {
 private enum Consts {
     enum View {
         static let cornerRadius: CGFloat = 10
-        static let opaqueViewOffset: CGFloat = 8
+        static let opaqueViewOffset: CGFloat = 11
         static let textOffsetMargin: CGFloat = 10
-        static let textClippingOffset: CGFloat = 1
     }
 }
 

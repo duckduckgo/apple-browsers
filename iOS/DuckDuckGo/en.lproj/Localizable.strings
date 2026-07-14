@@ -2831,10 +2831,10 @@ https://duckduckgo.com/mac";
 "network.protection.status.view.troubleshooting.section.title" = "Troubleshooting";
 
 /* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.body" = "Enforce Strict Routing is off. Turning it on strengthens protection against traffic leaks on untrusted networks.";
+"network.protection.strict.routing.reminder.notification.body" = "Some traffic may bypass the VPN while off. Strict Routing is recommended for public networks.";
 
 /* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
-"network.protection.strict.routing.reminder.notification.title" = "Allow DuckDuckGo VPN to Enforce Strict Routing";
+"network.protection.strict.routing.reminder.notification.title" = "Strict Routing is OFF";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "DuckDuckGo VPN is On. Your location and online activity are protected.";

@@ -47,8 +47,8 @@ final class UserText {
 
     // MARK: - Strict Routing Reminder
 
-    static let vpnStrictRoutingReminderNotificationTitle = NSLocalizedString("vpn.strict.routing.reminder.notification.title", value: "Allow DuckDuckGo VPN to Enforce Strict Routing", comment: "The title of the notification reminding the user to turn the VPN Strict routing setting back on")
-    static let vpnStrictRoutingReminderNotificationSubtitle = NSLocalizedString("vpn.strict.routing.reminder.notification.subtitle", value: "Enforce Strict Routing is off. Turning it on strengthens protection against traffic leaks on untrusted networks.", comment: "The subtitle of the notification reminding the user to turn the VPN Strict routing setting back on")
+    static let vpnStrictRoutingReminderNotificationTitle = NSLocalizedString("vpn.strict.routing.reminder.notification.title", value: "Strict Routing is OFF", comment: "The title of the notification reminding the user to turn the VPN Strict routing setting back on")
+    static let vpnStrictRoutingReminderNotificationSubtitle = NSLocalizedString("vpn.strict.routing.reminder.notification.subtitle", value: "Some traffic may bypass the VPN while off. Strict Routing is recommended for public networks.", comment: "The subtitle of the notification reminding the user to turn the VPN Strict routing setting back on")
 
     // MARK: - Entitlement Expired
 

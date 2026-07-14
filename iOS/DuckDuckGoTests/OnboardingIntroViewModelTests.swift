@@ -18,6 +18,7 @@
 //
 
 import Core
+import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig
 import SetDefaultBrowserTestSupport
@@ -1409,6 +1410,67 @@ extension OnboardingIntroViewModelTests {
 }
 
 extension OnboardingIntroViewModelTests {
+
+    // MARK: - Download Reason Experiment
+
+    func testWhenCurrentStepIsDownloadReasonThenViewStateIsDownloadReasonDialogWithHiddenProgress() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReason]
+        let sut = makeSUT(currentOnboardingStep: .downloadReason)
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .downloadReasonDialog(content: .mock), step: .hidden)))
+    }
+
+    func testWhenSelectDownloadReasonThenPersistsReasonSplicesRemainingStepsAndAdvances() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReason]
+        onboardingManagerMock.stubbedRemainingSteps = [.setDefaultBrowser, .appIconSelection]
+        let sut = makeSUT(currentOnboardingStep: .downloadReason)
+        sut.onAppear()
+
+        // WHEN
+        sut.selectDownloadReasonAction(.blockAds)
+
+        // THEN
+        XCTAssertTrue(onboardingManagerMock.didCallSelectDownloadReason)
+        XCTAssertEqual(onboardingManagerMock.capturedDownloadReason, .blockAds)
+        // Advances to the first spliced step; the Download Screen is excluded from the progress count.
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .setDefaultBrowserDialog(content: .mockBrowser), step: .init(currentStep: 1, totalSteps: 2))))
+    }
+
+    func testWhenSelectDownloadReasonIsCalledOffTheDownloadScreenThenItIsANoOp() {
+        // GIVEN — already advanced past the Download Screen (e.g. a repeated tap)
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReason, .setDefaultBrowser]
+        let sut = makeSUT(currentOnboardingStep: .setDefaultBrowser)
+        sut.onAppear()
+        let stateBefore = sut.state
+
+        // WHEN
+        sut.selectDownloadReasonAction(.blockAds)
+
+        // THEN — nothing happens: no persistence and no advance
+        XCTAssertFalse(onboardingManagerMock.didCallSelectDownloadReason)
+        XCTAssertEqual(sut.state, stateBefore)
+    }
+
+    func testWhenResumeStepIsDownloadReasonThenRestoresToDownloadReasonStep() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReason]
+        let resumeStore = MockKeyValueStore()
+        let keyedResumeStore: any KeyedStoring<OnboardingStoringKeys> = resumeStore.keyedStoring()
+        keyedResumeStore.resumeStep = .downloadReason
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: false), resumeStepStore: resumeStore)
+
+        // WHEN
+        sut.onAppear()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .downloadReasonDialog(content: .mock), step: .hidden)))
+    }
 
     func makeSUT(
         currentOnboardingStep: OnboardingIntroStep = .introDialog(isReturningUser: false),

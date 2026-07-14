@@ -47,8 +47,8 @@ final class PageContextTabExtension {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let extractionPixelHandler: PageContextExtractionPixelFiring
     private var lastMainFrameResponse: (url: URL, mimeType: String?)?
-    private var pendingTrigger: PageContextExtractionTrigger?
-    private var pendingCollectStartedAt: DispatchTime?
+
+    private var extractionResolver = PageContextExtractionResolver()
 
     private let aiChatSessionStore: AIChatSessionStoring
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
@@ -338,20 +338,12 @@ final class PageContextTabExtension {
     }
 
     private func fireExtractionOutcome(for pageContext: AIChatPageContextData?) {
-        let outcome: PageContextExtractionOutcome
-        if let pageContext {
-            outcome = pageContext.isEmpty() ? .failure(.emptyContent) : .success
-        } else {
-            outcome = .failure(.deserializeFailed)
+        // No pending request → duplicate or a collect we didn't initiate; skip the pixel.
+        guard let resolution = extractionResolver.resolve(pageContext: pageContext) else {
+            return
         }
-        let trigger = pendingTrigger ?? .auto
-        let latency = pendingCollectStartedAt.map {
-            PageContextExtractionLatencyBucket(seconds: Double(DispatchTime.now().uptimeNanoseconds - $0.uptimeNanoseconds) / 1_000_000_000)
-        }
-        pendingTrigger = nil
-        pendingCollectStartedAt = nil
-        Logger.aiChat.debug("📊 PageContext extraction outcome: \(String(describing: outcome), privacy: .public) trigger=\(trigger.rawValue, privacy: .public) latency=\(latency?.rawValue ?? "nil", privacy: .public)")
-        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency)
+        Logger.aiChat.debug("📊 PageContext extraction outcome: \(String(describing: resolution.outcome), privacy: .public) trigger=\(resolution.trigger.rawValue, privacy: .public) latency=\(resolution.latency.rawValue, privacy: .public)")
+        extractionPixelHandler.fire(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
     }
 
     private func collectPageContextIfNeeded(trigger: PageContextExtractionTrigger) {
@@ -368,8 +360,7 @@ final class PageContextTabExtension {
             extractionPixelHandler.fire(.failure(.noWebView), trigger: trigger, latency: nil)
             return
         }
-        pendingTrigger = trigger
-        pendingCollectStartedAt = DispatchTime.now()
+        extractionResolver.requested(trigger: trigger)
         Logger.aiChat.debug("✅ PageContext gate: attachable, collecting host=\(url.host ?? "nil", privacy: .public) trigger=\(trigger.rawValue, privacy: .public)")
         pageContextUserScript.collect()
     }
@@ -554,8 +545,7 @@ final class PageContextTabExtension {
             return
         }
         pendingSignalsOnlyCollection = true
-        pendingTrigger = .tabContent
-        pendingCollectStartedAt = DispatchTime.now()
+        extractionResolver.requested(trigger: .tabContent)
         pageContextUserScript.collect()
     }
 

@@ -749,8 +749,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             }
             alert.addAction(cancelAction)
             alert.addAction(turnOffAction)
-            let viewControllerToPresentFrom = navigationController?.presentedViewController ?? presentedViewController ?? self
-            viewControllerToPresentFrom.present(alert, animated: true)
+            self.present(alert, animated: true)
         }
     }
 

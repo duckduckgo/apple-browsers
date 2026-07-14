@@ -21,10 +21,12 @@ import Foundation
 public enum PageContextExtractionOutcome: Equatable {
 
     public enum FailureReason: String, Equatable {
-        case emptyContent
+        case emptyContent = "empty_content"
+        case deserializeFailed = "deserialize_failed"
         case timeout
-        case malformed
-        case unavailable
+        case noWebView = "no_webview"
+        case postFailed = "post_failed"
+        case tabEvicted = "tab_evicted"
     }
 
     case success
@@ -34,4 +36,27 @@ public enum PageContextExtractionOutcome: Equatable {
 
 public extension PageContextExtractionOutcome {
     static let internalPageCategory = "internalPage"
+}
+
+public enum PageContextExtractionTrigger: String, Equatable {
+    case auto
+    case navigation
+    case userRequest = "user_request"
+    case tabContent = "tab_content"
+}
+
+public enum PageContextExtractionLatencyBucket: String, Equatable {
+    case under1s = "under_1s"
+    case oneToFiveSeconds = "1_to_5s"
+    case over5s = "over_5s"
+
+    public init(seconds: TimeInterval) {
+        if seconds < 1 {
+            self = .under1s
+        } else if seconds <= 5 {
+            self = .oneToFiveSeconds
+        } else {
+            self = .over5s
+        }
+    }
 }

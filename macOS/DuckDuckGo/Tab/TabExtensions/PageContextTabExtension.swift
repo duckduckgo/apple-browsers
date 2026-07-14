@@ -47,6 +47,8 @@ final class PageContextTabExtension {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let extractionPixelHandler: PageContextExtractionPixelFiring
     private var lastMainFrameResponse: (url: URL, mimeType: String?)?
+    private var pendingTrigger: PageContextExtractionTrigger?
+    private var pendingCollectStartedAt: DispatchTime?
 
     private let aiChatSessionStore: AIChatSessionStoring
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
@@ -184,7 +186,7 @@ final class PageContextTabExtension {
                     if let cachedPageContext {
                         Task { await self.handle(cachedPageContext) }
                     } else {
-                        collectPageContextIfNeeded()
+                        collectPageContextIfNeeded(trigger: .auto)
                     }
                 }
             }
@@ -245,7 +247,7 @@ final class PageContextTabExtension {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.shouldForceContextCollection = true
-                self?.collectPageContextIfNeeded()
+                self?.collectPageContextIfNeeded(trigger: .userRequest)
             }
             .store(in: &sidebarCancellables)
 
@@ -321,7 +323,7 @@ final class PageContextTabExtension {
         return verdict.isAttachable ? nil : (verdict.preventionReason ?? PageContextExtractionOutcome.internalPageCategory)
     }
 
-    private func deliverPreventedContext(for url: URL, reason: String) {
+    private func deliverPreventedContext(for url: URL, reason: String, trigger: PageContextExtractionTrigger) {
         let context = AIChatPageContextData(
             title: content.title ?? "",
             favicon: [],
@@ -332,7 +334,7 @@ final class PageContextTabExtension {
             attachable: false
         )
         Task { await handle(context) }
-        extractionPixelHandler.fire(.prevented(reason))
+        extractionPixelHandler.fire(.prevented(reason), trigger: trigger, latency: nil)
     }
 
     private func fireExtractionOutcome(for pageContext: AIChatPageContextData?) {
@@ -340,27 +342,35 @@ final class PageContextTabExtension {
         if let pageContext {
             outcome = pageContext.isEmpty() ? .failure(.emptyContent) : .success
         } else {
-            outcome = .failure(.malformed)
+            outcome = .failure(.deserializeFailed)
         }
-        Logger.aiChat.log("📊 PageContext extraction outcome: \(String(describing: outcome), privacy: .public)")
-        extractionPixelHandler.fire(outcome)
+        let trigger = pendingTrigger ?? .auto
+        let latency = pendingCollectStartedAt.map {
+            PageContextExtractionLatencyBucket(seconds: Double(DispatchTime.now().uptimeNanoseconds - $0.uptimeNanoseconds) / 1_000_000_000)
+        }
+        pendingTrigger = nil
+        pendingCollectStartedAt = nil
+        Logger.aiChat.log("📊 PageContext extraction outcome: \(String(describing: outcome), privacy: .public) trigger=\(trigger.rawValue, privacy: .public) latency=\(latency?.rawValue ?? "nil", privacy: .public)")
+        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency)
     }
 
-    private func collectPageContextIfNeeded() {
+    private func collectPageContextIfNeeded(trigger: PageContextExtractionTrigger) {
         guard case .url(let url, _, _) = content, isContextCollectionEnabled else {
             return
         }
         if let reason = preventedAttachReason(for: url) {
             Logger.aiChat.log("🚫 PageContext gate: prevented attach (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
-            deliverPreventedContext(for: url, reason: reason)
+            deliverPreventedContext(for: url, reason: reason, trigger: trigger)
             return
         }
-        guard let pageContextUserScript else {
-            Logger.aiChat.log("⚠️ PageContext gate: user script unavailable, cannot collect host=\(url.host ?? "nil", privacy: .public)")
-            extractionPixelHandler.fire(.failure(.unavailable))
+        guard let pageContextUserScript, webView != nil else {
+            Logger.aiChat.log("⚠️ PageContext gate: no webview/user script, cannot collect host=\(url.host ?? "nil", privacy: .public)")
+            extractionPixelHandler.fire(.failure(.noWebView), trigger: trigger, latency: nil)
             return
         }
-        Logger.aiChat.log("✅ PageContext gate: attachable, collecting host=\(url.host ?? "nil", privacy: .public)")
+        pendingTrigger = trigger
+        pendingCollectStartedAt = DispatchTime.now()
+        Logger.aiChat.log("✅ PageContext gate: attachable, collecting host=\(url.host ?? "nil", privacy: .public) trigger=\(trigger.rawValue, privacy: .public)")
         pageContextUserScript.collect()
     }
 
@@ -462,7 +472,7 @@ final class PageContextTabExtension {
                                 contextConsumed: hasContextBeenConsumedByChat,
                                 fromAttachablePage: previousWasURL) {
         case .collectNewContext:
-            collectPageContextIfNeeded()
+            collectPageContextIfNeeded(trigger: .navigation)
         case .sendNavigationSignal:
             session.chatViewController?.setPageContext(nil)
         case .keepExistingContext:
@@ -540,10 +550,12 @@ final class PageContextTabExtension {
         }
         if let reason = preventedAttachReason(for: url) {
             Logger.aiChat.log("🚫 PageContext gate (signals-only): prevented (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
-            deliverPreventedContext(for: url, reason: reason)
+            deliverPreventedContext(for: url, reason: reason, trigger: .tabContent)
             return
         }
         pendingSignalsOnlyCollection = true
+        pendingTrigger = .tabContent
+        pendingCollectStartedAt = DispatchTime.now()
         pageContextUserScript.collect()
     }
 
@@ -591,7 +603,7 @@ extension PageContextTabExtension: NavigationResponder {
     /// update on same-tab navigation. Mirrors Windows' `NavigationCompleted` re-collect.
     func navigationDidFinish(_ navigation: Navigation) {
         guard !isLoadedInSidebar else { return }
-        collectPageContextIfNeeded()
+        collectPageContextIfNeeded(trigger: .navigation)
         requestSignalsOnlyCollectionIfNeeded()
     }
 

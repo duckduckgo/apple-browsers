@@ -147,13 +147,14 @@ enum AIChatPixel: PixelKitEvent {
     case aiChatPageContextExtractionSuccess
 
     /// Event Trigger: Page-context extraction was attempted but produced no usable content.
-    /// `reason` is one of `emptyContent` / `timeout` / `malformed` / `unavailable`.
-    case aiChatPageContextExtractionFailed(reason: String)
+    /// `reason` is the failure reason; `trigger` is what initiated collection; `latency` is a
+    /// bucketed request-to-result time, present only when a result actually arrived.
+    case aiChatPageContextExtractionFailed(reason: String, trigger: String, latency: String?)
 
     /// Event Trigger: Page-context extraction was skipped because the page is not attachable
     /// (blocklisted media type or a native special page). `category` is the blocklist category
-    /// key (e.g. `pdf`) or `internalPage`.
-    case aiChatPageContextExtractionPrevented(category: String)
+    /// key (e.g. `pdf`) or `internalPage`; `trigger` is what initiated collection.
+    case aiChatPageContextExtractionPrevented(category: String, trigger: String)
 
     // MARK: - Deleting chat history
 
@@ -859,10 +860,14 @@ enum AIChatPixel: PixelKitEvent {
             return ["fileCount": String(fileCount)]
         case .aiChatAddressBarFileValidationFailed(let reason):
             return ["reason": reason]
-        case .aiChatPageContextExtractionFailed(let reason):
-            return ["reason": reason]
-        case .aiChatPageContextExtractionPrevented(let category):
-            return ["category": category]
+        case .aiChatPageContextExtractionFailed(let reason, let trigger, let latency):
+            var params = ["reason": reason, "trigger": trigger]
+            if let latency {
+                params["latency"] = latency
+            }
+            return params
+        case .aiChatPageContextExtractionPrevented(let category, let trigger):
+            return ["category": category, "reason": "non_attachable", "trigger": trigger]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
         case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):

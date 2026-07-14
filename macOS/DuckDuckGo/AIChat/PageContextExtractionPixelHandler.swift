@@ -21,7 +21,9 @@ import Foundation
 import PixelKit
 
 protocol PageContextExtractionPixelFiring {
-    func fire(_ outcome: PageContextExtractionOutcome)
+    func fire(_ outcome: PageContextExtractionOutcome,
+              trigger: PageContextExtractionTrigger,
+              latency: PageContextExtractionLatencyBucket?)
 }
 
 final class PageContextExtractionPixelHandler: PageContextExtractionPixelFiring {
@@ -32,14 +34,16 @@ final class PageContextExtractionPixelHandler: PageContextExtractionPixelFiring 
         self.firePixel = firePixel
     }
 
-    func fire(_ outcome: PageContextExtractionOutcome) {
+    func fire(_ outcome: PageContextExtractionOutcome,
+              trigger: PageContextExtractionTrigger,
+              latency: PageContextExtractionLatencyBucket?) {
         switch outcome {
         case .success:
             firePixel(.aiChatPageContextExtractionSuccess)
         case .failure(let reason):
-            firePixel(.aiChatPageContextExtractionFailed(reason: reason.rawValue))
+            firePixel(.aiChatPageContextExtractionFailed(reason: reason.rawValue, trigger: trigger.rawValue, latency: latency?.rawValue))
         case .prevented(let category):
-            firePixel(.aiChatPageContextExtractionPrevented(category: category))
+            firePixel(.aiChatPageContextExtractionPrevented(category: category, trigger: trigger.rawValue))
         }
     }
 }

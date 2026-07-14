@@ -23,34 +23,51 @@ import Testing
 
 struct PageContextExtractionPixelHandlerTests {
 
-    private func capture(_ outcome: PageContextExtractionOutcome) -> AIChatPixel? {
+    private func capture(_ outcome: PageContextExtractionOutcome,
+                         trigger: PageContextExtractionTrigger = .navigation,
+                         latency: PageContextExtractionLatencyBucket? = nil) -> AIChatPixel? {
         var fired: AIChatPixel?
         let handler = PageContextExtractionPixelHandler(firePixel: { fired = $0 })
-        handler.fire(outcome)
+        handler.fire(outcome, trigger: trigger, latency: latency)
         return fired
     }
 
-    @Test("success maps to the extraction-success pixel")
+    @Test("success maps to the extraction-success pixel with no extra params")
     func successMapsToSuccessPixel() {
-        #expect(capture(.success)?.name == "aichat_page_context_extraction_success")
+        let pixel = capture(.success, trigger: .navigation, latency: .under1s)
+        #expect(pixel?.name == "aichat_page_context_extraction_success")
+        #expect(pixel?.parameters?["reason"] == nil)
+        #expect(pixel?.parameters?["trigger"] == nil)
+        #expect(pixel?.parameters?["latency"] == nil)
     }
 
-    @Test("failure(emptyContent) maps to failed pixel with reason")
-    func emptyContentMapsToFailedWithReason() {
-        let pixel = capture(.failure(.emptyContent))
+    @Test("failure(emptyContent) maps to failed pixel with reason, trigger, latency")
+    func emptyContentMapsToFailedWithParams() {
+        let pixel = capture(.failure(.emptyContent), trigger: .auto, latency: .oneToFiveSeconds)
         #expect(pixel?.name == "aichat_page_context_extraction_failed")
-        #expect(pixel?.parameters?["reason"] == "emptyContent")
+        #expect(pixel?.parameters?["reason"] == "empty_content")
+        #expect(pixel?.parameters?["trigger"] == "auto")
+        #expect(pixel?.parameters?["latency"] == "1_to_5s")
     }
 
-    @Test("failure(malformed) maps to failed pixel with reason")
-    func malformedMapsToFailedWithReason() {
-        #expect(capture(.failure(.malformed))?.parameters?["reason"] == "malformed")
+    @Test("failure(deserializeFailed) maps to failed pixel with snake_case reason")
+    func deserializeFailedMapsToFailedWithReason() {
+        #expect(capture(.failure(.deserializeFailed))?.parameters?["reason"] == "deserialize_failed")
     }
 
-    @Test("prevented maps to prevented pixel with category")
-    func preventedMapsToPreventedWithCategory() {
-        let pixel = capture(.prevented("pdf"))
+    @Test("failure without a latency omits the latency param")
+    func failureWithoutLatencyOmitsLatency() {
+        let pixel = capture(.failure(.noWebView), trigger: .navigation, latency: nil)
+        #expect(pixel?.parameters?["reason"] == "no_webview")
+        #expect(pixel?.parameters?["latency"] == nil)
+    }
+
+    @Test("prevented maps to prevented pixel with category, reason, trigger")
+    func preventedMapsToPreventedWithParams() {
+        let pixel = capture(.prevented("pdf"), trigger: .tabContent)
         #expect(pixel?.name == "aichat_page_context_extraction_prevented")
         #expect(pixel?.parameters?["category"] == "pdf")
+        #expect(pixel?.parameters?["reason"] == "non_attachable")
+        #expect(pixel?.parameters?["trigger"] == "tab_content")
     }
 }

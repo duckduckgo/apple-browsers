@@ -1741,7 +1741,7 @@ class MainViewController: UIViewController {
 
     /// True for escape-hatch burns — these handle focus themselves in `restoreFocusModeAfterBurnIfNeeded`,
     /// so the generic post-fire keyboard fallback is skipped for them.
-    private func isEscapeHatchHideBurn(_ request: FireRequest) -> Bool {
+    private func isEscapeHatchBurn(_ request: FireRequest) -> Bool {
         request.source == .escapeHatch
     }
 
@@ -6403,7 +6403,7 @@ extension MainViewController {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchHideBurn(request) {
+            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) {
                 // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
                 let showKeyboardAfterFireButton = DispatchWorkItem {
                     if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
@@ -6435,7 +6435,7 @@ extension MainViewController {
     private func presentPostBurnMessage(tabsCount: Int, request: FireRequest) {
         let message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: tabsCount)
         // Escape-hatch-hide burns restore the keyboard, which would cover a bottom toast — show it at the top.
-        let location: ActionMessageView.PresentationLocation = isEscapeHatchHideBurn(request)
+        let location: ActionMessageView.PresentationLocation = isEscapeHatchBurn(request)
             ? .top
             : .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom)
         ActionMessageView.present(message: message, presentationLocation: location)

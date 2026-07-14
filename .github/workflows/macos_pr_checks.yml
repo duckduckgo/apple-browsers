@@ -286,6 +286,7 @@ jobs:
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
           -configuration "CI" \
+          -skipPackagePluginValidation -skipMacroValidation \
           -test-timeouts-enabled YES \
           -default-test-execution-time-allowance 60 \
           -maximum-test-execution-time-allowance 120 \
@@ -304,6 +305,7 @@ jobs:
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
           -configuration "CI" \
+          -skipPackagePluginValidation -skipMacroValidation \
           -test-timeouts-enabled YES \
           -default-test-execution-time-allowance 60 \
           -maximum-test-execution-time-allowance 120 \

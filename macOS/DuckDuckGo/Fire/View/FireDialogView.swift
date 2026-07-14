@@ -604,6 +604,9 @@ struct FireDialogView: ModalView {
                 Text(tabsSubtitle)
                     .font(.system(size: 11))
                     .padding(.leading, 4)
+                    .onTapGesture {
+                        viewModel.includeTabsAndWindows.toggle()
+                    }
             }
 
             Spacer(minLength: 8)
@@ -621,7 +624,7 @@ struct FireDialogView: ModalView {
                 onConfirm?(.burn(options: result))
                 dismiss()
             } label: {
-                Text(UserText.delete)
+                Text(viewModel.includeTabsAndWindows ? UserText.fireDialogDeleteAndClose : UserText.delete)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
                     .frame(height: 32)

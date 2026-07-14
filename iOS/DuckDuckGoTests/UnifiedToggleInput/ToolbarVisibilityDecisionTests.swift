@@ -30,7 +30,7 @@ final class ToolbarVisibilityDecisionTests: XCTestCase {
 
     func test_aiChrome_omnibarSession_keepsToolbarTabLike() {
         // Focused omnibar opened from a Duck.ai tab keeps the toolbar (standard browser controls).
-        XCTAssertEqual(decide(isCurrentTabUsingUnifiedInputAIChrome: true, isFocusedOmnibarSession: true).visibility, .visible(healsClampConstant: false))
+        XCTAssertEqual(decide(isCurrentTabUsingUnifiedInputAIChrome: true, isFocusedOmnibarSession: true).visibility, .visible)
     }
 
     // MARK: - Non-AI branch (iPad / minimal chrome)
@@ -44,22 +44,7 @@ final class ToolbarVisibilityDecisionTests: XCTestCase {
     }
 
     func test_nonAIChrome_phone_showsToolbar() {
-        XCTAssertEqual(decide().visibility, .visible(healsClampConstant: false))
-    }
-
-    // MARK: - Self-heal clamp (kept in Phase 1; Phase 4 deletes it)
-
-    func test_visibleToolbar_staleOffscreenConstant_healsClamp() {
-        XCTAssertEqual(decide(toolbarAlpha: 1.0, toolbarBottomConstant: 49).visibility, .visible(healsClampConstant: true))
-    }
-
-    func test_visibleToolbar_partialAlpha_doesNotHeal() {
-        // alpha < 1 == mid-scroll partial hide; not a stale clamp.
-        XCTAssertEqual(decide(toolbarAlpha: 0.5, toolbarBottomConstant: 49).visibility, .visible(healsClampConstant: false))
-    }
-
-    func test_visibleToolbar_constantAlreadyZero_doesNotHeal() {
-        XCTAssertEqual(decide(toolbarAlpha: 1.0, toolbarBottomConstant: 0).visibility, .visible(healsClampConstant: false))
+        XCTAssertEqual(decide().visibility, .visible)
     }
 
     // MARK: - Bars recompute on hidden-flip
@@ -76,18 +61,14 @@ final class ToolbarVisibilityDecisionTests: XCTestCase {
         isFocusedOmnibarSession: Bool = false,
         isLargeWidth: Bool = false,
         isInMinimalChromeLayout: Bool = false,
-        currentToolbarIsHidden: Bool = false,
-        toolbarAlpha: CGFloat = 1.0,
-        toolbarBottomConstant: CGFloat = 0
+        currentToolbarIsHidden: Bool = false
     ) -> ToolbarVisibilityDecision {
         ToolbarVisibilityDecision.resolve(.init(
             isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
             isFocusedOmnibarSession: isFocusedOmnibarSession,
             isLargeWidth: isLargeWidth,
             isInMinimalChromeLayout: isInMinimalChromeLayout,
-            currentToolbarIsHidden: currentToolbarIsHidden,
-            toolbarAlpha: toolbarAlpha,
-            toolbarBottomConstant: toolbarBottomConstant
+            currentToolbarIsHidden: currentToolbarIsHidden
         ))
     }
 }

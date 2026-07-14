@@ -159,9 +159,7 @@ extension MainViewController {
             isFocusedOmnibarSession: unifiedToggleInputCoordinator?.isOmnibarSession == true,
             isLargeWidth: AppWidthObserver.shared.isLargeWidth,
             isInMinimalChromeLayout: isInMinimalChromeLayout,
-            currentToolbarIsHidden: viewCoordinator.toolbar.isHidden,
-            toolbarAlpha: viewCoordinator.toolbar.alpha,
-            toolbarBottomConstant: viewCoordinator.constraints.toolbarBottom.constant
+            currentToolbarIsHidden: viewCoordinator.toolbar.isHidden
         ))
     }
 
@@ -213,20 +211,15 @@ extension MainViewController {
         applyToolbarVisibility(toolbarVisibilityDecision())
     }
 
-    /// Renders a resolved toolbar decision. The self-heal clamp restores a stale off-screen
-    /// constraint left by a transient AI-tab phase; bars recompute only when hidden flips.
+    /// Renders a resolved toolbar decision. On a hidden-flip the full bars layout is recomputed;
+    /// otherwise the toolbar's constraint is re-derived from the single constant source so it can't
+    /// linger off-screen after a transient AI-tab phase.
     private func applyToolbarVisibility(_ decision: ToolbarVisibilityDecision) {
-        switch decision.visibility {
-        case .hidden:
-            viewCoordinator.toolbar.isHidden = true
-        case .visible(let healsClampConstant):
-            viewCoordinator.toolbar.isHidden = false
-            if healsClampConstant {
-                viewCoordinator.constraints.toolbarBottom.constant = 0
-            }
-        }
+        viewCoordinator.toolbar.isHidden = (decision.visibility == .hidden)
         if decision.recomputesBars {
             setBarsVisibility(currentBarsVisibility, animated: false, animationDuration: nil)
+        } else if decision.visibility == .visible {
+            updateToolbarConstant(currentBarsVisibility)
         }
     }
 

@@ -17,13 +17,9 @@
 //  limitations under the License.
 //
 
-import CoreGraphics
-
 enum ToolbarVisibility: Equatable {
     case hidden
-    /// `healsClampConstant` snaps a stale off-screen toolbar constraint back on-screen. See
-    /// `MainViewController.reconcileToolbarVisibilityForCurrentTab`.
-    case visible(healsClampConstant: Bool)
+    case visible
 }
 
 /// Pure decision for the browser toolbar's visibility on the current tab.
@@ -39,29 +35,20 @@ struct ToolbarVisibilityDecision: Equatable {
         let isLargeWidth: Bool
         let isInMinimalChromeLayout: Bool
         let currentToolbarIsHidden: Bool
-        let toolbarAlpha: CGFloat
-        let toolbarBottomConstant: CGFloat
     }
 
     static func resolve(_ inputs: Inputs) -> ToolbarVisibilityDecision {
-        let visibility = resolveVisibility(inputs)
-        let willHide = (visibility == .hidden)
+        let visibility: ToolbarVisibility = shouldHide(inputs) ? .hidden : .visible
         return ToolbarVisibilityDecision(
             visibility: visibility,
-            recomputesBars: inputs.currentToolbarIsHidden != willHide
+            recomputesBars: inputs.currentToolbarIsHidden != (visibility == .hidden)
         )
     }
 
-    private static func resolveVisibility(_ inputs: Inputs) -> ToolbarVisibility {
+    private static func shouldHide(_ inputs: Inputs) -> Bool {
         if inputs.isCurrentTabUsingUnifiedInputAIChrome && !inputs.isFocusedOmnibarSession {
-            return .hidden
+            return true
         }
-        if inputs.isLargeWidth || inputs.isInMinimalChromeLayout {
-            return .hidden
-        }
-        // alpha == 1 excludes mid-scroll partial hides; a non-zero constant with full alpha is a
-        // stale clamp left by a transient AI-tab phase.
-        let healsClampConstant = inputs.toolbarAlpha == 1.0 && inputs.toolbarBottomConstant != 0
-        return .visible(healsClampConstant: healsClampConstant)
+        return inputs.isLargeWidth || inputs.isInMinimalChromeLayout
     }
 }

@@ -1709,7 +1709,7 @@ class MainViewController: UIViewController {
         instrumentation: ntpAfterIdleInstrumentation
     )
 
-    /// Re-presents the tab switcher after a burn. No-op when the feature is off or the user has left the NTP.
+    /// Re-presents the tab switcher after a burn. No-op when the NTP isn't showing.
     private func restoreTabSwitcherOnlyHatchAfterBurn() {
         guard let controller = newTabPageViewController,
               let currentTab = tabManager.currentTabsModel.currentTab,
@@ -1739,9 +1739,8 @@ class MainViewController: UIViewController {
         }
     }
 
-    /// True for escape-hatch burns while the hide feature is on — these handle focus themselves in
-    /// `restoreFocusModeAfterBurnIfNeeded`, so the generic post-fire keyboard fallback is skipped for them.
-    /// With the feature off, escape-hatch burns keep the original fire behaviour.
+    /// True for escape-hatch burns — these handle focus themselves in `restoreFocusModeAfterBurnIfNeeded`,
+    /// so the generic post-fire keyboard fallback is skipped for them.
     private func isEscapeHatchHideBurn(_ request: FireRequest) -> Bool {
         request.source == .escapeHatch
     }
@@ -6405,7 +6404,7 @@ extension MainViewController {
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
             } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchHideBurn(request) {
-                // With the hide feature on, escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
+                // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
                 let showKeyboardAfterFireButton = DispatchWorkItem {
                     if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
                         self.enterSearch()

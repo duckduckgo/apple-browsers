@@ -39,7 +39,7 @@ extension TabManager: EscapeHatchTabsSource {
 
 /// Single sink for the four escape-hatch verbs. Implemented by the object that actually fulfils the
 /// actions (today: `MainViewController`). Constructors that want to build an `EscapeHatchModel` without
-/// hand-bundling closures hold a weak reference to this and use `EscapeHatchModel(...,router:featureFlagger:)`.
+/// hand-bundling closures hold a weak reference to this and use `EscapeHatchModel(...,router:)`.
 protocol EscapeHatchActionRouter: AnyObject {
     func escapeHatchDidRequestSwitch(to tab: Tab)
     func escapeHatchDidRequestClose(_ tab: Tab)

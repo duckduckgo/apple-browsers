@@ -21,6 +21,7 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 import UniformTypeIdentifiers
 import VPN
 
@@ -38,7 +39,15 @@ struct NetworkProtectionVPNSettingsView: View {
 
     @StateObject var viewModel = NetworkProtectionVPNSettingsViewModel()
 
+    /// When true, the view scrolls to the Strict Routing section once after appearing.
+    /// Set by the status view's pill so tapping it lands on that setting.
+    var scrollsToStrictRouting = false
+
     @State private var copySupportInfoState = CopySupportInfoState.idle
+
+    @State private var hasAutoScrolled = false
+
+    private let strictRoutingRowID = "strictRoutingRow"
 
     private var showsCopyDiagnosticsButton: Bool {
         AppDependencyProvider.shared.featureFlagger.isFeatureOn(.vpnShowCopyDiagnosticsButton)
@@ -46,6 +55,7 @@ struct NetworkProtectionVPNSettingsView: View {
 
     var body: some View {
         VStack {
+            ScrollViewReader { proxy in
             List {
                 switch viewModel.viewKind {
                 case .loading: EmptyView()
@@ -75,7 +85,8 @@ struct NetworkProtectionVPNSettingsView: View {
                 if viewModel.isStrictRoutingAvailable {
                     toggleSection(
                         text: UserText.netPStrictRoutingSettingTitle,
-                        footerText: UserText.netPStrictRoutingSettingFooter
+                        footerText: UserText.netPStrictRoutingSettingFooter,
+                        rowID: strictRoutingRowID
                     ) {
                         Toggle("", isOn: $viewModel.enforceRoutes)
                     }
@@ -87,13 +98,29 @@ struct NetworkProtectionVPNSettingsView: View {
                     diagnostics()
                 }
             }
-        }
-        .applyInsetGroupedListStyle()
-        .navigationTitle(UserText.netPVPNSettingsTitle).onAppear {
-            Task {
-                await viewModel.onViewAppeared()
+            .onAppear {
+                Task {
+                    await viewModel.onViewAppeared()
+                }
+            }
+            .onChange(of: viewModel.viewKind) { _ in
+                scrollToStrictRoutingIfNeeded(using: proxy)
+            }
             }
         }
+        .applyInsetGroupedListStyle()
+        .navigationTitle(UserText.netPVPNSettingsTitle)
+    }
+
+    /// Scrolls to the Strict Routing row once, when arriving via a deep link that requested it.
+    /// Driven by the view-kind change: leaving `.loading` inserts the notifications section above this
+    /// row, so scrolling then targets the settled layout. Latches on the first settled pass regardless of
+    /// availability, so a later view re-appear (e.g. returning from DNS settings) never re-scrolls.
+    private func scrollToStrictRoutingIfNeeded(using proxy: ScrollViewProxy) {
+        guard scrollsToStrictRouting, !hasAutoScrolled, viewModel.viewKind != .loading else { return }
+        hasAutoScrolled = true
+        guard viewModel.isStrictRoutingAvailable else { return }
+        proxy.scrollTo(strictRoutingRowID, anchor: .top)
     }
 
     func dnsSection() -> some View {
@@ -219,7 +246,7 @@ struct NetworkProtectionVPNSettingsView: View {
     }
 
     @ViewBuilder
-    func toggleSection(text: String, headerText: String? = nil, footerText: String, @ViewBuilder toggle: () -> some View) -> some View {
+    func toggleSection(text: String, headerText: String? = nil, footerText: String, rowID: String? = nil, @ViewBuilder toggle: () -> some View) -> some View {
         Section {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -231,6 +258,9 @@ struct NetworkProtectionVPNSettingsView: View {
 
                 toggle()
                     .toggleStyle(SwitchToggleStyle(tint: .init(designSystemColor: .accentPrimary)))
+            }
+            .ifLet(rowID) { view, id in
+                view.id(id)
             }
         } header: {
             if let headerText {

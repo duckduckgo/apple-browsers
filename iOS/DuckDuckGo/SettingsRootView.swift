@@ -253,8 +253,12 @@ struct SettingsRootView: View {
             } else {
                 SettingsDuckPlayerView().environmentObject(viewModel)
             }
-        case .netP:
-            NetworkProtectionRootView()
+        case .netP(let scrollToStrictRouting):
+            if scrollToStrictRouting {
+                NetworkProtectionVPNSettingsView(scrollsToStrictRouting: true)
+            } else {
+                NetworkProtectionRootView()
+            }
         case .aiChat:
             SettingsAIFeaturesView().environmentObject(viewModel)
         case .privateSearch:

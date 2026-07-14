@@ -127,7 +127,7 @@ struct NetworkProtectionStatusView: View {
             }
             .padding([.top, .bottom], 2)
             .background(
-                NavigationLink(destination: NetworkProtectionVPNSettingsView(), isActive: $isShowingVPNSettings) {
+                NavigationLink(destination: NetworkProtectionVPNSettingsView(scrollsToStrictRouting: true), isActive: $isShowingVPNSettings) {
                     EmptyView()
                 }
                 .opacity(0)

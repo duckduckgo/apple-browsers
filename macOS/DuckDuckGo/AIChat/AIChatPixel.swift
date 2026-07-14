@@ -141,6 +141,20 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User attaches selected text as page context via the "Attach to Duck.ai" context-menu action
     case aiChatAttachSelection
 
+    // MARK: - Page Context Extraction
+
+    /// Event Trigger: Page-context extraction produced usable content.
+    case aiChatPageContextExtractionSuccess
+
+    /// Event Trigger: Page-context extraction was attempted but produced no usable content.
+    /// `reason` is one of `emptyContent` / `timeout` / `malformed` / `unavailable`.
+    case aiChatPageContextExtractionFailed(reason: String)
+
+    /// Event Trigger: Page-context extraction was skipped because the page is not attachable
+    /// (blocklisted media type or a native special page). `category` is the blocklist category
+    /// key (e.g. `pdf`) or `internalPage`.
+    case aiChatPageContextExtractionPrevented(category: String)
+
     // MARK: - Deleting chat history
 
     /// Event Trigger: User requests to delete Duck.ai chat history from the fire button or history delete dialog
@@ -513,6 +527,12 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_page_context_removed"
         case .aiChatAttachSelection:
             return "aichat_attach_selection"
+        case .aiChatPageContextExtractionSuccess:
+            return "aichat_page_context_extraction_success"
+        case .aiChatPageContextExtractionFailed:
+            return "aichat_page_context_extraction_failed"
+        case .aiChatPageContextExtractionPrevented:
+            return "aichat_page_context_extraction_prevented"
         case let .aiChatAutoClearHistorySettingToggled(enabled):
             if enabled {
                 return "m_mac_aichat_history_autoclear_enabled"
@@ -739,6 +759,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatTranslationSourceLinkClicked,
                 .aiChatPageContextSourceLinkClicked,
                 .aiChatAttachSelection,
+                .aiChatPageContextExtractionSuccess,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
@@ -838,6 +859,10 @@ enum AIChatPixel: PixelKitEvent {
             return ["fileCount": String(fileCount)]
         case .aiChatAddressBarFileValidationFailed(let reason):
             return ["reason": reason]
+        case .aiChatPageContextExtractionFailed(let reason):
+            return ["reason": reason]
+        case .aiChatPageContextExtractionPrevented(let category):
+            return ["category": category]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
         case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):
@@ -909,6 +934,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatPageContextAdded,
                 .aiChatPageContextRemoved,
                 .aiChatAttachSelection,
+                .aiChatPageContextExtractionSuccess,
+                .aiChatPageContextExtractionFailed,
+                .aiChatPageContextExtractionPrevented,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
                 .aiChatDeleteHistoryFailed,

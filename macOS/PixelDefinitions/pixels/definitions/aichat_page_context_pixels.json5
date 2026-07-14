@@ -31,5 +31,45 @@
             },
             "channel"
         ]
+    },
+    "m_mac_aichat_page_context_extraction_success": {
+        "description": "Fired when Duck.ai page-context extraction produced usable content for the current page",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_page_context_extraction_failed": {
+        "description": "Fired when Duck.ai page-context extraction was attempted but produced no usable content",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "description": "Why extraction produced no usable content.",
+                "type": "string",
+                "enum": ["emptyContent", "timeout", "malformed", "unavailable"]
+            }
+        ]
+    },
+    "m_mac_aichat_page_context_extraction_prevented": {
+        "description": "Fired when Duck.ai page-context extraction was skipped because the current page is not attachable (blocklisted media type or a native special page)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "category",
+                "description": "The prevention category: a blocklist media category key (e.g. pdf, image, video, audio) or internalPage.",
+                "type": "string"
+            }
+        ]
     }
 }

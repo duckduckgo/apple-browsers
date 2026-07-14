@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import Foundation
 import Navigation
+import os.log
 import PrivacyConfig
 import WebKit
 
@@ -43,6 +44,10 @@ final class PageContextTabExtension {
     private let tabID: TabIdentifier
     private var content: Tab.TabContent = .none
     private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let extractionPixelHandler: PageContextExtractionPixelFiring
+    private var lastMainFrameResponse: (url: URL, mimeType: String?)?
+
     private let aiChatSessionStore: AIChatSessionStoring
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let isLoadedInSidebar: Bool
@@ -92,6 +97,8 @@ final class PageContextTabExtension {
         contentPublisher: some Publisher<Tab.TabContent, Never>,
         tabID: TabIdentifier,
         featureFlagger: FeatureFlagger,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        extractionPixelHandler: PageContextExtractionPixelFiring,
         aiChatSessionStore: AIChatSessionStoring,
         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
         isLoadedInSidebar: Bool,
@@ -99,6 +106,8 @@ final class PageContextTabExtension {
     ) {
         self.tabID = tabID
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.extractionPixelHandler = extractionPixelHandler
         self.aiChatSessionStore = aiChatSessionStore
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.isLoadedInSidebar = isLoadedInSidebar
@@ -201,11 +210,13 @@ final class PageContextTabExtension {
                 /// ignore unsolicited results so they can't overwrite attached context with nil.
                 if self.isContextCollectionEnabled {
                     self.pendingSignalsOnlyCollection = false
+                    self.fireExtractionOutcome(for: pageContext)
                     Task {
                         await self.handle(pageContext)
                     }
                 } else if self.pendingSignalsOnlyCollection {
                     self.pendingSignalsOnlyCollection = false
+                    self.fireExtractionOutcome(for: pageContext)
                     Task {
                         await self.handleSignalsOnly(pageContext)
                     }
@@ -293,11 +304,64 @@ final class PageContextTabExtension {
         }
     }
 
+    // MARK: - Attachability gate
+
+    private func currentAttachabilityPolicy() -> PageContextAttachabilityPolicy? {
+        let settings = privacyConfigurationManager.privacyConfig.settings(for: .pageContext)
+        guard let blocklist = PageContextBlocklistSettings(blocklist: settings["aiPageContextBlocklist"]) else {
+            return nil
+        }
+        return PageContextAttachabilityPolicy(settings: blocklist)
+    }
+
+    private func preventedAttachReason(for url: URL) -> String? {
+        guard let policy = currentAttachabilityPolicy() else { return nil }
+        let mimeType = lastMainFrameResponse.flatMap { $0.url == url ? $0.mimeType : nil }
+        let verdict = policy.verdict(url: url, mimeType: mimeType)
+        return verdict.isAttachable ? nil : (verdict.preventionReason ?? PageContextExtractionOutcome.internalPageCategory)
+    }
+
+    private func deliverPreventedContext(for url: URL, reason: String) {
+        let context = AIChatPageContextData(
+            title: content.title ?? "",
+            favicon: [],
+            url: url.absoluteString,
+            content: "",
+            truncated: false,
+            fullContentLength: 0,
+            attachable: false
+        )
+        Task { await handle(context) }
+        extractionPixelHandler.fire(.prevented(reason))
+    }
+
+    private func fireExtractionOutcome(for pageContext: AIChatPageContextData?) {
+        let outcome: PageContextExtractionOutcome
+        if let pageContext {
+            outcome = pageContext.isEmpty() ? .failure(.emptyContent) : .success
+        } else {
+            outcome = .failure(.malformed)
+        }
+        Logger.aiChat.log("📊 PageContext extraction outcome: \(String(describing: outcome), privacy: .public)")
+        extractionPixelHandler.fire(outcome)
+    }
+
     private func collectPageContextIfNeeded() {
-        guard case .url = content, isContextCollectionEnabled else {
+        guard case .url(let url, _, _) = content, isContextCollectionEnabled else {
             return
         }
-        pageContextUserScript?.collect()
+        if let reason = preventedAttachReason(for: url) {
+            Logger.aiChat.log("🚫 PageContext gate: prevented attach (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
+            deliverPreventedContext(for: url, reason: reason)
+            return
+        }
+        guard let pageContextUserScript else {
+            Logger.aiChat.log("⚠️ PageContext gate: user script unavailable, cannot collect host=\(url.host ?? "nil", privacy: .public)")
+            extractionPixelHandler.fire(.failure(.unavailable))
+            return
+        }
+        Logger.aiChat.log("✅ PageContext gate: attachable, collecting host=\(url.host ?? "nil", privacy: .public)")
+        pageContextUserScript.collect()
     }
 
     // MARK: - Selection Context ("Attach to Duck.ai")
@@ -468,10 +532,15 @@ final class PageContextTabExtension {
     private func requestSignalsOnlyCollectionIfNeeded() {
         guard featureFlagger.isFeatureOn(.aiChatPageContext),
               featureFlagger.isFeatureOn(.sidebarSuggestedPrompts),
-              case .url = content,
+              case .url(let url, _, _) = content,
               !isContextCollectionEnabled,
               aiChatSessionStore.sessions[tabID]?.chatViewController != nil,
               let pageContextUserScript else {
+            return
+        }
+        if let reason = preventedAttachReason(for: url) {
+            Logger.aiChat.log("🚫 PageContext gate (signals-only): prevented (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
+            deliverPreventedContext(for: url, reason: reason)
             return
         }
         pendingSignalsOnlyCollection = true
@@ -524,6 +593,14 @@ extension PageContextTabExtension: NavigationResponder {
         guard !isLoadedInSidebar else { return }
         collectPageContextIfNeeded()
         requestSignalsOnlyCollectionIfNeeded()
+    }
+
+    @MainActor
+    func decidePolicy(for navigationResponse: NavigationResponse) async -> NavigationResponsePolicy? {
+        guard !isLoadedInSidebar, navigationResponse.isForMainFrame else { return .next }
+        lastMainFrameResponse = (navigationResponse.url, navigationResponse.response.mimeType)
+        Logger.aiChat.log("📄 PageContext MIME captured: \(navigationResponse.response.mimeType ?? "nil", privacy: .public) host=\(navigationResponse.url.host ?? "nil", privacy: .public)")
+        return .next
     }
 }
 

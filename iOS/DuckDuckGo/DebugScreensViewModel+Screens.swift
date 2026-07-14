@@ -263,6 +263,8 @@ extension DebugScreensViewModel {
                 }
 
                 weak var capturedController: OnboardingDebugViewController?
+
+                // swiftlint:disable:next empty_parentheses_with_trailing_closure
                 let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView() {
                     guard let capturedController else { return }
 

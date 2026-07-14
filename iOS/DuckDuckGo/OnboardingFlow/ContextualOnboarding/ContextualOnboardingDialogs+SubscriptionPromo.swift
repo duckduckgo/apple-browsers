@@ -1,5 +1,5 @@
 //
-//  RebrandedContextualOnboardingDialogs+SubscriptionPromo.swift
+//  ContextualOnboardingDialogs+SubscriptionPromo.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.

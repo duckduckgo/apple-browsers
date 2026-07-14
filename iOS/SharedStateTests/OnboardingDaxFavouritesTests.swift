@@ -37,8 +37,6 @@ import Combine
 import PrivacyConfig
 import AIChatTestingUtilities
 
-// swiftlint:disable force_try
-
 private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
     func isFeatureAvailable() -> Bool { false }
     func isEligibleForNTPAfterIdle() -> Bool { false }
@@ -281,5 +279,3 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
     }
 
 }
-
-// swiftlint:enable force_try

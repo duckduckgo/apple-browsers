@@ -1162,6 +1162,13 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_dbp_freemium_settings_entry_point_impression": {
+        "description": "Fires when the freemium Personal Information Removal entry point is shown to an eligible user in Settings. Used to count entry-point exposure for the freemium funnel dashboard.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_dbp_freemium_settings_entry_point_clicked": {
         "description": "Fires when the user taps the freemium Personal Information Removal entry point CTA in Settings.",
         "owners": ["jozsef-vesza"],

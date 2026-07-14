@@ -1,7 +1,7 @@
 //
 //  FireDialogView.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,21 +28,6 @@ import SwiftUIExtensions
 import BrowserServicesKit
 import Combine
 
-// Result returned by FireDialogView when using onConfirm callback
-struct FireDialogResult {
-    let clearingOption: FireDialogViewModel.ClearingOption
-    let includeHistory: Bool
-    let includeTabsAndWindows: Bool
-    let includeCookiesAndSiteData: Bool
-    let includeChatHistory: Bool
-    /// Optional selection of cookie domains (eTLD+1). When provided, cookie/site data clearing is limited to this set.
-    var selectedCookieDomains: Set<String>?
-    /// Optional explicit visits selection for history flows
-    var selectedVisits: [Visit]?
-    /// Burn all windows in case we are burning visits for today (respecting closeWindows flag)
-    var isToday: Bool = false
-}
-
 @MainActor
 struct FireDialogView: ModalView {
 
@@ -67,9 +52,8 @@ struct FireDialogView: ModalView {
         switch viewModel.clearingOption {
         case .currentTab:
             baseMessage = UserText.fireDialogCloseThisTab
-        case .currentWindow:
-            baseMessage = UserText.fireDialogCloseThisWindow
-        case .allData:
+        case .currentWindow, // current window is pending removal, not supported by the simplified fire dialog, and defaults to burning all data.
+                .allData:
             baseMessage = UserText.fireDialogCloseAllTabsWindows
         }
 
@@ -224,11 +208,10 @@ struct FireDialogView: ModalView {
             ),
             segments: [
                 .init(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogSegmentTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.tabDesktop)),
-                .init(id: FireDialogViewModel.ClearingOption.currentWindow.rawValue, title: UserText.fireDialogSegmentWindow, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.window)),
                 .init(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
             ],
-            containerBackground: Color(designSystemColor: .containerFillPrimary),
-            containerBorder: Color(designSystemColor: .containerBorderPrimary),
+            containerBackground: .clear,
+            containerBorder: .clear,
             containerCornerRadius: style.segmentedControlCornerRadius,
             segmentCornerRadius: style.segmentedControlItemCornerRadius,
             selectedForeground: Color(designSystemColor: .accentPrimary),
@@ -798,6 +781,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         aiChatHistoryCleaner: MockAIChatHistoryCleaner(),
         fireproofDomains: Application.appDelegate.fireproofDomains,
         faviconManagement: Application.appDelegate.faviconManager,
+        featureFlagger: Application.appDelegate.featureFlagger,
         tld: tld
     )
 
@@ -839,6 +823,7 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         aiChatHistoryCleaner: MockAIChatHistoryCleaner(),
         fireproofDomains: fireproofDomains,
         faviconManagement: faviconMock,
+        featureFlagger: Application.appDelegate.featureFlagger,
         clearingOption: .allData,
         tld: tld
     )

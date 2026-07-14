@@ -120,38 +120,38 @@
             },
             // Per-step latencies
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_latency_ms",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_latency_ms$",
                 "type": "integer",
                 "description": "Latency for VPN connection steps (in ms)"
             },
             // Per-step error domains
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.domain",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.domain$",
                 "type": "string",
                 "description": "Error domain for VPN connection step failures"
             },
             // Per-step error codes
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.code",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.code$",
                 "type": "integer",
                 "description": "Error code for VPN connection step failures"
             },
             // Per-step error descriptions
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.description",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.description$",
                 "type": "string",
                 "description": "Human-readable error description for VPN connection step failures",
                 "examples": ["simulateControllerFailureError", "loadFromPreferencesFailed"]
             },
             // Per-step underlying error domains
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_domain[0-9]?",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_domain[0-9]?$",
                 "type": "string",
                 "description": "Underlying error domain for VPN connection step failures"
             },
             // Per-step underlying error codes
             {
-                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_code[0-9]?",
+                "keyPattern": "^feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_code[0-9]?$",
                 "type": "integer",
                 "description": "Underlying error code for VPN connection step failures"
             },
@@ -238,30 +238,30 @@
                 "description": "Operating system major/minor version at the time of the leak check, for example 13.7 or 26.4"
             },
             {
-                "keyPattern": "feature\\.data\\.ext\\.ipv(4|6)\\.leak_ip_type",
+                "keyPattern": "^feature\\.data\\.ext\\.ipv(4|6)\\.leak_ip_type$",
                 "type": "string",
                 "description": "Classification of the leaked IP, present when any probe of that IP family reported a leak",
                 "enum": ["public", "private", "unknown"]
             },
             {
-                "keyPattern": "feature\\.data\\.ext\\.ipv(4|6)\\.(http|https|stun)\\.status",
+                "keyPattern": "^feature\\.data\\.ext\\.ipv(4|6)\\.(http|https|stun)\\.status$",
                 "type": "string",
                 "description": "Per-probe outcome for the IP family × probe combination",
                 "enum": ["success", "leak", "error"]
             },
             {
-                "keyPattern": "feature\\.data\\.ext\\.ipv(4|6)\\.(http|https|stun)\\.(error_domain|underlying_domain)",
+                "keyPattern": "^feature\\.data\\.ext\\.ipv(4|6)\\.(http|https|stun)\\.(error_domain|underlying_domain)$",
                 "type": "string",
                 "description": "Error domain associated with a per-probe error (outer or underlying)",
                 "examples": ["NWErrorDomain", "NSURLErrorDomain", "LeakCheckHTTPResponseParser.ParseError"]
             },
             {
-                "keyPattern": "feature\\.data\\.ext\\.ipv(4|6)\\.(http|https|stun)\\.(error_code|underlying_code)",
+                "keyPattern": "^feature\\.data\\.ext\\.ipv(4|6)\\.(http|https|stun)\\.(error_code|underlying_code)$",
                 "type": "integer",
                 "description": "Error code associated with a per-probe error (outer or underlying)"
             },
             {
-                "keyPattern": "feature\\.data\\.ext\\.ipv4\\.(http|https|stun)\\.leak_octet[1-4]_matched",
+                "keyPattern": "^feature\\.data\\.ext\\.ipv4\\.(http|https|stun)\\.leak_octet[1-4]_matched$",
                 "type": "boolean",
                 "description": "Whether the corresponding octet of the observed IPv4 address matched the egress IP, present only when a probe reported a leak"
             }

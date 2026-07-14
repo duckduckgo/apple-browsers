@@ -17,6 +17,7 @@
 //
 
 import Common
+import FeatureFlags
 import FoundationExtensions
 import History
 import HistoryView
@@ -54,6 +55,7 @@ final class FireDialogViewModelTests: XCTestCase {
         let manager = WebCacheManagerMock()
         let permissionManager = PermissionManagerMock()
         let faviconManager = FaviconManagerMock()
+        let featureFlagger = MockFeatureFlagger()
 
         fire = Fire(cacheManager: manager,
                     historyCoordinating: historyCoordinator,
@@ -68,7 +70,7 @@ final class FireDialogViewModelTests: XCTestCase {
         tabCollectionVM = TabCollectionViewModel(isPopup: false)
         onboardingContextualDialogsManager = CapturingContextualOnboardingStateUpdater()
         fireCoordinator = FireCoordinator(tld: TLD(),
-                                          featureFlagger: Application.appDelegate.featureFlagger,
+                                          featureFlagger: featureFlagger,
                                           historyCoordinating: historyCoordinator,
                                           visualizeFireAnimationDecider: nil,
                                           onboardingContextualDialogsManager: { [unowned self] in self.onboardingContextualDialogsManager },
@@ -192,7 +194,7 @@ final class FireDialogViewModelTests: XCTestCase {
 
         // Use the inactive fire coordinator
         let inactiveFireCoordinator = FireCoordinator(tld: TLD(),
-                                                      featureFlagger: Application.appDelegate.featureFlagger,
+                                                      featureFlagger: MockFeatureFlagger(),
                                                       historyCoordinating: historyCoordinator,
                                                       visualizeFireAnimationDecider: nil,
                                                       onboardingContextualDialogsManager: { [unowned self] in self.onboardingContextualDialogsManager },
@@ -254,6 +256,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: faviconManager,
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
 
@@ -322,6 +325,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: faviconManager,
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
 
@@ -356,6 +360,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
         vm.clearingOption = .currentTab
@@ -416,6 +421,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
         vm.clearingOption = .currentWindow
@@ -477,6 +483,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
         vm.clearingOption = .currentTab
@@ -526,6 +533,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
         vm.clearingOption = .currentWindow
@@ -574,6 +582,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
         vm.clearingOption = .allData
@@ -629,6 +638,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
         vm.clearingOption = .allData
@@ -684,6 +694,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
         vm.clearingOption = .currentTab
@@ -743,6 +754,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
         vm.clearingOption = .currentWindow
@@ -803,6 +815,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
         vm.clearingOption = .allData
@@ -861,6 +874,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
 
@@ -926,6 +940,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             tld: TLD(),
         )
 
@@ -994,6 +1009,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             tld: TLD(),
         )
@@ -1379,6 +1395,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: faviconManager,
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             scopeVisits: scopeVisits,  // Provided by coordinator
             tld: TLD()
@@ -1415,6 +1432,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
             tld: TLD()
@@ -1446,6 +1464,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: faviconManager,
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
             tld: Application.appDelegate.tld
@@ -1478,6 +1497,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
             tld: TLD()
@@ -1504,6 +1524,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: .currentTab,
             settings: mockSettings,
             tld: TLD()
@@ -1535,6 +1556,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             mode: .historyView(query: .rangeFilter(.today)),
             settings: mockSettings,
@@ -1560,6 +1582,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1576,6 +1599,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1595,6 +1619,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1616,6 +1641,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1631,6 +1657,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1648,6 +1675,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1669,6 +1697,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1684,6 +1713,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1701,6 +1731,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1722,6 +1753,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1737,6 +1769,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1754,6 +1787,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1775,6 +1809,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
             tld: TLD()
@@ -1791,6 +1826,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
             tld: TLD()
@@ -1809,6 +1845,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: .allData,
             settings: mockSettings,
             tld: TLD()
@@ -1831,6 +1868,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1857,6 +1895,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1890,6 +1929,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: .currentTab,
             includeTabsAndWindows: true,
             includeHistory: true,
@@ -1921,6 +1961,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             settings: mockSettings,
             tld: TLD()
         )
@@ -1931,6 +1972,125 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.includeHistory, "Default includeHistory should be true")
         XCTAssertTrue(viewModel.includeCookiesAndSiteData, "Default includeCookiesAndSiteData should be true")
         XCTAssertFalse(viewModel.includeChatHistorySetting, "Default includeChatHistorySetting should be false")
+    }
+
+    // MARK: - Simplified Fire Dialog: currentWindow folding
+
+    @MainActor func testClearingOption_WhenSimplifiedEnabledAndPersistedScopeIsCurrentWindow_FoldsToAllData() {
+        // Scenario: The simplified Fire dialog is enabled and the user's last-selected scope was .currentWindow,
+        //           an option the simplified dialog no longer offers.
+        // Action: Create the ViewModel with no explicit clearingOption so the persisted value is resolved.
+        // Expectation: The resolved clearingOption is folded to .allData and the folded value is persisted.
+
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: true])
+        let mockSettings = MockFireDialogViewSettings(lastSelectedClearingOption: .currentWindow)
+
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            featureFlagger: featureFlagger,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        XCTAssertEqual(viewModel.clearingOption, .allData, "currentWindow should fold to allData when the simplified dialog is enabled")
+        XCTAssertEqual(mockSettings.lastSelectedClearingOption, .allData, "The folded value should be persisted")
+    }
+
+    @MainActor func testClearingOption_WhenSimplifiedEnabledAndScopeIsCurrentWindow_FoldsToAllData() {
+        // Scenario: The simplified Fire dialog is enabled and .currentWindow is provided explicitly.
+        // Action: Create the ViewModel with clearingOption: .currentWindow.
+        // Expectation: The clearingOption is folded to .allData.
+
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: true])
+
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            featureFlagger: featureFlagger,
+            clearingOption: .currentWindow,
+            settings: MockFireDialogViewSettings(),
+            tld: TLD()
+        )
+
+        XCTAssertEqual(viewModel.clearingOption, .allData, "currentWindow should fold to allData when the simplified dialog is enabled")
+    }
+
+    @MainActor func testClearingOption_WhenSimplifiedDisabledAndScopeIsCurrentWindow_RemainsCurrentWindow() {
+        // Scenario: The simplified Fire dialog is disabled and .currentWindow is the selected scope.
+        // Action: Create the ViewModel with clearingOption: .currentWindow and the flag off.
+        // Expectation: The clearingOption is left untouched.
+
+        let featureFlagger = MockFeatureFlagger() // fireDialogSimplified is off by default
+
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            featureFlagger: featureFlagger,
+            clearingOption: .currentWindow,
+            settings: MockFireDialogViewSettings(),
+            tld: TLD()
+        )
+
+        XCTAssertEqual(viewModel.clearingOption, .currentWindow, "currentWindow should be preserved when the simplified dialog is disabled")
+    }
+
+    @MainActor func testClearingOption_WhenSimplifiedEnabledAndScopeIsCurrentTab_RemainsCurrentTab() {
+        // Scenario: The simplified Fire dialog is enabled but the selected scope is .currentTab.
+        // Action: Create the ViewModel with clearingOption: .currentTab.
+        // Expectation: Only .currentWindow is folded; .currentTab is preserved.
+
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: true])
+
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            featureFlagger: featureFlagger,
+            clearingOption: .currentTab,
+            settings: MockFireDialogViewSettings(),
+            tld: TLD()
+        )
+
+        XCTAssertEqual(viewModel.clearingOption, .currentTab, "currentTab should be preserved when the simplified dialog is enabled")
+    }
+
+    @MainActor func testClearingOption_WhenSimplifiedEnabledAndScopeIsAllData_RemainsAllData() {
+        // Scenario: The simplified Fire dialog is enabled and the selected scope is already .allData.
+        // Action: Create the ViewModel with clearingOption: .allData.
+        // Expectation: .allData is preserved.
+
+        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.fireDialogSimplified.rawValue: true])
+
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            featureFlagger: featureFlagger,
+            clearingOption: .allData,
+            settings: MockFireDialogViewSettings(),
+            tld: TLD()
+        )
+
+        XCTAssertEqual(viewModel.clearingOption, .allData, "allData should be preserved when the simplified dialog is enabled")
     }
 
     // MARK: - Helper Methods
@@ -1947,6 +2107,7 @@ final class FireDialogViewModelTests: XCTestCase {
             aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
+            featureFlagger: MockFeatureFlagger(),
             clearingOption: clearingOption,
             scopeCookieDomains: scopeCookieDomains,
             tld: TLD()

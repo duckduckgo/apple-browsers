@@ -613,8 +613,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             qrCodeString: stringForQRCode,
             source: CodeCollectionSource(syncSetupSource: source))
         model.delegate = self
-        
-        let controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
+
+        let rootView = useSimplifiedLayoutV2
+            ? AnyView(ScanQRCodeViewV2(model: model))
+            : AnyView(SimplifiedScanOrShowCodeView(model: model))
+        let controller = UIHostingController(rootView: rootView)
 
         let navController = UIDevice.current.userInterfaceIdiom == .phone
         ? PortraitNavigationController(rootViewController: controller)
@@ -633,7 +636,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             navController.modalPresentationStyle = .fullScreen
         }
         navigationController?.present(navController, animated: true) {
-            self.checkCameraPermission(model: model)
+            if !self.useSimplifiedLayoutV2 {
+                self.checkCameraPermission(model: model)
+            }
             if let onPresentPixelInfo {
                 let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
                 var parameters = [
@@ -644,6 +649,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 Pixel.fire(pixel: onPresentPixelInfo.pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
             }
         }
+    }
+
+    func requestCameraPermission(for model: ScanOrPasteCodeViewModel) {
+        checkCameraPermission(model: model)
     }
 
     func checkCameraPermission(model: ScanOrPasteCodeViewModel) {

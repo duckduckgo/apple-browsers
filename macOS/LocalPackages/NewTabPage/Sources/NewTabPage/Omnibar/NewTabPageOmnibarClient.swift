@@ -34,6 +34,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case getAiChats = "omnibar_getAiChats"
         case openAiChat = "omnibar_openAiChat"
         case viewAllAIChats = "omnibar_viewAllAIChats"
+        case openCustomizeResponses = "omnibar_openCustomizeResponses"
+        case setCustomizeResponsesActive = "omnibar_setCustomizeResponsesActive"
         case getOpenTabs = "omnibar_getOpenTabs"
         case getTabContent = "omnibar_getTabContent"
     }
@@ -69,7 +71,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.selectedReasoningEffortPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.isVoiceChatAccessEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.showAskAiSuggestionPublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.isAttachTabsEnabledPublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.isAttachTabsEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.customizeResponsesStatePublisher.map { _ in () }.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -99,6 +102,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.getAiChats.rawValue: { [weak self] in try await self?.getAiChats(params: $0, original: $1) },
             MessageName.openAiChat.rawValue: { [weak self] in try await self?.openAiChat(params: $0, original: $1) },
             MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) },
+            MessageName.openCustomizeResponses.rawValue: { [weak self] in try await self?.openCustomizeResponses(params: $0, original: $1) },
+            MessageName.setCustomizeResponsesActive.rawValue: { [weak self] in try await self?.setCustomizeResponsesActive(params: $0, original: $1) },
             MessageName.getOpenTabs.rawValue: { [weak self] in try await self?.getOpenTabs(params: $0, original: $1) },
             MessageName.getTabContent.rawValue: { [weak self] in try await self?.getTabContent(params: $0, original: $1) }
         ])
@@ -107,6 +112,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let aiModelSections = await modelsProvider?.fetchAIModelSections()
+        let customize = configProvider.customizeResponsesState(requestingWebView: original.webView)
         return NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
@@ -117,6 +123,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             enableImageGeneration: configProvider.isImageGenerationEnabled,
             enableWebSearch: configProvider.isWebSearchEnabled,
+            enableCustomizeResponses: configProvider.isCustomizeResponsesEnabled,
+            customizeSubLabel: customize.hasCustomization ? customize.subLabel : nil,
+            hasCustomization: customize.hasCustomization,
+            customizationActive: customize.active,
             enableVoiceChatAccess: configProvider.isVoiceChatAccessEnabled,
             enableAskAiSuggestion: configProvider.showAskAiSuggestion,
             selectedModelId: configProvider.selectedModelId,
@@ -182,6 +192,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func notifyConfigUpdated() {
+        let customize = configProvider.customizeResponsesState(requestingWebView: nil)
         let config = NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
@@ -192,6 +203,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             enableImageGeneration: configProvider.isImageGenerationEnabled,
             enableWebSearch: configProvider.isWebSearchEnabled,
+            enableCustomizeResponses: configProvider.isCustomizeResponsesEnabled,
+            customizeSubLabel: customize.hasCustomization ? customize.subLabel : nil,
+            hasCustomization: customize.hasCustomization,
+            customizationActive: customize.active,
             enableVoiceChatAccess: configProvider.isVoiceChatAccessEnabled,
             enableAskAiSuggestion: configProvider.showAskAiSuggestion,
             selectedModelId: configProvider.selectedModelId,
@@ -319,6 +334,21 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             return nil
         }
         await actionHandler.viewAllAiChats(target: action.target)
+        return nil
+    }
+
+    @MainActor
+    private func openCustomizeResponses(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        actionHandler.openCustomizeResponses()
+        return nil
+    }
+
+    @MainActor
+    private func setCustomizeResponsesActive(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.SetCustomizeResponsesActiveAction = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        actionHandler.setCustomizeResponsesActive(action.active)
         return nil
     }
 

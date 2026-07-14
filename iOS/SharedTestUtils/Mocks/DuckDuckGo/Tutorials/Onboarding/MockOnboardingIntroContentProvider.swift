@@ -23,8 +23,8 @@ import Foundation
 class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent = .mock
     var introStepContent: OnboardingIntroStepContent = .mock
-    var browserComparisonContent: OnboardingBrowserComparisonContent = .mock
-    var aiComparisonContent: OnboardingAIComparisonContent = .mock
+    var setDefaultBrowserContent: OnboardingComparisonContent = .mockBrowser
+    var aiIntroContent: OnboardingComparisonContent = .mockAI
     var addToDockContent: OnboardingAddToDockContent = .mock
     var appIconColorContent: OnboardingAppIconColorContent = .mock
     var addressBarPositionContent: OnboardingAddressBarPositionContent = .mock
@@ -63,27 +63,27 @@ extension OnboardingIntroStepContent {
     )
 }
 
-extension OnboardingBrowserComparisonContent {
-    static let mock = OnboardingBrowserComparisonContent(
+extension OnboardingComparisonContent {
+    static let mockBrowser = OnboardingComparisonContent(
         title: "Browser Comparison Title",
+        subHeader: nil,
         features: [
             .init(type: RebrandedComparisonTableModel.Feature.BrowserFeatureType.privateSearch, competitorAvailability: .unavailable, ddgAvailability: .available)
         ],
         primaryCTA: "Browser Comparison Primary",
         secondaryCTA: "Browser Comparison Secondary",
-        daxAnimation: .wingLeft
+        daxAnimation: .wingBottom
     )
-}
 
-extension OnboardingAIComparisonContent {
-    static let mock = OnboardingAIComparisonContent(
+    static let mockAI = OnboardingComparisonContent(
         title: "AI Comparison Title",
         subHeader: "AI Comparison SubHeader",
         features: [
             .init(type: RebrandedComparisonTableModel.Feature.AIFeatureType.anonymousChats, competitorAvailability: .unavailable, ddgAvailability: .available)
         ],
         primaryCTA: "AI Comparison Primary",
-        daxAnimation: .wingLeft
+        secondaryCTA: nil,
+        daxAnimation: .wingBottom
     )
 }
 

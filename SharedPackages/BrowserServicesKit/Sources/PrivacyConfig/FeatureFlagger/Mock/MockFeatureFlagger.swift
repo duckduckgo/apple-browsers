@@ -70,4 +70,8 @@ public final class MockFeatureFlagger: FeatureFlagger {
     public func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
         resolveCohortStub
     }
+
+    public func assignedCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
+        resolveCohortStub
+    }
 }

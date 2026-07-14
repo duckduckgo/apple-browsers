@@ -77,7 +77,8 @@ extension MainViewController {
         guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
             isFloatingUIEnabled: isFloatingUIEnabled,
             addressBarPosition: appSettings.currentAddressBarPosition,
-            isUnifiedToggleInputVisible: false
+            isUnifiedToggleInputVisible: false,
+            isMinimalChromeLayout: isInMinimalChromeLayout
         ),
               currentTab?.isAITab != true else {
             return

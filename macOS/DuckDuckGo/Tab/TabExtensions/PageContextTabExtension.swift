@@ -50,6 +50,10 @@ final class PageContextTabExtension {
 
     private var extractionResolver = PageContextExtractionResolver()
 
+    /// How long to wait for a `collect()` result before reporting it as `.timeout`. Matches
+    /// `PageContextUserScript.collectAndWait`'s default.
+    private static let collectionTimeout: TimeInterval = 5
+
     private let aiChatSessionStore: AIChatSessionStoring
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let isLoadedInSidebar: Bool
@@ -342,8 +346,22 @@ final class PageContextTabExtension {
         guard let resolution = extractionResolver.resolve(pageContext: pageContext) else {
             return
         }
-        Logger.aiChat.debug("📊 PageContext extraction outcome: \(String(describing: resolution.outcome), privacy: .public) trigger=\(resolution.trigger.rawValue, privacy: .public) latency=\(resolution.latency.rawValue, privacy: .public)")
+        fire(resolution)
+    }
+
+    private func fire(_ resolution: PageContextExtractionResolver.Resolution) {
+        Logger.aiChat.debug("📊 PageContext extraction outcome: \(String(describing: resolution.outcome), privacy: .public) trigger=\(resolution.trigger.rawValue, privacy: .public) latency=\(resolution.latency?.rawValue ?? "nil", privacy: .public)")
         extractionPixelHandler.fire(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
+    }
+
+    /// Fires `.timeout` for any collect that hasn't produced a result within the timeout window and
+    /// clears its pending entry, so a never-resolving collect neither loses its pixel nor lets a
+    /// stale entry mis-attribute a later navigation.
+    private func scheduleCollectionTimeout() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.collectionTimeout) { [weak self] in
+            guard let self else { return }
+            self.extractionResolver.expireCollections(olderThan: Self.collectionTimeout).forEach { self.fire($0) }
+        }
     }
 
     private func collectPageContextIfNeeded(trigger: PageContextExtractionTrigger) {
@@ -363,6 +381,7 @@ final class PageContextTabExtension {
         extractionResolver.requested(trigger: trigger)
         Logger.aiChat.debug("✅ PageContext gate: attachable, collecting host=\(url.host ?? "nil", privacy: .public) trigger=\(trigger.rawValue, privacy: .public)")
         pageContextUserScript.collect()
+        scheduleCollectionTimeout()
     }
 
     // MARK: - Selection Context ("Attach to Duck.ai")
@@ -547,6 +566,7 @@ final class PageContextTabExtension {
         pendingSignalsOnlyCollection = true
         extractionResolver.requested(trigger: .tabContent)
         pageContextUserScript.collect()
+        scheduleCollectionTimeout()
     }
 
     /// Delivers a signals-only payload from a collected context: keeps the Content-Scope-Scripts

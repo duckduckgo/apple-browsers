@@ -25,7 +25,8 @@ public struct PageContextExtractionResolver {
     public struct Resolution: Equatable {
         public let outcome: PageContextExtractionOutcome
         public let trigger: PageContextExtractionTrigger
-        public let latency: PageContextExtractionLatencyBucket
+        /// Request-to-result time; `nil` when no result arrived (a timed-out collection).
+        public let latency: PageContextExtractionLatencyBucket?
     }
 
     private struct PendingCollection {
@@ -57,5 +58,22 @@ public struct PageContextExtractionResolver {
 
         let seconds = Double(now.uptimeNanoseconds - request.startedAt.uptimeNanoseconds) / 1_000_000_000
         return Resolution(outcome: outcome, trigger: request.trigger, latency: PageContextExtractionLatencyBucket(seconds: seconds))
+    }
+
+    /// Drops requests that have been outstanding for at least `timeout` and returns a
+    /// `.failure(.timeout)` resolution (no latency) for each, oldest first. A `collect()` that
+    /// never yields a result would otherwise leave its entry pending indefinitely.
+    public mutating func expireCollections(olderThan timeout: TimeInterval, now: DispatchTime = .now()) -> [Resolution] {
+        let cutoffNanos = UInt64(timeout * 1_000_000_000)
+        var expired: [Resolution] = []
+        pending.removeAll { request in
+            guard now.uptimeNanoseconds >= request.startedAt.uptimeNanoseconds,
+                  now.uptimeNanoseconds - request.startedAt.uptimeNanoseconds >= cutoffNanos else {
+                return false
+            }
+            expired.append(Resolution(outcome: .failure(.timeout), trigger: request.trigger, latency: nil))
+            return true
+        }
+        return expired
     }
 }

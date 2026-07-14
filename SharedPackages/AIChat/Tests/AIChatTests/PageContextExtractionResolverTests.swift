@@ -143,4 +143,50 @@ final class PageContextExtractionResolverTests: XCTestCase {
         _ = resolver.resolve(pageContext: nonEmptyContext())
         XCTAssertFalse(resolver.hasPendingCollections)
     }
+
+    // MARK: - Timeout expiry
+
+    func testWhenCollectionExceedsTimeoutThenExpiredAsTimeoutWithNilLatency() {
+        var resolver = PageContextExtractionResolver()
+        resolver.requested(trigger: .navigation, at: time(0))
+        let expired = resolver.expireCollections(olderThan: 5, now: time(6))
+        XCTAssertEqual(expired.count, 1)
+        XCTAssertEqual(expired.first?.outcome, .failure(.timeout))
+        XCTAssertEqual(expired.first?.trigger, .navigation)
+        XCTAssertNil(expired.first?.latency)
+        XCTAssertFalse(resolver.hasPendingCollections)
+    }
+
+    func testWhenCollectionWithinTimeoutThenNotExpired() {
+        var resolver = PageContextExtractionResolver()
+        resolver.requested(trigger: .navigation, at: time(0))
+        XCTAssertTrue(resolver.expireCollections(olderThan: 5, now: time(3)).isEmpty)
+        XCTAssertTrue(resolver.hasPendingCollections)
+    }
+
+    func testWhenMultipleCollectionsExpireThenReturnedOldestFirst() {
+        var resolver = PageContextExtractionResolver()
+        resolver.requested(trigger: .navigation, at: time(0))
+        resolver.requested(trigger: .userRequest, at: time(1))
+        let expired = resolver.expireCollections(olderThan: 5, now: time(7))
+        XCTAssertEqual(expired.map(\.trigger), [.navigation, .userRequest])
+        XCTAssertFalse(resolver.hasPendingCollections)
+    }
+
+    func testWhenOnlyOldCollectionsExpireThenNewerRemainForNextResult() {
+        var resolver = PageContextExtractionResolver()
+        resolver.requested(trigger: .navigation, at: time(0))
+        resolver.requested(trigger: .userRequest, at: time(4))
+        // At t=6 only the first (age 6) is past the 5s timeout; the second (age 2) stays pending.
+        XCTAssertEqual(resolver.expireCollections(olderThan: 5, now: time(6)).map(\.trigger), [.navigation])
+        XCTAssertTrue(resolver.hasPendingCollections)
+        XCTAssertEqual(resolver.resolve(pageContext: nonEmptyContext(), now: time(6))?.trigger, .userRequest)
+    }
+
+    func testWhenResolvedBeforeTimeoutThenExpiryIsNoOp() {
+        var resolver = PageContextExtractionResolver()
+        resolver.requested(trigger: .navigation, at: time(0))
+        _ = resolver.resolve(pageContext: nonEmptyContext(), now: time(1))
+        XCTAssertTrue(resolver.expireCollections(olderThan: 5, now: time(10)).isEmpty)
+    }
 }

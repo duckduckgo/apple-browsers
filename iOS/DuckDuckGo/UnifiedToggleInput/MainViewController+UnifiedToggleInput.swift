@@ -195,7 +195,10 @@ extension MainViewController {
             isInMinimalChromeLayout: isInMinimalChromeLayout,
             currentToolbarIsHidden: viewCoordinator.toolbar.isHidden,
             toolbarAlpha: viewCoordinator.toolbar.alpha,
-            toolbarBottomConstant: viewCoordinator.constraints.toolbarBottom.constant
+            toolbarBottomConstant: viewCoordinator.constraints.toolbarBottom.constant,
+            isOnAITab: currentTab?.isAITab == true,
+            isAIChatInputHiddenByFrontend: unifiedToggleInputCoordinator?.aiChatInputBoxVisibility == .hidden,
+            isVoiceSessionActive: unifiedToggleInputCoordinator?.isVoiceSessionActive == true
         )
         applyToolbarVisibility(UnifiedInputChromeResolver.resolve(inputs))
     }

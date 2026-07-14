@@ -29,6 +29,9 @@ struct UnifiedInputChromeResolverInputs: Equatable {
     let currentToolbarIsHidden: Bool
     let toolbarAlpha: CGFloat
     let toolbarBottomConstant: CGFloat
+    let isOnAITab: Bool
+    let isAIChatInputHiddenByFrontend: Bool
+    let isVoiceSessionActive: Bool
 }
 
 enum ToolbarVisibility: Equatable {
@@ -43,6 +46,10 @@ struct ChromeState: Equatable {
     let toolbar: ToolbarVisibility
     /// True when the toolbar's hidden-state flips, so the bars layout must be recomputed.
     let recomputesBars: Bool
+    /// Hides the bottom UTI input bar when FE asks to hide the chat input on an AI tab.
+    let hidesAIChatInput: Bool
+    /// Hides the header chats/compose pill while a voice session is in progress on an AI tab.
+    let voiceChromeActive: Bool
 }
 
 enum UnifiedInputChromeResolver {
@@ -50,7 +57,12 @@ enum UnifiedInputChromeResolver {
     static func resolve(_ inputs: UnifiedInputChromeResolverInputs) -> ChromeState {
         let toolbar = resolveToolbar(inputs)
         let willHide = (toolbar == .hidden)
-        return ChromeState(toolbar: toolbar, recomputesBars: inputs.currentToolbarIsHidden != willHide)
+        return ChromeState(
+            toolbar: toolbar,
+            recomputesBars: inputs.currentToolbarIsHidden != willHide,
+            hidesAIChatInput: inputs.isOnAITab && inputs.isAIChatInputHiddenByFrontend,
+            voiceChromeActive: inputs.isOnAITab && inputs.isVoiceSessionActive
+        )
     }
 
     private static func resolveToolbar(_ inputs: UnifiedInputChromeResolverInputs) -> ToolbarVisibility {

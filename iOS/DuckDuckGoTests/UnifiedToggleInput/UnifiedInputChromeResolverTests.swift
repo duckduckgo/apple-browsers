@@ -70,6 +70,21 @@ final class UnifiedInputChromeResolverTests: XCTestCase {
         XCTAssertEqual(state.toolbar, .visible(healsClampConstant: false))
     }
 
+    // MARK: - AI chat input hidden (FE-driven)
+
+    func test_hidesAIChatInput_onlyWhenOnAITabAndFrontendHides() {
+        XCTAssertTrue(resolve(isOnAITab: true, isAIChatInputHiddenByFrontend: true).hidesAIChatInput)
+        XCTAssertFalse(resolve(isOnAITab: false, isAIChatInputHiddenByFrontend: true).hidesAIChatInput)
+        XCTAssertFalse(resolve(isOnAITab: true, isAIChatInputHiddenByFrontend: false).hidesAIChatInput)
+    }
+
+    // MARK: - Voice session chrome
+
+    func test_voiceChromeActive_onlyOnAITab() {
+        XCTAssertTrue(resolve(isOnAITab: true, isVoiceSessionActive: true).voiceChromeActive)
+        XCTAssertFalse(resolve(isOnAITab: false, isVoiceSessionActive: true).voiceChromeActive)
+    }
+
     // MARK: - Bars recompute on hidden-flip
 
     func test_recomputesBars_whenHiddenFlips() {
@@ -88,7 +103,10 @@ final class UnifiedInputChromeResolverTests: XCTestCase {
         isInMinimalChromeLayout: Bool = false,
         currentToolbarIsHidden: Bool = false,
         toolbarAlpha: CGFloat = 1.0,
-        toolbarBottomConstant: CGFloat = 0
+        toolbarBottomConstant: CGFloat = 0,
+        isOnAITab: Bool = false,
+        isAIChatInputHiddenByFrontend: Bool = false,
+        isVoiceSessionActive: Bool = false
     ) -> ChromeState {
         UnifiedInputChromeResolver.resolve(.init(
             isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
@@ -97,7 +115,10 @@ final class UnifiedInputChromeResolverTests: XCTestCase {
             isInMinimalChromeLayout: isInMinimalChromeLayout,
             currentToolbarIsHidden: currentToolbarIsHidden,
             toolbarAlpha: toolbarAlpha,
-            toolbarBottomConstant: toolbarBottomConstant
+            toolbarBottomConstant: toolbarBottomConstant,
+            isOnAITab: isOnAITab,
+            isAIChatInputHiddenByFrontend: isAIChatInputHiddenByFrontend,
+            isVoiceSessionActive: isVoiceSessionActive
         ))
     }
 }

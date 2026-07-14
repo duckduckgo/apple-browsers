@@ -3762,8 +3762,8 @@
 		BBDA795D2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDA795B2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift */; };
 		BBDAA91A2DAD4E7400555E1E /* CurrentVPNNavigationBarIconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */; };
 		BBDAA91B2DAD4E7400555E1E /* CurrentVPNNavigationBarIconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */; };
-		BBDAA91D2DAD6DAD00555E1E /* fire-button-mouse-over-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-new.json */; };
-		BBDAA91E2DAD6DAD00555E1E /* fire-button-mouse-over-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-new.json */; };
+		BBDAA91D2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */; };
+		BBDAA91E2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */; };
 		BBDAA9202DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */; };
 		BBDAA9212DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */; };
 		BBDE001C2D6DE6A800109F88 /* DefaultBrowserAndDockPromptPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */; };
@@ -6681,7 +6681,7 @@
 		BBD9C3952E9D72050060A6E8 /* SERPSettings */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SERPSettings; path = ../SharedPackages/SERPSettings; sourceTree = SOURCE_ROOT; };
 		BBDA795B2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetectionDebugMenu.swift; sourceTree = "<group>"; };
 		BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentVPNNavigationBarIconProvider.swift; sourceTree = "<group>"; };
-		BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "fire-button-mouse-over-new.json"; sourceTree = "<group>"; };
+		BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "fire-button-mouse-over-legacy.json"; sourceTree = "<group>"; };
 		BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButtonIconStyleProviding.swift; sourceTree = "<group>"; };
 		BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPopover.swift; sourceTree = "<group>"; };
 		BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptContent.swift; sourceTree = "<group>"; };
@@ -10023,7 +10023,7 @@
 				BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */,
 				BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */,
 				BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */,
-				BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-new.json */,
+				BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */,
 				37EE55B42D5F197300D53C7C /* dark-flame-mouse-over.json */,
 				37EE55B52D5F197300D53C7C /* dark-shield.json */,
 				37EE55B62D5F197300D53C7C /* dark-shield-dot.json */,
@@ -14221,7 +14221,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BBDAA91E2DAD6DAD00555E1E /* fire-button-mouse-over-new.json in Resources */,
+				BBDAA91E2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */,
 				561D66672B95C45A008ACC5C /* Suggestion.storyboard in Resources */,
 				CD2AB5C82C8223040019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29952E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,
@@ -14458,7 +14458,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BBDAA91D2DAD6DAD00555E1E /* fire-button-mouse-over-new.json in Resources */,
+				BBDAA91D2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */,
 				561D66662B95C45A008ACC5C /* Suggestion.storyboard in Resources */,
 				CD2AB5C72C8223030019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29942E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,

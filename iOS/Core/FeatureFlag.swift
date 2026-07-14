@@ -83,6 +83,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654865?focus=true
     case cookiePopupOptInDialog
 
+    /// Holdback experiment for the Cookie Pop-up Protection opt-in dialog (`control` suppresses it, `treatment` shows it)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216573736010817?focus=true
+    case cookiePopupOptInDialogExperiment
+
     // Duckplayer 'Web based' UI
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609457246
     case duckPlayer
@@ -525,6 +529,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
+    public enum CookiePopupOptInDialogCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     public static var localOverrideStoreName: String = "com.duckduckgo.app.featureFlag.localOverrides"
 
     private struct Config {
@@ -588,6 +597,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupPreferenceSetting))
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog))
+        case .cookiePopupOptInDialogExperiment:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialogExperiment), cohortType: CookiePopupOptInDialogCohort.self)
         case .duckPlayer:
             Config(source: .remoteReleasable(DuckPlayerSubfeature.enableDuckPlayer), supportsLocalOverriding: false)
         case .duckPlayerOpenInNewTab:

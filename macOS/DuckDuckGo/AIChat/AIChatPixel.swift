@@ -330,6 +330,14 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User submits a prompt while web search mode is active on the New Tab Page
     case aiChatNtpWebSearchSubmitted
 
+    // MARK: - Customize Responses
+
+    /// Event Trigger: User opens Customize Responses from the native address bar Tools menu
+    case aiChatAddressBarCustomizeResponsesOpened
+
+    /// Event Trigger: User opens Customize Responses from the New Tab Page omnibar Tools menu
+    case aiChatNtpCustomizeResponsesOpened
+
     /// Event Trigger: User taps "View all chats" from the native address bar omnibar
     case aiChatViewAllChatsClicked
 
@@ -642,6 +650,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_ntp_image_generation_submitted"
         case .aiChatNtpWebSearchSubmitted:
             return "aichat_ntp_web_search_submitted"
+        case .aiChatAddressBarCustomizeResponsesOpened:
+            return "aichat_addressbar_customize_responses_opened"
+        case .aiChatNtpCustomizeResponsesOpened:
+            return "aichat_ntp_customize_responses_opened"
         case .aiChatViewAllChatsClicked:
             return "aichat_view_all_chats_clicked"
         case .aiChatModelsFetchFailed:
@@ -818,6 +830,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiFeaturesSearchAssistOften,
                 .aiFeaturesHideImagesOn,
                 .aiFeaturesHideImagesOff,
+                .aiChatAddressBarCustomizeResponsesOpened,
+                .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return nil
         case .aiChatIsEnabled(let isEnabled):
@@ -1002,6 +1016,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiFeaturesSearchAssistOften,
                 .aiFeaturesHideImagesOn,
                 .aiFeaturesHideImagesOff,
+                .aiChatAddressBarCustomizeResponsesOpened,
+                .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return [.pixelSource]
         }

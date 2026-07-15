@@ -255,6 +255,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             Logger.newTabPageOmnibar.error("Failed to get key window in openCustomizeResponses")
             return
         }
+        PixelKit.fire(AIChatPixel.aiChatNtpCustomizeResponsesOpened, frequency: .dailyAndCount, includeAppVersionParameter: true)
         let modal = CustomizeResponsesModalController(burnerMode: mainWindowController.mainViewController.tabCollectionViewModel.burnerMode)
         modal.onClose = { [weak self] in
             self?.customizeResponsesModal = nil

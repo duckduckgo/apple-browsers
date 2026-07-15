@@ -75,7 +75,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         var isAnimating = true
     }
 
-    @Published private(set) var state: OnboardingView.ViewState {
+    @Published private(set) var state: OnboardingIntroViewState {
         didSet {
             measureScreenImpression()
         }
@@ -338,17 +338,17 @@ private extension OnboardingIntroViewModel {
     }
 
     func setViewState(introStep: OnboardingIntroStep) {
-        func stepInfo() -> OnboardingView.ViewState.Intro.StepInfo {
+        func stepInfo() -> OnboardingIntroViewState.Intro.StepInfo {
             // Remove interlude steps from counting the total number of steps as they're not rendered
             let stepsWithoutInterludes = introSteps.filter { !$0.isInterlude }
 
             guard let currentStepIndex = stepsWithoutInterludes.firstIndex(of: introStep) else { return .hidden }
 
             // Remove startOnboardingDialog from the count of total steps since we don't show the progress for that step.
-            return OnboardingView.ViewState.Intro.StepInfo(currentStep: currentStepIndex, totalSteps: stepsWithoutInterludes.count - 1)
+            return OnboardingIntroViewState.Intro.StepInfo(currentStep: currentStepIndex, totalSteps: stepsWithoutInterludes.count - 1)
         }
 
-        func mapToViewState(renderableStep: OnboardingIntroStep.RenderableStep) -> OnboardingView.ViewState {
+        func mapToViewState(renderableStep: OnboardingIntroStep.RenderableStep) -> OnboardingIntroViewState {
             switch renderableStep {
             case .introDialog(let isReturningUser):
                 return .onboarding(
@@ -404,7 +404,7 @@ private extension OnboardingIntroViewModel {
                 // Duck.ai Tailored flow pre-selects Duck.ai; the default flow always pre-selects Search.
                 let duckAIQueryMode: DuckAIQueryMode = isDuckAiTailoredFlow ? .duckAI : .search
                 // Duck.ai Tailored flow shows step counter; the default flow hides it.
-                let progressStep: OnboardingView.ViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
+                let progressStep: OnboardingIntroViewState.Intro.StepInfo = isDuckAiTailoredFlow ? stepInfo() : .hidden
                 return .onboarding(
                     .init(
                         type: .duckAIQueryDialog(content: contentProvider.duckAIQueryContent, defaultMode: duckAIQueryMode),
@@ -534,7 +534,7 @@ private extension OnboardingIntroViewModel {
         introSteps.insert(.duckAIQuerySelection, at: currentStepIndex + 1)
     }
 
-    func introDialogType(isReturningUser: Bool) -> OnboardingView.ViewState.Intro.IntroDialogType {
+    func introDialogType(isReturningUser: Bool) -> OnboardingIntroViewState.Intro.IntroDialogType {
         guard isReturningUser else {
             return .default
         }
@@ -550,7 +550,7 @@ private extension OnboardingIntroViewModel {
         return restorePromptHandler.isEligibleForRestorePrompt() ? .restoreData : .skipTutorial
     }
 
-    func measureAutoRestorePromptImpressionIfNeeded(dialogType: OnboardingView.ViewState.Intro.IntroDialogType) {
+    func measureAutoRestorePromptImpressionIfNeeded(dialogType: OnboardingIntroViewState.Intro.IntroDialogType) {
         guard dialogType == .restoreData else {
             return
         }

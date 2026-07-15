@@ -91,6 +91,21 @@ final class LongPressBarMenuBuilderTests: XCTestCase {
         XCTAssertEqual(title, UserText.actionCopyLink)
     }
 
+    func testWhenDuckPlayerURLThenCopyLinkActionURLReturnsYouTubeURL() {
+        let url = URL(string: "duck://player/abcdef12345?t=23s")!
+        XCTAssertEqual(url.urlForCopyLinkAction.absoluteString, "https://m.youtube.com/watch?v=abcdef12345&t=23s")
+    }
+
+    func testWhenYouTubeNoCookieDuckPlayerURLThenCopyLinkActionURLReturnsYouTubeURL() {
+        let url = URL(string: "https://www.youtube-nocookie.com/embed/abcdef12345?t=23s")!
+        XCTAssertEqual(url.urlForCopyLinkAction.absoluteString, "https://m.youtube.com/watch?v=abcdef12345&t=23s")
+    }
+
+    func testWhenRegularURLThenCopyLinkActionURLReturnsOriginalURL() {
+        let url = URL(string: "https://example.com/path")!
+        XCTAssertEqual(url.urlForCopyLinkAction, url)
+    }
+
     func testWhenPadThenMoveAddressBarActionHidden() {
         let menu = builder.makeOmniBarMenu(context: makeOmniBarContext(isPad: true))
         let actions = flatActions(from: menu)

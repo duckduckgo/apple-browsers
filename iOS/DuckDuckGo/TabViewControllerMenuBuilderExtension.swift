@@ -1207,3 +1207,13 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         })
     }
 }
+
+extension URL {
+
+    var urlForCopyLinkAction: URL {
+        guard isDuckPlayer, let (videoID, timestamp) = youtubeVideoParams else {
+            return self
+        }
+        return .youtube(videoID, timestamp: timestamp)
+    }
+}

@@ -147,13 +147,9 @@ enum AIChatPixel: PixelKitEvent {
     case aiChatPageContextExtractionSuccess
 
     /// Event Trigger: Page-context extraction was attempted but produced no usable content.
-    /// `reason` is the failure reason; `trigger` is what initiated collection; `latency` is a
-    /// bucketed request-to-result time, present only when a result actually arrived.
     case aiChatPageContextExtractionFailed(reason: String, trigger: String, latency: String?)
 
-    /// Event Trigger: Page-context extraction was skipped because the page is not attachable
-    /// (blocklisted media type or a native special page). `category` is the blocklist category
-    /// key (e.g. `pdf`) or `internalPage`; `trigger` is what initiated collection.
+    /// Event Trigger: Page-context extraction was skipped because the page is not attachable (blocklisted media type or special page).
     case aiChatPageContextExtractionPrevented(category: String, trigger: String)
 
     // MARK: - Deleting chat history

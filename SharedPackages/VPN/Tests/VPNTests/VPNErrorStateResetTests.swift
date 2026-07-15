@@ -30,9 +30,8 @@ final class VPNErrorStateResetTests: XCTestCase {
         var lastKnownFailure: KnownFailure?
     }
 
-    /// A working connection must clear every stored error signal, not just one: a stale value left
-    /// on either store resurfaces when the tunnel later disconnects (the app re-reads the last
-    /// error on the disconnect transition).
+    /// A working connection must clear both stores, not just one — a value left on either
+    /// resurfaces on the next disconnect.
     func testClearRemovesBothTheLastErrorMessageAndTheKnownFailure() {
         let errorMessageStore = FakeErrorMessageStore()
         let knownFailureStore = FakeKnownFailureStore()

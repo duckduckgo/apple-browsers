@@ -31,12 +31,10 @@ protocol LastKnownFailureStoring: AnyObject {
 extension NetworkProtectionTunnelErrorStore: LastErrorMessageStoring {}
 extension NetworkProtectionKnownFailureStore: LastKnownFailureStoring {}
 
-/// Clears the VPN error signals that a successful connection makes stale.
+/// Clears the two stores holding VPN error signals (last error message and known failure).
 ///
-/// Start and connectivity errors are persisted across two independent stores — the last error
-/// message and the typed known failure. A working connection invalidates both, so they must be
-/// cleared together: clearing only one leaves a stale signal that resurfaces when the tunnel later
-/// disconnects, because the app re-reads the last error on the disconnect transition.
+/// A working connection invalidates both; leaving either set resurfaces on the next disconnect,
+/// when the app re-reads the last error.
 struct VPNErrorStateReset {
 
     private let errorMessageStore: LastErrorMessageStoring
@@ -48,8 +46,7 @@ struct VPNErrorStateReset {
         self.knownFailureStore = knownFailureStore
     }
 
-    /// Clears every stored error signal. Call when the connection is confirmed working, or on a
-    /// manual (re)start, so no stale error survives to be surfaced on the next disconnect.
+    /// Call when the connection is confirmed working, or on a manual start.
     func clear() {
         errorMessageStore.lastErrorMessage = nil
         knownFailureStore.lastKnownFailure = nil

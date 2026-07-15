@@ -1073,13 +1073,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         clearResolvedIssueState()
     }
 
-    /// Clears the issue state that a working connection makes stale.
+    /// Clears the issue state once a working connection is confirmed (and on manual start).
     ///
-    /// Called on a manual start and whenever the connection tester confirms a working connection.
-    /// A successful connection invalidates any prior start or connectivity error, so the stored
-    /// error and known failure are cleared here. Without this, on-demand starts (which skip
-    /// `resetIssueStateOnTunnelStart`) leave a stale error in the stores that resurfaces when the
-    /// tunnel later disconnects — the app re-reads the last error on the disconnect transition.
+    /// On-demand starts skip `resetIssueStateOnTunnelStart`, so without this a failed start's error
+    /// lingers in the stores and resurfaces when the tunnel later disconnects.
     ///
     private func clearResolvedIssueState() {
         tunnelHealth.isHavingConnectivityIssues = false

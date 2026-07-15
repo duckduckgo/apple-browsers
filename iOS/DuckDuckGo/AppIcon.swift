@@ -25,11 +25,11 @@ enum AppIcon: String, CaseIterable {
     case red = "AppIcon-red"
     case pink = "AppIcon-pink"
     case purple = "AppIcon-purple"
-    case white = "AppIcon-white"
     case yellow = "AppIcon-yellow"
     case green = "AppIcon-green"
     case blue = "AppIcon-blue"
     case black = "AppIcon-black"
+    case white = "AppIcon-white"
 
     var accessibilityName: String {
         switch self {

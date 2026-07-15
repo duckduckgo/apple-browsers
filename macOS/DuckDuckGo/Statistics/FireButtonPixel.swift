@@ -54,7 +54,7 @@ enum FireButtonPixel: PixelKitEvent {
         case .fireDialogToggleMode:
             return "fire_dialog_toggle_mode_mac"
         case .fireDialogChangeSettings:
-            return "fire_dialog_change_settings_mac"
+            return "fire_dialog_change_settings_mac_u"
         case .fireDialogToggleCloseTabs:
             return "fire_dialog_toggle_close_tabs_mac"
         case .fireDialogToggleClearHistory:

@@ -594,11 +594,19 @@ class TabViewController: UIViewController {
     let autoplaySettings: AutoplaySettings
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+
+    /// Most recent main-frame navigation response (URL + MIME), captured in `handleNavigationResponse`
+    /// and consulted by the Duck.ai page-context attachability gate. Keyed by URL so a stale MIME from a
+    /// previous navigation can't leak into a cached / back-forward navigation (where no response is observed).
+    private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
+
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
         let pageContextHandler = AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
             userScriptProvider: { [weak self] in self?.userScripts?.pageContextUserScript },
-            faviconProvider: { [weak self] url in self?.getFaviconBase64(for: url) }
+            faviconProvider: { [weak self] url in self?.getFaviconBase64(for: url) },
+            attachabilityPolicyProvider: { [weak self] in self?.currentPageContextAttachabilityPolicy() },
+            mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) }
         )
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,
@@ -2023,9 +2031,30 @@ extension TabViewController: WKNavigationDelegate {
         }
     }
 
+    /// The current page-context attachability policy built from the `aiPageContextBlocklist` privacy
+    /// config, or `nil` when the config is absent/malformed. `nil` is the kill-switch: the gate and
+    /// extraction telemetry become no-ops (fail-open, behavior exactly as before this feature).
+    private func currentPageContextAttachabilityPolicy() -> PageContextAttachabilityPolicy? {
+        let settings = privacyConfigurationManager.privacyConfig.settings(for: .pageContext)
+        guard let blocklist = PageContextBlocklistSettings(blocklist: settings["aiPageContextBlocklist"]) else {
+            return nil
+        }
+        return PageContextAttachabilityPolicy(settings: blocklist)
+    }
+
+    /// The captured main-frame response MIME for `url`, or `nil` when it doesn't match the last observed
+    /// response (so a stale MIME can't leak into cached / back-forward navigations).
+    private func lastMainFramePageContextMIMEType(for url: URL) -> String? {
+        lastMainFramePageContextResponse.flatMap { $0.url == url ? $0.mimeType : nil }
+    }
+
     private func handleNavigationResponse(_ navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
         let httpResponse = navigationResponse.response as? HTTPURLResponse
         let mimeType = MIMEType(from: navigationResponse.response.mimeType, fileExtension: navigationResponse.response.url?.pathExtension)
+        // Capture the main-frame response MIME for the Duck.ai page-context attachability gate.
+        if navigationResponse.isForMainFrame, let responseURL = navigationResponse.response.url {
+            lastMainFramePageContextResponse = (responseURL, navigationResponse.response.mimeType)
+        }
         let urlSchemeType = navigationResponse.response.url.map { SchemeHandler.schemeType(for: $0) } ?? .unknown
         let urlNavigationalScheme = navigationResponse.response.url?.scheme.map { URL.NavigationalScheme(rawValue: $0) }
 

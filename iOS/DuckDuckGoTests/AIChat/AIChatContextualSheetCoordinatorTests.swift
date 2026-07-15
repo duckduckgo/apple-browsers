@@ -31,6 +31,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     private final class MockPageContextHandler: AIChatPageContextHandling {
         var triggerContextCollectionCallCount = 0
+        var lastTriggerContextCollectionTrigger: PageContextExtractionTrigger?
         var triggerContextCollectionReturnValue = true
         var clearCallCount = 0
         var clearAttachedContextCallCount = 0
@@ -46,8 +47,9 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contextSubject.send(context)
         }
 
-        func triggerContextCollection() -> Bool {
+        func triggerContextCollection(trigger: PageContextExtractionTrigger) -> Bool {
             triggerContextCollectionCallCount += 1
+            lastTriggerContextCollectionTrigger = trigger
             onTriggerContextCollection?()
             return triggerContextCollectionReturnValue
         }

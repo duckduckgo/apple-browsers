@@ -207,10 +207,10 @@ final class AIChatContextualSheetCoordinator {
             if sessionState.showsSuggestionsStartSurface {
                 sessionState.beginLoadingSuggestions()
             }
-            pageContextHandler.triggerContextCollection()
+            pageContextHandler.triggerContextCollection(trigger: .auto)
         } else if shouldCollectSignalsOnly {
             sessionState.markPendingSignalsOnlyCollection()
-            pageContextHandler.triggerContextCollection()
+            pageContextHandler.triggerContextCollection(trigger: .tabContent)
         }
 
         stopSessionTimer()
@@ -263,7 +263,7 @@ final class AIChatContextualSheetCoordinator {
             if sessionState.showsSuggestionsStartSurface {
                 sessionState.beginLoadingSuggestions()
             }
-            let didTrigger = pageContextHandler.triggerContextCollection()
+            let didTrigger = pageContextHandler.triggerContextCollection(trigger: .navigation)
             if !didTrigger {
                 sessionState.clearProcessingNavigationFlag()
             }
@@ -272,7 +272,7 @@ final class AIChatContextualSheetCoordinator {
             sessionState.clearProcessingNavigationFlag()
         } else if shouldCollectSignalsOnly {
             sessionState.markPendingSignalsOnlyCollection()
-            if !pageContextHandler.triggerContextCollection() {
+            if !pageContextHandler.triggerContextCollection(trigger: .tabContent) {
                 sessionState.clearProcessingNavigationFlag()
             }
         } else {
@@ -367,7 +367,7 @@ private extension AIChatContextualSheetCoordinator {
         host.onAttachRequested = { [weak self] in
             guard let self else { return }
             self.sessionState.beginManualAttach()
-            let didTrigger = self.pageContextHandler.triggerContextCollection()
+            let didTrigger = self.pageContextHandler.triggerContextCollection(trigger: .userRequest)
             if !didTrigger {
                 self.sessionState.cancelManualAttach()
             }
@@ -434,7 +434,7 @@ private extension AIChatContextualSheetCoordinator {
                 }
             continuation.onTermination = { _ in cancellable.cancel() }
 
-            if !pageContextHandler.triggerContextCollection() {
+            if !pageContextHandler.triggerContextCollection(trigger: .userRequest) {
                 sessionState.cancelManualAttach()
                 continuation.yield(nil)
                 continuation.finish()
@@ -518,7 +518,7 @@ private extension AIChatContextualSheetCoordinator {
 
                 guard self.featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else {
                     self.sessionState.beginManualAttach(fromFrontend: true)
-                    if !self.pageContextHandler.triggerContextCollection() {
+                    if !self.pageContextHandler.triggerContextCollection(trigger: .userRequest) {
                         self.sessionState.cancelManualAttach()
                     }
                     return nil
@@ -612,7 +612,7 @@ private extension AIChatContextualSheetCoordinator {
             Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
             sessionState.beginLoadingSuggestions()
         }
-        pageContextHandler.triggerContextCollection()
+        pageContextHandler.triggerContextCollection(trigger: .userRequest)
 
         delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
     }
@@ -661,7 +661,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewControllerDidRequestAttachPage(_ viewController: AIChatContextualSheetViewController) {
         sessionState.beginManualAttach()
-        let didTrigger = pageContextHandler.triggerContextCollection()
+        let didTrigger = pageContextHandler.triggerContextCollection(trigger: .userRequest)
         if !didTrigger {
             sessionState.cancelManualAttach()
         }

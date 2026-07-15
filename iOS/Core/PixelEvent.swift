@@ -1814,6 +1814,11 @@ extension Pixel {
         case aiChatContextualFireButtonConfirmed
         case aiChatContextualPageContextCollectionEmpty
         case aiChatContextualPageContextCollectionUnavailable
+
+        // Page-context extraction telemetry (shared decision core; names mirror macOS `aichat_page_context_extraction_*`).
+        case aiChatPageContextExtractionSuccess
+        case aiChatPageContextExtractionFailed
+        case aiChatPageContextExtractionPrevented
         case aiChatContextualQuickActionAskAboutPageSelected
         case aiChatContextualRecentChatsPopupDisplayed
         case aiChatContextualRecentChatSelected
@@ -3724,6 +3729,9 @@ extension Pixel.Event {
         case .aiChatContextualFireButtonConfirmed: return "m_aichat_contextual_fire_button_confirmed"
         case .aiChatContextualPageContextCollectionEmpty: return "m_aichat_contextual_page_context_collection_empty"
         case .aiChatContextualPageContextCollectionUnavailable: return "m_aichat_contextual_page_context_collection_unavailable"
+        case .aiChatPageContextExtractionSuccess: return "m_aichat_page_context_extraction_success"
+        case .aiChatPageContextExtractionFailed: return "m_aichat_page_context_extraction_failed"
+        case .aiChatPageContextExtractionPrevented: return "m_aichat_page_context_extraction_prevented"
         case .aiChatContextualQuickActionAskAboutPageSelected: return "m_aichat_contextual_quick_action_ask_about_page_selected"
         case .aiChatContextualRecentChatsPopupDisplayed: return "m_aichat_contextual_recent_chats_popup_displayed"
         case .aiChatContextualRecentChatSelected: return "m_aichat_contextual_recent_chat_selected"

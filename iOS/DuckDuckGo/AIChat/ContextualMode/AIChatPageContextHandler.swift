@@ -48,6 +48,18 @@ typealias WebViewProvider = () -> WKWebView?
 typealias UserScriptProvider = () -> PageContextCollecting?
 typealias FaviconProvider = (URL) -> String?
 
+/// Supplies the attachability policy built from the current `aiPageContextBlocklist` privacy config,
+/// or `nil` when the config is absent/malformed. `nil` is the kill-switch: gating and extraction
+/// telemetry become no-ops (fail-open). Mirrors macOS `PageContextTabExtension.currentAttachabilityPolicy()`.
+typealias AttachabilityPolicyProvider = () -> PageContextAttachabilityPolicy?
+
+/// Supplies the URL of the page about to be collected (production: the web view's current URL).
+typealias PageContextURLProvider = () -> URL?
+
+/// Supplies the main-frame response MIME type for a given URL, or `nil` when unknown
+/// (restored / cached / back-forward navigations where no response was observed).
+typealias PageContextMIMETypeProvider = (URL) -> String?
+
 // MARK: - Page Context Collection Protocol
 
 /// Protocol for page context collection, enabling dependency injection and testing.
@@ -70,7 +82,8 @@ protocol AIChatPageContextHandling: AnyObject {
     /// Triggers context collection from JS. Does not return the result directly.
     /// Callers should subscribe to `contextPublisher` for results.
     /// Note: First call also starts observing auto-updates from the page.
-    @discardableResult func triggerContextCollection() -> Bool
+    /// - Parameter trigger: what initiated the collection, used for extraction telemetry.
+    @discardableResult func triggerContextCollection(trigger: PageContextExtractionTrigger) -> Bool
 
     /// Clears stored context and cancels active subscriptions.
     func clear()
@@ -95,6 +108,30 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     private let faviconProvider: FaviconProvider
     private let pixelHandler: AIChatContextualModePixelFiring
 
+    private let attachabilityPolicyProvider: AttachabilityPolicyProvider
+    private let currentURLProvider: PageContextURLProvider
+    private let mimeTypeProvider: PageContextMIMETypeProvider
+    private let extractionPixelHandler: PageContextExtractionPixelFiring
+
+    /// Pairs collect requests with their results (FIFO) so extraction pixels carry the right
+    /// trigger/latency when collects overlap. Reset on navigation to a new URL.
+    private var extractionResolver = PageContextExtractionResolver()
+
+    /// Set once a navigation/tab-content extraction outcome is reported for the current URL, so the
+    /// overlapping collects triggered by one navigation don't each fire a pixel. Reset on new URL.
+    private var didReportExtractionForCurrentNavigation = false
+
+    /// The URL of the most recent collection, used to detect navigation and reset the resolver.
+    private var lastCollectedURL: URL?
+
+    /// Safety-net window for a fire-and-forget `collect()` whose result never arrives (hung JS, torn-
+    /// down page). After it, the pending entry is dropped and reported as `.timeout`. Kept generous —
+    /// a slow collect resolving after this window is still delivered via `handle`, but its pending
+    /// entry is already gone, so it can be mislabeled `.timeout`; a high value makes that rare while
+    /// bounding the queue (navigation also clears it via `extractionResolver.reset()`). Independent of
+    /// the coordinator's 5s synchronous FE-bridge timeout. Mirrors macOS `collectionTimeout`.
+    private static let collectionTimeout: TimeInterval = 30
+
     private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
     private var updatesCancellable: AnyCancellable?
 
@@ -109,31 +146,62 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     init(webViewProvider: @escaping WebViewProvider,
          userScriptProvider: @escaping UserScriptProvider,
          faviconProvider: @escaping FaviconProvider,
-         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
+         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
+         attachabilityPolicyProvider: @escaping AttachabilityPolicyProvider = { nil },
+         currentURLProvider: PageContextURLProvider? = nil,
+         mimeTypeProvider: @escaping PageContextMIMETypeProvider = { _ in nil },
+         extractionPixelHandler: PageContextExtractionPixelFiring = PageContextExtractionPixelHandler()) {
         self.webViewProvider = webViewProvider
         self.userScriptProvider = userScriptProvider
         self.faviconProvider = faviconProvider
         self.pixelHandler = pixelHandler
+        self.attachabilityPolicyProvider = attachabilityPolicyProvider
+        self.currentURLProvider = currentURLProvider ?? { webViewProvider()?.url }
+        self.mimeTypeProvider = mimeTypeProvider
+        self.extractionPixelHandler = extractionPixelHandler
     }
 
     @discardableResult
-    func triggerContextCollection() -> Bool {
-        Logger.aiChat.debug("[PageContext] Collection triggered")
+    func triggerContextCollection(trigger: PageContextExtractionTrigger) -> Bool {
+        Logger.aiChat.debug("[PageContext] Collection triggered (trigger: \(trigger.rawValue))")
+
+        let url = currentURLProvider()
+        resetExtractionStateIfNavigated(to: url)
+
+        // Attachability gate. When the blocklist config is present and the page is not attachable,
+        // skip collection, deliver nil (no auto-attach — iOS native UI has no attachable:false path),
+        // and fire the `prevented` extraction pixel. Config absent/malformed => policy nil => no-op.
+        if let policy = attachabilityPolicyProvider() {
+            let mimeType = url.flatMap { mimeTypeProvider($0) }
+            let verdict = policy.verdict(url: url, mimeType: mimeType)
+            if !verdict.isAttachable {
+                let reason = verdict.preventionReason ?? PageContextExtractionOutcome.internalPageCategory
+                Logger.aiChat.debug("[PageContext] 🚫 gate: prevented attach (reason: \(reason))")
+                fireExtractionPixel(.prevented(reason), trigger: trigger, latency: nil)
+                contextSubject.send(nil)
+                return false
+            }
+        }
 
         guard let script = userScriptProvider() else {
             Logger.aiChat.debug("[PageContext] Collection skipped - no user script available")
             pixelHandler.firePageContextCollectionUnavailable()
+            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
             return false
         }
 
         guard let webView = webViewProvider() else {
            Logger.aiChat.debug("[PageContext] Collection skipped - no web view available")
+           fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
            return false
        }
 
         script.webView = webView
         startObservingUpdates()
+        extractionResolver.requested(trigger: trigger)
+        Logger.aiChat.debug("[PageContext] ✅ gate: attachable, collecting (trigger: \(trigger.rawValue))")
         script.collect()
+        scheduleCollectionTimeout()
         return true
     }
 
@@ -167,6 +235,57 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
 private extension AIChatPageContextHandler {
 
+    // MARK: - Extraction telemetry
+
+    /// Telemetry (and gating) is active only while the `aiPageContextBlocklist` config is present.
+    /// Matches macOS: the extraction pixels give a baseline only where the blocklist is deployed.
+    var isExtractionMeasurementEnabled: Bool {
+        attachabilityPolicyProvider() != nil
+    }
+
+    /// Drops the previous page's outstanding collects and clears the once-per-navigation guard when the
+    /// collection URL changes, so a slow/never-resolving collect can't pair (FIFO) with the next page's
+    /// result and mis-attribute its trigger/latency/outcome. Mirrors macOS `extractionResolver.reset()`.
+    func resetExtractionStateIfNavigated(to url: URL?) {
+        guard url != lastCollectedURL else { return }
+        extractionResolver.reset()
+        didReportExtractionForCurrentNavigation = false
+        lastCollectedURL = url
+    }
+
+    /// Resolves a collection result against the pending request queue and fires its outcome pixel.
+    /// No pending request => a duplicate or a collect we didn't initiate; skip.
+    func fireExtractionOutcome(for pageContext: AIChatPageContextData?) {
+        guard let resolution = extractionResolver.resolve(pageContext: pageContext) else { return }
+        fireExtractionPixel(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
+    }
+
+    func fireExtractionPixel(_ outcome: PageContextExtractionOutcome,
+                             trigger: PageContextExtractionTrigger,
+                             latency: PageContextExtractionLatencyBucket?) {
+        guard isExtractionMeasurementEnabled else { return }
+        // A navigation drives several automatic collects (navigation re-collect + signals-only);
+        // report only the first. User/setting collects (.userRequest / .auto) always report.
+        if trigger == .navigation || trigger == .tabContent {
+            guard !didReportExtractionForCurrentNavigation else { return }
+            didReportExtractionForCurrentNavigation = true
+        }
+        Logger.aiChat.debug("[PageContext] 📊 extraction outcome: \(String(describing: outcome)) trigger: \(trigger.rawValue)")
+        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency)
+    }
+
+    /// Fires `.timeout` for any collect that hasn't produced a result within the timeout window and
+    /// clears its pending entry, so a never-resolving collect neither loses its pixel nor lets a
+    /// stale entry mis-attribute a later navigation. Mirrors macOS `scheduleCollectionTimeout`.
+    func scheduleCollectionTimeout() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.collectionTimeout) { [weak self] in
+            guard let self else { return }
+            for resolution in self.extractionResolver.expireCollections(olderThan: Self.collectionTimeout) {
+                self.fireExtractionPixel(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
+            }
+        }
+    }
+
     func startObservingUpdates() {
         guard updatesCancellable == nil else {
             Logger.aiChat.debug("[PageContext] startObservingUpdates skipped - already subscribed")
@@ -182,6 +301,10 @@ private extension AIChatPageContextHandler {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
                 guard let self else { return }
+
+                // Extraction telemetry (success / empty / deserialize failure), paired with its
+                // triggering collect. Independent of the auto-attach handling below.
+                self.fireExtractionOutcome(for: pageContext)
 
                 guard let pageContext else {
                     Logger.aiChat.debug("[PageContext] Context collection returned nil - decode failure, publishing nil to subscribers")

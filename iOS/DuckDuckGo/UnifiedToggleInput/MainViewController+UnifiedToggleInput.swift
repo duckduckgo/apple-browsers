@@ -808,6 +808,12 @@ private extension MainViewController {
 
     func refreshNonAITab(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) {
         viewCoordinator.hideAITabChrome()
+        // Must run before the layout pass below, which reads live UTI visibility for the anchor.
+        if coordinator.isActive {
+            coordinator.deactivateToOmnibar()
+            coordinator.hide()
+            coordinator.unbind()
+        }
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         applyUnifiedInputChromeBackground(.standardChrome)
@@ -817,11 +823,6 @@ private extension MainViewController {
         reconcileAIChromeForCurrentTab()
         // Snap chrome revealed — prior chat-scroll could have hidden bars under the AI header, so without this the omnibar flies in on return.
         chromeManager.reset(animated: false)
-        if coordinator.isActive {
-            coordinator.deactivateToOmnibar()
-            coordinator.hide()
-            coordinator.unbind()
-        }
     }
 
     func setUpAIChatTabChatHeader() {

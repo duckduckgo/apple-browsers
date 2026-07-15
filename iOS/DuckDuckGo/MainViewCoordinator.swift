@@ -720,10 +720,7 @@ class MainViewCoordinator {
         }
     }
 
-    /// The UTI owns the bottom anchor whenever it's actually on screen, regardless of what a
-    /// caller requests — otherwise the full-bleed AI-tab web view extends past the UTI card.
-    /// Carve-out: voice mode/bottom-chrome-hidden hides `navigationBarContainer` (so the UTI
-    /// isn't really visible) before requesting `.safeArea`, which this must still honor.
+    /// The UTI owns the bottom anchor whenever it's visible and not voice-mode-hidden, regardless of what a caller requests.
     private func setContentContainerBottomAnchorMode(_ mode: ContentContainerBottomAnchorMode) {
         let resolvedMode: ContentContainerBottomAnchorMode = (isUnifiedToggleInputVisible && !navigationBarContainer.isHidden) ? .unifiedToggleInput : mode
         constraints.contentContainerBottomToToolbarTop.isActive = resolvedMode == .toolbar

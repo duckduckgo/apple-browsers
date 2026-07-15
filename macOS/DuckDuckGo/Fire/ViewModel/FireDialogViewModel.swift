@@ -238,7 +238,7 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeTabsAndWindows: Bool {
         didSet {
             settings.lastIncludeTabsAndWindowsState = includeTabsAndWindows
-            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, doNotEnforcePrefix: true)
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleCloseTabs, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         }
     }
@@ -246,7 +246,7 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeHistory: Bool {
         didSet {
             settings.lastIncludeHistoryState = includeHistory
-            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, doNotEnforcePrefix: true)
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearHistory, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         }
     }
@@ -254,7 +254,7 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeCookiesAndSiteData: Bool {
         didSet {
             settings.lastIncludeCookiesAndSiteDataState = includeCookiesAndSiteData
-            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, doNotEnforcePrefix: true)
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearSiteData, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         }
     }
@@ -268,7 +268,7 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeChatHistorySetting: Bool {
         didSet {
             settings.lastIncludeChatHistoryState = includeChatHistorySetting
-            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+            pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName, doNotEnforcePrefix: true)
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearAIChats, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         }
     }

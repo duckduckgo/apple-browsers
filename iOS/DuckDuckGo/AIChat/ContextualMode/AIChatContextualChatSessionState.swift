@@ -595,10 +595,10 @@ private extension AIChatContextualChatSessionState {
                 }
 
             case .attached:
-                chipState = .attached(context)
                 if isStaleEchoOfDeliveredContext(context.contextData) {
                     Logger.aiChat.debug("[SessionState] Ignoring stale auto-attach echo for already-delivered context")
                 } else {
+                    chipState = .attached(context)
                     didUpdateAttachment = true
                     Logger.aiChat.debug("[SessionState] Updated attached context (setting ON)")
                 }

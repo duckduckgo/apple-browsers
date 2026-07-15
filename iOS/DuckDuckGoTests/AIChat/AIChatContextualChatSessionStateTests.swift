@@ -1056,6 +1056,21 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertTrue(delivered.isEmpty)
     }
 
+    func testStaleAutoAttachEchoDoesNotMutateStoredContext() {
+        // Given
+        sessionState.updateUnifiedToggleInputActive(true)
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateContext(makeTestContext(title: "Original", url: "https://example.com/article"))
+        sessionState.beginChatForUTISubmission()
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Original")
+
+        // When a stale echo of the already-submitted page arrives with a refreshed title
+        sessionState.updateContext(makeTestContext(title: "Echo (updated)", url: "https://example.com/article"))
+
+        // Then the stored attached context still reflects what was submitted, not the ignored echo
+        XCTAssertEqual(sessionState.intendedAttachedContext?.title, "Original")
+    }
+
     func testUTIChipDeliveryStateMarksStaleEchoDeliveredAndFreshContextPending() {
         // Given
         sessionState.updateUnifiedToggleInputActive(true)

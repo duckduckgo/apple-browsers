@@ -127,7 +127,7 @@ final class FireDialogHistoryDeleteAllUITests: UITestCase, FireDialogUITests {
 
         // Verify window closed and new tab opened
         XCTAssertEqual(app.windows.count, 1, "Should have 1 window")
-        XCTAssertTrue(app.webViews["New Tab Page"].waitForExistence(timeout: UITests.Timeouts.elementExistence), "New Tab Page should be open after burning tabs")
+        verifyNewTabPageIsOpen()
 
         // Verify history was preserved (history toggle was off)
         app.openHistory()
@@ -230,7 +230,7 @@ final class FireDialogHistoryDeleteAllUITests: UITestCase, FireDialogUITests {
 
         // Verify window closed and new tab opened
         XCTAssertEqual(app.windows.count, 1, "Should have 1 window")
-        XCTAssertTrue(app.webViews["New Tab Page"].waitForExistence(timeout: UITests.Timeouts.elementExistence), "New Tab Page should be open after burning tabs")
+        verifyNewTabPageIsOpen()
 
         // Verify history was cleared
         app.openHistory()

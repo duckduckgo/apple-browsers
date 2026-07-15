@@ -1112,7 +1112,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 title: UserText.aiChatImageGenButtonLabel,
                 subtitle: UserText.aiChatImageGenToolSubtitle
             )
-            createImageItem.image = DesignSystemImages.Glyphs.Size16.image
+            createImageItem.image = DesignSystemImages.Glyphs.Size16.images
             createImageItem.target = self
             createImageItem.action = #selector(toolsMenuCreateImageClicked)
             if omnibarController.isImageGenerationMode {

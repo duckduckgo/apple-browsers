@@ -430,9 +430,6 @@ extension TabViewController {
             guard let self else { return }
             self.onCopyAction(forUrl: url)
             Pixel.fire(pixel: .browsingMenuCopy)
-            let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
-            ActionMessageView.present(message: UserText.actionCopyMessage,
-                                      presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))
         })
     }
 

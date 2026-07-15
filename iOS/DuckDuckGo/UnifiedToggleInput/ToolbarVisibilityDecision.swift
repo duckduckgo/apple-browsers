@@ -17,16 +17,9 @@
 //  limitations under the License.
 //
 
-enum ToolbarVisibility: Equatable {
-    case hidden
-    case visible
-}
-
 /// Pure decision for the browser toolbar's visibility on the current tab.
 struct ToolbarVisibilityDecision: Equatable {
-    let visibility: ToolbarVisibility
-    /// True when the toolbar's hidden-state flips, so the bars layout must be recomputed.
-    let recomputesBars: Bool
+    let isHidden: Bool
 
     /// Value-only inputs, so the decision is pure and its tests need no mocks.
     struct Inputs: Equatable {
@@ -34,21 +27,18 @@ struct ToolbarVisibilityDecision: Equatable {
         let isFocusedOmnibarSession: Bool
         let isLargeWidth: Bool
         let isInMinimalChromeLayout: Bool
-        let currentToolbarIsHidden: Bool
     }
 
     static func resolve(_ inputs: Inputs) -> ToolbarVisibilityDecision {
-        let visibility: ToolbarVisibility = shouldHide(inputs) ? .hidden : .visible
-        return ToolbarVisibilityDecision(
-            visibility: visibility,
-            recomputesBars: inputs.currentToolbarIsHidden != (visibility == .hidden)
-        )
+        ToolbarVisibilityDecision(isHidden: shouldHide(inputs))
     }
 
     private static func shouldHide(_ inputs: Inputs) -> Bool {
+        // A Duck.ai tab hides the toolbar unless it's a focused omnibar session (tab-like).
         if inputs.isCurrentTabUsingUnifiedInputAIChrome && !inputs.isFocusedOmnibarSession {
             return true
         }
+        // iPad and minimal-chrome layouts have no bottom toolbar.
         return inputs.isLargeWidth || inputs.isInMinimalChromeLayout
     }
 }

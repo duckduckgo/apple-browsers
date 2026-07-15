@@ -138,28 +138,13 @@ extension MainViewController {
         unifiedToggleInputFeature.isAvailable && currentTab?.isAITab == true
     }
 
-    /// True when FE has asked us to hide the native chat input for the current AI tab via
-    /// `hideChatInput`. Persisted per tab in `TabInputState`.
-    var isAIChatInputHiddenForCurrentTab: Bool {
-        guard currentTab?.isAITab == true else { return false }
-        return unifiedToggleInputCoordinator?.aiChatInputBoxVisibility == .hidden
-    }
-
-    /// True when FE has signalled a voice session is in progress on the current AI tab via
-    /// `voiceSessionStarted`. Persisted per tab in `TabInputState`.
-    var isVoiceSessionActiveForCurrentTab: Bool {
-        guard currentTab?.isAITab == true else { return false }
-        return unifiedToggleInputCoordinator?.isVoiceSessionActive == true
-    }
-
     /// Toolbar visibility decision for the current tab, built from live chrome state.
     private func toolbarVisibilityDecision() -> ToolbarVisibilityDecision {
         ToolbarVisibilityDecision.resolve(.init(
             isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
             isFocusedOmnibarSession: unifiedToggleInputCoordinator?.isOmnibarSession == true,
             isLargeWidth: AppWidthObserver.shared.isLargeWidth,
-            isInMinimalChromeLayout: isInMinimalChromeLayout,
-            currentToolbarIsHidden: viewCoordinator.toolbar.isHidden
+            isInMinimalChromeLayout: isInMinimalChromeLayout
         ))
     }
 
@@ -215,10 +200,11 @@ extension MainViewController {
     /// otherwise the toolbar's constraint is re-derived from the single constant source so it can't
     /// linger off-screen after a transient AI-tab phase.
     private func applyToolbarVisibility(_ decision: ToolbarVisibilityDecision) {
-        viewCoordinator.toolbar.isHidden = (decision.visibility == .hidden)
-        if decision.recomputesBars {
+        let wasHidden = viewCoordinator.toolbar.isHidden
+        viewCoordinator.toolbar.isHidden = decision.isHidden
+        if wasHidden != decision.isHidden {
             setBarsVisibility(currentBarsVisibility, animated: false, animationDuration: nil)
-        } else if decision.visibility == .visible {
+        } else if !decision.isHidden {
             updateToolbarConstant(currentBarsVisibility)
         }
     }

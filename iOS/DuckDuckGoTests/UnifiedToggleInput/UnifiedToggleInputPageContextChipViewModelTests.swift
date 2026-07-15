@@ -249,7 +249,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         sut.setAttached(makeContext(title: "Cat", url: url))
         XCTAssertTrue(sut.isVisible)
 
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Cat", url: url), deliveryState: .delivered)
         XCTAssertFalse(sut.isVisible)
         XCTAssertEqualState(sut.state, .attached(title: "Cat", favicon: nil))
     }
@@ -261,7 +261,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         originatingURL.send(URL(string: url))
         makeSUT()
         sut.setAttached(makeContext(title: "Cat", url: url))
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Cat", url: url), deliveryState: .delivered)
         XCTAssertFalse(sut.isVisible)
 
         sut.clearAttached()
@@ -355,7 +355,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertTrue(sut.isVisible)
         XCTAssertEqualState(sut.state, .attached(title: "Dog", favicon: nil))
 
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Dog", url: newURL), deliveryState: .delivered)
         XCTAssertFalse(sut.isVisible)
     }
 
@@ -380,7 +380,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         makeSUT()
 
         sut.setAttached(makeContext(title: "Cat", url: url))
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Cat", url: url), deliveryState: .delivered)
         XCTAssertFalse(sut.isVisible)
 
         sut.clearAttached()
@@ -403,15 +403,15 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqual(sut.pendingAttachedContextData?.title, "Cat")
     }
 
-    func test_pendingAttachedContextData_afterMarkPromptSubmitted_returnsNil() {
-        // Once the chip flips to `.delivered`, every
+    func test_pendingAttachedContextData_afterDeliveredPush_returnsNil() {
+        // Once the session state pushes the attachment as `.delivered`, every
         // subsequent prompt must ship `pageContext: nil` — otherwise duck.ai renders a
         // "Page content from..." attribution beneath each follow-up prompt.
         let url = "https://en.wikipedia.org/wiki/Cat"
         originatingURL.send(URL(string: url))
         makeSUT()
         sut.setAttached(makeContext(title: "Cat", url: url))
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Cat", url: url), deliveryState: .delivered)
         XCTAssertNil(sut.pendingAttachedContextData)
     }
 
@@ -444,7 +444,7 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         originatingURL.send(URL(string: url))
         makeSUT()
         sut.setAttached(makeContext(title: "Cat", url: url))
-        sut.markPromptSubmitted()
+        sut.setAttached(makeContext(title: "Cat", url: url), deliveryState: .delivered)
         XCTAssertNil(sut.pendingAttachedContextData)
 
         sut.clearAttached()

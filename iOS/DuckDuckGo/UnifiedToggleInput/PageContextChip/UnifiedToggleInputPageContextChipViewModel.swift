@@ -56,8 +56,7 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     private(set) var attachedContext: AIChatPageContext?
     private var attachedURL: URL?
     private var originatingURL: URL?
-    /// Whether the current attachment is waiting to be included in a prompt or has already
-    /// been delivered. `markPromptSubmitted()` flips pending attachments to delivered.
+    /// Presentation-only pending/delivered flag; set solely by `setAttached`, never decided by the chip.
     private var attachmentDeliveryState: PageContextAttachmentDeliveryState = .pendingSubmit
     private var isShowingAttachAffordance = false
     private var cancellables = Set<AnyCancellable>()
@@ -126,14 +125,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     var pendingAttachedContextData: AIChatPageContextData? {
         guard attachmentDeliveryState == .pendingSubmit else { return nil }
         return attachedContext?.contextData
-    }
-
-    /// Mark the current attachment as delivered (submitted in a prompt). Hides the chip if the
-    /// attachment is matching — we don't need to keep showing what's silently riding along.
-    func markPromptSubmitted() {
-        guard attachedContext != nil, attachmentDeliveryState != .delivered else { return }
-        attachmentDeliveryState = .delivered
-        recompute()
     }
 
     private func updateAttachment(_ context: AIChatPageContext?, deliveryState: PageContextAttachmentDeliveryState) {

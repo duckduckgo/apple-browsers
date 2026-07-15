@@ -382,6 +382,9 @@ private extension AIChatContextualSheetCoordinator {
             self.sessionState.beginChatForUTISubmission()
             self.sheetViewController?.handleFirstUTISubmission()
         }
+        host.onPromptDelivered = { [weak self] in
+            self?.sessionState.markUTIContextDelivered()
+        }
         host.onAIVoiceChatRequested = { [weak self] in
             guard let self else { return }
             self.sheetViewController?.dismiss(animated: true) { [weak self] in
@@ -484,7 +487,7 @@ private extension AIChatContextualSheetCoordinator {
             ? sessionState.latestContext
             : AIChatPageContext(contextData: context, favicon: nil)
         if let pageContext {
-            host.setAttachedContext(pageContext, deliveryState: .pendingSubmit)
+            host.setAttachedContext(pageContext, deliveryState: sessionState.utiChipDeliveryState(forDelivering: context))
         }
     }
 

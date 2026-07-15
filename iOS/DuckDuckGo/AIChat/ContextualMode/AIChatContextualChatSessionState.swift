@@ -114,6 +114,9 @@ final class AIChatContextualChatSessionState {
     private(set) var contextualChatURL: URL?
     private(set) var latestContext: AIChatPageContext?
 
+    /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
+    private var deliveredContextURLWithNoNavigationSince: URL?
+
     @Published private(set) var viewState = SheetViewState(
         content: .nativeInput,
         isExpandButtonEnabled: true,
@@ -226,6 +229,7 @@ final class AIChatContextualChatSessionState {
         case .attached(let context):
             contextData = context.contextData
             frontendState = .chatWithInitialContext
+            deliveredContextURLWithNoNavigationSince = URL(string: context.contextData.url)
             pixelHandler.firePromptSubmittedWithContext()
             Logger.aiChat.debug("[SessionState] Chat started WITH initial context (chip was attached)")
         case .placeholder:
@@ -252,8 +256,9 @@ final class AIChatContextualChatSessionState {
         }
 
         switch chipState {
-        case .attached:
+        case .attached(let context):
             frontendState = .chatWithInitialContext
+            deliveredContextURLWithNoNavigationSince = URL(string: context.contextData.url)
             pixelHandler.firePromptSubmittedWithContext()
             Logger.aiChat.debug("[SessionState] UTI chat started WITH initial context")
         case .placeholder:
@@ -270,6 +275,7 @@ final class AIChatContextualChatSessionState {
         frontendState = .noChat
         chipState = .placeholder
         contextualChatURL = nil
+        deliveredContextURLWithNoNavigationSince = nil
         userDowngradedToPlaceholder = false
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
@@ -340,6 +346,9 @@ final class AIChatContextualChatSessionState {
     func notifyPageChanged(pageURL: URL? = nil) {
         Logger.aiChat.debug("[SessionState] Page navigation detected")
         isProcessingNavigation = true
+        // A real navigation means any subsequent context update is fresh, even if it later
+        // resolves to a URL that was already submitted (e.g. the user navigated away and back).
+        deliveredContextURLWithNoNavigationSince = nil
         if shouldAutoCollectContext, userDowngradedToPlaceholder {
             userDowngradedToPlaceholder = false
             Logger.aiChat.debug("[SessionState] Page navigation cleared temporary context removal")
@@ -508,6 +517,18 @@ final class AIChatContextualChatSessionState {
         return true
     }
 
+    /// `.delivered` when `context` is a stale echo of the already-submitted page (chip stays hidden); else `.pendingSubmit`.
+    func utiChipDeliveryState(forDelivering context: AIChatPageContextData) -> PageContextAttachmentDeliveryState {
+        isStaleEchoOfDeliveredContext(context) ? .delivered : .pendingSubmit
+    }
+
+    /// Marks the attached context delivered on submit so it stops riding later prompts and the chip hides.
+    func markUTIContextDelivered() {
+        guard case .attached(let context) = chipState else { return }
+        deliveredContextURLWithNoNavigationSince = URL(string: context.contextData.url)
+        emitDeliveryIfNeeded(context.contextData)
+    }
+
     func shouldDeliverToFrontendBridge(_ context: AIChatPageContextData?) -> Bool {
         if isUnifiedToggleInputActive, context != nil {
             Logger.aiChat.debug("[SessionState] shouldDeliverToFrontendBridge=false (non-nil context delivered to UTI)")
@@ -541,6 +562,8 @@ private extension AIChatContextualChatSessionState {
         if isShowingNativeInput || isUnifiedToggleInputActive {
             chipState = .attached(context)
             userDowngradedToPlaceholder = false
+            // A manual attach is always fresh: clear the delivered marker so it is not read as a stale echo.
+            deliveredContextURLWithNoNavigationSince = nil
             Logger.aiChat.debug("[SessionState] Manually attached context")
         }
 
@@ -572,9 +595,13 @@ private extension AIChatContextualChatSessionState {
                 }
 
             case .attached:
-                chipState = .attached(context)
-                didUpdateAttachment = true
-                Logger.aiChat.debug("[SessionState] Updated attached context (setting ON)")
+                if isStaleEchoOfDeliveredContext(context.contextData) {
+                    Logger.aiChat.debug("[SessionState] Ignoring stale auto-attach echo for already-delivered context")
+                } else {
+                    chipState = .attached(context)
+                    didUpdateAttachment = true
+                    Logger.aiChat.debug("[SessionState] Updated attached context (setting ON)")
+                }
             }
         } else {
             Logger.aiChat.debug("[SessionState] Context updated on navigation (WebView active, chip not updated)")
@@ -583,6 +610,13 @@ private extension AIChatContextualChatSessionState {
         if didUpdateAttachment || shouldDeliverToFrontendBridge(context.contextData) {
             emitDeliveryIfNeeded(context.contextData)
         }
+    }
+
+    /// Whether `context` is a passive same-page re-collection already submitted with no navigation since.
+    func isStaleEchoOfDeliveredContext(_ context: AIChatPageContextData) -> Bool {
+        guard let deliveredContextURLWithNoNavigationSince,
+              let contextURL = URL(string: context.url) else { return false }
+        return contextURL.equals(deliveredContextURLWithNoNavigationSince, by: .sameDocument)
     }
 
     func cleanupFlags() {

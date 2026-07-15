@@ -2743,10 +2743,12 @@ class MainViewController: UIViewController {
     }
 
     private func isMinimalChromeMode(for size: CGSize? = nil) -> Bool {
-        guard minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false) else { return false }
         let size = size ?? view.bounds.size
-        return !AppWidthObserver.shared.isPad
-            && (size.width > size.height)
+        return MinimalChromeModeDecision.isActive(
+            minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false),
+            isPad: AppWidthObserver.shared.isPad,
+            isLandscape: size.width > size.height
+        )
     }
 
     private var isApplyingWidth = false

@@ -2248,6 +2248,8 @@
 		CBB4A8732FD83C4100A65956 /* ModeSwitchSwipeGestureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8722FD83C4100A65956 /* ModeSwitchSwipeGestureController.swift */; };
 		CBB4A8752FD83D3A00A65956 /* DuckAISuggestionsSurfaceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8742FD83D3A00A65956 /* DuckAISuggestionsSurfaceProvider.swift */; };
 		CBB4A8772FD890E800A65956 /* SuggestionHistoryDeletion.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB4A8762FD890E800A65956 /* SuggestionHistoryDeletion.swift */; };
+		CBB6055C3008163C003607EA /* MinimalChromeModeDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB6055B3008163C003607EA /* MinimalChromeModeDecisionTests.swift */; };
+		CBB6055E30081648003607EA /* MinimalChromeModeDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB6055D30081648003607EA /* MinimalChromeModeDecision.swift */; };
 		CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */; };
 		CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE22C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift */; };
 		CBC88EE52C8097B500F0F8C5 /* URLCredentialCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC88EE42C8097B500F0F8C5 /* URLCredentialCreator.swift */; };
@@ -4954,6 +4956,8 @@
 		CBB4A8722FD83C4100A65956 /* ModeSwitchSwipeGestureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeSwitchSwipeGestureController.swift; sourceTree = "<group>"; };
 		CBB4A8742FD83D3A00A65956 /* DuckAISuggestionsSurfaceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAISuggestionsSurfaceProvider.swift; sourceTree = "<group>"; };
 		CBB4A8762FD890E800A65956 /* SuggestionHistoryDeletion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionHistoryDeletion.swift; sourceTree = "<group>"; };
+		CBB6055B3008163C003607EA /* MinimalChromeModeDecisionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinimalChromeModeDecisionTests.swift; sourceTree = "<group>"; };
+		CBB6055D30081648003607EA /* MinimalChromeModeDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinimalChromeModeDecision.swift; sourceTree = "<group>"; };
 		CBB6B2542AF6D543006B777C /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC7AB542AF6D583008CB798 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBC88EE02C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageUserScriptTests.swift; sourceTree = "<group>"; };
@@ -7529,6 +7533,7 @@
 				9FE7E7A22EAAF7B700AEAD83 /* WhatsNew */,
 				7B059F0E2D0387E900371ED0 /* Widgets */,
 				BB77957A2E9D4B0B00CF58F4 /* WinBackOffer */,
+				CBB6055D30081648003607EA /* MinimalChromeModeDecision.swift */,
 			);
 			path = DuckDuckGo;
 			sourceTree = "<group>";
@@ -10774,6 +10779,7 @@
 				C18390C82F5099B6001939B9 /* UnifiedToggleInput */,
 				AA2F4066CC87E0BEB71CB7BC /* DarkReader */,
 				EFDD89B030192C303307F253 /* DBP */,
+				CBB6055B3008163C003607EA /* MinimalChromeModeDecisionTests.swift */,
 			);
 			name = DuckDuckGo;
 			sourceTree = "<group>";
@@ -12914,6 +12920,7 @@
 				859DB8132CE6263C001F7210 /* TextZoomStorage.swift in Sources */,
 				D65625952C22D382006EF297 /* TabViewController.swift in Sources */,
 				E1A4A4D52F2A111100AA11BB /* TabViewController+UI.swift in Sources */,
+				CBB6055E30081648003607EA /* MinimalChromeModeDecision.swift in Sources */,
 				653561022D4D2C6D0064F258 /* Logger+DuckPlayer.swift in Sources */,
 				9FAB4B7D2E98D68900D8298A /* RemoteMessagingSurveyLastSearchStateRefresher.swift in Sources */,
 				8C4838B5221C8F7F008A6739 /* GestureToolbarButton.swift in Sources */,
@@ -14126,6 +14133,7 @@
 				3105BCF52DF2154800EB755E /* AIChatPixelMetricHandlerTests.swift in Sources */,
 				3105BCF62DF2154800EB755E /* MockAIChatPixelMetricHandler.swift in Sources */,
 				9795B2152EC6360B002A812F /* OnboardingSearchExperiencePickerViewModelTests.swift in Sources */,
+				CBB6055C3008163C003607EA /* MinimalChromeModeDecisionTests.swift in Sources */,
 				98E563E72DE8B32D00E6E75F /* MockTabInteractionStateSource.swift in Sources */,
 				98E563E82DE8B32D00E6E75F /* MockUserAgent.swift in Sources */,
 				9795B2132EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift in Sources */,

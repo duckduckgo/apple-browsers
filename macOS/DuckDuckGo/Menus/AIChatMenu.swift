@@ -244,6 +244,9 @@ final class AIChatMenu: NSMenu {
         dialog.confirmed = {
             let pixel: AIChatPixel = origin == .moreOptionsMenu ? .aiChatDeleteAllChatsMoreOptionsMenu : .aiChatDeleteAllChatsMainMenu
             PixelKit.fire(pixel, frequency: .dailyAndStandard)
+            PixelKit.fire(FireButtonPixel.fireStarted, frequency: .dailyAndCount)
+            PixelKit.fire(FireButtonPixel.fireStartedInSession, frequency: .dailyAndCount)
+            PixelKit.fire(FireButtonPixel.burn(.aiChats), frequency: .dailyAndCount)
             Task { @MainActor in
                 await actions.deleteAllChats()
             }

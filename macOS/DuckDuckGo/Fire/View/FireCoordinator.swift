@@ -335,12 +335,26 @@ extension FireCoordinator {
         pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
         switch result.clearingOption {
         case .currentTab:
-            pixelFiring?.fire(GeneralPixel.fireButton(option: .tab))
             guard let tabCollectionViewModel,
                   let tabViewModel = tabCollectionViewModel.selectedTabViewModel else {
                 assertionFailure("No tab selected")
                 return
             }
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .tab))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .currentTab(
+                        .init(
+                            pinned: tabViewModel.isPinned,
+                            closeTab: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount
+            )
+
             let entity = Fire.BurningEntity.tab(tabViewModel: tabViewModel,
                                                 selectedDomains: result.selectedCookieDomains ?? [],
                                                 parentTabCollectionViewModel: tabCollectionViewModel,
@@ -353,11 +367,26 @@ extension FireCoordinator {
                                                 dataClearingWideEventService: dataClearingWideEventService)
 
         case .currentWindow:
-            pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
             guard let tabCollectionViewModel else {
                 assertionFailure("Missing TabCollectionViewModel for window scope")
                 return
             }
+
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .currentWindow(
+                        .init(
+                            hasPinnedTabs: !tabCollectionViewModel.pinnedTabs.isEmpty,
+                            closeWindow: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount
+            )
+
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
                                                    selectedDomains: result.selectedCookieDomains ?? [],
                                                    close: result.includeTabsAndWindows)
@@ -370,6 +399,21 @@ extension FireCoordinator {
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .allData(
+                        .init(
+                            hasPinnedTabs: !windowControllersManager.pinnedTabsManagerProvider.arePinnedTabsEmpty,
+                            closeWindows: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData,
+                            clearAIChats: result.includeChatHistory
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount
+            )
+
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
                 dataClearingWideEventService?.start(options: result, path: .burnAll, isAutoClear: false)

@@ -144,14 +144,14 @@ enum FireButtonPixel: PixelKitEvent {
 
         struct CurrentWindowParameters: Encodable {
             let hasPinnedTabs: Bool
-            let closeTab: Bool
+            let closeWindow: Bool
             let clearHistory: Bool
             let clearSiteData: Bool
 
             var dictionaryRepresentation: [String: String] {
                 [
                     "has_pinned_tabs": String(hasPinnedTabs),
-                    "close_tab": String(closeTab),
+                    "close_window": String(closeWindow),
                     "clear_history": String(clearHistory),
                     "clear_site_data": String(clearSiteData)
                 ]
@@ -160,7 +160,7 @@ enum FireButtonPixel: PixelKitEvent {
 
         struct AllDataParameters: Encodable {
             let hasPinnedTabs: Bool
-            let closeTab: Bool
+            let closeWindows: Bool
             let clearHistory: Bool
             let clearSiteData: Bool
             let clearAIChats: Bool
@@ -168,7 +168,7 @@ enum FireButtonPixel: PixelKitEvent {
             var dictionaryRepresentation: [String: String] {
                 [
                     "has_pinned_tabs": String(hasPinnedTabs),
-                    "close_tab": String(closeTab),
+                    "close_windows": String(closeWindows),
                     "clear_history": String(clearHistory),
                     "clear_site_data": String(clearSiteData),
                     "clear_ai_chats": String(clearAIChats)

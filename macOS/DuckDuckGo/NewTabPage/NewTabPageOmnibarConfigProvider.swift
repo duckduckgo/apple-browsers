@@ -251,7 +251,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         guard let windowControllersManager else { return .none }
         let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
         let handler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? NSApp.delegateTyped.duckAiNativeStorageHandler
-        let state = CustomizeResponsesStore(storageHandler: handler).currentState(clarifiesLabel: UserText.aiChatCustomizeResponsesClarifies)
+        let state = CustomizeResponsesStore(storageHandler: handler).currentState()
         return NewTabPageDataModel.OmnibarCustomizeResponsesState(subLabel: state.subLabel, hasCustomization: state.hasCustomization, active: state.isActive)
     }
 

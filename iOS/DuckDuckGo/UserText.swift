@@ -505,12 +505,12 @@ public struct UserText {
     // Variant shown when Cookie Pop-up Protection is already ON
     public static let cookiePopupProtectionOptInEnabledTitle = NSLocalizedString("cookie-popup-protection.opt-in.enabled.title", value: "Tired of cookie pop-ups that don't let you opt out?", comment: "Title of the opt-in dialog when cookie pop-up protection is already enabled")
     public static let cookiePopupProtectionOptInEnabledBody = NSLocalizedString("cookie-popup-protection.opt-in.enabled.body", value: "We can save you a click and accept these cookies for you.", comment: "Body of the opt-in dialog when cookie pop-up protection is already enabled")
-    public static let cookiePopupProtectionOptInEnabledPrimaryOption = NSLocalizedString("cookie-popup-protection.opt-in.enabled.primary-option", value: "Accept no-opt-out cookies for me", comment: "Primary (recommended) option when cookie pop-up protection is already enabled")
-    public static let cookiePopupProtectionOptInEnabledSecondaryOption = NSLocalizedString("cookie-popup-protection.opt-in.enabled.secondary-option", value: "I'll keep handling them myself", comment: "Secondary option when cookie pop-up protection is already enabled")
+    public static let cookiePopupProtectionOptInEnabledPrimaryOption = NSLocalizedString("cookie-popup-protection.opt-in.enabled.primary-option", value: "Accept cookies that can't be rejected", comment: "Primary (recommended) option when cookie pop-up protection is already enabled")
+    public static let cookiePopupProtectionOptInEnabledSecondaryOption = NSLocalizedString("cookie-popup-protection.opt-in.enabled.secondary-option", value: "I'll keep accepting them myself", comment: "Secondary option when cookie pop-up protection is already enabled")
     // Variant shown when Cookie Pop-up Protection is OFF
     public static let cookiePopupProtectionOptInDisabledTitle = NSLocalizedString("cookie-popup-protection.opt-in.disabled.title", value: "Tired of cookie pop-ups that won't leave you alone?", comment: "Title of the opt-in dialog when cookie pop-up protection is off")
-    public static let cookiePopupProtectionOptInDisabledBody = NSLocalizedString("cookie-popup-protection.opt-in.disabled.body", value: "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you.", comment: "Body of the opt-in dialog when cookie pop-up protection is off")
-    public static let cookiePopupProtectionOptInDisabledPrimaryOption = NSLocalizedString("cookie-popup-protection.opt-in.disabled.primary-option", value: "Manage or accept cookies for me", comment: "Primary (recommended) option when cookie pop-up protection is off")
+    public static let cookiePopupProtectionOptInDisabledBody = NSLocalizedString("cookie-popup-protection.opt-in.disabled.body", value: "We'll aim to reject as many cookies as possible. If there's no reject option, we'll save you a click and accept these cookies for you.", comment: "Body of the opt-in dialog when cookie pop-up protection is off")
+    public static let cookiePopupProtectionOptInDisabledPrimaryOption = NSLocalizedString("cookie-popup-protection.opt-in.disabled.primary-option", value: "Reject when possible or accept for me", comment: "Primary (recommended) option when cookie pop-up protection is off")
     public static let cookiePopupProtectionOptInDisabledSecondaryOption = NSLocalizedString("cookie-popup-protection.opt-in.disabled.secondary-option", value: "I'll keep handling them myself", comment: "Secondary option when cookie pop-up protection is off")
 
     public static let emailBrowsingMenuUseNewDuckAddress = NSLocalizedString("email.browsingMenu.useNewDuckAddress", value: "Generate Private Duck Address", comment: "Email option title in the browsing menu")
@@ -1754,9 +1754,9 @@ public struct UserText {
 
     public static let settingsPProVPNTitle = NSLocalizedString("settings.subscription.VPN.title", value: "VPN", comment: "VPN cell title for privacy pro")
     public static let settingsPProDBPTitle = NSLocalizedString("settings.subscription.DBP.title", value: "Personal Information Removal", comment: "Data Broker protection cell title for privacy pro")
-    public static let settingsPProOtherProtectionsSection = NotLocalizedString("settings.subscription.otherProtections.section", value: "Other Protections", comment: "Freemium PIR section title for eligible users")
     public static let settingsPProFreemiumDBPSubtitle = NotLocalizedString("settings.subscription.DBP.freemium.subtitle", value: "Find your personal info on sites that sell it.", comment: "Freemium PIR subtitle for eligible users")
-    public static let settingsPProFreemiumDBPFreeScanCTA = NotLocalizedString("settings.subscription.DBP.freemium.freeScan", value: "Free Scan", comment: "Freemium PIR CTA for eligible users")
+    public static let settingsPProFreemiumDBPFreeScanCTA = NotLocalizedString("settings.subscription.DBP.freemium.freeScan", value: "Start Free Scan", comment: "Freemium PIR CTA for eligible users")
+    public static let settingsPProFreemiumDBPShowResultsCTA = NotLocalizedString("settings.subscription.DBP.freemium.showResults", value: "View Scan Results", comment: "Freemium PIR CTA shown once the user's first scan has completed")
     public static let settingsSubscriptionAiChatTitle = NSLocalizedString("settings.subscription.AIChat.title", value: "Duck.ai", comment: "Paid AIChat protection cell title for subscription")
     public static let settingsPProDBPSubTitle = NSLocalizedString("settings.subscription.DBP.subtitle", value: "Remove your info from sites that sell it", comment: "Data Broker protection cell subtitle for privacy pro")
     public static let settingsPProITRTitle = NSLocalizedString("settings.subscription.ITR.title", value: "Identity Theft Restoration", comment: "Identity theft restoration cell title for privacy pro")
@@ -3038,4 +3038,11 @@ public struct UserText {
     public static let omnibarLongPressMoveToTop = NSLocalizedString("omnibar.menu.move-to-top", value: "Move Address Bar to Top", comment: "Label for moving the address bar to the top of the screen")
     public static let actionCopyLink = NSLocalizedString("action.title.copy.link", value: "Copy Link", comment: "Copy link action")
     public static let actionCopyCleanLink = NSLocalizedString("action.title.copy.clean.link", value: "Copy Clean Link", comment: "Copy clean link action")
+
+    public static func copyLinkTitle(for url: URL, isPrivacyProtectionEnabled: Bool) -> String {
+        if !url.isDuckDuckGo, isPrivacyProtectionEnabled {
+            return actionCopyCleanLink
+        }
+        return actionCopyLink
+    }
 }

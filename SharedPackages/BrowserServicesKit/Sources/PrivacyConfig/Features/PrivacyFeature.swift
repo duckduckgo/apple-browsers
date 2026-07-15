@@ -259,16 +259,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213336304802675
     case showNTPAfterIdleReturn
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214749215529034?focus=true
-    case escapeHatchActions
-
-    /// Surfaces the escape-hatch "delete tab" action as a dedicated Fire button on the card and removes it from the menu.
-    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1215358250572341?focus=true
-    case escapeHatchFireButton
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215530020470713?focus=true
-    case escapeHatchHideShortcut
-
     case crashReportOptInStatusResetting
 
     case screenTimeCleaning
@@ -287,6 +277,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216535350078652
+    case fireButtonSingleTabDeleteAll
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212828713075939?focus=true
     case omniBarLongPressMenu

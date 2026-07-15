@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Confirmă";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Vom încerca să selectăm cele mai private opțiuni disponibile privind modulele cookie și să le închidem pentru tine. Dacă nu au opțiuni de renunțare, te vom scuti de un click și vom accepta aceste module cookie pentru tine.";
+"cookie-popup-protection.opt-in.disabled.body" = "Vom încerca să respingem cât mai multe module cookie. Dacă nu există o opțiune de respingere, te vom scuti de un click și vom accepta aceste module cookie pentru tine.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Gestionează sau acceptă modulele cookie pentru mine";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Respinge când este posibil sau acceptă pentru mine";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Le voi gestiona în continuare personal";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Te putem scuti de un click și putem accepta aceste module cookie pentru tine.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Accept modulele cookie fără opțiune de renunțare pentru mine";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Acceptă modulele cookie care nu pot fi respinse";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Le voi gestiona în continuare personal";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Le voi accepta în continuare personal";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Te-ai săturat de ferestrele pop-up cu module cookie care nu îți permit să renunți la ele?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Protecție pentru ferestre pop-up aferente modulelor cookie";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo va încerca să selecteze cele mai private setări disponibile și să ascundă aceste ferestre pop-up pentru tine.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo poate gestiona automat preferințele privind modulele cookie pentru a maximiza confidențialitatea, a minimiza modulele cookie și a închide aceste ferestre pop-up.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Vom încerca să selectăm doar cele mai private opțiuni privind modulele cookie disponibile pentru tine, apoi vom închide aceste ferestre pop-up.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Gestionează automat ferestrele pop-up pentru module cookie";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "De asemenea, lasă DuckDuckGo să te scutească de un click acceptând modulele cookie în numele tău pentru a închide ferestrele pop-up care nu îți permit să renunți.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Ferestre pop-up fără opțiune de renunțare";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Gestionare pop-up-uri pentru module cookie";

@@ -97,18 +97,22 @@ public enum DuckPlayerContainer {
         let hasBackground: Bool
         let showDragHandle: Bool
         let allowDragGesture: Bool
+        /// When true, the sheet chrome (panel background + top border) is dropped so the content
+        /// floats as an isolated capsule. Used by the Floating UI Duck Player pills.
+        let floatingStyle: Bool
         let content: (PresentationMetrics) -> Content
         let onDismiss: (Bool) -> Void
         let onPresentDuckPlayer: () -> Void
 
         public init(
-            viewModel: ViewModel, hasBackground: Bool = true, showDragHandle: Bool = true, allowDragGesture: Bool = true, onDismiss: @escaping (Bool) -> Void, onPresentDuckPlayer: @escaping () -> Void,
+            viewModel: ViewModel, hasBackground: Bool = true, showDragHandle: Bool = true, allowDragGesture: Bool = true, floatingStyle: Bool = false, onDismiss: @escaping (Bool) -> Void, onPresentDuckPlayer: @escaping () -> Void,
             @ViewBuilder content: @escaping (PresentationMetrics) -> Content
         ) {
             self.viewModel = viewModel
             self.hasBackground = hasBackground
             self.showDragHandle = showDragHandle
             self.allowDragGesture = allowDragGesture
+            self.floatingStyle = floatingStyle
             self.content = content
             self.onDismiss = onDismiss
             self.onPresentDuckPlayer = onPresentDuckPlayer
@@ -120,6 +124,7 @@ public enum DuckPlayerContainer {
                 containerHeight: containerHeight,
                 showDragHandle: showDragHandle,
                 allowDragGesture: allowDragGesture,
+                floatingStyle: floatingStyle,
                 content: content,
                 onHeightChange: { sheetHeight = $0 },
                 onDismiss: onDismiss,
@@ -174,6 +179,7 @@ private struct SheetView<Content: View>: View {
     let containerHeight: Double
     let showDragHandle: Bool
     let allowDragGesture: Bool
+    let floatingStyle: Bool
     let content: (DuckPlayerContainer.PresentationMetrics) -> Content
     let onHeightChange: (Double) -> Void
     let onDismiss: (Bool) -> Void
@@ -277,20 +283,24 @@ private struct SheetView<Content: View>: View {
             sheetWidth = newWidth
         }
         .padding(.bottom, 20)
-        .background(Color(designSystemColor: .panel))
+        .background(floatingStyle ? Color.clear : Color(designSystemColor: .panel))
         .overlay(
-            Rectangle()
-                .fill(Color(uiColor: UIColor { traitCollection in
-                    switch traitCollection.userInterfaceStyle {
-                    case .dark:
-                        return .black
-                    default:
-                        return UIColor(designSystemColor: .border)
-                    }
-                }))
-                .frame(height: 0.5)
-                .frame(maxWidth: .infinity)
-                .alignmentGuide(.top) { _ in 0 },
+            Group {
+                if !floatingStyle {
+                    Rectangle()
+                        .fill(Color(uiColor: UIColor { traitCollection in
+                            switch traitCollection.userInterfaceStyle {
+                            case .dark:
+                                return .black
+                            default:
+                                return UIColor(designSystemColor: .border)
+                            }
+                        }))
+                        .frame(height: 0.5)
+                        .frame(maxWidth: .infinity)
+                        .alignmentGuide(.top) { _ in 0 }
+                }
+            },
             alignment: .top
         )
         .frame(maxWidth: .infinity)

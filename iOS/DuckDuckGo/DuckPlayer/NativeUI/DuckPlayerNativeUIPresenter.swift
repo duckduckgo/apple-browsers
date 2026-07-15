@@ -79,6 +79,11 @@ final class DuckPlayerNativeUIPresenter {
         static let height: CGFloat = 50
         static let fadeAnimationDuration: TimeInterval = 0.2
         static let visibleDuration: TimeInterval = 3.0
+
+        // Vertical space to clear the Floating UI bottom toolbar (always at the bottom in floating
+        // mode, regardless of address bar position). Matches the floating toolbar capsule height
+        // plus its standalone bottom margin.
+        static let floatingToolbarClearance: CGFloat = BrowserToolbarView.floatingButtonsHeight + 21
     }
 
     /// The container view model for the entry pill
@@ -150,6 +155,10 @@ final class DuckPlayerNativeUIPresenter {
     // Pixel Handler
     let pixelHandler: DuckPlayerPixelFiring.Type
 
+    /// Gate for the Floating UI experience. When enabled (and on a supported device), the
+    /// entry and re-entry pills use the new black floating design.
+    private let floatingUIManager: FloatingUIManaging
+
     // MARK: - Public Methods
     ///
     /// - Parameter appSettings: The application settings
@@ -158,13 +167,15 @@ final class DuckPlayerNativeUIPresenter {
          state: DuckPlayerState = DuckPlayerState(),
          notificationCenter: NotificationCenter = .default,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self) {
+         pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
+         floatingUIManager: FloatingUIManaging = FloatingUIManager()) {
         self.appSettings = appSettings
         self.duckPlayerSettings = duckPlayerSettings
         self.state = state
         self.notificationCenter = notificationCenter
         self.pixelHandler = pixelHandler
         self.userScriptsDependencies = userScriptsDependencies
+        self.floatingUIManager = floatingUIManager
         setupNotificationObservers(notificationCenter: notificationCenter)
     }
     
@@ -197,14 +208,22 @@ final class DuckPlayerNativeUIPresenter {
     }
 
     
+    /// The bottom constraint constant for the pill, accounting for Floating UI.
+    ///
+    /// In Floating UI the navigation toolbar always sits at the bottom, so the pill is positioned
+    /// above it regardless of the address bar position. Otherwise it follows the legacy behaviour:
+    /// above the address bar when it's at the bottom, at screen bottom when it's at the top.
+    private var pillBottomConstraintConstant: CGFloat {
+        if floatingUIManager.isFloatingUIEnabled {
+            return -Constants.floatingToolbarClearance
+        }
+        return appSettings.currentAddressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0
+    }
+
     /// Updates the pill's bottom constraint based on the current address bar position
     private func updatePillBottomConstraint() {
         guard let bottomConstraint = self.bottomConstraint else { return }
-        
-        let addressBarPosition = self.appSettings.currentAddressBarPosition
-        
-        // Position pill above address bar when it's at bottom, or at screen bottom when address bar is at top
-        bottomConstraint.constant = addressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0
+        bottomConstraint.constant = pillBottomConstraintConstant
     }
 
         /// Updates the UI based on Ombibar Notification
@@ -259,8 +278,11 @@ final class DuckPlayerNativeUIPresenter {
                 AnyView(DuckPlayerWelcomePillView(viewModel: welcomePillViewModel))
             }
         } else if pillType == .entry {
-            // Create the pill view model for entry type
-            let pillViewModel = DuckPlayerEntryPillViewModel { [weak self] in
+            let useFloatingStyle = floatingUIManager.isFloatingUIEnabled
+
+            // Create the pill view model for entry type. The videoID is only needed to fetch the
+            // thumbnail used by the Floating UI design.
+            let pillViewModel = DuckPlayerEntryPillViewModel(videoID: useFloatingStyle ? videoID : nil) { [weak self] in
                 self?.videoPlaybackRequest.send((videoID, timestamp, .entry))
             }
 
@@ -268,6 +290,7 @@ final class DuckPlayerNativeUIPresenter {
             return DuckPlayerContainer.Container(
                 viewModel: containerViewModel,
                 hasBackground: false,
+                floatingStyle: useFloatingStyle,
                 onDismiss: { [weak self] programatic in
                     self?.dismissPill(programatic: programatic)
                 },
@@ -283,9 +306,19 @@ final class DuckPlayerNativeUIPresenter {
                     )
                 }
             ) { _ in
-                AnyView(DuckPlayerEntryPillView(viewModel: pillViewModel))
+                AnyView(
+                    Group {
+                        if useFloatingStyle {
+                            DuckPlayerFloatingEntryPillView(viewModel: pillViewModel)
+                        } else {
+                            DuckPlayerEntryPillView(viewModel: pillViewModel)
+                        }
+                    }
+                )
             }
         } else {
+            let useFloatingStyle = floatingUIManager.isFloatingUIEnabled
+
             // Create the mini pill view model for re-entry type
             let miniPillViewModel = DuckPlayerMiniPillViewModel(
                 onOpen: { [weak self] in
@@ -298,6 +331,7 @@ final class DuckPlayerNativeUIPresenter {
             return DuckPlayerContainer.Container(
                 viewModel: containerViewModel,
                 hasBackground: false,
+                floatingStyle: useFloatingStyle,
                 onDismiss: { [weak self] programatic in
                     self?.dismissPill(programatic: programatic)
                 },
@@ -313,7 +347,15 @@ final class DuckPlayerNativeUIPresenter {
                     )
                 }
             ) { _ in
-                AnyView(DuckPlayerMiniPillView(viewModel: miniPillViewModel))
+                AnyView(
+                    Group {
+                        if useFloatingStyle {
+                            DuckPlayerFloatingMiniPillView(viewModel: miniPillViewModel)
+                        } else {
+                            DuckPlayerMiniPillView(viewModel: miniPillViewModel)
+                        }
+                    }
+                )
             }
         }
     }
@@ -322,6 +364,9 @@ final class DuckPlayerNativeUIPresenter {
     @MainActor
     private func updateWebViewConstraintForPillHeight() {
         guard hostView != nil else { return }
+        // In Floating UI the web content is full-bleed under the glass chrome, so the pill overlays
+        // it rather than shrinking it. Avoid resizing the web view in that case.
+        guard !floatingUIManager.isFloatingUIEnabled else { return }
         constraintUpdatePublisher.send(.showPill(height: self.pillHeight))
     }
 
@@ -589,14 +634,14 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Add to host view
         hostView.view.addSubview(hostingController.view)
 
-        // Calculate bottom constraints based on address bar position
-        // If address bar is at the bottom, position the pill above it
-        // If address bar is at the top, position the pill at the bottom of the screen
-        let newBottomConstraint =
-            appSettings.currentAddressBarPosition == .bottom
-            ? hostingController.view.bottomAnchor.constraint(equalTo: hostView.view.bottomAnchor, constant: -DefaultOmniBarView.expectedHeight)
-            : hostingController.view.bottomAnchor.constraint(equalTo: hostView.view.bottomAnchor)
-        
+        // Calculate bottom constraints based on address bar position (and Floating UI toolbar).
+        // If address bar is at the bottom, position the pill above it.
+        // If address bar is at the top, position the pill at the bottom of the screen.
+        // In Floating UI, always position the pill above the floating bottom toolbar.
+        let newBottomConstraint = hostingController.view.bottomAnchor.constraint(
+            equalTo: hostView.view.bottomAnchor,
+            constant: pillBottomConstraintConstant)
+
         bottomConstraint = newBottomConstraint
 
         NSLayoutConstraint.activate([

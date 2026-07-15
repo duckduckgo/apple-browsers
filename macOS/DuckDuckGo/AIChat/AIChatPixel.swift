@@ -141,6 +141,17 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User attaches selected text as page context via the "Attach to Duck.ai" context-menu action
     case aiChatAttachSelection
 
+    // MARK: - Page Context Extraction
+
+    /// Event Trigger: Page-context extraction produced usable content.
+    case aiChatPageContextExtractionSuccess
+
+    /// Event Trigger: Page-context extraction was attempted but produced no usable content.
+    case aiChatPageContextExtractionFailed(reason: String, trigger: String, latency: String?)
+
+    /// Event Trigger: Page-context extraction was skipped because the page is not attachable (blocklisted media type or special page).
+    case aiChatPageContextExtractionPrevented(category: String, trigger: String)
+
     // MARK: - Deleting chat history
 
     /// Event Trigger: User requests to delete Duck.ai chat history from the fire button or history delete dialog
@@ -330,6 +341,14 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User submits a prompt while web search mode is active on the New Tab Page
     case aiChatNtpWebSearchSubmitted
 
+    // MARK: - Customize Responses
+
+    /// Event Trigger: User opens Customize Responses from the native address bar Tools menu
+    case aiChatAddressBarCustomizeResponsesOpened
+
+    /// Event Trigger: User opens Customize Responses from the New Tab Page omnibar Tools menu
+    case aiChatNtpCustomizeResponsesOpened
+
     /// Event Trigger: User taps "View all chats" from the native address bar omnibar
     case aiChatViewAllChatsClicked
 
@@ -513,6 +532,12 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_page_context_removed"
         case .aiChatAttachSelection:
             return "aichat_attach_selection"
+        case .aiChatPageContextExtractionSuccess:
+            return "aichat_page_context_extraction_success"
+        case .aiChatPageContextExtractionFailed:
+            return "aichat_page_context_extraction_failed"
+        case .aiChatPageContextExtractionPrevented:
+            return "aichat_page_context_extraction_prevented"
         case let .aiChatAutoClearHistorySettingToggled(enabled):
             if enabled {
                 return "m_mac_aichat_history_autoclear_enabled"
@@ -642,6 +667,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_ntp_image_generation_submitted"
         case .aiChatNtpWebSearchSubmitted:
             return "aichat_ntp_web_search_submitted"
+        case .aiChatAddressBarCustomizeResponsesOpened:
+            return "aichat_addressbar_customize_responses_opened"
+        case .aiChatNtpCustomizeResponsesOpened:
+            return "aichat_ntp_customize_responses_opened"
         case .aiChatViewAllChatsClicked:
             return "aichat_view_all_chats_clicked"
         case .aiChatModelsFetchFailed:
@@ -739,6 +768,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatTranslationSourceLinkClicked,
                 .aiChatPageContextSourceLinkClicked,
                 .aiChatAttachSelection,
+                .aiChatPageContextExtractionSuccess,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
@@ -818,6 +848,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiFeaturesSearchAssistOften,
                 .aiFeaturesHideImagesOn,
                 .aiFeaturesHideImagesOff,
+                .aiChatAddressBarCustomizeResponsesOpened,
+                .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return nil
         case .aiChatIsEnabled(let isEnabled):
@@ -838,6 +870,14 @@ enum AIChatPixel: PixelKitEvent {
             return ["fileCount": String(fileCount)]
         case .aiChatAddressBarFileValidationFailed(let reason):
             return ["reason": reason]
+        case .aiChatPageContextExtractionFailed(let reason, let trigger, let latency):
+            var params = ["reason": reason, "trigger": trigger]
+            if let latency {
+                params["latency"] = latency
+            }
+            return params
+        case .aiChatPageContextExtractionPrevented(let category, let trigger):
+            return ["category": category, "reason": "non_attachable", "trigger": trigger]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
         case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):
@@ -909,6 +949,9 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatPageContextAdded,
                 .aiChatPageContextRemoved,
                 .aiChatAttachSelection,
+                .aiChatPageContextExtractionSuccess,
+                .aiChatPageContextExtractionFailed,
+                .aiChatPageContextExtractionPrevented,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
                 .aiChatDeleteHistoryFailed,
@@ -1002,6 +1045,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiFeaturesSearchAssistOften,
                 .aiFeaturesHideImagesOn,
                 .aiFeaturesHideImagesOff,
+                .aiChatAddressBarCustomizeResponsesOpened,
+                .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return [.pixelSource]
         }

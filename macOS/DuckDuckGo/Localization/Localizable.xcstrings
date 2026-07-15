@@ -4041,6 +4041,2346 @@
         }
       }
     },
+    "aichat.customize-responses-button.label" : {
+      "comment" : "Label for the Customize Responses tool in the AI chat omnibar tools menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antworten anpassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Customize Responses"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personaliza las respuestas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personnaliser les réponses"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizza le risposte"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antwoorden aanpassen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostosuj odpowiedzi"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizar respostas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройка ответов"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses-tool.subtitle" : {
+      "comment" : "Subtitle for the Customize Responses tool in the tools dropdown menu, shown when responses haven't been customized",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton, Länge und mehr steuern"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Control tone, length, and more"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controla el tono, la duración y más"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réglez le ton, la durée et plus encore"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlla tono, lunghezza e altro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stel toon, lengte en meer in"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontroluj ton, długość i nie tylko"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controla o tom, a duração e muito mais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задайте тон, длину ответа и прочие параметры"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.brainstorm-partner" : {
+      "comment" : "Customize Responses AI role option: brainstorm partner",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brainstorm-Partner"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Brainstorm partner"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Socio de lluvia de ideas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partenaire de réflexion"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partner di Brainstorm"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brainstormpartner"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partner do burzy mózgów"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parceiro de brainstorming"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Партнер для мозгового штурма"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.career-coach" : {
+      "comment" : "Customize Responses AI role option: career coach",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karriere-Coach"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Career coach"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orientador profesional"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coach de carrière"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coach di carriera"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loopbaancoach"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doradca zawodowy"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formador de carreira"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коуч по карьере"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.chef" : {
+      "comment" : "Customize Responses AI role option: chef",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koch"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chef"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chef"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chef"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chef"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kok"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szef kuchni"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chef"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Шеф-повар"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.coding-coach" : {
+      "comment" : "Customize Responses AI role option: coding coach",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coding-Coach"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Coding coach"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orientador de programación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coach en codage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Insegnante di coding"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codecoach"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trener kodowania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formador de programação"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ментор по программированию"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.editor" : {
+      "comment" : "Customize Responses AI role option: editor",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Editor"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Éditeur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redattore"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redaktor"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Редактор"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.entertainment-guide" : {
+      "comment" : "Customize Responses AI role option: entertainment guide",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unterhaltungsanleitung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Entertainment guide"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guía de entretenimiento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guide de divertissement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guida all'intrattenimento"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entertainmentgids"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przewodnik rozrywkowy"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guia de entretenimento"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Гид по развлечениям"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.fitness-trainer" : {
+      "comment" : "Customize Responses AI role option: fitness trainer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitnesstrainer"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fitness trainer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparador físico"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coach sportif"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal trainer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitnesstrainer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trener fitnessu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal trainer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фитнес-тренер"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.gardener" : {
+      "comment" : "Customize Responses AI role option: gardener",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gärtner"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Gardener"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jardinero"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jardinier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giardiniere"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuinman"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogrodnik"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jardineiro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Садовник"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.homework-helper" : {
+      "comment" : "Customize Responses AI role option: homework helper",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hausaufgabenhelfer"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Homework helper"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayudante de tareas escolares"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aide aux devoirs"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiuto per i compiti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Huiswerkhulp"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomocnik do odrabiania prac domowych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajudante de trabalhos de casa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Репетитор по домашним заданиям"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.language-tutor" : {
+      "comment" : "Customize Responses AI role option: language tutor",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprachlehrer"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Language tutor"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutor de idiomas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Professeur de langues"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutor di lingua"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taalcoach"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nauczyciel języka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutor de idiomas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Репетитор по языкам"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.life-coach" : {
+      "comment" : "Customize Responses AI role option: life coach",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Life Coach"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Life coach"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orientador vital"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coach de vie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Life coach"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Levenscoach"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trener życiowy"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coach de vida"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лайф-коуч"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.marketer" : {
+      "comment" : "Customize Responses AI role option: marketer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vermarkter"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Marketer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Especialista en marketing"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Responsable marketing"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marketer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marketeer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marketer"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marketer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Маркетолог"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.product-manager" : {
+      "comment" : "Customize Responses AI role option: product manager",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Produktmanager"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Product manager"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerente de producto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chef de produit"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Product manager"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Productmanager"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menedżer produktu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestor de produto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Менеджер по продукции"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.public-speaking-coach" : {
+      "comment" : "Customize Responses AI role option: public speaking coach",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coach für öffentliches Sprechen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Public speaking coach"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrenador de oratoria"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coach de prise de parole en public"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coach di public speaking"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coach voor spreken in het openbaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trener wystąpień publicznych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formador de oratória"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тренер по публичным выступлениям"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.social-media-copywriter" : {
+      "comment" : "Customize Responses AI role option: social media copywriter",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Werbetexter für soziale Medien"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Social media copywriter"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redactor de redes sociales"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rédacteur de contenu pour les réseaux sociaux"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copywriter per social media"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tekstschrijver voor sociale media"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copywriter do mediów społecznościowych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copywriter de redes sociais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Копирайтер для соцсетей"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.storyteller" : {
+      "comment" : "Customize Responses AI role option: storyteller",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschichtenerzähler"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Storyteller"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Narrador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conteur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cantastorie"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verhalenverteller"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gawędziarz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contador de histórias"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рассказчик"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.summarizer" : {
+      "comment" : "Customize Responses AI role option: summarizer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summarizer"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Summarizer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumidor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synthétiseur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strumento di riepilogo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Samenvatter"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ekspert od podsumowań"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sumarizador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Краткий пересказчик"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.teacher" : {
+      "comment" : "Customize Responses AI role option: teacher",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lehrer"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Teacher"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profesor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enseignant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Insegnante"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leraar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nauczyciel"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Professor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Учитель"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.tech-support-specialist" : {
+      "comment" : "Customize Responses AI role option: tech support specialist",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spezialist für technischen Support"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tech support specialist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Especialista en soporte técnico"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spécialiste du support technique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Specialista del supporto tecnico"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Specialist in technische ondersteuning"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Specjalista ds. wsparcia technicznego"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Especialista em suporte técnico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Специалист по технической поддержке"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.translator" : {
+      "comment" : "Customize Responses AI role option: translator",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Übersetzer"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Translator"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traductor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traducteur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traduttore"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertaler"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tłumacz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tradutor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переводчик"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.travel-guide" : {
+      "comment" : "Customize Responses AI role option: travel guide",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reiseführer"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Travel guide"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guía turístico"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guide de voyage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guida di viaggio"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reisgids"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przewodnik turystyczny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guia de viagem"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Путеводитель"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.trivia-expert" : {
+      "comment" : "Customize Responses AI role option: trivia expert",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trivia-Experte"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Trivia expert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experto en curiosidades"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expert en culture générale"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperto di curiosità"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trivia-expert"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ekspert od ciekawostek"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Especialista em curiosidades"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эксперт по викторинам"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.ai-role.writer" : {
+      "comment" : "Customize Responses AI role option: writer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autor"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Writer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escritor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Écrivain"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrittore"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schrijver"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pisarz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escritor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Писатель"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.clarifies" : {
+      "comment" : "Sub-label fragment shown in the Customize Responses row when clarifying questions are enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verdeutlicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Clarifies"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aclara"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clarifie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiarisce"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verduidelijkt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyjaśnia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esclarece"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "С уточнениями"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.length.short" : {
+      "comment" : "Customize Responses length option: short",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kurz"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Short"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Corto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Courtes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breve"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kort"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krótkie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Curto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Короткие"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.length.shortest" : {
+      "comment" : "Customize Responses length option: shortest",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kürzeste"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shortest"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El más corto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plus court"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La più breve"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kortst"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najkrótsze"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais curto"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Максимально короткие"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.casual" : {
+      "comment" : "Customize Responses tone option: casual",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lässig"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Casual"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Décontracté"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casual"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieformalny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casual"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неформальный"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.ducky" : {
+      "comment" : "Customize Responses tone option: ducky (DuckDuckGo mascot personality)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ducky"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ducky"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ducky"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ducky"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ducky"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ducky"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaczor"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ducky"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Учтивый"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.empathetic" : {
+      "comment" : "Customize Responses tone option: empathetic",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einfühlsam"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Empathetic"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empático"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empathique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empatico"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empathisch"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empatyczny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empático"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эмпатичный"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.friendly" : {
+      "comment" : "Customize Responses tone option: friendly",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Freundlich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Friendly"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amable"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amical"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amichevole"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vriendelijk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przyjazny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amigável"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дружелюбный"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.playful" : {
+      "comment" : "Customize Responses tone option: playful",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verspielt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Playful"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Juguetón"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enjoué"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giocoso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speels"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Figlarny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Divertido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Игривый"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.tone.professional" : {
+      "comment" : "Customize Responses tone option: professional",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Professionell"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Professional"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profesional"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Professionnel"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Professionale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Professioneel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profesjonalny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profissional"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профессионал"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.your-role.parent" : {
+      "comment" : "Customize Responses your-role option: parent",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elternteil"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Parent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progenitor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genitore"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouder"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rodzic"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pai/mãe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Родитель"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.your-role.professional" : {
+      "comment" : "Customize Responses your-role option: professional",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Professionell"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Professional"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profesional"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Professionnel"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Professionale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Professioneel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profesjonalista"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profissional"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профессионал"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.your-role.programmer" : {
+      "comment" : "Customize Responses your-role option: programmer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programmierer"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Programmer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programmeur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programmatore"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programmeur"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programista"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Программист"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.your-role.student" : {
+      "comment" : "Customize Responses your-role option: student",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Student"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Student"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estudiante"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Étudiant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Studente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Student"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uczeń"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estudante"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Студент"
+          }
+        }
+      }
+    },
+    "aichat.customize-responses.your-role.writer" : {
+      "comment" : "Customize Responses your-role option: writer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autor"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Writer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escritor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Écrivain"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrittore"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schrijver"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pisarz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escritor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Писатель"
+          }
+        }
+      }
+    },
     "aichat.file-attachment.accessibility-format" : {
       "comment" : "Accessibility label for a file added to the AI chat omnibar — %@ is replaced with the filename",
       "extractionState" : "extracted_with_value",
@@ -22779,55 +25119,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wir werden versuchen, die strengsten verfügbaren Cookie-Einstellungen auszuwählen und diese für dich zu deaktivieren. Falls es keine Opt-out-Möglichkeit gibt, ersparen wir dir einen Klick und akzeptieren diese Cookies für dich."
+            "value" : "Wir werden versuchen, so viele Cookies wie möglich abzulehnen. Wenn es keine Möglichkeit gibt, dies abzulehnen, ersparen wir dir einen Klick und akzeptieren diese Cookies für dich."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you."
+            "value" : "We'll aim to reject as many cookies as possible. If there's no reject option, we'll save you a click and accept these cookies for you."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Intentaremos seleccionar las opciones de cookies más privadas disponibles y cerrarlas por ti. Si no permiten rechazarlas, te ahorraremos un clic y aceptaremos estas cookies por ti."
+            "value" : "Intentaremos rechazar el mayor número de cookies posible. Si no hay opción de rechazarlas, te ahorraremos un clic y aceptaremos estas cookies por ti."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nous nous efforcerons de sélectionner les options de cookies les plus respectueuses de la vie privée et de les désactiver pour vous. Si aucune option de désactivation n'est proposée, nous vous épargnerons un clic et accepterons ces cookies à votre place."
+            "value" : "Nous nous efforcerons de rejeter le plus grand nombre de cookies possible. Si aucune option de rejet n’est proposée, nous vous épargnerons un clic et accepterons ces cookies à votre place."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cercheremo di selezionare le opzioni sui cookie più riservate disponibili e di chiuderle per te. Se non sono previste opzioni di rifiuto, ti risparmieremo un clic accettando i cookie al posto tuo."
+            "value" : "Cercheremo di rifiutare il maggior numero possibile di cookie. Se non è prevista un'opzione di rifiuto, ti risparmieremo un clic e accetteremo questi cookie per te."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We proberen de meest privacyvriendelijke cookie-opties te selecteren en deze voor je te sluiten. Als afmelden niet mogelijk is, besparen we je een klik en accepteren we deze cookies voor je."
+            "value" : "We proberen zoveel mogelijk cookies af te wijzen. Als er geen weigeroptie is, besparen we je een klik en accepteren we deze cookies voor je."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Postaramy się wybrać najbardziej prywatne dostępne opcje plików cookie i zamknąć je za Ciebie. Jeśli nie mają opcji rezygnacji, zaoszczędzimy Ci kliknięcia i zaakceptujemy te pliki cookie za Ciebie."
+            "value" : "Postaramy się odrzucić jak najwięcej plików cookie. Jeśli nie będzie opcji odrzucenia, zaoszczędzimy Ci kliknięcia i zaakceptujemy te pliki cookie za Ciebie."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vamos tentar selecionar as opções de cookies mais privadas disponíveis e fechá-las por ti. Se não tiverem opções de exclusão, vamos poupar-te um clique e aceitar estes cookies por ti."
+            "value" : "Vamos tentar rejeitar o máximo de cookies possível. Se não houver opção de rejeição, vamos poupar-te um clique e aceitar estes cookies por ti."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Мы постараемся выбрать максимально конфиденциальные настройки файлов cookie и закроем эти окна за вас. Если во всплывающих окнах нет возможности отказаться от отслеживания, мы сэкономим ваше время и примем эти файлы cookie за вас."
+            "value" : "Мы постараемся отклонить как можно больше файлов cookie. Если возможности отказаться от отслеживания нет, мы сэкономим ваше время и примем эти файлы cookie за вас."
           }
         }
       }
@@ -22839,55 +25179,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verwalte oder akzeptiere Cookies für mich"
+            "value" : "Wenn möglich ablehnen oder für mich akzeptieren"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Manage or accept cookies for me"
+            "value" : "Reject when possible or accept for me"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestionar o aceptar las cookies por mí"
+            "value" : "Rechazar cuando sea posible o aceptar por mí"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gérer ou accepter les cookies à ma place"
+            "value" : "Rejeter si possible ou accepter pour moi"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestisci o accetta i cookie per me"
+            "value" : "Rifiuta quando possibile o accetta per me"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Beheer of accepteer cookies voor mij"
+            "value" : "Wijs af waar mogelijk of accepteer voor mij"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zarządzaj plikami cookie lub zaakceptuj je za mnie"
+            "value" : "Odrzucaj, gdy to możliwe, lub akceptuj za mnie"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gerir ou aceitar cookies por mim"
+            "value" : "Rejeitar quando possível ou aceitar por mim"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Настраивать или принимать файлы cookie за меня"
+            "value" : "Отклонять, когда это возможно, или принимать за меня"
           }
         }
       }
@@ -22953,19 +25293,19 @@
       }
     },
     "cookie-popup-protection.opt-in.disabled.title" : {
-      "comment" : "Title of the opt-in dialog when cookie pop-up protection is off",
+      "comment" : "Title of the opt-in dialog when cookie pop-up protection is off. \\n is an intentional line break for English; translations can omit it.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hast du genug von Cookie-Pop-ups, die dich nicht in Ruhe lassen?"
+            "value" : "Hast du genug von Cookie-Pop-ups,\ndie dich nicht in Ruhe lassen?"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Tired of cookie pop-ups that won't leave you alone?"
+            "value" : "Tired of cookie pop-ups\nthat won't leave you alone?"
           }
         },
         "es" : {
@@ -22995,7 +25335,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Masz dość wyskakujących okienek z informacją o plikach cookie, które nie dają ci spokoju?"
+            "value" : "Masz dość wyskakujących okienek z informacją o plikach cookie, które nie dają Ci spokoju?"
           }
         },
         "pt" : {
@@ -23013,19 +25353,19 @@
       }
     },
     "cookie-popup-protection.opt-in.enabled.body" : {
-      "comment" : "Body of the opt-in dialog when cookie pop-up protection is already enabled",
+      "comment" : "Body of the opt-in dialog when cookie pop-up protection is already enabled. \\n is an intentional line break for English; translations can omit it.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wir können dir einen Klick ersparen und diese Cookies für dich akzeptieren."
+            "value" : "Wir können dir einen Klick ersparen und\ndiese Cookies für dich akzeptieren."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "We can save you a click and accept these cookies for you."
+            "value" : "We can save you a click and accept these\ncookies for you."
           }
         },
         "es" : {
@@ -23055,7 +25395,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Możemy zaoszczędzić Ci kliknięcia i zaakceptować te pliki cookie za Ciebie."
+            "value" : "Możemy Ci zaoszczędzić kliknięcia i zaakceptować te pliki cookie za Ciebie."
           }
         },
         "pt" : {
@@ -23079,55 +25419,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Akzeptiere für mich Cookies, bei denen kein Opt-out möglich ist"
+            "value" : "Cookies akzeptieren, die nicht abgelehnt werden können"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Accept no-opt-out cookies for me"
+            "value" : "Accept cookies that can't be rejected"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aceptar cookies sin opción de rechazarlas por mí"
+            "value" : "Aceptar cookies sin opción de rechazarlas"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Accepter les cookies sans option de désactivation pour moi"
+            "value" : "Accepter les cookies qui ne peuvent pas être refusés"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Accetta per me i cookie che non prevedono il rifiuto"
+            "value" : "Accetta i cookie che non prevedono il rifiuto"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Accepteer cookies zonder afmeldoptie voor me"
+            "value" : "Accepteer cookies zonder afmeldoptie"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Akceptuj za mnie pliki cookie niewymagające rezygnacji"
+            "value" : "Akceptuj pliki cookie, których nie można odrzucić"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aceitar cookies sem opção de exclusão por mim"
+            "value" : "Aceitar cookies que não podem ser rejeitados"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Принимать за меня файлы cookie, от которых нельзя отказаться"
+            "value" : "Принимать файлы cookie, от которых нельзя отказаться"
           }
         }
       }
@@ -23139,73 +25479,73 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ich kümmere mich weiter selbst darum"
+            "value" : "Ich werde sie weiterhin selbst annehmen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "I'll keep handling them myself"
+            "value" : "I'll keep accepting them myself"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seguiré gestionándolas por mi cuenta"
+            "value" : "Seguiré aceptándolas por mi cuenta"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Je les gérerai moi-même"
+            "value" : "Je les accepterai moi-même"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Continuerò a occuparmene io"
+            "value" : "Continuerò ad accettarli io"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ik blijf ze zelf beheren"
+            "value" : "Ik blijf ze zelf accepteren"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Będę się nimi zajmować samodzielnie"
+            "value" : "Nadal będę je akceptować samodzielnie"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prefiro continuar eu a geri-los"
+            "value" : "Prefiro continuar eu a aceitá-los"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Я продолжу управлять файлами cookie самостоятельно"
+            "value" : "Я продолжу принимать их самостоятельно"
           }
         }
       }
     },
     "cookie-popup-protection.opt-in.enabled.title" : {
-      "comment" : "Title of the opt-in dialog when cookie pop-up protection is already enabled",
+      "comment" : "Title of the opt-in dialog when cookie pop-up protection is already enabled. \\n is an intentional line break for English; translations can omit it.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hast du genug von Cookie-Pop-ups, bei denen du dich nicht abmelden kannst?"
+            "value" : "Hast du genug von Cookie-Pop-ups,\nbei denen du dich nicht abmelden kannst?"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Tired of cookie pop-ups that don't let you opt out?"
+            "value" : "Tired of cookie pop-ups\nthat don't let you opt out?"
           }
         },
         "es" : {
@@ -23235,7 +25575,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Masz dość wyskakujących okienek z plikami cookie, z których nie możesz zrezygnować?"
+            "value" : "Masz dość wyskakujących okienek z informacją o plikach cookie, z których nie możesz zrezygnować?"
           }
         },
         "pt" : {
@@ -23259,49 +25599,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Du kannst das später jederzeit anpassen unter:\n**Einstellungen** > **Cookie-Pop-up-Schutz**."
+            "value" : "Du kannst das später jederzeit unter\n**Einstellungen** > **Cookie-Pop-up-Schutz** anpassen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You can always adjust later in:\n**Settings** > **Cookie Pop-Up Protection**."
+            "value" : "You can always adjust later in\n**Settings** > **Cookie Pop-Up Protection**."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Puedes ajustar esto más tarde en:\n**Ajustes** > **Protección contra ventanas emergentes de cookies**."
+            "value" : "Puedes ajustar esta configuración más tarde en \n**Ajustes** > **Protección contra ventanas emergentes de cookies**."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vous pouvez toujours modifier ces paramètres ultérieurement dans :\n**Réglages** > **Protection contre les fenêtres contextuelles des cookies**."
+            "value" : "Vous pouvez toujours modifier ces paramètres ultérieurement dans\n**Réglages** > **Protection contre les fenêtres contextuelles des cookies**."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Puoi sempre modificare questa scelta in un secondo momento in:\n**Impostazioni** > **Protezione pop-up dei cookie**."
+            "value" : "Puoi sempre modificare questa scelta in un secondo momento in\n**Impostazioni** > **Protezione pop-up dei cookie**."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Je kunt dit altijd later aanpassen in:\n**Instellingen** > **Bescherming tegen cookiepop-ups**."
+            "value" : "Je kunt dit altijd later aanpassen in\n**Instellingen** > **Bescherming tegen cookiepop-ups**."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Możesz to zawsze później zmienić, wybierając kolejno:\n**Ustawienia** > **Ochrona przed wyskakującymi okienkami dotyczącymi plików cookie**."
+            "value" : "To ustawienie możesz zmienić w późniejszym czasie, wybierając **Ustawienia** > **Ochrona przed wyskakującymi okienkami dotyczącymi plików cookie**."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Podes sempre ajustar mais tarde em:\n**Definições** > **Proteção contra pop-ups de cookies**."
+            "value" : "Podes sempre ajustar mais tarde em\n**Definições** > **Proteção contra pop-ups de cookies**."
           }
         },
         "ru" : {
@@ -79745,6 +82085,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Пароли и реквизиты карт подвергаются шифрованию."
+          }
+        }
+      }
+    },
+    "pm.empty.default.identities.description.extended.v2" : {
+      "comment" : "Label for empty state description when the user has no identities saved",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identitäten werden sicher auf deinem Gerät gespeichert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Identities are stored securely on your device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las identidades se almacenan de forma segura en tu dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les identités sont stockées en toute sécurité sur votre appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le identità sono archiviate in modo sicuro sul dispositivo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identiteiten worden veilig opgeslagen op je apparaat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tożsamości są bezpiecznie przechowywane na Twoim urządzeniu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As identidades são armazenadas com segurança no teu dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Учетные данные надежно хранятся на вашем устройстве."
           }
         }
       }

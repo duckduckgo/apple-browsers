@@ -31,7 +31,7 @@ final class CustomizeResponsesModalController: NSObject {
     var onClose: (() -> Void)?
 
     private enum Constants {
-        static let width: CGFloat = 520
+        static let width: CGFloat = 620
         static let height: CGFloat = 680
     }
 

@@ -1,4 +1,27 @@
 {
+    "m_sync_login": {
+        "description": "Fired when the app successfully logs in to an existing Sync account.",
+        "owners": ["amddg44", "frosty"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The Sync entry point or promotion source that led to login, when known.",
+                "enum": [
+                    "sync-start",
+                    "sync-backup",
+                    "data_import_summary",
+                    "promotion_data_import_summary",
+                    "promotion_bookmarks",
+                    "promotion_passwords",
+                    "promotion_ai_chat"
+                ]
+            }
+        ]
+    },
     "sync_setup_barcode_screen_shown": {
         "description": "Fired when the Sync setup QR/code screen is shown.",
         "owners": ["amddg44"],

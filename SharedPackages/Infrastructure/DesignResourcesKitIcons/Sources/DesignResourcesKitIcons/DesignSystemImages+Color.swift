@@ -24,9 +24,17 @@ public extension DesignSystemImages {
         }
 
         public enum Size16 {
-            public static var accessibility: DesignSystemImage { .init(resource: .accessibilityColor16) }
+            public static var accessibility: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .accessibilityColor16)
+                    : .init(resource: .accessibilityColor16Legacy)
+            }
             public static var addToDock: DesignSystemImage { .init(resource: .addToDockColor16) }
-            public static var adsBlocked: DesignSystemImage { .init(resource: .adsBlockedColor16) }
+            public static var adsBlocked: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .adsBlockedColor16)
+                    : .init(resource: .adsBlockedColor16Legacy)
+            }
             public static var aiChat: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .aiChatColor16)
@@ -34,8 +42,16 @@ public extension DesignSystemImages {
             }
             public static var aiChatToggle: DesignSystemImage { .init(resource: .aiChatToggleColor16) }
             public static var aiChatGradient: DesignSystemImage { .init(resource: .aiChatColorGradient16) }
-            public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneralColor16) }
-            public static var appearance: DesignSystemImage { .init(resource: .appearanceColor16) }
+            public static var aiGeneral: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .aiGeneralColor16)
+                    : .init(resource: .aiGeneralColor16Legacy)
+            }
+            public static var appearance: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .appearanceColor16)
+                    : .init(resource: .appearanceColor16Legacy)
+            }
             public static var assist: DesignSystemImage { .init(resource: .assistColor16) }
             public static var autofill: DesignSystemImage { .init(resource: .autofillColor16) }
             public static var bitwarden: DesignSystemImage { .init(resource: .bitwardenColor16) }
@@ -52,20 +68,40 @@ public extension DesignSystemImages {
             public static var calendarYesterday: DesignSystemImage { .init(resource: .calendarYesterdayColor16) }
             public static var chat: DesignSystemImage { .init(resource: .chatColor16) }
             public static var chatPinned: DesignSystemImage { .init(resource: .chatPinned16) }
-            public static var cookie: DesignSystemImage { .init(resource: .cookieColor16) }
+            public static var cookie: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .cookieColor16)
+                    : .init(resource: .cookieColor16Legacy)
+            }
             public static var cookieBlocked: DesignSystemImage { .init(resource: .cookieBlockedColor16) }
             public static var dashboard: DesignSystemImage { .init(resource: .dashboardColor16) }
             public static var databroker: DesignSystemImage { .init(resource: .databrokerColor16) }
-            public static var defaultBrowser: DesignSystemImage { .init(resource: .defaultBrowserColor16) }
+            public static var defaultBrowser: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .browserDefaultColor16)
+                    : .init(resource: .defaultBrowserColor16Legacy)
+            }
             public static var defaultBrowserAlt: DesignSystemImage { .init(resource: .defaultBrowserAltColor16) }
             public static var deviceMobileProtection: DesignSystemImage { .init(resource: .deviceMobileProtectionColor16) }
             public static var document: DesignSystemImage { .init(resource: .documentColor16) }
-            public static var downloads: DesignSystemImage { .init(resource: .downloadsColor16) }
-            public static var duckDuckGo: DesignSystemImage { .init(resource: .duckDuckGoColor16) }
+            public static var downloads: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .downloadsColor16)
+                    : .init(resource: .downloadsColor16Legacy)
+            }
+            public static var duckDuckGo: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .duckDuckGoColor16)
+                    : .init(resource: .duckDuckGoColor16Legacy)
+            }
             public static var email: DesignSystemImage { .init(resource: .emailColor16) }
             public static var emailBlock: DesignSystemImage { .init(resource: .emailBlockColor16) }
             public static var emailCheck: DesignSystemImage { .init(resource: .emailCheckColor16) }
-            public static var emailProtection: DesignSystemImage { .init(resource: .emailProtectionColor16) }
+            public static var emailProtection: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .emailProtectionColor16)
+                    : .init(resource: .emailProtectionColor16Legacy)
+            }
             public static var exclamation: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .exclamationColor16)
@@ -81,8 +117,16 @@ public extension DesignSystemImages {
             public static var favoriteGrey: DesignSystemImage { .init(resource: .favoriteGreyColor16) }
             public static var feedback: DesignSystemImage { .init(resource: .feedbackColor16) }
             public static var fewerAds: DesignSystemImage { .init(resource: .fewerAdsColor16) }
-            public static var findSearch: DesignSystemImage { .init(resource: .findSearchColor16) }
-            public static var fire: DesignSystemImage { .init(resource: .fireColor16) }
+            public static var findSearch: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .searchFindColor16)
+                    : .init(resource: .findSearchColor16Legacy)
+            }
+            public static var fire: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .fireColor16)
+                    : .init(resource: .fireColor16Legacy)
+            }
             public static var folder: DesignSystemImage { .init(resource: .folderColor16) }
             public static var folderWin: DesignSystemImage { .init(resource: .folderWinColor16) }
             public static var globe: DesignSystemImage { .init(resource: .globeColor16) }
@@ -92,39 +136,83 @@ public extension DesignSystemImages {
             public static var history: DesignSystemImage { .init(resource: .historyColor16) }
             public static var home: DesignSystemImage { .init(resource: .homeColor16) }
             public static var hourglass: DesignSystemImage { .init(resource: .hourglassColor16) }
-            public static var identityBlockedPIR: DesignSystemImage { .init(resource: .identityBlockedPIRColor16) }
-            public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestorationColor16) }
+            public static var identityBlockedPIR: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .identityBlockedPIRColor16)
+                    : .init(resource: .identityBlockedPIRColor16Legacy)
+            }
+            public static var identityTheftRestoration: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .identityTheftRestorationColor16)
+                    : .init(resource: .identityTheftRestorationColor16Legacy)
+            }
             public static var `import`: DesignSystemImage { .init(resource: .importColor16) }
             public static var infoFeedback: DesignSystemImage { .init(resource: .infoFeedbackColor16) }
-            public static var key: DesignSystemImage { .init(resource: .keyColor16) }
+            public static var key: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .keyColor16)
+                    : .init(resource: .keyColor16Legacy)
+            }
             public static var linkSecure: DesignSystemImage { .init(resource: .linkSecureColor16) }
             public static var lock: DesignSystemImage { .init(resource: .lockColor16) }
-            public static var paidAiChat: DesignSystemImage { .init(resource: .paidAiChatColor16) }
+            public static var paidAiChat: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .duckDuckGoAiColor16)
+                    : .init(resource: .paidAiChatColor16Legacy)
+            }
             public static var privacyCheck: DesignSystemImage { .init(resource: .privacyCheckColor16) }
             public static var privacyCheckGray: DesignSystemImage { .init(resource: .privacyCheckGrayColor16) }
             public static var profile: DesignSystemImage { .init(resource: .profileColor16) }
-            public static var radar: DesignSystemImage { .init(resource: .radarColor16) }
+            public static var radar: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .radarColor16)
+                    : .init(resource: .radarColor16Legacy)
+            }
             public static var releaseNotes: DesignSystemImage { .init(resource: .releaseNotesColor16) }
             public static var rocket: DesignSystemImage { .init(resource: .rocketColor16) }
             public static var sessionRestore: DesignSystemImage { .init(resource: .sessionRestoreColor16) }
-            public static var settings: DesignSystemImage { .init(resource: .settingsColor16) }
-            public static var shield: DesignSystemImage { .init(resource: .shieldColor16) }
+            public static var settings: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .settingsColor16)
+                    : .init(resource: .settingsColor16Legacy)
+            }
+            public static var shield: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .shieldColor16)
+                    : .init(resource: .shieldColor16Legacy)
+            }
             public static var shieldCheck: DesignSystemImage { .init(resource: .shieldCheckColor16) }
             public static var shieldNeutral: DesignSystemImage { .init(resource: .shieldNeutralColor16) }
             public static var shieldNeutralAlert: DesignSystemImage { .init(resource: .shieldNeutralAlertColor16) }
             public static var shopping: DesignSystemImage { .init(resource: .shoppingColor16) }
             public static var siri: DesignSystemImage { .init(resource: .siriColor16) }
-            public static var sync: DesignSystemImage { .init(resource: .syncColor16) }
-            public static var subscription: DesignSystemImage { .init(resource: .privacyProColor16) }
+            public static var sync: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .syncColor16)
+                    : .init(resource: .syncColor16Legacy)
+            }
+            public static var subscription: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .subscriptionColor16)
+                    : .init(resource: .privacyProColor16Legacy)
+            }
             public static var survey: DesignSystemImage { .init(resource: .surveyColor16) }
             public static var tabsRecentlyClosed: DesignSystemImage { .init(resource: .tabsReccentlyClosedColor16) }
             public static var thumbsDown: DesignSystemImage { .init(resource: .thumbsDownColor16) }
             public static var thumbsDownNeutral: DesignSystemImage { .init(resource: .thumbsDownNeutralColor16) }
             public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUpColor16) }
             public static var thumbsUpNeutral: DesignSystemImage { .init(resource: .thumbsUpNeutralColor16) }
-            public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayerColor16) }
+            public static var videoPlayer: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .videoPlayerColor16)
+                    : .init(resource: .videoPlayerColor16Legacy)
+            }
             public static var videoPlayerBlocked: DesignSystemImage { .init(resource: .videoPlayerBlockedColor16) }
-            public static var vpn: DesignSystemImage { .init(resource: .vpnColor16) }
+            public static var vpn: DesignSystemImage {
+                AppRebrand.isAppRebranded()
+                    ? .init(resource: .vpnColor16)
+                    : .init(resource: .vpnColor16Legacy)
+            }
             public static var vpnGray: DesignSystemImage { .init(resource: .vpnGrayColor16) }
             public static var searchFindToggle: DesignSystemImage {
                 AppRebrand.isAppRebranded()

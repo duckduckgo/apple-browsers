@@ -3135,6 +3135,10 @@
 		B5CCC06E2F649BAF003EB0A2 /* TabBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CCC06C2F649BAF003EB0A2 /* TabBackgroundView.swift */; };
 		B5CCC0702F649BB9003EB0A2 /* TabBackgroundShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CCC06F2F649BB9003EB0A2 /* TabBackgroundShapeView.swift */; };
 		B5CCC0712F649BB9003EB0A2 /* TabBackgroundShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CCC06F2F649BB9003EB0A2 /* TabBackgroundShapeView.swift */; };
+		B5D20880300076B100B5671D /* vpn-animation.json in Resources */ = {isa = PBXBuildFile; fileRef = B5D2087F300076B100B5671D /* vpn-animation.json */; };
+		B5D20881300076B100B5671D /* vpn-animation.json in Resources */ = {isa = PBXBuildFile; fileRef = B5D2087F300076B100B5671D /* vpn-animation.json */; };
+		B5D20882300076B100B5671D /* vpn-animation.json in Resources */ = {isa = PBXBuildFile; fileRef = B5D2087F300076B100B5671D /* vpn-animation.json */; };
+		B5D20883300076B100B5671D /* vpn-animation.json in Resources */ = {isa = PBXBuildFile; fileRef = B5D2087F300076B100B5671D /* vpn-animation.json */; };
 		B5D62C802F55F5B000947DFD /* StartupMetricsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */; };
 		B5D62C812F55F5B000947DFD /* StartupMetricsExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */; };
 		B5DE8DA92EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
@@ -6280,6 +6284,7 @@
 		B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTitleView.swift; sourceTree = "<group>"; };
 		B5CCC06C2F649BAF003EB0A2 /* TabBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBackgroundView.swift; sourceTree = "<group>"; };
 		B5CCC06F2F649BB9003EB0A2 /* TabBackgroundShapeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBackgroundShapeView.swift; sourceTree = "<group>"; };
+		B5D2087F300076B100B5671D /* vpn-animation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpn-animation.json"; sourceTree = "<group>"; };
 		B5D62C7F2F55F5B000947DFD /* StartupMetricsExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsExporter.swift; sourceTree = "<group>"; };
 		B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		B5DFC5372F608D45001AB6AA /* UITests+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITests+Helpers.swift"; sourceTree = "<group>"; };
@@ -12635,6 +12640,7 @@
 			children = (
 				BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */,
 				BB1F8E112E3CC5C40043648F /* sparkleloop_wide.json */,
+				B5D2087F300076B100B5671D /* vpn-animation.json */,
 				BD384AC82BBC821100EF3735 /* vpn-dark-mode.json */,
 				BD384AC72BBC821100EF3735 /* vpn-light-mode.json */,
 			);
@@ -14252,6 +14258,7 @@
 				84C96E482CF9BB6400A80A01 /* malwareFilterSet.json in Resources */,
 				84C96E492CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,
 				3706FCD6293F65D500E42796 /* httpsMobileV2FalsePositives.json in Resources */,
+				B5D20882300076B100B5671D /* vpn-animation.json in Resources */,
 				3706FCD8293F65D500E42796 /* BookmarksBar.storyboard in Resources */,
 				3706FCDB293F65D500E42796 /* Feedback.storyboard in Resources */,
 				B658BAB72B0F848D00D1F2C7 /* Localizable.xcstrings in Resources */,
@@ -14326,6 +14333,7 @@
 				4B1561872F2FF36400E444AA /* macos-config.json in Resources */,
 				BDE981DA2BBD10D600645880 /* vpn-light-mode.json in Resources */,
 				BB1F8E152E3CC5C40043648F /* sparkleloop_wide.json in Resources */,
+				B5D20880300076B100B5671D /* vpn-animation.json in Resources */,
 				BBBED48C2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */,
 				7BA7CC482AD11E5C0042E5CE /* Assets.xcassets in Resources */,
 				1EC711552D03421B0009EB5C /* Localizable.xcstrings in Resources */,
@@ -14340,6 +14348,7 @@
 				4B1561882F2FF36400E444AA /* macos-config.json in Resources */,
 				BDADBDCD2BD2BC5700421B9B /* vpn-light-mode.json in Resources */,
 				BB1F8E122E3CC5C40043648F /* sparkleloop_wide.json in Resources */,
+				B5D20881300076B100B5671D /* vpn-animation.json in Resources */,
 				BBBED48D2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */,
 				7BA7CC472AD11E5C0042E5CE /* Assets.xcassets in Resources */,
 				1EC711562D03421B0009EB5C /* Localizable.xcstrings in Resources */,
@@ -14483,6 +14492,7 @@
 				84C96E462CF9BB6400A80A01 /* malwareFilterSet.json in Resources */,
 				84C96E472CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,
 				4B677435255DBEB800025BD8 /* httpsMobileV2FalsePositives.json in Resources */,
+				B5D20883300076B100B5671D /* vpn-animation.json in Resources */,
 				4BD18F05283F151F00058124 /* BookmarksBar.storyboard in Resources */,
 				AA3863C527A1E28F00749AB5 /* Feedback.storyboard in Resources */,
 				B658BAB62B0F845D00D1F2C7 /* Localizable.xcstrings in Resources */,

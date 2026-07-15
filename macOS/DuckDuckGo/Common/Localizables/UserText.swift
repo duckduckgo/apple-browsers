@@ -41,6 +41,8 @@ struct UserText {
     static let fireDialogCloseThisTab = NSLocalizedString("fire.dialog.close.this.tab", value: "Close this tab.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Tab’. Means: the currently active tab will be closed.")
     static let fireDialogCloseThisWindow = NSLocalizedString("fire.dialog.close.this.window", value: "Close this window.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Window’. Means: the current browser window (all tabs inside it) will be closed.")
     static let fireDialogCloseAllTabsWindows = NSLocalizedString("fire.dialog.close.all.tabs.windows", value: "Close all tabs and windows.", comment: "Subtitle shown under the Tabs and windows row when scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
+    static let fireDialogCloseThisTabAfterDeleting = NotLocalizedString("fire.dialog.close.this.tab.after.deleting", value: "Close this tab after deleting.", comment: "Checkbox caption for when the data clearing scope is ‘Tab’. Means: the currently active tab will be closed.")
+    static let fireDialogCloseAllTabsWindowsAfterDeleting = NotLocalizedString("fire.dialog.close.all.windows.after.deleting", value: "Close all tabs and windows after deleting.", comment: "Checkbox caption for when the data clearing scope is ‘Everything’. Means: all browser tabs and windows will be closed.")
 
     static func fireDialogHistoryItemsSubtitle(_ count: Int) -> String {
         let template = NSLocalizedString(
@@ -489,6 +491,8 @@ struct UserText {
     static let fireDialogSegmentWindow = NSLocalizedString("fire.dialog.segment.window", value: "Window", comment: "Segment label for Window scope")
     static let fireDialogSegmentEverything = NSLocalizedString("fire.dialog.segment.everything", value: "Everything", comment: "Segment label for Everything scope")
     static let fireDialogManageIndividualSitesLink = NSLocalizedString("fire.dialog.manage.individual.sites", value: "Delete individual sites and history.", comment: "Link row text to manage per-site deletions")
+    static let fireDialogMoreOptions = NotLocalizedString("fire.dialog.more.options", value: "More Options", comment: "Accessibility label for the toolbar button that reveals more Fire dialog options")
+    static let fireDialogDeleteAndClose = NotLocalizedString("fire.dialog.delete.and.close", value: "Delete & Close", comment: "Caption for the Fire dialog action button for deleting data and closing tabs and windows")
 
     // MARK: - Fire dialog sites list sheet
     static let fireDialogSitesOverlayTitle = NSLocalizedString("fire.dialog.sites.overlay.title",

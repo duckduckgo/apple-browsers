@@ -717,6 +717,7 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case heuristicAction
     case cookiePopupPreferenceSetting
     case cookiePopupOptInDialog
+    case cookiePopupOptInDialogExperiment
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {

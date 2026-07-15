@@ -66,11 +66,7 @@ extension MainViewController {
         return pill.convert(pill.bounds, to: nil)
     }
 
-    /// The collapsed-pose hand-off only makes sense when the resting omnibar is actually on screen
-    /// to morph out of. On the new-tab focus path the shared omnibar is measured before the
-    /// swipe-tabs collection has scrolled/reparented it into the new cell, so it reads a full page
-    /// off-screen; seeding the UTI's card and text from that makes them slide in from the edge.
-    /// Report an off-screen omnibar as unmeasurable so callers fall back to the resting margins.
+    /// Off-screen omnibar (e.g. new-tab focus before swipe-tabs reparents it) is unmeasurable, so the hand-off falls back to resting margins.
     private func omnibarChromeIsOnScreenForHandoff(_ view: UIView) -> Bool {
         guard let window = view.window else { return false }
         return window.bounds.intersects(view.convert(view.bounds, to: nil))

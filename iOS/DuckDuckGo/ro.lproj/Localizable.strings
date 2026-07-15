@@ -103,9 +103,6 @@
 /* Cancel action - button shown in alert */
 "action.title.cancel" = "Renunță";
 
-/* Open the native Duck.ai chat history sheet from the browser menu. */
-"action.title.chats" = "Chaturi";
-
 /* Copy action */
 "action.title.copy" = "Copiere";
 
@@ -250,6 +247,24 @@
 /* Settings screen title for AI features */
 "ai-features.settings.title" = "Caracteristici AI";
 
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
+"aiChat.tabSwitcher.card.chip.chat" = "Chat";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.transcript" = "Transcriere";
+
+/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.chip.voice" = "Chat vocal";
+
+/* Title shown on a Duck.ai tab grid card when the chat has no title yet. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.untitledChat" = "Chat nou";
+
+/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening" = "Ascultare în curs...";
+
+/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. Not translated; final copy will land in a follow-up PR. */
+"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Ascult...";
+
 /* List row label in the app menu on a Duck.ai tab — opens the recent Duck.ai chats sidebar */
 "aichat.appMenu.chats" = "Chaturi";
 
@@ -322,45 +337,6 @@
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Chat vocal nou";
 
-/* Title of the confirmation shown when the user taps Fire in Duck.ai chat history to delete all chats; the number is the chat count. Do not translate - stringsdict entry */
-"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
-
-/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
-"aiChat.history.emptyState.openDuckAi" = "Deschide Duck.ai";
-
-/* Title shown when the user has no Duck.ai chat history yet. */
-"aiChat.history.emptyState.title" = "Nu există chaturi recente";
-
-/* Message of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.message" = "A apărut o eroare la încărcarea chaturilor tale Duck.ai. Încearcă din nou mai târziu.";
-
-/* Title of the alert shown when Duck.ai chat history fails to load. */
-"aiChat.history.loadError.title" = "Nu s-au putut încărca chaturile";
-
-/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
-"aiChat.history.noSearchResults.title" = "Nu s-au găsit potriviri";
-
-/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
-"aiChat.history.searchBar.placeholder" = "Caută";
-
-/* Section header above the user's pinned chats in the Duck.ai chat history list. */
-"aiChat.history.section.pinned" = "Fixat";
-
-/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
-"aiChat.history.section.recent" = "Recent";
-
-/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.delete.a11y" = "Șterge chatul";
-
-/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
-"aiChat.history.swipe.download.a11y" = "Descarcă chatul";
-
-/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
-"aiChat.history.swipe.pin.a11y" = "Fixează chatul";
-
-/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
-"aiChat.history.swipe.unpin.a11y" = "Anulează fixarea chatului";
-
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Pentru sarcini analitice";
 
@@ -399,24 +375,6 @@
 
 /* Headline of the sync promo card shown above the Duck.ai recent chats list. */
 "aiChat.syncPromo.title" = "Accesează-ți chaturile pe toate dispozitivele folosind Sync & Backup.";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a regular text conversation. */
-"aiChat.tabSwitcher.card.chip.chat" = "Chat";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as the transcript of a finished voice conversation. */
-"aiChat.tabSwitcher.card.chip.transcript" = "Transcriere";
-
-/* Label of the type chip on the bottom-leading of the Duck.ai tab grid card identifying the chat as a live voice session. */
-"aiChat.tabSwitcher.card.chip.voice" = "Chat vocal";
-
-/* Title shown on a Duck.ai tab grid card when the chat has no title yet. */
-"aiChat.tabSwitcher.card.untitledChat" = "Chat nou";
-
-/* Status label at the top of the Duck.ai tab grid card for a tab with a live voice session in progress. A leading microphone glyph is shown next to it in the UI. */
-"aiChat.tabSwitcher.card.voice.listening" = "Ascultare în curs...";
-
-/* VoiceOver label for the Duck.ai tab grid card of a tab with a live voice session — same as the visible status without the decorative emoji. */
-"aiChat.tabSwitcher.card.voice.listening.accessibilityLabel" = "Ascult...";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Setează tonul, durata și comportamentul";
@@ -582,6 +540,8 @@
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nu se poate conecta la server.";
+
+/* Description for unable to sync with another device error */
 
 /* Description for unable to turn sync off error */
 "alert.unable-to-turn-sync-off-description" = "Nu se pot opri Sincronizare și backup.";
@@ -3772,9 +3732,6 @@
 /* Button to delete all tabs and data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.all.button" = "Șterge toate";
 
-/* Button to delete all chats in scoped fire confirmation dialog */
-"scoped.fire.confirmation.delete.chats.button" = "Șterge chaturile";
-
 /* Button to delete a single tab and its site data in scoped fire confirmation dialog */
 "scoped.fire.confirmation.delete.tab.button" = "Șterge fila";
 
@@ -3932,7 +3889,7 @@
 "settings.aifeatures.assist.never" = "Niciodată";
 
 /* Search Assist frequency option: often show AI-assisted answers */
-"settings.aifeatures.assist.often" = "Adesea";
+"settings.aifeatures.assist.often" = "Des";
 
 /* Search Assist frequency option: show AI-assisted answers on demand */
 "settings.aifeatures.assist.ondemand" = "La cerere";
@@ -3968,10 +3925,10 @@
 "settings.aifeatures.hide.ai.generated.images" = "Ascunde imaginile generate de IA";
 
 /* Hide AI-Generated Images option: off (images shown) */
-"settings.aifeatures.hide.ai.generated.images.off" = "Dezactivat";
+"settings.aifeatures.hide.ai.generated.images.off" = "Oprit";
 
 /* Hide AI-Generated Images option: on (images hidden) */
-"settings.aifeatures.hide.ai.generated.images.on" = "Activat";
+"settings.aifeatures.hide.ai.generated.images.on" = "Pornit";
 
 /* Footnote for the hide AI-generated images setting; ends with a Learn more link to the help page (do not remove the link) */
 "settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrează site-urile spam cunoscute, bazate pe IA, din rezultatele căutării de imagini. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results)";
@@ -4093,26 +4050,26 @@
 /* The name of the settings section containing options to set up the app */
 "settings.complete.setup" = "Finalizează configurarea";
 
-/* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Vom încerca să selectăm doar cele mai private opțiuni privind modulele cookie disponibile pentru tine, apoi vom închide aceste ferestre pop-up.";
-
-/* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Gestionează automat ferestrele pop-up pentru module cookie";
-
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Protecție pentru ferestre pop-up aferente modulelor cookie";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
 "settings.cookie.pop.up.protection.explanation" = "DuckDuckGo poate gestiona automat preferințele privind modulele cookie pentru a maximiza confidențialitatea, a minimiza modulele cookie și a închide aceste ferestre pop-up.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
-/* Settings screen cell text for Cookie popups */
-"settings.cookie.popups" = "Gestionare pop-up-uri pentru module cookie";
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Vom încerca să selectăm doar cele mai private opțiuni privind modulele cookie disponibile pentru tine, apoi vom închide aceste ferestre pop-up.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Gestionează automat ferestrele pop-up pentru module cookie";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.explanation" = "De asemenea, lasă DuckDuckGo să te scutească de un click acceptând modulele cookie în numele tău pentru a închide ferestrele pop-up care nu îți permit să renunți.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
 "settings.cookie.popups-without-opt-outs.title" = "Ferestre pop-up fără opțiune de renunțare";
+
+/* Settings screen cell text for Cookie popups */
+"settings.cookie.popups" = "Gestionare pop-up-uri pentru module cookie";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Șterge filele și datele";
@@ -5428,3 +5385,52 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
 
+
+/* No comment provided by engineer. */
+"No matches for \"%@\"" = "Nu există potriviri pentru „%@”";
+
+
+/* Open the native Duck.ai chat history sheet from the browser menu. */
+"action.title.chats" = "Chaturi";
+
+/* Title shown when the user has no Duck.ai chat history yet. */
+"aiChat.history.emptyState.title" = "Nu există chaturi recente";
+
+/* Primary button on the empty Duck.ai chat-history screen; opens the Duck.ai web chat. */
+"aiChat.history.emptyState.openDuckAi" = "Deschide Duck.ai";
+
+/* Placeholder for the search bar at the top of the Duck.ai chat history list. */
+"aiChat.history.searchBar.placeholder" = "Caută";
+
+/* Section header above the user's pinned chats in the Duck.ai chat history list. */
+"aiChat.history.section.pinned" = "Fixat";
+
+/* Section header above the user's recent (unpinned) chats in the Duck.ai chat history list. */
+"aiChat.history.section.recent" = "Recent";
+
+/* Shown inside the Duck.ai chat history list when the user's search query returns no matching chats. */
+"aiChat.history.noSearchResults.title" = "Nu s-au găsit potriviri";
+
+/* Title of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.title" = "Nu s-au putut încărca chaturile";
+
+/* Message of the alert shown when Duck.ai chat history fails to load. */
+"aiChat.history.loadError.message" = "A apărut o eroare la încărcarea chaturilor tale Duck.ai. Încearcă din nou mai târziu.";
+
+/* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.delete.a11y" = "Șterge chatul";
+
+/* Accessibility label for the download action revealed by swiping a Duck.ai chat row. */
+"aiChat.history.swipe.download.a11y" = "Descarcă chatul";
+
+/* Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section. */
+"aiChat.history.swipe.pin.a11y" = "Fixează chatul";
+
+/* Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section. */
+"aiChat.history.swipe.unpin.a11y" = "Anulează fixarea chatului";
+
+/* Button to delete all chats in scoped fire confirmation dialog */
+"scoped.fire.confirmation.delete.chats.button" = "Șterge chaturile";
+
+/* Do not translate - stringsdict entry */
+"aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";

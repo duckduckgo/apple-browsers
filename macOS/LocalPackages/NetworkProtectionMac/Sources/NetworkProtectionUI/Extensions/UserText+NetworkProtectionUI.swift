@@ -120,7 +120,7 @@ final class UserText {
     static let networkProtectionStrictRoutingPillOff = NSLocalizedString("network.protection.status.view.strict.routing.pill.off", bundle: Bundle.module, value: "Strict routing: Off", comment: "Label for the status pill shown while the VPN's Strict routing setting is off")
     static let networkProtectionStrictRoutingPillTooltipOn = NSLocalizedString("network.protection.status.view.strict.routing.pill.tooltip.on", bundle: Bundle.module, value: "Some apps may not work while Strict Routing is on.", comment: "Tooltip shown when hovering the status pill while the VPN's Strict routing setting is on")
     static let networkProtectionStrictRoutingPillTooltipOff = NSLocalizedString("network.protection.status.view.strict.routing.pill.tooltip.off", bundle: Bundle.module, value: "Strict Routing is recommended for public networks.", comment: "Tooltip shown when hovering the status pill while the VPN's Strict routing setting is off")
-    static let networkProtectionStatusHeaderMessageStrictRoutingOff = NSLocalizedString("network.protection.status.header.message.strict.routing.off", bundle: Bundle.module, value: "Some traffic may bypass the VPN while off. Strict Routing is recommended for public networks.", comment: "Status view message shown while the VPN is on but Strict routing is off")
+    static let networkProtectionStatusHeaderMessageStrictRoutingOff = NSLocalizedString("network.protection.status.header.message.strict.routing.off", bundle: Bundle.module, value: "Some traffic may bypass the VPN while Strict Routing is off. Strict Routing is recommended for public networks.", comment: "Status view message shown while the VPN is on but Strict routing is off")
 
     // MARK: Updating Appex to Sysex for App Store builds
 

@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Bekreft";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Vi prøver å velge de mest private alternativene for informasjonskapsler som er tilgjengelige, og lukker disse for deg. Hvis de ikke tilbyr muligheten til å reservere seg, sparer vi deg for et klikk ved å godta disse informasjonskapslene for deg.";
+"cookie-popup-protection.opt-in.disabled.body" = "Vi prøver å avvise så mange informasjonskapsler som mulig. Hvis det ikke finnes noe alternativ for å avvise dem, sparer vi deg for et klikk ved å godta dem for deg.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Administrer eller godta informasjonskapsler for meg";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Avvis når det er mulig, eller godta for meg";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Jeg vil fortsette å håndtere dem selv";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Vi kan spare deg for et klikk og godta disse kapslene for deg.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Godta informasjonskapsler som ikke gir muligheten til å reservere seg, for meg";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Godta informasjonskapsler som ikke kan avvises";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Jeg vil fortsette å håndtere dem selv";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Jeg vil fortsette å godta dem selv";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Lei av popup-vinduer om informasjonskapsler som ikke gir deg muligheten til å reservere deg mot dem?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Beskyttelse mot popup-vinduer om informasjonskapsler";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo prøver å velge de mest private innstillingene som er tilgjengelige, og skjule disse popup-vinduene for deg.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan administrere innstillinger for informasjonskapsler automatisk for å maksimere personvernet, minimere informasjonskapsler og lukke disse popup-vinduene.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Vi prøver å velge de mest private alternativene for informasjonskapsler som er tilgjengelige, og så lukker vi disse popup-vinduene.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Administrer popup-vinduer om informasjonskapsler automatisk";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Du kan også la DuckDuckGo spare deg for et klikk ved å godta informasjonskapsler på dine vegne, og dermed lukke popup-vinduer som ikke gir deg muligheten til å reservere deg.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Popup-vinduer uten mulighet til å reservere seg";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Administrer vinduer om informasjonskapsler";
@@ -5422,3 +5434,6 @@
 
 /* Do not translate - stringsdict entry */
 "aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Spør om siden";

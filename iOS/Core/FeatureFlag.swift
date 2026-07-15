@@ -354,16 +354,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213076120133808?focus=true
     case showNTPAfterIdleReturn
 
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1213821747548995?focus=true
-    case escapeHatchActions
-
-    /// Surfaces the escape-hatch "delete tab" action as a dedicated Fire button on the card and removes it from the menu.
-    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1215358250572341?focus=true
-    case escapeHatchFireButton
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215530020470713?focus=true
-    case escapeHatchHideShortcut
-
     /// Test-only feature flag for verifying UI test override mechanism.
     /// Used in Debug > UI Test Overrides screen.
     case uiTestFeatureFlag
@@ -377,9 +367,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
     case crashCollectionLimitCallStackTreeDepth
-
-    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1211806114021630?focus=true
-    case onboardingRebranding
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214974217398704?focus=true
     case appRebranding
@@ -420,6 +407,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
+
+    /// https://app.asana.com/1/137249556945/project/1214749231578703/task/1213613180881406
+    case fireButtonSingleTabDeleteAll
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
@@ -769,12 +759,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(TabSwitcherTrackerCountSubfeature.featureEnabled))
         case .showNTPAfterIdleReturn:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
-        case .escapeHatchActions:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.escapeHatchActions))
-        case .escapeHatchFireButton:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.escapeHatchFireButton))
-        case .escapeHatchHideShortcut:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.escapeHatchHideShortcut))
         case .uiTestFeatureFlag:
             Config(source: .disabled)
         case .uiTestExperiment:
@@ -785,8 +769,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionLimitCallStackTreeDepth:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
-        case .onboardingRebranding:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.onboardingRebranding))
         case .appRebranding:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRebranding), supportsLocalOverriding: true)
         case .webExtensions:
@@ -811,6 +793,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireMode))
         case .fireButtonRefinements:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
+        case .fireButtonSingleTabDeleteAll:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonSingleTabDeleteAll))
         case .aiChatOmnibarDefaultPosition:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
         case .duckAIVoiceShortcut:

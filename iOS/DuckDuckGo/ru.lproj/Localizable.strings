@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Подтвердить";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Мы постараемся выбрать максимально конфиденциальные настройки файлов cookie и закроем эти окна за вас. Если во всплывающих окнах нет возможности отказаться от отслеживания, мы сэкономим ваше время и примем эти файлы cookie за вас.";
+"cookie-popup-protection.opt-in.disabled.body" = "Мы постараемся отклонить как можно больше файлов cookie. Если возможности отказаться от отслеживания нет, мы сэкономим ваше время и примем эти файлы cookie за вас.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Настраивать или принимать файлы cookie за меня";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Отклонять, когда это возможно, или принимать за меня";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Я продолжу управлять файлами cookie самостоятельно";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Мы можем сэкономить вам время и примем эти файлы cookie за вас.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Принимать за меня файлы cookie, от которых нельзя отказаться";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Принимать файлы cookie, от которых нельзя отказаться";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Я продолжу управлять файлами cookie самостоятельно";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Я продолжу принимать их самостоятельно";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Устали от всплывающих окон с уведомлениями о файлах cookie, от которых вы не можете отказаться?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Защита от всплывающих окон куки";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo по возможности откажется от куки-файлов и скроет подобные окна.\n[Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo может автоматически управлять настройками файлов cookie, чтобы обеспечить максимальную конфиденциальность, минимизировать использование cookie и закрывать соответствующие всплывающие окна.\n[Подробнее](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Мы постараемся выбрать для вас только максимально конфиденциальные настройки файлов cookie, а затем закроем эти окна.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Автоматическое управление окнами выбора файлов cookie";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Также разрешите DuckDuckGo экономить вам время, принимая файлы cookie за вас, чтобы закрывать всплывающие окна без возможности отказа.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Всплывающие окна без возможности отказа";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Управление окнами выбора куки-файлов";
@@ -5422,3 +5434,6 @@
 
 /* Do not translate - stringsdict entry */
 "aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Задать вопрос о странице";

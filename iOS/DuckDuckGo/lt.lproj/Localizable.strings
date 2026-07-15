@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Patvirtinti";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Stengsimės parinkti privačiausias galimas slapukų parinktis ir jas už jus uždaryti. Jei nėra atsisakymo parinkčių, sutaupysime jums paspaudimą ir priimsime šiuos slapukus už jus.";
+"cookie-popup-protection.opt-in.disabled.body" = "Stengsimės atmesti kuo daugiau slapukų. Jei atmetimo parinkties nėra, sutaupysime tau paspaudimą ir šiuos slapukus priimsime už tave.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Tvarkyti arba priimti slapukus už mane";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Atmesti, kai įmanoma, arba priimti už mane";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Aš ir toliau juos tvarkysiu";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Galime išlaisvinti jus nuo paspaudimo ir priimti šiuos slapukus už jus.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Priimti neatsisakomus slapukus už mane";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Priimti slapukus, kurių negalima atmesti";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Aš ir toliau juos tvarkysiu";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ir toliau juos priimsiu pats";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Ar pavargote nuo slapukų iškylančiųjų langų, kurie neleidžia jų atsisakyti?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Apsauga nuo slapukų iškylančiųjų langų";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "„DuckDuckGo“ bandys pasirinkti didžiausią privatumą užtikrinančius nustatymus ir paslėpti šiuos iškylančiuosius langus.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "„DuckDuckGo“ gali automatiškai tvarkyti slapukų nuostatas, kad maksimaliai padidintų privatumą, sumažintų slapukų skaičių ir uždarytų šiuos iškylančiuosius langus.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Stengsimės parinkti tik didžiausią privatumą užtikrinančias slapukų parinktis ir uždaryti šiuos iškylančiuosius langus.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Automatiškai valdyti slapukų iššokančiuosius langus";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Taip pat leisti „DuckDuckGo“ išlaisvinti jus nuo paspaudimo priimant slapukus jūsų vardu, kad būtų uždaromi iškylantieji langai, kurie neleidžia jų atsisakyti.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Iššokantieji langai be atsisakymo galimybės";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Valdyti slapukų iššokančiuosius langus";
@@ -5422,3 +5434,6 @@
 
 /* Do not translate - stringsdict entry */
 "aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Klausk apie puslapį";

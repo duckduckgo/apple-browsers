@@ -324,5 +324,12 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_addressbar_customize_responses_opened": {
+        "description": "Fired when the user opens Customize Responses from the native address bar Tools menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

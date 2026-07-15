@@ -779,7 +779,9 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         fireproofDomains: Application.appDelegate.fireproofDomains,
         faviconManagement: Application.appDelegate.faviconManager,
         featureFlagger: Application.appDelegate.featureFlagger,
-        tld: tld
+        tld: tld,
+        windowControllersManager: Application.appDelegate.windowControllersManager,
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
     )
 
     PreviewView(showWindowTitle: false) {
@@ -822,7 +824,9 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         faviconManagement: faviconMock,
         featureFlagger: Application.appDelegate.featureFlagger,
         clearingOption: .allData,
-        tld: tld
+        tld: tld,
+        windowControllersManager: Application.appDelegate.windowControllersManager,
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
     )
 
     return PreviewView(showWindowTitle: false) {

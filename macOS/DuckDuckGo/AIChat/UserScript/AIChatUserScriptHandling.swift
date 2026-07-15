@@ -156,7 +156,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     /// `voiceChatStartFailed` but surfaces dictation-specific remediation copy.
     @MainActor func dictationStartFailed(params: Any, message: UserScriptMessage) async -> Encodable?
 
-    /// Posted by the native-customize-modal placement when the user dismisses the Customize Responses card.
+    /// Posted by the Customize Responses card placement when the user dismisses it.
     @MainActor func customizeResponsesModalClosed(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 

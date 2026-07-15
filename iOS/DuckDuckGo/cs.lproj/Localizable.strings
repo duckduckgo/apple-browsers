@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Potvrdit";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Pokusíme se vybrat ty možnosti cookies, které nejlépe chrání soukromí, a okna za tebe zavřeme. Pokud možnost odmítnutí neexistuje, ušetříme ti kliknutí a tyto cookies za tebe přijmeme.";
+"cookie-popup-protection.opt-in.disabled.body" = "Pokusíme se odmítnout co nejvíce souborů cookie. Pokud možnost odmítnutí neexistuje, ušetříme vám kliknutí a tyto soubory cookie odsouhlasíme místo tebe.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Spravovat nebo přijímat cookies za mě";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Když je to možné odmítnout nebo odsouhlasit mým jménem";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Budu je dál řešit já";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Můžeme ti ušetřit klikání a cookies přijímat za tebe.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Přijímat za mě cookies, které nelze odmítnout";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Přijímat cookies, které nelze odmítnout";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Budu je dál řešit já";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Budu je dál odsouhlasovat sám/sama";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Štvou tě vyskakovací okna s cookies, která ti nedovolí je odmítnout?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Ochrana před vyskakovacími okny ohledně cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo se pokusí zvolit nastavení s maximálním zachováním soukromí a tato vyskakovací okna bude skrývat.\n[Více informací](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo může automaticky spravovat předvolby cookies tak, aby zajistilo maximální ochranu soukromí, co nejméně cookies a zavíralo vyskakovací okna.\n[Více informací](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Budeme se snažit vybírat pro tebe jen ty možnosti cookies, které nejlépe chrání soukromí, a pak tato vyskakovací okna zavřeme.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Automaticky spravovat vyskakovací okna o cookies";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Nech DuckDuckGo, ať ti také šetří klikání přijímáním cookies za tebe a zavírá vyskakovací okna, kde není možnost cookies odmítnout.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Vyskakovací okna bez možnosti odmítnutí";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Správa vyskakovacích oken ohledně cookies";
@@ -5422,3 +5434,6 @@
 
 /* Do not translate - stringsdict entry */
 "aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Zeptat se ohledně stránky";

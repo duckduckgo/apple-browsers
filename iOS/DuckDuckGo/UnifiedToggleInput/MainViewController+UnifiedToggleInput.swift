@@ -1222,20 +1222,24 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
-        let trimmed = prefilledText.trimmingWhitespace()
+        // Coordinator-resolved: empty = untouched prefill (open Duck.ai, no prompt), else submit as the prompt.
+        openUnifiedToggleInputAIShortcutChat(prompt: prefilledText.trimmingWhitespace())
+    }
+
+    private func openUnifiedToggleInputAIShortcutChat(prompt: String) {
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
         // On a Duck.ai tab, route through openAIChat so the "new tab when current has content" rule applies.
         // This opens the chip handoff in a fresh chat tab and avoids the contextual-sheet branch in onAIChatPressed.
         if currentTab?.isAITab == true {
-            if trimmed.isEmpty {
+            if prompt.isEmpty {
                 openAIChat()
             } else {
-                openAIChat(trimmed, autoSend: true)
+                openAIChat(prompt, autoSend: true)
             }
             return
         }
-        onAIChatPressed(prefilledText: trimmed.isEmpty ? nil : trimmed)
+        onAIChatPressed(prefilledText: prompt)
     }
 
     func unifiedToggleInputDidChangeHeight() {

@@ -50,6 +50,10 @@ final class PageContextTabExtension {
 
     private var extractionResolver = PageContextExtractionResolver()
 
+    /// Set once an automatic (page-load) extraction outcome is reported for the current navigation,
+    /// so its overlapping navigation/signals-only collects don't each fire a pixel. Reset on new URL.
+    private var didReportExtractionForCurrentNavigation = false
+
     /// Safety-net window for a fire-and-forget `collect()` whose result never arrives (hung JS,
     /// torn-down page). After it, `scheduleCollectionTimeout` fires `.timeout` and drops the pending
     /// entry so the queue can't leak.
@@ -162,6 +166,7 @@ final class PageContextTabExtension {
                     // collect can't pair (FIFO) with this page's result and mis-attribute its
                     // extraction telemetry (trigger/latency/outcome).
                     self.extractionResolver.reset()
+                    self.didReportExtractionForCurrentNavigation = false
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
@@ -371,13 +376,16 @@ final class PageContextTabExtension {
         fireExtractionPixel(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
     }
 
-    /// Single chokepoint for extraction pixels. Suppresses all page-context extraction telemetry
-    /// (pixel and outcome log) when the `aiPageContextBlocklist` config is absent
-    /// (see `isExtractionMeasurementEnabled`).
     private func fireExtractionPixel(_ outcome: PageContextExtractionOutcome,
                                      trigger: PageContextExtractionTrigger,
                                      latency: PageContextExtractionLatencyBucket?) {
         guard isExtractionMeasurementEnabled else { return }
+        // A navigation triggers several automatic collects (navigation re-collect + signals-only);
+        // report only the first. User/setting collects (.userRequest / .auto) always report.
+        if trigger == .navigation || trigger == .tabContent {
+            guard !didReportExtractionForCurrentNavigation else { return }
+            didReportExtractionForCurrentNavigation = true
+        }
         Logger.aiChat.debug("📊 PageContext extraction outcome: \(String(describing: outcome), privacy: .public) trigger=\(trigger.rawValue, privacy: .public) latency=\(latency?.rawValue ?? "nil", privacy: .public)")
         extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency)
     }

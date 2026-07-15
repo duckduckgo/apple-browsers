@@ -160,7 +160,8 @@ final class FireDialogViewModel: ObservableObject {
          scopeVisits: [Visit]? = nil,
          tld: TLD,
          windowControllersManager: WindowControllersManagerProtocol,
-         dataClearingPreferences: DataClearingPreferences) {
+         dataClearingPreferences: DataClearingPreferences,
+         pixelFiring: PixelFiring?) {
 
         self.fireViewModel = fireViewModel
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -171,6 +172,7 @@ final class FireDialogViewModel: ObservableObject {
         self.aiChatHistoryCleaner = aiChatHistoryCleaner
         self.windowControllersManager = windowControllersManager
         self.dataClearingPreferences = dataClearingPreferences
+        self.pixelFiring = pixelFiring
 
         self.tld = tld
         self.mode = mode
@@ -217,6 +219,7 @@ final class FireDialogViewModel: ObservableObject {
     private let aiChatHistoryCleaner: AIChatHistoryCleaning
     private let windowControllersManager: WindowControllersManagerProtocol
     private let dataClearingPreferences: DataClearingPreferences
+    let pixelFiring: PixelFiring?
     let tld: TLD
     let mode: Mode
     private let scopeVisits: [Visit]?

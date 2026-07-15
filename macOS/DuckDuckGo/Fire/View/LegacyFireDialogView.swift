@@ -781,7 +781,8 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         featureFlagger: Application.appDelegate.featureFlagger,
         tld: tld,
         windowControllersManager: Application.appDelegate.windowControllersManager,
-        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
+        pixelFiring: nil
     )
 
     PreviewView(showWindowTitle: false) {
@@ -826,7 +827,8 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         clearingOption: .allData,
         tld: tld,
         windowControllersManager: Application.appDelegate.windowControllersManager,
-        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
+        pixelFiring: nil
     )
 
     return PreviewView(showWindowTitle: false) {

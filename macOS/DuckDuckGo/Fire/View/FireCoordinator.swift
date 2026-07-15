@@ -250,7 +250,8 @@ extension FireCoordinator {
             scopeVisits: scopeVisits,
             tld: tld,
             windowControllersManager: self.windowControllersManager,
-            dataClearingPreferences: self.dataClearingPreferences
+            dataClearingPreferences: self.dataClearingPreferences,
+            pixelFiring: self.pixelFiring
         )
 
         let response: FireDialogView.Response = await withCheckedContinuation { (continuation: CheckedContinuation<FireDialogView.Response, Never>) in

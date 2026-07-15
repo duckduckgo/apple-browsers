@@ -784,28 +784,47 @@ class MainViewCoordinator {
         isNavBarContainerBottomKeyboardBased = false
     }
 
-    /// Sets up nav bar for minimal chrome with bottom address bar:
-    /// keyboard-based bottom, expandable height, screen-edge bottom limit.
-    func applyMinimalChromeBottomLayout() {
-        // Bottom: keyboard-based
-        constraints.navigationBarContainerBottom.isActive = false
-        constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
-        constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
-            .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
-        constraints.navigationBarContainerBottom.priority = .defaultHigh
-        constraints.navigationBarContainerBottom.isActive = true
-        isNavBarContainerBottomKeyboardBased = true
-
-        // Bottom limit: screen edge (extends past safe area for home indicator)
-        let limit = navigationBarContainer.bottomAnchor
-            .constraint(lessThanOrEqualTo: superview.bottomAnchor)
-        limit.isActive = true
-        constraints.navigationBarContainerBottomSafeAreaFloor = limit
+    /// Minimal chrome bottom bar setup. Expandable height. Pin to screen bottom or to keyboard.
+    func applyMinimalChromeBottomLayout(pinnedToScreenBottom: Bool = false) {
+        setMinimalChromeBottomAnchor(pinnedToScreenBottom: pinnedToScreenBottom)
 
         // Height: expandable
         constraints.navigationBarContainerHeight.isActive = false
         constraints.navigationBarContainerMinHeight.isActive = true
         constraints.navigationBarCollectionViewSafeAreaBottom.isActive = true
+    }
+
+    /// Flip minimal chrome bar between screen bottom and above keyboard. No-op if not minimal chrome bottom.
+    func updateMinimalChromeBottomAnchor(pinnedToScreenBottom: Bool) {
+        guard isInMinimalChromeLayout, addressBarPosition.isBottom else { return }
+        setMinimalChromeBottomAnchor(pinnedToScreenBottom: pinnedToScreenBottom)
+    }
+
+    private func setMinimalChromeBottomAnchor(pinnedToScreenBottom: Bool) {
+        constraints.navigationBarContainerBottom.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor = nil
+
+        if pinnedToScreenBottom {
+            // Stick to screen bottom. Keyboard covers bar.
+            constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
+                .constraint(equalTo: superview.bottomAnchor)
+            constraints.navigationBarContainerBottom.isActive = true
+            isNavBarContainerBottomKeyboardBased = false
+        } else {
+            // Ride on top of keyboard for omnibar editing.
+            constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
+                .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
+            constraints.navigationBarContainerBottom.priority = .defaultHigh
+            constraints.navigationBarContainerBottom.isActive = true
+            isNavBarContainerBottomKeyboardBased = true
+
+            // Do not go past screen edge.
+            let limit = navigationBarContainer.bottomAnchor
+                .constraint(lessThanOrEqualTo: superview.bottomAnchor)
+            limit.isActive = true
+            constraints.navigationBarContainerBottomSafeAreaFloor = limit
+        }
     }
 
     /// Resets nav bar from minimal chrome to default layout.

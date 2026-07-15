@@ -1099,6 +1099,8 @@ class MainViewController: UIViewController {
         keyboardShowing = true
         productSurfaceTelemetry.keyboardActive()
         dismissContextualSheetIfKeyboardIsForBackgroundContent()
+        // Keyboard up. Fix minimal chrome bar spot.
+        refreshMinimalChromeBottomAnchor()
     }
 
     private func dismissContextualSheetIfKeyboardIsForBackgroundContent() {
@@ -1168,8 +1170,7 @@ class MainViewController: UIViewController {
         return isAnyAITabUTIState
     }
 
-    /// True when the visible keyboard is being driven by the omnibar (address bar editing),
-    /// as opposed to a focused element in web content.
+    /// Keyboard came from omnibar, not web page.
     private var isKeyboardOwnedByOmnibar: Bool {
         if omniBar.isTextFieldEditing { return true }
         if unifiedToggleInputCoordinator?.isOmnibarSession == true { return true }
@@ -1180,8 +1181,7 @@ class MainViewController: UIViewController {
         return false
     }
 
-    /// The standard (legacy) bottom omnibar layout, i.e. excluding Unified Toggle Input / AI-tab
-    /// states and the Floating UI omnibar-in-toolbar layout.
+    /// Plain bottom bar. No AI, no UTI, no floating toolbar.
     private var isStandardBottomOmnibar: Bool {
         appSettings.currentAddressBarPosition.isBottom
             && !isAnyAITabUTIState
@@ -1189,10 +1189,28 @@ class MainViewController: UIViewController {
             && !viewCoordinator.isOmnibarInToolbar
     }
 
-    /// True when the standard bottom address bar is intentionally kept at its resting position,
-    /// hidden behind a keyboard that was raised by web content rather than the omnibar.
+    /// Bottom bar hidden behind web keyboard.
     var isBottomAddressBarHiddenForWebKeyboard: Bool {
         isStandardBottomOmnibar && keyboardShowing && !isKeyboardOwnedByOmnibar
+    }
+
+    /// Minimal chrome bar: stick to bottom behind keyboard. Lift above keyboard only when omnibar has
+    /// focus. Returns true when pinned to bottom. Safe to call any time.
+    @discardableResult
+    func refreshMinimalChromeBottomAnchor(duration: TimeInterval = 0.2,
+                                          curve: UIView.AnimationOptions = .curveEaseInOut) -> Bool {
+        guard isInMinimalChromeLayout, isStandardBottomOmnibar else { return false }
+        let pinToBottom = !isKeyboardOwnedByOmnibar
+        // Already right? Skip work.
+        guard viewCoordinator.isNavigationBarContainerBottomKeyboardBased == pinToBottom else { return pinToBottom }
+        viewCoordinator.updateMinimalChromeBottomAnchor(pinnedToScreenBottom: pinToBottom)
+        if pinToBottom {
+            currentTab?.webView.scrollView.contentInset.bottom = 0
+        }
+        UIView.animate(withDuration: duration, delay: 0, options: curve) {
+            self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+        }
+        return pinToBottom
     }
 
     private func setUpToolbarButtonsActions() {
@@ -1533,9 +1551,15 @@ class MainViewController: UIViewController {
             return
         }
 
+        // Minimal chrome: bar sticks to bottom. Pinned = done. Editing = fall through.
+        if isInMinimalChromeLayout, isStandardBottomOmnibar {
+            if refreshMinimalChromeBottomAnchor(duration: duration, curve: animationCurve) {
+                return
+            }
+        }
+
         if isStandardBottomOmnibar, keyboardVisible, !isKeyboardOwnedByOmnibar {
-            // Keyboard is for web content: keep the address bar at its resting
-            // position so the keyboard covers it, instead of floating it above.
+            // Web keyboard. Leave bar at rest so keyboard hides it.
             viewCoordinator.constraints.navigationBarContainerHeight.constant = omniBarHeight
             if let currentTab {
                 currentTab.webView.scrollView.contentInset.bottom = 0
@@ -2868,7 +2892,8 @@ class MainViewController: UIViewController {
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
         if appSettings.currentAddressBarPosition.isBottom {
-            viewCoordinator.applyMinimalChromeBottomLayout()
+            // Bar sits at bottom. Lift it only when omnibar has focus.
+            viewCoordinator.applyMinimalChromeBottomLayout(pinnedToScreenBottom: !isKeyboardOwnedByOmnibar)
         } else {
             viewCoordinator.resetMinimalChromeLayout()
         }
@@ -4012,9 +4037,7 @@ extension MainViewController: BrowserChromeDelegate {
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
     }
 
-    /// When `true`, scroll gestures must not drive the chrome hide/reveal animation. This is used
-    /// while the bottom address bar is hidden behind a web-content keyboard, where running the
-    /// hide/reveal animation on scroll fights the keyboard and makes the page jerk around.
+    /// No hide/show bars on scroll. On when bar hides behind web keyboard (else page jerks).
     var isChromeScrollInteractionDisabled: Bool {
         isBottomAddressBarHiddenForWebKeyboard
     }
@@ -5012,7 +5035,10 @@ extension MainViewController: OmniBarDelegate {
         handleVoiceSearchOpenRequest(preferredTarget: preferredTarget)
     }
 
-    func onDidBeginEditing() { }
+    func onDidBeginEditing() {
+        // Omnibar got focus. Lift minimal chrome bar above keyboard.
+        refreshMinimalChromeBottomAnchor()
+    }
     func onDidEndEditing() {
         // Restore the tab's committed mode — the user may have toggled without submitting.
         // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from
@@ -5020,6 +5046,8 @@ extension MainViewController: OmniBarDelegate {
         if let tab = tabManager.currentTabsModel.currentTab {
             viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab))
         }
+        // Omnibar lost focus. Drop minimal chrome bar back to bottom.
+        refreshMinimalChromeBottomAnchor()
     }
 
     // MARK: - iPad Expanded Omnibar

@@ -31,8 +31,7 @@ protocol BrowserChromeDelegate: AnyObject {
     
     var canHideBars: Bool { get }
 
-    /// When `true`, scroll gestures must leave the chrome exactly as-is (no hide/reveal). Used while
-    /// the bottom address bar is hidden behind a web-content keyboard.
+    /// True = scroll must not move bars. Used when bar hides behind web keyboard.
     var isChromeScrollInteractionDisabled: Bool { get }
 
     var isToolbarHidden: Bool { get }
@@ -106,8 +105,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
         guard scrollView.isDragging else { return }
         onUserScrolled?()
 
-        // While the bottom address bar is hidden behind a web-content keyboard, leave the chrome
-        // untouched so scrolling doesn't fight the hide/reveal animation and make the page jerk.
+        // Bar hidden behind web keyboard. Do not touch bars, else page jerks.
         guard delegate?.isChromeScrollInteractionDisabled != true else { return }
 
         guard canHideBars(for: scrollView) else {

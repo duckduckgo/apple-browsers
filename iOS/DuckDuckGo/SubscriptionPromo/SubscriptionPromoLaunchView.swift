@@ -72,6 +72,7 @@ private extension SubscriptionPromoLaunchView {
                         .frame(width: Metrics.Header.closeButtonSize, height: Metrics.Header.closeButtonSize)
                         .foregroundStyle(Color.primary)
                 }
+                .accessibilityIdentifier("subscriptionPromoCloseButton")
             }
         }
     }

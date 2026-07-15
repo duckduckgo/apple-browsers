@@ -228,6 +228,11 @@ extension LaunchOptionsHandler {
             userDefaults.set(false, forKey: "com.duckduckgo.ios.daxOnboardingIsDismissed")
         }
 
+        // Dax state overrides — used by upgrade-path tests to simulate pre-feature-build UserDefaults.
+        if arguments.contains("-setDaxState.browsingFinalDialogShown") {
+            userDefaults.set(true, forKey: "com.duckduckgo.ios.daxOnboardingFinalDialogSeen")
+        }
+
         applyFlagOverrides(featureFlagOverrideStore: featureFlagOverrideStore, configRolloutStore: configRolloutStore)
     }
 

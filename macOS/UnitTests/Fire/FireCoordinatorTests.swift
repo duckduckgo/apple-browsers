@@ -196,7 +196,7 @@ struct FireCoordinatorTests {
             .init(
                 pixel: FireDialogPixel.burn(
                     .allData(
-                        .init(hasPinnedTabs: !tabCollectionViewModel.pinnedTabs.isEmpty, closeWindows: true, clearHistory: true, clearSiteData: true, clearAIChats: true)
+                        .init(hasPinnedTabs: !windowControllersManager.pinnedTabsManagerProvider.arePinnedTabsEmpty, closeWindows: true, clearHistory: true, clearSiteData: true, clearAIChats: true)
                     )
                 ),
                 frequency: .dailyAndCount,
@@ -225,7 +225,7 @@ struct FireCoordinatorTests {
             .init(
                 pixel: FireDialogPixel.burn(
                     .allData(
-                        .init(hasPinnedTabs: !tabCollectionViewModel.pinnedTabs.isEmpty, closeWindows: true, clearHistory: true, clearSiteData: true, clearAIChats: false)
+                        .init(hasPinnedTabs: !windowControllersManager.pinnedTabsManagerProvider.arePinnedTabsEmpty, closeWindows: true, clearHistory: true, clearSiteData: true, clearAIChats: false)
                     )
                 ),
                 frequency: .dailyAndCount,

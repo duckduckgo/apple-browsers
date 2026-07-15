@@ -19,9 +19,8 @@
 import AppKit
 import Foundation
 
-/// A custom-windowed replacement for `NSPopover` used by the bookmarks bar menu when
-/// the `bookmarksBarMenusCustomWindow` feature flag is enabled. Mirrors the slice of
-/// the `NSPopover` API the rest of the codebase relies on and keeps the responder-chain
+/// A custom-windowed replacement for `NSPopover` used by the bookmarks bar menu. Mirrors the
+/// slice of the `NSPopover` API the rest of the codebase relies on and keeps the responder-chain
 /// trick that the view controller uses to find its enclosing popover.
 final class BookmarksBarMenuCustomPopover: NSResponder, BookmarksBarMenuPopoverPresenting {
 
@@ -60,7 +59,7 @@ final class BookmarksBarMenuCustomPopover: NSResponder, BookmarksBarMenuPopoverP
 
         super.init()
 
-        let controller = BookmarksBarMenuViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: rootFolder, usesCustomWindowChrome: true)
+        let controller = BookmarksBarMenuViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: rootFolder)
         controller.delegate = self
         contentViewController = controller
     }

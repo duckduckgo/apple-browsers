@@ -117,6 +117,43 @@ enum SubscriptionContainerViewFactory {
             .environmentObject(navigationCoordinator)
     }
 
+    @ViewBuilder
+    static func makePurchaseFlowV2(redirectURLComponents: URLComponents?,
+                                   navigationCoordinator: SubscriptionNavigationCoordinator,
+                                   subscriptionManager: SubscriptionManager,
+                                   subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                   subscriptionDataReporter: SubscriptionDataReporting?,
+                                   userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                                   tld: TLD,
+                                   internalUserDecider: InternalUserDecider,
+                                   dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+                                   wideEvent: WideEventManaging,
+                                   featureFlagger: FeatureFlagger) -> some View {
+        if let redirectURLComponents,
+           SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
+            makePlansFlowV2(redirectURLComponents: redirectURLComponents,
+                            navigationCoordinator: navigationCoordinator,
+                            subscriptionManager: subscriptionManager,
+                            subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                            userScriptsDependencies: userScriptsDependencies,
+                            internalUserDecider: internalUserDecider,
+                            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+                            wideEvent: wideEvent,
+                            featureFlagger: featureFlagger)
+        } else {
+            makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
+                                navigationCoordinator: navigationCoordinator,
+                                subscriptionManager: subscriptionManager,
+                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                subscriptionDataReporter: subscriptionDataReporter,
+                                userScriptsDependencies: userScriptsDependencies,
+                                tld: tld,
+                                internalUserDecider: internalUserDecider,
+                                dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+                                wideEvent: wideEvent,
+                                featureFlagger: featureFlagger)
+        }
+    }
 
     static func makeRestoreFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
                                   subscriptionManager: SubscriptionManager,

@@ -1189,6 +1189,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func presentCustomizeResponsesModal() {
         guard customizeResponsesModal == nil else { return }
+        PixelKit.fire(AIChatPixel.aiChatAddressBarCustomizeResponsesOpened, frequency: .dailyAndCount, includeAppVersionParameter: true)
         guard let parentWindow = view.window else {
             omnibarController.openCustomizeResponses()
             return

@@ -41,4 +41,12 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     @MainActor
     func viewAllAiChats(target: NewTabPageDataModel.OpenTarget)
 
+    /// Opens the Duck.ai Customize Responses modal from the NTP omnibar Tools menu.
+    @MainActor
+    func openCustomizeResponses()
+
+    /// Persists whether the stored response customization is applied (from the row's toggle).
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool)
+
 }

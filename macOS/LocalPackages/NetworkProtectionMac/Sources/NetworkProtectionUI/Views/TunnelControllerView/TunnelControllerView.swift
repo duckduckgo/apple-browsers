@@ -23,6 +23,7 @@ import VPN
 import Lottie
 import os.log
 import TipKit
+import DesignResourcesKit
 
 public struct TunnelControllerView: View {
 
@@ -36,6 +37,8 @@ public struct TunnelControllerView: View {
     ///
     @ObservedObject
     var model: TunnelControllerViewModel
+
+    private let isAppRebranded = DesignSystemRebrand.isAppRebranded()
 
     // MARK: - Initializers
 
@@ -159,7 +162,9 @@ public struct TunnelControllerView: View {
 
     @ViewBuilder
     private func headerAnimationView() -> some View {
-        if colorScheme == .light {
+        if isAppRebranded {
+            headerAnimationView("vpn-animation")
+        } else if colorScheme == .light {
             headerAnimationView("vpn-light-mode")
         } else {
             headerAnimationView("vpn-dark-mode")
@@ -168,14 +173,25 @@ public struct TunnelControllerView: View {
 
     @ViewBuilder
     private func headerAnimationView(_ animationName: String) -> some View {
-        LottieView(animation: .named(animationName))
-            .playing(withIntro: .init(
+        if isAppRebranded {
+            LottieView(animation: .named(animationName))
+                .playing(withIntro: .init(
+                    skipIntro: model.isConnectedOrConnecting && !model.isToggleDisabled,
+                    introStartFrame: 0,
+                    introEndFrame: 30,
+                    loopStartFrame: 30,
+                    loopEndFrame: 120,
+                ), isAnimating: model.isConnectedOrConnecting)
+        } else {
+            LottieView(animation: .named(animationName))
+                .playing(withIntro: .init(
                     skipIntro: model.isConnectedOrConnecting && !model.isToggleDisabled,
                     introStartFrame: 0,
                     introEndFrame: 100,
                     loopStartFrame: 130,
                     loopEndFrame: 370
                 ), isAnimating: model.isConnectedOrConnecting)
+        }
     }
 
     @ViewBuilder

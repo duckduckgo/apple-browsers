@@ -1256,6 +1256,38 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         XCTAssertNil(policy, "Pinned tab same-domain navigation should return .next (nil)")
     }
 
+    @MainActor
+    func testWhenPinnedTabNavigatesFromErrorPageToAnotherDomain_ThenStaysInCurrentTab() async {
+        // GIVEN - Tab is pinned and currently showing an internal error page
+        popupHandlingExtension = createExtension(isTabPinned: true)
+
+        // WHEN - Navigate from the error page to a different domain
+        let targetURL = URL(string: "https://different.com")!
+        let errorFrame = FrameInfo(webView: webView,
+                                   handle: FrameHandle(rawValue: 1),
+                                   isMainFrame: true,
+                                   url: URL.error,
+                                   securityOrigin: URL.error.securityOrigin)
+
+        let navigationAction = NavigationAction(
+            request: URLRequest(url: targetURL),
+            navigationType: .linkActivated(isMiddleClick: false),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: errorFrame,
+            targetFrame: errorFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        var prefs = NavigationPreferences.default
+        let policy = await popupHandlingExtension.decidePolicy(for: navigationAction, preferences: &prefs)
+
+        // THEN - Should allow navigation in current tab (.next is nil)
+        XCTAssertNil(policy, "Pinned tab error-page navigation should return .next (nil)")
+    }
+
     // MARK: - pageInitiatedPopupOpened Flag Tests
 
     @MainActor

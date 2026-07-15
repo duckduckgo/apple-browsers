@@ -366,7 +366,8 @@ extension FireCoordinator {
                         )
                     )
                 ),
-                frequency: .dailyAndCount
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
             )
 
             let entity = Fire.BurningEntity.tab(tabViewModel: tabViewModel,
@@ -398,7 +399,8 @@ extension FireCoordinator {
                         )
                     )
                 ),
-                frequency: .dailyAndCount
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
             )
 
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
@@ -425,7 +427,8 @@ extension FireCoordinator {
                         )
                     )
                 ),
-                frequency: .dailyAndCount
+                frequency: .dailyAndCount,
+                doNotEnforcePrefix: true
             )
 
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity

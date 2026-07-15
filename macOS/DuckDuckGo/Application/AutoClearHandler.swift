@@ -155,6 +155,8 @@ final class AutoClearHandler: ApplicationTerminationDecider {
         let shouldBurnOnStart = dataClearingPreferences.isAutoClearEnabled && !appTerminationHandledCorrectly
         guard shouldBurnOnStart else { return false }
 
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+        pixelFiring?.fire(FireDialogPixel.fireStartedOnStartup, frequency: .dailyAndCount, doNotEnforcePrefix: true)
         fireViewModel.fire.burnAll(includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled,
                                    isAutoClear: true,
                                    dataClearingWideEventService: dataClearingWideEventService)

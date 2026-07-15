@@ -27,6 +27,7 @@ enum FireButtonPixel: PixelKitEvent {
     case fireStarted
     case fireStartedInSession
     case fireStartedOnExit
+    case fireStartedOnStartup
     case burn(_ mode: BurnMode)
     case fireDialogToggleMode
     case fireDialogChangeSettings
@@ -46,6 +47,8 @@ enum FireButtonPixel: PixelKitEvent {
             return "fire_started_in-session_mac"
         case .fireStartedOnExit:
             return "fire_started_on-exit_mac"
+        case .fireStartedOnStartup:
+            return "fire_started_on-startup_mac"
         case .burn(let mode):
             return "fire_burn_\(mode.rawValue)_mac"
         case .fireDialogToggleMode:
@@ -79,6 +82,7 @@ enum FireButtonPixel: PixelKitEvent {
         case .fireStarted,
                 .fireStartedInSession,
                 .fireStartedOnExit,
+                .fireStartedOnStartup,
                 .fireDialogToggleMode,
                 .fireDialogChangeSettings,
                 .fireDialogToggleCloseTabs,

@@ -332,6 +332,12 @@ final class PageContextTabExtension {
         return PageContextAttachabilityPolicy(settings: blocklist)
     }
 
+    /// Extraction telemetry (success / failure / prevented / timeout) is only reported once the
+    /// `aiPageContextBlocklist` privacy config is present
+    private var isExtractionMeasurementEnabled: Bool {
+        currentAttachabilityPolicy() != nil
+    }
+
     private func preventedAttachReason(for url: URL) -> String? {
         guard let policy = currentAttachabilityPolicy() else { return nil }
         let mimeType = lastMainFrameResponse.flatMap { $0.url == url ? $0.mimeType : nil }
@@ -350,7 +356,7 @@ final class PageContextTabExtension {
             attachable: false
         )
         Task { await handle(context) }
-        extractionPixelHandler.fire(.prevented(reason), trigger: trigger, latency: nil)
+        fireExtractionPixel(.prevented(reason), trigger: trigger, latency: nil)
     }
 
     private func fireExtractionOutcome(for pageContext: AIChatPageContextData?) {
@@ -362,8 +368,18 @@ final class PageContextTabExtension {
     }
 
     private func fire(_ resolution: PageContextExtractionResolver.Resolution) {
-        Logger.aiChat.debug("📊 PageContext extraction outcome: \(String(describing: resolution.outcome), privacy: .public) trigger=\(resolution.trigger.rawValue, privacy: .public) latency=\(resolution.latency?.rawValue ?? "nil", privacy: .public)")
-        extractionPixelHandler.fire(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
+        fireExtractionPixel(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
+    }
+
+    /// Single chokepoint for extraction pixels. Suppresses all page-context extraction telemetry
+    /// (pixel and outcome log) when the `aiPageContextBlocklist` config is absent
+    /// (see `isExtractionMeasurementEnabled`).
+    private func fireExtractionPixel(_ outcome: PageContextExtractionOutcome,
+                                     trigger: PageContextExtractionTrigger,
+                                     latency: PageContextExtractionLatencyBucket?) {
+        guard isExtractionMeasurementEnabled else { return }
+        Logger.aiChat.debug("📊 PageContext extraction outcome: \(String(describing: outcome), privacy: .public) trigger=\(trigger.rawValue, privacy: .public) latency=\(latency?.rawValue ?? "nil", privacy: .public)")
+        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency)
     }
 
     /// Fires `.timeout` for any collect that hasn't produced a result within the timeout window and
@@ -387,7 +403,7 @@ final class PageContextTabExtension {
         }
         guard let pageContextUserScript, webView != nil else {
             Logger.aiChat.debug("⚠️ PageContext gate: no webview/user script, cannot collect host=\(url.host ?? "nil", privacy: .public)")
-            extractionPixelHandler.fire(.failure(.noWebView), trigger: trigger, latency: nil)
+            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
             return
         }
         extractionResolver.requested(trigger: trigger)

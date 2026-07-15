@@ -23,6 +23,8 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     var openSuggestionHandler: ((NewTabPageDataModel.Suggestion, NewTabPageDataModel.OpenTarget) -> Void)?
     var submitChatHandler: ((String, NewTabPageDataModel.OpenTarget, String?, [NewTabPageDataModel.SubmitChatImage]?, String?, [String]?, String?, [NewTabPageDataModel.OmnibarPageContext]?, [NewTabPageDataModel.OmnibarPromptFile]?) -> Void)?
     var openAiChatHandler: ((String, Bool, NewTabPageDataModel.OpenAiChatTrigger, NewTabPageDataModel.OpenTarget) -> Void)?
+    var openCustomizeResponsesHandler: (() -> Void)?
+    var setCustomizeResponsesActiveHandler: ((Bool) -> Void)?
 
     @MainActor
     func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget) {
@@ -55,5 +57,15 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     @MainActor
     func viewAllAiChats(target: NewTabPage.NewTabPageDataModel.OpenTarget) {
 
+    }
+
+    @MainActor
+    func openCustomizeResponses() {
+        openCustomizeResponsesHandler?()
+    }
+
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool) {
+        setCustomizeResponsesActiveHandler?(active)
     }
 }

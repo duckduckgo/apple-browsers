@@ -282,6 +282,7 @@ public extension DesignSystemImages {
             public static var location: DesignSystemImage { .init(resource: .location16) }
             public static var locationBlocked: DesignSystemImage { .init(resource: .locationBlocked16) }
             public static var locationSolid: DesignSystemImage { .init(resource: .locationSolid16) }
+            public static var menuDots: DesignSystemImage { .init(resource: .menuDots16) }
             public static var menuLines: DesignSystemImage { .init(resource: .menuLines16) }
             public static var menuLinesDot: DesignSystemImage { .init(resource: .menuLinesDot16) }
             public static var permissionMicrophone: DesignSystemImage { .init(resource: .microphone16) }
@@ -560,6 +561,8 @@ public extension DesignSystemImages {
             public static var menuDotsVertical: DesignSystemImage { .init(resource: .menuDotsVertical24) }
             public static var menuDotsHorizontal: DesignSystemImage { .init(resource: .menuDotsHorizontal24) }
             public static var menuHamburger: DesignSystemImage { .init(resource: .menuHamburger24) }
+            public static var menuHamburgerAlert: DesignSystemImage { .init(resource: .menuHamburgerAlert24) }
+            public static var menuHamburgerAlertDot: DesignSystemImage { .init(resource: .menuHamburgerAlertDot24) }
             public static var menuHamburgerAlertRecolorable: DesignSystemImage { .init(resource: .menuHamburgerAlertRecolorable24) }
             public static var microphone: DesignSystemImage { .init(resource: .microphone24) }
             public static var microphoneSolid: DesignSystemImage { .init(resource: .microphoneSolid24) }

@@ -2,7 +2,7 @@
 //  OnboardingView+RestorePromptDialogContent.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,42 +17,43 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import DuckUI
 import Onboarding
+import SwiftUI
 
 extension OnboardingView {
 
+    /// Figma: https://www.figma.com/design/YPE94Xkcrk2uqiF2l4VmSv/Onboarding--2026-?node-id=12191-42055
     struct RestorePromptDialogContent: View {
+        @Environment(\.onboardingTheme) private var onboardingTheme
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-        typealias Copy = UserText.Onboarding.RestorePrompt
-
+        private let content: OnboardingIntroStepContent.RestorePromptStepContent
         private let skipOnboardingView: AnyView?
-        private var animateText: Binding<Bool>
-        private var animateBody: Binding<Bool>
-        private var showCTA: Binding<Bool>
-        private var isSkipped: Binding<Bool>
         private let restoreAction: () -> Void
         private let skipAction: () -> Void
         private let onSkipOnboardingPresented: () -> Void
 
         @State private var showSkipOnboarding = false
+        @State private var shouldStartTyping = false
+        @State private var showContent = false
+        @Binding var isVisible: Bool
+        /// Reset before the skip swap so the new `TypingText` doesn't skip itself.
+        @Binding var skipTypingAnimation: Bool
 
         init(
-            skipOnboardingView: AnyView? = nil,
-            animateText: Binding<Bool> = .constant(true),
-            animateBody: Binding<Bool> = .constant(false),
-            showCTA: Binding<Bool> = .constant(false),
-            isSkipped: Binding<Bool>,
+            content: OnboardingIntroStepContent.RestorePromptStepContent,
+            skipOnboardingView: AnyView?,
+            isVisible: Binding<Bool>,
+            skipTypingAnimation: Binding<Bool>,
             restoreAction: @escaping () -> Void,
             skipAction: @escaping () -> Void,
             onSkipOnboardingPresented: @escaping () -> Void
         ) {
+            self.content = content
             self.skipOnboardingView = skipOnboardingView
-            self.animateText = animateText
-            self.animateBody = animateBody
-            self.showCTA = showCTA
-            self.isSkipped = isSkipped
+            self._isVisible = isVisible
+            self._skipTypingAnimation = skipTypingAnimation
             self.restoreAction = restoreAction
             self.skipAction = skipAction
             self.onSkipOnboardingPresented = onSkipOnboardingPresented
@@ -74,42 +75,86 @@ extension OnboardingView {
         }
 
         private var restorePromptContent: some View {
-            VStack(spacing: 24.0) {
-                AnimatableTypingText(Copy.title, startAnimating: animateText, skipAnimation: isSkipped) {
-                    withAnimation {
-                        animateBody.wrappedValue = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 20, weight: .bold))
-
-                AnimatableTypingText(Copy.body, startAnimating: animateBody, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showCTA.wrappedValue = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Font.system(size: 16))
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                OnboardingActions(
-                    viewModel: .init(
-                        primaryButtonTitle: Copy.restoreCTA,
-                        secondaryButtonTitle: Copy.skipCTA
-                    ),
-                    primaryAction: restoreAction,
-                    secondaryAction: {
-                        if skipOnboardingView != nil {
-                            isSkipped.wrappedValue = false
-                            showSkipOnboarding = true
+            LinearDialogContentContainer(
+                metrics: .init(
+                    outerSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    textSpacing: onboardingTheme.linearOnboardingMetrics.contentInnerSpacing,
+                    contentSpacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing,
+                    actionsSpacing: onboardingTheme.linearOnboardingMetrics.actionsSpacing
+                ),
+                message:
+                    AnyView(
+                        Text(content.message)
+                            .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                            .font(onboardingTheme.typography.body)
+                            .multilineTextAlignment(.center)
+                ),
+                showContent: $showContent,
+                title: {
+                    TypingText(content.title, startAnimating: $shouldStartTyping, onTypingFinished: { [reduceMotion] in
+                        if reduceMotion {
+                            showContent = true
+                        } else {
+                            withAnimation { showContent = true }
                         }
-                        skipAction()
+                    })
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .font(onboardingTheme.typography.title)
+                    .multilineTextAlignment(.center)
+                },
+                actions: {
+                    VStack(spacing: onboardingTheme.linearOnboardingMetrics.buttonSpacing) {
+                        Button(action: restoreAction) {
+                            Text(content.primaryCTA)
+                        }
+                        .buttonStyle(onboardingTheme.primaryButtonStyle.style)
+
+                        if skipOnboardingView != nil {
+                            Button(action: showSkipOnboardingDialog) {
+                                Text(content.secondaryCTA)
+                            }
+                            .buttonStyle(onboardingTheme.secondaryButtonStyle.style)
+                        }
                     }
-                )
-                .frame(maxWidth: .infinity)
-                .visibility(showCTA.wrappedValue ? .visible : .invisible)
+                }
+            )
+            .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
+        }
+
+        /// Hide → resize → show swap. Deferred so the parent's tap-to-skip gesture fires
+        /// before we reset `skipTypingAnimation` and mount the new view.
+        private func showSkipOnboardingDialog() {
+            isVisible = false
+            skipAction()
+
+            // Reduce Motion: jump to final state.
+            guard !reduceMotion else {
+                skipTypingAnimation = false
+                showSkipOnboarding = true
+                isVisible = true
+                return
+            }
+
+            DispatchQueue.main.async {
+                skipTypingAnimation = false
+
+                if #available(iOS 17.0, *) {
+                    withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                        showSkipOnboarding = true
+                    } completion: {
+                        withAnimation { isVisible = true }
+                    }
+                } else {
+                    withAnimation(.easeInOut(duration: OnboardingBubbleAnimationMetrics.bubbleResizeAnimationDuration)) {
+                        showSkipOnboarding = true
+                    }
+                    // iOS 16 fallback (no withAnimation completion).
+                    DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingBubbleAnimationMetrics.contentFadeInDelay) {
+                        withAnimation { isVisible = true }
+                    }
+                }
             }
         }
+
     }
 }

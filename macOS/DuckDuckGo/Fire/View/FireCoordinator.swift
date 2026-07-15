@@ -115,6 +115,14 @@ final class FireCoordinator {
         self.visualizeFireAnimationDecider = OverridableVisualizeFireSettingsDecider(internalDecider: visualizeFireAnimationDecider)
 
         self.fireDialogViewFactory = fireDialogViewFactory ?? { config in
+            guard featureFlagger.isFeatureOn(.fireDialogSimplified) else {
+                let view = LegacyFireDialogView(
+                    viewModel: config.viewModel,
+                    showIndividualSitesLink: config.showIndividualSitesLink,
+                    onConfirm: config.onConfirm
+                )
+                return DefaultFireDialogPresenter(view: view)
+            }
             let view = FireDialogView(
                 viewModel: config.viewModel,
                 showIndividualSitesLink: config.showIndividualSitesLink,
@@ -229,6 +237,7 @@ extension FireCoordinator {
                                                        nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler),
             fireproofDomains: self.fireproofDomains,
             faviconManagement: self.faviconManagement,
+            featureFlagger: self.featureFlagger,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
             includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
             includeChatHistory: mode.shouldShowChatHistoryToggle ? nil /* last selected */ : false,

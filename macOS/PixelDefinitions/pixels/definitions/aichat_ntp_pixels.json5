@@ -56,5 +56,12 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_ntp_customize_responses_opened": {
+        "description": "Fired when the user opens Customize Responses from the New Tab Page omnibar Tools menu",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

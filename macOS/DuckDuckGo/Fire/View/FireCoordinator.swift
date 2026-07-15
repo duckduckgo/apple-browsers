@@ -122,14 +122,24 @@ final class FireCoordinator {
                 let view = LegacyFireDialogView(
                     viewModel: config.viewModel,
                     showIndividualSitesLink: config.showIndividualSitesLink,
-                    onConfirm: config.onConfirm
+                    onConfirm: { response in
+                        if case .noAction = response {
+                            pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount)
+                        }
+                        config.onConfirm(response)
+                    }
                 )
                 return DefaultFireDialogPresenter(view: view)
             }
             let view = FireDialogView(
                 viewModel: config.viewModel,
                 showIndividualSitesLink: config.showIndividualSitesLink,
-                onConfirm: config.onConfirm
+                onConfirm: { response in
+                    if case .noAction = response {
+                        pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount)
+                    }
+                    config.onConfirm(response)
+                }
             )
             return DefaultFireDialogPresenter(view: view)
         }

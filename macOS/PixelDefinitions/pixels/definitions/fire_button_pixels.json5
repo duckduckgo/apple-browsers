@@ -140,7 +140,7 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "fire_dialog_change_settings_mac": {
+    "fire_dialog_change_settings_mac_u": {
         "description": "Sent once per install, the first time the user changes any of the Fire dialog data-clearing toggles (close tabs/windows, clear history, clear site data, or clear AI chats).",
         "owners": ["ayoy"],
         "triggers": ["user_submitted"],

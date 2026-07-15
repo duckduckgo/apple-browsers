@@ -1180,6 +1180,21 @@ class MainViewController: UIViewController {
         return false
     }
 
+    /// The standard (legacy) bottom omnibar layout, i.e. excluding Unified Toggle Input / AI-tab
+    /// states and the Floating UI omnibar-in-toolbar layout.
+    private var isStandardBottomOmnibar: Bool {
+        appSettings.currentAddressBarPosition.isBottom
+            && !isAnyAITabUTIState
+            && unifiedToggleInputCoordinator?.isOmnibarSession != true
+            && !viewCoordinator.isOmnibarInToolbar
+    }
+
+    /// True when the standard bottom address bar is intentionally kept at its resting position,
+    /// hidden behind a keyboard that was raised by web content rather than the omnibar.
+    var isBottomAddressBarHiddenForWebKeyboard: Bool {
+        isStandardBottomOmnibar && keyboardShowing && !isKeyboardOwnedByOmnibar
+    }
+
     private func setUpToolbarButtonsActions() {
 
         viewCoordinator.toolbarBackButton.addTarget(self, action: #selector(onBackPressed), for: .touchUpInside)
@@ -1517,11 +1532,6 @@ class MainViewController: UIViewController {
             }
             return
         }
-
-        let isStandardBottomOmnibar = appSettings.currentAddressBarPosition.isBottom
-            && !isAnyAITabUTIState
-            && unifiedToggleInputCoordinator?.isOmnibarSession != true
-            && !viewCoordinator.isOmnibarInToolbar
 
         if isStandardBottomOmnibar, keyboardVisible, !isKeyboardOwnedByOmnibar {
             // Keyboard is for web content: keep the address bar at its resting
@@ -4000,6 +4010,13 @@ extension MainViewController: BrowserChromeDelegate {
         // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
         if currentTab?.isError == true { return false }
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
+    }
+
+    /// When `true`, scroll gestures must not drive the chrome hide/reveal animation. This is used
+    /// while the bottom address bar is hidden behind a web-content keyboard, where running the
+    /// hide/reveal animation on scroll fights the keyboard and makes the page jerk around.
+    var isChromeScrollInteractionDisabled: Bool {
+        isBottomAddressBarHiddenForWebKeyboard
     }
 
     /// When `true`, the omni bar and toolbar are never hidden on scroll.

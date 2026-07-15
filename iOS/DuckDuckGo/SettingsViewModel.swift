@@ -418,10 +418,6 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
     }
 
-    var shouldShowLastTabShortcutSetting: Bool {
-        featureFlagger.isFeatureOn(.escapeHatchHideShortcut)
-    }
-
     var lastTabShortcutEnabledBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.lastTabShortcutAdapter.isEnabled },

@@ -1736,16 +1736,14 @@ class MainViewController: UIViewController {
         tabManager: tabManager,
         lastActiveTabStore: lastActiveTabStore,
         idleReturnEligibilityManager: idleReturnEligibilityManager,
-        featureFlagger: featureFlagger,
         afterInactivityOptionAdapter: afterInactivityOptionAdapter,
         lastTabShortcutAdapter: lastTabShortcutAdapter,
         instrumentation: ntpAfterIdleInstrumentation
     )
 
-    /// Re-presents the tab switcher after a burn. No-op when the feature is off or the user has left the NTP.
+    /// Re-presents the tab switcher after a burn. No-op when the NTP isn't showing.
     private func restoreTabSwitcherOnlyHatchAfterBurn() {
-        guard featureFlagger.isFeatureOn(.escapeHatchHideShortcut),
-              let controller = newTabPageViewController,
+        guard let controller = newTabPageViewController,
               let currentTab = tabManager.currentTabsModel.currentTab,
               currentTab.fireTab == false else {
             return
@@ -1773,11 +1771,10 @@ class MainViewController: UIViewController {
         }
     }
 
-    /// True for escape-hatch burns while the hide feature is on — these handle focus themselves in
-    /// `restoreFocusModeAfterBurnIfNeeded`, so the generic post-fire keyboard fallback is skipped for them.
-    /// With the feature off, escape-hatch burns keep the original fire behaviour.
-    private func isEscapeHatchHideBurn(_ request: FireRequest) -> Bool {
-        request.source == .escapeHatch && featureFlagger.isFeatureOn(.escapeHatchHideShortcut)
+    /// True for escape-hatch burns — these handle focus themselves in `restoreFocusModeAfterBurnIfNeeded`,
+    /// so the generic post-fire keyboard fallback is skipped for them.
+    private func isEscapeHatchBurn(_ request: FireRequest) -> Bool {
+        request.source == .escapeHatch
     }
 
     private func buildEscapeHatch(openedAfterIdle: Bool) -> EscapeHatchModel? {
@@ -5419,13 +5416,6 @@ extension MainViewController: EscapeHatchActionRouter {
 
         // Keep the hatch (and the current focus state) so the card collapses to the expanded pill,
         // consistent with the delete flow which also preserves focus.
-        if featureFlagger.isFeatureOn(.escapeHatchHideShortcut) {
-            return
-        }
-
-        /// # TODO: Invoking `closeTab` removes the Escape Hatch from screen
-        clearEscapeHatch()
-        dismissOmniBar()
     }
 
     func escapeHatchDidRequestBurnWithConfirmation(_ tab: Tab, sourceRect: CGRect) {
@@ -5447,14 +5437,9 @@ extension MainViewController: EscapeHatchActionRouter {
             fireContext: .singleTab,
             browsingMode: tab.mode,
             onConfirm: { [weak self] fireRequest in
-                if self?.featureFlagger.isFeatureOn(.escapeHatchHideShortcut) == true {
-                    self?.forgetAllWithAnimation(request: fireRequest) { [weak self] in
-                        self?.restoreTabSwitcherOnlyHatchAfterBurn()
-                        self?.restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: wasInFocusMode)
-                    }
-                } else {
-                    self?.forgetAllWithAnimation(request: fireRequest) {}
-                    self?.clearEscapeHatch()
+                self?.forgetAllWithAnimation(request: fireRequest) { [weak self] in
+                    self?.restoreTabSwitcherOnlyHatchAfterBurn()
+                    self?.restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: wasInFocusMode)
                 }
                 self?.postIdleSessionInstrumentation.burnTabTapped()
             },
@@ -5480,14 +5465,9 @@ extension MainViewController: EscapeHatchActionRouter {
             source: .escapeHatch
         )
 
-        if featureFlagger.isFeatureOn(.escapeHatchHideShortcut) {
-            forgetAllWithAnimation(request: request) { [weak self] in
-                self?.restoreTabSwitcherOnlyHatchAfterBurn()
-                self?.restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: wasInFocusMode)
-            }
-        } else {
-            forgetAllWithAnimation(request: request) {}
-            clearEscapeHatch()
+        forgetAllWithAnimation(request: request) { [weak self] in
+            self?.restoreTabSwitcherOnlyHatchAfterBurn()
+            self?.restoreFocusModeAfterBurnIfNeeded(wasInFocusMode: wasInFocusMode)
         }
         ntpAfterIdleInstrumentation.escapeHatchBurnTapped(requiredConfirmation: false)
         postIdleSessionInstrumentation.burnTabTapped()
@@ -6455,8 +6435,8 @@ extension MainViewController {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchHideBurn(request) {
-                // With the hide feature on, escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
+            } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) {
+                // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
                 let showKeyboardAfterFireButton = DispatchWorkItem {
                     if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
                         self.enterSearch()
@@ -6487,7 +6467,7 @@ extension MainViewController {
     private func presentPostBurnMessage(tabsCount: Int, request: FireRequest) {
         let message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: tabsCount)
         // Escape-hatch-hide burns restore the keyboard, which would cover a bottom toast — show it at the top.
-        let location: ActionMessageView.PresentationLocation = isEscapeHatchHideBurn(request)
+        let location: ActionMessageView.PresentationLocation = isEscapeHatchBurn(request)
             ? .top
             : .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom)
         ActionMessageView.present(message: message, presentationLocation: location)

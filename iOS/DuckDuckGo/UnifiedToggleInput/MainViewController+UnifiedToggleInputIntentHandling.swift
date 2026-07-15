@@ -53,7 +53,7 @@ extension MainViewController {
 
     func currentOmnibarPlaceholderWindowX() -> CGFloat? {
         guard let textField = viewCoordinator.omniBar.barView.textField,
-              textField.window != nil else { return nil }
+              omnibarChromeIsOnScreenForHandoff(textField) else { return nil }
         let placeholderRect = textField.placeholderRect(forBounds: textField.bounds)
         return textField.convert(placeholderRect.origin, to: nil).x
     }
@@ -62,8 +62,18 @@ extension MainViewController {
     /// the bottom-position UTI to disguise its collapsed pose as the floating omnibar at hand-off.
     func currentOmnibarPillWindowFrame() -> CGRect? {
         guard let pill = viewCoordinator.omniBar.barView.searchContainer,
-              pill.window != nil else { return nil }
+              omnibarChromeIsOnScreenForHandoff(pill) else { return nil }
         return pill.convert(pill.bounds, to: nil)
+    }
+
+    /// The collapsed-pose hand-off only makes sense when the resting omnibar is actually on screen
+    /// to morph out of. On the new-tab focus path the shared omnibar is measured before the
+    /// swipe-tabs collection has scrolled/reparented it into the new cell, so it reads a full page
+    /// off-screen; seeding the UTI's card and text from that makes them slide in from the edge.
+    /// Report an off-screen omnibar as unmeasurable so callers fall back to the resting margins.
+    private func omnibarChromeIsOnScreenForHandoff(_ view: UIView) -> Bool {
+        guard let window = view.window else { return false }
+        return window.bounds.intersects(view.convert(view.bounds, to: nil))
     }
 
     func currentOmnibarPlaceholderColor() -> UIColor? {

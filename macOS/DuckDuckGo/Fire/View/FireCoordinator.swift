@@ -124,7 +124,7 @@ final class FireCoordinator {
                     showIndividualSitesLink: config.showIndividualSitesLink,
                     onConfirm: { response in
                         if case .noAction = response {
-                            pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount)
+                            pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, doNotEnforcePrefix: true)
                         }
                         config.onConfirm(response)
                     }
@@ -136,7 +136,7 @@ final class FireCoordinator {
                 showIndividualSitesLink: config.showIndividualSitesLink,
                 onConfirm: { response in
                     if case .noAction = response {
-                        pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount)
+                        pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, doNotEnforcePrefix: true)
                     }
                     config.onConfirm(response)
                 }
@@ -277,7 +277,10 @@ extension FireCoordinator {
                 FireDialogViewConfig(
                     viewModel: vm,
                     showIndividualSitesLink: [.fireButton, .mainMenuAll].contains(mode),
-                    onConfirm: { response in
+                    onConfirm: { [weak self] response in
+                        if case .noAction = response {
+                            self?.pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+                        }
                         resumeOnce(returning: response)
                     }
                 )
@@ -343,9 +346,7 @@ extension FireCoordinator {
             dataClearingWideEventService?.complete()
             return
         }
-        pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
-        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount)
-        pixelFiring?.fire(FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount)
+
         switch result.clearingOption {
         case .currentTab:
             guard let tabCollectionViewModel,
@@ -457,6 +458,10 @@ extension FireCoordinator {
                 .filter { $0.content.isHistory }
             historyTabs.forEach { $0.reload() }
         }
+
+        pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount, doNotEnforcePrefix: true)
+        pixelFiring?.fire(FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount, doNotEnforcePrefix: true)
 
         // Complete wide event tracking
         dataClearingWideEventService?.complete()

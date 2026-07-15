@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-
 import Foundation
 import PixelKit
 
@@ -27,6 +26,7 @@ typealias FireDialogPixel = FireButtonPixel
 enum FireButtonPixel: PixelKitEvent {
     case fireStarted
     case fireStartedInSession
+    case fireStartedOnExit
     case burn(_ mode: BurnMode)
     case fireDialogToggleMode
     case fireDialogChangeSettings
@@ -41,29 +41,31 @@ enum FireButtonPixel: PixelKitEvent {
     var name: String {
         switch self {
         case .fireStarted:
-            return "m_mac_fire_started"
+            return "fire_started_mac"
         case .fireStartedInSession:
-            return "m_mac_fire_started_in-session"
+            return "fire_started_in-session_mac"
+        case .fireStartedOnExit:
+            return "fire_started_on-exit_mac"
         case .burn(let mode):
-            return "m_mac_fire_burn_\(mode.rawValue)"
+            return "fire_burn_\(mode.rawValue)_mac"
         case .fireDialogToggleMode:
-            return "m_mac_fire_dialog_toggle_mode"
+            return "fire_dialog_toggle_mode_mac"
         case .fireDialogChangeSettings:
-            return "m_mac_fire_dialog_change_settings"
+            return "fire_dialog_change_settings_mac"
         case .fireDialogToggleCloseTabs:
-            return "m_mac_fire_dialog_toggle_close_tabs"
+            return "fire_dialog_toggle_close_tabs_mac"
         case .fireDialogToggleClearHistory:
-            return "m_mac_fire_dialog_toggle_clear_history"
+            return "fire_dialog_toggle_clear_history_mac"
         case .fireDialogToggleClearSiteData:
-            return "m_mac_fire_dialog_toggle_clear_site_data"
+            return "fire_dialog_toggle_clear_site_data_mac"
         case .fireDialogToggleClearAIChats:
-            return "m_mac_fire_dialog_toggle_clear_ai_chats"
+            return "fire_dialog_toggle_clear_ai_chats_mac"
         case .fireDialogDeleteIndividualSitesClicked:
-            return "m_mac_fire_dialog_delete_individual_sites_clicked"
+            return "fire_dialog_delete_individual_sites_clicked_mac"
         case .fireDialogManageFireproofedSites:
-            return "m_mac_fire_dialog_manage_fireproofed_sites"
+            return "fire_dialog_manage_fireproofed_sites_mac"
         case .fireDialogCancel:
-            return "m_mac_fire_dialog_cancel"
+            return "fire_dialog_cancel_mac"
         }
     }
 
@@ -71,11 +73,12 @@ enum FireButtonPixel: PixelKitEvent {
         return [.pixelSource]
     }
 
-    var parameters: [String : String]? {
+    var parameters: [String: String]? {
         switch self {
 
         case .fireStarted,
                 .fireStartedInSession,
+                .fireStartedOnExit,
                 .fireDialogToggleMode,
                 .fireDialogChangeSettings,
                 .fireDialogToggleCloseTabs,

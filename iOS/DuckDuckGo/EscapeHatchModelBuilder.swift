@@ -28,7 +28,6 @@ struct EscapeHatchModelBuilder {
     let tabManager: TabManager
     let lastActiveTabStore: LastActiveTabStoring
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
-    let featureFlagger: FeatureFlagger
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     let lastTabShortcutAdapter: LastTabShortcutAdapter
     let instrumentation: NTPAfterIdleInstrumentation
@@ -52,7 +51,7 @@ struct EscapeHatchModelBuilder {
         }
 
         // No tab to return to. When the shortcut is hidden, still show the expanded pill (even with one tab).
-        if featureFlagger.isFeatureOn(.escapeHatchHideShortcut), !lastTabShortcutAdapter.isEnabled, let currentTab {
+        if !lastTabShortcutAdapter.isEnabled, let currentTab {
             return makeTabSwitcherOnly(targetTab: currentTab, router: router)
         }
 
@@ -66,7 +65,6 @@ struct EscapeHatchModelBuilder {
             tabSwitcherOnlyTargetTab: targetTab,
             tabsSource: tabManager,
             router: router,
-            featureFlagger: featureFlagger,
             afterInactivityOptionAdapter: afterInactivityOptionAdapter,
             lastTabShortcutAdapter: lastTabShortcutAdapter
         )
@@ -108,7 +106,6 @@ struct EscapeHatchModelBuilder {
             targetTab: targetTab,
             tabsSource: tabManager,
             router: router,
-            featureFlagger: featureFlagger,
             afterInactivityOptionAdapter: afterInactivityOptionAdapter,
             lastTabShortcutAdapter: lastTabShortcutAdapter,
             onShortcutHidden: { [instrumentation] in instrumentation.escapeHatchHiddenFromMenu() },

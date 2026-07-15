@@ -83,6 +83,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     init(tabViewModel: TabViewModel?,
          source: FireRequest.Source,
          fireContext: FireContext,
+         isSingleTab: Bool = false,
          downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          keyValueStore: KeyValueStoring = UserDefaults.standard,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
@@ -97,9 +98,15 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         let isSingleChatConfirmation = Self.isSingleChatConfirmation(fireContext: fireContext,
                                                                      isRefinementsEnabled: isRefinementsEnabled,
                                                                      tabViewModel: tabViewModel)
+        let showDeleteAllOnlyForSingleTab = Self.showDeleteAllOnlyForSingleTab(fireContext: fireContext,
+                                                                               isSingleTab: isSingleTab,
+                                                                               isSingleChatConfirmation: isSingleChatConfirmation,
+                                                                               tabViewModel: tabViewModel,
+                                                                               dataClearingCapability: dataClearingCapability)
 
         self.headerTitle = Self.computeHeaderTitle(fireContext: fireContext,
                                                    isSingleChatConfirmation: isSingleChatConfirmation,
+                                                   showDeleteAllOnlyForSingleTab: showDeleteAllOnlyForSingleTab,
                                                    browsingMode: browsingMode,
                                                    appSettings: appSettings)
         self.showAnimation = !(isRefinementsEnabled && appSettings.currentFireButtonAnimation == .none)
@@ -109,6 +116,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                         source: source,
                                         isRefinementsEnabled: isRefinementsEnabled,
                                         isSingleChatConfirmation: isSingleChatConfirmation,
+                                        showDeleteAllOnlyForSingleTab: showDeleteAllOnlyForSingleTab,
                                         onConfirm: onConfirm,
                                         onCancel: onCancel)
         self.subtitle = Self.computeSubtitle(fireContext: fireContext,
@@ -147,6 +155,20 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         }
     }
 
+    /// Returns `true` when only one non-Duck.ai tab is open and the standard fire button is used.
+    /// In that case "Delete This Tab" is equivalent to "Delete All", so the choice is dropped and
+    /// only "Delete All" is shown. Gated behind the `fireButtonSingleTabDeleteAll` flag.
+    private static func showDeleteAllOnlyForSingleTab(fireContext: FireContext,
+                                                      isSingleTab: Bool,
+                                                      isSingleChatConfirmation: Bool,
+                                                      tabViewModel: TabViewModel?,
+                                                      dataClearingCapability: DataClearingCapable) -> Bool {
+        guard case .default = fireContext else { return false }
+        guard dataClearingCapability.isSingleTabDeleteAllEnabled, isSingleTab else { return false }
+        // Never override the Duck.ai single-chat confirmation.
+        return !isSingleChatConfirmation && tabViewModel?.tab.isAITab != true
+    }
+
     /// Builds the ordered list of action buttons for the confirmation sheet.
     ///
     /// - Contextual chat: single "Delete Chat" button
@@ -160,6 +182,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                     source: FireRequest.Source,
                                     isRefinementsEnabled: Bool,
                                     isSingleChatConfirmation: Bool,
+                                    showDeleteAllOnlyForSingleTab: Bool,
                                     onConfirm: @escaping (FireRequest) -> Void,
                                     onCancel: @escaping () -> Void) -> [FireConfirmationButton] {
         switch fireContext {
@@ -219,6 +242,15 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         }
 
         let deleteAllAction = { burnAll(browsingMode: browsingMode, source: source, onConfirm: onConfirm) }
+
+        // Single non-Duck.ai tab: "Delete This Tab" == "Delete All", so show only "Delete All".
+        if showDeleteAllOnlyForSingleTab {
+            return [FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteAllButton,
+                       style: .primary,
+                       action: deleteAllAction,
+                       accessibilityIdentifier: AccessibilityIdentifiers.deleteAll)]
+        }
+
         let canBurnTab = tabViewModel?.tab.supportsTabHistory == true
 
         // Refinements enabled: "Delete This Tab" (primary) then "Delete All" (secondary)
@@ -275,6 +307,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
 
     private static func computeHeaderTitle(fireContext: FireContext,
                                            isSingleChatConfirmation: Bool,
+                                           showDeleteAllOnlyForSingleTab: Bool,
                                            browsingMode: BrowsingMode,
                                            appSettings: AppSettings) -> String {
         switch fireContext {
@@ -295,6 +328,9 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
             }
             if browsingMode == .fire {
                 return UserText.scopedFireConfirmationAlertFireModeTitle
+            }
+            if showDeleteAllOnlyForSingleTab {
+                return UserText.scopedFireConfirmationAlertSingleTabTitle
             }
             return appSettings.autoClearAIChatHistory
                 ? UserText.scopedFireConfirmationAlertTitleWithAIChat

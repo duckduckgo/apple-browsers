@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Megerősítés";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Igyekszünk kiválasztani az elérhető legdiszkrétebb sütibeállításokat, és bezárni őket. Ha nincs lehetőség a leiratkozásra, egy kattintást megspórolva elfogadjuk helyetted ezeket a sütiket.";
+"cookie-popup-protection.opt-in.disabled.body" = "Igyekszünk a lehető legtöbb sütit elutasítani. Ha nincs lehetőség az elutasításra, megspórolunk neked egy kattintást, és elfogadjuk helyetted ezeket a sütiket.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Sütik helyettem való kezelése, illetve elfogadása";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Elutasítás, ha lehetséges; egyébként elfogadás helyettem";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Továbbra is magam kezelem őket";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Egy kattintást megspórolva elfogadhatjuk helyetted ezeket a sütiket.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Nem letiltható sütik helyettem való elfogadása";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Nem letiltható sütik elfogadása";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Továbbra is magam kezelem őket";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Továbbra is én fogadom el őket";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Eleged van már a folyton felugró sütiablakokból, amelyek nem tilthatók le?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Felugró sütiablak elleni védelem";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "A DuckDuckGo megpróbálja kiválasztani a rendelkezésre álló leginkább privát beállításokat, és elrejteni az ilyen felugró ablakokat.\n[További részletek](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "A DuckDuckGo az adatvédelem maximalizálása, a sütik minimalizálása és a felugró ablakok bezárása érdekében képes a sütikre vonatkozó beállítások automatikus kezelésére.\n[További részletek](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Igyekszünk kiválasztani az elérhető legdiszkrétebb sütibeállításokat, és bezárni ezeket a felugró ablakokat.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Felugró sütiablakok automatikus kezelése";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Engedd, hogy a DuckDuckGo egy kattintást megspórolva elfogadja helyetted a sütiket, és bezárja a le nem tiltható felugró ablakokat.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Le nem tiltható felugró ablakok";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Felugró sütiablakok kezelése";

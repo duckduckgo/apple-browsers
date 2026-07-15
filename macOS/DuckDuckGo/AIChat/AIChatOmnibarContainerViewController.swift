@@ -1138,7 +1138,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         if isCustomizeResponsesItemVisible {
             let store = CustomizeResponsesStore(storageHandler: duckAiNativeStorageHandler)
-            let state = store.currentState(clarifiesLabel: UserText.aiChatCustomizeResponsesClarifies)
+            let state = store.currentState()
             let subtitle = (state.hasCustomization ? state.subLabel : nil) ?? UserText.aiChatCustomizeResponsesToolSubtitle
             let rowView = CustomizeResponsesMenuRowView(
                 title: UserText.aiChatCustomizeResponsesButtonLabel,
@@ -1189,6 +1189,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func presentCustomizeResponsesModal() {
         guard customizeResponsesModal == nil else { return }
+        PixelKit.fire(AIChatPixel.aiChatAddressBarCustomizeResponsesOpened, frequency: .dailyAndCount, includeAppVersionParameter: true)
         guard let parentWindow = view.window else {
             omnibarController.openCustomizeResponses()
             return
@@ -2061,27 +2062,5 @@ private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
     /// user actually picked or removed something during this session.
     func markDidMutate() {
         didMutateDuringSession = true
-    }
-}
-
-// MARK: - Customize Responses state (native storage bridge)
-
-final class CustomizeResponsesStore {
-
-    private let storageHandler: DuckAiNativeStorageHandling?
-
-    init(storageHandler: DuckAiNativeStorageHandling?) {
-        self.storageHandler = storageHandler
-    }
-
-    func currentState(clarifiesLabel: String) -> CustomizeResponsesState {
-        guard let storageHandler else { return .none }
-        let customization = (try? storageHandler.getEntry(key: CustomizeResponsesStorageKey.customization)) ?? nil
-        let active = (try? storageHandler.getEntry(key: CustomizeResponsesStorageKey.active)) ?? nil
-        return CustomizeResponsesState.make(customizationValue: customization, activeValue: active, clarifiesLabel: clarifiesLabel)
-    }
-
-    func setActive(_ active: Bool) {
-        try? storageHandler?.putEntry(key: CustomizeResponsesStorageKey.active, value: active ? "true" : "false")
     }
 }

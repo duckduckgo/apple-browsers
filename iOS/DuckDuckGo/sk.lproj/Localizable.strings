@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Potvrdiť";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Budeme sa snažiť vybrať dostupné možnosti súborov cookie s najväčšou ochranou súkromia a zatvoríme ich za teba. Ak neponúkajú možnosť odmietnutia, ušetríme ti kliknutie a tieto súbory cookie za teba prijmeme.";
+"cookie-popup-protection.opt-in.disabled.body" = "Budeme sa snažiť odmietnuť čo najviac súborov cookie. Ak neexistuje možnosť odmietnutia, ušetríme ti kliknutie a tieto súbory cookie za teba prijmeme.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Spravuj alebo prijmi súbory cookie za mňa";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Odmietni, ak je to možné, alebo prijmi za mňa";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Budem ich naďalej spravovať sám/sama";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Ušetríme ti kliknutie a tieto súbory cookie prijmeme za teba.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Prijímaj za mňa súbory cookie, ktoré nevyžadujú odhlásenie";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Prijmi súbory cookie, ktoré nemožno odmietnuť";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Budem ich naďalej spravovať sám/sama";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Budem ich naďalej prijímať sám/sama";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Už ťa unavujú vyskakovacie okná s cookies, ktoré ti neumožňujú nesúhlasiť?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Ochrana proti automatickému otváraniu okien o súboroch cookie";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo sa pokúsi vybrať najosobnejšie dostupné nastavenia a skryť tieto automatické okná za vás.\n[Viac informácií](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo môže automaticky spravovať možnosti súborov cookie s cieľom maximalizovať súkromie, minimalizovať súbory cookie a zavrieť tieto kontextové okná.\n[Viac informácií](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Budeme sa snažiť vybrať pre teba len tie možnosti súborov cookie s najväčšou ochranou súkromia a následne tieto vyskakovacie okná zatvoríme.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Automatická správa kontextových okien súborov cookie";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Nechaj tiež DuckDuckGo, aby ti ušetril kliknutie tým, že v tvojom mene prijme súbory cookie a zatvorí vyskakovacie okná, ktoré ti neumožňujú odmietnuť ich.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Automaticky zobrazené okná bez možnosti odmietnutia";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Správa kontextových okien súborov cookie";

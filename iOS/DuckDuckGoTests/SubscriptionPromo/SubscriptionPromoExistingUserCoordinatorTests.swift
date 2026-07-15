@@ -26,13 +26,17 @@ final class SubscriptionPromoExistingUserCoordinatorTests: XCTestCase {
 
     private var sut: SubscriptionPromoExistingUserCoordinator!
     private var mockDaxDialogs: MockDaxOnboardingGating!
+    private var mockSettings: MockDaxDialogsSettings!
     private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockTutorialSettings: MockTutorialSettings!
     private var mockStatisticsStore: MockStatisticsStore!
     private var mockSubscriptionManager: SubscriptionManagerMock!
 
     override func setUpWithError() throws {
         mockDaxDialogs = MockDaxOnboardingGating()
+        mockSettings = MockDaxDialogsSettings()
         mockFeatureFlagger = MockFeatureFlagger()
+        mockTutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
         mockStatisticsStore = MockStatisticsStore()
         mockSubscriptionManager = SubscriptionManagerMock()
 
@@ -42,7 +46,9 @@ final class SubscriptionPromoExistingUserCoordinatorTests: XCTestCase {
     override func tearDownWithError() throws {
         sut = nil
         mockDaxDialogs = nil
+        mockSettings = nil
         mockFeatureFlagger = nil
+        mockTutorialSettings = nil
         mockStatisticsStore = nil
         mockSubscriptionManager = nil
         PixelFiringMock.tearDown()
@@ -274,7 +280,9 @@ final class SubscriptionPromoExistingUserCoordinatorTests: XCTestCase {
     private func makeSUT() -> SubscriptionPromoExistingUserCoordinator {
         SubscriptionPromoExistingUserCoordinator(
             daxDialogs: mockDaxDialogs,
+            daxDialogsSettings: mockSettings,
             featureFlagger: mockFeatureFlagger,
+            tutorialSettings: mockTutorialSettings,
             statisticsStore: mockStatisticsStore,
             subscriptionManager: mockSubscriptionManager,
             pixelFiring: PixelFiringMock.self

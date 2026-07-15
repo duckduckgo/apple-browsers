@@ -36,20 +36,26 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
     static let cooldownDays = 7
 
     private var daxDialogs: any ContextualDaxDialogStatusProvider & SubscriptionPromotionCoordinating
+    private let daxDialogsSettings: DaxDialogsSettings
     private let featureFlagger: FeatureFlagger
+    private let tutorialSettings: TutorialSettings
     private let statisticsStore: StatisticsStore
     private let subscriptionManager: any SubscriptionManager
     private let pixelFiring: PixelFiring.Type
 
     init(
         daxDialogs: any ContextualDaxDialogStatusProvider & SubscriptionPromotionCoordinating,
+        daxDialogsSettings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
         featureFlagger: FeatureFlagger,
+        tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
         statisticsStore: StatisticsStore = StatisticsUserDefaults(),
         subscriptionManager: any SubscriptionManager,
         pixelFiring: PixelFiring.Type = Pixel.self
     ) {
         self.daxDialogs = daxDialogs
+        self.daxDialogsSettings = daxDialogsSettings
         self.featureFlagger = featureFlagger
+        self.tutorialSettings = tutorialSettings
         self.statisticsStore = statisticsStore
         self.subscriptionManager = subscriptionManager
         self.pixelFiring = pixelFiring
@@ -73,6 +79,9 @@ final class SubscriptionPromoExistingUserCoordinator: SubscriptionPromoCoordinat
         let shouldShow = featureFlagger.isFeatureOn(for: FeatureFlag.subscriptionPromoForExistingUsers, allowOverride: true)
             && featureFlagger.isFeatureOn(for: FeatureFlag.privacyProOnboardingPromotion, allowOverride: true)
             && hasCooldownPassed()
+            // Don't show for users who skipped onboarding: handled by SubscriptionPromoCoordinator
+            && !(daxDialogsSettings.isDismissed && isReturningUser && tutorialSettings.hasSkippedOnboarding)
+
         Logger.subscription.debug("[Subscription Promo - Existing User] shouldPresentLaunchPrompt: \(shouldShow)")
         return shouldShow
     }

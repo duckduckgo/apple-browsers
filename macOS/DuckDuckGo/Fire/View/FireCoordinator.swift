@@ -333,6 +333,8 @@ extension FireCoordinator {
             return
         }
         pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount)
+        pixelFiring?.fire(FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount)
         switch result.clearingOption {
         case .currentTab:
             guard let tabCollectionViewModel,

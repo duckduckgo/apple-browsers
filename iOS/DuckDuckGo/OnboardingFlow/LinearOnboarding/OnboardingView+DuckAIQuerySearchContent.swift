@@ -26,477 +26,475 @@ import SwiftUI
 import UIComponents
 import UIKit
 
-extension OnboardingView {
-    private enum Metrics {
-        // MARK: Spacing
-        static let contentVerticalSpacing: CGFloat = 16
-        static let legacyTitleToPickerTopPadding: CGFloat = 8
-        static let rebrandedTitleToPickerTopPadding: CGFloat = 16
-        static let fieldToFirstChipTopPadding: CGFloat = 16
-        static let queryFieldBottomPadding: CGFloat = 0
-        static let queryFieldTopPadding: CGFloat = -12
-        static let queryFieldContentSpacing: CGFloat = 8
-        static let queryFieldHorizontalPadding: CGFloat = 16
-        static let queryFieldVerticalPadding: CGFloat = 7
-        static let disabledPrimaryActionOpacity: CGFloat = 0.3
+private enum Metrics {
+    // MARK: Spacing
+    static let contentVerticalSpacing: CGFloat = 16
+    static let legacyTitleToPickerTopPadding: CGFloat = 8
+    static let rebrandedTitleToPickerTopPadding: CGFloat = 16
+    static let fieldToFirstChipTopPadding: CGFloat = 16
+    static let queryFieldBottomPadding: CGFloat = 0
+    static let queryFieldTopPadding: CGFloat = -12
+    static let queryFieldContentSpacing: CGFloat = 8
+    static let queryFieldHorizontalPadding: CGFloat = 16
+    static let queryFieldVerticalPadding: CGFloat = 7
+    static let disabledPrimaryActionOpacity: CGFloat = 0.3
 
-        // MARK: Sizing
-        static let pickerMaxWidth: CGFloat = 320
-        static let pickerHeight: CGFloat = 38
-        static let pickerContainerHeight: CGFloat = 40
-        static let pickerVerticalPadding: CGFloat = 0.5
-        static let pickerBottomPadding: CGFloat = 4
-        static let singleLineFieldHeight: CGFloat = 26
-        static let multilineFieldHeight: CGFloat = 56
-        static let queryFieldActionButtonSize: CGFloat = 28
-        static let queryFieldCornerRadius: CGFloat = 14
-        static let maxSuggestionCount = 3
-        static let queryFieldShadowColor: Color = .black.opacity(0.16)
-        static let queryFieldShadowRadius: CGFloat = 16
-        static let queryFieldShadowOffset = CGPoint(x: 0, y: 8)
+    // MARK: Sizing
+    static let pickerMaxWidth: CGFloat = 320
+    static let pickerHeight: CGFloat = 38
+    static let pickerContainerHeight: CGFloat = 40
+    static let pickerVerticalPadding: CGFloat = 0.5
+    static let pickerBottomPadding: CGFloat = 4
+    static let singleLineFieldHeight: CGFloat = 26
+    static let multilineFieldHeight: CGFloat = 56
+    static let queryFieldActionButtonSize: CGFloat = 28
+    static let queryFieldCornerRadius: CGFloat = 14
+    static let maxSuggestionCount = 3
+    static let queryFieldShadowColor: Color = .black.opacity(0.16)
+    static let queryFieldShadowRadius: CGFloat = 16
+    static let queryFieldShadowOffset = CGPoint(x: 0, y: 8)
 
-        // MARK: Animation
-        static let controlsRevealDelayAfterTitleAnimation: TimeInterval = 0.3
-        static let keyboardFocusDelayAfterControlsReveal: TimeInterval = 0.2
-        static let legacyInitialInputFocusDelayAfterAppear: TimeInterval = 0.35
-        static let rebrandedInitialInputFocusDelayAfterAppear: TimeInterval = 0.55
-        static let suggestionInitialRevealDelay: TimeInterval = 0.8
-        static let pickerSelectionAnimationDuration: TimeInterval = 0.22
-        static let contentFadeAnimationDuration: TimeInterval = 0.2
-        static let suggestionSpringMass: CGFloat = 0.7
-        static let suggestionSpringStiffness: CGFloat = 180
-        static let suggestionSpringDamping: CGFloat = 14
-        static let suggestionSpringInitialVelocity: CGFloat = 0.25
+    // MARK: Animation
+    static let controlsRevealDelayAfterTitleAnimation: TimeInterval = 0.3
+    static let keyboardFocusDelayAfterControlsReveal: TimeInterval = 0.2
+    static let legacyInitialInputFocusDelayAfterAppear: TimeInterval = 0.35
+    static let rebrandedInitialInputFocusDelayAfterAppear: TimeInterval = 0.55
+    static let suggestionInitialRevealDelay: TimeInterval = 0.8
+    static let pickerSelectionAnimationDuration: TimeInterval = 0.22
+    static let contentFadeAnimationDuration: TimeInterval = 0.2
+    static let suggestionSpringMass: CGFloat = 0.7
+    static let suggestionSpringStiffness: CGFloat = 180
+    static let suggestionSpringDamping: CGFloat = 14
+    static let suggestionSpringInitialVelocity: CGFloat = 0.25
 
-        // MARK: Offset
-        static let queryFieldActionOffsetX: CGFloat = 2.33
-        static let queryFieldActionOffsetY: CGFloat = 0
-    }
-
-    struct DuckAIQuerySearchContent: View {
-        // MARK: Types
-        enum VisualStyle {
-            case legacy
-            case rebranded
-        }
-
-        // MARK: Dependencies
-        @Environment(\.onboardingTheme) private var onboardingTheme
-        @Environment(\.accessibilityReduceMotion) private var reduceMotion
-        private let content: OnboardingDuckAIQueryContent
-        private let onModeConfirmed: (DuckAIQueryMode) -> Void
-        private let openAIChatAction: (String?, Bool) -> Void
-        private let openSearchAction: (String) -> Void
-        private let measureQuerySubmissionAction: (DuckAIQueryMode, DuckAIQueryPromptSource) -> Void
-        private let startExitTransitionAction: () -> Void
-        private let visualStyle: VisualStyle
-        private var animateTitle: Binding<Bool>
-        @StateObject private var pickerViewModel: ImageSegmentedPickerViewModel
-        private let suggestionsViewModel = OnboardingDuckAISuggestionsViewModel()
-
-        // MARK: State
-        @State private var query = ""
-        @State private var selectedMode: DuckAIQueryMode
-        @State private var isInputFocused = false
-        @State private var visibleSuggestionCount = 0
-        @State private var isTransitioningOut = false
-        @State private var suggestionSequenceStarted = false
-        @State private var showInteractiveControls = false
-        @State private var hasStartedEntranceSequence = false
-        @State private var hasPassedInitialFocusDelay = false
-        @State private var shouldFocusWhenInitialDelayPasses = false
-        /// Local typing-start trigger for the rebranded `TypingText` (the rebranded call site
-        /// doesn't pass an `animateTitle` binding).
-        @State private var rebrandedAnimateTitle = false
-
-        // MARK: Constants
-        private static let pickerItems: [ImageSegmentedPickerItem] = [
-            ImageSegmentedPickerItem(
-                text: UserText.searchInputToggleSearchButtonTitle,
-                selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearchGradientColor),
-                unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch)
-            ),
-            ImageSegmentedPickerItem(
-                text: UserText.Onboarding.DuckAIQuery.toggleAILabel,
-                selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChatGradientColor),
-                unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat)
-            )
-        ]
-
-        init(
-            content: OnboardingDuckAIQueryContent = .init(
-                title: UserText.Onboarding.DuckAIQuery.title,
-                searchPlaceholder: UserText.Onboarding.DuckAIQuery.searchPlaceholder,
-                aiPlaceholder: UserText.Onboarding.DuckAIQuery.aiPlaceholder,
-                isToggleVisible: true,
-                daxAnimation: nil
-            ),
-            defaultMode: DuckAIQueryMode,
-            visualStyle: VisualStyle = .legacy,
-            animateTitle: Binding<Bool> = .constant(false),
-            onModeConfirmed: @escaping (DuckAIQueryMode) -> Void,
-            openAIChatAction: @escaping (String?, Bool) -> Void,
-            openSearchAction: @escaping (String) -> Void,
-            measureQuerySubmissionAction: @escaping (DuckAIQueryMode, DuckAIQueryPromptSource) -> Void,
-            startExitTransitionAction: @escaping () -> Void
-        ) {
-            self.content = content
-            self.onModeConfirmed = onModeConfirmed
-            self.openAIChatAction = openAIChatAction
-            self.openSearchAction = openSearchAction
-            self.measureQuerySubmissionAction = measureQuerySubmissionAction
-            self.startExitTransitionAction = startExitTransitionAction
-            self.visualStyle = visualStyle
-            self.animateTitle = animateTitle
-            let initialSelection = (defaultMode == .duckAI) ? Self.pickerItems[1] : Self.pickerItems[0]
-            _selectedMode = State(initialValue: defaultMode)
-            _pickerViewModel = StateObject(wrappedValue: ImageSegmentedPickerViewModel(
-                items: Self.pickerItems,
-                selectedItem: initialSelection,
-                configuration: ImageSegmentedPickerConfiguration(itemContentSpacing: Metrics.queryFieldContentSpacing,
-                                                                 textLineLimit: 1),
-                scrollProgress: defaultMode == .duckAI ? 1 : 0,
-                isScrollProgressDriven: false
-            ))
-        }
-
-        // MARK: View
-        var body: some View {
-            VStack(spacing: Metrics.contentVerticalSpacing) {
-                // Header text inside the onboarding bubble.
-                Group {
-                    if visualStyle == .rebranded {
-                        TypingText(
-                            content.title,
-                            startAnimating: $rebrandedAnimateTitle,
-                            onTypingFinished: handleTitleAnimationFinished
-                        )
-                    } else {
-                        AnimatableTypingText(
-                            content.title,
-                            startAnimating: animateTitle,
-                            onTypingFinished: handleTitleAnimationFinished
-                        )
-                    }
-                }
-                    .font(visualStyle == .rebranded ? onboardingTheme.typography.title : Font(UIFont.daxTitle3()))
-                    .multilineTextAlignment(visualStyle == .rebranded ? .center : .leading)
-                    .foregroundColor(visualStyle == .rebranded ? onboardingTheme.colorPalette.textPrimary : Color(designSystemColor: .textPrimary))
-                    .frame(maxWidth: .infinity, alignment: visualStyle == .rebranded ? .center : .leading)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Group {
-                    if content.isToggleVisible {
-                        // Search / Duck.ai segmented control.
-                        ImageSegmentedPickerView(viewModel: pickerViewModel)
-                            .frame(maxWidth: Metrics.pickerMaxWidth, minHeight: Metrics.pickerHeight, maxHeight: Metrics.pickerHeight)
-                            .padding(.vertical, Metrics.pickerVerticalPadding)
-                            .frame(maxWidth: Metrics.pickerMaxWidth, minHeight: Metrics.pickerContainerHeight, maxHeight: Metrics.pickerContainerHeight)
-                        // Drive content mode (Search vs Duck.ai) from user picker selection.
-                            .onChange(of: pickerViewModel.selectedItem) { [reduceMotion] selectedItem in
-                                let newMode: DuckAIQueryMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
-                                if reduceMotion {
-                                    selectedMode = newMode
-                                } else {
-                                    SwiftUI.withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
-                                        selectedMode = newMode
-                                    }
-                                }
-                            }
-                        // Keep picker model + visual progress in sync for programmatic/default mode changes.
-                            .onChange(of: selectedMode) { selection in
-                                let pickerItem = selection == .duckAI ? Self.pickerItems[1] : Self.pickerItems[0]
-                                if pickerViewModel.selectedItem != pickerItem {
-                                    pickerViewModel.selectItem(pickerItem)
-                                }
-                                pickerViewModel.updateScrollProgress(selection == .duckAI ? 1 : 0)
-                            }
-                            .padding(.top, titleToPickerTopPadding)
-                            .padding(.bottom, Metrics.pickerBottomPadding)
-                    }
-
-                    // If toggle is not visible set a different padding to avoid text area to be too close to the title
-                    let queryFieldTopPadding = content.isToggleVisible ? Metrics.queryFieldTopPadding : nil
-
-                    // Query field + trailing action icon.
-                    queryField
-                        .padding(.top, queryFieldTopPadding)
-                        .padding(.bottom, Metrics.queryFieldBottomPadding)
-                }
-                .opacity(showInteractiveControls ? 1 : 0)
-                .allowsHitTesting(showInteractiveControls)
-
-                // Delayed/staggered suggestion chips.
-                if visibleSuggestionCount > 0 {
-                    suggestionChips
-                        .padding(.top, Metrics.fieldToFirstChipTopPadding)
-                }
-            }
-            .opacity(isTransitioningOut ? 0 : 1)
-            .onAppear {
-                let initialSelection = selectedMode == .duckAI ? Self.pickerItems[1] : Self.pickerItems[0]
-                pickerViewModel.selectItem(initialSelection)
-                pickerViewModel.updateScrollProgress(selectedMode == .duckAI ? 1 : 0)
-                query = ""
-                isInputFocused = false
-                visibleSuggestionCount = 0
-                showInteractiveControls = false
-                hasStartedEntranceSequence = false
-                hasPassedInitialFocusDelay = false
-                shouldFocusWhenInitialDelayPasses = false
-                suggestionSequenceStarted = false
-                scheduleInitialFocusGate()
-                // Both styles end up in `handleTitleAnimationFinished`; only the start binding differs.
-                if visualStyle == .rebranded {
-                    rebrandedAnimateTitle = true
-                } else {
-                    animateTitle.wrappedValue = true
-                }
-            }
-            // Fade out this content while transitioning to the selected destination.
-            .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: isTransitioningOut)
-            .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: showInteractiveControls)
-        }
-
-        // MARK: Style
-        private var accentColor: Color {
-            visualStyle == .rebranded ? Color(singleUseColor: .rebranding(.accentPrimary)) : Color(designSystemColor: .accentPrimary)
-        }
-
-        private var titleToPickerTopPadding: CGFloat {
-            visualStyle == .rebranded ? Metrics.rebrandedTitleToPickerTopPadding : Metrics.legacyTitleToPickerTopPadding
-        }
-
-        private var queryFieldBackgroundColor: Color {
-            visualStyle == .rebranded ? onboardingTheme.colorPalette.background : Color(designSystemColor: .surface)
-        }
-
-        private var initialInputFocusDelayAfterAppear: TimeInterval {
-            visualStyle == .rebranded ? Metrics.rebrandedInitialInputFocusDelayAfterAppear : Metrics.legacyInitialInputFocusDelayAfterAppear
-        }
-
-        // MARK: Initial Sequencing
-        private func handleTitleAnimationFinished() {
-            guard !hasStartedEntranceSequence else { return }
-            hasStartedEntranceSequence = true
-
-            // Reduce Motion: skip the staggered entrance — show controls + suggestions and
-            // focus the input immediately.
-            if reduceMotion {
-                guard !isTransitioningOut else { return }
-                showInteractiveControls = true
-                requestInputFocus()
-                startSuggestionSequenceIfNeeded()
-                return
-            }
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.controlsRevealDelayAfterTitleAnimation) {
-                guard hasStartedEntranceSequence, !isTransitioningOut else { return }
-                showInteractiveControls = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.keyboardFocusDelayAfterControlsReveal) {
-                    guard hasStartedEntranceSequence, showInteractiveControls, !isTransitioningOut else { return }
-                    requestInputFocus()
-                }
-                startSuggestionSequenceIfNeeded()
-            }
-        }
-
-        private func scheduleInitialFocusGate() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + initialInputFocusDelayAfterAppear) {
-                hasPassedInitialFocusDelay = true
-                if shouldFocusWhenInitialDelayPasses {
-                    shouldFocusWhenInitialDelayPasses = false
-                    isInputFocused = true
-                }
-            }
-        }
-
-        private func requestInputFocus() {
-            if hasPassedInitialFocusDelay {
-                isInputFocused = true
-            } else {
-                shouldFocusWhenInitialDelayPasses = true
-            }
-        }
-
-        // MARK: Subviews
-        private var queryField: some View {
-            HStack(alignment: .bottom, spacing: Metrics.queryFieldContentSpacing) {
-                // Text input
-                OnboardingQueryField(
-                    text: $query,
-                    placeholder: selectedMode == .duckAI
-                    ? content.aiPlaceholder
-                    : content.searchPlaceholder,
-                    isFocused: $isInputFocused,
-                    isSingleLine: selectedMode != .duckAI,
-                    onSubmit: handlePrimaryAction
-                )
-                .transaction { transaction in
-                    // Prevent placeholder/baseline shifts from inheriting parent animations when toggling mode.
-                    transaction.animation = nil
-                }
-                .frame(
-                    height: selectedMode == .duckAI ? Metrics.multilineFieldHeight : Metrics.singleLineFieldHeight,
-                    alignment: selectedMode == .duckAI ? .topLeading : .center
-                )
-
-                // Submit action button
-                Button(action: handlePrimaryAction) {
-                    Image(
-                        uiImage: selectedMode == .duckAI
-                        ? DesignSystemImages.Glyphs.Size16.arrowRight
-                        : DesignSystemImages.Glyphs.Size24.findSearchSmall
-                    )
-                    .renderingMode(.template)
-                    .foregroundColor(visualStyle == .rebranded ? accentColor : Color(designSystemColor: .icons))
-                    .opacity(isPrimaryActionEnabled ? 1 : Metrics.disabledPrimaryActionOpacity)
-                    .frame(width: Metrics.queryFieldActionButtonSize, height: Metrics.queryFieldActionButtonSize)
-                    .offset(x: Metrics.queryFieldActionOffsetX, y: Metrics.queryFieldActionOffsetY)
-                }
-                .buttonStyle(.plain)
-                .disabled(!isPrimaryActionEnabled)
-            }
-            .padding(.horizontal, Metrics.queryFieldHorizontalPadding)
-            .padding(.vertical, Metrics.queryFieldVerticalPadding)
-            .background(queryFieldBackgroundColor)
-            .cornerRadius(Metrics.queryFieldCornerRadius)
-            .frame(maxWidth: .infinity)
-            .shadow(color: Metrics.queryFieldShadowColor, radius: Metrics.queryFieldShadowRadius, x: Metrics.queryFieldShadowOffset.x, y: Metrics.queryFieldShadowOffset.y)
-            .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: selectedMode)
-        }
-
-        private var suggestionChips: some View {
-            OnboardingSuggestionChips(
-                viewModel: suggestionsViewModel,
-                isDuckAIMode: selectedMode == .duckAI,
-                visibleCount: visibleSuggestionCount,
-                visualStyle: visualStyle,
-                onItemTap: { item, promptSource in
-                    openSelectedExperience(prompt: item.title, autoSend: true, promptSource: promptSource)
-                }
-            )
-        }
-
-        private var suggestionAppearanceAnimation: Animation {
-            .interpolatingSpring(
-                mass: Metrics.suggestionSpringMass,
-                stiffness: Metrics.suggestionSpringStiffness,
-                damping: Metrics.suggestionSpringDamping,
-                initialVelocity: Metrics.suggestionSpringInitialVelocity
-            )
-        }
-
-        // MARK: Actions
-        private func handlePrimaryAction() {
-            guard isPrimaryActionEnabled else { return }
-            let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-            openSelectedExperience(
-                prompt: trimmedQuery.isEmpty ? nil : trimmedQuery,
-                autoSend: !trimmedQuery.isEmpty,
-                promptSource: .custom
-            )
-        }
-
-        private var isPrimaryActionEnabled: Bool {
-            !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        }
-
-        private func openSelectedExperience(prompt: String?, autoSend: Bool, promptSource: DuckAIQueryPromptSource) {
-            if autoSend {
-                measureQuerySubmissionAction(selectedMode, promptSource)
-            }
-
-            let preloadedSearchQuery: String? = {
-                guard selectedMode != .duckAI, let searchQuery = prompt, !searchQuery.isEmpty else { return nil }
-                return searchQuery
-            }()
-
-            // Start browser loading immediately so results can be ready behind the exit hold.
-            if let searchQuery = preloadedSearchQuery {
-                openSearchAction(searchQuery)
-            }
-
-            isInputFocused = false
-            dismissKeyboard()
-            startExitTransitionAction()
-
-            let completion = {
-                if selectedMode == .duckAI {
-                    openAIChatAction(prompt, autoSend)
-                    onModeConfirmed(.duckAI)
-                } else if preloadedSearchQuery != nil {
-                    onModeConfirmed(.search)
-                } else {
-                    isTransitioningOut = false
-                }
-            }
-
-            if reduceMotion {
-                isTransitioningOut = true
-                completion()
-            } else {
-                withAnimation(.easeOut(duration: Metrics.contentFadeAnimationDuration)) {
-                    isTransitioningOut = true
-                } completion: {
-                    completion()
-                }
-            }
-        }
-
-        // MARK: Suggestion Sequencing
-        private func startSuggestionSequenceIfNeeded() {
-            guard !suggestionSequenceStarted, showInteractiveControls else { return }
-            suggestionSequenceStarted = true
-            // Reduce Motion: show all suggestions at once, no staggered reveal.
-            guard !reduceMotion else {
-                guard !isTransitioningOut else { return }
-                visibleSuggestionCount = Metrics.maxSuggestionCount
-                return
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.suggestionInitialRevealDelay) {
-                guard suggestionSequenceStarted, showInteractiveControls, !isTransitioningOut else { return }
-                startSuggestionRevealSequence()
-            }
-        }
-
-        private func startSuggestionRevealSequence() {
-            guard suggestionSequenceStarted, !isTransitioningOut else { return }
-            visibleSuggestionCount = 0
-            revealSuggestionsSequentially(nextIndex: 1)
-        }
-
-        private func revealSuggestionsSequentially(nextIndex: Int) {
-            guard suggestionSequenceStarted, !isTransitioningOut else { return }
-            guard nextIndex <= Metrics.maxSuggestionCount else { return }
-
-            withAnimation(suggestionAppearanceAnimation) {
-                visibleSuggestionCount = nextIndex
-            } completion: {
-                revealSuggestionsSequentially(nextIndex: nextIndex + 1)
-            }
-        }
-
-        // MARK: Utilities
-        @MainActor
-        private func withAnimation(_ animation: Animation, _ updates: @escaping () -> Void, completion: @escaping () -> Void) {
-            if #available(iOS 17, *) {
-                SwiftUI.withAnimation(animation, completionCriteria: .logicallyComplete, updates) {
-                    completion()
-                }
-            } else {
-                CATransaction.begin()
-                CATransaction.setCompletionBlock(completion)
-                SwiftUI.withAnimation(animation, updates)
-                CATransaction.commit()
-            }
-        }
-        private func dismissKeyboard() {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        }
-    }
-
+    // MARK: Offset
+    static let queryFieldActionOffsetX: CGFloat = 2.33
+    static let queryFieldActionOffsetY: CGFloat = 0
 }
+
+struct DuckAIQuerySearchContent: View {
+    // MARK: Types
+    enum VisualStyle {
+        case legacy
+        case rebranded
+    }
+
+    // MARK: Dependencies
+    @Environment(\.onboardingTheme) private var onboardingTheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private let content: OnboardingDuckAIQueryContent
+    private let onModeConfirmed: (DuckAIQueryMode) -> Void
+    private let openAIChatAction: (String?, Bool) -> Void
+    private let openSearchAction: (String) -> Void
+    private let measureQuerySubmissionAction: (DuckAIQueryMode, DuckAIQueryPromptSource) -> Void
+    private let startExitTransitionAction: () -> Void
+    private let visualStyle: VisualStyle
+    private var animateTitle: Binding<Bool>
+    @StateObject private var pickerViewModel: ImageSegmentedPickerViewModel
+    private let suggestionsViewModel = OnboardingDuckAISuggestionsViewModel()
+
+    // MARK: State
+    @State private var query = ""
+    @State private var selectedMode: DuckAIQueryMode
+    @State private var isInputFocused = false
+    @State private var visibleSuggestionCount = 0
+    @State private var isTransitioningOut = false
+    @State private var suggestionSequenceStarted = false
+    @State private var showInteractiveControls = false
+    @State private var hasStartedEntranceSequence = false
+    @State private var hasPassedInitialFocusDelay = false
+    @State private var shouldFocusWhenInitialDelayPasses = false
+    /// Local typing-start trigger for the rebranded `TypingText` (the rebranded call site
+    /// doesn't pass an `animateTitle` binding).
+    @State private var rebrandedAnimateTitle = false
+
+    // MARK: Constants
+    private static let pickerItems: [ImageSegmentedPickerItem] = [
+        ImageSegmentedPickerItem(
+            text: UserText.searchInputToggleSearchButtonTitle,
+            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearchGradientColor),
+            unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch)
+        ),
+        ImageSegmentedPickerItem(
+            text: UserText.Onboarding.DuckAIQuery.toggleAILabel,
+            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChatGradientColor),
+            unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat)
+        )
+    ]
+
+    init(
+        content: OnboardingDuckAIQueryContent = .init(
+            title: UserText.Onboarding.DuckAIQuery.title,
+            searchPlaceholder: UserText.Onboarding.DuckAIQuery.searchPlaceholder,
+            aiPlaceholder: UserText.Onboarding.DuckAIQuery.aiPlaceholder,
+            isToggleVisible: true,
+            daxAnimation: nil
+        ),
+        defaultMode: DuckAIQueryMode,
+        visualStyle: VisualStyle = .legacy,
+        animateTitle: Binding<Bool> = .constant(false),
+        onModeConfirmed: @escaping (DuckAIQueryMode) -> Void,
+        openAIChatAction: @escaping (String?, Bool) -> Void,
+        openSearchAction: @escaping (String) -> Void,
+        measureQuerySubmissionAction: @escaping (DuckAIQueryMode, DuckAIQueryPromptSource) -> Void,
+        startExitTransitionAction: @escaping () -> Void
+    ) {
+        self.content = content
+        self.onModeConfirmed = onModeConfirmed
+        self.openAIChatAction = openAIChatAction
+        self.openSearchAction = openSearchAction
+        self.measureQuerySubmissionAction = measureQuerySubmissionAction
+        self.startExitTransitionAction = startExitTransitionAction
+        self.visualStyle = visualStyle
+        self.animateTitle = animateTitle
+        let initialSelection = (defaultMode == .duckAI) ? Self.pickerItems[1] : Self.pickerItems[0]
+        _selectedMode = State(initialValue: defaultMode)
+        _pickerViewModel = StateObject(wrappedValue: ImageSegmentedPickerViewModel(
+            items: Self.pickerItems,
+            selectedItem: initialSelection,
+            configuration: ImageSegmentedPickerConfiguration(itemContentSpacing: Metrics.queryFieldContentSpacing,
+                                                             textLineLimit: 1),
+            scrollProgress: defaultMode == .duckAI ? 1 : 0,
+            isScrollProgressDriven: false
+        ))
+    }
+
+    // MARK: View
+    var body: some View {
+        VStack(spacing: Metrics.contentVerticalSpacing) {
+            // Header text inside the onboarding bubble.
+            Group {
+                if visualStyle == .rebranded {
+                    TypingText(
+                        content.title,
+                        startAnimating: $rebrandedAnimateTitle,
+                        onTypingFinished: handleTitleAnimationFinished
+                    )
+                } else {
+                    AnimatableTypingText(
+                        content.title,
+                        startAnimating: animateTitle,
+                        onTypingFinished: handleTitleAnimationFinished
+                    )
+                }
+            }
+            .font(visualStyle == .rebranded ? onboardingTheme.typography.title : Font(UIFont.daxTitle3()))
+            .multilineTextAlignment(visualStyle == .rebranded ? .center : .leading)
+            .foregroundColor(visualStyle == .rebranded ? onboardingTheme.colorPalette.textPrimary : Color(designSystemColor: .textPrimary))
+            .frame(maxWidth: .infinity, alignment: visualStyle == .rebranded ? .center : .leading)
+            .fixedSize(horizontal: false, vertical: true)
+
+            Group {
+                if content.isToggleVisible {
+                    // Search / Duck.ai segmented control.
+                    ImageSegmentedPickerView(viewModel: pickerViewModel)
+                        .frame(maxWidth: Metrics.pickerMaxWidth, minHeight: Metrics.pickerHeight, maxHeight: Metrics.pickerHeight)
+                        .padding(.vertical, Metrics.pickerVerticalPadding)
+                        .frame(maxWidth: Metrics.pickerMaxWidth, minHeight: Metrics.pickerContainerHeight, maxHeight: Metrics.pickerContainerHeight)
+                    // Drive content mode (Search vs Duck.ai) from user picker selection.
+                        .onChange(of: pickerViewModel.selectedItem) { [reduceMotion] selectedItem in
+                            let newMode: DuckAIQueryMode = selectedItem == Self.pickerItems[1] ? .duckAI : .search
+                            if reduceMotion {
+                                selectedMode = newMode
+                            } else {
+                                SwiftUI.withAnimation(.easeInOut(duration: Metrics.pickerSelectionAnimationDuration)) {
+                                    selectedMode = newMode
+                                }
+                            }
+                        }
+                    // Keep picker model + visual progress in sync for programmatic/default mode changes.
+                        .onChange(of: selectedMode) { selection in
+                            let pickerItem = selection == .duckAI ? Self.pickerItems[1] : Self.pickerItems[0]
+                            if pickerViewModel.selectedItem != pickerItem {
+                                pickerViewModel.selectItem(pickerItem)
+                            }
+                            pickerViewModel.updateScrollProgress(selection == .duckAI ? 1 : 0)
+                        }
+                        .padding(.top, titleToPickerTopPadding)
+                        .padding(.bottom, Metrics.pickerBottomPadding)
+                }
+
+                // If toggle is not visible set a different padding to avoid text area to be too close to the title
+                let queryFieldTopPadding = content.isToggleVisible ? Metrics.queryFieldTopPadding : nil
+
+                // Query field + trailing action icon.
+                queryField
+                    .padding(.top, queryFieldTopPadding)
+                    .padding(.bottom, Metrics.queryFieldBottomPadding)
+            }
+            .opacity(showInteractiveControls ? 1 : 0)
+            .allowsHitTesting(showInteractiveControls)
+
+            // Delayed/staggered suggestion chips.
+            if visibleSuggestionCount > 0 {
+                suggestionChips
+                    .padding(.top, Metrics.fieldToFirstChipTopPadding)
+            }
+        }
+        .opacity(isTransitioningOut ? 0 : 1)
+        .onAppear {
+            let initialSelection = selectedMode == .duckAI ? Self.pickerItems[1] : Self.pickerItems[0]
+            pickerViewModel.selectItem(initialSelection)
+            pickerViewModel.updateScrollProgress(selectedMode == .duckAI ? 1 : 0)
+            query = ""
+            isInputFocused = false
+            visibleSuggestionCount = 0
+            showInteractiveControls = false
+            hasStartedEntranceSequence = false
+            hasPassedInitialFocusDelay = false
+            shouldFocusWhenInitialDelayPasses = false
+            suggestionSequenceStarted = false
+            scheduleInitialFocusGate()
+            // Both styles end up in `handleTitleAnimationFinished`; only the start binding differs.
+            if visualStyle == .rebranded {
+                rebrandedAnimateTitle = true
+            } else {
+                animateTitle.wrappedValue = true
+            }
+        }
+        // Fade out this content while transitioning to the selected destination.
+        .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: isTransitioningOut)
+        .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: showInteractiveControls)
+    }
+
+    // MARK: Style
+    private var accentColor: Color {
+        visualStyle == .rebranded ? Color(singleUseColor: .rebranding(.accentPrimary)) : Color(designSystemColor: .accentPrimary)
+    }
+
+    private var titleToPickerTopPadding: CGFloat {
+        visualStyle == .rebranded ? Metrics.rebrandedTitleToPickerTopPadding : Metrics.legacyTitleToPickerTopPadding
+    }
+
+    private var queryFieldBackgroundColor: Color {
+        visualStyle == .rebranded ? onboardingTheme.colorPalette.background : Color(designSystemColor: .surface)
+    }
+
+    private var initialInputFocusDelayAfterAppear: TimeInterval {
+        visualStyle == .rebranded ? Metrics.rebrandedInitialInputFocusDelayAfterAppear : Metrics.legacyInitialInputFocusDelayAfterAppear
+    }
+
+    // MARK: Initial Sequencing
+    private func handleTitleAnimationFinished() {
+        guard !hasStartedEntranceSequence else { return }
+        hasStartedEntranceSequence = true
+
+        // Reduce Motion: skip the staggered entrance — show controls + suggestions and
+        // focus the input immediately.
+        if reduceMotion {
+            guard !isTransitioningOut else { return }
+            showInteractiveControls = true
+            requestInputFocus()
+            startSuggestionSequenceIfNeeded()
+            return
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.controlsRevealDelayAfterTitleAnimation) {
+            guard hasStartedEntranceSequence, !isTransitioningOut else { return }
+            showInteractiveControls = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.keyboardFocusDelayAfterControlsReveal) {
+                guard hasStartedEntranceSequence, showInteractiveControls, !isTransitioningOut else { return }
+                requestInputFocus()
+            }
+            startSuggestionSequenceIfNeeded()
+        }
+    }
+
+    private func scheduleInitialFocusGate() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + initialInputFocusDelayAfterAppear) {
+            hasPassedInitialFocusDelay = true
+            if shouldFocusWhenInitialDelayPasses {
+                shouldFocusWhenInitialDelayPasses = false
+                isInputFocused = true
+            }
+        }
+    }
+
+    private func requestInputFocus() {
+        if hasPassedInitialFocusDelay {
+            isInputFocused = true
+        } else {
+            shouldFocusWhenInitialDelayPasses = true
+        }
+    }
+
+    // MARK: Subviews
+    private var queryField: some View {
+        HStack(alignment: .bottom, spacing: Metrics.queryFieldContentSpacing) {
+            // Text input
+            OnboardingQueryField(
+                text: $query,
+                placeholder: selectedMode == .duckAI
+                ? content.aiPlaceholder
+                : content.searchPlaceholder,
+                isFocused: $isInputFocused,
+                isSingleLine: selectedMode != .duckAI,
+                onSubmit: handlePrimaryAction
+            )
+            .transaction { transaction in
+                // Prevent placeholder/baseline shifts from inheriting parent animations when toggling mode.
+                transaction.animation = nil
+            }
+            .frame(
+                height: selectedMode == .duckAI ? Metrics.multilineFieldHeight : Metrics.singleLineFieldHeight,
+                alignment: selectedMode == .duckAI ? .topLeading : .center
+            )
+
+            // Submit action button
+            Button(action: handlePrimaryAction) {
+                Image(
+                    uiImage: selectedMode == .duckAI
+                    ? DesignSystemImages.Glyphs.Size16.arrowRight
+                    : DesignSystemImages.Glyphs.Size24.findSearchSmall
+                )
+                .renderingMode(.template)
+                .foregroundColor(visualStyle == .rebranded ? accentColor : Color(designSystemColor: .icons))
+                .opacity(isPrimaryActionEnabled ? 1 : Metrics.disabledPrimaryActionOpacity)
+                .frame(width: Metrics.queryFieldActionButtonSize, height: Metrics.queryFieldActionButtonSize)
+                .offset(x: Metrics.queryFieldActionOffsetX, y: Metrics.queryFieldActionOffsetY)
+            }
+            .buttonStyle(.plain)
+            .disabled(!isPrimaryActionEnabled)
+        }
+        .padding(.horizontal, Metrics.queryFieldHorizontalPadding)
+        .padding(.vertical, Metrics.queryFieldVerticalPadding)
+        .background(queryFieldBackgroundColor)
+        .cornerRadius(Metrics.queryFieldCornerRadius)
+        .frame(maxWidth: .infinity)
+        .shadow(color: Metrics.queryFieldShadowColor, radius: Metrics.queryFieldShadowRadius, x: Metrics.queryFieldShadowOffset.x, y: Metrics.queryFieldShadowOffset.y)
+        .animation(reduceMotion ? nil : .easeInOut(duration: Metrics.contentFadeAnimationDuration), value: selectedMode)
+    }
+
+    private var suggestionChips: some View {
+        OnboardingSuggestionChips(
+            viewModel: suggestionsViewModel,
+            isDuckAIMode: selectedMode == .duckAI,
+            visibleCount: visibleSuggestionCount,
+            visualStyle: visualStyle,
+            onItemTap: { item, promptSource in
+                openSelectedExperience(prompt: item.title, autoSend: true, promptSource: promptSource)
+            }
+        )
+    }
+
+    private var suggestionAppearanceAnimation: Animation {
+        .interpolatingSpring(
+            mass: Metrics.suggestionSpringMass,
+            stiffness: Metrics.suggestionSpringStiffness,
+            damping: Metrics.suggestionSpringDamping,
+            initialVelocity: Metrics.suggestionSpringInitialVelocity
+        )
+    }
+
+    // MARK: Actions
+    private func handlePrimaryAction() {
+        guard isPrimaryActionEnabled else { return }
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        openSelectedExperience(
+            prompt: trimmedQuery.isEmpty ? nil : trimmedQuery,
+            autoSend: !trimmedQuery.isEmpty,
+            promptSource: .custom
+        )
+    }
+
+    private var isPrimaryActionEnabled: Bool {
+        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func openSelectedExperience(prompt: String?, autoSend: Bool, promptSource: DuckAIQueryPromptSource) {
+        if autoSend {
+            measureQuerySubmissionAction(selectedMode, promptSource)
+        }
+
+        let preloadedSearchQuery: String? = {
+            guard selectedMode != .duckAI, let searchQuery = prompt, !searchQuery.isEmpty else { return nil }
+            return searchQuery
+        }()
+
+        // Start browser loading immediately so results can be ready behind the exit hold.
+        if let searchQuery = preloadedSearchQuery {
+            openSearchAction(searchQuery)
+        }
+
+        isInputFocused = false
+        dismissKeyboard()
+        startExitTransitionAction()
+
+        let completion = {
+            if selectedMode == .duckAI {
+                openAIChatAction(prompt, autoSend)
+                onModeConfirmed(.duckAI)
+            } else if preloadedSearchQuery != nil {
+                onModeConfirmed(.search)
+            } else {
+                isTransitioningOut = false
+            }
+        }
+
+        if reduceMotion {
+            isTransitioningOut = true
+            completion()
+        } else {
+            withAnimation(.easeOut(duration: Metrics.contentFadeAnimationDuration)) {
+                isTransitioningOut = true
+            } completion: {
+                completion()
+            }
+        }
+    }
+
+    // MARK: Suggestion Sequencing
+    private func startSuggestionSequenceIfNeeded() {
+        guard !suggestionSequenceStarted, showInteractiveControls else { return }
+        suggestionSequenceStarted = true
+        // Reduce Motion: show all suggestions at once, no staggered reveal.
+        guard !reduceMotion else {
+            guard !isTransitioningOut else { return }
+            visibleSuggestionCount = Metrics.maxSuggestionCount
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.suggestionInitialRevealDelay) {
+            guard suggestionSequenceStarted, showInteractiveControls, !isTransitioningOut else { return }
+            startSuggestionRevealSequence()
+        }
+    }
+
+    private func startSuggestionRevealSequence() {
+        guard suggestionSequenceStarted, !isTransitioningOut else { return }
+        visibleSuggestionCount = 0
+        revealSuggestionsSequentially(nextIndex: 1)
+    }
+
+    private func revealSuggestionsSequentially(nextIndex: Int) {
+        guard suggestionSequenceStarted, !isTransitioningOut else { return }
+        guard nextIndex <= Metrics.maxSuggestionCount else { return }
+
+        withAnimation(suggestionAppearanceAnimation) {
+            visibleSuggestionCount = nextIndex
+        } completion: {
+            revealSuggestionsSequentially(nextIndex: nextIndex + 1)
+        }
+    }
+
+    // MARK: Utilities
+    @MainActor
+    private func withAnimation(_ animation: Animation, _ updates: @escaping () -> Void, completion: @escaping () -> Void) {
+        if #available(iOS 17, *) {
+            SwiftUI.withAnimation(animation, completionCriteria: .logicallyComplete, updates) {
+                completion()
+            }
+        } else {
+            CATransaction.begin()
+            CATransaction.setCompletionBlock(completion)
+            SwiftUI.withAnimation(animation, updates)
+            CATransaction.commit()
+        }
+    }
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
 
 // MARK: - OnboardingQueryField
 private struct OnboardingQueryField: UIViewRepresentable {
@@ -733,7 +731,7 @@ private struct OnboardingSuggestionChips: View {
     let viewModel: OnboardingDuckAISuggestionsViewModel
     let isDuckAIMode: Bool
     let visibleCount: Int
-    let visualStyle: OnboardingView.DuckAIQuerySearchContent.VisualStyle
+    let visualStyle: DuckAIQuerySearchContent.VisualStyle
     let onItemTap: (ContextualOnboardingListItem, DuckAIQueryPromptSource) -> Void
 
     // MARK: Computed Properties

@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "確認";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "選択可能な中で最もプライバシー保護を強化したCookieオプションが選択され、ポップアップは自動的に閉じます。オプトアウトできないCookieは、ユーザーがクリックしなくても、自動的に受け入れられます。";
+"cookie-popup-protection.opt-in.disabled.body" = "可能な限り多くのCookieを拒否するように努めます。拒否オプションがない場合は、クリックしなくても自動的にCookieを受け入れます。";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "自動的にCookieを管理し、同意する";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "可能な限り拒否または自動的に受け入れる";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "自分で継続的に管理する";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "クリックしなくても、Cookieオプションを受け入れることができます。";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "オプトアウトできないCookieを受け入れる";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "拒否できないCookieを受け入れる";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "自分で継続的に管理する";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "自分で継続的に受け入れる";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "オプトアウトできないCookieポップアップにうんざりしていませんか？";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Cookieポップアップ保護";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGoは、利用可能な最もプライベートな設定を選択し、これらのポップアップを表示しないようにします。[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGoではCookie設定の自動管理が可能です。プライバシーを最大限に保護しつつ、Cookieを最小限に抑え、ポップアップを閉じる手間を省きます。\n[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "選択可能な中で最もプライバシー保護を強化したCookieオプションのみが選択され、ポップアップは自動的に閉じます。";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Cookieポップアップを自動管理";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "また、オプトアウトできないCookieについては、DuckDuckGoが代わりに受け入れて、ポップアウトを閉じるため、クリックする手間がなくなります。";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "オプトアウト不可のポップアップ";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Cookieポップアップを管理";

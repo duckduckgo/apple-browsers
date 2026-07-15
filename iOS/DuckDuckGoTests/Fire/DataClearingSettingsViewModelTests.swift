@@ -24,6 +24,7 @@ import AIChat
 
 final class MockDataClearingCapability: DataClearingCapable {
     var isFireButtonRefinementsEnabled: Bool = false
+    var isSingleTabDeleteAllEnabled: Bool = false
 }
 
 @MainActor

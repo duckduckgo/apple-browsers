@@ -89,8 +89,6 @@ public extension OnboardingTheme {
             maxTopMargin: 16,
             progressBarTrailingPadding: 16.0,
             progressBarTopPadding: 12.0,
-            rebrandingBadgeLeadingPadding: 12.0,
-            rebrandingBadgeTopPadding: 12.0,
             dialogVerticalOffsetPercentage: MetricBuilder<CGFloat>(default: 0.1).iPhoneSmallScreen(0.01),
             actionsSpacing: 12
         )

@@ -195,3 +195,58 @@ struct SelectionContextTests {
         #expect(first.id != second.id)
     }
 }
+
+// MARK: - Per-navigation extraction pixel dedup Tests
+
+struct PerNavigationExtractionPixelDedupTests {
+
+    /// Mirrors the per-navigation dedup in PageContextTabExtension.fireExtractionPixel: automatic
+    /// page-load collects (.navigation / .tabContent) report once per navigation and re-arm on
+    /// navigation to a new URL; user/setting collects (.userRequest / .auto) always report.
+    private final class Dedup {
+        private var didReportForCurrentNavigation = false
+
+        func resetForNavigation() { didReportForCurrentNavigation = false }
+
+        func shouldReport(_ trigger: PageContextExtractionTrigger) -> Bool {
+            guard trigger == .navigation || trigger == .tabContent else { return true }
+            if didReportForCurrentNavigation { return false }
+            didReportForCurrentNavigation = true
+            return true
+        }
+    }
+
+    @Test("First automatic collect reports; the navigation's later automatic collects are suppressed")
+    func firstAutomaticReportsRestSuppressed() {
+        let dedup = Dedup()
+        #expect(dedup.shouldReport(.navigation) == true)   // didCommit re-collect
+        #expect(dedup.shouldReport(.navigation) == false)  // didFinish re-collect
+        #expect(dedup.shouldReport(.tabContent) == false)  // signals-only harvest
+    }
+
+    @Test("navigation and tabContent share the single per-navigation slot")
+    func navigationAndTabContentShareSlot() {
+        let dedup = Dedup()
+        #expect(dedup.shouldReport(.tabContent) == true)
+        #expect(dedup.shouldReport(.navigation) == false)
+    }
+
+    @Test("Navigation to a new URL re-arms automatic reporting")
+    func navigationResetReArms() {
+        let dedup = Dedup()
+        #expect(dedup.shouldReport(.navigation) == true)
+        #expect(dedup.shouldReport(.navigation) == false)
+        dedup.resetForNavigation()
+        #expect(dedup.shouldReport(.navigation) == true)
+    }
+
+    @Test("User- and setting-initiated collects always report and never consume the slot")
+    func userAndSettingAlwaysReport() {
+        let dedup = Dedup()
+        #expect(dedup.shouldReport(.userRequest) == true)
+        #expect(dedup.shouldReport(.auto) == true)
+        #expect(dedup.shouldReport(.userRequest) == true)
+        // Slot untouched by user/setting collects, so the first automatic collect still reports.
+        #expect(dedup.shouldReport(.navigation) == true)
+    }
+}

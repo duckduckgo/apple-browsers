@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Kinnita";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Püüame valida kõige privaatsemad saadaolevad küpsisevalikud ja sulgeda need sinu eest. Kui neil pole loobumisvõimalust, säästame sulle ühe klõpsu ja nõustume nende küpsistega sinu eest.";
+"cookie-popup-protection.opt-in.disabled.body" = "Püüame blokeerida nii palju küpsiseid kui võimalik. Kui keeldumisvõimalust pole, säästame sulle ühe klõpsu ja nõustume nende küpsistega sinu eest.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Halda või nõustu küpsistega minu eest";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Keeldu võimalusel või nõustu minu eest";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Ma jätkan nende haldamist ise";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Saame säästa sind ühest klõpsust ja nõustuda nende küpsistega sinu eest.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Nõustu minu eest küpsistega, millest ei saa loobuda";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Nõustu küpsistega, millest ei saa loobuda";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ma jätkan nende haldamist ise";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ma nõustun nendega ka edaspidi ise";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Oled väsinud küpsiste hüpikakendest, mis ei lase sul neist keelduda?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Küpsiste hüpikakna kaitse";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo proovib valida kõige privaatsemad saadaolevad seaded ja peidab need hüpikaknad sinu eest.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo saab automaatselt hallata sinu küpsiste eelistusi, et maksimeerida privaatsust, minimeerida küpsiseid ja sulgeda need hüpikaknad.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Proovime sinu jaoks valida ainult kõige privaatsemad saadaolevad küpsisevalikud, seejärel sulgeda need hüpikaknad.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Halda küpsiste hüpikaknaid automaatselt";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Luba DuckDuckGo'l säästa sind klikkimisest, nõustudes sinu eest küpsistega, et sulgeda hüpikaknad, mis ei võimalda neist keelduda.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Hüpikaknad ilma loobumisvõimaluseta";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Halda küpsiste hüpikaknaid";

@@ -70,8 +70,8 @@ private extension SubscriptionPromoLaunchView {
                         .resizable()
                         .scaledToFit()
                         .frame(width: Metrics.Header.closeButtonSize, height: Metrics.Header.closeButtonSize)
-                        .foregroundStyle(Color.primary)
                 }
+                .buttonStyle(CloseButtonStyle())
                 .accessibilityIdentifier("subscriptionPromoCloseButton")
             }
         }

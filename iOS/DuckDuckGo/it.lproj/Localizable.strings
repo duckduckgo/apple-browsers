@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Conferma";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Cercheremo di selezionare le opzioni sui cookie più riservate disponibili e di chiuderle per te. Se non sono previste opzioni di rifiuto, ti risparmieremo un clic accettando i cookie al posto tuo.";
+"cookie-popup-protection.opt-in.disabled.body" = "Cercheremo di rifiutare il maggior numero possibile di cookie. Se non è prevista un'opzione di rifiuto, ti risparmieremo un clic e accetteremo questi cookie per te.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Gestisci o accetta i cookie per me";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Rifiuta quando possibile o accetta per me";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Continuerò a occuparmene io";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Possiamo farti risparmiare un clic e accettare questi cookie per te.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Accetta per me i cookie che non prevedono il rifiuto";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Accetta i cookie che non prevedono il rifiuto";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Continuerò a occuparmene io";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Continuerò ad accettarli io";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Non vuoi più vedere pop-up sui cookie che non ti permettono di rifiutare?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Protezione pop-up dei cookie";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo cercherà di selezionare le impostazioni con la massima privacy e nasconderà questi popup per te.[Scopri di più](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo può gestire automaticamente le preferenze sui cookie per massimizzare la privacy, ridurre al minimo i cookie e chiudere questi popup.\n[Scopri di più](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Cercheremo di selezionare solo le opzioni dei cookie più private disponibili per te, quindi di chiudere questi popup.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Gestione automatica dei popup dei cookie";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Lascia inoltre che DuckDuckGo ti faccia risparmiare un clic accettando i cookie per tuo conto, per chiudere i pop-up che non ti permettono di rifiutare.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Popup senza possibilità di rifiutare";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Gestione popup dei cookie";

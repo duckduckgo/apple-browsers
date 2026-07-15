@@ -1420,37 +1420,37 @@
 "control.center.widget.education.paragraph.3" = "Ekrāna apakšā pieskaries pogai **Pievienot vadīklu**";
 
 /* Small 'NEW' badge shown above the Cookie Pop-up Protection opt-in dialog header */
-"cookie-popup-protection.opt-in.badge" = "New";
+"cookie-popup-protection.opt-in.badge" = "Jauns";
 
 /* Confirm button in the Cookie Pop-up Protection opt-in dialog */
-"cookie-popup-protection.opt-in.confirm" = "Confirm";
+"cookie-popup-protection.opt-in.confirm" = "Apstiprināt";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you.";
+"cookie-popup-protection.opt-in.disabled.body" = "Mēs centīsimies noraidīt pēc iespējas vairāk sīkfailu. Ja nav noraidīšanas iespējas, mēs ietaupīsim tev klikšķi un pieņemsim šos sīkfailus tavā vietā.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Manage or accept cookies for me";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Noraidīt, ja iespējams, vai pieņemt manā vietā";
 
 /* Secondary option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.secondary-option" = "I'll keep handling them myself";
+"cookie-popup-protection.opt-in.disabled.secondary-option" = "Es turpināšu tos pārvaldīt pats";
 
 /* Title of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.title" = "Tired of cookie pop-ups that won't leave you alone?";
+"cookie-popup-protection.opt-in.disabled.title" = "Vai tev ir apnikuši sīkfailu uznirstošie logi, kas neliek tevi mierā?";
 
 /* Body of the opt-in dialog when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.body" = "We can save you a click and accept these cookies for you.";
+"cookie-popup-protection.opt-in.enabled.body" = "Mēs varam ietaupīt tev klikšķi un pieņemt šos sīkfailus tavā vietā.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Accept no-opt-out cookies for me";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Pieņemt sīkfailus, no kuriem nevar atteikties";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "I'll keep handling them myself";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Es turpināšu tos pieņemt pats";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.title" = "Tired of cookie pop-ups that don't let you opt out?";
+"cookie-popup-protection.opt-in.enabled.title" = "Noguris no sīkfailu uznirstošajiem logiem, no kuriem nevar atteikties?";
 
 /* Footer text in the Cookie Pop-up Protection opt-in dialog. The text between ** ** is rendered bold. */
-"cookie-popup-protection.opt-in.footer" = "You can always adjust later in\n**Settings** > **Cookie Pop-Up Protection**.";
+"cookie-popup-protection.opt-in.footer" = "Vēlāk to vienmēr vari mainīt sadaļā\n**Iestatījumi** > **Sīkfailu uznirstošo logu aizsardzība**.";
 
 /* Crash Report always send button title */
 "crash.report.dialog.always.send" = "Vienmēr sūtīt avārijas ziņojumus";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Sīkfailu uznirstošo logu aizsardzība";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo mēģinās izvēlēties visprivātākos pieejamos iestatījumus un paslēpt šos uznirstošos logus tavā vietā.\n[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo var automātiski pārvaldīt sīkfailu preferences, lai maksimāli palielinātu privātumu, samazinātu sīkfailus un aizvērtu šos uznirstošos logus.\n[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Mēs centīsimies tavā vietā atlasīt tikai visprivātākās pieejamās sīkfailu opcijas un pēc tam aizvērt šos uznirstošos logus.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Automātiski pārvaldīt sīkfailu uznirstošos logus";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Ļauj DuckDuckGo arī ietaupīt tev vienu klikšķi, tavā vietā pieņemot sīkfailus, lai aizvērtu uznirstošos logus, no kuriem nevar atteikties.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Uznirstošie logi bez atteikšanās iespējas";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Pārvaldīt sīkfailu uznirstošos logus";

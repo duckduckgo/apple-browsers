@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import AppKit
 import SwiftUIExtensions
 import Combine
 import VPN
@@ -183,6 +184,28 @@ public struct TunnelControllerView: View {
     private func headerAnimationView(_ animationName: String) -> some View {
         if isAppRebranded {
             LottieView(animation: .named(animationName))
+                .configure { [enforceRoutes = model.enforceRoutes] animationView in
+                    // Tint the badge + arc lines to reflect strict routing: green when routing
+                    // is enforced, yellow (alert) when not — matching the strict-routing pill.
+                    let black = LottieColor(r: 0, g: 0, b: 0, a: 1)
+                    let accentToken: DesignSystemColor = enforceRoutes ? .alertGreen : .alertYellow
+                    let accent = Self.lottieColor(designSystemColor: accentToken, in: animationView)
+
+                    // Circle: its color is keyframed black->accent (the light-up reveal), so a
+                    // block preserves the black off-state and swaps the accent in above the reveal.
+                    animationView.setValueProvider(
+                        ColorValueProvider(block: { frame in frame < 14 ? black : accent }),
+                        keypath: AnimationKeypath(keypath: "badge-fill.badge-fill.Fill 1.Color")
+                    )
+
+                    // Arc lines: static accent fill + stroke.
+                    for line in ["Line", "Line 2", "Line 3"] {
+                        animationView.setValueProvider(ColorValueProvider(accent),
+                                                       keypath: AnimationKeypath(keypath: "\(line).Shape 1.Fill 1.Color"))
+                        animationView.setValueProvider(ColorValueProvider(accent),
+                                                       keypath: AnimationKeypath(keypath: "\(line).Shape 1.Stroke 1.Color"))
+                    }
+                }
                 .playing(withIntro: .init(
                     skipIntro: model.isConnectedOrConnecting && !model.isToggleDisabled,
                     introStartFrame: 0,
@@ -200,6 +223,22 @@ public struct TunnelControllerView: View {
                     loopEndFrame: 370
                 ), isAnimating: model.isConnectedOrConnecting)
         }
+    }
+
+    /// Resolves a design-system color to a `LottieColor` for use in a value provider.
+    /// (Lottie's `lottieColorValue` convenience is UIKit-only, so we bridge via `NSColor`.)
+    /// Resolved inside the view's `effectiveAppearance` so light/dark variants are correct.
+    private static func lottieColor(designSystemColor: DesignSystemColor, in view: NSView) -> LottieColor {
+        var lottieColor = LottieColor(r: 0, g: 0, b: 0, a: 1)
+        view.effectiveAppearance.performAsCurrentDrawingAppearance {
+            if let color = NSColor(designSystemColor: designSystemColor).usingColorSpace(.sRGB) {
+                lottieColor = LottieColor(r: Double(color.redComponent),
+                                          g: Double(color.greenComponent),
+                                          b: Double(color.blueComponent),
+                                          a: Double(color.alphaComponent))
+            }
+        }
+        return lottieColor
     }
 
     @ViewBuilder

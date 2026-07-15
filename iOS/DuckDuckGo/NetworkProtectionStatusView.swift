@@ -21,6 +21,7 @@ import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import Lottie
 import Networking
 import SwiftUI
 import TipKit
@@ -392,8 +393,36 @@ struct NetworkProtectionStatusView: View {
             lottieFile: animationName,
             loopMode: loopMode,
             isAnimating: $statusModel.isNetPEnabled,
+            configure: AppRebrand.isAppRebranded() ? Self.strictRoutingTint(enforceRoutes: statusModel.enforceRoutes) : nil,
             contentSize: contentSize
         )
+    }
+
+    /// Tints the rebranded VPN animation's badge + arc lines to reflect strict routing:
+    /// green when routing is enforced, yellow (alert) when not — matching the strict-routing pill.
+    private static func strictRoutingTint(enforceRoutes: Bool) -> (LottieAnimationView) -> Void {
+        { animationView in
+            let black = LottieColor(r: 0, g: 0, b: 0, a: 1)
+            let token: DesignSystemColor = enforceRoutes ? .alertGreen : .alertYellow
+            let accent = UIColor(designSystemColor: token)
+                .resolvedColor(with: animationView.traitCollection)
+                .lottieColorValue
+
+            // Circle: its color is keyframed black->accent (the light-up reveal), so a block
+            // preserves the black off-state and swaps the accent in above the reveal.
+            animationView.setValueProvider(
+                ColorValueProvider(block: { frame in frame < 14 ? black : accent }),
+                keypath: AnimationKeypath(keypath: "badge-fill.badge-fill.Fill 1.Color")
+            )
+
+            // Arc lines: static accent fill + stroke.
+            for line in ["Line", "Line 2", "Line 3"] {
+                animationView.setValueProvider(ColorValueProvider(accent),
+                                               keypath: AnimationKeypath(keypath: "\(line).Shape 1.Fill 1.Color"))
+                animationView.setValueProvider(ColorValueProvider(accent),
+                                               keypath: AnimationKeypath(keypath: "\(line).Shape 1.Stroke 1.Color"))
+            }
+        }
     }
 
     // MARK: - Tips

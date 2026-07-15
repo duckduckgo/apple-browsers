@@ -464,9 +464,13 @@ final class FireDialogViewModel: ObservableObject {
         window.endSheet(window.attachedSheet ?? window)
     }
 
-    /// Host of the currently selected tab's URL, or `nil` when it can't be fireproofed.
+    /// Host of the currently selected tab's user-editable URL, or `nil` when it can't be fireproofed.
+    ///
+    /// Uses `userEditableUrl` (like the address bar's more-options menu) rather than the resolved
+    /// tab URL so Duck Player — and other non-web tabs — are correctly excluded: on a Duck Player
+    /// tab `userEditableUrl` is a `duck://player/…` URL, which is not fireproofable.
     private var fireproofableCurrentHost: String? {
-        guard let url = tabCollectionViewModel?.selectedTabViewModel?.tab.url,
+        guard let url = tabCollectionViewModel?.selectedTabViewModel?.tab.content.userEditableUrl,
               url.canFireproof, let host = url.host else { return nil }
         return host
     }

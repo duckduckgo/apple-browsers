@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Confirmer";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Nous nous efforcerons de sélectionner les options de cookies les plus respectueuses de la vie privée et de les désactiver pour vous. Si aucune option de désactivation n'est proposée, nous vous épargnerons un clic et accepterons ces cookies à votre place.";
+"cookie-popup-protection.opt-in.disabled.body" = "Nous nous efforcerons de rejeter le plus grand nombre de cookies possible. Si aucune option de rejet n’est proposée, nous vous épargnerons un clic et accepterons ces cookies à votre place.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Gérer ou accepter les cookies à ma place";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Rejeter quand c'est possible ou accepter pour moi";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Je les gérerai moi-même";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Nous pouvons vous épargner un clic et accepter ces cookies à votre place.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Accepter les cookies sans option de désactivation pour moi";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Accepter les cookies qui ne peuvent pas être refusés";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Je les gérerai moi-même";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Je les accepterai moi-même";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Vous en avez assez des fenêtres contextuelles de cookies qui ne vous permettent pas de refuser leur utilisation ?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Protection contre les fenêtres contextuelles des cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo essaiera de sélectionner les paramètres de confidentialité les plus élevés et de masquer ces fenêtres contextuelles pour vous.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo peut gérer automatiquement les préférences en matière de cookies pour maximiser la confidentialité, minimiser les cookies et fermer ces fenêtres contextuelles.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Nous nous efforcerons de ne sélectionner que les options de cookies les plus respectueuses de la vie privée pour vous, puis de fermer ces fenêtres contextuelles.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Gérer automatiquement les fenêtres contextuelles (cookies)";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Laissez aussi DuckDuckGo vous épargner un clic en acceptant les cookies en votre nom pour fermer les fenêtres contextuelles qui ne vous permettent pas de refuser leur utilisation.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Fenêtres contextuelles sans option de refus";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Gérer les fenêtres contextuelles (cookies)";
@@ -5422,3 +5434,6 @@
 
 /* Do not translate - stringsdict entry */
 "aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Posez des questions sur la page";

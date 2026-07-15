@@ -34,7 +34,7 @@ extension UIViewController {
         return []
     }
 
-    public func presentShareSheet(withItems activityItems: [Any], fromView sourceView: UIView, atPoint point: Point? = nil, overrideInterfaceStyle: UIUserInterfaceStyle? = nil, widthObserver: AppWidthObserver = .shared, additionalExcludedActivityTypes: [UIActivity.ActivityType] = [], completion: UIActivityViewController.CompletionWithItemsHandler? = nil) {
+    public func presentShareSheet(withItems activityItems: [Any], fromView sourceView: UIView, atPoint point: CGPoint? = nil, overrideInterfaceStyle: UIUserInterfaceStyle? = nil, widthObserver: AppWidthObserver = .shared, additionalExcludedActivityTypes: [UIActivity.ActivityType] = [], completion: UIActivityViewController.CompletionWithItemsHandler? = nil) {
         let activities = buildActivities()
         let shareController = UIActivityViewController(activityItems: activityItems, applicationActivities: activities)
         shareController.completionWithItemsHandler = completion
@@ -62,10 +62,10 @@ extension UIViewController {
         present(controller, animated: true, completion: nil)
     }
 
-    public func present(controller: UIViewController, fromView sourceView: UIView, atPoint point: Point? = nil) {
+    public func present(controller: UIViewController, fromView sourceView: UIView, atPoint point: CGPoint? = nil) {
         if let popover = controller.popoverPresentationController {
             popover.sourceView = sourceView
-            popover.sourceRect = point != nil ? CGRect(x: point!.x, y: point!.y, width: 0, height: 0) : sourceView.bounds
+            popover.sourceRect = point.map { CGRect(origin: $0, size: .zero) } ?? sourceView.bounds
         }
         present(controller, animated: true, completion: nil)
     }

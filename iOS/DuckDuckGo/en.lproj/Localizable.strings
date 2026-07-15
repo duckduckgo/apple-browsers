@@ -253,6 +253,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "You can only attach %d images at a time.";
 
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Ask About Page";
+
 /* Top-level attachment menu option to add a file to an AI chat message */
 "aichat.attachment.option.attach.file" = "Add File";
 
@@ -1400,10 +1403,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Confirm";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "We'll aim to select the most private cookie options available and close these for you. If they don't have opt-outs, we'll save you a click and accept these cookies for you.";
+"cookie-popup-protection.opt-in.disabled.body" = "We'll aim to reject as many cookies as possible. If there's no reject option, we'll save you a click and accept these cookies for you.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Manage or accept cookies for me";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Reject when possible or accept for me";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "I'll keep handling them myself";
@@ -1415,10 +1418,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "We can save you a click and accept these cookies for you.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Accept no-opt-out cookies for me";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Accept cookies that can't be rejected";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "I'll keep handling them myself";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "I'll keep accepting them myself";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Tired of cookie pop-ups that don't let you opt out?";

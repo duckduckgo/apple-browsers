@@ -25,6 +25,7 @@ import History
 import HistoryView
 import Persistence
 import PixelKit
+import PrivacyConfig
 
 struct FireDialogViewSettings: StoringKeys {
     let lastSelectedClearingOption = StorageKey<FireDialogViewModel.ClearingOption>(.fireDialogSelectedClearingOption)
@@ -147,6 +148,7 @@ final class FireDialogViewModel: ObservableObject {
          aiChatHistoryCleaner: AIChatHistoryCleaning,
          fireproofDomains: FireproofDomains,
          faviconManagement: FaviconManagement,
+         featureFlagger: FeatureFlagger,
          clearingOption: ClearingOption? = nil,
          includeTabsAndWindows: Bool? = nil,
          includeHistory: Bool? = nil,
@@ -156,14 +158,19 @@ final class FireDialogViewModel: ObservableObject {
          settings: (any KeyedStoring<FireDialogViewSettings>)? = nil,
          scopeCookieDomains: Set<String>? = nil,
          scopeVisits: [Visit]? = nil,
-         tld: TLD) {
+         tld: TLD,
+         windowControllersManager: WindowControllersManagerProtocol,
+         dataClearingPreferences: DataClearingPreferences) {
 
         self.fireViewModel = fireViewModel
         self.tabCollectionViewModel = tabCollectionViewModel
         self.fireproofDomains = fireproofDomains
         self.faviconManagement = faviconManagement
+        self.featureFlagger = featureFlagger
         self.historyCoordinating = historyCoordinating
         self.aiChatHistoryCleaner = aiChatHistoryCleaner
+        self.windowControllersManager = windowControllersManager
+        self.dataClearingPreferences = dataClearingPreferences
 
         self.tld = tld
         self.mode = mode
@@ -179,8 +186,17 @@ final class FireDialogViewModel: ObservableObject {
         self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? self.settings.lastIncludeCookiesAndSiteDataState ?? true
         self.includeChatHistorySetting = includeChatHistory ?? self.settings.lastIncludeChatHistoryState ?? false
 
+        updateLastSelectedClearingOptionIfNeeded()
+
         // Initialize selectable/fireproofed lists so counts are available immediately
         updateItems(for: self.clearingOption)
+    }
+
+    private func updateLastSelectedClearingOptionIfNeeded() {
+        guard featureFlagger.isFeatureOn(.fireDialogSimplified), clearingOption == .currentWindow else {
+            return
+        }
+        self.clearingOption = .allData
     }
 
     private(set) var shouldShowPinnedTabsInfo: Bool = false
@@ -196,8 +212,11 @@ final class FireDialogViewModel: ObservableObject {
     private(set) weak var tabCollectionViewModel: TabCollectionViewModel?
     private let fireproofDomains: FireproofDomains
     private let faviconManagement: FaviconManagement
+    private let featureFlagger: FeatureFlagger
     private let historyCoordinating: HistoryCoordinating
     private let aiChatHistoryCleaner: AIChatHistoryCleaning
+    private let windowControllersManager: WindowControllersManagerProtocol
+    private let dataClearingPreferences: DataClearingPreferences
     let tld: TLD
     let mode: Mode
     private let scopeVisits: [Visit]?
@@ -406,6 +425,73 @@ final class FireDialogViewModel: ObservableObject {
             }
             return selectedDomain
         })
+    }
+
+    // MARK: - More Options menu
+
+    /// Opens a new Fire window and dismisses the dialog.
+    func openNewFireWindow() {
+        dismissDialog()
+        windowControllersManager.openNewWindow(burnerMode: BurnerMode(isBurner: true))
+    }
+
+    /// Presents the Manage Fireproof Sites dialog stacked above the Fire dialog, then refreshes the scope.
+    func showManageFireproofSites() {
+        Task { @MainActor in
+            await dataClearingPreferences.presentManageFireproofSitesDialog()
+            // Refresh selectable/fireproofed lists in case fireproofing changed.
+            updateItems(for: clearingOption)
+        }
+    }
+
+    /// Dismisses the dialog and opens the per-site history/deletion view.
+    func deleteIndividualSites() {
+        dismissDialog()
+        windowControllersManager.lastKeyMainWindowController?
+            .mainViewController
+            .browserTabViewController
+            .openNewTab(with: .history(pane: .allSites))
+    }
+
+    /// Dismisses the dialog and opens Settings → Data Clearing.
+    func openDataDeletionSettings() {
+        dismissDialog()
+        windowControllersManager.showTab(with: .settings(pane: .dataClearing))
+    }
+
+    private func dismissDialog() {
+        guard let window = windowControllersManager.lastKeyMainWindowController?.window else { return }
+        window.endSheet(window.attachedSheet ?? window)
+    }
+
+    /// Host of the currently selected tab's user-editable URL, or `nil` when it can't be fireproofed.
+    ///
+    /// Uses `userEditableUrl` (like the address bar's more-options menu) rather than the resolved
+    /// tab URL so Duck Player — and other non-web tabs — are correctly excluded: on a Duck Player
+    /// tab `userEditableUrl` is a `duck://player/…` URL, which is not fireproofable.
+    private var fireproofableCurrentHost: String? {
+        guard let url = tabCollectionViewModel?.selectedTabViewModel?.tab.content.userEditableUrl,
+              url.canFireproof, let host = url.host else { return nil }
+        return host
+    }
+
+    /// Whether the "Fireproof This Site" menu item should be enabled for the current site.
+    var canFireproofCurrentSite: Bool {
+        fireproofableCurrentHost != nil
+    }
+
+    /// Whether the currently selected site is already fireproofed.
+    var isCurrentSiteFireproof: Bool {
+        guard let host = fireproofableCurrentHost else { return false }
+        return fireproofDomains.isFireproof(fireproofDomain: host)
+    }
+
+    /// Toggles fireproofing for the currently selected site and refreshes the scope.
+    func toggleCurrentSiteFireproofing() {
+        guard let host = fireproofableCurrentHost else { return }
+        _ = fireproofDomains.toggle(domain: host)
+        // Refresh selectable/fireproofed lists and counts to reflect the change
+        updateItems(for: clearingOption)
     }
 
 }

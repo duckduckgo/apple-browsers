@@ -225,11 +225,37 @@ final class UTIRenderStateTests: XCTestCase {
     func test_omnibarNewAIChat_submitsAIChatOnKeyboardReturn() {
         sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .top)
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertTrue(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
+    }
+
+    func test_contextualChat_submitsAIChatOnKeyboardReturn() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            contextualStartsPreSubmit: true
+        )
+
+        XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
+    }
+
+    func test_contextualChat_keepsSubmittingAIChatOnKeyboardReturnAfterSubmit() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            contextualStartsPreSubmit: true
+        )
+
+        _ = sut.prepareExternalPromptSubmission()
+
+        XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
     }
 
     func test_aiTabNewChat_usesNormalKeyboardReturn() {
         sut.showExpanded(inputMode: .aiChat)
         XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
     }
 
     func test_omnibarSearch_doesNotUseFloatingReturnKeyOrKeyboardReturnSubmit() {
@@ -239,6 +265,7 @@ final class UTIRenderStateTests: XCTestCase {
 
         XCTAssertFalse(state.isFloatingReturnKeyVisible)
         XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
     }
 
     func test_deactivateToOmnibar_clearsNewPromptInputBehavior() {
@@ -246,11 +273,13 @@ final class UTIRenderStateTests: XCTestCase {
         sut.setText("how")
         XCTAssertTrue(sut.computeRenderState().isFloatingReturnKeyVisible)
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertTrue(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
 
         sut.deactivateToOmnibar()
 
         XCTAssertFalse(sut.computeRenderState().isFloatingReturnKeyVisible)
         XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
+        XCTAssertFalse(sut.viewController.handler.usesReturnKeySubmitButtonStyle)
     }
 
     // MARK: - Content Input Mode
@@ -293,6 +322,12 @@ final class UTIRenderStateTests: XCTestCase {
         let state = sut.computeRenderState()
         XCTAssertFalse(state.cardLayout.showsToggle)
         XCTAssertTrue(state.cardLayout.showsToolbar)
+        XCTAssertTrue(state.isExpanded)
+        XCTAssertTrue(state.isInputVisible)
+        XCTAssertFalse(state.isContentVisible)
+        XCTAssertFalse(state.isAITab)
+        XCTAssertTrue(state.isInlineDismissHidden)
+        XCTAssertFalse(sut.isAITabState)
     }
 
     func test_omnibarHost_aiTabExpanded_aiChat_toggleDisabled_stillShowsToolbar() {

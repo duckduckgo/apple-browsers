@@ -212,7 +212,7 @@ final class AIChatContextualWebViewController: UIViewController {
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
         Logger.aiChat.debug("[ContextualWebVC] submitPrompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         if pageContext != nil {
-            utiHost?.markPromptSubmitted()
+            utiHost?.notifyPromptDelivered()
         }
         if isPageReady && isContentHandlerReady {
             Logger.aiChat.debug("[ContextualWebVC] Submitting prompt immediately")

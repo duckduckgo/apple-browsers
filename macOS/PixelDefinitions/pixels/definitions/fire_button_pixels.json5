@@ -21,6 +21,13 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "fire_started_on-startup_mac": {
+        "description": "Fired alongside fire_started_mac when data is automatically cleared on startup because the previous session did not terminate cleanly (Auto-Clear).",
+        "owners": ["ayoy"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "fire_burn_current-tab_mac": {
         "description": "Fired when the user burns the current tab. Reports the selected tab and data-clearing options.",
         "owners": ["ayoy"],

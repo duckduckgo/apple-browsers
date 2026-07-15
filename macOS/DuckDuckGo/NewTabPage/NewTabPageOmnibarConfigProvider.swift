@@ -103,6 +103,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
     @Published private var hasExcessChats = false
     private var aiChatsProviderCancellable: AnyCancellable?
+    private var customizeResponsesChangeObserver: NSObjectProtocol?
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
@@ -120,6 +121,22 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.firePixel = firePixel
 
         Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
+
+        // Address-bar Customize Responses changes (modal or toggle) post this; re-push config so open
+        // NTPs update without waiting for their own toggle. The NTP's own paths notify directly.
+        customizeResponsesChangeObserver = NotificationCenter.default.addObserver(
+            forName: .aiChatCustomizeResponsesDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.notifyCustomizeResponsesChanged()
+        }
+    }
+
+    deinit {
+        if let customizeResponsesChangeObserver {
+            NotificationCenter.default.removeObserver(customizeResponsesChangeObserver)
+        }
     }
 
     @MainActor

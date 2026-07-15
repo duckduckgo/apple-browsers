@@ -141,10 +141,9 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "fire_dialog_change_settings_mac": {
-        "description": "Fired when the user changes any of the Fire dialog data-clearing toggles (close tabs/windows, clear history, clear site data, or clear AI chats).",
+        "description": "Sent once per install, the first time the user changes any of the Fire dialog data-clearing toggles (close tabs/windows, clear history, clear site data, or clear AI chats).",
         "owners": ["ayoy"],
         "triggers": ["user_submitted"],
-        "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "fire_dialog_toggle_close_tabs_mac": {

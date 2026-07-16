@@ -60,6 +60,7 @@ let package = Package(
                 "DataBrokerProtection-iOS",
                 "DataBrokerProtectionCore",
                 "BrowserServicesKit",
+                .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "DataBrokerProtectionCoreTestsUtils", package: "DataBrokerProtectionCore"),
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),

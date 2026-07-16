@@ -28,10 +28,10 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         static let chipHeight: CGFloat = 44
         static let imageChipWidth: CGFloat = 82
         static let fileChipWidth: CGFloat = 196
-        static let chipCornerRadius: CGFloat = 18
-        static let thumbnailSize: CGFloat = 32
+        static let chipCornerRadius: CGFloat = 15
+        static let thumbnailSize: CGFloat = 28
         static let thumbnailCornerRadius: CGFloat = 6
-        static let documentIconSize: CGFloat = 32
+        static let documentIconSize: CGFloat = 28
         static let removeButtonSize: CGFloat = 32
         static let horizontalPadding: CGFloat = 10
         static let iconTextSpacing: CGFloat = 8
@@ -82,7 +82,7 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     private lazy var removeButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.tintColor = UIColor(designSystemColor: .textSecondary)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(removeTapped), for: .touchUpInside)
         return button
@@ -201,7 +201,7 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         chipView.backgroundColor = chipBackgroundColor
         chipView.layer.borderColor = borderColor.cgColor
         fileNameLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        removeButton.tintColor = UIColor(designSystemColor: .textPrimary)
+        removeButton.tintColor = UIColor(designSystemColor: .textSecondary)
     }
 
     @objc func removeTapped() {

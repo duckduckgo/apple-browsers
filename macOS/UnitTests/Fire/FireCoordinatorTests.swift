@@ -58,6 +58,7 @@ struct FireCoordinatorTests {
                                fireproofDomains: MockFireproofDomains(),
                                faviconManagement: faviconManagement,
                                windowControllersManager: windowControllersManager,
+                               dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
                                pixelFiring: pixelFiring,
                                wideEventManaging: WideEventMock(),
                                historyProvider: MockHistoryViewDataProvider(),

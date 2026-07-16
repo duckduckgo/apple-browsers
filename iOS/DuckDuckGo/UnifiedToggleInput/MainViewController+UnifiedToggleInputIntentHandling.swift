@@ -77,7 +77,8 @@ extension MainViewController {
         guard FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
             isFloatingUIEnabled: isFloatingUIEnabled,
             addressBarPosition: appSettings.currentAddressBarPosition,
-            isUnifiedToggleInputVisible: false
+            isUnifiedToggleInputVisible: false,
+            isMinimalChromeLayout: isInMinimalChromeLayout
         ),
               currentTab?.isAITab != true else {
             return
@@ -190,6 +191,7 @@ private extension MainViewController {
     }
 
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {
+        warmSearchTokenIfEligible()
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
         coordinator.contentViewController.refreshSuggestionsCaches()

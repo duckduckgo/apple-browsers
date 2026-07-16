@@ -151,6 +151,7 @@ private extension ScopedFireConfirmationView {
 #if DEBUG
 private struct PreviewDataClearingCapability: DataClearingCapable {
     var isFireButtonRefinementsEnabled: Bool { false }
+    var isSingleTabDeleteAllEnabled: Bool { false }
 }
 
 private final class PreviewDownloadManager: DownloadManaging {

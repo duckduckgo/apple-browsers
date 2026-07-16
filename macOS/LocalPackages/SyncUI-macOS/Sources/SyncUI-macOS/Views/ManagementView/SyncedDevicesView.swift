@@ -69,22 +69,8 @@ struct SyncedDeviceIcon: View {
     }
 
     var body: some View {
-        IconOnBackground(image: image)
-    }
-}
-
-struct IconOnBackground: View {
-    var image: NSImage
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color(.blackWhite100).opacity(0.06))
-                .frame(width: 24, height: 24)
-
-            Image(nsImage: image)
-                .aspectRatio(contentMode: .fit)
-        }
+        Image(nsImage: image)
+            .aspectRatio(contentMode: .fit)
     }
 }
 

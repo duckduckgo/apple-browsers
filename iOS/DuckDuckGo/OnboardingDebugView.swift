@@ -29,12 +29,10 @@ struct OnboardingDebugView: View {
     @State private var isShowingResetOnboardingAlert = false
     @State private var isShowingSubscriptionPromoCooldownAlert = false
 
-    private let newOnboardingIntroStartAction: (OnboardingDebugFlow) -> Void
-    @State private var selectedFlow: OnboardingDebugFlow
+    private let newOnboardingIntroStartAction: () -> Void
 
-    init(initialFlow: OnboardingDebugFlow, onNewOnboardingIntroStartAction: @escaping @MainActor (OnboardingDebugFlow) -> Void) {
+    init(onNewOnboardingIntroStartAction: @escaping @MainActor () -> Void) {
         newOnboardingIntroStartAction = onNewOnboardingIntroStartAction
-        _selectedFlow = State(initialValue: initialFlow)
     }
 
     var body: some View {
@@ -122,24 +120,8 @@ struct OnboardingDebugView: View {
             }
 
             Section {
-                Picker(
-                    selection: $selectedFlow,
-                    content: {
-                        ForEach(OnboardingDebugFlow.allCases) { flow in
-                            Text(verbatim: flow.description).tag(flow)
-                        }
-                    },
-                    label: {
-                        Text(verbatim: "Flow:")
-                    }
-                )
-            } header: {
-                Text(verbatim: "Onboarding Flow")
-            }
-
-            Section {
-                Button(action: { newOnboardingIntroStartAction(selectedFlow) }, label: {
-                    Text(verbatim: "Preview Onboarding \(selectedFlow.description) Intro - \(viewModel.onboardingUserType.description)")
+                Button(action: { newOnboardingIntroStartAction() }, label: {
+                    Text(verbatim: "Preview Onboarding Intro - \(viewModel.onboardingUserType.description)")
                 })
             }
         }
@@ -268,26 +250,6 @@ extension OnboardingUserType: Identifiable {
     }
 }
 
-enum OnboardingDebugFlow: String, CaseIterable, CustomStringConvertible, Identifiable {
-    case rebranding
-    case legacy
-
-    var id: OnboardingDebugFlow { self }
-
-    var description: String {
-        switch self {
-        case .rebranding:
-            return "Rebranding"
-        case .legacy:
-            return "Original (Legacy)"
-        }
-    }
-
-    var isRebranding: Bool {
-        self == .rebranding
-    }
-}
-
 #Preview {
-    OnboardingDebugView(initialFlow: .legacy, onNewOnboardingIntroStartAction: { _ in })
+    OnboardingDebugView(onNewOnboardingIntroStartAction: { })
 }

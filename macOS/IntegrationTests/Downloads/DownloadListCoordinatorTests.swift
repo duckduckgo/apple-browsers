@@ -125,6 +125,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
                                                   fireproofDomains: MockFireproofDomains(),
                                                   faviconManagement: FaviconManagerMock(),
                                                   windowControllersManager: WindowControllersManagerMock(),
+                                                  dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
                                                   pixelFiring: nil,
                                                   historyProvider: MockHistoryViewDataProvider())
             let mainViewController = MainViewController(

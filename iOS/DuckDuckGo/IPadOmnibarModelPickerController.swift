@@ -102,7 +102,7 @@ final class IPadOmnibarModelPickerController {
             let isNewSelection = modelId != store.persistedModelId
             store.updateSelectedModel(modelId, isNewChatContext: true)
             if isNewSelection {
-                UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId)
+                UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId, surface: .addressBar)
             }
         } else if routeGatedModelSelection(model) {
             // Remember the gated model so a post-purchase `/models` refresh can apply it.
@@ -138,7 +138,7 @@ final class IPadOmnibarModelPickerController {
         let isNewSelection = modelId != store.persistedModelId
         store.updateSelectedModel(modelId, isNewChatContext: true)
         if isNewSelection {
-            UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId)
+            UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId, surface: .addressBar)
         }
     }
 }

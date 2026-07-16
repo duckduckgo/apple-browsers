@@ -486,8 +486,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         fireButton.setAccessibilityTitle(UserText.clearBrowsingHistoryTooltip)
 
         fireButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
-        fireButton.animationNames = MouseOverAnimationButton.AnimationNames(aqua: style.lightAnimation,
-                                                                            dark: style.darkAnimation)
+        fireButton.animationNames = MouseOverAnimationButton.AnimationNames(aqua: style.animationName,
+                                                                            dark: style.animationName)
         fireButton.sendAction(on: .leftMouseDown)
         fireButtonMouseOverCancellable = fireButton.publisher(for: \.isMouseOver)
             .first(where: { $0 }) // only interested when mouse is over

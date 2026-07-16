@@ -63,6 +63,9 @@
                     "error": "errorParameters"
                 }
             }
+        },
+        "context": {
+            "name": ["funnel_appsettings_ios", "funnel_systemsettings_multiple", "funnel_others_multiple"]
         }
     }
 }

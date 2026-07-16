@@ -31,7 +31,7 @@ public class MockOAuthClient: OAuthClient {
         if let currentTokenContainerError {
             throw currentTokenContainerError
         }
-        internalCurrentTokenContainer
+        return internalCurrentTokenContainer
     }
 
     public func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws {

@@ -1105,6 +1105,9 @@ class MainViewController: UIViewController {
 
 
     var keyboardShowing = false
+    // Set at keyboardWillChangeFrame time (before keyboardDidShow) so the web-keyboard scroll guard
+    // engages during the show animation, not just after it.
+    private var isKeyboardOverlappingContent = false
     private var didSendGestureDismissPixel: Bool = false
     var latestKeyboardFrame: CGRect = .zero
 
@@ -1205,7 +1208,7 @@ class MainViewController: UIViewController {
 
     /// Bottom bar hidden behind web keyboard.
     var isBottomAddressBarHiddenForWebKeyboard: Bool {
-        isStandardBottomOmnibar && keyboardShowing && !isKeyboardOwnedByOmnibar
+        isStandardBottomOmnibar && (keyboardShowing || isKeyboardOverlappingContent) && !isKeyboardOwnedByOmnibar
     }
 
     /// Minimal chrome bar: stick to bottom behind keyboard. Lift above keyboard only when omnibar has
@@ -1574,6 +1577,7 @@ class MainViewController: UIViewController {
         let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame.insetBy(dx: 0, dy: -additionalSafeAreaInsets.bottom)
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
         let keyboardVisible = intersection.height > 0
+        isKeyboardOverlappingContent = keyboardVisible
         keyboardHeight = keyboardFrameInView.height
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
 

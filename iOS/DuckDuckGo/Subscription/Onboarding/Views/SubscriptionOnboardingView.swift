@@ -24,19 +24,15 @@ import DuckUI
 
 private enum Metrics {
     static let horizontalPadding: CGFloat = 24
-    static let topBarHorizontalPadding: CGFloat = 16
     static let navigationButtonSize: CGFloat = 44
-    static let navigationGlyphSize: CGFloat = navigationButtonSize - CloseButtonStyle.Constant.padding * 2
-    static let navigationButtonBottomSpacing: CGFloat = 10
-    /// The button is centered, so this spacing sits above and below it
-    static let topBarHeight: CGFloat = navigationButtonSize + navigationButtonBottomSpacing * 2
+    static let navigationGlyphSize: CGFloat = 24
     static let contentVerticalPadding: CGFloat = 20
     static let sectionSpacing: CGFloat = 24
     static let footerSpacing: CGFloat = 8
 }
 
-/// The top bar's leading button: either a back button or a close button. Both render as a circular
-/// shaded button and carry their own glyph and VoiceOver label.
+/// The navigation bar's leading button: either a back button or a close button. Both render as a
+/// circular filled button and carry their own glyph and VoiceOver label.
 enum SubscriptionOnboardingNavigationButton {
     case back(() -> Void)
     case close(() -> Void)
@@ -85,8 +81,8 @@ enum SubscriptionOnboardingFooter {
     case double(primary: SubscriptionOnboardingFooterButton, secondary: SubscriptionOnboardingFooterButton)
 }
 
-/// A generic, high-level page for the post-subscription onboarding flow: a top bar (an optional leading
-/// back/close button and an optional centered title), an optional ``SubscriptionOnboardingHeaderView``,
+/// A generic, high-level page for the post-subscription onboarding flow: a native navigation bar (an
+/// optional leading back/close button and an optional centered title), an optional ``SubscriptionOnboardingHeaderView``,
 /// a caller-supplied body, and an optional bottom-pinned footer of one or two buttons. The flow presents
 /// it in a `.fullScreenCover`; each concrete section (VPN, Duck.ai, …) supplies its own title, header,
 /// body and footer.
@@ -115,9 +111,8 @@ struct SubscriptionOnboardingView<Content: View>: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            topBar
-            ScrollView(showsIndicators: false) {
+        NavigationView {
+            let page = ScrollView(showsIndicators: false) {
                 VStack(spacing: Metrics.sectionSpacing) {
                     header
                     content
@@ -125,38 +120,53 @@ struct SubscriptionOnboardingView<Content: View>: View {
                 .padding(.vertical, Metrics.contentVerticalPadding)
                 .padding(.horizontal, Metrics.horizontalPadding)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(pageBackgroundColor.ignoresSafeArea())
+            .safeAreaInset(edge: .bottom) { footerView }
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarBackground(pageBackgroundColor)
+
+            // On iOS 26 the toolbar wraps its items in a shared Liquid Glass background (with a drop
+            // shadow). Hide it so the leading button shows only its own circular fill.
+            if #available(iOS 26.0, *) {
+                page.toolbar { toolbarContent.sharedBackgroundVisibility(.hidden) }
+            } else {
+                page.toolbar { toolbarContent }
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(pageBackgroundColor.ignoresSafeArea())
-        .safeAreaInset(edge: .bottom) { footerView }
+        .navigationViewStyle(.stack)
     }
 }
 
-// MARK: - Top bar
+// MARK: - Navigation bar
 
 private extension SubscriptionOnboardingView {
-    var topBar: some View {
-        ZStack {
+    @ToolbarContentBuilder
+    var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarLeading) {
+            if let navigationButton {
+                Button(action: navigationButton.action) {
+                    Image(uiImage: navigationButton.glyph)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: Metrics.navigationGlyphSize, height: Metrics.navigationGlyphSize)
+                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                        .frame(width: Metrics.navigationButtonSize, height: Metrics.navigationButtonSize)
+                        .background(Color(designSystemColor: .controlsFillPrimary))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(navigationButton.accessibilityLabel)
+            }
+        }
+        ToolbarItem(placement: .principal) {
             if let title {
                 Text(title)
                     .daxSubheadSemibold()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
             }
-            HStack {
-                if let navigationButton {
-                    Button(action: navigationButton.action) {
-                        Image(uiImage: navigationButton.glyph)
-                            .frame(width: Metrics.navigationGlyphSize, height: Metrics.navigationGlyphSize)
-                    }
-                    .buttonStyle(CloseButtonStyle())
-                    .padding(-CloseButtonStyle.Constant.padding)
-                    .accessibilityLabel(navigationButton.accessibilityLabel)
-                }
-                Spacer()
-            }
         }
-        .frame(height: Metrics.topBarHeight)
-        .padding(.horizontal, Metrics.topBarHorizontalPadding)
     }
 }
 
@@ -200,6 +210,23 @@ private extension SubscriptionOnboardingView {
             .buttonStyle(SecondaryFillButtonStyle())
             .background(pageBackgroundColor)
             .clipShape(Capsule())
+    }
+}
+
+// MARK: - Navigation bar background
+
+private extension View {
+    /// Paints the navigation bar with the page color so it matches the flat `surfaceTertiary` page.
+    /// `toolbarBackground` is iOS 16+, so on iOS 15 the bar keeps the system default background.
+    @ViewBuilder
+    func navigationBarBackground(_ color: Color) -> some View {
+        if #available(iOS 16.0, *) {
+            self
+                .toolbarBackground(color, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+        } else {
+            self
+        }
     }
 }
 

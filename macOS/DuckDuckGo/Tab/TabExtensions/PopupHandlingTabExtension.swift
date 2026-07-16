@@ -107,16 +107,10 @@ final class PopupHandlingTabExtension {
         interactionEventsPublisher
             .filter { event in
                 switch event {
-                case .mouseDown, .middleMouseDown:
-                    // Always capture mouse-button events so that modifier flags (e.g. ⌥ for
-                    // "save link as") are reliably available in decidePolicyForNavigationAction
-                    // even when WebKit fires the policy callback after the event is processed.
-                    if featureFlagger.isFeatureOn(.popupBlocking) {
-                        Logger.navigation.debug("PopupHandlingTabExtension.interactionEventsPublisher.filter: event: \(String(describing: event))")
+                case .mouseDown, .keyDown, .middleMouseDown:
+                    guard featureFlagger.isFeatureOn(.popupBlocking) else {
+                        return false
                     }
-                    return true
-                case .keyDown:
-                    guard featureFlagger.isFeatureOn(.popupBlocking) else { return false }
                     Logger.navigation.debug("PopupHandlingTabExtension.interactionEventsPublisher.filter: event: \(String(describing: event))")
                     return true
                 case .scrollWheel: return false
@@ -457,21 +451,19 @@ extension PopupHandlingTabExtension: NavigationResponder {
         }()
 
         // Last interaction event that triggered the link activation (regular click, ⌘-click, middle-click, key press, etc.)
-        // Prefer the stored mouseDown event (captured immediately at click time) so modifier flags
-        // are reliable even when WebKit fires this callback after the event has been processed and
-        // NSApp.currentEvent has moved on.  Fall back to NSApp.modifierFlags (the TYPE property,
-        // which queries the Quartz/CGEvent system state) for keyboard navigation and accessibility
-        // clicks.  NSApp.currentEvent is not reliable here because XCUITest accessibility clicks
-        // bypass the NSApp event queue, so currentEvent never reflects synthesized modifier keys.
-        let modifierFlags = lastUserInteractionEvent?.modifierFlags ?? NSEvent.modifierFlags
-        Logger.navigation.debug("PopupHandlingTabExtension.decidePolicyFor: \(String(describing: navigationAction)) lastUserInteractionEvent: \(self.lastUserInteractionEvent ??? "<nil>") currentEvent: \(NSApp.currentEvent ??? "<nil>")")
+        let userInteractionEvent = if featureFlagger.isFeatureOn(.popupBlocking) {
+            lastUserInteractionEvent
+        } else {
+            NSApp.currentEvent
+        }
+        Logger.navigation.debug("PopupHandlingTabExtension.decidePolicyFor: \(String(describing: navigationAction)) userInteractionEvent: \(userInteractionEvent ??? "<nil>") currentEvent: \(NSApp.currentEvent ??? "<nil>")")
 
         // For pinned-tab cross-domain navigations canOpenLinkInCurrentTab is false.
         // shouldSelectNewTab:true ensures a plain left-click always selects the new tab — the user
         // clicked a link the pinned tab cannot open in place, so foreground is the right default.
         // Modifier-key semantics (⌘, ⌘⇧, ⌘⌥, ⌘⌥⇧) are preserved by LinkOpenBehavior as usual.
         let linkOpenBehavior = LinkOpenBehavior(button: navigationAction.navigationType.isMiddleButtonClick ? .middle : .left,
-                                                modifierFlags: modifierFlags,
+                                                modifierFlags: userInteractionEvent?.modifierFlags ?? [],
                                                 switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
                                                 canOpenLinkInCurrentTab: canOpenLinkInCurrentTab,
                                                 shouldSelectNewTab: !canOpenLinkInCurrentTab)
@@ -494,7 +486,7 @@ extension PopupHandlingTabExtension: NavigationResponder {
 
                 return linkOpenBehavior.newWindowPolicy(isBurner: isBurner).map(NewWindowPolicyDecision.allow)
             }
-            Logger.navigation.debug("PopupHandlingTabExtension.decidePolicy: \(linkOpenBehavior) for \(url) initiated by \(self.lastUserInteractionEvent ??? "<nil>")")
+            Logger.navigation.debug("PopupHandlingTabExtension.decidePolicy: \(linkOpenBehavior) for \(url) initiated by \(userInteractionEvent ??? "<nil>")")
 
             // Consume the user interaction event when actually opening a new window/tab (⌘-click or middle mouse button press…)
             lastUserInteractionEvent = nil

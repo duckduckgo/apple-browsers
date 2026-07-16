@@ -343,7 +343,8 @@ class PinnedTabsTests: UITestCase {
         let mainWindow = app.windows.firstMatch
         mainWindow.webViews[sourceTitle].links["Go to \(targetTitle)"].click()
 
-        // Even with switchToNewTab disabled, a pinned tab's cross-domain link must open in the foreground.
+        // Even with switchToNewTab disabled, a pinned tab's cross-domain link must open in the foreground,
+        // because it's initiated by user action.
         // Use a generous timeout: prior test failures can leave session-restore windows that slow
         // down accessibility-tree updates (but the assertion itself is unchanged — foreground required).
         XCTAssertTrue(

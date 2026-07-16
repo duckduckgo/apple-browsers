@@ -29,6 +29,9 @@ final class TabBarView: MouseOverView {
     override func hitTest(_ point: NSPoint) -> NSView? {
         guard let hit = super.hitTest(point) else { return nil }
 
+        // Only redirect the initial click; drag-and-drop destination resolution is also hitTest-based.
+        guard NSApp.currentEvent?.type == .leftMouseDown else { return hit }
+
         if hit is TabBarScrollView || hit is NSClipView || hit is TabBarCollectionView,
            let windowDraggingView {
             return windowDraggingView

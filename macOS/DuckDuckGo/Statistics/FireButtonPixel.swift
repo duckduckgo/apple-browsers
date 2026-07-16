@@ -42,33 +42,33 @@ enum FireButtonPixel: PixelKitEvent {
     var name: String {
         switch self {
         case .fireStarted:
-            return "fire_started_mac"
+            return "fire_started_macos"
         case .fireStartedInSession:
-            return "fire_started_in-session_mac"
+            return "fire_started_in-session_macos"
         case .fireStartedOnExit:
-            return "fire_started_on-exit_mac"
+            return "fire_started_on-exit_macos"
         case .fireStartedOnStartup:
-            return "fire_started_on-startup_mac"
+            return "fire_started_on-startup_macos"
         case .burn(let mode):
-            return "fire_burn_\(mode.rawValue)_mac"
+            return "fire_burn_\(mode.rawValue)_macos"
         case .fireDialogToggleMode:
-            return "fire_dialog_toggle_mode_mac"
+            return "fire_dialog_toggle_mode_macos"
         case .fireDialogChangeSettings:
-            return "fire_dialog_change_settings_mac_u"
+            return "fire_dialog_change_settings_macos_u"
         case .fireDialogToggleCloseTabs:
-            return "fire_dialog_toggle_close_tabs_mac"
+            return "fire_dialog_toggle_close_tabs_macos"
         case .fireDialogToggleClearHistory:
-            return "fire_dialog_toggle_clear_history_mac"
+            return "fire_dialog_toggle_clear_history_macos"
         case .fireDialogToggleClearSiteData:
-            return "fire_dialog_toggle_clear_site_data_mac"
+            return "fire_dialog_toggle_clear_site_data_macos"
         case .fireDialogToggleClearAIChats:
-            return "fire_dialog_toggle_clear_ai_chats_mac"
+            return "fire_dialog_toggle_clear_ai_chats_macos"
         case .fireDialogDeleteIndividualSitesClicked:
-            return "fire_dialog_delete_individual_sites_clicked_mac"
+            return "fire_dialog_delete_individual_sites_clicked_macos"
         case .fireDialogManageFireproofedSites:
-            return "fire_dialog_manage_fireproofed_sites_mac"
+            return "fire_dialog_manage_fireproofed_sites_macos"
         case .fireDialogCancel:
-            return "fire_dialog_cancel_mac"
+            return "fire_dialog_cancel_macos"
         }
     }
 

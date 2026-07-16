@@ -56,6 +56,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
         hasActiveChat: @escaping () -> Bool,
         isAutoAttachEnabled: @escaping () -> Bool,
+        isCurrentPageAttachable: @escaping () -> Bool = { true },
         isFireTab: Bool,
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
         voiceShortcutFeature: DuckAIVoiceShortcutFeatureProviding = DuckAIVoiceShortcutFeature(),
@@ -88,6 +89,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
         coordinator.onPageContextAttachRequested = { [weak chipViewModel] in
             chipViewModel?.tapToAttach()
         }
+        coordinator.isPageContextAttachable = isCurrentPageAttachable
         coordinator.hasPendingPageContextProvider = { [weak chipViewModel] in
             chipViewModel?.pendingAttachedContextData != nil
         }

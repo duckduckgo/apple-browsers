@@ -366,6 +366,7 @@ private extension AIChatContextualSheetCoordinator {
             initialAttachmentDeliveryState: initialUTIAttachment.deliveryState,
             hasActiveChat: { [weak self] in self?.sessionState.hasActiveChat ?? false },
             isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
+            isCurrentPageAttachable: { [weak self] in self?.pageContextHandler.isCurrentPageAttachable() ?? true },
             isFireTab: isFireTab,
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             startsPreSubmit: startsPreSubmit

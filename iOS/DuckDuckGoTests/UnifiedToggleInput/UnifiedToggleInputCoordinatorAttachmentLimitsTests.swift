@@ -261,6 +261,16 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         }
     }
 
+    func testWhenPageContextNotAttachableThenAskAboutPageActionIsDisabled() {
+        let sut = makeCoordinator(host: .contextualChat)
+        sut.onPageContextAttachRequested = {}
+        sut.isPageContextAttachable = { false }
+        sut.updateImageButtonVisibility()
+
+        let actions = attachmentMenuActionsByTitle(for: sut)
+        XCTAssertTrue(actions[UserText.aiChatAttachmentOptionAskAboutPage]?.attributes.contains(.disabled) == true)
+    }
+
     func testWhenPageContextActionAvailableOutsideContextualChatThenAttachmentMenuDoesNotShowAskAboutPageAction() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"

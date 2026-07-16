@@ -607,6 +607,28 @@ struct FireDialogView: ModalView {
         }
     }
 
+    private var deleteButtonBackground: LinearGradient {
+        LinearGradient(
+            stops: [
+                .init(color: Color(singleUseColor: .fireButtonGradientStart), location: 0.116),
+                .init(color: Color(singleUseColor: .fireButtonGradientEnd), location: 1.0)
+            ],
+            startPoint: UnitPoint(x: 0, y: 0.37),
+            endPoint: UnitPoint(x: 1, y: 0.63)
+        )
+    }
+
+    private var deleteButtonPressedBackground: LinearGradient {
+        LinearGradient(
+            stops: [
+                .init(color: Color(singleUseColor: .fireButtonPressedGradientStart), location: 0.116),
+                .init(color: Color(singleUseColor: .fireButtonPressedGradientEnd), location: 1.0)
+            ],
+            startPoint: UnitPoint(x: 0, y: 0.37),
+            endPoint: UnitPoint(x: 1, y: 0.63)
+        )
+    }
+
     private var footerView: some View {
 
         VStack(alignment: .leading, spacing: 16) {
@@ -670,8 +692,8 @@ struct FireDialogView: ModalView {
                         enabled: isDeleteEnabled,
                         topPadding: 0,
                         bottomPadding: 0,
-                        backgroundColor: Color(designSystemColor: .destructivePrimary),
-                        backgroundPressedColor: Color(designSystemColor: .destructiveSecondary),
+                        background: deleteButtonBackground,
+                        pressedBackground: deleteButtonPressedBackground,
                         pillShape: true
                     )
                 )

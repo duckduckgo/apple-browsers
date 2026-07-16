@@ -47,11 +47,17 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             contextSubject.send(context)
         }
 
+        var isCurrentPageAttachableReturnValue = true
+
         func triggerContextCollection(trigger: PageContextExtractionTrigger) -> Bool {
             triggerContextCollectionCallCount += 1
             lastTriggerContextCollectionTrigger = trigger
             onTriggerContextCollection?()
             return triggerContextCollectionReturnValue
+        }
+
+        func isCurrentPageAttachable() -> Bool {
+            isCurrentPageAttachableReturnValue
         }
 
         func clear() {

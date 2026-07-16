@@ -170,7 +170,8 @@ final class AIChatContextualSheetCoordinator {
         self.sessionState = AIChatContextualChatSessionState(
             aiChatSettings: aiChatSettings,
             pixelHandler: pixelHandler,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            isCurrentPageAttachable: { [weak pageContextHandler] in pageContextHandler?.isCurrentPageAttachable() ?? true }
         )
         self.sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         self.sessionEffectCancellable = self.sessionState.effects

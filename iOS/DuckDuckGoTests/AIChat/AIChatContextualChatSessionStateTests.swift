@@ -1346,6 +1346,29 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
+    func testQuickActionsEmptyWhenPageNotAttachable() {
+        // Given a non-attachable page (blocklisted), the "Ask about page" affordance is suppressed.
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            isCurrentPageAttachable: { false }
+        )
+
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
+    }
+
+    func testQuickActionsShowAskAboutPageWhenPageAttachable() {
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            isCurrentPageAttachable: { true }
+        )
+
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+    }
+
     // MARK: - Suggested Prompts Coexistence Tests
 
     func testQuickActionsIsAskAboutPageWhenSuggestedPromptsOnAndPlaceholder() {

@@ -1815,7 +1815,7 @@ extension Pixel {
         case aiChatContextualPageContextCollectionEmpty
         case aiChatContextualPageContextCollectionUnavailable
 
-        // Page-context extraction telemetry (shared decision core; names mirror macOS `aichat_page_context_extraction_*`).
+        // Page-context extraction measurement.
         case aiChatPageContextExtractionSuccess
         case aiChatPageContextExtractionFailed
         case aiChatPageContextExtractionPrevented

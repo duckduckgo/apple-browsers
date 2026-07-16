@@ -21,9 +21,7 @@ import AIChat
 import Core
 import Foundation
 
-/// Maps a platform-agnostic `PageContextExtractionOutcome` to the iOS extraction-telemetry pixels.
-/// Injected into `AIChatPageContextHandler` so the mapping is unit-testable and the firing
-/// side-effect can be stubbed in tests. Mirrors the macOS `PageContextExtractionPixelHandler`.
+/// Maps a `PageContextExtractionOutcome` to the iOS extraction-measurement pixels.
 protocol PageContextExtractionPixelFiring {
     func fire(_ outcome: PageContextExtractionOutcome,
               trigger: PageContextExtractionTrigger,
@@ -34,7 +32,6 @@ final class PageContextExtractionPixelHandler: PageContextExtractionPixelFiring 
 
     private let firePixel: (Pixel.Event, [String: String]) -> Void
 
-    /// - Parameter firePixel: fires the mapped pixel + params. Defaults to a daily+count `DailyPixel` fire.
     init(firePixel: @escaping (Pixel.Event, [String: String]) -> Void = { DailyPixel.fireDailyAndCount(pixel: $0, withAdditionalParameters: $1) }) {
         self.firePixel = firePixel
     }
@@ -44,7 +41,7 @@ final class PageContextExtractionPixelHandler: PageContextExtractionPixelFiring 
               latency: PageContextExtractionLatencyBucket?) {
         switch outcome {
         case .success:
-            // Mirrors macOS: the success pixel carries no discriminating params.
+            // success carries no discriminating params
             firePixel(.aiChatPageContextExtractionSuccess, [:])
         case .failure(let reason):
             var params = ["reason": reason.rawValue, "trigger": trigger.rawValue]

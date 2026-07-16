@@ -104,7 +104,7 @@ jobs:
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
-      ONLY_ACTIVE_ARCH: ${{ inputs.build-active-architecture-only && 'YES' || '' }}
+      EXCLUDED_ARCHS: ${{ inputs.build-active-architecture-only && 'x86_64' || '' }}
 
     steps:
     - name: Register SSH keys for private repos

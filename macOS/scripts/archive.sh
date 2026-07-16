@@ -262,7 +262,7 @@ archive_and_export() {
 		CURRENT_PROJECT_VERSION="${build_number}" \
 		RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo \
 		${extra_xcargs:+"${extra_xcargs}"} \
-		${ONLY_ACTIVE_ARCH:+"ONLY_ACTIVE_ARCH=${ONLY_ACTIVE_ARCH}"} \
+		${EXCLUDED_ARCHS:+"EXCLUDED_ARCHS=${EXCLUDED_ARCHS}"} \
 		2>&1 \
 		| ${log_formatter}
 

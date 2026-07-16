@@ -54,6 +54,10 @@ on:
         description: "Skip Mattermost notification"
         default: false
         type: boolean
+      build-active-architecture-only:
+        description: "Build only the active architecture"
+        default: false
+        type: boolean
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -100,6 +104,7 @@ jobs:
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
+      ONLY_ACTIVE_ARCH: ${{ inputs.build-active-architecture-only && 'YES' || '' }}
 
     steps:
     - name: Register SSH keys for private repos

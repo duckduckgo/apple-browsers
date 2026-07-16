@@ -633,13 +633,15 @@ struct FireDialogView: ModalView {
 
         VStack(alignment: .leading, spacing: 16) {
 
-            Toggle(tabsSubtitle, isOn: $viewModel.includeTabsAndWindows)
-                .toggleStyle(.checkbox)
-                .tint(style.knobFillColor)
-                .accessibilityLabel(tabsSubtitle)
-                .accessibilityIdentifier("FireDialogView.tabsToggle")
-                .accessibilityHidden(isShowingSitesOverlay)
-                .font(.system(size: 11))
+            if viewModel.mode.shouldShowCloseTabsToggle {
+                Toggle(tabsSubtitle, isOn: $viewModel.includeTabsAndWindows)
+                    .toggleStyle(.checkbox)
+                    .tint(style.knobFillColor)
+                    .accessibilityLabel(tabsSubtitle)
+                    .accessibilityIdentifier("FireDialogView.tabsToggle")
+                    .accessibilityHidden(isShowingSitesOverlay)
+                    .font(.system(size: 11))
+            }
 
             // Buttons
             HStack(spacing: 12) {

@@ -31,5 +31,69 @@
             },
             "channel"
         ]
+    },
+    "m_mac_aichat_page_context_extraction_success": {
+        "description": "Fired when Duck.ai page-context extraction produced usable content for the current page",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_page_context_extraction_failed": {
+        "description": "Fired when Duck.ai page-context extraction was attempted but produced no usable content",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "description": "Why extraction produced no usable content.",
+                "type": "string",
+                "enum": ["empty_content", "deserialize_failed", "timeout", "no_webview", "post_failed", "tab_evicted"]
+            },
+            {
+                "key": "trigger",
+                "description": "What initiated the extraction attempt.",
+                "type": "string",
+                "enum": ["auto", "navigation", "user_request", "tab_content"]
+            },
+            {
+                "key": "latency",
+                "description": "Bucketed request-to-result time. Present only when a result arrived.",
+                "type": "string",
+                "enum": ["under_1s", "1_to_5s", "over_5s"]
+            }
+        ]
+    },
+    "m_mac_aichat_page_context_extraction_prevented": {
+        "description": "Fired when Duck.ai page-context extraction was skipped because the current page is not attachable (blocklisted media type or a native special page)",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "category",
+                "description": "The prevention category: a blocklist media category key (e.g. pdf, image, video, audio) or internalPage.",
+                "type": "string"
+            },
+            {
+                "key": "reason",
+                "description": "Always non_attachable; the page cannot be attached.",
+                "type": "string",
+                "enum": ["non_attachable"]
+            },
+            {
+                "key": "trigger",
+                "description": "What initiated the extraction attempt.",
+                "type": "string",
+                "enum": ["auto", "navigation", "user_request", "tab_content"]
+            }
+        ]
     }
 }

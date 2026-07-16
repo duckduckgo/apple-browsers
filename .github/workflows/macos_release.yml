@@ -75,6 +75,7 @@ jobs:
     with:
       release-type: release
       create-dmg: true
+      include-x86-architecture: true
       asana-task-url: ${{ inputs.asana-task-url }}
       branch: ${{ inputs.branch }}
       commit-sha: ${{ inputs.commit-sha }}

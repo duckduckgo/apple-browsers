@@ -67,6 +67,7 @@ final class FireCoordinator {
     private let faviconManagement: FaviconManagement
     private let onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)?
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let dataClearingPreferences: DataClearingPreferences
     private let tabViewModelGetter: (NSWindow) -> TabCollectionViewModel?
     private let pixelFiring: PixelFiring?
     private let aiChatSyncCleaner: (() -> AIChatSyncCleaning?)?
@@ -83,6 +84,7 @@ final class FireCoordinator {
          fireproofDomains: FireproofDomains,
          faviconManagement: FaviconManagement,
          windowControllersManager: WindowControllersManagerProtocol,
+         dataClearingPreferences: DataClearingPreferences,
          pixelFiring: PixelFiring?,
          wideEventManaging: WideEventManaging? = nil,
          aiChatSyncCleaner: (() -> AIChatSyncCleaning?)? = nil,
@@ -100,6 +102,7 @@ final class FireCoordinator {
         self.faviconManagement = faviconManagement
         self.onboardingContextualDialogsManager = onboardingContextualDialogsManager
         self.windowControllersManager = windowControllersManager
+        self.dataClearingPreferences = dataClearingPreferences
         self.tabViewModelGetter = tabViewModelGetter ?? { window in
             (window.contentViewController as? MainViewController)?.tabCollectionViewModel
         }
@@ -245,7 +248,9 @@ extension FireCoordinator {
             settings: settings,
             scopeCookieDomains: scopeCookieDomains,
             scopeVisits: scopeVisits,
-            tld: tld
+            tld: tld,
+            windowControllersManager: self.windowControllersManager,
+            dataClearingPreferences: self.dataClearingPreferences
         )
 
         let response: FireDialogView.Response = await withCheckedContinuation { (continuation: CheckedContinuation<FireDialogView.Response, Never>) in

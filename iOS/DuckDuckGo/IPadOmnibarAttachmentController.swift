@@ -41,7 +41,7 @@ final class IPadOmnibarAttachmentController {
         didSet {
             attachmentsStripView?.onAttachmentRemoved = { _, attachment, isUserInitiated in
                 guard isUserInitiated else { return }
-                UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment)
+                UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment, surface: .addressBar)
             }
         }
     }
@@ -173,7 +173,7 @@ final class IPadOmnibarAttachmentController {
         if let validationError = attachmentPolicy.fileValidationError(for: fileAttachment) {
             DailyPixel.fireDailyAndCount(
                 pixel: .unifiedToggleInputFileValidationFailed,
-                withAdditionalParameters: ["reason": validationError.reason.rawValue]
+                withAdditionalParameters: ["reason": validationError.reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue]
             )
             attachmentsStripView?.addAttachment(.invalidFile(
                 UnifiedToggleInputInvalidFileAttachment(
@@ -188,7 +188,7 @@ final class IPadOmnibarAttachmentController {
             return
         }
 
-        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileAttached)
+        DailyPixel.fireDailyAndCount(pixel: .unifiedToggleInputFileAttached, withAdditionalParameters: ["surface": UnifiedToggleInputPixelSurface.addressBar.rawValue])
         attachmentsStripView?.addAttachment(.file(fileAttachment))
     }
 
@@ -209,7 +209,7 @@ final class IPadOmnibarAttachmentController {
         }
         DailyPixel.fireDailyAndCount(
             pixel: .unifiedToggleInputFileValidationFailed,
-            withAdditionalParameters: ["reason": reason.rawValue]
+            withAdditionalParameters: ["reason": reason.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue]
         )
         attachmentsStripView?.addAttachment(.invalidFile(
             UnifiedToggleInputInvalidFileAttachment(

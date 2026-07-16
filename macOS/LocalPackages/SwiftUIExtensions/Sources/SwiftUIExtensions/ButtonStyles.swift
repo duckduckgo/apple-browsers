@@ -182,13 +182,15 @@ public struct DismissActionButtonStyle: ButtonStyle {
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
     public let pillShape: Bool
+    public let showsBorder: Bool
 
-    public init(textColor: Color? = nil, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = false, stateColors: ButtonStateColors = .legacyDismissButton) {
+    public init(textColor: Color? = nil, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = false, showsBorder: Bool = true, stateColors: ButtonStateColors = .legacyDismissButton) {
         self.stateColors = stateColors
         self.textColor = textColor ?? stateColors.textColor
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
         self.pillShape = pillShape
+        self.showsBorder = showsBorder
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
@@ -219,22 +221,25 @@ public struct DismissActionButtonStyle: ButtonStyle {
                     }
                 }
             )
-            .overlay(
-                Group {
-                    if pillShape && AppVersion.isLiquidGlassSupported {
-                        Capsule()
-                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
-                    } else {
-                        RoundedRectangle(cornerRadius: 5)
-                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
-                    }
-                }
-            )
+            .overlay(makeBorder())
             .foregroundColor(textColor)
             .onHover { hovering in
                 isHovered = hovering
             }
 
+    }
+
+    @ViewBuilder
+    private func makeBorder() -> some View {
+        if showsBorder {
+            if pillShape && AppVersion.isLiquidGlassSupported {
+                Capsule()
+                    .stroke(Color.black.opacity(0.1), lineWidth: 1)
+            } else {
+                RoundedRectangle(cornerRadius: 5)
+                    .stroke(Color.black.opacity(0.1), lineWidth: 1)
+            }
+        }
     }
 }
 

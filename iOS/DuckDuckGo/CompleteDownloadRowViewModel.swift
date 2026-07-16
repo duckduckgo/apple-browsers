@@ -56,8 +56,7 @@ class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
     func preparePreviewContact() -> CNContact? {
         // A persisted file on disk carries no MIME type, so this entry point keys off the filename only.
         // Shares FilePreviewHelper's matcher so "is this a vCard filename" stays defined in one place across both entry points.
-        guard featureFlagger.isFeatureOn(.vcardContactLinks),
-              FilePreviewHelper.hasVCardFileExtension(url: fileURL, filename: nil) else {
+        guard FilePreviewHelper.hasVCardFileExtension(url: fileURL, filename: nil) else {
             return nil
         }
         guard let result = VCardFileReader.read(at: fileURL) else {

@@ -214,14 +214,34 @@ struct FireDialogView: ModalView {
 
             Spacer()
 
-            Button {
-                // Present the "more options" menu once its contents are defined.
+            moreOptionsMenu
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .accessibilityLabel(UserText.fireDialogMoreOptions)
+                .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
+        }
+        .padding(.top, 16)
+        .padding(.horizontal, Constants.toolbarHorizontalPadding)
+    }
+
+    private var moreOptionsMenuDotsIcon: some View {
+        Image(nsImage: DesignSystemImages.Glyphs.Size16.menuDots)
+            .resizable()
+            .frame(width: 16, height: 16)
+            .foregroundColor(Color(designSystemColor: .iconsSecondary))
+    }
+
+    @ViewBuilder
+    private var moreOptionsMenu: some View {
+        if #available(macOS 13.0, *) {
+            // `.button` menu style adopts the ambient button style, preserving the
+            // toolbar button's pressed state (see the sibling close button).
+            Menu {
+                moreOptionsMenuItems
             } label: {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.menuDots)
-                    .resizable()
-                    .frame(width: 16, height: 16)
-                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                moreOptionsMenuDotsIcon
             }
+            .menuStyle(.button)
             .buttonStyle(
                 StandardButtonStyle(topPadding: 4,
                                     bottomPadding: 4,
@@ -230,16 +250,72 @@ struct FireDialogView: ModalView {
                                     backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary))
             )
             .clipShape(Circle())
-            .accessibilityLabel(UserText.fireDialogMoreOptions)
-            .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
+        } else {
+            Menu {
+                moreOptionsMenuItems
+            } label: {
+                moreOptionsMenuDotsIcon
+                    .padding(4)
+                    .contentShape(Circle())
+            }
+            .menuStyle(.borderlessButton)
         }
-        .padding(.top, 16)
-        .padding(.horizontal, Constants.toolbarHorizontalPadding)
+    }
+
+    @ViewBuilder
+    private var moreOptionsMenuItems: some View {
+        Button {
+            viewModel.openNewFireWindow()
+        } label: {
+            HStack {
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.fireWindow)
+                Text(UserText.newBurnerWindowMenuItem)
+            }
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.newFireWindow")
+
+        Divider()
+
+        Button {
+            viewModel.toggleCurrentSiteFireproofing()
+        } label: {
+            Text(viewModel.isCurrentSiteFireproof ? UserText.removeFireproofing : UserText.fireproofSite)
+        }
+        .disabled(!viewModel.canFireproofCurrentSite)
+        .accessibilityIdentifier("FireDialogView.moreOptions.fireproofSite")
+
+        Button {
+            viewModel.showManageFireproofSites()
+        } label: {
+            Text(UserText.manageFireproofSites)
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.manageFireproofSites")
+
+        Divider()
+
+        Button {
+            viewModel.deleteIndividualSites()
+        } label: {
+            Text(UserText.fireDialogMenuDeleteIndividualSites)
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.deleteIndividualSites")
+
+        Divider()
+
+        Button {
+            viewModel.openDataDeletionSettings()
+        } label: {
+            HStack {
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.settings)
+                Text(UserText.fireDialogMenuDataDeletionSettings)
+            }
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.dataDeletionSettings")
     }
 
     private var headerView: some View {
         VStack(spacing: 6) {
-            FirePictogramAnimation()
+            FirePictogramAnimation(isAppRebranded: themeManager.isAppRebranded)
                 .frame(width: 72, height: 72)
                 .padding(.top, 8)
 
@@ -352,27 +428,6 @@ struct FireDialogView: ModalView {
         .padding(.top, 4)
         .padding(.bottom, 8)
         .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func presentManageFireproof() {
-        // Use the app's preferences presenter to begin a sheet on the parent window (stacks above the Fire sheet)
-        Task { @MainActor in
-            // await for the dialog to complete and trigger data reload
-            await Application.appDelegate.dataClearingPreferences.presentManageFireproofSitesDialog()
-            viewModel.clearingOption = viewModel.clearingOption
-        }
-    }
-
-    private func presentIndividualSites() {
-        // Close the dialog and open History->Sites management
-        if let window = NSApp.mainWindow {
-            window.endSheet(window.attachedSheet ?? window)
-        }
-        Application.appDelegate.windowControllersManager
-            .lastKeyMainWindowController?
-            .mainViewController
-            .browserTabViewController
-            .openNewTab(with: .history(pane: .allSites))
     }
 
     // MARK: - Sites overlay
@@ -529,7 +584,7 @@ struct FireDialogView: ModalView {
 
     private var fireproofSectionView: some View {
         RowWithPressEffect(roundedCorners: .bottom, rowCornerRadius: style.rowCornerRadius, isEnabled: true) {
-            presentManageFireproof()
+            viewModel.showManageFireproofSites()
         } content: {
             HStack(alignment: .center, spacing: 0) {
                 HStack(spacing: 6) {
@@ -548,7 +603,7 @@ struct FireDialogView: ModalView {
 
                 Spacer(minLength: 4)
 
-                Button(UserText.fireDialogFireproofSitesManage) { presentManageFireproof() }
+                Button(UserText.fireDialogFireproofSitesManage) { viewModel.showManageFireproofSites() }
                     .buttonStyle(
                         StandardButtonStyle(
                             fontSize: 11,
@@ -580,7 +635,7 @@ struct FireDialogView: ModalView {
                 .tinted(with: individualSitesColor))
                 .accessibilityHidden(true)
             TextButton(UserText.fireDialogManageIndividualSitesLink, textColor: Color(individualSitesColor), fontSize: 11) {
-                presentIndividualSites()
+                viewModel.deleteIndividualSites()
             }
             .accessibilityIdentifier("FireDialogView.individualSitesLink")
             .accessibilityHidden(isShowingSitesOverlay)
@@ -760,7 +815,11 @@ private struct RowWithPressEffect<Content: View>: View {
 /// Loads the fire pictogram Lottie animation.
 private struct FirePictogramAnimation: NSViewRepresentable {
 
-    private static let assetName = "fire-pictogram"
+    let isAppRebranded: Bool
+
+    private var assetName: String {
+        isAppRebranded ? "fire-pictogram-new" : "fire-pictogram"
+    }
 
     func makeNSView(context: Context) -> NSView {
         let container = NSView()
@@ -773,7 +832,7 @@ private struct FirePictogramAnimation: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {}
 
     private func attachAnimation(to container: NSView) {
-        guard let animation = LottieAnimation.asset(Self.assetName, bundle: .main) else {
+        guard let animation = LottieAnimation.asset(assetName, bundle: .main) else {
             return
         }
         let view = LottieAnimationView(animation: animation)
@@ -818,7 +877,9 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         fireproofDomains: Application.appDelegate.fireproofDomains,
         faviconManagement: Application.appDelegate.faviconManager,
         featureFlagger: Application.appDelegate.featureFlagger,
-        tld: tld
+        tld: tld,
+        windowControllersManager: Application.appDelegate.windowControllersManager,
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
     )
 
     PreviewView(showWindowTitle: false) {
@@ -861,7 +922,9 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         faviconManagement: faviconMock,
         featureFlagger: Application.appDelegate.featureFlagger,
         clearingOption: .allData,
-        tld: tld
+        tld: tld,
+        windowControllersManager: Application.appDelegate.windowControllersManager,
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
     )
 
     return PreviewView(showWindowTitle: false) {

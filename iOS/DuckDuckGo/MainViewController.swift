@@ -1569,6 +1569,7 @@ class MainViewController: UIViewController {
         adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
         var keyboardHeight = keyboardFrame.size.height
 

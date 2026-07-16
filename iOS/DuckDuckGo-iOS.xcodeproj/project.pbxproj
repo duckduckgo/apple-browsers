@@ -284,6 +284,12 @@
 		369E692A2E5F579B00F98A8F /* NotificationServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E69292E5F579500F98A8F /* NotificationServiceManager.swift */; };
 		369E692D2E5F6EC200F98A8F /* InactivityNotificationSchedulerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */; };
 		36A96A0A2E6606CF003D4529 /* LocalNotificationsPlaygroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36A96A092E6606C0003D4529 /* LocalNotificationsPlaygroundView.swift */; };
+		36DDC46C30093068004B1068 /* SubscriptionOnboardingHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DDC46B30093068004B1068 /* SubscriptionOnboardingHeaderView.swift */; };
+		36DDC46E30093073004B1068 /* SubscriptionOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DDC46D30093073004B1068 /* SubscriptionOnboardingView.swift */; };
+		36DDC47330093082004B1068 /* SubscriptionOnboardingViewFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DDC47130093082004B1068 /* SubscriptionOnboardingViewFactory.swift */; };
+		36DDC47430093082004B1068 /* SubscriptionOnboardingSectionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DDC47030093082004B1068 /* SubscriptionOnboardingSectionDelegate.swift */; };
+		36DDC47530093082004B1068 /* SubscriptionOnboardingSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DDC46F30093082004B1068 /* SubscriptionOnboardingSection.swift */; };
+		36DDC4773009309F004B1068 /* SubscriptionOnboardingSectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DDC4763009309F004B1068 /* SubscriptionOnboardingSectionTests.swift */; };
 		36F2CA592E604C5100C7039D /* UNUserNotificationCenterRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA582E604C4700C7039D /* UNUserNotificationCenterRepresentable.swift */; };
 		36F2CA5B2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */; };
 		36F2CA5C2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */; };
@@ -3072,6 +3078,12 @@
 		369E69292E5F579500F98A8F /* NotificationServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceManager.swift; sourceTree = "<group>"; };
 		369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerServiceTests.swift; sourceTree = "<group>"; };
 		36A96A092E6606C0003D4529 /* LocalNotificationsPlaygroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotificationsPlaygroundView.swift; sourceTree = "<group>"; };
+		36DDC46B30093068004B1068 /* SubscriptionOnboardingHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingHeaderView.swift; sourceTree = "<group>"; };
+		36DDC46D30093073004B1068 /* SubscriptionOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingView.swift; sourceTree = "<group>"; };
+		36DDC46F30093082004B1068 /* SubscriptionOnboardingSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingSection.swift; sourceTree = "<group>"; };
+		36DDC47030093082004B1068 /* SubscriptionOnboardingSectionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingSectionDelegate.swift; sourceTree = "<group>"; };
+		36DDC47130093082004B1068 /* SubscriptionOnboardingViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingViewFactory.swift; sourceTree = "<group>"; };
+		36DDC4763009309F004B1068 /* SubscriptionOnboardingSectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOnboardingSectionTests.swift; sourceTree = "<group>"; };
 		36F2CA582E604C4700C7039D /* UNUserNotificationCenterRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UNUserNotificationCenterRepresentable.swift; sourceTree = "<group>"; };
 		36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUNUserNotificationCenter.swift; sourceTree = "<group>"; };
 		36F2CA612E6098EF00C7039D /* InactivityNotificationSchedulerServiceIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerServiceIntegrationTests.swift; sourceTree = "<group>"; };
@@ -6678,6 +6690,7 @@
 		3666D84A30004E3E00B63F99 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				36DDC47230093082004B1068 /* Flow */,
 				3666D878300193DB00B63F99 /* Resources */,
 				3666D876300193CC00B63F99 /* SubscriptionOnboardingUserText.swift */,
 				3666D8743001917B00B63F99 /* Models */,
@@ -6690,6 +6703,8 @@
 		3666D85F30016E4D00B63F99 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				36DDC46D30093073004B1068 /* SubscriptionOnboardingView.swift */,
+				36DDC46B30093068004B1068 /* SubscriptionOnboardingHeaderView.swift */,
 				3666D86630017A6800B63F99 /* SubscriptionOnboardingCard.swift */,
 				3666D85930016E4D00B63F99 /* SubscriptionOnboardingAIModelPicker.swift */,
 				3666D85C30016E4D00B63F99 /* SubscriptionOnboardingProgressView.swift */,
@@ -6731,6 +6746,7 @@
 		3666D87C3001AA9600B63F99 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				36DDC4763009309F004B1068 /* SubscriptionOnboardingSectionTests.swift */,
 				3666D87B3001AA9600B63F99 /* SubscriptionOnboardingFreeTrialCalendarCardModelTests.swift */,
 			);
 			path = Onboarding;
@@ -6746,6 +6762,16 @@
 				C1A74BAF2EC2618D00870321 /* AutofillServiceTests.swift */,
 			);
 			path = AppServices;
+			sourceTree = "<group>";
+		};
+		36DDC47230093082004B1068 /* Flow */ = {
+			isa = PBXGroup;
+			children = (
+				36DDC46F30093082004B1068 /* SubscriptionOnboardingSection.swift */,
+				36DDC47030093082004B1068 /* SubscriptionOnboardingSectionDelegate.swift */,
+				36DDC47130093082004B1068 /* SubscriptionOnboardingViewFactory.swift */,
+			);
+			path = Flow;
 			sourceTree = "<group>";
 		};
 		36F619572F68655A00CBF121 /* Statistics */ = {
@@ -13581,6 +13607,7 @@
 				6EE9F7F9C41E3A100FBB7C5C /* TabSwipeOverlayView.swift in Sources */,
 				BBA0000000000000000F0002 /* UnifiedInputTabState.swift in Sources */,
 				F2B8A10136AA100000C0DE01 /* UnifiedToggleInputAttachmentPresenter.swift in Sources */,
+				36DDC46E30093073004B1068 /* SubscriptionOnboardingView.swift in Sources */,
 				F2B8A10736AA100000C0DE01 /* UnifiedToggleInputAttachment.swift in Sources */,
 				AABB00010001000100010007 /* UTIAttachmentPolicy.swift in Sources */,
 				CB27DAE72FFFE65200EEEADB /* WebViewTransitionGeometry.swift in Sources */,
@@ -13766,6 +13793,7 @@
 				9FA09DA72EA71F2900E26F3F /* PromptCooldownStore.swift in Sources */,
 				CBB4A8432FD2FB0E00A65956 /* DuckAISuggestionsPipeline.swift in Sources */,
 				80A198C72F1AB3A90015521B /* TabViewModel.swift in Sources */,
+				36DDC46C30093068004B1068 /* SubscriptionOnboardingHeaderView.swift in Sources */,
 				5BF65FDA2F5A2CB800BCC9F4 /* AutoplaySettings.swift in Sources */,
 				9FA09DA82EA71F2900E26F3F /* PromptCooldownManager.swift in Sources */,
 				80A09D642F6BBA1F00AACDEE /* DataStoreWarmupWorker.swift in Sources */,
@@ -13849,6 +13877,9 @@
 				9F989C142E9CB9ED00EC2701 /* ModalPromptCoordinationService.swift in Sources */,
 				1E908BF129827C480008C8F3 /* AutoconsentUserScript.swift in Sources */,
 				1D200C972BA3157A00108701 /* SettingsNextStepsView.swift in Sources */,
+				36DDC47330093082004B1068 /* SubscriptionOnboardingViewFactory.swift in Sources */,
+				36DDC47430093082004B1068 /* SubscriptionOnboardingSectionDelegate.swift in Sources */,
+				36DDC47530093082004B1068 /* SubscriptionOnboardingSection.swift in Sources */,
 				4B0295192537BC6700E00CEF /* ConfigurationDebugViewController.swift in Sources */,
 				9FD6E6172DFA71A800C2B032 /* PictureInPictureControllerFactory.swift in Sources */,
 				7B020B9A2D11F99D00876178 /* FavoritesDisplayMode+UserDefaults.swift in Sources */,
@@ -14387,6 +14418,7 @@
 				C163DC962DC92FDC0026852D /* OnboardingSubscriptionPromotionHelpingTests.swift in Sources */,
 				CB596FF12ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */,
 				9F5E5AB22C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift in Sources */,
+				36DDC4773009309F004B1068 /* SubscriptionOnboardingSectionTests.swift in Sources */,
 				C1D6C1DD2E74285A00F29155 /* SwitchBarRetentionMetricsTests.swift in Sources */,
 				9F387DF82EA8BF4F006861F8 /* MockLaunchSourceManager.swift in Sources */,
 				98E563E22DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift in Sources */,

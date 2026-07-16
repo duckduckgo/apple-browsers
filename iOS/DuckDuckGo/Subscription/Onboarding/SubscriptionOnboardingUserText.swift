@@ -70,4 +70,8 @@ extension UserText {
     public static let subscriptionOnboardingVPNInfoVisibleIP = NotLocalizedString("subscription.onboarding.vpn-info.visible-ip", value: "Your IP Address is Visible", comment: "VPN info card overline shown while the VPN is off and the customer's real IP address is visible")
     public static let subscriptionOnboardingVPNInfoHiddenIP = NotLocalizedString("subscription.onboarding.vpn-info.hidden-ip", value: "Your IP Address is Hidden", comment: "VPN info card overline shown once the VPN is on and the customer's real IP address is hidden")
     public static let subscriptionOnboardingVPNInfoNewIP = NotLocalizedString("subscription.onboarding.vpn-info.new-ip", value: "Your New IP Address", comment: "VPN info card overline for the new (VPN egress) IP address shown once the VPN is on")
+
+    public static let subscriptionOnboardingStepIndicatorFormat = NotLocalizedString("subscription.onboarding.step-indicator", value: "Step %1$ld of %2$ld", comment: "Top-bar progress indicator on an onboarding section screen. %1$ld is the current step number and %2$ld the total number of steps, e.g. 'Step 2 of 4'")
+    public static let subscriptionOnboardingBackButtonAccessibilityLabel = NotLocalizedString("subscription.onboarding.back-button.accessibility-label", value: "Back", comment: "VoiceOver label for the back button in the top bar of an onboarding section screen")
+    public static let subscriptionOnboardingCloseButtonAccessibilityLabel = NotLocalizedString("subscription.onboarding.close-button.accessibility-label", value: "Close", comment: "VoiceOver label for the close button in the top bar of an onboarding section screen")
 }

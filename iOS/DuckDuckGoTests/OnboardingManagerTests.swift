@@ -542,16 +542,24 @@ struct OnboardingStepsForConfiguredFlow {
 
     @Test("Check countsTowardProgress excludes the intro dialog, interludes, and the Download Screen")
     func countsTowardProgressExcludesNonProgressSteps() {
-        #expect(OnboardingIntroStep.introDialog(isReturningUser: false).countsTowardProgress == false)
-        #expect(OnboardingIntroStep.interlude(.duckAI).countsTowardProgress == false)
-        #expect(OnboardingIntroStep.downloadReasonSelection.countsTowardProgress == false)
-        #expect(OnboardingIntroStep.setDefaultBrowser.countsTowardProgress == true)
-        #expect(OnboardingIntroStep.aiIntro.countsTowardProgress == true)
-        #expect(OnboardingIntroStep.addToDockPromo.countsTowardProgress == true)
-        #expect(OnboardingIntroStep.appIconSelection.countsTowardProgress == true)
-        #expect(OnboardingIntroStep.addressBarPositionSelection.countsTowardProgress == true)
-        #expect(OnboardingIntroStep.searchExperienceSelection.countsTowardProgress == true)
-        #expect(OnboardingIntroStep.duckAIQuerySelection.countsTowardProgress == true)
+        // Steps excluded regardless of flow.
+        #expect(OnboardingIntroStep.introDialog(isReturningUser: false).countsTowardProgress(flow: .default) == false)
+        #expect(OnboardingIntroStep.interlude(.duckAI).countsTowardProgress(flow: .default) == false)
+        #expect(OnboardingIntroStep.downloadReasonSelection.countsTowardProgress(flow: .default) == false)
+
+        // Steps counted regardless of flow.
+        #expect(OnboardingIntroStep.setDefaultBrowser.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.aiIntro.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.addToDockPromo.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.appIconSelection.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.addressBarPositionSelection.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.searchExperienceSelection.countsTowardProgress(flow: .default) == true)
+    }
+
+    @Test("Check countsTowardProgress counts the Duck.ai query step only in the Duck.ai flow")
+    func countsTowardProgressForDuckAIQueryDependsOnFlow() {
+        #expect(OnboardingIntroStep.duckAIQuerySelection.countsTowardProgress(flow: .duckAI) == true)
+        #expect(OnboardingIntroStep.duckAIQuerySelection.countsTowardProgress(flow: .default) == false)
     }
 
 }

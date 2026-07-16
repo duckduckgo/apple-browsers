@@ -382,7 +382,8 @@ private extension OnboardingIntroViewModel {
     func setViewState(introStep: OnboardingIntroStep) {
         func stepInfo() -> OnboardingIntroViewState.Intro.StepInfo {
             // Count only steps that appear in the progress indicator (excludes the intro dialog, interludes, and the Download Screen).
-            let progressSteps = introSteps.filter(\.countsTowardProgress)
+            let flowType = onboardingManager.currentOnboardingFlow
+            let progressSteps = introSteps.filter { $0.countsTowardProgress(flow: flowType) }
 
             guard let currentStepIndex = progressSteps.firstIndex(of: introStep) else { return .hidden }
 

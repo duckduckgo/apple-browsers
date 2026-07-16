@@ -222,18 +222,22 @@ extension DownloadsTabExtension: NavigationResponder {
     }
 
     @MainActor
-    func enqueueDownload(_ download: WebKitDownload, withNavigationAction navigationAction: NavigationAction?) {
-        let webView = download.originatingWebView ?? download.targetWebView
+    private func enqueueDownload(_ download: WebKitDownload, withNavigationAction navigationAction: NavigationAction?) {
         let task = downloadManager.add(download,
-                                       fireWindowSession: resolveFireWindowSession(for: webView),
+                                       fireWindowSession: resolveFireWindowSession(for: download.originatingWebView ?? download.targetWebView),
                                        delegate: self,
                                        destination: .auto)
-        guard let webView else { return }
 
-        var shouldCloseTabOnDownloadStart: Bool {
+        closeWebViewIfNeeded(forEnqueuedDownloadTask: task, initiatedBy: navigationAction)
+    }
+
+    private func closeWebViewIfNeeded(forEnqueuedDownloadTask downloadTask: WebKitDownloadTask, initiatedBy navigationAction: NavigationAction?) {
+        guard let targetWebView = downloadTask.targetWebView else { return }
+
+        let shouldCloseTabOnDownloadStart: Bool = {
             guard let navigationAction else {
                 // if converted from navigation response but no navigation was committed
-                return webView.backForwardList.currentItem == nil
+                return targetWebView.backForwardList.currentItem == nil
             }
             // get the first navigation action in the redirect series
             let initialNavigationAction = navigationAction.redirectHistory?.first ?? navigationAction
@@ -245,24 +249,20 @@ extension DownloadsTabExtension: NavigationResponder {
             }
 
             return false
-        }
+        }()
 
         // If the download has started from a popup Tab - close it after starting the download
         // e.g. download button on this page:
         // https://en.wikipedia.org/wiki/Guitar#/media/File:GuitareClassique5.png
         guard shouldCloseTabOnDownloadStart else { return }
 
-        self.closeWebView(webView, afterDownloadTaskHasStarted: task)
-    }
-
-    private func closeWebView(_ webView: WKWebView, afterDownloadTaskHasStarted downloadTask: WebKitDownloadTask) {
         // close the initiating Tab after location has been chosen and leave it open when the task was cancelled
         // the wait is needed because closing the tab would cancel download location chooser dialog
         var cancellable: AnyCancellable?
         cancellable = downloadTask.didChooseDownloadLocationPublisher.sink { completion in
             // close the tab if completed without an error (location chosen)
             if case .finished = completion {
-                webView.close()
+                targetWebView.close()
             }
             cancellable?.cancel()
         } receiveValue: { _ in }

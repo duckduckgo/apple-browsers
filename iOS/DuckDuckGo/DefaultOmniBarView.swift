@@ -858,6 +858,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             : UIColor(designSystemColor: .urlBar))
     }
 
+    func restoreFloatingFieldAppearance() {
+        // The bottom floating field can lose its opaque fill after an omnibar notification animation
+        // ends, dropping contrast with the toolbar. Re-assert the resting opaque appearance. Top glass
+        // and non-floating are unaffected.
+        guard isFloatingUIEnabled, !shouldUseFloatingTopGlass else { return }
+        makeOpaque()
+    }
+
     func setFloatingMinimalChromeBar(_ enabled: Bool) {
         guard isFloatingUIEnabled, isFloatingMinimalChromeBar != enabled else { return }
         isFloatingMinimalChromeBar = enabled

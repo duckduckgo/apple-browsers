@@ -756,7 +756,7 @@ class MainViewController: UIViewController {
 
         // Automation bypass: a UI-test override can mark onboarding already-completed without ever
         // calling onboardingCompleted(controller:), so apply the rollout Duck Player defaults here too.
-        if case .overridden(.uiTests(completed: true)) = onboardingStatus {
+        if case .overridden(.uiTests(completed: true)) = onboardingStatus, ProcessInfo.isRunningUITests {
             appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: adBlockingAvailability.areAdBlockingDefaultsActive)
         }
 

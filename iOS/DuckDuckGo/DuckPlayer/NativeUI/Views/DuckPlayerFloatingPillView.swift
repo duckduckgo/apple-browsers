@@ -21,49 +21,75 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
 
-/// Shared black rounded-rect pill content used by the Floating UI Duck Player prompts.
-///
-/// Builds on the toast pattern using a black background (both light and dark), suggesting the
-/// theater mode of Duck Player. The whole pill is tappable and the enclosing
-/// `DuckPlayerContainer` provides the swipe-down-to-dismiss gesture.
+/// Floating-pill thumbnail. Renders an already-downloaded image (the presenter waits for it before
+/// sliding the pill in), so it moves as one unit with the pill instead of loading on its own timeline.
+private struct FloatingPillThumbnailImage: View {
+    let image: UIImage?
+    let width: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        ZStack {
+            Rectangle().foregroundColor(.gray.opacity(0.3))
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            }
+        }
+        .frame(width: width, height: height)
+        .contentShape(Rectangle())
+    }
+}
+
+/// Shared black rounded-rect pill for the Floating UI Duck Player prompts.
+/// The whole pill is tappable; `DuckPlayerContainer` provides swipe-down-to-dismiss.
 private struct DuckPlayerFloatingPillContent: View {
     let showsLogo: Bool
     let title: String
     let subtitle: String
-    let thumbnailURL: URL?
+    let thumbnailImage: UIImage?
     let accessibilityID: String
     let action: () -> Void
 
     struct Constants {
-        static let cornerRadius: CGFloat = 16
+        static let cornerRadius: CGFloat = 26
         static let logoSize: CGFloat = 40
         static let thumbnailSize: (w: CGFloat, h: CGFloat) = (72, 48)
-        static let thumbnailCornerRadius: CGFloat = 8
+        static let thumbnailCornerRadius: CGFloat = 16
+        static let thumbnailStrokeOpacity: CGFloat = 0.25
         static let hStackSpacing: CGFloat = 12
         static let vStackSpacing: CGFloat = 2
         static let contentPadding: CGFloat = 12
-        static let horizontalMargin: CGFloat = 6
-        static let playBadgeSize: CGFloat = 24
+        static let playIconSize: CGFloat = 24
+        static let playIconShadowOpacity: CGFloat = 0.1
+        static let playIconShadowRadius: CGFloat = 4
+        static let playIconShadowOffset = CGSize(width: 0, height: 1)
     }
 
     private var thumbnail: some View {
-        AnimatedAsyncImage(
-            url: thumbnailURL,
+        FloatingPillThumbnailImage(
+            image: thumbnailImage,
             width: Constants.thumbnailSize.w,
-            height: Constants.thumbnailSize.h,
-            cornerRadius: Constants.thumbnailCornerRadius,
-            borderColor: nil,
-            borderWidth: nil,
-            borderOpacity: nil
+            height: Constants.thumbnailSize.h
         )
         .frame(width: Constants.thumbnailSize.w, height: Constants.thumbnailSize.h)
-        .clipShape(RoundedRectangle(cornerRadius: Constants.thumbnailCornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: Constants.thumbnailCornerRadius, style: .continuous))
         .overlay(
-            Image(uiImage: DesignSystemImages.Glyphs.Size16.playSolid)
+            RoundedRectangle(cornerRadius: Constants.thumbnailCornerRadius, style: .continuous)
+                .strokeBorder(Color.white.opacity(Constants.thumbnailStrokeOpacity), lineWidth: 1)
+        )
+        .overlay(
+            Image(uiImage: DesignSystemImages.Glyphs.Size20.videoPlaySolid)
+                .renderingMode(.template)
                 .foregroundColor(.white)
-                .frame(width: Constants.playBadgeSize, height: Constants.playBadgeSize)
-                .background(Color.black.opacity(0.5))
-                .clipShape(Circle())
+                .frame(width: Constants.playIconSize, height: Constants.playIconSize)
+                .shadow(
+                    color: Color.black.opacity(Constants.playIconShadowOpacity),
+                    radius: Constants.playIconShadowRadius,
+                    x: Constants.playIconShadowOffset.width,
+                    y: Constants.playIconShadowOffset.height
+                )
         )
     }
 
@@ -71,7 +97,7 @@ private struct DuckPlayerFloatingPillContent: View {
         Button(action: action) {
             HStack(spacing: Constants.hStackSpacing) {
                 if showsLogo {
-                    Image(.home)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.duckDuckGoDaxColor)
                         .resizable()
                         .frame(width: Constants.logoSize, height: Constants.logoSize)
                 }
@@ -98,10 +124,9 @@ private struct DuckPlayerFloatingPillContent: View {
             }
             .padding(Constants.contentPadding)
             .background(Color.black)
-            .cornerRadius(Constants.cornerRadius)
+            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, Constants.horizontalMargin)
         .accessibilityIdentifier(accessibilityID)
     }
 }
@@ -113,9 +138,9 @@ struct DuckPlayerFloatingEntryPillView: View {
     var body: some View {
         DuckPlayerFloatingPillContent(
             showsLogo: true,
-            title: UserText.duckPlayerOptInPillTitle,
+            title: UserText.duckPlayerFloatingPillTitle,
             subtitle: UserText.duckPlayerOptInPillSubtitle,
-            thumbnailURL: viewModel.thumbnailURL,
+            thumbnailImage: viewModel.thumbnailImage,
             accessibilityID: "Play this video in Duck Player",
             action: { viewModel.openInDuckPlayer() }
         )
@@ -131,7 +156,7 @@ struct DuckPlayerFloatingMiniPillView: View {
             showsLogo: false,
             title: UserText.duckPlayerResumeInDuckPlayer,
             subtitle: viewModel.title,
-            thumbnailURL: viewModel.thumbnailURL,
+            thumbnailImage: viewModel.thumbnailImage,
             accessibilityID: "Resume in Duck Player",
             action: { viewModel.openInDuckPlayer() }
         )

@@ -1112,7 +1112,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 title: UserText.aiChatImageGenButtonLabel,
                 subtitle: UserText.aiChatImageGenToolSubtitle
             )
-            createImageItem.image = DesignSystemImages.Glyphs.Size16.image
+            createImageItem.image = DesignSystemImages.Glyphs.Size16.images
             createImageItem.target = self
             createImageItem.action = #selector(toolsMenuCreateImageClicked)
             if omnibarController.isImageGenerationMode {
@@ -1137,8 +1137,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
 
         if isCustomizeResponsesItemVisible {
+            if menu.numberOfItems > 0 {
+                menu.addItem(.separator())
+            }
             let store = CustomizeResponsesStore(storageHandler: duckAiNativeStorageHandler)
-            let state = store.currentState(clarifiesLabel: UserText.aiChatCustomizeResponsesClarifies)
+            let state = store.currentState()
             let subtitle = (state.hasCustomization ? state.subLabel : nil) ?? UserText.aiChatCustomizeResponsesToolSubtitle
             let rowView = CustomizeResponsesMenuRowView(
                 title: UserText.aiChatCustomizeResponsesButtonLabel,
@@ -1148,7 +1151,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 isActive: state.isActive,
                 isEnabled: !omnibarController.isImageGenerationMode,
                 onOpen: { [weak self] in self?.presentCustomizeResponsesModal() },
-                onToggle: { active in store.setActive(active) }
+                onToggle: { active in
+                    store.setActive(active)
+                    NotificationCenter.default.post(name: .aiChatCustomizeResponsesDidChange, object: nil)
+                }
             )
             let customizeItem = NSMenuItem()
             customizeItem.view = rowView
@@ -1195,7 +1201,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             return
         }
         let modal = CustomizeResponsesModalController(burnerMode: burnerMode)
-        modal.onClose = { [weak self] in self?.customizeResponsesModal = nil }
+        modal.onClose = { [weak self] in
+            self?.customizeResponsesModal = nil
+            // Fires on every dismissal path (FE close, backdrop, Esc) so open NTPs re-push their config.
+            NotificationCenter.default.post(name: .aiChatCustomizeResponsesDidChange, object: nil)
+        }
         customizeResponsesModal = modal
         modal.present(over: parentWindow)
     }
@@ -2062,27 +2072,5 @@ private final class AttachTabsSubmenuObserver: NSObject, NSMenuDelegate {
     /// user actually picked or removed something during this session.
     func markDidMutate() {
         didMutateDuringSession = true
-    }
-}
-
-// MARK: - Customize Responses state (native storage bridge)
-
-final class CustomizeResponsesStore {
-
-    private let storageHandler: DuckAiNativeStorageHandling?
-
-    init(storageHandler: DuckAiNativeStorageHandling?) {
-        self.storageHandler = storageHandler
-    }
-
-    func currentState(clarifiesLabel: String) -> CustomizeResponsesState {
-        guard let storageHandler else { return .none }
-        let customization = (try? storageHandler.getEntry(key: CustomizeResponsesStorageKey.customization)) ?? nil
-        let active = (try? storageHandler.getEntry(key: CustomizeResponsesStorageKey.active)) ?? nil
-        return CustomizeResponsesState.make(customizationValue: customization, activeValue: active, clarifiesLabel: clarifiesLabel)
-    }
-
-    func setActive(_ active: Bool) {
-        try? storageHandler?.putEntry(key: CustomizeResponsesStorageKey.active, value: active ? "true" : "false")
     }
 }

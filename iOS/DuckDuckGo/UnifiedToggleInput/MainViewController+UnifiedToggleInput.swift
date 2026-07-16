@@ -808,6 +808,12 @@ private extension MainViewController {
 
     func refreshNonAITab(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) {
         viewCoordinator.hideAITabChrome()
+        // Must run before the layout pass below, which reads live UTI visibility for the anchor.
+        if coordinator.isActive {
+            coordinator.deactivateToOmnibar()
+            coordinator.hide()
+            coordinator.unbind()
+        }
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         applyUnifiedInputChromeBackground(.standardChrome)
@@ -817,11 +823,6 @@ private extension MainViewController {
         reconcileAIChromeForCurrentTab()
         // Snap chrome revealed — prior chat-scroll could have hidden bars under the AI header, so without this the omnibar flies in on return.
         chromeManager.reset(animated: false)
-        if coordinator.isActive {
-            coordinator.deactivateToOmnibar()
-            coordinator.hide()
-            coordinator.unbind()
-        }
     }
 
     func setUpAIChatTabChatHeader() {
@@ -1222,20 +1223,24 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
-        let trimmed = prefilledText.trimmingWhitespace()
+        // Coordinator-resolved: empty = untouched prefill (open Duck.ai, no prompt), else submit as the prompt.
+        openUnifiedToggleInputAIShortcutChat(prompt: prefilledText.trimmingWhitespace())
+    }
+
+    private func openUnifiedToggleInputAIShortcutChat(prompt: String) {
         unifiedToggleInputCoordinator?.clearText()
         unifiedToggleInputCoordinator?.handleExternalSubmission(.prompt)
         // On a Duck.ai tab, route through openAIChat so the "new tab when current has content" rule applies.
         // This opens the chip handoff in a fresh chat tab and avoids the contextual-sheet branch in onAIChatPressed.
         if currentTab?.isAITab == true {
-            if trimmed.isEmpty {
+            if prompt.isEmpty {
                 openAIChat()
             } else {
-                openAIChat(trimmed, autoSend: true)
+                openAIChat(prompt, autoSend: true)
             }
             return
         }
-        onAIChatPressed(prefilledText: trimmed.isEmpty ? nil : trimmed)
+        onAIChatPressed(prefilledText: prompt)
     }
 
     func unifiedToggleInputDidChangeHeight() {

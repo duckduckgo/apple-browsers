@@ -406,6 +406,13 @@ class MainViewController: UIViewController {
         SearchTokenExperiment(featureFlagger: featureFlagger, statisticsStore: statisticsStore)
     }
 
+    private lazy var searchTokenFetcher: SearchTokenFetcher = {
+        let settings = SearchTokenExperimentSettings(privacyConfigurationManager: privacyConfigurationManager)
+        return SearchTokenFetcher(requester: SearchTokenRequest(tokenURL: .searchToken),
+                                  ttlProvider: { settings.tokenTTL },
+                                  windowProvider: { settings.refreshWindow })
+    }()
+
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         bookmarksDatabase: CoreDataDatabase,
@@ -1026,8 +1033,12 @@ class MainViewController: UIViewController {
     }
 
     private func refreshAIChatChromeChip() {
-        guard let tabsBarController else { return }
         let isSheetPresented = currentTab?.aiChatContextualSheetCoordinator.isSheetPresented ?? false
+        // iPhone-only: iPad's tabs-bar chip already indicates sheet state, so avoid a duplicate.
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            omniBar.barView.updateAIChatButtonForContextualSheet(isPresented: isSheetPresented)
+        }
+        guard let tabsBarController else { return }
         tabsBarController.updateAIChatChipState(isContextualSheetPresented: isSheetPresented)
     }
 
@@ -1959,6 +1970,7 @@ class MainViewController: UIViewController {
                 tabViewModel: tabManager.viewModelForCurrentTab(),
                 pixelSource: .browsing,
                 fireContext: .default(daxDialogsManager: daxDialogsManager),
+                isSingleTab: tabManager.currentTabsModel.count == 1,
                 browsingMode: tabManager.currentBrowsingMode,
                 onConfirm: { [weak self] fireRequest in
                     guard let self else { return }
@@ -3260,6 +3272,16 @@ class MainViewController: UIViewController {
             }
             .store(in: &urlInterceptorCancellables)
 
+        NotificationCenter.default.publisher(for: .dataBrokerProtectionOpenSubscriptionFlow)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                let redirectURLComponents = notification.userInfo?[
+                    DataBrokerProtectionSubscriptionFlowParameter.redirectURLComponents
+                ] as? URLComponents
+                self?.presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: redirectURLComponents)
+            }
+            .store(in: &urlInterceptorCancellables)
+
         NotificationCenter.default.publisher(for: .urlInterceptAIChat)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -3288,6 +3310,45 @@ class MainViewController: UIViewController {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: deepLinkTarget)
         }, deepLinkTarget: deepLinkTarget)
+    }
+
+    private func presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: URLComponents?) {
+        let subscriptionFlowViewController = makeDataBrokerProtectionSubscriptionFlowViewController(
+            redirectURLComponents: redirectURLComponents
+        )
+
+        if let settingsNavigationController = presentedViewController as? SettingsUINavigationController {
+            settingsNavigationController.pushViewController(subscriptionFlowViewController, animated: true)
+            return
+        }
+
+        let navigationController = DataBrokerProtectionSubscriptionFlowNavigationController(
+            rootViewController: subscriptionFlowViewController
+        )
+        var presenter: UIViewController = self
+        while let presentedViewController = presenter.presentedViewController {
+            presenter = presentedViewController
+        }
+        presenter.present(navigationController, animated: true)
+    }
+
+    private func makeDataBrokerProtectionSubscriptionFlowViewController(redirectURLComponents: URLComponents?) -> UIViewController {
+        let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
+        let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makePurchaseFlowV2(
+            redirectURLComponents: redirectURLComponents,
+            navigationCoordinator: subscriptionNavigationCoordinator,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+            subscriptionDataReporter: subscriptionDataReporter,
+            userScriptsDependencies: userScriptsDependencies,
+            tld: AppDependencyProvider.shared.storageCache.tld,
+            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            featureFlagger: featureFlagger
+        ))
+        viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
+        return viewController
     }
 
     private func subscribeToSettingsDeeplinkNotifications() {
@@ -4944,7 +5005,11 @@ extension MainViewController: OmniBarDelegate {
         ViewHighlighter.hideAll()
         hideSuggestionTray()
 
-        if let currentTab, aiChatContextualModeFeature.isAvailable, newTabPageViewController == nil {
+        let shouldPresentContextualSheet = currentTab?.tabModel.isHomeTab == false
+            && aiChatContextualModeFeature.isAvailable
+            && prefilledText == nil
+
+        if let currentTab, shouldPresentContextualSheet {
             omniBar.endEditing()
             currentTab.presentContextualAIChatSheet(from: self)
         } else {
@@ -5009,7 +5074,22 @@ extension MainViewController: OmniBarDelegate {
         handleVoiceSearchOpenRequest(preferredTarget: preferredTarget)
     }
 
-    func onDidBeginEditing() { }
+    func onDidBeginEditing() {
+        warmSearchTokenIfEligible()
+    }
+
+    /// Proactively warms the search token for enrolled treatment users when the search input begins editing.
+    /// Called from every "editing began" entry point. Safe to over-call:
+    /// the fetcher's refresh-ahead window coalesces redundant triggers.
+    func warmSearchTokenIfEligible() {
+        guard searchTokenExperiment.cohort == .treatment else { return }
+        // Match the SERP navigation's UA exactly (the token is UA-bound): the tab's desktop state + a
+        // duckduckgo.com URL, resolved through the same `agent(forUrl:isDesktop:)` the WebView uses.
+        let isDesktop = currentTab?.tabModel.isDesktop ?? false
+        let userAgent = DefaultUserAgentManager.shared.userAgent(isDesktop: isDesktop, url: .ddg)
+        Task { await searchTokenFetcher.fetchIfNeeded(userAgent: userAgent) }
+    }
+
     func onDidEndEditing() {
         // Restore the tab's committed mode — the user may have toggled without submitting.
         // Safe on iPhone: the experimental editing state prevents textFieldDidEndEditing from

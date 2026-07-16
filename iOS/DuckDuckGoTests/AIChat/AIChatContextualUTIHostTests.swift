@@ -79,6 +79,16 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(attachCallCount, 1)
     }
 
+    func test_aiVoiceChatRequest_firesVoiceCallback() {
+        var voiceCallCount = 0
+        makeSUT()
+        sut.onAIVoiceChatRequested = { voiceCallCount += 1 }
+
+        sut.unifiedToggleInputDidRequestAIVoiceChat()
+
+        XCTAssertEqual(voiceCallCount, 1)
+    }
+
     func test_chipRemoveAction_firesRemoveCallbackOnly() {
         let url = URL(string: "https://example.com/a")!
         var removeCallCount = 0
@@ -113,7 +123,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertNil(sut.attachedContextURL)
     }
 
-    func test_showAttachAffordanceShowsPlaceholderWithoutClearingDeliveredAttachment() {
+    func test_showAttachAffordanceKeepsPlaceholderHiddenWithoutClearingDeliveredAttachment() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
         makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .delivered)
@@ -121,7 +131,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         sut.showAttachAffordance()
 
         XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
-        XCTAssertTrue(sut.chipViewModel.isVisible)
+        XCTAssertFalse(sut.chipViewModel.isVisible)
         XCTAssertEqual(sut.attachedContextURL, url)
         XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
     }
@@ -139,19 +149,30 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(sut.chipViewModel.pendingAttachedContextData?.url, url.absoluteString)
     }
 
-    func test_setAttachedContextAfterPromptSubmittedWithSameURL_makesContextPendingAgain() {
+    func test_setAttachedContextWithSameURLAfterDelivered_makesContextPendingAgain() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
         let context = makeContext(title: "Page A", url: url.absoluteString)
-        makeSUT(initialAttachedContext: context, initialAttachmentDeliveryState: .pendingSubmit)
+        makeSUT(initialAttachedContext: context, initialAttachmentDeliveryState: .delivered)
 
-        sut.markPromptSubmitted()
         XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
 
         sut.setAttachedContext(context)
 
         XCTAssertEqual(sut.chipViewModel.pendingAttachedContextData?.url, url.absoluteString)
         XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
+    }
+
+    func test_notifyPromptDelivered_firesOnPromptDeliveredCallback() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .pendingSubmit)
+        var deliveredCount = 0
+        sut.onPromptDelivered = { deliveredCount += 1 }
+
+        sut.notifyPromptDelivered()
+
+        XCTAssertEqual(deliveredCount, 1)
     }
 
     func test_prepareForNewChat_clearsAttachedContextPresentation() {

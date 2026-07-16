@@ -53,16 +53,28 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         reporter = CapturingOnboardingPixelReporter()
 
         windowControllersManager = WindowControllersManagerMock()
+
+        let fireproofDomains = MockFireproofDomains()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.contextualOnboarding]
+
+        let faviconManager = FaviconManagerMock()
+        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor(),
+                                                              fireproofDomains: fireproofDomains,
+                                                              faviconManager: faviconManager,
+                                                              windowControllersManager: windowControllersManager,
+                                                              featureFlagger: featureFlagger,
+                                                              aiChatHistoryCleaner: MockAIChatHistoryCleaner())
+
         fireCoordinator = FireCoordinator(tld: TLD(),
                                           featureFlagger: featureFlagger,
                                           historyCoordinating: HistoryCoordinatingMock(),
                                           visualizeFireAnimationDecider: nil,
                                           onboardingContextualDialogsManager: nil,
-                                          fireproofDomains: MockFireproofDomains(),
-                                          faviconManagement: FaviconManagerMock(),
+                                          fireproofDomains: fireproofDomains,
+                                          faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
+                                          dataClearingPreferences: dataClearingPreferences,
                                           pixelFiring: nil,
                                           historyProvider: MockHistoryViewDataProvider())
         viewModel = OnboardingFireButtonDialogViewModel(

@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Bestätigen";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Wir werden versuchen, die strengsten verfügbaren Cookie-Einstellungen auszuwählen und diese für dich zu deaktivieren. Falls es keine Opt-out-Möglichkeit gibt, ersparen wir dir einen Klick und akzeptieren diese Cookies für dich.";
+"cookie-popup-protection.opt-in.disabled.body" = "Wir werden versuchen, so viele Cookies wie möglich abzulehnen. Wenn es keine Möglichkeit gibt, diese abzulehnen, ersparen wir dir einen Klick und akzeptieren diese Cookies für dich.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Verwalte oder akzeptiere Cookies für mich";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Wenn möglich ablehnen oder für mich akzeptieren";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Ich kümmere mich weiter selbst darum";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Wir können dir einen Klick ersparen und diese Cookies für dich akzeptieren.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Akzeptiere für mich Cookies, bei denen kein Opt-out möglich ist";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Cookies akzeptieren, die nicht abgelehnt werden können";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ich kümmere mich weiter selbst darum";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Ich nehme sie weiterhin selbst an";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Hast du genug von Cookie-Pop-ups, bei denen du dich nicht abmelden kannst?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Cookie-Pop-up-Schutz";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo wird versuchen, die privatesten Einstellungen zu wählen und diese Pop-ups für dich auszublenden.\n[Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kann Cookie-Einstellungen automatisch verwalten, um die Privatsphäre zu maximieren, Cookies zu minimieren und diese Pop-ups zu schließen.\n[Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Wir werden versuchen, nur die privatesten verfügbaren Cookie-Optionen für dich auszuwählen und diese Pop-ups dann zu schließen.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Cookie-Pop-ups automatisch verwalten";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Lass DuckDuckGo dir außerdem einen Klick ersparen, indem Cookies in deinem Namen akzeptiert werden, um Pop-ups zu schließen, bei denen du dich nicht abmelden kannst.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Pop-ups ohne Abmeldemöglichkeit";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Cookie-Pop-ups verwalten";
@@ -5422,3 +5434,6 @@
 
 /* Do not translate - stringsdict entry */
 "aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Frage zur Seite";

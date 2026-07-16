@@ -1149,8 +1149,8 @@ final class AddressBarButtonsViewController: NSViewController {
                 privacyDashboardButton.setAccessibilityValue("shieldDot")
 
                 let animationNames = MouseOverAnimationButton.AnimationNames(
-                    aqua: privacyShieldStyle.hoverAnimationWithDot(forLightMode: true),
-                    dark: privacyShieldStyle.hoverAnimationWithDot(forLightMode: false)
+                    aqua: privacyShieldStyle.hoverAnimationWithDot,
+                    dark: privacyShieldStyle.hoverAnimationWithDot
                 )
                 privacyDashboardButton.animationNames = animationNames
             } else {
@@ -1166,8 +1166,8 @@ final class AddressBarButtonsViewController: NSViewController {
                 }
 
                 let animationNames = MouseOverAnimationButton.AnimationNames(
-                    aqua: privacyShieldStyle.hoverAnimation(forLightMode: true),
-                    dark: privacyShieldStyle.hoverAnimation(forLightMode: false)
+                    aqua: privacyShieldStyle.hoverAnimation,
+                    dark: privacyShieldStyle.hoverAnimation
                 )
                 privacyDashboardButton.animationNames = animationNames
             }
@@ -2431,14 +2431,13 @@ final class AddressBarButtonsViewController: NSViewController {
             return newAnimationView
         }
 
-        let isAquaMode = NSApp.effectiveAppearance.name == .aqua
         let style = theme.addressBarStyleProvider.privacyShieldStyleProvider
 
         shieldAnimationView = addAndLayoutAnimationViewIfNeeded(animationView: shieldAnimationView,
-                                                                animationName: style.animationForShield(forLightMode: isAquaMode),
+                                                                animationName: style.animationForShield,
                                                                 alignLeft: true)
         shieldDotAnimationView = addAndLayoutAnimationViewIfNeeded(animationView: shieldDotAnimationView,
-                                                                   animationName: style.animationForShieldWithDot(forLightMode: isAquaMode),
+                                                                   animationName: style.animationForShieldWithDot,
                                                                    alignLeft: true)
 
         // Initialize shield animations as hidden - updatePrivacyEntryPointIcon() will show the correct one

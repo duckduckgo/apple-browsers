@@ -259,13 +259,30 @@ jobs:
         restore-keys: |
           xcode-compilation-cache-${{ matrix.flavor }}-
 
-    - name: Build and run unit tests
-      id: run-unit-tests
+    - name: Build for testing
+      id: build-for-testing
       run: |
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"
+
+        set -o pipefail && xcodebuild build-for-testing \
+          -scheme "${{ matrix.scheme }}" \
+          -derivedDataPath "DerivedData" \
+          -configuration "CI" \
+          -skipPackagePluginValidation -skipMacroValidation \
+          ENABLE_TESTABILITY=true \
+          ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          | tee ${{ matrix.flavor }}-build-for-testing-xcodebuild.log \
+          | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
+          | xcbeautify
+
+    - name: Run unit tests
+      id: run-unit-tests
+      run: |
         export OS_ACTIVITY_MODE=debug
 
-        set -o pipefail && xcodebuild test \
+        set -o pipefail && xcodebuild test-without-building \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
           -configuration "CI" \
@@ -273,10 +290,6 @@ jobs:
           -test-timeouts-enabled YES \
           -default-test-execution-time-allowance 60 \
           -maximum-test-execution-time-allowance 120 \
-          ENABLE_TESTABILITY=true \
-          ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
-          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "-skip-testing:${{ matrix.integration-tests-target }}" \
           -test-iterations 3 \
           -retry-tests-on-failure \
@@ -288,7 +301,7 @@ jobs:
     - name: Run integration tests
       id: run-integration-tests
       run: |
-        set -o pipefail && xcodebuild test \
+        set -o pipefail && xcodebuild test-without-building \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
           -configuration "CI" \
@@ -296,10 +309,6 @@ jobs:
           -test-timeouts-enabled YES \
           -default-test-execution-time-allowance 60 \
           -maximum-test-execution-time-allowance 120 \
-          ENABLE_TESTABILITY=true \
-          ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
-          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "-only-testing:${{ matrix.integration-tests-target }}" \
           -test-iterations 3 \
           -retry-tests-on-failure \
@@ -429,6 +438,14 @@ jobs:
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: m_ci_apple_status_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}
+
+    - name: Upload failed build log
+      uses: actions/upload-artifact@v6
+      if: failure() || cancelled()
+      with:
+        name: ${{ matrix.flavor }}-build-for-testing-xcodebuild.log
+        path: macOS/${{ matrix.flavor }}-build-for-testing-xcodebuild.log
+        retention-days: 7
 
     - name: Upload failed unit tests log
       uses: actions/upload-artifact@v6

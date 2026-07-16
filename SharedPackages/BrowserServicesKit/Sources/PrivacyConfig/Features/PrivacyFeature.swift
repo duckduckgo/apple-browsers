@@ -278,6 +278,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216535350078652
+    case fireButtonSingleTabDeleteAll
+
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212828713075939?focus=true
     case omniBarLongPressMenu
 

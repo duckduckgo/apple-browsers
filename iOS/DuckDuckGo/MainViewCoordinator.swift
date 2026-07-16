@@ -720,10 +720,12 @@ class MainViewCoordinator {
         }
     }
 
+    /// The UTI owns the bottom anchor whenever it's visible and not voice-mode-hidden, regardless of what a caller requests.
     private func setContentContainerBottomAnchorMode(_ mode: ContentContainerBottomAnchorMode) {
-        constraints.contentContainerBottomToToolbarTop.isActive = mode == .toolbar
-        constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = mode == .unifiedToggleInput
-        constraints.contentContainerBottomToSafeArea.isActive = mode == .safeArea
+        let resolvedMode: ContentContainerBottomAnchorMode = (isUnifiedToggleInputVisible && !navigationBarContainer.isHidden) ? .unifiedToggleInput : mode
+        constraints.contentContainerBottomToToolbarTop.isActive = resolvedMode == .toolbar
+        constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = resolvedMode == .unifiedToggleInput
+        constraints.contentContainerBottomToSafeArea.isActive = resolvedMode == .safeArea
     }
 
     /// Activates the resting content-container top anchor for the current mode. In floating top

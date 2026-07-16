@@ -41,8 +41,6 @@ protocol AIChatContextualModePixelFiring {
     func fireViewAllChatsTapped()
 
     // MARK: - Page Context Attachment
-    func firePageContextPlaceholderShown()
-    func firePageContextPlaceholderTapped()
     func firePageContextAutoAttached()
     func firePageContextUpdatedOnNavigation(url: String)
     func firePageContextManuallyAttachedNative()
@@ -140,14 +138,6 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
     }
 
     // MARK: - Page Context Attachment
-
-    func firePageContextPlaceholderShown() {
-        firePixel(.aiChatContextualPageContextPlaceholderShown)
-    }
-
-    func firePageContextPlaceholderTapped() {
-        firePixel(.aiChatContextualPageContextPlaceholderTapped)
-    }
 
     func firePageContextAutoAttached() {
         firePixel(.aiChatContextualPageContextAutoAttached)

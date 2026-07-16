@@ -242,6 +242,7 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
             case blue
             case purple
             case black
+            case white
         }
 
         case shown

@@ -9,6 +9,12 @@
         "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
         "examples": ["7.175.1"]
     },
+    "unified_input_surface": {
+        "key": "surface",
+        "type": "string",
+        "description": "The Unified Toggle Input surface the pixel was fired from, distinguishing the contextual chat sheet from the Duck.ai tab and the address bar.",
+        "enum": ["address_bar", "duck_ai", "contextual_chat"]
+    },
     "cookie_popup_preference": {
         "key": "cookie_popup_preference",
         "type": "string",

@@ -1,0 +1,59 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_contextual_immediate_uti_pre_submit_toolbar
+
+---
+
+# Immediate contextual UTI starts before the first prompt with its normal toolbar:
+# model picker visible, attachment menu available, no placeholder chip, and page
+# context attach requested through the attachment menu.
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.unifiedToggleInput: "true"
+        ff.contextualDuckAIMode: "true"
+        ff.aiChatContextualUnifiedToggleInput: "true"
+        ff.aiChatAutoAttachContextByDefault: "false"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertVisible: ".*Privacy Test Pages.*"
+
+- tapOn:
+    id: "Browser.OmniBar.Button.AIChat"
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+- assertVisible: "Attach"
+- assertNotVisible:
+    id: "AIChat.ContextChip.Placeholder"
+- assertNotVisible:
+    id: "AIChat.ContextChip.AttachedTitle"
+
+- tapOn: "Attach"
+- assertVisible: "Add Image"
+- assertVisible: "Add File"
+- assertVisible: "Ask About Page"
+- tapOn: "Ask About Page"
+
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextChip.AttachedTitle"
+    timeout: 10000
+- assertNotVisible:
+    id: "AIChat.ContextChip.Placeholder"

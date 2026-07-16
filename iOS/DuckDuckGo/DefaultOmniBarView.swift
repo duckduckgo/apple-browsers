@@ -2314,6 +2314,12 @@ extension DefaultOmniBarView {
         textField.alpha = hasText ? 0 : 1
     }
 
+    func updateAIChatButtonForContextualSheet(isPresented: Bool) {
+        searchAreaView.aiChatButton.setImage(isPresented
+            ? DesignSystemImages.Glyphs.Size24.aiChatDown
+            : DesignSystemImages.Glyphs.Size24.aiChat)
+    }
+
     func updateAIChatSendButton(hasText: Bool) {
         // Mirror the iPhone unified toggle rule: submit is available with text or a valid attachment,
         // and blocked while any attachment is invalid. Voice only stands in when the input is truly

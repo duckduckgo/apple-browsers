@@ -53,7 +53,7 @@ extension MainViewController {
 
     func currentOmnibarPlaceholderWindowX() -> CGFloat? {
         guard let textField = viewCoordinator.omniBar.barView.textField,
-              textField.window != nil else { return nil }
+              omnibarChromeIsOnScreenForHandoff(textField) else { return nil }
         let placeholderRect = textField.placeholderRect(forBounds: textField.bounds)
         return textField.convert(placeholderRect.origin, to: nil).x
     }
@@ -62,8 +62,14 @@ extension MainViewController {
     /// the bottom-position UTI to disguise its collapsed pose as the floating omnibar at hand-off.
     func currentOmnibarPillWindowFrame() -> CGRect? {
         guard let pill = viewCoordinator.omniBar.barView.searchContainer,
-              pill.window != nil else { return nil }
+              omnibarChromeIsOnScreenForHandoff(pill) else { return nil }
         return pill.convert(pill.bounds, to: nil)
+    }
+
+    /// Off-screen omnibar (e.g. new-tab focus before swipe-tabs reparents it) is unmeasurable, so the hand-off falls back to resting margins.
+    private func omnibarChromeIsOnScreenForHandoff(_ view: UIView) -> Bool {
+        guard let window = view.window else { return false }
+        return window.bounds.intersects(view.convert(view.bounds, to: nil))
     }
 
     func currentOmnibarPlaceholderColor() -> UIColor? {
@@ -191,6 +197,7 @@ private extension MainViewController {
     }
 
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {
+        warmSearchTokenIfEligible()
         guard let coordinator = unifiedToggleInputCoordinator else { return }
 
         coordinator.contentViewController.refreshSuggestionsCaches()

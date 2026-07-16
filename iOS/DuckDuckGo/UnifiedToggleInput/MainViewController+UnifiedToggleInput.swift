@@ -138,18 +138,22 @@ extension MainViewController {
         unifiedToggleInputFeature.isAvailable && currentTab?.isAITab == true
     }
 
-    /// True when FE has asked us to hide the native chat input for the current AI tab via
-    /// `hideChatInput`. Persisted per tab in `TabInputState`.
-    var isAIChatInputHiddenForCurrentTab: Bool {
-        guard currentTab?.isAITab == true else { return false }
-        return unifiedToggleInputCoordinator?.aiChatInputBoxVisibility == .hidden
+    /// Toolbar visibility decision for the current tab, built from live chrome state.
+    private func toolbarVisibilityDecision() -> ToolbarVisibilityDecision {
+        ToolbarVisibilityDecision.resolve(.init(
+            isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
+            isLargeWidth: AppWidthObserver.shared.isLargeWidth,
+            isInMinimalChromeLayout: isInMinimalChromeLayout
+        ))
     }
 
-    /// True when FE has signalled a voice session is in progress on the current AI tab via
-    /// `voiceSessionStarted`. Persisted per tab in `TabInputState`.
-    var isVoiceSessionActiveForCurrentTab: Bool {
-        guard currentTab?.isAITab == true else { return false }
-        return unifiedToggleInputCoordinator?.isVoiceSessionActive == true
+    /// AI-tab bottom-chrome decision for the current tab (native input bar + voice pill).
+    private func aiTabChromeDecision() -> AITabChromeDecision {
+        AITabChromeDecision.resolve(.init(
+            isOnAITab: currentTab?.isAITab == true,
+            isAIChatInputHiddenByFrontend: unifiedToggleInputCoordinator?.aiChatInputBoxVisibility == .hidden,
+            isVoiceSessionActive: unifiedToggleInputCoordinator?.isVoiceSessionActive == true
+        ))
     }
 
     /// Hides the bottom UTI input bar when FE asks to hide the chat input. Idempotent.
@@ -157,12 +161,12 @@ extension MainViewController {
         // Only AI tabs have an AI chat input to reconcile. For a non-AI tabs this can
         //  cause glitches in the positioning of the bars.
         guard currentTab?.isAITab == true else { return }
-        viewCoordinator.setAITabBottomChromeHidden(isAIChatInputHiddenForCurrentTab)
+        viewCoordinator.setAITabBottomChromeHidden(aiTabChromeDecision().hidesInputBar)
     }
 
     /// Hides the header chats/compose pill while a voice session is in progress. Idempotent.
     func reconcileVoiceSessionChromeForCurrentTab() {
-        aiChatTabChatHeaderView?.setVoiceSessionActive(isVoiceSessionActiveForCurrentTab)
+        aiChatTabChatHeaderView?.setVoiceSessionActive(aiTabChromeDecision().voiceChromeActive)
     }
 
     /// Applies both AI-chrome reconciles together — call from every refresh path so adding a new
@@ -184,40 +188,21 @@ extension MainViewController {
         }
     }
 
-    /// Hides the toolbar on AI tabs; restores it on non-AI tabs. The focused omnibar session
-    /// opened from a Duck.ai tab counts as "tab-like" — keep the toolbar so the user has the
-    /// standard browser controls while searching. Idempotent; safe with the feature flag off.
+    /// Hides the toolbar on AI tabs; restores it on non-AI tabs. Idempotent; safe with the feature flag off.
     func reconcileToolbarVisibilityForCurrentTab() {
-        let isFocusedOmnibarSession = unifiedToggleInputCoordinator?.isOmnibarSession == true
+        applyToolbarVisibility(toolbarVisibilityDecision())
+    }
+
+    /// Renders a resolved toolbar decision. On a hidden-flip the full bars layout is recomputed;
+    /// otherwise the toolbar's constraint is re-derived from the single constant source so it can't
+    /// linger off-screen after a transient AI-tab phase.
+    private func applyToolbarVisibility(_ decision: ToolbarVisibilityDecision) {
         let wasHidden = viewCoordinator.toolbar.isHidden
-        if isCurrentTabUsingUnifiedInputAIChrome && !isFocusedOmnibarSession {
-            viewCoordinator.toolbar.isHidden = true
-        } else {
-            viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth || isInMinimalChromeLayout
-            // Self-heal a stale clamp. `updateToolbarConstant` deliberately pushes the
-            // toolbar's constraint off-screen whenever `toolbar.isHidden == true`. This
-            // is required for iPad and minimal-chrome layouts, where the toolbar is
-            // permanently hidden and its off-screen layout slot acts as a spacer.
-            //
-            // The UTI AI-tab phase reuses `isHidden = true` *transiently*. Any
-            // `setBarsVisibility(1)` call during that phase (refreshAITab, BarsAnimator,
-            // applyDuckAIFireChromeState, etc.) writes the same off-screen
-            // value via the clamp. When `isHidden` flips back to false here, nothing
-            // else recomputes the constant; the toolbar is unhidden but laid out
-            // off-screen. Snap it back to 0.
-            //
-            // `alpha == 1` excludes mid-scroll partial-hides. `BarsAnimator` writes
-            // matching `alpha` and `constant` values together, so they can only
-            // disagree when the clamp suppressed a write.
-            if !viewCoordinator.toolbar.isHidden
-                && viewCoordinator.toolbar.alpha == 1.0
-                && viewCoordinator.constraints.toolbarBottom.constant != 0 {
-                viewCoordinator.constraints.toolbarBottom.constant = 0
-            }
-        }
-        // `toolbarBottom.constant` is derived from `isHidden`; recompute when it flips.
-        if wasHidden != viewCoordinator.toolbar.isHidden {
+        viewCoordinator.toolbar.isHidden = decision.isHidden
+        if wasHidden != decision.isHidden {
             setBarsVisibility(currentBarsVisibility, animated: false, animationDuration: nil)
+        } else if !decision.isHidden {
+            updateToolbarConstant(currentBarsVisibility)
         }
     }
 
@@ -808,6 +793,12 @@ private extension MainViewController {
 
     func refreshNonAITab(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) {
         viewCoordinator.hideAITabChrome()
+        // Must run before the layout pass below, which reads live UTI visibility for the anchor.
+        if coordinator.isActive {
+            coordinator.deactivateToOmnibar()
+            coordinator.hide()
+            coordinator.unbind()
+        }
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         applyUnifiedInputChromeBackground(.standardChrome)
@@ -817,11 +808,6 @@ private extension MainViewController {
         reconcileAIChromeForCurrentTab()
         // Snap chrome revealed — prior chat-scroll could have hidden bars under the AI header, so without this the omnibar flies in on return.
         chromeManager.reset(animated: false)
-        if coordinator.isActive {
-            coordinator.deactivateToOmnibar()
-            coordinator.hide()
-            coordinator.unbind()
-        }
     }
 
     func setUpAIChatTabChatHeader() {

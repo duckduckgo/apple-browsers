@@ -240,10 +240,10 @@ final class NavigationResponseRouterTests {
     // MARK: - vCard contact links
 
     @available(iOS 16, *)
-    @Test("Returns autoPreviewPersist for contact MIME when vcardContactLinks is on, even with walletPassDownload also on", .timeLimit(.minutes(1)))
-    func returnsAutoPreviewPersistForContactMIMEWhenVCardFlagOn() {
+    @Test("Returns autoPreviewPersist for contact MIME, even with walletPassDownload also on", .timeLimit(.minutes(1)))
+    func returnsAutoPreviewPersistForContactMIME() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(mimeType: .contact)
 
         // WHEN
@@ -254,24 +254,10 @@ final class NavigationResponseRouterTests {
     }
 
     @available(iOS 16, *)
-    @Test("Returns autoPreviewTransient for contact MIME when vcardContactLinks is off", .timeLimit(.minutes(1)))
-    func returnsAutoPreviewTransientForContactMIMEWhenVCardFlagOff() {
-        // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: false)
-        let shape = makeShape(mimeType: .contact)
-
-        // WHEN
-        let decision = router.decide(for: shape)
-
-        // THEN
-        #expect(decision == .autoPreviewTransient)
-    }
-
-    @available(iOS 16, *)
     @Test("Returns autoPreviewPersist for .vcf URL extension even when MIME is octet-stream", .timeLimit(.minutes(1)))
     func returnsAutoPreviewPersistForVCardByURLExtension() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(
             url: URL(string: "https://example.com/contact.vcf"),
             mimeType: .octetStream,
@@ -289,7 +275,7 @@ final class NavigationResponseRouterTests {
     @Test("Returns autoPreviewPersist for .vcard suggestedFilename even when URL has no extension", .timeLimit(.minutes(1)))
     func returnsAutoPreviewPersistForVCardBySuggestedFilename() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(
             url: URL(string: "https://example.com/download"),
             mimeType: .octetStream,
@@ -307,7 +293,7 @@ final class NavigationResponseRouterTests {
     @Test("Fires m_download_started with can_auto_preview=1 for a vCard contact", .timeLimit(.minutes(1)))
     func firesDownloadStartedPixelForVCard() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(mimeType: .contact)
 
         // WHEN
@@ -323,7 +309,7 @@ final class NavigationResponseRouterTests {
     @Test("Does not fire wallet_pass_preview_requested for a vCard contact", .timeLimit(.minutes(1)))
     func doesNotFireWalletPassPreviewRequestedForVCard() {
         // GIVEN
-        let router = makeRouter(walletPassDownload: true, vcardContactLinks: true)
+        let router = makeRouter(walletPassDownload: true)
         let shape = makeShape(mimeType: .contact)
 
         // WHEN
@@ -608,12 +594,10 @@ final class NavigationResponseRouterTests {
     // MARK: - Helpers
 
     private func makeRouter(walletPassDownload: Bool = true,
-                            icsCalendarLinks: Bool = false,
-                            vcardContactLinks: Bool = false) -> NavigationResponseRouter {
+                            icsCalendarLinks: Bool = false) -> NavigationResponseRouter {
         var enabled: [FeatureFlag] = []
         if walletPassDownload { enabled.append(.walletPassDownload) }
         if icsCalendarLinks { enabled.append(.icsCalendarLinks) }
-        if vcardContactLinks { enabled.append(.vcardContactLinks) }
         let flagger = MockFeatureFlagger(enabledFeatureFlags: enabled)
         return NavigationResponseRouter(featureFlagger: flagger, pixelFiring: PixelFiringMock.self)
     }

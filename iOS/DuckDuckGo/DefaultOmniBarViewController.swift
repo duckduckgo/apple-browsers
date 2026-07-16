@@ -419,6 +419,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private func present(for textField: UITextField, suggestionsDependencies: SuggestionTrayDependencies, textEntryMode: TextEntryMode, animated: Bool) {
         guard editingStateViewController == nil else { return }
+        omniDelegate?.onDidBeginEditing()
 
         let switchBarHandler = createSwitchBarHandler(for: textField, initialToggleState: textEntryMode)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)

@@ -109,6 +109,12 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestDeleteChatWithID chatID: String) {
             deletedChatIDs.append(chatID)
         }
+
+        var newVoiceChatCallCount = 0
+
+        func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator) {
+            newVoiceChatCallCount += 1
+        }
     }
 
     private final class MockPresentingViewController: UIViewController {
@@ -404,6 +410,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         mockSettings.isAutomaticContextAttachmentEnabled = true
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.sendContext(makeTestContext())
+        await waitForAttachedChip()
         sut.aiChatContextualSheetViewControllerDidRequestRemoveChip(sut.sheetViewController!)
         mockPageContextHandler.triggerContextCollectionCallCount = 0
 
@@ -617,6 +624,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
+        await waitForAttachedChip()
         sut.sessionState.downgradeToPlaceholder()
         mockPageContextHandler.clearCallCount = 0
         mockPageContextHandler.triggerContextCollectionCallCount = 0
@@ -634,6 +642,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         await sut.presentSheet(from: mockPresentingVC)
         mockPageContextHandler.sendContext(makeTestContext(url: pageURL.absoluteString))
+        await waitForAttachedChip()
         sut.sessionState.downgradeToPlaceholder()
         mockPageContextHandler.clearCallCount = 0
         mockPageContextHandler.triggerContextCollectionCallCount = 0
@@ -767,6 +776,18 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             fullContentLength: 12
         )
         return AIChatPageContext(contextData: contextData, favicon: nil)
+    }
+
+    @MainActor
+    private func waitForAttachedChip(file: StaticString = #filePath, line: UInt = #line) async {
+        for _ in 0..<5 {
+            if case .attached = sut.sessionState.chipState {
+                return
+            }
+            await Task.yield()
+        }
+
+        XCTFail("Expected attached chip state", file: file, line: line)
     }
 
 }

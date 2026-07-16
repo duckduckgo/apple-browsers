@@ -47,6 +47,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var isCurrentTextValidURL: Bool = false
     @Published var hasSubmittedPrompt: Bool = false
     @Published var submitsAIChatOnKeyboardReturn: Bool = false
+    @Published var usesReturnKeySubmitButtonStyle: Bool = false
 
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
         $hasSubmittedPrompt.eraseToAnyPublisher()
@@ -54,6 +55,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> {
         $submitsAIChatOnKeyboardReturn.eraseToAnyPublisher()
+    }
+
+    var usesReturnKeySubmitButtonStylePublisher: AnyPublisher<Bool, Never> {
+        $usesReturnKeySubmitButtonStyle.eraseToAnyPublisher()
     }
 
     var isGenerating: Bool = false {

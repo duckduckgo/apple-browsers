@@ -1860,6 +1860,7 @@ class TabViewController: UIViewController {
     }
     
     func onCopyAction(forUrl url: URL) {
+        let url = url.urlForCopyLinkAction
         let copyText: String
         if url.isDuckDuckGo {
             let cleanURL = url.removingInternalSearchParameters()

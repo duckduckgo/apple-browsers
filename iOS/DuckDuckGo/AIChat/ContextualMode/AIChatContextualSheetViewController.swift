@@ -265,6 +265,16 @@ final class AIChatContextualSheetViewController: UIViewController {
         return view
     }()
 
+    /// Dismisses the keyboard on a vertical content drag, since `keyboardDismissMode` can't reach the sibling UTI field.
+    private lazy var contentDragKeyboardDismissRecognizer: UIPanGestureRecognizer = {
+        let recognizer = UIPanGestureRecognizer(target: self, action: #selector(handleContentDragToDismissKeyboard(_:)))
+        recognizer.delegate = self
+        recognizer.cancelsTouchesInView = false
+        recognizer.delaysTouchesBegan = false
+        recognizer.delaysTouchesEnded = false
+        return recognizer
+    }()
+
     private lazy var topSeparator: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor(designSystemColor: .lines)
@@ -601,14 +611,6 @@ private extension AIChatContextualSheetViewController {
         }
     }
 
-    func createPlaceholderChipView(onTapToAttach: @escaping () -> Void, onRemove: @escaping () -> Void) -> AIChatContextChipView {
-        let chipView = AIChatContextChipView()
-        chipView.configure(state: .placeholder)
-        chipView.onTapToAttach = onTapToAttach
-        chipView.onRemove = onRemove
-        return chipView
-    }
-
     func createContextChipView(context: AIChatPageContext, onRemove: @escaping () -> Void) -> AIChatContextChipView {
         let chipView = AIChatContextChipView()
         chipView.configure(state: .attached(title: context.title, favicon: context.favicon))
@@ -745,6 +747,24 @@ private extension AIChatContextualSheetViewController {
         animationView.play(fromProgress: 0, toProgress: 1) { [weak animationView] _ in
             animationView?.removeFromSuperview()
         }
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate
+
+extension AIChatContextualSheetViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        Self.isPredominantlyVerticalDrag(velocity: contentDragKeyboardDismissRecognizer.velocity(in: contentContainerView))
+    }
+
+    /// Only vertical drags dismiss the keyboard, so horizontal scrolling (e.g. a wide code block) leaves it up.
+    static func isPredominantlyVerticalDrag(velocity: CGPoint) -> Bool {
+        abs(velocity.y) > abs(velocity.x)
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        gestureRecognizer === contentDragKeyboardDismissRecognizer
     }
 }
 
@@ -1134,6 +1154,12 @@ private extension AIChatContextualSheetViewController {
         let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)
         contentContainerBottomConstraint = bottomConstraint
         bottomConstraint.isActive = true
+        contentContainerView.addGestureRecognizer(contentDragKeyboardDismissRecognizer)
+    }
+
+    @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {
+        guard gesture.state == .began else { return }
+        persistentUTIHost?.deactivateInput()
     }
     
     func updateShadowPath() {

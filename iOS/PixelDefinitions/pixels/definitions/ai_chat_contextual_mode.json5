@@ -48,20 +48,6 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-    "m_aichat_contextual_page_context_placeholder_shown": {
-        "description": "Fired when the placeholder context chip is shown to the user (auto-context setting disabled)",
-        "owners": ["aataraxiaa"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
-    "m_aichat_contextual_page_context_placeholder_tapped": {
-        "description": "Fired when the user taps the placeholder chip to attach page content",
-        "owners": ["aataraxiaa"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
     "m_aichat_contextual_page_context_auto_attached": {
         "description": "Fired when page context is automatically attached to an AI Chat prompt (auto-context setting enabled)",
         "owners": ["aataraxiaa"],

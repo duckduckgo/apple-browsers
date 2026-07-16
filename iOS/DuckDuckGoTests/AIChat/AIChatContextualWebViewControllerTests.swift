@@ -186,8 +186,6 @@ private final class StubContextualModePixelHandler: AIChatContextualModePixelFir
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() {}
     func fireFireButtonConfirmed() {}
-    func firePageContextPlaceholderShown() {}
-    func firePageContextPlaceholderTapped() {}
     func firePageContextAutoAttached() {}
     func firePageContextUpdatedOnNavigation(url: String) {}
     func firePageContextManuallyAttachedNative() {}

@@ -3096,6 +3096,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             fireproofDomains: mockFireproofDomains,
             faviconManagement: FaviconManagerMock(),
             windowControllersManager: Application.appDelegate.windowControllersManager,
+            dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
             pixelFiring: nil,
             wideEventManaging: WideEventMock(),
             historyProvider: mockHistoryProvider,

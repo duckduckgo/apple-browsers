@@ -34,6 +34,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var mockPreferences: MockAIChatPreferences!
     private var mockToggleModeStorage: MockToggleModeStorage!
     private var mockSubmissionMetrics: MockSwitchBarSubmissionMetrics!
+    private var retainedBridgeReadyWebView: WKWebView?
+    private var retainedBridgeReadyBroker: UserScriptMessageBroker?
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
@@ -59,6 +61,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockPreferences = nil
         mockToggleModeStorage = nil
         mockSubmissionMetrics = nil
+        retainedBridgeReadyWebView = nil
+        retainedBridgeReadyBroker = nil
         super.tearDown()
     }
 
@@ -69,6 +73,19 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.textState, .empty)
         XCTAssertEqual(sut.inputMode, .aiChat)
         XCTAssertFalse(sut.hasActiveChat)
+    }
+
+    func test_contextualChat_pixelSurfaceIsContextualChatNotAITab() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+
+        XCTAssertFalse(sut.isAITabState)
+        XCTAssertEqual(sut.pixelSurface, .contextualChat)
     }
 
     // MARK: - Display State: showCollapsed
@@ -499,6 +516,44 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didChangeText: "hello")
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
         XCTAssertEqual(sut.textState, .empty)
+    }
+
+    func test_submitProgrammatic_contextualNoBoundScript_passesAttachmentsBeforeClearing() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            switchBarSubmissionMetrics: mockSubmissionMetrics,
+            contextualStartsPreSubmit: true
+        )
+        sut.delegate = mockDelegate
+        mockPreferences.selectedModelId = "file-model"
+        sut.modelStore.models = [
+            AIChatModel(
+                id: "file-model",
+                name: "File model",
+                provider: .unknown,
+                supportsImageUpload: false,
+                supportedFileTypes: ["application/pdf"],
+                entityHasAccess: true
+            )
+        ]
+        sut.modelStore.attachmentLimits = makeLimits()
+        sut.addFileAttachment(makeFileAttachment())
+
+        var attachmentCountAtSubmit: Int?
+        mockDelegate.onPromptSubmit = { [weak sut] in
+            attachmentCountAtSubmit = sut?.viewController.currentAttachments.count
+        }
+
+        sut.submitProgrammatic(text: "Summarize This Page")
+
+        XCTAssertEqual(mockDelegate.submittedPrompt, "Summarize This Page")
+        XCTAssertEqual(mockDelegate.submittedFiles?.count, 1)
+        XCTAssertEqual(mockDelegate.submittedFiles?.first?.fileName, "test.pdf")
+        XCTAssertEqual(attachmentCountAtSubmit, 1)
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
     }
 
     // MARK: - VC Delegate: Submit — Submission Metrics
@@ -1263,6 +1318,57 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
     }
 
+    func test_toolsMenu_doesNotContainCustomizeResponsesAction_contextualPreSubmit() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+
+        let actionTitles = toolsMenuActions().map(\.title)
+
+        XCTAssertFalse(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+    }
+
+    func test_toolsMenu_doesNotContainCustomizeResponsesAction_contextualPostSubmitBeforeScriptBinds() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+
+        _ = sut.prepareExternalPromptSubmission()
+
+        let actionTitles = toolsMenuActions().map(\.title)
+
+        XCTAssertFalse(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+    }
+
+    func test_toolsMenu_containsCustomizeResponsesAction_contextualPostSubmitAfterScriptBinds() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+        sut.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.webSearch])]
+
+        _ = sut.prepareExternalPromptSubmission()
+        XCTAssertFalse(toolsMenuActions().map(\.title).contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+        sut.bindToTab(makeBridgeReadyUserScript(), hasExistingChat: true)
+
+        let actionTitles = toolsMenuActions().map(\.title)
+
+        XCTAssertTrue(actionTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+    }
+
     // MARK: - Web Search Tools
 
     func test_toolsButton_visibleOnAITabWhenModelSupportsTools() {
@@ -1936,7 +2042,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_modelChip_hiddenAfterPreparingExternalPromptSubmission() {
-        sut.prepareExternalPromptSubmission()
+        _ = sut.prepareExternalPromptSubmission()
         XCTAssertTrue(sut.hasSubmittedPrompt)
         XCTAssertTrue(sut.viewController.isModelChipHidden)
     }
@@ -1975,6 +2081,34 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isModelChipHidden)
         sut.startNewChat()
         XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_contextualChatPreSubmit_modelChipVisible() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+        XCTAssertFalse(sut.viewController.isModelChipHidden)
+    }
+
+    func test_contextualChatPostSubmit_modelChipHidden() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            contextualStartsPreSubmit: true
+        )
+
+        _ = sut.prepareExternalPromptSubmission()
+
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+        XCTAssertTrue(sut.viewController.isModelChipHidden)
     }
 
     func test_modelChip_notAffectedBySearchSubmit() {
@@ -2371,11 +2505,46 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_unifiedToggleInputVCDidTapAIChatShortcut_forwardsCurrentText() {
-        sut.viewController.handler.updateCurrentText("hello")
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "hello")
 
         sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
 
         XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "hello")
+    }
+
+    func test_unifiedToggleInputVCDidTapAIChatShortcut_afterReplacingPrefilledOmnibarTextForwardsTypedText() {
+        sut.activateFromOmnibar(prefilledText: "https://privacy-test-pages.site", inputMode: .search)
+        sut.onAnimatedDismissToOmnibar = { completion in completion?() }
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "What is a duck?")
+
+        sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
+
+        XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "What is a duck?")
+    }
+
+    func test_unifiedToggleInputVCDidTapAIChatShortcut_withUntouchedPrefilledURL_forwardsEmpty() {
+        // Untouched prefill (the page URL shown for convenience) must NOT be sent as a prompt.
+        let url = "https://privacy-test-pages.site"
+        sut.activateFromOmnibar(prefilledText: url, inputMode: .search)
+        sut.onAnimatedDismissToOmnibar = { completion in completion?() }
+        // Reproduce the on-device async flip of textState to .userTyped; currentText stays the URL.
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: url)
+        XCTAssertEqual(sut.textState, .userTyped)
+
+        sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
+
+        XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "")
+    }
+
+    func test_unifiedToggleInputVCDidTapAIChatShortcut_afterEditingPrefilledURLToDifferentURL_forwardsEditedURL() {
+        // A user-edited URL is submitted as the prompt, not treated as an untouched prefill.
+        sut.activateFromOmnibar(prefilledText: "https://privacy-test-pages.site", inputMode: .search)
+        sut.onAnimatedDismissToOmnibar = { completion in completion?() }
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "https://example.com")
+
+        sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
+
+        XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "https://example.com")
     }
 
     // MARK: - Helpers
@@ -2390,6 +2559,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         let userScript = makeTestUserScript()
         let webView = WKWebView()
         let broker = UserScriptMessageBroker(context: "test", requiresRunInPageContentWorld: true)
+        retainedBridgeReadyWebView = webView
+        retainedBridgeReadyBroker = broker
         userScript.with(broker: broker)
         userScript.webView = webView
         return userScript
@@ -2408,6 +2579,17 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     private func hasQueryItem(in components: URLComponents?, name: String, value: String) -> Bool {
         components?.queryItems?.contains { $0.name == name && $0.value == value } == true
+    }
+
+    private func makeFileAttachment(fileName: String = "test.pdf", pageCount: Int? = 1) -> AIChatFileAttachment {
+        let data = Data(repeating: 0, count: 1_000)
+        return AIChatFileAttachment(
+            data: data,
+            fileName: fileName,
+            mimeType: "application/pdf",
+            fileSizeBytes: data.count,
+            pageCount: pageCount
+        )
     }
 
     private func makeLimits() -> AIChatAttachmentTierLimits {
@@ -2587,6 +2769,17 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertNotNil(modelChipButton)
         if #available(iOS 16.0, *) {
             XCTAssertEqual(modelChipButton?.preferredMenuElementOrder, .fixed)
+        }
+    }
+
+    func test_attachmentButton_usesFixedMenuElementOrder() {
+        let sut = UnifiedToggleInputToolbarView()
+
+        let attachmentButton = findButton(accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel, in: sut)
+
+        XCTAssertNotNil(attachmentButton)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(attachmentButton?.preferredMenuElementOrder, .fixed)
         }
     }
 
@@ -2779,6 +2972,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
     var submittedQuery: String?
     var committedMode: TextEntryMode?
+    var onPromptSubmit: (() -> Void)?
     var didRequestVoiceSearchCount = 0
     var didRequestAIVoiceChatCount = 0
     var didRequestAIChatCount = 0
@@ -2791,6 +2985,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedReasoningEffort = reasoningEffort
         submittedImages = images
         submittedFiles = files
+        onPromptSubmit?()
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearchCount += 1 }

@@ -13,7 +13,7 @@ let package = Package(
         .library(name: "AppUpdaterTestHelpers", targets: ["AppUpdaterTestHelpers"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.8.1"),
+        .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.9.4"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../FeatureFlags"),

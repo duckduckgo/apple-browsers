@@ -1426,10 +1426,10 @@
 "cookie-popup-protection.opt-in.confirm" = "Potrdi";
 
 /* Body of the opt-in dialog when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.body" = "Poskušali bomo izbrati najbolj zasebne možnosti piškotkov, ki so na voljo, in jih zapreti namesto vas. Če nimajo možnosti zavrnitve, vam bomo prihranili klik in te piškotke sprejeli namesto vas.";
+"cookie-popup-protection.opt-in.disabled.body" = "Poskušali bomo zavrniti čim več piškotkov. Če možnost zavrnitve ne bo na voljo, vam bomo prihranili klik in te piškotke sprejeli namesto vas.";
 
 /* Primary (recommended) option when cookie pop-up protection is off */
-"cookie-popup-protection.opt-in.disabled.primary-option" = "Upravljaj ali sprejmi piškotke zame";
+"cookie-popup-protection.opt-in.disabled.primary-option" = "Zavrni, ko je mogoče, ali sprejmi zame";
 
 /* Secondary option when cookie pop-up protection is off */
 "cookie-popup-protection.opt-in.disabled.secondary-option" = "Upravljanje bom še naprej urejal/-a sam/-a";
@@ -1441,10 +1441,10 @@
 "cookie-popup-protection.opt-in.enabled.body" = "Prihranimo vam lahko klik in te piškotke sprejmemo namesto vas.";
 
 /* Primary (recommended) option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.primary-option" = "Zame sprejmi piškotke brez možnosti zavrnitve";
+"cookie-popup-protection.opt-in.enabled.primary-option" = "Sprejmi piškotke, ki jih ni mogoče zavrniti";
 
 /* Secondary option when cookie pop-up protection is already enabled */
-"cookie-popup-protection.opt-in.enabled.secondary-option" = "Upravljanje bom še naprej urejal/-a sam/-a";
+"cookie-popup-protection.opt-in.enabled.secondary-option" = "Sprejemanje bom še naprej urejal/-a sam/-a";
 
 /* Title of the opt-in dialog when cookie pop-up protection is already enabled */
 "cookie-popup-protection.opt-in.enabled.title" = "Ste naveličani pojavnih oken s piškotki, ki vam ne omogočajo, da jih zavrnete?";
@@ -4054,7 +4054,19 @@
 "settings.cookie.pop-up-protection.protection" = "Zaščita pred pojavnimi okni piškotkov";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo bo poskusil izbrati najbolj zasebne nastavitve, ki so na voljo, in skriti ta pojavna okna za vas.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo lahko samodejno upravlja nastavitve piškotkov za povečanje zasebnosti, zmanjšanje števila piškotkov in zapiranje teh pojavnih oken.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+
+/* Explanation below the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.explanation" = "Poskušali bomo izbrati le najbolj zasebne možnosti piškotkov, ki so na voljo za vas, nato pa zapreti ta pojavna okna.";
+
+/* Title for the auto-manage cookie pop-ups toggle in settings */
+"settings.cookie.auto-manage.title" = "Samodejno upravljanje pojavnih oken za piškotke";
+
+/* Explanation below the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.explanation" = "Prav tako vam DuckDuckGo prihrani klik tako, da namesto vas sprejme piškotke za zapiranje pojavnih oken, ki vam ne omogočajo zavrnitve.";
+
+/* Title for the pop-ups without opt-outs toggle in settings */
+"settings.cookie.popups-without-opt-outs.title" = "Pojavna okna brez možnosti zavrnitve";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Upravljanje pojavnih oken za piškotke";
@@ -5422,3 +5434,6 @@
 
 /* Do not translate - stringsdict entry */
 "aiChat.history.deleteAll.confirmation.title" = "aiChat.history.deleteAll.confirmation.title";
+
+/* Top-level attachment menu option to attach the current page content to an AI chat message */
+"aichat.attachment.option.ask.about.page" = "Vprašajte o strani";

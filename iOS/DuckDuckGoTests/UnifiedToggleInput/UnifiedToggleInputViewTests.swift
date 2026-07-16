@@ -121,6 +121,55 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(scrollView.contentOffset.x, 0, accuracy: 1)
     }
 
+    func test_attachmentStripShowsPageContextChipWithoutAddingAttachment() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView()
+
+        sut.setPageContextChipState(.attached(title: "DuckDuckGo", favicon: nil))
+        sut.setPageContextChipVisible(true)
+
+        XCTAssertTrue(sut.attachments.isEmpty)
+        XCTAssertTrue(sut.hasVisiblePageContext)
+        XCTAssertNotNil(firstDescendant(of: AIChatContextChipView.self, in: sut))
+    }
+
+    func test_attachmentStripPageContextRemoveDoesNotRemoveFileAttachment() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView()
+        var removeCount = 0
+        sut.onPageContextRemove = { removeCount += 1 }
+        sut.addAttachment(makeFileAttachment())
+        sut.setPageContextChipState(.attached(title: "DuckDuckGo", favicon: nil))
+        sut.setPageContextChipVisible(true)
+
+        let removeButton = try XCTUnwrap(findButton(accessibilityIdentifier: "AIChat.ContextChip.RemoveButton", in: sut))
+        removeButton.sendActions(for: .touchUpInside)
+
+        XCTAssertEqual(removeCount, 1)
+        XCTAssertEqual(sut.attachments.count, 1)
+        XCTAssertTrue(sut.hasVisiblePageContext)
+    }
+
+    @MainActor
+    func test_visiblePageContextShowsAttachmentStripButDoesNotEnableAttachmentOnlySubmit() throws {
+        let originatingURL = CurrentValueSubject<URL?, Never>(URL(string: "https://duckduckgo.com"))
+        let viewModel = UnifiedToggleInputPageContextChipViewModel(
+            originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
+            initialAttachedContext: nil,
+            isAutoAttachEnabled: { true }
+        )
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.bindPageContextChip(to: viewModel)
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+
+        viewModel.setAttached(makePageContext(title: "DuckDuckGo", url: "https://duckduckgo.com"))
+        flushMainQueue()
+
+        let strip = try XCTUnwrap(firstDescendant(of: UnifiedToggleInputAttachmentsStripView.self, in: sut))
+        XCTAssertEqual(strip.alpha, 1, accuracy: 0.001)
+        XCTAssertTrue(sut.currentAttachments.isEmpty)
+        XCTAssertFalse(sut.isToolbarSubmitEnabled)
+    }
+
     @MainActor
     func test_documentPickerFailureIncludesFallbackMetadataForInvalidChip() async {
         let sut = UnifiedToggleInputAttachmentPresenter()
@@ -658,6 +707,11 @@ final class UnifiedToggleInputViewTests: XCTestCase {
                 pageCount: 1
             )
         )
+    }
+
+    private func makePageContext(title: String, url: String) -> AIChatPageContext {
+        let data = AIChatPageContextData(title: title, favicon: [], url: url, content: "", truncated: false, fullContentLength: 0)
+        return AIChatPageContext(contextData: data, favicon: nil)
     }
 
     private func firstDescendant<T: UIView>(of type: T.Type, in view: UIView) -> T? {

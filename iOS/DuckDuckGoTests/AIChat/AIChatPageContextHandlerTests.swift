@@ -663,13 +663,13 @@ final class PageContextExtractionPixelHandlerTests: XCTestCase {
 
     func testWhenSuccessThenFiresSuccessPixelWithNoAdditionalParams() {
         let result = capture(.success, trigger: .navigation, latency: .under1s)
-        XCTAssertEqual(result?.event.name, "m_aichat_page_context_extraction_success")
+        XCTAssertEqual(result?.event.name, "aichat_page_context_extraction_success")
         XCTAssertEqual(result?.params, [:])
     }
 
     func testWhenFailureThenFiresFailedPixelWithReasonTriggerLatency() {
         let result = capture(.failure(.emptyContent), trigger: .auto, latency: .oneToFiveSeconds)
-        XCTAssertEqual(result?.event.name, "m_aichat_page_context_extraction_failed")
+        XCTAssertEqual(result?.event.name, "aichat_page_context_extraction_failed")
         XCTAssertEqual(result?.params["reason"], "empty_content")
         XCTAssertEqual(result?.params["trigger"], "auto")
         XCTAssertEqual(result?.params["latency"], "1_to_5s")
@@ -683,7 +683,7 @@ final class PageContextExtractionPixelHandlerTests: XCTestCase {
 
     func testWhenPreventedThenFiresPreventedPixelWithCategoryReasonTrigger() {
         let result = capture(.prevented("pdf"), trigger: .tabContent, latency: nil)
-        XCTAssertEqual(result?.event.name, "m_aichat_page_context_extraction_prevented")
+        XCTAssertEqual(result?.event.name, "aichat_page_context_extraction_prevented")
         XCTAssertEqual(result?.params["category"], "pdf")
         XCTAssertEqual(result?.params["reason"], "non_attachable")
         XCTAssertEqual(result?.params["trigger"], "tab_content")

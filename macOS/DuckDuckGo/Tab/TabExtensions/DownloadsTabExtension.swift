@@ -108,7 +108,7 @@ final class DownloadsTabExtension: NSObject {
             let destination = self.downloadDestination(for: location, suggestedFilename: webView.suggestedFilename ?? "")
             let download = await webView.startDownload(using: URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad))
 
-            self.downloadManager.add(download, fireWindowSession: FireWindowSessionRef(window: webView.window), delegate: self, destination: destination)
+            self.downloadManager.add(download, fireWindowSession: self.resolveFireWindowSession(for: webView), delegate: self, destination: destination)
         }
 
     }
@@ -223,11 +223,12 @@ extension DownloadsTabExtension: NavigationResponder {
 
     @MainActor
     func enqueueDownload(_ download: WebKitDownload, withNavigationAction navigationAction: NavigationAction?) {
+        let webView = download.originatingWebView ?? download.targetWebView
         let task = downloadManager.add(download,
-                                       fireWindowSession: FireWindowSessionRef(window: (download.originatingWebView ?? download.targetWebView)?.window),
+                                       fireWindowSession: resolveFireWindowSession(for: webView),
                                        delegate: self,
                                        destination: .auto)
-        guard let webView = download.targetWebView else { return }
+        guard let webView else { return }
 
         var shouldCloseTabOnDownloadStart: Bool {
             guard let navigationAction else {
@@ -267,6 +268,14 @@ extension DownloadsTabExtension: NavigationResponder {
         } receiveValue: { _ in }
     }
 
+    @MainActor
+    private func resolveFireWindowSession(for webView: WKWebView?) -> FireWindowSessionRef? {
+        let session = FireWindowSessionRef(session: webView?.configuration.websiteDataStore.fireWindowSession)
+            ?? FireWindowSessionRef(window: webView?.window)
+        assert(!isBurner || session != nil, "Fire session must be resolvable for burner download")
+        return session
+    }
+
 }
 
 extension DownloadsTabExtension: WKNavigationDelegate {
@@ -275,7 +284,7 @@ extension DownloadsTabExtension: WKNavigationDelegate {
     @objc(_webView:contextMenuDidCreateDownload:)
     func webView(_ webView: WKWebView, contextMenuDidCreate download: WebKitDownload) {
         // to do: url should be cleaned up before launching download
-        downloadManager.add(download, fireWindowSession: FireWindowSessionRef(window: webView.window), delegate: self, destination: .prompt)
+        downloadManager.add(download, fireWindowSession: resolveFireWindowSession(for: webView), delegate: self, destination: .prompt)
     }
 
 }

@@ -20,19 +20,12 @@ import AppKit
 
 final class TabBarView: MouseOverView {
 
-    /// The full-width window-dragging view sitting at the bottom of the z-order.
     private var windowDraggingView: WindowDraggingView? {
         subviews.first { $0 is WindowDraggingView && !$0.isHidden } as? WindowDraggingView
     }
 
-    /// The tab bar is hosted in the window's title bar, so its empty chrome should drag the
-    /// window like the rest of the title bar. The scroll view and collection view swallow those
-    /// clicks (`TabBarScrollView.mouseDownCanMoveWindow == false`) and sit above the base
-    /// `WindowDraggingView` in the z-order, which breaks dragging in the gap before the first tab
-    /// when no tabs are pinned (with pinned tabs, that gap is the draggable pinned-tabs container).
-    /// Redirect background clicks to the window-dragging view so dragging works there too.
-    /// Clicks on actual tabs resolve to `TabBarItemCellView`, and buttons to their own views, so
-    /// only genuinely empty areas are redirected.
+    // Empty tab-bar chrome should drag the window; the scroll/collection views swallow those
+    // clicks, so redirect them to the dragging view. Tabs and buttons resolve to their own views.
     override func hitTest(_ point: NSPoint) -> NSView? {
         guard let hit = super.hitTest(point) else { return nil }
 

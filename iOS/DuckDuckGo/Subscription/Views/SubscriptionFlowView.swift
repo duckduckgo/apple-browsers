@@ -51,7 +51,9 @@ struct SubscriptionFlowView: View {
     var body: some View {
         
         // Hidden Navigation Links for Onboarding sections
-        NavigationLink(destination: LazyView(NetworkProtectionRootView(source: .subscriptionFlow).navigationViewStyle(.stack)),
+        NavigationLink(destination: LazyView(
+            NetworkProtectionRootView(source: .subscriptionFlow, subscriptionIncludesVPN: .trueValue)
+                .navigationViewStyle(.stack)),
                        isActive: $isShowingNetP,
                        label: { EmptyView() })
         

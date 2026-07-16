@@ -1649,7 +1649,9 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
 extension SettingsViewModel {
 
     enum SettingsDeepLinkSection: Identifiable, Equatable {
-        case netP(source: VPNConnectionWideEventData.ScreenSource = .appSettings, scrollToStrictRouting: Bool = false)
+        case netP(source: VPNConnectionWideEventData.ScreenSource,
+                  subscriptionIncludesVPN: VPNConnectionWideEventData.BooleanState = .unknown,
+                  scrollToStrictRouting: Bool = false)
         case dbp
         case itr
         case subscriptionFlow(redirectURLComponents: URLComponents? = nil)
@@ -1668,7 +1670,7 @@ extension SettingsViewModel {
 
         var id: String {
             switch self {
-            case let .netP(source, _): return "netP-\(source.rawValue)"
+            case let .netP(source, subscriptionIncludesVPN, _): return "netP-\(source.rawValue)-\(subscriptionIncludesVPN.rawValue)"
             case .dbp: return "dbp"
             case .itr: return "itr"
             case .subscriptionFlow: return "subscriptionFlow"

@@ -116,20 +116,25 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.description"], "TunnelStartFailed")
     }
 
-    func testPixelParameters_withAccountStatusAndScreenSource() {
+    func testPixelParameters_withEntryContext() {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            accountStatus: .init(isSignedIn: .yes, hasVPNEntitlement: .no),
-            screenSource: .subscriptionSettings,
+            entryContext: .init(
+                source: .subscriptionSettings,
+                tokenState: .missing,
+                accountHasVPNEntitlement: .falseValue,
+                subscriptionIncludesVPN: .trueValue
+            ),
             contextData: WideEventContextData(name: "Test-Context")
         )
 
         let parameters = eventData.pixelParameters()
 
-        XCTAssertEqual(parameters["feature.data.ext.account_is_signed_in"], "yes")
-        XCTAssertEqual(parameters["feature.data.ext.account_has_vpn_entitlement"], "no")
         XCTAssertEqual(parameters["feature.data.ext.vpn_screen_source"], "subscription_settings")
+        XCTAssertEqual(parameters["feature.data.ext.vpn_screen_entry_token_state"], "missing")
+        XCTAssertEqual(parameters["feature.data.ext.account_has_vpn_entitlement"], "false")
+        XCTAssertEqual(parameters["feature.data.ext.subscription_includes_vpn"], "true")
     }
 
     // MARK: - Abandoned and Delayed Flows

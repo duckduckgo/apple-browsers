@@ -27,15 +27,20 @@ struct NetworkProtectionRootView: View {
 
     @StateObject var statusViewModel: NetworkProtectionStatusViewModel
     @StateObject var feedbackFormModel: UnifiedFeedbackFormViewModel
-    private let source: VPNConnectionWideEventData.ScreenSource
 
-    init(source: VPNConnectionWideEventData.ScreenSource = .unknown) {
-        self.source = source
+    init(source: VPNConnectionWideEventData.ScreenSource,
+         subscriptionIncludesVPN: VPNConnectionWideEventData.BooleanState = .unknown) {
         let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+        let entryContext = VPNConnectionWideEventData.EntryContext(
+            source: source,
+            subscriptionIncludesVPN: subscriptionIncludesVPN,
+            accountSnapshot: subscriptionManager.localAccountSnapshot()
+        )
         let locationListRepository = NetworkProtectionLocationListCompositeRepository()
         let tunnelController = AppDependencyProvider.shared.networkProtectionTunnelController
         _statusViewModel = StateObject(wrappedValue: NetworkProtectionStatusViewModel(
             tunnelController: tunnelController,
+            entryContext: entryContext,
             settings: AppDependencyProvider.shared.vpnSettings,
             statusObserver: AppDependencyProvider.shared.connectionObserver,
             serverInfoObserver: AppDependencyProvider.shared.serverInfoObserver,
@@ -56,8 +61,40 @@ struct NetworkProtectionRootView: View {
         NetworkProtectionStatusView(statusModel: statusViewModel, feedbackFormModel: feedbackFormModel)
             .navigationTitle(UserText.netPNavTitle)
             .onFirstAppear {
-                AppDependencyProvider.shared.networkProtectionTunnelController.setScreenSource(source)
-                Pixel.fire(pixel: .subscriptionVPNSettings, withAdditionalParameters: self.statusViewModel.featureDiscovery.addToParams([:], forFeature: .vpn))
+                Pixel.fire(
+                    pixel: .subscriptionVPNSettings,
+                    withAdditionalParameters: self.statusViewModel.featureDiscovery.addToParams([:], forFeature: .vpn))
             }
+    }
+}
+
+private extension VPNConnectionWideEventData.EntryContext {
+
+    init(source: VPNConnectionWideEventData.ScreenSource,
+         subscriptionIncludesVPN: VPNConnectionWideEventData.BooleanState,
+         accountSnapshot: LocalSubscriptionAccountSnapshot) {
+        let tokenState: VPNConnectionWideEventData.TokenState
+        switch accountSnapshot.tokenState {
+        case .present:
+            tokenState = .present
+        case .missing:
+            tokenState = .missing
+        case .readError:
+            tokenState = .readError
+        }
+
+        let accountHasVPNEntitlement: VPNConnectionWideEventData.BooleanState
+        if let entitlements = accountSnapshot.entitlements {
+            accountHasVPNEntitlement = entitlements.contains(.networkProtection) ? .trueValue : .falseValue
+        } else {
+            accountHasVPNEntitlement = .unknown
+        }
+
+        self.init(
+            source: source,
+            tokenState: tokenState,
+            accountHasVPNEntitlement: accountHasVPNEntitlement,
+            subscriptionIncludesVPN: subscriptionIncludesVPN
+        )
     }
 }

@@ -253,11 +253,11 @@ struct SettingsRootView: View {
             } else {
                 SettingsDuckPlayerView().environmentObject(viewModel)
             }
-        case let .netP(source, scrollToStrictRouting):
+        case let .netP(source, subscriptionIncludesVPN, scrollToStrictRouting):
             if scrollToStrictRouting {
                 NetworkProtectionVPNSettingsView(scrollsToStrictRouting: true)
             } else {
-                NetworkProtectionRootView(source: source)
+                NetworkProtectionRootView(source: source, subscriptionIncludesVPN: subscriptionIncludesVPN)
             }
         case .aiChat:
             SettingsAIFeaturesView().environmentObject(viewModel)

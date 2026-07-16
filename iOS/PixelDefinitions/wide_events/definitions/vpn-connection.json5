@@ -36,19 +36,9 @@
                         "description": "VPN onboarding state at connection time (macOS). `needs_to_allow_extension` and `needs_to_allow_vpn_configuration` mean onboarding was still incomplete; `completed` means onboarding had finished; `unknown` if it could not be determined.",
                         "enum": ["needs_to_allow_extension", "needs_to_allow_vpn_configuration", "completed", "unknown"]
                     },
-                    "account_is_signed_in": {
-                        "type": "string",
-                        "description": "Whether the user is signed into a Privacy Pro account when the VPN connection flow starts.",
-                        "enum": ["yes", "no", "unknown"]
-                    },
-                    "account_has_vpn_entitlement": {
-                        "type": "string",
-                        "description": "Whether the account has the VPN entitlement when the VPN connection flow starts.",
-                        "enum": ["yes", "no", "unknown"]
-                    },
                     "vpn_screen_source": {
                         "type": "string",
-                        "description": "The app surface that opened the VPN screen before the connection flow.",
+                        "description": "The app surface that opened the VPN screen before the connection attempt.",
                         "enum": [
                             "app_settings",
                             "subscription_settings",
@@ -63,6 +53,21 @@
                             "vpn_access_revoked_alert",
                             "unknown"
                         ]
+                    },
+                    "vpn_screen_entry_token_state": {
+                        "type": "string",
+                        "description": "Whether a local Privacy Pro token container was present when the VPN screen opened. `read_error` means local token storage could not be read without mutating account state.",
+                        "enum": ["present", "missing", "read_error", "unknown"]
+                    },
+                    "account_has_vpn_entitlement": {
+                        "type": "string",
+                        "description": "Whether the locally stored account token contained the VPN entitlement when the VPN screen opened.",
+                        "enum": ["true", "false", "unknown"]
+                    },
+                    "subscription_includes_vpn": {
+                        "type": "string",
+                        "description": "Whether the route or UI state that opened the VPN screen indicated that the subscription plan included VPN. `unknown` means the route did not check this condition.",
+                        "enum": ["true", "false", "unknown"]
                     },
                     "latency_ms": {
                         "type": "integer",

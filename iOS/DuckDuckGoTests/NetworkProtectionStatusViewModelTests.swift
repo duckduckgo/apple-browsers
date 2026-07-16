@@ -44,6 +44,7 @@ import Subscription
         statusObserver = MockConnectionStatusObserver()
         serverInfoObserver = MockConnectionServerInfoObserver()
         viewModel = NetworkProtectionStatusViewModel(tunnelController: tunnelController,
+                                                     entryContext: .unknown,
                                                      settings: VPNSettings(defaults: .networkProtectionGroupDefaults),
                                                      statusObserver: statusObserver,
                                                      serverInfoObserver: serverInfoObserver,
@@ -70,6 +71,20 @@ import Subscription
     func testDidToggleNetPToTrue_setsTunnelControllerStateToTrue() async {
         await viewModel.didToggleNetP(to: true)
         XCTAssertEqual(self.tunnelController.didCallStart, true)
+    }
+
+    func testWhenNetPIsEnabledThenPassesEntryContextToTunnelController() async {
+        let entryContext = VPNConnectionWideEventData.EntryContext(
+            source: .toolbar,
+            tokenState: .missing,
+            accountHasVPNEntitlement: .falseValue,
+            subscriptionIncludesVPN: .trueValue
+        )
+        let viewModel = makeViewModel(entryContext: entryContext)
+
+        await viewModel.didToggleNetP(to: true)
+
+        XCTAssertEqual(tunnelController.startEntryContexts, [entryContext])
     }
 
     func testDidToggleNetPToFalse_setsTunnelControllerStateToFalse() async {
@@ -259,11 +274,30 @@ import Subscription
         XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
     }
 
+    func testWhenMappingVPNSubscriptionFunnelOriginsThenReturnsScreenSources() {
+        let expectations: [(SubscriptionFunnelOrigin, VPNConnectionWideEventData.ScreenSource)] = [
+            (.appSettings, .appSettings),
+            (.newTabMenu, .browserMenu),
+            (.toolbarVPN, .toolbar),
+            (.addressBarVPN, .addressBar),
+            (.widgetVPN, .widget),
+            (.shortcutVPN, .shortcut),
+            (.notificationVPN, .notification),
+            (.vpnAccessRevokedAlert, .vpnAccessRevokedAlert),
+        ]
+
+        for (origin, expectedSource) in expectations {
+            XCTAssertEqual(VPNConnectionWideEventData.ScreenSource(subscriptionFunnelOrigin: origin), expectedSource)
+        }
+    }
+
     // MARK: - Helpers
 
-    private func makeViewModel(controllerErrorPublisher: AnyPublisher<String?, Never>,
+    private func makeViewModel(controllerErrorPublisher: AnyPublisher<String?, Never> = Empty(completeImmediately: false).eraseToAnyPublisher(),
+                               entryContext: VPNConnectionWideEventData.EntryContext = .unknown,
                                errorObserver: ConnectionErrorObserver = MockConnectionErrorObserver()) -> NetworkProtectionStatusViewModel {
         NetworkProtectionStatusViewModel(tunnelController: tunnelController,
+                                         entryContext: entryContext,
                                          settings: VPNSettings(defaults: .networkProtectionGroupDefaults),
                                          statusObserver: statusObserver,
                                          serverInfoObserver: serverInfoObserver,

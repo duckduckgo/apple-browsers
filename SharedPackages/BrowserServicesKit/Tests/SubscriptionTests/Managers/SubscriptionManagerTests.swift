@@ -94,6 +94,36 @@ class SubscriptionManagerTests: XCTestCase {
 
     // MARK: - Token Retrieval Tests
 
+    func testWhenLocalAccountSnapshotHasTokenThenReturnsTokenEntitlementsWithoutRefreshing() {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        let snapshot = subscriptionManager.localAccountSnapshot()
+
+        XCTAssertEqual(snapshot.tokenState, .present)
+        XCTAssertEqual(snapshot.entitlements, [.networkProtection, .dataBrokerProtection, .identityTheftRestoration])
+        XCTAssertTrue(mockOAuthClient.getTokensTriggers.isEmpty)
+    }
+
+    func testWhenLocalAccountSnapshotHasNoTokenThenReturnsMissingWithoutRefreshing() {
+        mockOAuthClient.internalCurrentTokenContainer = nil
+
+        let snapshot = subscriptionManager.localAccountSnapshot()
+
+        XCTAssertEqual(snapshot.tokenState, .missing)
+        XCTAssertEqual(snapshot.entitlements, [])
+        XCTAssertTrue(mockOAuthClient.getTokensTriggers.isEmpty)
+    }
+
+    func testWhenLocalAccountSnapshotTokenCannotBeReadThenReturnsReadErrorWithoutRefreshing() {
+        mockOAuthClient.currentTokenContainerError = NSError(domain: "LocalTokenStore", code: 1)
+
+        let snapshot = subscriptionManager.localAccountSnapshot()
+
+        XCTAssertEqual(snapshot.tokenState, .readError)
+        XCTAssertNil(snapshot.entitlements)
+        XCTAssertTrue(mockOAuthClient.getTokensTriggers.isEmpty)
+    }
+
     func testGetTokenContainer_Success() async throws {
         let expectedTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         mockOAuthClient.getTokensResponse = .success(expectedTokenContainer)

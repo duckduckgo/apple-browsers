@@ -35,7 +35,7 @@ enum VPNConfigurationRemovalReason: String {
     case debugMenu
 }
 
-final class NetworkProtectionTunnelController: TunnelController, TunnelSessionProvider {
+final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunnelController, TunnelSessionProvider {
     static var shouldSimulateFailure: Bool = false
 
     private let featureFlagger: FeatureFlagger
@@ -64,8 +64,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     // Wide Event
     private let wideEvent: WideEventManaging
     private var connectionWideEventData: VPNConnectionWideEventData?
-    private var screenSource: VPNConnectionWideEventData.ScreenSource = .unknown
-    private let accountStatusProvider: () async -> VPNConnectionWideEventData.AccountStatus
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     // MARK: - Manager, Session, & Connection
@@ -171,9 +169,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          persistentPixel: PersistentPixelFiring,
          settings: VPNSettings,
          wideEvent: WideEventManaging,
-         accountStatusProvider: @escaping () async -> VPNConnectionWideEventData.AccountStatus = {
-             .init(isSignedIn: .unknown, hasVPNEntitlement: .unknown)
-         },
          freeTrialConversionService: FreeTrialConversionInstrumentationService
     ) {
 
@@ -182,7 +177,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         self.settings = settings
         self.tokenHandler = tokenHandler
         self.wideEvent = wideEvent
-        self.accountStatusProvider = accountStatusProvider
         self.freeTrialConversionService = freeTrialConversionService
 
         subscribeToSnoozeTimingChanges()
@@ -194,8 +188,15 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     /// Starts the VPN connection used for Network Protection
     ///
     func start() async {
-        let accountStatus = await accountStatusProvider()
-        setupAndStartConnectionWideEvent(accountStatus: accountStatus)
+        await start(with: nil)
+    }
+
+    func start(entryContext: VPNConnectionWideEventData.EntryContext) async {
+        await start(with: entryContext)
+    }
+
+    private func start(with entryContext: VPNConnectionWideEventData.EntryContext?) async {
+        setupAndStartConnectionWideEvent(entryContext: entryContext)
         controllerErrorSubject.send(nil)
         persistentPixel.fire(
             pixel: .networkProtectionControllerStartAttempt,
@@ -311,10 +312,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                                          error: error,
                                          withAdditionalParameters: [PixelParameters.reason: reason.rawValue])
         }
-    }
-
-    func setScreenSource(_ source: VPNConnectionWideEventData.ScreenSource) {
-        screenSource = source
     }
 
     // MARK: - Connection Status Querying
@@ -638,12 +635,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
 private extension NetworkProtectionTunnelController {
     
-    func setupAndStartConnectionWideEvent(accountStatus: VPNConnectionWideEventData.AccountStatus) {
+    func setupAndStartConnectionWideEvent(entryContext: VPNConnectionWideEventData.EntryContext?) {
         let data = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            accountStatus: accountStatus,
-            screenSource: screenSource,
+            entryContext: entryContext,
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         )
         self.connectionWideEventData = data
@@ -702,8 +698,19 @@ extension VPNConnectionWideEventData.ScreenSource {
             self = .notification
         case .vpnAccessRevokedAlert:
             self = .vpnAccessRevokedAlert
-        default:
+        case .appSettings:
             self = .appSettings
+        case .newTabMenu:
+            self = .browserMenu
+        case .onboarding,
+             .skippedOnboarding,
+             .addressBarModelPicker,
+             .addressBarReasoningPicker,
+             .duckAIModelPicker,
+             .duckAIReasoningPicker,
+             .winBackLaunch,
+             .winBackSettings:
+            self = .unknown
         }
     }
 }

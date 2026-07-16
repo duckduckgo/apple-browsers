@@ -296,28 +296,12 @@ final class AppDependencyProvider: DependencyProvider {
         )
         self.freeTrialConversionService.startObservingSubscriptionChanges()
 
-        let vpnConnectionAccountStatusProvider: () async -> VPNConnectionWideEventData.AccountStatus = {
-            let isSignedIn: VPNConnectionWideEventData.AccountState = subscriptionManager.isUserAuthenticated ? .yes : .no
-            let hasVPNEntitlement: VPNConnectionWideEventData.AccountState
-            if let isVPNEnabled = try? await subscriptionManager.isFeatureEnabled(.networkProtection) {
-                hasVPNEntitlement = isVPNEnabled ? .yes : .no
-            } else {
-                hasVPNEntitlement = .unknown
-            }
-
-            return VPNConnectionWideEventData.AccountStatus(
-                isSignedIn: isSignedIn,
-                hasVPNEntitlement: hasVPNEntitlement
-            )
-        }
-
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,
                                                                               featureFlagger: featureFlagger,
                                                                               persistentPixel: persistentPixel,
                                                                               settings: vpnSettings,
                                                                               wideEvent: wideEvent,
-                                                                              accountStatusProvider: vpnConnectionAccountStatusProvider,
                                                                               freeTrialConversionService: freeTrialConversionService
         )
 

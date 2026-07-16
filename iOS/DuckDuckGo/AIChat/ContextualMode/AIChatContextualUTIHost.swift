@@ -111,6 +111,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate {
             .store(in: &cancellables)
     }
 
+    /// Re-evaluates the attach button/menu for the current page (e.g. page-context attachability after navigation).
+    func refreshPageContextAttachability() {
+        coordinator.updateImageButtonVisibility()
+    }
+
     func setAttachedContext(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
         chipViewModel.setAttached(context, deliveryState: deliveryState)
     }

@@ -2294,7 +2294,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func updateAttachButtonPresentation() {
-        let supportsPageContextAttachment = isContextualChatState && onPageContextAttachRequested != nil
+        let supportsPageContextAttachment = isContextualChatState && onPageContextAttachRequested != nil && (isPageContextAttachable?() ?? true)
         let supportsAttachments = selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment
         let hasAvailableAttachmentAction = attachmentPolicy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment
         let canAttachMore = hasAvailableAttachmentAction && !viewController.isGenerating

@@ -358,6 +358,8 @@ final class AIChatContextualChatSessionState {
             userDowngradedToPlaceholder = false
             Logger.aiChat.debug("[SessionState] Page navigation cleared temporary context removal")
         }
+        // Re-evaluate quick actions for the new page's attachability (the collect path may not run).
+        rebuildViewState()
     }
 
     func updateUnifiedToggleInputActive(_ isActive: Bool, isImmediateContextual _: Bool = false) {

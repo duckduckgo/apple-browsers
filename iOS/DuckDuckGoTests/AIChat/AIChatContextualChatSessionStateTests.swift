@@ -1369,6 +1369,23 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
+    func testQuickActionsClearedOnNavigationToNonAttachablePage() {
+        var attachable = true
+        sessionState = AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            isCurrentPageAttachable: { attachable }
+        )
+        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
+
+        // Navigating onto a non-attachable page must refresh the quick actions, not leave them stale.
+        attachable = false
+        sessionState.notifyPageChanged()
+
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
+    }
+
     // MARK: - Suggested Prompts Coexistence Tests
 
     func testQuickActionsIsAskAboutPageWhenSuggestedPromptsOnAndPlaceholder() {

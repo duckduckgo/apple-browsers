@@ -486,6 +486,34 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertTrue(extractionPixels.calls.isEmpty)
     }
 
+    func testClearResetsExtractionQueueSoLaterCollectReportsItsOwnTrigger() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/article") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        // A .navigation collect is requested but never resolves, then the session is cleared.
+        handler.triggerContextCollection(trigger: .navigation)
+        handler.clear()
+
+        // A later .userRequest collect on the same URL must report its own trigger, not the stale one.
+        let expectation = XCTestExpectation(description: "Context published")
+        handler.contextPublisher.dropFirst().first().sink { _ in expectation.fulfill() }.store(in: &cancellables)
+        handler.triggerContextCollection(trigger: .userRequest)
+        mockScript.simulateValidContext()
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertEqual(extractionPixels.calls.count, 1)
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .userRequest)
+    }
+
     // MARK: - Helpers
 
     private func makeHandler(

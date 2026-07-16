@@ -262,6 +262,8 @@ final class AIChatContextualSheetCoordinator {
     func notifyPageChanged() async {
         guard hasActiveSheet else { return }
         sessionState.notifyPageChanged()
+        // Re-evaluate the attach menu/button for the new page's attachability.
+        persistentUTIHost?.refreshPageContextAttachability()
 
         if sessionState.shouldTriggerAutoCollect() {
             if sessionState.showsSuggestionsStartSurface {
@@ -615,11 +617,12 @@ private extension AIChatContextualSheetCoordinator {
         if shouldCollectSignalsOnly {
             Logger.aiChat.debug("[PageContext] New chat - collecting signals-only")
             sessionState.markPendingSignalsOnlyCollection()
+            pageContextHandler.triggerContextCollection(trigger: .tabContent)
         } else {
             Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
             sessionState.beginLoadingSuggestions()
+            pageContextHandler.triggerContextCollection(trigger: .userRequest)
         }
-        pageContextHandler.triggerContextCollection(trigger: .userRequest)
 
         delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
     }

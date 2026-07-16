@@ -206,6 +206,7 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         Logger.aiChat.debug("[PageContext] Clearing stored context and cancelling subscriptions")
         updatesCancellable?.cancel()
         updatesCancellable = nil
+        resetExtractionState()
         contextSubject.send(nil)
 
         if let script = userScriptProvider() {
@@ -224,6 +225,7 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         Logger.aiChat.debug("[PageContext] Resubscribe called - cancelling existing subscription")
         updatesCancellable?.cancel()
         updatesCancellable = nil
+        resetExtractionState()
         startObservingUpdates()
     }
 }
@@ -254,9 +256,16 @@ private extension AIChatPageContextHandler {
     /// On navigation to a new URL, drops stale pending collects so they can't mis-attribute the next page's result.
     func resetExtractionStateIfNavigated(to url: URL?) {
         guard url != lastCollectedURL else { return }
+        resetExtractionState()
+        lastCollectedURL = url
+    }
+
+    /// Drops any pending collect + navigation dedupe state. Called on clear/resubscribe so a stale
+    /// entry can't pair with a later collect or emit a spurious timeout pixel.
+    func resetExtractionState() {
         extractionResolver.reset()
         didReportExtractionForCurrentNavigation = false
-        lastCollectedURL = url
+        lastCollectedURL = nil
     }
 
     /// No pending request => a duplicate or a collect we didn't initiate; skip.

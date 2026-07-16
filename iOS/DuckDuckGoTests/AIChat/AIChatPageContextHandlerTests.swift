@@ -439,6 +439,53 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertEqual(extractionPixels.calls.first?.trigger, .navigation)
     }
 
+    // MARK: - Attachability measurement (no collection)
+
+    func testReportAttachabilityMeasurementFiresPreventedWhenNotAttachable() {
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/report.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        handler.reportAttachabilityMeasurement(trigger: .navigation)
+
+        XCTAssertEqual(extractionPixels.calls.count, 1)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("pdf"))
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .navigation)
+    }
+
+    func testReportAttachabilityMeasurementDoesNothingWhenAttachable() {
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let policy = makeBlocklistPolicy()
+        let handler = makeHandler(
+            attachabilityPolicyProvider: { policy },
+            currentURLProvider: { URL(string: "https://example.com/article") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        handler.reportAttachabilityMeasurement(trigger: .navigation)
+
+        XCTAssertTrue(extractionPixels.calls.isEmpty)
+    }
+
+    func testReportAttachabilityMeasurementDoesNothingWhenNoConfig() {
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let handler = makeHandler(
+            currentURLProvider: { URL(string: "https://example.com/report.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        handler.reportAttachabilityMeasurement(trigger: .navigation)
+
+        XCTAssertTrue(extractionPixels.calls.isEmpty)
+    }
+
     // MARK: - Helpers
 
     private func makeHandler(

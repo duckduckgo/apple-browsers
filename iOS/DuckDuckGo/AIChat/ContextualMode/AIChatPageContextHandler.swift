@@ -83,6 +83,10 @@ protocol AIChatPageContextHandling: AnyObject {
     /// Whether the current page can be attached; `true` when no blocklist config (fail-open).
     func isCurrentPageAttachable() -> Bool
 
+    /// Fires the `prevented` measurement if the current page is non-attachable, without collecting.
+    /// Call when the sheet becomes active / navigates so non-attachable pages are still measured.
+    func reportAttachabilityMeasurement(trigger: PageContextExtractionTrigger)
+
     /// Clears stored context and cancels active subscriptions.
     func clear()
 
@@ -159,15 +163,9 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         resetExtractionStateIfNavigated(to: url)
 
         // Gate: skip collection + deliver nil (iOS has no native attachable:false path) for blocklisted pages.
-        if let policy = attachabilityPolicyProvider() {
-            let verdict = policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) })
-            if !verdict.isAttachable {
-                let reason = verdict.preventionReason ?? PageContextExtractionOutcome.internalPageCategory
-                Logger.aiChat.debug("[PageContext] 🚫 gate: prevented attach (reason: \(reason))")
-                fireExtractionPixel(.prevented(reason), trigger: trigger, latency: nil)
-                contextSubject.send(nil)
-                return false
-            }
+        if firePreventedIfNonAttachable(for: url, trigger: trigger) {
+            contextSubject.send(nil)
+            return false
         }
 
         guard let script = userScriptProvider() else {
@@ -196,6 +194,12 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         guard let policy = attachabilityPolicyProvider() else { return true }
         let url = currentURLProvider()
         return policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) }).isAttachable
+    }
+
+    func reportAttachabilityMeasurement(trigger: PageContextExtractionTrigger) {
+        let url = currentURLProvider()
+        resetExtractionStateIfNavigated(to: url)
+        _ = firePreventedIfNonAttachable(for: url, trigger: trigger)
     }
 
     func clear() {
@@ -232,6 +236,19 @@ private extension AIChatPageContextHandler {
 
     var isExtractionMeasurementEnabled: Bool {
         attachabilityPolicyProvider() != nil
+    }
+
+    /// Fires `.prevented` for a non-attachable page; returns whether it did. Shared by the collection
+    /// gate and the standalone sheet-open/navigation measurement.
+    @discardableResult
+    func firePreventedIfNonAttachable(for url: URL?, trigger: PageContextExtractionTrigger) -> Bool {
+        guard let policy = attachabilityPolicyProvider() else { return false }
+        let verdict = policy.verdict(url: url, mimeType: url.flatMap { mimeTypeProvider($0) })
+        guard !verdict.isAttachable else { return false }
+        let reason = verdict.preventionReason ?? PageContextExtractionOutcome.internalPageCategory
+        Logger.aiChat.debug("[PageContext] 🚫 gate: prevented attach (reason: \(reason))")
+        fireExtractionPixel(.prevented(reason), trigger: trigger, latency: nil)
+        return true
     }
 
     /// On navigation to a new URL, drops stale pending collects so they can't mis-attribute the next page's result.

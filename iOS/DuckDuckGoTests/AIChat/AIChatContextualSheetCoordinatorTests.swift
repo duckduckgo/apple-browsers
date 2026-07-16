@@ -48,6 +48,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         }
 
         var isCurrentPageAttachableReturnValue = true
+        var reportAttachabilityMeasurementCallCount = 0
+        var lastReportAttachabilityMeasurementTrigger: PageContextExtractionTrigger?
 
         func triggerContextCollection(trigger: PageContextExtractionTrigger) -> Bool {
             triggerContextCollectionCallCount += 1
@@ -58,6 +60,11 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         func isCurrentPageAttachable() -> Bool {
             isCurrentPageAttachableReturnValue
+        }
+
+        func reportAttachabilityMeasurement(trigger: PageContextExtractionTrigger) {
+            reportAttachabilityMeasurementCallCount += 1
+            lastReportAttachabilityMeasurementTrigger = trigger
         }
 
         func clear() {
@@ -237,6 +244,16 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertNotNil(sut.sheetViewController?.delegate)
+    }
+
+    @MainActor
+    func testPresentSheetMeasuresAttachabilityWhenNoCollectionTriggered() async {
+        // Auto-attach off + suggested prompts off (defaults) → no collection → attachability still measured.
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(mockPageContextHandler.reportAttachabilityMeasurementCallCount, 1)
+        XCTAssertEqual(mockPageContextHandler.lastReportAttachabilityMeasurementTrigger, .auto)
     }
     
     // MARK: - clearActiveChat Tests

@@ -212,6 +212,9 @@ final class AIChatContextualSheetCoordinator {
         } else if shouldCollectSignalsOnly {
             sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection(trigger: .tabContent)
+        } else {
+            // No collection attempted — still measure whether this page is attachable.
+            pageContextHandler.reportAttachabilityMeasurement(trigger: .auto)
         }
 
         stopSessionTimer()
@@ -271,6 +274,7 @@ final class AIChatContextualSheetCoordinator {
         } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             sessionState.notifyFrontendOfMultiContextNavigation()
             sessionState.clearProcessingNavigationFlag()
+            pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
         } else if shouldCollectSignalsOnly {
             sessionState.markPendingSignalsOnlyCollection()
             if !pageContextHandler.triggerContextCollection(trigger: .tabContent) {
@@ -278,6 +282,7 @@ final class AIChatContextualSheetCoordinator {
             }
         } else {
             sessionState.clearProcessingNavigationFlag()
+            pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
         }
     }
 

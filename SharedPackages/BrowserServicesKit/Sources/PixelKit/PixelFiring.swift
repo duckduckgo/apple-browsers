@@ -40,7 +40,7 @@ extension PixelFiring {
     public func fire(_ event: PixelKitEvent,
                      frequency: PixelKit.Frequency,
                      doNotEnforcePrefix: Bool) {
-        fire(event, frequency: frequency, includeAppVersionParameter:true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: doNotEnforcePrefix, onComplete: { _, _ in })
+        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, doNotEnforcePrefix: doNotEnforcePrefix, onComplete: { _, _ in })
     }
 
     public func fire(_ event: PixelKitEvent,

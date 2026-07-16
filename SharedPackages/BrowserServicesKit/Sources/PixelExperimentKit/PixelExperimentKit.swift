@@ -143,12 +143,12 @@ extension PixelKit {
     ///   must occur before the pixel is fired.
     public static func fireSearchExperimentPixels() {
         let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
-            1: [0...0, 1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 5...7],
-            4: [5...7, 8...15],
-            6: [5...7, 8...15],
-            11: [5...7, 8...15],
-            21: [5...7, 8...15],
-            30: [5...7, 8...15]
+            1: [0...0, 1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 1...4, 5...7],
+            4: [1...4, 5...7, 8...15],
+            6: [1...4, 5...7, 8...15],
+            11: [1...4, 5...7, 8...15],
+            21: [1...4, 5...7, 8...15],
+            30: [1...4, 5...7, 8...15]
         ]
         guard let featureFlagger = ExperimentConfig.featureFlagger else {
             assertionFailure("PixelKit is not configured for experiments")
@@ -172,12 +172,12 @@ extension PixelKit {
     ///   must occur before the pixel is fired.
     public static func fireAppRetentionExperimentPixels() {
         let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
-            1: [1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 5...7],
-            4: [5...7, 8...15],
-            6: [5...7, 8...15],
-            11: [5...7, 8...15],
-            21: [5...7, 8...15],
-            30: [5...7, 8...15]
+            1: [1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 1...4, 5...7],
+            4: [1...4, 5...7, 8...15],
+            6: [1...4, 5...7, 8...15],
+            11: [1...4, 5...7, 8...15],
+            21: [1...4, 5...7, 8...15],
+            30: [1...4, 5...7, 8...15]
         ]
         guard let featureFlagger = ExperimentConfig.featureFlagger else {
             assertionFailure("PixelKit is not configured for experiments")

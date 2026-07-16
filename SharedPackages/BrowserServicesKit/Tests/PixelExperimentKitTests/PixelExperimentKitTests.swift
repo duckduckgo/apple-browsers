@@ -347,22 +347,22 @@ final class PixelExperimentKitTests: XCTestCase {
 
         mockFeatureFlagger.experiments = [subfeatureID: experimentData1]
         PixelKit.fireSearchExperimentPixels()
-        XCTAssertEqual(firedEvent.count, 1) // Fires 1 1-1
+        XCTAssertEqual(firedEvent.count, 2) // Fires 1 1-1 and 1 1-4
         clearEvents()
 
         mockFeatureFlagger.experiments = [subfeatureID: experimentData2]
         PixelKit.fireSearchExperimentPixels()
-        XCTAssertEqual(firedEvent.count, 1) // Fires 1 2-2
+        XCTAssertEqual(firedEvent.count, 2) // Fires 1 2-2 and 1 1-4
         clearEvents()
 
         mockFeatureFlagger.experiments = [subfeatureID: experimentData3]
         PixelKit.fireSearchExperimentPixels()
-        XCTAssertEqual(firedEvent.count, 1) // Fires 1 3-3
+        XCTAssertEqual(firedEvent.count, 2) // Fires 1 3-3 and 1 1-4
         clearEvents()
 
         mockFeatureFlagger.experiments = [subfeatureID: experimentData4]
         PixelKit.fireSearchExperimentPixels()
-        XCTAssertEqual(firedEvent.count, 1) // Fires 1 4-4
+        XCTAssertEqual(firedEvent.count, 2) // Fires 1 4-4 and 1 1-4
         clearEvents()
 
         mockFeatureFlagger.experiments = [subfeatureID: experimentData5]
@@ -402,12 +402,12 @@ final class PixelExperimentKitTests: XCTestCase {
         let experimentData16 = ExperimentData(parentID: "autofill", cohortID: cohort, enrollmentDate: enrollmentDate16)
 
         mockFeatureFlagger.experiments = [subfeatureID: experimentData4]
-        PixelKit.fireSearchExperimentPixels() // Fires 1 4-4
+        PixelKit.fireSearchExperimentPixels() // Fires 1 4-4 + 1 1-4
         PixelKit.fireSearchExperimentPixels() // Nothing
         PixelKit.fireSearchExperimentPixels() // Nothing
-        XCTAssertEqual(firedEventSet.count, 1)
-        PixelKit.fireSearchExperimentPixels() // Nothing
-        XCTAssertEqual(firedEventSet.count, 1)
+        XCTAssertEqual(firedEventSet.count, 2)
+        PixelKit.fireSearchExperimentPixels() // Fires 4 1-4
+        XCTAssertEqual(firedEventSet.count, 3)
         clearEvents()
 
         mockFeatureFlagger.experiments = [subfeatureID: experimentData5]

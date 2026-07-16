@@ -21,6 +21,7 @@ import Foundation
 import DDGSync
 import Combine
 import CombineExtensions
+import DesignResourcesKit
 import Common
 import FoundationExtensions
 import SystemConfiguration
@@ -118,6 +119,7 @@ final class SyncDialogController {
         self.connectionControllerFactory = connectionControllerFactory ?? SyncDialogController.defaultConnectionControllerFactory
         self.featureFlagger = featureFlagger ?? Application.appDelegate.featureFlagger
         self.managementDialogModel = managementDialogModel
+        self.managementDialogModel.isAppRebranded = DesignSystemRebrand.isAppRebranded()
 
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
 

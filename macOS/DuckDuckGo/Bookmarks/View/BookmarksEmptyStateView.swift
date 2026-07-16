@@ -62,7 +62,7 @@ public struct BookmarksEmptyStateView: View {
         VStack(spacing: 16) {
             Spacer()
 
-            if let image = content.image {
+            if let image = content.image(isAppRebranded: DesignSystemRebrand.isAppRebranded()) {
                 Image(nsImage: image)
                     .accessibilityIdentifier(BookmarksEmptyStateContent.imageAccessibilityIdentifier)
             }

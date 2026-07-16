@@ -739,12 +739,10 @@ class MainViewCoordinator {
     }
 
     private func activateBaseContentContainerTopAnchor() {
+        // Floating UI spans content to the screen top for both bar positions; chrome is reserved via obscured insets.
         let useFloatingTop = isFloatingUIEnabled
-            && addressBarPosition == .top
             && !isUnifiedToggleInputVisible
             && (aiChatTabChatHeaderContainer?.isHidden ?? true)
-        // Floating top spans to the screen edge (behind the status bar) so content can underflow all
-        // the way up; otherwise content sits below the chrome via the topSlide anchor.
         setContentContainerTopAnchorMode(useFloatingTop ? .floatingBehindBar : .standard)
     }
 

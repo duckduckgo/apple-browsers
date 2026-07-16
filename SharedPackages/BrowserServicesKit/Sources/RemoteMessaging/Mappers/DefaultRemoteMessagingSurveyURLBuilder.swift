@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 
 public protocol VPNActivationDateProviding {
@@ -95,6 +96,10 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
             case .subscriptionBilling:
                 if let billing = subscriptionDataProvider?.subscriptionBilling {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: billing))
+                }
+            case .subscriptionTier:
+                if let tier = subscriptionDataProvider?.subscriptionTier {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: tier))
                 }
             case .subscriptionTrialActive:
                 if let trialActive = subscriptionDataProvider?.subscriptionTrialActive {

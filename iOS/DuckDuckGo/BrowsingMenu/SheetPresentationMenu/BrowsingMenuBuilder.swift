@@ -67,6 +67,12 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         }
     }
 
+    /// Appends a section for the given entries, skipping the section entirely when there are none.
+    private func appendSection(_ items: [BrowsingMenuModel.Entry], to sections: inout [BrowsingMenuModel.Section]) {
+        guard !items.isEmpty else { return }
+        sections.append(BrowsingMenuModel.Section(items: items))
+    }
+
     // MARK: - New Tab Page
 
     private func buildNewTabPageMenu(mobileCustomization: MobileCustomization,
@@ -81,10 +87,13 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         ].compactMap { $0 }
 
         // MARK: Shortcuts group
+        // With Unified Toggle Input on, the Duck.ai "Chats" row moves into its own Duck.ai cluster below.
+        let duckAIItems = entryBuilder.makeDuckAIMenuItems()
         let shortcutsItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
-            .init(entryBuilder.makeDownloadsEntry())
+            .init(entryBuilder.makeDownloadsEntry()),
+            .init(duckAIItems.isEmpty ? entryBuilder.makeDuckAiChatsEntry() : nil)
         ].compactMap { $0 }
 
         // MARK: Privacy group
@@ -96,12 +105,11 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         var sections = [BrowsingMenuModel.Section]()
 
-        // MARK: Fire Mode Promotion
-        if let fireModePromotionEntry = BrowsingMenuModel.Entry(entryBuilder.makeFireModePromotionEntry()) {
-            sections.append(BrowsingMenuModel.Section(items: [fireModePromotionEntry]))
-        }
-
         sections.append(BrowsingMenuModel.Section(items: shortcutsItems))
+
+        // MARK: Duck.ai group
+        appendSection(duckAIItems.compactMap { .init($0) }, to: &sections)
+
         sections.append(BrowsingMenuModel.Section(items: privacyItems))
 
         return BrowsingMenuModel(
@@ -128,9 +136,9 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         var sections = [BrowsingMenuModel.Section]()
 
-        // MARK: Fire Mode Promotion
-        if let fireModePromotionEntry = BrowsingMenuModel.Entry(entryBuilder.makeFireModePromotionEntry()) {
-            sections.append(BrowsingMenuModel.Section(items: [fireModePromotionEntry]))
+        // MARK: YouTube Ad Block toggle
+        if let youTubeAdBlockEntry = BrowsingMenuModel.Entry(entryBuilder.makeYouTubeAdBlockToggleEntry()) {
+            sections.append(BrowsingMenuModel.Section(items: [youTubeAdBlockEntry]))
         }
 
         if options.mergeActionsAndBookmarks {
@@ -170,15 +178,19 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         }
 
         // MARK: Shortcuts group
+        // With Unified Toggle Input on, the Duck.ai "Chats" row moves into its own Duck.ai cluster below.
+        let duckAIItems = entryBuilder.makeDuckAIMenuItems()
         let shortcutItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
-            .init(entryBuilder.makeDownloadsEntry())
+            .init(entryBuilder.makeDownloadsEntry()),
+            .init(duckAIItems.isEmpty ? entryBuilder.makeDuckAiChatsEntry() : nil)
         ].compactMap { $0 }
 
-        if !shortcutItems.isEmpty {
-            sections.append(BrowsingMenuModel.Section(items: shortcutItems))
-        }
+        appendSection(shortcutItems, to: &sections)
+
+        // MARK: Duck.ai group
+        appendSection(duckAIItems.compactMap { .init($0) }, to: &sections)
 
         // MARK: Privacy group
         let privacyItems: [BrowsingMenuModel.Entry] = [
@@ -197,6 +209,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
             .init(entryBuilder.makeReloadEntry()),
             .init(entryBuilder.makeReportBrokenSiteEntry()),
             .init(entryBuilder.makeToggleProtectionEntry()),
+            .init(entryBuilder.makeCopyLinkEntry()),
             .init(entryBuilder.makePrintEntry())
         ].compactMap { $0 }
 

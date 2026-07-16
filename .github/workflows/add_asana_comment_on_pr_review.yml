@@ -1,0 +1,120 @@
+name: Shared - Add Asana Comment on PR Review
+
+on:
+    pull_request_review:
+        types: [submitted]
+
+jobs:
+
+    add-pr-review-comment:
+        # Skip this job when:
+        #   - The review submitter is the PR author themselves (self-review,
+        #     or AI/automation tools posting via the author's GitHub token).
+        #   - The review submitter is a Bot account (e.g. cursor[bot],
+        #     dependabot[bot]) posting under its own [bot] identity. No
+        #     Asana subtask exists for bots.
+        #   - The review state is 'commented' with an empty body. GitHub
+        #     wraps every "Add single comment" inline reply in a review with
+        #     state=commented and an empty body; filtering by body excludes
+        #     those noisy inline-reply events while keeping deliberate
+        #     "Submit review → Comment" submissions that include a summary.
+        if: |
+            contains(fromJSON('["approved","changes_requested","commented"]'), github.event.review.state)
+            && github.event.review.user.login != github.event.pull_request.user.login
+            && github.event.review.user.type != 'Bot'
+            && (github.event.review.state != 'commented' || github.event.review.body != '')
+        name: "Add Asana comment on PR review"
+        runs-on: ubuntu-latest
+
+        steps:
+        - name: Get Task ID
+          id: get-task-id
+          uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@main
+          with:
+            text: ${{ github.event.pull_request.body }}
+
+        - name: Fail if no Asana task URL in PR body
+          if: ${{ steps.get-task-id.outputs.task-id == '' }}
+          run: |
+            echo "::error::No Asana task URL found in the PR body. Add a 'Task/Issue URL: https://app.asana.com/...' line to enable PR review subtask comments."
+            exit 1
+
+        - name: Find PR review subtask for the reviewer
+          id: find-subtask
+          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@main
+          with:
+            access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ steps.get-task-id.outputs.task-id }}
+            github-reviewer-user: ${{ github.event.review.user.login }}
+            github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+
+        - name: Create PR review subtask if missing
+          if: ${{ steps.find-subtask.outputs.subtask-ids == '[]' }}
+          uses: duckduckgo/apple-toolbox/actions/asana-create-pr-subtask@main
+          with:
+            access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ steps.get-task-id.outputs.task-id }}
+            github-reviewer-user: ${{ github.event.review.user.login }}
+            github-pr-author-user: ${{ github.event.pull_request.user.login }}
+            github-pr-author-type: ${{ github.event.pull_request.user.type }}
+            github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+            asana-project-id: ${{ vars.APPLE_TEAM_CODE_REVIEWS_ASANA_PROJECT_ID }}
+            asana-section-id: ${{ vars.APPLE_TEAM_CODE_REVIEWS_SECTION_ID }}
+
+        - name: Resolve PR review subtask for the reviewer
+          id: resolve-subtask
+          uses: duckduckgo/apple-toolbox/actions/asana-fetch-pr-subtasks@main
+          with:
+            access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ steps.get-task-id.outputs.task-id }}
+            github-reviewer-user: ${{ github.event.review.user.login }}
+            github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+
+        - name: Fail if PR review subtask could not be resolved
+          if: ${{ steps.resolve-subtask.outputs.subtask-ids == '[]' }}
+          run: |
+            echo "::error::No PR review subtask could be found or created for @${{ github.event.review.user.login }}. Check their GitHub→Asana mapping and the parent Asana task, then re-run."
+            exit 1
+
+        - name: Build comment text
+          id: comment
+          env:
+            STATE: ${{ github.event.review.state }}
+            REVIEWER: ${{ github.event.review.user.login }}
+            REVIEW_URL: ${{ github.event.review.html_url }}
+          run: |
+            case "$STATE" in
+              approved)          prefix="✅ Approved" ;;
+              changes_requested) prefix="🔄 Changes requested" ;;
+              commented)         prefix="💬 Comment" ;;
+            esac
+            echo "text=${prefix} by @${REVIEWER} — see review: ${REVIEW_URL}" >> "$GITHUB_OUTPUT"
+
+        - name: Post review comment
+          uses: duckduckgo/native-github-asana-sync@v2.5.1
+          with:
+            action: 'post-comment-asana-task'
+            asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ fromJSON(steps.resolve-subtask.outputs.subtask-ids)[0] }}
+            asana-task-comment: ${{ steps.comment.outputs.text }}
+            asana-task-comment-pinned: false
+
+        - name: Mark subtask complete on approve
+          if: ${{ github.event.review.state == 'approved' }}
+          uses: duckduckgo/native-github-asana-sync@v2.5.1
+          with:
+            action: 'mark-asana-task-complete'
+            asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ fromJSON(steps.resolve-subtask.outputs.subtask-ids)[0] }}
+            is-complete: true
+
+        # If a reviewer returns to a previously approved PR (subtask already
+        # completed) and submits a non-approve review, reopen the subtask.
+        - name: Mark subtask incomplete on non-approve review
+          if: ${{ github.event.review.state != 'approved' }}
+          uses: duckduckgo/native-github-asana-sync@v2.5.1
+          with:
+            action: 'mark-asana-task-complete'
+            asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+            asana-task-id: ${{ fromJSON(steps.resolve-subtask.outputs.subtask-ids)[0] }}
+            is-complete: false

@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 /// Manages the visibility of the win-back offer.
 public protocol WinBackOfferVisibilityManaging {
@@ -175,7 +176,7 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private func checkCachedSubscription() {
         guard isFeatureEnabled else { return }
         Task {
-            guard let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) else {
+            guard let currentSubscription = try? await subscriptionManager.getSubscription() else {
                 return
             }
 
@@ -189,7 +190,13 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         guard isFeatureEnabled else { return }
 
         observer = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { [weak self] notification in
-            guard let self, let newSubscription = notification.userInfo?[UserDefaultsCacheKey.subscription] as? DuckDuckGoSubscription else { return }
+            guard let self else { return }
+
+            // nil userInfo means subscription was cleared (no subscription on backend)
+            guard let newSubscription = notification.userInfo?[UserDefaultsCacheKey.subscription] as? DuckDuckGoSubscription else {
+                hasActiveSubscription = false
+                return
+            }
 
             let wasActive = hasActiveSubscription
             let isNowActive = newSubscription.status.isActive

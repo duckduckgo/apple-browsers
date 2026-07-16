@@ -22,4 +22,5 @@ enum PromoContext {
     case global
     case newTabPage
     case webPage
+    case fireWindow
 }

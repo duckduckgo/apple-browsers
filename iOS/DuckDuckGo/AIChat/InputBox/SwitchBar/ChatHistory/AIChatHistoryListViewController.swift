@@ -24,6 +24,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
 import UIKit
+import PrivacyConfig
 
 /// A view controller displaying the list of recent AI chats
 final class AIChatHistoryListViewController: UIViewController {
@@ -37,10 +38,13 @@ final class AIChatHistoryListViewController: UIViewController {
         static let cellHeight: CGFloat = 44
         static let horizontalInset: CGFloat = 16
         static let topContentInset: CGFloat = -20
-        static let escapeHatchTopPadding: CGFloat = 16
-        static let escapeHatchHeaderHeight: CGFloat = 72
+        // Use a tighter top padding when a section title sits below the hatch so they feel grouped;
+        // use the wider padding when the hatch stands alone.
+        static let escapeHatchTopPaddingNoTitle: CGFloat = 16
+        static let escapeHatchTopPaddingWithTitle: CGFloat = 6
+        static let escapeHatchHeaderHeight: CGFloat = 56
         static let escapeHatchBottomPadding: CGFloat = 16
-        static let escapeHatchTopContentInset: CGFloat = 8
+        static let escapeHatchTopContentInset: CGFloat = 0
         static let escapeHatchMaxWidth: CGFloat = HomeMessageCollectionViewCell.maximumWidth
         static let escapeHatchMaxWidthPad: CGFloat = HomeMessageCollectionViewCell.maximumWidthPad
     }
@@ -77,8 +81,11 @@ final class AIChatHistoryListViewController: UIViewController {
         }
     }
 
+    private let featureFlagger: FeatureFlagger
     private let viewModel: AIChatSuggestionsViewModel
     private let onChatSelected: (AIChatSuggestion) -> Void
+    private let onChatDeleted: (AIChatSuggestion) -> Void
+    private let onViewAllSelected: () -> Void
     private let isIPadExperience: Bool
     private var cancellables = Set<AnyCancellable>()
 
@@ -89,7 +96,7 @@ final class AIChatHistoryListViewController: UIViewController {
         tableView.dataSource = self
         tableView.alwaysBounceVertical = true
         tableView.keyboardDismissMode = .onDrag
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
+        tableView.register(DuckAISuggestionTableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorInset = UIEdgeInsets(top: 0, left: Constants.horizontalInset + Constants.iconSize + Constants.iconTextSpacing, bottom: 0, right: 0)
         tableView.sectionFooterHeight = 0
@@ -101,8 +108,18 @@ final class AIChatHistoryListViewController: UIViewController {
         viewModel.filteredSuggestions
     }
 
+    /// Mirrors the view model's last `selectedIndex` so the observer can de-highlight the previous row.
+    private var previousSelectedIndex: Int?
+
     private var currentEscapeHatchModel: EscapeHatchModel?
-    private var escapeHatchHostingController: UIHostingController<ReturnToTabCard>?
+    private var escapeHatchHostingController: UIHostingController<EscapeHatchView>?
+
+    var additionalTopInset: CGFloat = 0 {
+        didSet {
+            guard additionalTopInset != oldValue else { return }
+            updateTableHeader()
+        }
+    }
 
     private(set) var sectionTitle: String? {
         didSet {
@@ -123,10 +140,17 @@ final class AIChatHistoryListViewController: UIViewController {
 
     init(viewModel: AIChatSuggestionsViewModel,
          isIPadExperience: Bool,
-         onChatSelected: @escaping (AIChatSuggestion) -> Void) {
+         onChatSelected: @escaping (AIChatSuggestion) -> Void,
+         onChatDeleted: @escaping (AIChatSuggestion) -> Void,
+         onViewAllSelected: @escaping () -> Void,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger)
+    {
         self.viewModel = viewModel
         self.isIPadExperience = isIPadExperience
         self.onChatSelected = onChatSelected
+        self.onChatDeleted = onChatDeleted
+        self.onViewAllSelected = onViewAllSelected
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -140,6 +164,13 @@ final class AIChatHistoryListViewController: UIViewController {
         super.viewDidLoad()
         setupView()
         subscribeToViewModel()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        /// Dismiss FireConfirmation if present. On iPad this ViewController is dismissed upon rotation
+        presentedViewController?.dismiss(animated: true)
     }
 
     // MARK: - Private Methods
@@ -157,18 +188,46 @@ final class AIChatHistoryListViewController: UIViewController {
     }
 
     private func subscribeToViewModel() {
-        viewModel.$filteredSuggestions
+        Publishers.CombineLatest(viewModel.$filteredSuggestions, viewModel.$showViewAllChats)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
-                self.tableView.reloadData()
-                self.updateScrollEnabled()
+                self?.tableView.reloadData()
+            }
+            .store(in: &cancellables)
+
+        // Keyboard selection is owned by the view model; repaint the highlighted row as it moves.
+        viewModel.$selectedIndex
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] selectedIndex in
+                self?.applyHighlight(at: selectedIndex)
             }
             .store(in: &cancellables)
     }
 
-    private func updateScrollEnabled() {
-        tableView.isScrollEnabled = !chats.isEmpty
+    // MARK: - Keyboard selection highlight
+
+    private func applyHighlight(at selectedIndex: Int?) {
+        if let previousSelectedIndex {
+            applyHighlightAppearance(atRow: previousSelectedIndex, isHighlighted: false)
+        }
+        previousSelectedIndex = selectedIndex
+        guard let selectedIndex else { return }
+        applyHighlightAppearance(atRow: selectedIndex, isHighlighted: true)
+        // The table reloads asynchronously, so guard against a row it hasn't inserted yet.
+        if tableView.numberOfSections > 0, selectedIndex < tableView.numberOfRows(inSection: 0) {
+            tableView.scrollToRow(at: IndexPath(row: selectedIndex, section: 0), at: .none, animated: false)
+        }
+    }
+
+    private func applyHighlightAppearance(atRow row: Int, isHighlighted: Bool) {
+        let indexPath = IndexPath(row: row, section: 0)
+        guard tableView.indexPathsForVisibleRows?.contains(indexPath) == true,
+              let cell = tableView.cellForRow(at: indexPath) else { return }
+        cell.backgroundColor = highlightBackgroundColor(isHighlighted: isHighlighted)
+    }
+
+    private func highlightBackgroundColor(isHighlighted: Bool) -> UIColor {
+        isHighlighted ? UIColor(designSystemColor: .accentPrimary) : UIColor(designSystemColor: .surface)
     }
 
     func setScrollableTitle(_ title: String?) {
@@ -189,20 +248,7 @@ final class AIChatHistoryListViewController: UIViewController {
 
         let container = UIView()
         container.backgroundColor = UIColor(designSystemColor: .background)
-        var totalHeight: CGFloat = 0
-
-        if hasTitleContent {
-            let config = titleLayoutConfiguration
-            titleLabel.text = sectionTitle
-            container.addSubview(titleLabel)
-            NSLayoutConstraint.activate([
-                titleLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: config.topPadding),
-                titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: config.leadingInset),
-                titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: config.trailingInset),
-            ])
-            let titleHeight = titleLabel.font.lineHeight
-            totalHeight += config.topPadding + ceil(titleHeight) + config.bottomPadding
-        }
+        var totalHeight: CGFloat = additionalTopInset
 
         if hasEscapeHatch, let hosting = escapeHatchHostingController {
             hosting.view.translatesAutoresizingMaskIntoConstraints = false
@@ -218,7 +264,8 @@ final class AIChatHistoryListViewController: UIViewController {
             let minimumTrailing = hosting.view.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -Constants.horizontalInset)
             minimumTrailing.priority = .required - 1
 
-            let topOffset = totalHeight + Constants.escapeHatchTopPadding
+            let escapeHatchTopPadding = hasTitleContent ? Constants.escapeHatchTopPaddingWithTitle : Constants.escapeHatchTopPaddingNoTitle
+            let topOffset = totalHeight + escapeHatchTopPadding
             NSLayoutConstraint.activate([
                 hosting.view.centerXAnchor.constraint(equalTo: container.centerXAnchor),
                 hosting.view.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
@@ -229,7 +276,20 @@ final class AIChatHistoryListViewController: UIViewController {
                 hosting.view.heightAnchor.constraint(equalToConstant: Constants.escapeHatchHeaderHeight),
             ])
 
-            totalHeight += Constants.escapeHatchTopPadding + Constants.escapeHatchHeaderHeight + Constants.escapeHatchBottomPadding
+            totalHeight += escapeHatchTopPadding + Constants.escapeHatchHeaderHeight + Constants.escapeHatchBottomPadding
+        }
+
+        if hasTitleContent {
+            let config = titleLayoutConfiguration
+            titleLabel.text = sectionTitle
+            container.addSubview(titleLabel)
+            NSLayoutConstraint.activate([
+                titleLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: totalHeight + config.topPadding),
+                titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: config.leadingInset),
+                titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: config.trailingInset),
+            ])
+            let titleHeight = titleLabel.font.lineHeight
+            totalHeight += config.topPadding + ceil(titleHeight) + config.bottomPadding
         }
 
         let width = tableView.bounds.width > 0 ? tableView.bounds.width : view.bounds.width
@@ -246,14 +306,17 @@ final class AIChatHistoryListViewController: UIViewController {
         }
     }
 
-    /// Shows or hides the escape hatch (Return to tab card) as the table header. Pass nil to hide.
-    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
-        if model == currentEscapeHatchModel {
-            return
-        }
+    /// Shows or hides the escape hatch (return-to-tab card + tab switcher pill) as the table header. Pass nil to hide.
+    /// The pill's open-tab count is sourced from the model (it self-subscribes to the target mode's tabs publisher),
+    /// so this method only needs to swap when the model changes.
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        let modelChanged = model != currentEscapeHatchModel
         currentEscapeHatchModel = model
 
-        if let model, let onTapped {
+        if let model {
+            if escapeHatchHostingController != nil, !modelChanged {
+                return
+            }
             if let existingHosting = escapeHatchHostingController {
                 existingHosting.willMove(toParent: nil)
                 existingHosting.view.removeFromSuperview()
@@ -261,15 +324,14 @@ final class AIChatHistoryListViewController: UIViewController {
             }
             escapeHatchHostingController = nil
 
-            let card = ReturnToTabCard(model: model, onTap: onTapped)
-            let hosting = UIHostingController(rootView: card)
+            let view = EscapeHatchView(model: model)
+            let hosting = UIHostingController(rootView: view)
             hosting.view.backgroundColor = .clear
             escapeHatchHostingController = hosting
 
             addChild(hosting)
             updateTableHeader()
             hosting.didMove(toParent: self)
-            updateScrollEnabled()
         } else {
             if let hosting = escapeHatchHostingController {
                 hosting.willMove(toParent: nil)
@@ -278,7 +340,6 @@ final class AIChatHistoryListViewController: UIViewController {
             }
             escapeHatchHostingController = nil
             updateTableHeader()
-            updateScrollEnabled()
         }
     }
 
@@ -306,6 +367,73 @@ final class AIChatHistoryListViewController: UIViewController {
 
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor(designSystemColor: .surface)
+
+        configureDeleteActionIfNeeded(cell: cell, chat: chat)
+    }
+
+    /// Index of the virtual "View all chats" row, shown after the last suggestion when the view model opts in.
+    private var viewAllChatsRowIndex: Int? {
+        viewModel.showViewAllChats ? chats.count : nil
+    }
+
+    private func configureViewAllChatsCell(_ cell: UITableViewCell) {
+        var config = cell.defaultContentConfiguration()
+
+        config.text = UserText.aiChatViewAllChats
+        config.textProperties.font = UIFont.preferredFont(forTextStyle: .body)
+        config.textProperties.color = UIColor(designSystemColor: .textPrimary)
+        config.textProperties.lineBreakMode = .byTruncatingTail
+        config.textProperties.numberOfLines = 1
+
+        config.image = DesignSystemImages.Glyphs.Size24.chats.withRenderingMode(.alwaysTemplate)
+        config.imageProperties.tintColor = UIColor(designSystemColor: .icons)
+        config.imageProperties.maximumSize = CGSize(width: Constants.iconSize, height: Constants.iconSize)
+
+        config.directionalLayoutMargins = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: Constants.horizontalInset,
+            bottom: 0,
+            trailing: Constants.horizontalInset
+        )
+        config.imageToTextPadding = Constants.iconTextSpacing
+
+        cell.contentConfiguration = config
+        cell.backgroundColor = UIColor(designSystemColor: .surface)
+
+        // The "View all chats" row never offers per-row deletion.
+        if let cell = cell as? DuckAISuggestionTableViewCell {
+            cell.displaysAccessoryButton = false
+            cell.onAccessoryButtonPressed = nil
+        }
+    }
+}
+
+// MARK: - Chat Deletion
+
+private extension AIChatHistoryListViewController {
+
+    func configureDeleteActionIfNeeded(cell: UITableViewCell, chat: AIChatSuggestion) {
+        guard let cell = cell as? DuckAISuggestionTableViewCell else {
+            return
+        }
+
+        cell.accessoryButtonImage = DesignSystemImages.Glyphs.Size16.fire
+        cell.displaysAccessoryButton = featureFlagger.isFeatureOn(.removeChatHistory)
+        cell.onAccessoryButtonPressed = { [weak self] source in
+            self?.presentChatDeletionConfirmation(chat: chat, source: source)
+        }
+    }
+
+    func presentChatDeletionConfirmation(chat: AIChatSuggestion, source: UIView) {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteButtonTapped)
+
+        FireConfirmationPresenter.presentFireConfirmation(suggestion: chat, presenter: self, source: source) {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteCancelled)
+
+        } onConfirm: { [weak self] in
+            self?.onChatDeleted(chat)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteConfirmed)
+        }
     }
 }
 
@@ -314,20 +442,24 @@ final class AIChatHistoryListViewController: UIViewController {
 extension AIChatHistoryListViewController: UITableViewDataSource {
 
     func numberOfSections(in tableView: UITableView) -> Int {
-        return chats.isEmpty ? 0 : 1
+        return (chats.isEmpty && !viewModel.showViewAllChats) ? 0 : 1
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return chats.count
+        return chats.count + (viewModel.showViewAllChats ? 1 : 0)
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: Constants.cellIdentifier, for: indexPath)
 
-        guard indexPath.row < chats.count else { return cell }
+        if indexPath.row == viewAllChatsRowIndex {
+            configureViewAllChatsCell(cell)
+        } else if indexPath.row < chats.count {
+            configureCell(cell, with: chats[indexPath.row])
+        }
 
-        let chat = chats[indexPath.row]
-        configureCell(cell, with: chat)
+        // Re-apply the highlight so a reused cell renders correctly.
+        cell.backgroundColor = highlightBackgroundColor(isHighlighted: viewModel.selectedIndex == indexPath.row)
 
         return cell
     }
@@ -347,19 +479,12 @@ extension AIChatHistoryListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-
-        guard indexPath.row < chats.count else { return }
-
-        let chat = chats[indexPath.row]
-        let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
-        DailyPixel.fireDailyAndCount(pixel: pixel)
-
-        if isIPadExperience {
-            let iPadPixel: Pixel.Event = chat.isPinned ? .aiChatIPadToggleRecentChatSelectedPinned : .aiChatIPadToggleRecentChatSelected
-            DailyPixel.fireDailyAndCount(pixel: iPadPixel)
+        if indexPath.row == viewAllChatsRowIndex {
+            onViewAllSelected()
+            return
         }
-
-        onChatSelected(chat)
+        guard indexPath.row < chats.count else { return }
+        onChatSelected(chats[indexPath.row])
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

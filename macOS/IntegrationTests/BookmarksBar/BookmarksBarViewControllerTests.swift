@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import PrivacyConfig
@@ -53,6 +54,7 @@ final class BookmarksBarViewControllerTests: XCTestCase {
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
                                               windowControllersManager: WindowControllersManagerMock(),
+                                              dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
 

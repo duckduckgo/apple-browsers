@@ -19,6 +19,7 @@
 
 import UIKit
 import Common
+import FoundationExtensions
 import Core
 import Bookmarks
 import BrowserServicesKit
@@ -37,6 +38,12 @@ extension MainViewController {
         }, deepLinkTarget: .appearance)
     }
 
+    func segueToGeneralSettings() {
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .general)
+        }, deepLinkTarget: .general)
+    }
+
     func segueToCustomizeAddressBarSettings() {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .customizeAddressBarButton)
@@ -53,23 +60,22 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller: Onboarding = if featureFlagger.isFeatureOn(.onboardingRebranding) {
-            OnboardingIntroViewController.rebranded(
-                onboardingPixelReporter: contextualOnboardingPixelReporter,
-                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                daxDialogsManager: daxDialogsManager,
-                syncAutoRestoreHandler: syncAutoRestoreHandler
-            )
-        } else {
-            OnboardingIntroViewController.legacy(
-                onboardingPixelReporter: contextualOnboardingPixelReporter,
-                systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                daxDialogsManager: daxDialogsManager,
-                syncAutoRestoreHandler: syncAutoRestoreHandler
-            )
-        }
-        controller.delegate = self
+        let viewModel = OnboardingIntroFactory.makeViewModel(
+            pixelReporter: contextualOnboardingPixelReporter,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+            daxDialogsManager: daxDialogsManager,
+            syncAutoRestoreHandler: syncAutoRestoreHandler,
+            onboardingManager: onboardingManager
+        )
+        let controller = OnboardingIntroFactory.makeController(
+            viewModel: viewModel,
+            delegate: self
+        )
         controller.modalPresentationStyle = .overFullScreen
+        linearOnboardingContext = OnboardingIntroContext(
+            onboardingViewController: controller,
+            onboardingViewModel: viewModel
+        )
         present(controller, animated: false, completion: completion)
     }
 
@@ -139,8 +145,10 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
+        // Reuse the tab's live PrivacyInfo (with its accumulated tracker/protection state) as the
+        // dashboard flow does; only build a fresh one if the tab has none yet.
         guard let currentURL = currentTab?.url,
-              let privacyInfo = currentTab?.makePrivacyInfo(url: currentURL) else {
+              let privacyInfo = currentTab?.privacyInfo ?? currentTab?.makePrivacyInfo(url: currentURL) else {
             assertionFailure("Missing fundamental data")
             return
         }
@@ -184,12 +192,7 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let storyboard = UIStoryboard(name: "Downloads", bundle: nil)
-        guard let controller = storyboard.instantiateInitialViewController() else {
-            assertionFailure()
-            return
-        }
-        present(controller, animated: true)
+        present(DownloadsListHostingController(), animated: true)
     }
 
     func segueToTabSwitcher() async {
@@ -217,27 +220,27 @@ extension MainViewController {
             return
         }
 
-        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
-            TabSwitcherViewController(coder: coder,
-                                      bookmarksDatabase: self.bookmarksDatabase,
-                                      syncService: self.syncService,
-                                      featureFlagger: self.featureFlagger,
-                                      favicons: self.favicons,
-                                      tabManager: self.tabManager,
-                                      aiChatSettings: self.aiChatSettings,
-                                      appSettings: self.appSettings,
-                                      privacyStats: self.privacyStats,
-                                      productSurfaceTelemetry: self.productSurfaceTelemetry,
-                                      historyManager: self.historyManager,
-                                      fireproofing: self.fireproofing,
-                                      keyValueStore: self.keyValueStore,
-                                      daxDialogsManager: self.daxDialogsManager,
-                                      initialTrackerCountState: initialTrackerCountState)
-        }) else {
-            assertionFailure()
-            return
-        }
+        let duckAIGridContentProvider = DuckAIGridContentResolver(
+            featureFlagger: featureFlagger,
+            storageHandler: duckAiNativeStorageHandler
+        )
+
+        let controller = TabSwitcherViewController(bookmarksDatabase: self.bookmarksDatabase,
+                                                   syncService: self.syncService,
+                                                   featureFlagger: self.featureFlagger,
+                                                   favicons: self.favicons,
+                                                   tabManager: self.tabManager,
+                                                   aiChatSettings: self.aiChatSettings,
+                                                   appSettings: self.appSettings,
+                                                   privacyStats: self.privacyStats,
+                                                   productSurfaceTelemetry: self.productSurfaceTelemetry,
+                                                   historyManager: self.historyManager,
+                                                   fireproofing: self.fireproofing,
+                                                   keyValueStore: self.keyValueStore,
+                                                   daxDialogsManager: self.daxDialogsManager,
+                                                   initialTrackerCountState: initialTrackerCountState,
+                                                   duckAIGridContentProvider: duckAIGridContentProvider,
+                                                   duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker)
 
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
@@ -255,12 +258,17 @@ extension MainViewController {
         launchSettings()
     }
 
-    func segueToDuckDuckGoSubscription() {
+    func segueToDuckDuckGoSubscription(origin: String?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
+        let components: URLComponents? = origin.map {
+            var components = URLComponents()
+            components.queryItems = [URLQueryItem(name: AttributionParameter.origin, value: $0)]
+            return components
+        }
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
-        }, deepLinkTarget: .subscriptionFlow())
+            $0.triggerDeepLinkNavigation(to: .subscriptionFlow(redirectURLComponents: components))
+        }, deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
     }
 
     func segueToSubscriptionRestoreFlow() {
@@ -269,6 +277,14 @@ extension MainViewController {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .restoreFlow)
         }, deepLinkTarget: .restoreFlow)
+    }
+
+    func segueToSubscriptionWelcome() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .subscriptionWelcome)
+        }, deepLinkTarget: .subscriptionWelcome)
     }
 
     func segueToVPN() {
@@ -295,7 +311,7 @@ extension MainViewController {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
             let hasEntitlement = (try? await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false
 
-            if hasEntitlement {
+            if hasEntitlement || freemiumPIREligibilityChecker.canShowEntryPoint() {
                 launchSettings(completion: {
                     $0.triggerDeepLinkNavigation(to: .dbp)
                 }, deepLinkTarget: .dbp)
@@ -389,6 +405,27 @@ extension MainViewController {
         }
     }
 
+    func presentDataImportSummary(_ summary: DataImportSummary,
+                                  importScreen: DataImportViewModel.ImportScreen = .passwords) {
+        let presenter = topMostPresentedViewController(startingFrom: self)
+
+        guard !(presenter is DataImportSummaryViewController) else {
+            Logger.autofill.debug("Data import summary already presented")
+            return
+        }
+
+        let summaryViewController = DataImportSummaryViewController(summary: summary,
+                                                                    importScreen: importScreen,
+                                                                    syncService: syncService) { [weak self] source in
+            guard let self else { return }
+            dismissPresentedDataImportSummaryIfNeeded {
+                self.segueToSettingsSync(with: source)
+            }
+        } onCompletion: { }
+
+        presenter.present(summaryViewController, animated: true)
+    }
+
     func segueToFeedback() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
@@ -419,11 +456,15 @@ extension MainViewController {
                                                             productSurfaceTelemetry: productSurfaceTelemetry,
                                                             webExtensionManager: webExtensionManager,
                                                             syncAutoRestoreHandler: syncAutoRestoreHandler,
+                                                            freemiumPIRDebugSettings: freemiumPIRDebugSettings,
+                                                            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
-        let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
-                                                        featureFlagger: featureFlagger)
+        let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings)
+        // Share the app key-value store so native AI Features controls read/write the same
+        // SERP settings blob the SERP uses.
+        serpSettingsProvider.keyValueStore = keyValueStore
         let whatsNewCoordinator = WhatsNewCoordinator(
             displayContext: .onDemand,
             repository: whatsNewRepository,
@@ -449,10 +490,16 @@ extension MainViewController {
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
                                                   privacyConfigurationManager: privacyConfigurationManager,
                                                   keyValueStore: keyValueStore,
+                                                  contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                                                   idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                                  afterInactivityOptionAdapter: afterInactivityOptionAdapter,
+                                                  lastTabShortcutAdapter: lastTabShortcutAdapter,
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
+                                                  freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+                                                  profileStateManager: profileStateManager,
+                                                  freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
@@ -461,6 +508,11 @@ extension MainViewController {
                                                   adBlockingAvailability: adBlockingAvailability)
 
         settingsViewModel.autoClearActionDelegate = self
+        settingsViewModel.onRequestOpenDuckAIChat = { [weak self] in
+            self?.dismiss(animated: true) {
+                self?.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
+            }
+        }
         Pixel.fire(pixel: .settingsPresented)
 
         func doLaunch() {
@@ -477,6 +529,9 @@ extension MainViewController {
 
                 // We are still presenting legacy views, so use a Navcontroller
                 let navController = SettingsUINavigationController(rootViewController: settingsController)
+                // When Settings is opened purely to host the onboarding subscription purchase, backing out
+                // without buying should return home rather than land on Settings (see the override).
+                navController.dismissesModalOnSubscriptionBailout = deepLinkTarget?.isOnboardingSubscriptionFlow ?? false
                 navController.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
                 settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
                 // Opaque nav bar and matching view background so sheet top gap (if any) is visually continuous with the bar
@@ -522,6 +577,8 @@ extension MainViewController {
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            freemiumPIRDebugSettings: self.freemiumPIRDebugSettings,
+            freemiumDBPUserStateManager: self.freemiumDBPUserStateManager,
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
@@ -546,12 +603,38 @@ extension MainViewController {
             ViewHighlighter.hideAll()
         }
     }
-    
+
+    private func dismissPresentedDataImportSummaryIfNeeded(completion: @escaping () -> Void) {
+        let topMostViewController = topMostPresentedViewController(startingFrom: self)
+        guard topMostViewController is DataImportSummaryViewController else {
+            completion()
+            return
+        }
+
+        topMostViewController.dismiss(animated: true, completion: completion)
+    }
+
+    private func topMostPresentedViewController(startingFrom rootViewController: UIViewController) -> UIViewController {
+        var currentViewController = rootViewController
+        while let presentedViewController = currentViewController.presentedViewController {
+            currentViewController = presentedViewController
+        }
+        return currentViewController
+    }
+
 }
 
 // Exists to fire a did disappear notification for settings when the controller did disappear
 //  so that we get the event regardless of where in the UI hierarchy it happens.
 class SettingsUINavigationController: UINavigationController {
+
+    /// Whether to dismiss the entire Settings modal when the subscription flow was presented,
+    /// but a subscription was not purchased
+    var dismissesModalOnSubscriptionBailout = false
+
+    /// Whether a subscription was acquired while the subscription flow was presented
+    private var didAcquireSubscription = false
+    private var subscriptionChangeObserver: Any?
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -559,11 +642,33 @@ class SettingsUINavigationController: UINavigationController {
 
     init(rootViewController: SettingsHostingController) {
         super.init(rootViewController: rootViewController)
+        subscriptionChangeObserver = NotificationCenter.default.addObserver(forName: .subscriptionDidChange,
+                                                                            object: nil,
+                                                                            queue: .main) { [weak self] _ in
+            self?.didAcquireSubscription = true
+        }
+    }
+
+    deinit {
+        if let subscriptionChangeObserver {
+            NotificationCenter.default.removeObserver(subscriptionChangeObserver)
+        }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         NotificationCenter.default.post(name: .settingsDidDisappear, object: nil)
+    }
+
+    override func popViewController(animated: Bool) -> UIViewController? {
+        // Bail out to home instead of popping to the Settings root
+        // when leaving the onboarding subscription flow without a purchase.
+        if dismissesModalOnSubscriptionBailout,
+           !didAcquireSubscription {
+            dismiss(animated: true)
+            return nil
+        }
+        return super.popViewController(animated: animated)
     }
 
     override func pushViewController(_ viewController: UIViewController, animated: Bool) {
@@ -577,6 +682,28 @@ class SettingsUINavigationController: UINavigationController {
         }
     }
 
+}
+
+final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigationController {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        let surfaceColor = UIColor(designSystemColor: .surface)
+        view.backgroundColor = surfaceColor
+        navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
+        navigationBar.isTranslucent = false
+        navigationBar.barTintColor = surfaceColor
+        navigationBar.backgroundColor = surfaceColor
+        viewControllers.first?.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close,
+                                                                                  target: self,
+                                                                                  action: #selector(dismissSubscriptionFlow))
+    }
+
+    @objc
+    private func dismissSubscriptionFlow() {
+        dismiss(animated: true)
+    }
 }
 
 extension NSNotification.Name {

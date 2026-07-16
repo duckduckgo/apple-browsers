@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import AIChat
+import FeatureFlags
+import Onboarding
 import Persistence
 import PersistenceTestingUtils
 import PrivacyConfig
@@ -39,7 +42,8 @@ class OnboardingManagerTests: XCTestCase {
     var dataClearingPreferences: DataClearingPreferences!
     var startupPersistor: StartupPreferencesUserDefaultsPersistor!
     var importProvider: CapturingDataImportProvider!
-    var applicationBuildType: MockApplicationBuildType!
+    private var onboardingSharedPixelHandler: MockOnboardingSharedPixelHandler!
+    private var chromeExtensionInstaller: MockThirdPartyBrowserExtensionInstalling!
 
     @MainActor override func setUp() {
         navigationDelegate = CapturingOnboardingNavigation()
@@ -62,7 +66,8 @@ class OnboardingManagerTests: XCTestCase {
         )
         startupPreferences = StartupPreferences(pinningManager: MockPinningManager(), persistor: startupPersistor, appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()
-        applicationBuildType = MockApplicationBuildType()
+        onboardingSharedPixelHandler = MockOnboardingSharedPixelHandler()
+        chromeExtensionInstaller = MockThirdPartyBrowserExtensionInstalling()
         manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -71,7 +76,8 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: MockFeatureFlagger(),
-            applicationBuildType: applicationBuildType
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
         )
     }
 
@@ -86,16 +92,20 @@ class OnboardingManagerTests: XCTestCase {
         dataClearingPreferences = nil
         fireButtonPreferencesPersistor = nil
         importProvider = nil
-        applicationBuildType = nil
+        onboardingSharedPixelHandler = nil
+        chromeExtensionInstaller = nil
     }
 
     func testReturnsExpectedOnboardingConfig_WhenBothFlagsAreOff_ExcludesAddressBarMode() {
         // Given
         let systemSettings = SystemSettings(rows: ["dock", "import"])
-        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        let stepDefinitions = StepDefinitions(
+            systemSettings: systemSettings,
+            getStarted: GetStarted(options: [])
+        )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -106,9 +116,59 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(manager.configuration, expectedConfig)
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenAppStoreBuild_DoesNotShowDockRow() {
+    func testReturnsExpectedOnboardingConfig_WhenChromeExtensionCanBeInstalled_AndFlagIsEnabled_IncludesChromeExtensionInstallOption() {
         // Given
-        applicationBuildType.isAppStoreBuild = true
+        chromeExtensionInstaller.canInstallDDGExtension = true
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.onboardingChromeExtension]
+        let managerWithFlagOn = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
+        )
+
+        // Then
+        XCTAssertEqual(managerWithFlagOn.configuration.stepDefinitions.getStarted.options, ["chrome-extension-install"])
+    }
+
+    func testReturnsExpectedOnboardingConfig_WhenChromeExtensionCanBeInstalled_AndFlagIsDisabled_DoesNotIncludeChromeExtensionInstallOption() {
+        // Given
+        chromeExtensionInstaller.canInstallDDGExtension = true
+
+        // Then
+        XCTAssertTrue(manager.configuration.stepDefinitions.getStarted.options.isEmpty)
+    }
+
+    func testReturnsExpectedOnboardingConfig_WhenChromeExtensionCannotBeInstalled_DoesNotIncludeChromeExtensionInstallOption() {
+        // Given
+        chromeExtensionInstaller.canInstallDDGExtension = false
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.onboardingChromeExtension]
+        let managerWithFlagOn = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
+        )
+
+        // Then
+        XCTAssertTrue(managerWithFlagOn.configuration.stepDefinitions.getStarted.options.isEmpty)
+    }
+
+    func testReturnsExpectedOnboardingConfig_WhenDockCustomization_DoesNotSupportAddingToDock() {
+        // Given
+        dockCustomization.supportsAddingToDock = false
         let appStoreManager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -117,12 +177,16 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: MockFeatureFlagger(),
-            applicationBuildType: applicationBuildType
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
         )
-        let stepDefinitions = StepDefinitions(systemSettings: SystemSettings(rows: ["import"]))
+        let stepDefinitions = StepDefinitions(
+            systemSettings: SystemSettings(rows: ["dock-instructions", "import"]),
+            getStarted: GetStarted(options: [])
+        )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -133,10 +197,10 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(appStoreManager.configuration, expectedConfig)
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenOnlyOmnibarToggleIsOn_ExcludesAddressBarMode() {
+    func testReturnsExpectedOnboardingConfig_WhenOmnibarOnboardingIsOff_ExcludesAddressBarMode() {
         // Given
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle]
+        featureFlagger.enabledFeatureFlags = []
         let managerWithFlagOn = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -145,14 +209,18 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
         )
 
         let systemSettings = SystemSettings(rows: ["dock", "import"])
-        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        let stepDefinitions = StepDefinitions(
+            systemSettings: systemSettings,
+            getStarted: GetStarted(options: [])
+        )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue, OnboardingExcludedStep.addressBarMode.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -163,40 +231,10 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(managerWithFlagOn.configuration, expectedConfig)
     }
 
-    func testReturnsExpectedOnboardingConfig_WhenOnlyOmnibarOnboardingIsOn_ExcludesAddressBarMode() {
+    func testReturnsExpectedOnboardingConfig_WhenOmnibarOnboardingIsOn_DoesNotExcludeAddressBarMode() {
         // Given
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.aiChatOmnibarOnboarding]
-        let managerWithFlagOn = OnboardingActionsManager(
-            navigationDelegate: navigationDelegate,
-            dockCustomization: dockCustomization,
-            defaultBrowserProvider: defaultBrowserProvider,
-            appearancePreferences: appearancePreferences,
-            startupPreferences: startupPreferences,
-            dataImportProvider: importProvider,
-            featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType
-        )
-
-        let systemSettings = SystemSettings(rows: ["dock", "import"])
-        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
-        let expectedConfig = OnboardingConfiguration(
-            stepDefinitions: stepDefinitions,
-            exclude: [OnboardingExcludedStep.addressBarMode.rawValue],
-            order: "v3",
-            env: "development",
-            locale: "en",
-            platform: .init(name: "macos")
-        )
-
-        // Then
-        XCTAssertEqual(managerWithFlagOn.configuration, expectedConfig)
-    }
-
-    func testReturnsExpectedOnboardingConfig_WhenBothFlagsAreOn_DoesNotExcludeAddressBarMode() {
-        // Given
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarOnboarding]
         let managerWithFlagsOn = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -205,14 +243,18 @@ class OnboardingManagerTests: XCTestCase {
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
             featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildType
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
         )
 
         let systemSettings = SystemSettings(rows: ["dock", "import"])
-        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        let stepDefinitions = StepDefinitions(
+            systemSettings: systemSettings,
+            getStarted: GetStarted(options: [])
+        )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: [],
+            exclude: [OnboardingExcludedStep.duckPlayerSingle.rawValue],
             order: "v3",
             env: "development",
             locale: "en",
@@ -382,6 +424,295 @@ class OnboardingManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(self.appearancePersistor.homeButtonPosition, .hidden)
+    }
+
+    // MARK: Shared pixels
+
+    func testWelcomeShownPixelFired_WhenOnboardingStarted() {
+        // When
+        manager.onboardingStarted()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.welcome(.shown)])
+    }
+
+    func testExpectedShownPixelsFired_WhenStepShown() {
+        // When
+        manager.stepShown(step: .welcome)
+        manager.stepShown(step: .getStarted)
+        manager.stepShown(step: .makeDefaultSingle)
+        manager.stepShown(step: .systemSettings)
+        manager.stepShown(step: .duckPlayerSingle)
+        manager.stepShown(step: .customize)
+        manager.stepShown(step: .addressBarMode)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [
+            .welcome(.shown),
+            .setDefault(.shown),
+            .duckPlayer(.shown),
+            .customization(.shown),
+            .searchExperience(.shown)
+        ])
+    }
+
+    func testExpectedShownPixelsFired_WhenGetStartedStepShown_AndChromeOptionCanBeShown() {
+        // Given
+        chromeExtensionInstaller.canInstallDDGExtension = true
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.onboardingChromeExtension]
+        let managerWithFlagOn = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
+        )
+
+        // When
+        managerWithFlagOn.stepShown(step: .getStarted)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.chromeExtensionInstall(.shown)])
+    }
+
+    func testExpectedShownPixelsFired_WhenRowShownTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.rowShown(.dock))
+        manager.reportTelemetryEvent(.rowShown(.dockInstructions))
+        manager.reportTelemetryEvent(.rowShown(.dataImport))
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [
+            .addToDock(.shown),
+            .addToDock(.shown),
+            .importData(.shown)
+        ])
+    }
+
+    func testExpectedDismissPixelsFired_WhenRowSkippedTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.rowSkipped(.dock))
+        manager.reportTelemetryEvent(.rowSkipped(.dockInstructions))
+        manager.reportTelemetryEvent(.rowSkipped(.dataImport))
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [
+            .addToDock(.clicked(.dismiss)),
+            .addToDock(.clicked(.dismiss)),
+            .importData(.clicked(.dismiss))
+        ])
+    }
+
+    func testOnlySetDefaultEngagePixelFired_WhenDefaultBrowserRequested() {
+        // When
+        manager.setAsDefault()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.setDefault(.clicked(.engage))])
+
+        // When
+        manager.stepCompleted(step: .makeDefaultSingle)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.setDefault(.clicked(.engage))])
+    }
+
+    func testSetDefaultDismissPixelFired_WhenDefaultBrowserStepCompleted_AndDefaultBrowserNotRequested() {
+        // When
+        manager.stepCompleted(step: .makeDefaultSingle)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.setDefault(.clicked(.dismiss))])
+    }
+
+    func testAddToDockEngagePixelFired_WhenAddedToDock() {
+        // When
+        manager.addToDock()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.addToDock(.clicked(.engage))])
+    }
+
+    func testChromeExtensionInstallEngagePixelFiredAndExtensionInstallCalled_WhenChromeExtensionInstalled() async {
+        // When
+        manager.installChromeExtension()
+
+        // Then
+        XCTAssertTrue(chromeExtensionInstaller.installDDGExtensionCalled)
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.chromeExtensionInstall(.clicked(.engage))])
+    }
+
+    func testAddToDockEngagePixelFired_WhenDockInstructionsShownTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.dockInstructionsShown)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.addToDock(.clicked(.engage))])
+    }
+
+    func testImportEngageAndConfirmedPixelsFired_WhenImportSuccessfullyCompleted() async {
+        // When
+        importProvider.didImport = true
+        _ = await manager.importData()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.importData(.clicked(.engage)), .importData(.confirmed)])
+    }
+
+    func testOnlyImportEngagePixelFired_WhenImportNotSuccessfullyCompleted() async {
+        // When
+        importProvider.didImport = false
+        _ = await manager.importData()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.importData(.clicked(.engage))])
+    }
+
+    func testDuckPlayerEngagePixelFired_WhenDuckPlayerToggledTelemetryEventReported() {
+        // When
+        manager.reportTelemetryEvent(.duckPlayerToggled)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.duckPlayer(.clicked(.engage))])
+    }
+
+    func testDuckPlayerEngagePixelFired_WhenDuckPlayerStepCompleted() {
+        // When
+        manager.stepCompleted(step: .duckPlayerSingle)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.duckPlayer(.clicked(.engage))])
+    }
+
+    func testCustomizationClickedPixelFired_WithEnabledSettings_WhenCustomizeStepCompleted() {
+        // When
+        manager.setBookmarkBar(enabled: true)
+        manager.setSessionRestore(enabled: false)
+        manager.setHomeButtonPosition(enabled: true)
+        manager.stepCompleted(step: .customize)
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.customization(.clicked([.bookmarksBar, .homeButton]))])
+    }
+
+    @MainActor
+    func testCustomizationSharedPixelFired_WhenCustomizeIsFinalStep() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = []
+        let manager = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
+        )
+
+        // When
+        manager.setBookmarkBar(enabled: true)
+        manager.setSessionRestore(enabled: true)
+        manager.setHomeButtonPosition(enabled: true)
+        manager.goToAddressBar()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.customization(.clicked([.bookmarksBar, .restoreSession, .homeButton]))])
+    }
+
+    @MainActor
+    func testSearchExperienceClickedPixelFired_WithAddressBarSetting_WhenAddressBarModeIsFinalStep() {
+        // Given
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarOnboarding]
+        let manager = OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
+        )
+
+        // When
+        manager.setDuckAiInAddressBar(enabled: false)
+        manager.goToAddressBar()
+
+        // Then
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.searchExperience(.clicked(.searchOnly))])
+    }
+
+    // MARK: setDuckAiInAddressBar — NTP + homepage (aiChatOnboardingToggleAffectsNtpAndDdg)
+
+    @MainActor
+    func testSetDuckAiInAddressBar_WhenFlagOnAndSearchOnly_HidesNtpToggleAndArmsHomepageSeedOff() {
+        let storage = MockAIChatPreferencesStorage()
+        let seedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
+        let manager = makeManager(enabledFlags: [.aiChatOnboardingToggleAffectsNtpAndDdg], aiChatPreferencesStorage: storage, homepageSearchModeSeedPersistor: seedPersistor)
+
+        manager.setDuckAiInAddressBar(enabled: false)
+
+        XCTAssertFalse(storage.showSearchAndDuckAIToggle)
+        XCTAssertFalse(storage.showShortcutOnNewTabPage)
+        XCTAssertEqual(seedPersistor.pendingShowSearchModeToggle, false)
+    }
+
+    @MainActor
+    func testSetDuckAiInAddressBar_WhenFlagOnAndSearchAndDuckAi_ShowsNtpToggleAndArmsHomepageSeedOn() {
+        let storage = MockAIChatPreferencesStorage()
+        let seedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
+        let manager = makeManager(enabledFlags: [.aiChatOnboardingToggleAffectsNtpAndDdg], aiChatPreferencesStorage: storage, homepageSearchModeSeedPersistor: seedPersistor)
+
+        manager.setDuckAiInAddressBar(enabled: true)
+
+        XCTAssertTrue(storage.showSearchAndDuckAIToggle)
+        XCTAssertTrue(storage.showShortcutOnNewTabPage)
+        XCTAssertEqual(seedPersistor.pendingShowSearchModeToggle, true)
+    }
+
+    @MainActor
+    func testSetDuckAiInAddressBar_WhenFlagOff_OnlySetsAddressBarToggle() {
+        let storage = MockAIChatPreferencesStorage()
+        storage.showShortcutOnNewTabPage = true
+        let seedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore())
+        let manager = makeManager(enabledFlags: [], aiChatPreferencesStorage: storage, homepageSearchModeSeedPersistor: seedPersistor)
+
+        manager.setDuckAiInAddressBar(enabled: false)
+
+        XCTAssertFalse(storage.showSearchAndDuckAIToggle)
+        XCTAssertTrue(storage.showShortcutOnNewTabPage)
+        XCTAssertNil(seedPersistor.pendingShowSearchModeToggle)
+    }
+
+    @MainActor
+    private func makeManager(enabledFlags: [FeatureFlag],
+                             aiChatPreferencesStorage: AIChatPreferencesStorage,
+                             homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor) -> OnboardingActionsManager {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = enabledFlags
+        return OnboardingActionsManager(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: importProvider,
+            aiChatPreferencesStorage: aiChatPreferencesStorage,
+            homepageSearchModeSeedPersistor: homepageSearchModeSeedPersistor,
+            featureFlagger: featureFlagger,
+            onboardingSharedPixelHandler: onboardingSharedPixelHandler,
+            chromeExtensionInstaller: chromeExtensionInstaller
+        )
     }
 
 }

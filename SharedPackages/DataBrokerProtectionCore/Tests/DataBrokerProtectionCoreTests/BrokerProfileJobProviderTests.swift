@@ -48,7 +48,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                                         emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                                         captchaService: CaptchaServiceMock(),
                                                         featureFlagger: MockDBPFeatureFlagger(),
-                                                        applicationNameForUserAgent: nil)
+                                                        applicationNameForUserAgentProvider: { nil })
     }
 
     func testWhenBuildOperations_andBrokerQueryDataHasDuplicateBrokers_thenDuplicatesAreIgnored() throws {
@@ -80,6 +80,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                          withPriorityDate: Date(),
                                          showWebView: false,
                                          statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
+                                         isAuthenticatedUser: true,
                                          jobDependencies: mockDependencies)
 
         // Then
@@ -109,11 +110,12 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                         withPriorityDate: nil,
                                         showWebView: false,
                                         statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
+                                        isAuthenticatedUser: true,
                                         jobDependencies: mockDependencies)
 
         // Then
-        XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
-        XCTAssertEqual(mockDatabase.lastShouldFilterRemovedBrokers, true, "Should request filtering of removed brokers for job scheduling")
+        XCTAssertTrue(mockDatabase.wasFetchEligibleBrokerProfileQueryDataCalled, "Should fetch eligible broker data (removed brokers excluded)")
+        XCTAssertEqual(mockDatabase.lastFetchEligibleIsAuthenticatedUser, true)
 
         // Should only create jobs for active broker
         XCTAssertEqual(result.count, 1, "Should only create jobs for active brokers")
@@ -142,6 +144,7 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                         withPriorityDate: nil,
                                         showWebView: false,
                                         statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
+                                        isAuthenticatedUser: true,
                                         jobDependencies: mockDependencies)
 
         // Then
@@ -201,17 +204,18 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                         withPriorityDate: nil,
                                         showWebView: false,
                                         statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
+                                        isAuthenticatedUser: true,
                                         jobDependencies: mockDependencies)
 
         // Then
-        XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData")
-        XCTAssertEqual(mockDatabase.lastShouldFilterRemovedBrokers, true, "Should request filtering of removed brokers")
+        XCTAssertTrue(mockDatabase.wasFetchEligibleBrokerProfileQueryDataCalled, "Should fetch eligible broker data (removed brokers excluded)")
+        XCTAssertEqual(mockDatabase.lastFetchEligibleIsAuthenticatedUser, true)
 
         // Should create jobs only for active brokers (removed brokers are filtered at database level)
         XCTAssertEqual(result.count, 2, "Should create jobs only for active brokers")
     }
 
-    func testProvideJobs_allFilterRemovedBrokers() throws {
+    func testProvideJobs_acrossAllJobTypes_fetchesEligibleBrokerData() throws {
         // Given
         let activeBrokerData = BrokerProfileQueryData(
             dataBroker: .mock,
@@ -234,112 +238,102 @@ final class BrokerProfileJobProviderTests: XCTestCase {
         // When & Then
         for jobType in jobTypes {
             // Reset call tracking flags
-            mockDatabase.wasFetchAllBrokerProfileQueryDataCalled = false
-            mockDatabase.lastShouldFilterRemovedBrokers = nil
+            mockDatabase.wasFetchEligibleBrokerProfileQueryDataCalled = false
+            mockDatabase.lastFetchEligibleIsAuthenticatedUser = nil
 
             let result = try sut.createJobs(with: jobType,
                                             withPriorityDate: nil,
                                             showWebView: false,
                                             statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
+                                            isAuthenticatedUser: true,
                                             jobDependencies: mockDependencies)
 
-            XCTAssertTrue(mockDatabase.wasFetchAllBrokerProfileQueryDataCalled, "Should call fetchAllBrokerProfileQueryData for \(jobType)")
-            XCTAssertEqual(mockDatabase.lastShouldFilterRemovedBrokers, true, "Should request filtering for job type \(jobType)")
+            XCTAssertTrue(mockDatabase.wasFetchEligibleBrokerProfileQueryDataCalled, "Should fetch eligible broker data for job type \(jobType)")
+            XCTAssertEqual(mockDatabase.lastFetchEligibleIsAuthenticatedUser, true)
 
             // Should create at most 1 job (for active broker only)
             XCTAssertLessThanOrEqual(result.count, 1, "Should create at most 1 job for \(jobType)")
         }
     }
 
-    // MARK: - Click Delay Optimization Tests
-
-    func testWhenClickDelayOptimizationIsOn_thenCreateOptOutRunnerUsesOptimizedDelay() {
+    func testProvideJobs_whenFreemiumUserHasSubscriptionRequiredBroker_excludesBrokerFromJobScheduling() throws {
         // Given
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
-        let dependencies = BrokerProfileJobDependencies(
-            database: mockDatabase,
-            contentScopeProperties: ContentScopeProperties.mock,
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            executionConfig: mockSchedulerConfig,
-            notificationCenter: .default,
-            pixelHandler: mockPixelHandler,
-            eventsHandler: mockEventsHandler,
-            dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
-            captchaService: CaptchaServiceMock(),
-            featureFlagger: featureFlagger,
-            applicationNameForUserAgent: nil
+        let gatedBrokerData = BrokerProfileQueryData(
+            dataBroker: makeBroker(id: 1, scanActions: [MockAction(actionType: .generateEmail)]),
+            profileQuery: .mock,
+            scanJobData: .mock(withBrokerId: 1)
         )
+        let eligibleBrokerData = BrokerProfileQueryData(
+            dataBroker: makeBroker(id: 2, scanActions: [MockAction(actionType: .click)]),
+            profileQuery: .mock,
+            scanJobData: .mock(withBrokerId: 2)
+        )
+        let otherEligibleBrokerData = BrokerProfileQueryData(
+            dataBroker: makeBroker(id: 3, scanActions: [MockAction(actionType: .navigate)]),
+            profileQuery: .mock,
+            scanJobData: .mock(withBrokerId: 3)
+        )
+        mockDatabase.brokerProfileQueryDataToReturn = [gatedBrokerData, eligibleBrokerData, otherEligibleBrokerData]
 
         // When
-        let runner = dependencies.createOptOutRunner(
-            profileQuery: BrokerProfileQueryData.mock(),
-            stageDurationCalculator: MockStageDurationCalculator(),
-            shouldRunNextStep: { true }
-        )
+        let result = try sut.createJobs(with: .scheduledScan,
+                                        withPriorityDate: nil,
+                                        showWebView: false,
+                                        statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
+                                        isAuthenticatedUser: false,
+                                        jobDependencies: mockDependencies)
 
         // Then
-        let concreteRunner = runner as! BrokerProfileOptOutSubJobWebRunner
-        XCTAssertEqual(concreteRunner.clickAwaitTime, 3, "Should use optimized 3s delay when flag is ON")
+        XCTAssertEqual(result.count, 2)
+        XCTAssertEqual(mockDatabase.lastFetchEligibleIsAuthenticatedUser, false)
     }
 
-    func testWhenClickDelayOptimizationIsOff_thenCreateOptOutRunnerUsesLegacyDelay() {
+    func testProvideJobs_whenAuthenticatedUserHasSubscriptionRequiredBroker_includesBrokerInJobScheduling() throws {
         // Given
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: false)
-        let dependencies = BrokerProfileJobDependencies(
-            database: mockDatabase,
-            contentScopeProperties: ContentScopeProperties.mock,
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            executionConfig: mockSchedulerConfig,
-            notificationCenter: .default,
-            pixelHandler: mockPixelHandler,
-            eventsHandler: mockEventsHandler,
-            dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
-            captchaService: CaptchaServiceMock(),
-            featureFlagger: featureFlagger,
-            applicationNameForUserAgent: nil
+        let gatedBrokerData = BrokerProfileQueryData(
+            dataBroker: makeBroker(id: 1, scanActions: [MockAction(actionType: .generateEmail)]),
+            profileQuery: .mock,
+            scanJobData: .mock(withBrokerId: 1)
         )
+        mockDatabase.brokerProfileQueryDataToReturn = [gatedBrokerData]
 
         // When
-        let runner = dependencies.createOptOutRunner(
-            profileQuery: BrokerProfileQueryData.mock(),
-            stageDurationCalculator: MockStageDurationCalculator(),
-            shouldRunNextStep: { true }
-        )
+        let result = try sut.createJobs(with: .scheduledScan,
+                                        withPriorityDate: nil,
+                                        showWebView: false,
+                                        statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
+                                        isAuthenticatedUser: true,
+                                        jobDependencies: mockDependencies)
 
         // Then
-        let concreteRunner = runner as! BrokerProfileOptOutSubJobWebRunner
-        XCTAssertEqual(concreteRunner.clickAwaitTime, 40, "Should use legacy 40s delay when flag is OFF")
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(mockDatabase.lastFetchEligibleIsAuthenticatedUser, true)
     }
 
-    func testCreateScanRunner_alwaysUsesZeroClickDelay() {
-        // Given
-        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
-        let dependencies = BrokerProfileJobDependencies(
-            database: mockDatabase,
-            contentScopeProperties: ContentScopeProperties.mock,
-            privacyConfig: PrivacyConfigurationManagingMock(),
-            executionConfig: mockSchedulerConfig,
-            notificationCenter: .default,
-            pixelHandler: mockPixelHandler,
-            eventsHandler: mockEventsHandler,
-            dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
-            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
-            captchaService: CaptchaServiceMock(),
-            featureFlagger: featureFlagger,
-            applicationNameForUserAgent: nil
+    private func makeBroker(id: Int64, scanActions: [Action]) -> DataBroker {
+        DataBroker(
+            id: id,
+            name: "Broker \(id)",
+            url: "broker-\(id).com",
+            steps: [
+                Step(type: .scan, actions: scanActions)
+            ],
+            version: "1.0",
+            schedulingConfig: .mock,
+            optOutUrl: "",
+            eTag: "",
+            removedAt: nil
         )
+    }
 
-        // When
-        let runner = dependencies.createScanRunner(
-            profileQuery: BrokerProfileQueryData.mock(),
-            stageDurationCalculator: MockStageDurationCalculator(),
-            shouldRunNextStep: { true }
-        )
+}
 
-        // Then
-        let concreteRunner = runner as! BrokerProfileScanSubJobWebRunner
-        XCTAssertEqual(concreteRunner.clickAwaitTime, 0, "Scan runner should always use 0s delay")
+private struct MockAction: Action {
+    let id: String = "mock"
+    let actionType: ActionType
+    let json: Data? = nil
+
+    func with(json: Data?) -> MockAction {
+        MockAction(actionType: actionType)
     }
 }

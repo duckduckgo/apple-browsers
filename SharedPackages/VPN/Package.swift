@@ -7,7 +7,7 @@ let package = Package(
     name: "VPN",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(name: "VPN", targets: ["VPN"]),
@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],
     targets: [
         .target(
@@ -22,6 +23,9 @@ let package = Package(
             dependencies: [
                 .target(name: "WireGuardC"),
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Networking", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),

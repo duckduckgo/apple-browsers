@@ -1,0 +1,14 @@
+<body>
+<strong>{iOS|macOS} Sentry review — release {version}</strong>
+
+Reviewed on {today}. Scope: unresolved issues with events in <code>app_version:{version_filter}</code>.
+
+<strong>Result: crash-free release</strong>
+• <code>find_releases(query="{version}")</code> returned no releases on the <code>{apple-ios|apple-macos}</code> project.
+• <code>list_issues(query="is:unresolved app_version:{version_filter}")</code> returned zero issues.
+
+This outcome is expected for builds that are still in internal testing or code freeze: no events have reached Sentry yet, so there are no new regressions to triage for this version.
+
+<strong>Recommended next step</strong>
+Re-run <code>/ddg-sentry-report {project} {version} {asana_url}</code> once the build has shipped to a wider audience and Sentry has accumulated events.
+</body>

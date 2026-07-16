@@ -20,6 +20,8 @@ import Combine
 import FeatureFlags
 import Foundation
 import NetworkProtectionIPC
+import NetworkProtectionUI
+import SystemExtensionManager
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import VPN
@@ -59,6 +61,10 @@ final class MockVPNControllerXPCClient: VPNControllerXPCClientProtocol {
         completion(nil)
     }
 
+    func refreshSystemState(completion: @escaping (Error?) -> Void) {
+        completion(nil)
+    }
+
     func command(_ command: VPNCommand) async throws {
         // Mock implementation
     }
@@ -67,6 +73,103 @@ final class MockVPNControllerXPCClient: VPNControllerXPCClientProtocol {
 // MARK: - Tests
 
 final class VPNAppEventsHandlerTests: XCTestCase {
+
+    func testSystemStateResolverWhenUsingSystemExtensionAndSystemExtensionNeedsActionThenReturnsAllowExtensionForEveryVPNConfigurationState() {
+        let actionableSystemExtensionStates: [SystemExtensionActivationState] = [
+            .awaitingUserApproval,
+            .disabled,
+            .uninstalling,
+            .notInstalled
+        ]
+
+        for systemExtensionState in actionableSystemExtensionStates {
+            for vpnConfigurationState in NetworkProtectionVPNConfigurationState.allCases {
+                let result = NetworkProtectionSystemStateResolver.resolvedOnboardingStatus(
+                    usesSystemExtension: true,
+                    systemExtensionState: systemExtensionState,
+                    vpnConfigurationState: vpnConfigurationState,
+                    existingStatus: .completed
+                )
+
+                XCTAssertEqual(result, .isOnboarding(step: .userNeedsToAllowExtension))
+            }
+        }
+    }
+
+    func testSystemStateResolverWhenUsingSystemExtensionAndSystemExtensionStateIsUnknownThenPreservesExistingStatus() {
+        let existingStatuses: [OnboardingStatus] = [
+            .completed,
+            .isOnboarding(step: .userNeedsToAllowExtension),
+            .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
+        ]
+
+        for existingStatus in existingStatuses {
+            for vpnConfigurationState in NetworkProtectionVPNConfigurationState.allCases {
+                let result = NetworkProtectionSystemStateResolver.resolvedOnboardingStatus(
+                    usesSystemExtension: true,
+                    systemExtensionState: .unknown,
+                    vpnConfigurationState: vpnConfigurationState,
+                    existingStatus: existingStatus
+                )
+
+                XCTAssertEqual(result, existingStatus)
+            }
+        }
+    }
+
+    func testSystemStateResolverWhenUsingSystemExtensionAndSystemExtensionIsEnabledThenMapsVPNConfigurationState() {
+        let expectations: [(NetworkProtectionVPNConfigurationState, OnboardingStatus)] = [
+            (.installedAndEnabled, .completed),
+            (.installedButDisabled, .isOnboarding(step: .userNeedsToAllowVPNConfiguration)),
+            (.missingOrInvalid, .isOnboarding(step: .userNeedsToAllowVPNConfiguration))
+        ]
+
+        for (vpnConfigurationState, expectedStatus) in expectations {
+            let result = NetworkProtectionSystemStateResolver.resolvedOnboardingStatus(
+                usesSystemExtension: true,
+                systemExtensionState: .enabled,
+                vpnConfigurationState: vpnConfigurationState,
+                existingStatus: .isOnboarding(step: .userNeedsToAllowExtension)
+            )
+
+            XCTAssertEqual(result, expectedStatus)
+        }
+    }
+
+    func testSystemStateResolverWhenNotUsingSystemExtensionThenIgnoresSystemExtensionStateAndMapsVPNConfigurationState() {
+        let expectations: [(NetworkProtectionVPNConfigurationState, OnboardingStatus)] = [
+            (.installedAndEnabled, .completed),
+            (.installedButDisabled, .isOnboarding(step: .userNeedsToAllowVPNConfiguration)),
+            (.missingOrInvalid, .isOnboarding(step: .userNeedsToAllowVPNConfiguration))
+        ]
+        let systemExtensionStates: [SystemExtensionActivationState] = [
+            .enabled,
+            .awaitingUserApproval,
+            .disabled,
+            .uninstalling,
+            .notInstalled,
+            .unknown
+        ]
+
+        for systemExtensionState in systemExtensionStates {
+            for (vpnConfigurationState, expectedStatus) in expectations {
+                let result = NetworkProtectionSystemStateResolver.resolvedOnboardingStatus(
+                    usesSystemExtension: false,
+                    systemExtensionState: systemExtensionState,
+                    vpnConfigurationState: vpnConfigurationState,
+                    existingStatus: .isOnboarding(step: .userNeedsToAllowExtension)
+                )
+
+                XCTAssertEqual(result, expectedStatus)
+            }
+        }
+    }
+
+    func testSystemStateResolverContinuesStartingTunnelAfterSystemExtensionActivationWhenReadyForVPNConfiguration() {
+        XCTAssertTrue(NetworkProtectionSystemStateResolver.shouldContinueStartingTunnel(afterSystemExtensionActivation: .completed))
+        XCTAssertFalse(NetworkProtectionSystemStateResolver.shouldContinueStartingTunnel(afterSystemExtensionActivation: .isOnboarding(step: .userNeedsToAllowExtension)))
+        XCTAssertTrue(NetworkProtectionSystemStateResolver.shouldContinueStartingTunnel(afterSystemExtensionActivation: .isOnboarding(step: .userNeedsToAllowVPNConfiguration)))
+    }
 
     /// Tests that VPN login items are disabled and not restarted at startup when user has no VPN access.
     ///

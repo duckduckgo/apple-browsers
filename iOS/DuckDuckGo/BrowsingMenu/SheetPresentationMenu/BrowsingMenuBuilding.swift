@@ -40,8 +40,11 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
 
     func makeNewTabEntry() -> BrowsingMenuEntry
     func makeChatEntry() -> BrowsingMenuEntry?
+    func makeDuckAiChatsEntry() -> BrowsingMenuEntry?
+    func makeDuckAIMenuItems() -> [BrowsingMenuEntry]
     func makeSettingsEntry() -> BrowsingMenuEntry
     func makeShareEntry() -> BrowsingMenuEntry
+    func makeCopyLinkEntry() -> BrowsingMenuEntry?
     func makePrintEntry() -> BrowsingMenuEntry
     func makeDownloadsEntry() -> BrowsingMenuEntry
     func makeAutoFillEntry() -> BrowsingMenuEntry?
@@ -57,7 +60,7 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeClearDataEntry(mobileCustomization: MobileCustomization, clearTabsAndData: @escaping () -> Void) -> BrowsingMenuEntry?
     func makeUseNewDuckAddressEntry() -> BrowsingMenuEntry?
     func makeKeepSignInEntry() -> BrowsingMenuEntry?
-    func makeFireModePromotionEntry() -> BrowsingMenuEntry?
+    func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry?
 }
 
 protocol BrowsingMenuBuilding: AnyObject {

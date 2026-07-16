@@ -20,6 +20,8 @@
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DuckUI
+import MetricBuilder
 import RemoteMessaging
 import Core
 
@@ -32,40 +34,44 @@ struct HomeMessageView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            VStack(spacing: 8) {
-                Group {
+            VStack(spacing: 0) {
+                VStack(spacing: 0) {
                     if case .promoSingleAction = viewModel.modelType {
                         title
                             .daxTitle3()
                             .padding(.top, 16)
                         image
+                            .padding(.top, Const.Spacing.imageAndTitle)
                     } else {
                         image
                         title
                             .daxHeadline()
+                            .padding(.top, Const.Spacing.imageAndTitle)
                     }
 
                     subtitle
-                        .padding(.top, 8)
+                        .padding(.top, Const.Spacing.titleAndSubtitle)
                 }
-                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.horizontal, 40)
 
-                HStack {
-                    buttons
+                // Button-less messages (small/medium) need their own bottom inset
+                .padding(.bottom, viewModel.buttons.isEmpty ? Const.Spacing.contentBottom : 0)
+
+                if !viewModel.buttons.isEmpty {
+                    HStack {
+                        buttons
+                    }
+                    .padding(.top, Const.Spacing.subtitleAndButtons)
+                    .padding([.horizontal, .bottom], AppRebrand.isAppRebranded() ? ButtonStackMetrics.containerPadding : 16)
                 }
-                .padding(.top, 8)
-                .padding(.horizontal, 8)
             }
             .multilineTextAlignment(.center)
-            .padding(.vertical)
-            .padding(.horizontal, 8)
 
-            closeButtonHeader
-                .alignmentGuide(.top) { dimension in
-                    dimension[.top]
-                }
+            closeButton
+                .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
-        .background(RoundedRectangle(cornerRadius: Const.Radius.cornerLarge)
+        .background(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
             .fill(Color.background)
             .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow1, x: 0, y: Const.Offset.updatedShadow1Vertical)
             .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow2, x: 0, y: Const.Offset.updatedShadow2Vertical)
@@ -75,16 +81,6 @@ struct HomeMessageView: View {
         }
     }
 
-    private var closeButtonHeader: some View {
-        VStack {
-            HStack {
-                Spacer()
-                closeButton
-                    .padding(0)
-            }
-        }
-    }
-    
     private var closeButton: some View {
         Button {
             Task {
@@ -92,10 +88,8 @@ struct HomeMessageView: View {
             }
         } label: {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                .foregroundColor(.primary)
         }
-        .frame(width: Const.Size.closeButtonWidth, height: Const.Size.closeButtonWidth)
-        .contentShape(Rectangle())
+        .buttonStyle(CloseButtonStyle())
     }
     
     @ViewBuilder
@@ -104,33 +98,46 @@ struct HomeMessageView: View {
             Image(uiImage: displayImage)
                 .resizable()
                 .scaledToFit()
-                .frame(maxHeight: Const.Size.imageMaxHeight)
+                .modifier(PictogramSize(legacyMaxHeight: Const.Size.imageMaxHeight))
         } else if let placeholderName = viewModel.image {
-            Image(placeholderName)
-                    .scaledToFit()
+            Image(rebrandable: placeholderName)
+                .scaledToFit()
+                .modifier(PictogramSize(legacyMaxHeight: nil))
                 .task {
                     loadedImage = await viewModel.loadRemoteImage?()
-            }
+                }
         }
     }
 
     private var title: some View {
         Text(viewModel.title)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.top, Const.Spacing.imageAndTitle)
             .frame(maxWidth: .infinity)
    }
+
+    private var subtitleColor: Color? {
+        AppRebrand.isAppRebranded() ? Color(designSystemColor: .textSecondary) : nil
+    }
+
+    @ViewBuilder
+    private func subtitleFont(_ text: Text) -> some View {
+        if AppRebrand.isAppRebranded() {
+            text.daxSubheadRegular()
+        } else {
+            text.daxBodyRegular()
+        }
+    }
 
     @ViewBuilder
     private var subtitle: some View {
         if let attributed = try? AttributedString(markdown: viewModel.subtitle) {
-            Text(attributed)
+            subtitleFont(Text(attributed))
                 .fixedSize(horizontal: false, vertical: true)
-                .daxBodyRegular()
+                .foregroundColor(subtitleColor)
         } else {
-            Text(viewModel.subtitle)
+            subtitleFont(Text(viewModel.subtitle))
                 .fixedSize(horizontal: false, vertical: true)
-                .daxBodyRegular()
+                .foregroundColor(subtitleColor)
         }
     }
 
@@ -147,12 +154,10 @@ struct HomeMessageView: View {
                             .resizable()
                             .frame(width: 24, height: 24)
                     }
-                    Text(buttonModel.title)
-                        .daxButton()
+                    buttonTitleView(for: buttonModel.title)
                 }
             }
-            .buttonStyle(HomeMessageButtonStyle(buttonModel: buttonModel))
-            .padding([.bottom], Const.Padding.buttonVerticalInset)
+            .modifier(HomeMessageButtonStyleModifier(actionStyle: buttonModel.actionStyle))
             .sheet(item: $activityItem) { activityItem in
                 ActivityViewController(activityItems: [activityItem.item]) { _, result, _, _ in
                     var additionalParameters = [
@@ -167,36 +172,45 @@ struct HomeMessageView: View {
 
         }
     }
+
+    @ViewBuilder
+    private func buttonTitleView(for title: String) -> some View {
+        if AppRebrand.isAppRebranded() {
+            Text(title)
+        } else {
+            Text(title)
+                .daxButton()
+        }
+    }
 }
 
-private struct HomeMessageButtonStyle: ButtonStyle {
+private struct HomeMessageButtonStyleModifier: ViewModifier {
+    let actionStyle: HomeMessageButtonViewModel.ActionStyle
 
-    let buttonModel: HomeMessageButtonViewModel
-
-    var foregroundColor: Color {
-        if case .cancel = buttonModel.actionStyle {
-            return .cancelButtonForeground
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if case .cancel = actionStyle {
+            content.buttonStyle(SecondaryFillButtonStyle(compact: true))
+        } else if AppRebrand.isAppRebranded() {
+            content.buttonStyle(BrandButtonStyle(compact: true))
+        } else {
+            content.buttonStyle(PrimaryButtonStyle(compact: true))
         }
-
-        return .primaryButtonText
     }
+}
 
-    var backgroundColor: Color {
-        if case .cancel = buttonModel.actionStyle {
-            return .cancelButtonBackground
+private struct PictogramSize: ViewModifier {
+    let legacyMaxHeight: CGFloat?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if AppRebrand.isAppRebranded() {
+            content.frame(width: Const.Size.rebrandedPictogram, height: Const.Size.rebrandedPictogram)
+        } else if let legacyMaxHeight {
+            content.frame(maxHeight: legacyMaxHeight)
+        } else {
+            content
         }
-
-        return .button
-    }
-
-    func makeBody(configuration: Self.Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, Const.Padding.buttonHorizontal)
-            .padding(.vertical, Const.Padding.buttonVertical)
-            .frame(height: Const.Size.buttonHeight)
-            .foregroundColor(configuration.isPressed ? foregroundColor.opacity(0.5) : foregroundColor)
-            .background(backgroundColor)
-            .cornerRadius(Const.Radius.corner)
     }
 }
 
@@ -227,63 +241,42 @@ extension HomeMessageView: RemoteMessagingPresenter {
 }
 
 private extension Color {
-    static let button = Color(designSystemColor: .buttonsPrimaryDefault)
-    static let primaryButtonText = Color(designSystemColor: .buttonsPrimaryText)
-    static let cancelButtonBackground = Color(designSystemColor: .buttonsSecondaryFillDefault)
-    static let cancelButtonForeground = Color(designSystemColor: .buttonsSecondaryFillText)
     static let background = Color(designSystemColor: .surface)
-    static let shadow = Color.shade(0.1)
     static let updatedShadow = Color(designSystemColor: .shadowPrimary)
 }
 
-private extension Image {
-    static let dismiss = Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-}
-
 private enum Const {
-    enum Font {
-        static let topText = UIFont.boldAppFont(ofSize: 13)
-        static let title = UIFont.boldAppFont(ofSize: 17)
-        static let subtitle = UIFont.appFont(ofSize: 15)
-        static let button = UIFont.boldAppFont(ofSize: 15)
-    }
-    
     enum Radius {
-        static let shadow: CGFloat = 3
         static let updatedShadow1: CGFloat = 12
         static let updatedShadow2: CGFloat = 48
-        static let corner: CGFloat = 8
-        static let cornerLarge: CGFloat = 16
     }
-    
-    enum Padding {
-        static let buttonHorizontal: CGFloat = 16
-        static let buttonVertical: CGFloat = 9
-        static let buttonVerticalInset: CGFloat = 8
-        static let textHorizontalInset: CGFloat = 30
-    }
-    
+
     enum Spacing {
         static let imageAndTitle: CGFloat = 8
-        static let titleAndSubtitle: CGFloat = 4
-        static let subtitleAndButtons: CGFloat = 6
-        static let line: CGFloat = 4
+        static let titleAndSubtitle: CGFloat = 2
+        static let subtitleAndButtons: CGFloat = 24
+        static let contentBottom: CGFloat = 24
     }
-    
+
     enum Size {
-        static let closeButtonWidth: CGFloat = 44
-        static let buttonHeight: CGFloat = 40
         static let imageMaxHeight: CGFloat = 48.0
+        static let rebrandedPictogram: CGFloat = 96
     }
-    
+
     enum Offset {
-        static let shadowVertical: CGFloat = 2
         static let updatedShadow1Vertical: CGFloat = 4
         static let updatedShadow2Vertical: CGFloat = 16
     }
 }
 
-struct HomeMessageView_Previews: PreviewProvider {
+// MARK: - Previews
+//
+// Two providers render the same five message variants under each `AppRebrand` state. Since
+// `AppRebrand.isAppRebranded` is a process-wide closure, the most recently invoked provider's
+// getter wins for any subsequent style lookup — switch between the previews one at a time
+// rather than pinning both in the canvas.
+
+private enum HomeMessagePreviewSamples {
 
     static let small: HomeSupportedMessageDisplayType =
         .small(titleText: "Small", descriptionText: "Description")
@@ -320,51 +313,45 @@ struct HomeMessageView_Previews: PreviewProvider {
                            actionText: "Share",
                            action: .share(value: "value", title: "title"))
 
-    static var previews: some View {
-        Group {
-            HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Small",
-                                                            modelType: small,
-                                                            messageActionHandler: RemoteMessagingActionHandler(),
-                                                            preloadedImage: nil,
-                                                            loadRemoteImage: nil,
-                                                            onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
-
-            HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Critical",
-                                                            modelType: critical,
-                                                            messageActionHandler: RemoteMessagingActionHandler(),
-                                                            preloadedImage: nil,
-                                                            loadRemoteImage: nil,
-                                                            onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
-
-            HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Single",
-                                                            modelType: bigSingle,
-                                                            messageActionHandler: RemoteMessagingActionHandler(),
-                                                            preloadedImage: nil,
-                                                            loadRemoteImage: nil,
-                                                            onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
-
-            HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Two",
-                                                            modelType: bigTwo,
-                                                            messageActionHandler: RemoteMessagingActionHandler(),
-                                                            preloadedImage: nil,
-                                                            loadRemoteImage: nil,
-                                                            onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
-
-            HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Promo",
-                                                            modelType: promo,
-                                                            messageActionHandler: RemoteMessagingActionHandler(),
-                                                            preloadedImage: nil,
-                                                            loadRemoteImage: nil,
-                                                            onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
-        }
-        .frame(height: 200)
-        .padding(.horizontal)
-
+    static func makeView(id: String, modelType: HomeSupportedMessageDisplayType) -> HomeMessageView {
+        HomeMessageView(viewModel: HomeMessageViewModel(messageId: id,
+                                                        modelType: modelType,
+                                                        messageActionHandler: RemoteMessagingActionHandler(),
+                                                        preloadedImage: nil,
+                                                        loadRemoteImage: nil,
+                                                        onDidClose: { _ in },
+                                                        onDidAppear: {},
+                                                        onAttachAdditionalParameters: { _, params in params }))
     }
 
-    struct PreviewNavigator: MessageNavigator {
-        func navigateTo(_ target: RemoteMessaging.NavigationTarget, presentationStyle: PresentationContext.Style) {
-            // no-op
+    @ViewBuilder
+    static var allMessages: some View {
+        ScrollView {
+            VStack {
+                makeView(id: "Small", modelType: small)
+                makeView(id: "Critical", modelType: critical)
+                makeView(id: "Big Single", modelType: bigSingle)
+                makeView(id: "Big Two", modelType: bigTwo)
+                makeView(id: "Promo", modelType: promo)
+            }
+            .padding(.horizontal)
         }
+        .background(Color.gray)
+    }
+}
+
+struct HomeMessageView_LegacyPreviews: PreviewProvider {
+    static var previews: some View {
+        AppRebrand.isAppRebranded = { false }
+        return HomeMessagePreviewSamples.allMessages
+            .previewDisplayName("Legacy")
+    }
+}
+
+struct HomeMessageView_RebrandedPreviews: PreviewProvider {
+    static var previews: some View {
+        AppRebrand.isAppRebranded = { true }
+        return HomeMessagePreviewSamples.allMessages
+            .previewDisplayName("Rebranded")
     }
 }

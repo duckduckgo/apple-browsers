@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Core
 import Common
+import FoundationExtensions
 import Persistence
 import PrivacyConfig
 
@@ -105,6 +106,8 @@ final class AutofillService {
     // MARK: - Resume
 
     func resume() {
+        DataImportHubSimulatedCompletionPersistor(keyValueStore: keyValueStore).fireExpiredFailurePixelsIfNeeded()
+
         guard let syncService else {
             assertionFailure("SyncService must be injected before calling onForeground.")
             return

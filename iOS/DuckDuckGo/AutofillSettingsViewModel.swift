@@ -89,8 +89,6 @@ final class AutofillSettingsViewModel: ObservableObject {
             } else {
                 Pixel.fire(pixel: .autofillLoginsSettingsDisabled, withAdditionalParameters: ["source": source.rawValue])
             }
-
-            experimentPixels.fireAutofillEnabled(savePasswordsEnabled)
         }
     }
     @Published var showingResetConfirmation = false
@@ -119,11 +117,6 @@ final class AutofillSettingsViewModel: ObservableObject {
     @Published var isExtensionEnabled: Bool = false
     @Published var isEnableRequestThrottled: Bool = false
 
-    /// Temporary flag used to ensure we don't fire pixel on initial state discovery
-    private var hasCompletedInitialExtensionStatusLoad: Bool = false
-
-    private let experimentPixels: AutofillOnboardingExperimentPixelFiring
-
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          keyValueStore: KeyValueStoringDictionaryRepresentable = UserDefaults.standard,
          autofillNeverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager,
@@ -131,9 +124,7 @@ final class AutofillSettingsViewModel: ObservableObject {
          source: AutofillSettingsSource,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          syncService: DDGSyncing,
-         syncDataProviders: SyncDataProviders,
-         experimentPixels: AutofillOnboardingExperimentPixelFiring = AutofillOnboardingExperimentPixelReporter()) {
-        self.experimentPixels = experimentPixels
+         syncDataProviders: SyncDataProviders) {
         self.autofillNeverPromptWebsitesManager = autofillNeverPromptWebsitesManager
         self.appSettings = appSettings
         self.keyValueStore = keyValueStore
@@ -229,13 +220,7 @@ final class AutofillSettingsViewModel: ObservableObject {
         }
 
         if #available(iOS 18, *), let coordinator = extensionEnableCoordinator as? AutofillExtensionEnableCoordinator {
-            let wasEnabled = isExtensionEnabled
             isExtensionEnabled = await coordinator.updateExtensionStatus()
-
-            if hasCompletedInitialExtensionStatusLoad && wasEnabled != isExtensionEnabled {
-                experimentPixels.fireAutofillInOtherAppsEnabled(isExtensionEnabled)
-            }
-            hasCompletedInitialExtensionStatusLoad = true
         }
     }
 
@@ -244,7 +229,7 @@ final class AutofillSettingsViewModel: ObservableObject {
         
         do {
             var attributedString = try AttributedString(markdown: markdownString)
-            attributedString.foregroundColor = Color(designSystemColor: .accent)
+            attributedString.foregroundColor = Color(designSystemColor: .accentPrimary)
             
             return attributedString
         } catch {
@@ -286,7 +271,6 @@ final class AutofillSettingsViewModel: ObservableObject {
                     case .success:
                         isExtensionEnabled = true
                         isShowingActivationView = true
-                        experimentPixels.fireAutofillInOtherAppsEnabled(true)
                     case .throttled:
                         isEnableRequestThrottled = coordinator.isEnableRequestThrottled
                         isShowingActivationView = false

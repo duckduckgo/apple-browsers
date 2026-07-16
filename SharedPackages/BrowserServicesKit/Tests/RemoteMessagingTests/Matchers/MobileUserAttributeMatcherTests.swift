@@ -101,6 +101,92 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
+    // MARK: - NTPAfterIdleState
+
+    func testWhenNTPAfterIdleStateMatchesSingleValueThenReturnMatch() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardShown")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown"], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenNTPAfterIdleStateDoesNotMatchSingleValueThenReturnFail() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardHidden")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown"], fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenNTPAfterIdleStateMatchesAnyOfMultipleValuesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardHidden")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown", "eligibleCardHidden"], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenNTPAfterIdleStateNotEligibleDoesNotMatchEligibleValuesThenReturnFail() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "notEligible")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown", "eligibleCardHidden"], fallback: nil)),
+                       .fail)
+    }
+
+    // MARK: - FreemiumPIREligible
+
+    func testWhenIsFreemiumPIREligibleMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isFreemiumPIREligible: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIREligibleMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenIsFreemiumPIREligibleDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isFreemiumPIREligible: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIREligibleMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenIsNotFreemiumPIREligibleMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isFreemiumPIREligible: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIREligibleMatchingAttribute(value: false, fallback: nil)),
+                       .match)
+    }
+
+    // MARK: - FreemiumPIRDidActivate
+
+    func testWhenFreemiumPIRDidActivateMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isFreemiumPIRActivated: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRDidActivateMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenFreemiumPIRDidNotActivateMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isFreemiumPIRActivated: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRDidActivateMatchingAttribute(value: false, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenFreemiumPIRDidActivateDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isFreemiumPIRActivated: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRDidActivateMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    // MARK: - FreemiumPIRFirstScanResult
+
+    func testWhenFreemiumPIRFirstScanResultMatchesMatchesFoundThenReturnMatch() throws {
+        setUpUserAttributeMatcher(freemiumPIRFirstScanResult: "matchesFound")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRFirstScanResultMatchingAttribute(value: "matchesFound", fallback: nil)),
+                       .match)
+    }
+
+    func testWhenFreemiumPIRFirstScanResultDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(freemiumPIRFirstScanResult: "noMatches")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRFirstScanResultMatchingAttribute(value: "matchesFound", fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenFreemiumPIRFirstScanResultMissingThenReturnFail() throws {
+        setUpUserAttributeMatcher(freemiumPIRFirstScanResult: nil)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: FreemiumPIRFirstScanResultMatchingAttribute(value: "matchesFound", fallback: nil)),
+                       .fail)
+    }
+
     // MARK: - PIRCurrentUser
 
     func testWhenIsCurrentPIRUserMatchesThenReturnMatch() throws {
@@ -127,7 +213,13 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
-    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], isSyncEnabled: Bool = false, isCurrentPIRUser: Bool = false) {
+    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [],
+                                           isSyncEnabled: Bool = false,
+                                           isFreemiumPIREligible: Bool = false,
+                                           isFreemiumPIRActivated: Bool = false,
+                                           freemiumPIRFirstScanResult: String? = nil,
+                                           isCurrentPIRUser: Bool = false,
+                                           ntpAfterIdleState: String = "") {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             featureDiscovery: mockFeatureDiscovery,
@@ -143,6 +235,7 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             subscriptionDaysSinceSubscribed: 5,
             subscriptionDaysUntilExpiry: 25,
             subscriptionPurchasePlatform: "apple",
+            subscriptionTier: "pro",
             isSubscriptionActive: true,
             isSubscriptionExpiring: false,
             isSubscriptionExpired: false,
@@ -154,7 +247,11 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             enabledFeatureFlags: [],
             isSyncEnabled: isSyncEnabled,
             shouldShowWinBackOfferUrgencyMessage: false,
-            isCurrentPIRUser: isCurrentPIRUser
+            isFreemiumPIREligible: isFreemiumPIREligible,
+            isFreemiumPIRActivated: isFreemiumPIRActivated,
+            freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
+            isCurrentPIRUser: isCurrentPIRUser,
+            ntpAfterIdleState: ntpAfterIdleState
         )
     }
 }

@@ -22,7 +22,10 @@ import Foundation
 class CapturingOnboardingActionsManager: OnboardingActionsManaging {
 
     var configuration: OnboardingConfiguration = OnboardingConfiguration(
-        stepDefinitions: StepDefinitions(systemSettings: SystemSettings(rows: [])),
+        stepDefinitions: StepDefinitions(
+            systemSettings: SystemSettings(rows: []),
+            getStarted: GetStarted(options: [])
+        ),
         exclude: [],
         order: "",
         env: "environment",
@@ -39,14 +42,17 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var setSessionRestoreCalled = false
     var setHomeButtonPositionCalled = false
     var setDuckAiInAddressBarCalled = false
+    var installChromeExtensionCalled = false
     var onboardingStartedCalled = false
     var reportExceptionCalled = false
     var exceptionParams: [String: String] = [:]
     var completedStep: OnboardingSteps?
+    var shownStep: OnboardingSteps?
     var bookmarkBarVisible: Bool?
     var homeButtonVisible: Bool?
     var sessionRestoreEnabled: Bool?
     var duckAiInAddressBarEnabled: Bool?
+    var reportedTelemetryEvent: OnboardingUserScript.TelemetryEvent?
 
     func onboardingStarted() {
         onboardingStartedCalled = true
@@ -93,12 +99,24 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
         duckAiInAddressBarEnabled = enabled
     }
 
+    func installChromeExtension() {
+        installChromeExtensionCalled = true
+    }
+
     func stepCompleted(step: OnboardingSteps) {
         completedStep = step
+    }
+
+    func stepShown(step: OnboardingSteps) {
+        shownStep = step
     }
 
     func reportException(with param: [String: String]) {
         reportExceptionCalled = true
         exceptionParams = param
+    }
+
+    func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent) {
+        reportedTelemetryEvent = event
     }
 }

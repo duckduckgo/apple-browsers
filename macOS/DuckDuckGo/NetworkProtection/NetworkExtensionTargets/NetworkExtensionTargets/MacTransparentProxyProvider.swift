@@ -18,12 +18,15 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import Networking
 import NetworkExtension
 import NetworkProtectionProxy
 import os.log
 import PixelKit
+import PrivacyConfig
+import VPN
 
 final class MacTransparentProxyProvider: TransparentProxyProvider {
 
@@ -40,27 +43,37 @@ final class MacTransparentProxyProvider: TransparentProxyProvider {
 #endif
         }()
 
-        let settings: TransparentProxySettings = {
+        /// The defaults the tunnel and proxy share inside this extension's process:
+        /// - sysex: tunnel and proxy live in the same binary and share `UserDefaults.standard`
+        /// - appex: tunnel writes to `.netP` via the app group; the proxy reads from the same group
+        let sharedDefaults: UserDefaults = {
 #if NETP_SYSTEM_EXTENSION
-            /// Because our System Extension is running in the system context and doesn't have access
-            /// to shared user defaults, we just make it use the `.standard` defaults.
-            TransparentProxySettings(defaults: .standard)
+            return .standard
 #else
-            /// Because our App Extension is running in the user context and has access
-            /// to shared user defaults, we take advantage of this and use the `.netP` defaults.
-            TransparentProxySettings(defaults: .netP)
+            return .netP
 #endif
         }()
+
+        let settings = TransparentProxySettings(defaults: sharedDefaults)
 
         let configuration = TransparentProxyProvider.Configuration(
             loadSettingsFromProviderConfiguration: loadSettingsFromStartupOptions)
 
-#if !NETP_SYSTEM_EXTENSION
-        PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
-                       appVersion: AppVersion.shared.versionNumber,
-                       source: "vpnProxyExtension",
-                       defaultHeaders: [:],
-                       defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
+        let internalUserDecider = DefaultInternalUserDecider(store: UserDefaults.appConfiguration)
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
+#if NETP_SYSTEM_EXTENSION
+        let pixelSource = "vpnSystemExtensionProxy"
+#else
+        let pixelSource = "vpnProxyExtension"
+#endif
+        let pixelKit = PixelKit(
+            dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
+            appVersion: AppVersion.shared.versionNumber,
+            source: pixelSource,
+            channel: channel,
+            defaultHeaders: [:],
+            defaults: sharedDefaults
+        ) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
             let url = URL.pixelUrl(forPixelNamed: pixelName)
             let apiHeaders = APIRequest.Headers(additionalHeaders: headers)
@@ -71,13 +84,14 @@ final class MacTransparentProxyProvider: TransparentProxyProvider {
                 onComplete(error == nil, error)
             }
         }
-#endif
 
-        let eventHandler = TransparentProxyProviderEventHandler(logger: Self.vpnProxyLogger)
+        let eventHandler = TransparentProxyProviderEventHandler(logger: Self.vpnProxyLogger, pixelKit: pixelKit)
+        let heartbeatStore = TunnelHeartbeatStore(store: sharedDefaults)
 
         super.init(settings: settings,
                    configuration: configuration,
                    logger: Self.vpnProxyLogger,
-                   eventHandler: eventHandler)
+                   eventHandler: eventHandler,
+                   heartbeatStore: heartbeatStore)
     }
 }

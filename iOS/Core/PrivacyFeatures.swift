@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import os.log
 
 public final class PrivacyFeatures {

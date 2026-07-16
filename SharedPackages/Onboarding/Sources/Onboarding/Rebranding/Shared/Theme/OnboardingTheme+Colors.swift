@@ -42,6 +42,10 @@ public extension OnboardingTheme {
         public let optionsListIconColor: Color
         /// Text color for contextual onboarding option list rows.
         public let optionsListTextColor: Color
+        /// Background color for contextual onboarding option list rows on hover.
+        public let optionsListHoverColor: Color
+        /// Background color for contextual onboarding option list rows when pressed.
+        public let optionsListPressedColor: Color
 
         /// Primary button background color.
         public let primaryButtonBackgroundColor: Color
@@ -69,6 +73,8 @@ public extension OnboardingTheme {
             optionsListBorderColor: Color,
             optionsListIconColor: Color,
             optionsListTextColor: Color,
+            optionsListHoverColor: Color,
+            optionsListPressedColor: Color,
             primaryButtonBackgroundColor: Color,
             primaryButtonPressedColor: Color,
             primaryButtonTextColor: Color,
@@ -86,6 +92,8 @@ public extension OnboardingTheme {
             self.optionsListBorderColor = optionsListBorderColor
             self.optionsListIconColor = optionsListIconColor
             self.optionsListTextColor = optionsListTextColor
+            self.optionsListHoverColor = optionsListHoverColor
+            self.optionsListPressedColor = optionsListPressedColor
             self.primaryButtonBackgroundColor = primaryButtonBackgroundColor
             self.primaryButtonPressedColor = primaryButtonPressedColor
             self.primaryButtonTextColor = primaryButtonTextColor
@@ -120,6 +128,8 @@ public extension OnboardingTheme {
                 optionsListBorderColor: optionsListBorderColor,
                 optionsListIconColor: optionsListIconColor,
                 optionsListTextColor: optionsListTextColor,
+                optionsListHoverColor: .clear,
+                optionsListPressedColor: .clear,
                 primaryButtonBackgroundColor: primaryButtonBackgroundColor,
                 primaryButtonPressedColor: primaryButtonBackgroundColor,
                 primaryButtonTextColor: primaryButtonTextColor,

@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Subscription
 import Networking
+import WebExtensions
 
 struct SettingsState {
     
@@ -73,7 +74,7 @@ struct SettingsState {
 
     // Privacy properties
     var sendDoNotSell: Bool
-    var autoconsentEnabled: Bool
+    var cookiePopupPreference: CookiePopupPreference
     var autoClearAIChatHistory: Bool
     var applicationLock: Bool
 
@@ -127,6 +128,7 @@ struct SettingsState {
     // YouTube Ad Blocking
     var youTubeAdBlockingAvailable: Bool
     var youTubeAdBlockingEnabled: Bool
+    var youTubeAdBlockingDisclosureHidden: Bool
 
     static var defaults: SettingsState {
         return SettingsState(
@@ -141,7 +143,7 @@ struct SettingsState {
             mobileCustomization: .default,
             forceWebsiteDarkMode: false,
             sendDoNotSell: true,
-            autoconsentEnabled: false,
+            cookiePopupPreference: .default,
             autoClearAIChatHistory: false,
             applicationLock: false,
             autocomplete: true,
@@ -183,7 +185,15 @@ struct SettingsState {
             duckPlayerNativeYoutubeMode: .ask,
             autoplayBlockingMode: .blockAudio,
             youTubeAdBlockingAvailable: false,
-            youTubeAdBlockingEnabled: false
+            youTubeAdBlockingEnabled: false,
+            youTubeAdBlockingDisclosureHidden: false
         )
+    }
+}
+
+extension SettingsState {
+    var autoconsentEnabled: Bool {
+        get { cookiePopupPreference.isBlockingEnabled }
+        mutating set { cookiePopupPreference = newValue ? .default : .off }
     }
 }

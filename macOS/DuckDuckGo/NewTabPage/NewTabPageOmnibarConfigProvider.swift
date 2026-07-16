@@ -18,6 +18,7 @@
 
 import AIChat
 import AppKit
+import WebKit
 import Combine
 import FeatureFlags
 import NewTabPage
@@ -26,6 +27,7 @@ import os.log
 import Persistence
 import PixelKit
 import Common
+import FoundationExtensions
 
 protocol NewTabPageAIChatShortcutSettingProviding: AnyObject {
     var isAIChatShortcutEnabled: Bool { get set }
@@ -77,6 +79,11 @@ final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSet
 final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private enum Key: String {
         case newTabPageOmnibarMode
+    }
+
+    private enum LegacyKey: String {
+        /// Previously-used per-NTP key. Migrated into `AIChatPreferencesPersisting.selectedModelId`
+        /// (shared with the native omnibar) on first init after the unification, then removed.
         case newTabPageSelectedModelId
     }
 
@@ -88,19 +95,48 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let featureFlagger: FeatureFlagger
     private let firePixel: (PixelKitEvent) -> Void
+    private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
+    private let searchPreferences: SearchPreferences
+    private let windowControllersManager: WindowControllersManagerProtocol?
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
+    private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
     @Published private var hasExcessChats = false
     private var aiChatsProviderCancellable: AnyCancellable?
+    private var customizeResponsesChangeObserver: NSObjectProtocol?
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
+         aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
+         searchPreferences: SearchPreferences,
+         windowControllersManager: WindowControllersManagerProtocol? = nil,
          firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
+        self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
+        self.searchPreferences = searchPreferences
+        self.windowControllersManager = windowControllersManager
         self.firePixel = firePixel
+
+        Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
+
+        // Address-bar Customize Responses changes (modal or toggle) post this; re-push config so open
+        // NTPs update without waiting for their own toggle. The NTP's own paths notify directly.
+        customizeResponsesChangeObserver = NotificationCenter.default.addObserver(
+            forName: .aiChatCustomizeResponsesDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.notifyCustomizeResponsesChanged()
+        }
+    }
+
+    deinit {
+        if let customizeResponsesChangeObserver {
+            NotificationCenter.default.removeObserver(customizeResponsesChangeObserver)
+        }
     }
 
     @MainActor
@@ -165,23 +201,126 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var selectedModelId: String? {
         get {
-            do {
-                return try keyValueStore.object(forKey: Key.newTabPageSelectedModelId.rawValue) as? String
-            } catch {
-                Logger.newTabPageOmnibar.error("Failed to retrieve selectedModelId from keyValueStore: \(error.localizedDescription)")
-                return nil
-            }
+            aiChatPreferencesPersistor.selectedModelId
         }
         set {
-            do {
-                try keyValueStore.set(newValue, forKey: Key.newTabPageSelectedModelId.rawValue)
-                if newValue != nil {
-                    PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
-                }
-            } catch {
-                Logger.newTabPageOmnibar.error("Failed to set selectedModelId in keyValueStore: \(error.localizedDescription)")
+            guard newValue != aiChatPreferencesPersistor.selectedModelId else { return }
+            aiChatPreferencesPersistor.selectedModelId = newValue
+            if newValue != nil {
+                PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
             }
         }
+    }
+
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> {
+        aiChatPreferencesPersistor.selectedModelIdPublisher
+    }
+
+    var selectedModelShortName: String? {
+        get {
+            aiChatPreferencesPersistor.selectedModelShortName
+        }
+        set {
+            aiChatPreferencesPersistor.selectedModelShortName = newValue
+        }
+    }
+
+    var isReasoningEffortEnabled: Bool {
+        // Reasoning effort depends on the model picker being available — if tools aren't
+        // enabled, there's no model picker and reasoning has nothing to attach to.
+        isAIChatToolsEnabled && featureFlagger.isFeatureOn(.aiChatOmnibarReasoningEffort)
+    }
+
+    var selectedReasoningEffort: String? {
+        get {
+            guard isReasoningEffortEnabled else { return nil }
+            return aiChatPreferencesPersistor.selectedReasoningEffort
+        }
+        set {
+            guard isReasoningEffortEnabled else { return }
+            guard newValue != aiChatPreferencesPersistor.selectedReasoningEffort else { return }
+            aiChatPreferencesPersistor.selectedReasoningEffort = newValue
+            if newValue != nil {
+                PixelKit.fire(AIChatPixel.aiChatNtpReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            }
+        }
+    }
+
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
+        aiChatPreferencesPersistor.selectedReasoningEffortPublisher
+    }
+
+    var isImageGenerationEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpImageGeneration)
+    }
+
+    var isWebSearchEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpWebSearch)
+    }
+
+    var isCustomizeResponsesEnabled: Bool {
+        // Gated by the dedicated Customize Responses flag, matching the native omnibar entry point.
+        featureFlagger.isFeatureOn(.aiChatCustomizeResponses)
+    }
+
+    @MainActor
+    func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState {
+        guard let windowControllersManager else { return .none }
+        let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
+        let handler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+        let state = CustomizeResponsesStore(storageHandler: handler).currentState()
+        return NewTabPageDataModel.OmnibarCustomizeResponsesState(subLabel: state.subLabel, hasCustomization: state.hasCustomization, active: state.isActive)
+    }
+
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> {
+        customizeResponsesChangedSubject.eraseToAnyPublisher()
+    }
+
+    func notifyCustomizeResponsesChanged() {
+        customizeResponsesChangedSubject.send(())
+    }
+
+    var isAttachTabsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpAttachMoreTabs)
+    }
+
+    /// Re-emits the current `isAttachTabsEnabled` value whenever the feature-flagger reports any
+    /// change. The client uses this to push `omnibar_onConfigUpdate` so an open NTP shows or hides
+    /// the attach-tabs affordance without a reload when the flag flips.
+    var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self?.isAttachTabsEnabled }
+            .prepend(isAttachTabsEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var isVoiceChatAccessEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarVoiceChatAccess)
+    }
+
+    /// Re-emits the current `isVoiceChatAccessEnabled` value whenever the feature-flagger reports
+    /// any change. The client uses this to push `omnibar_onConfigUpdate` so an open NTP swaps in
+    /// or out of voice-chat mode without a reload.
+    var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .compactMap { [weak self] in self?.isVoiceChatAccessEnabled }
+            .prepend(isVoiceChatAccessEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var showAskAiSuggestion: Bool {
+        searchPreferences.showAutocompleteSuggestions
+    }
+
+    /// Drops the initial value so subscriber attachment during init doesn't push a redundant
+    /// `omnibar_onConfigUpdate` — matches the other `*Publisher` shapes in this provider.
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> {
+        searchPreferences.$showAutocompleteSuggestions
+            .dropFirst()
+            .removeDuplicates()
+            .eraseToAnyPublisher()
     }
 
     var showCustomizePopover: Bool {
@@ -196,18 +335,34 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     var showViewAllAiChats: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
             && featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+            && searchPreferences.showAutocompleteSuggestions
             && hasExcessChats
     }
 
+    /// Re-evaluates `showViewAllAiChats` whenever either `hasExcessChats` or the autocomplete
+    /// preference flips. Without the second input, disabling Autocomplete suggestions would leave
+    /// a stale `true` in `hasExcessChats` (set on a prior `aiChats(query:)` call that fetched
+    /// suggestions), and the web could be told to show a "View All" button while the chats
+    /// response is empty.
+    ///
+    /// The closure reads the values straight off `CombineLatest` rather than calling
+    /// `self.showViewAllAiChats`. `@Published` fires in `willSet`, so the stored property is
+    /// still the old value when the publisher emits — reading the getter at that point would
+    /// race against the assignment.
     var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> {
-        $hasExcessChats
-            .map { [weak self] hasExcess in
-                guard let self else { return false }
-                return self.featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
-                    && self.featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
-                    && hasExcess
-            }
-            .eraseToAnyPublisher()
+        Publishers.CombineLatest(
+            $hasExcessChats,
+            searchPreferences.$showAutocompleteSuggestions
+        )
+        .map { [weak self] hasExcess, showAutocomplete in
+            guard let self else { return false }
+            return self.featureFlagger.isFeatureOn(.aiChatNtpRecentChats)
+                && self.featureFlagger.isFeatureOn(.aiChatNtpViewAllChats)
+                && showAutocomplete
+                && hasExcess
+        }
+        .removeDuplicates()
+        .eraseToAnyPublisher()
     }
 
     func configure(aiChatsProvider: NewTabPageOmnibarAiChatsProviding) {
@@ -216,6 +371,30 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
                 guard let self else { return }
                 self.hasExcessChats = hasExcess
             }
+    }
+
+    /// One-time migration: copy the old NTP-only model id into the shared `AIChatPreferencesPersisting`
+    /// store when the shared value is absent, then drop the legacy key so subsequent launches skip the work.
+    ///
+    /// The legacy NTP store never cached a short name, so on the upgrade path we seed it with the
+    /// model id as a placeholder. This keeps the native omnibar's model picker visible on first
+    /// launch post-upgrade (the picker is hidden when both `models` and `selectedModelShortName`
+    /// are empty). The real short name replaces the placeholder once the models fetch completes.
+    private static func migrateLegacySelectedModelIdIfNeeded(
+        from keyValueStore: ThrowingKeyValueStoring,
+        into persistor: inout AIChatPreferencesPersisting
+    ) {
+        let legacyKey = LegacyKey.newTabPageSelectedModelId.rawValue
+        guard let legacyValue = try? keyValueStore.object(forKey: legacyKey) as? String else {
+            return
+        }
+        if persistor.selectedModelId == nil {
+            persistor.selectedModelId = legacyValue
+            if persistor.selectedModelShortName == nil {
+                persistor.selectedModelShortName = legacyValue
+            }
+        }
+        try? keyValueStore.removeObject(forKey: legacyKey)
     }
 
 }

@@ -26,6 +26,7 @@ import NetworkProtectionIPC
 import PixelKit
 import PrivacyDashboard
 import Common
+import FoundationExtensions
 
 protocol PopoverPresenter {
     func show(_ popover: NSPopover, positionedBelow view: NSView)
@@ -87,6 +88,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
     private let pinningManager: PinningManager
     private let isBurner: Bool
+    private let isAppRebranded: Bool
 
     private var popoverIsShownCancellables = Set<AnyCancellable>()
 
@@ -103,7 +105,8 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         pinningManager: PinningManager,
-        isBurner: Bool
+        isBurner: Bool,
+        isAppRebranded: Bool = false
     ) {
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
@@ -118,6 +121,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
         self.pinningManager = pinningManager
         self.isBurner = isBurner
+        self.isAppRebranded = isAppRebranded
     }
 
     deinit {
@@ -154,6 +158,10 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     var isPasswordManagementPopoverShown: Bool {
         autofillPopoverPresenter.popoverIsShown
+    }
+
+    var isAutofillOnboardingPopoverShown: Bool {
+        autofillOnboardingPopover?.isShown ?? false
     }
 
     var isSaveCredentialsPopoverShown: Bool {
@@ -365,7 +373,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
                                          ctaCallback: @escaping (Bool) -> Void) {
         guard closeTransientPopovers() else { return }
 
-        let popover = SessionRestorePromptPopover(ctaCallback: ctaCallback)
+        let popover = SessionRestorePromptPopover(isAppRebranded: isAppRebranded, ctaCallback: ctaCallback)
         popover.delegate = delegate
         show(popover, positionedBelow: button, simulatingMouseDown: false)
     }

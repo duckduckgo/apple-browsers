@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import Navigation
 import UniformTypeIdentifiers
 import os.log
@@ -48,6 +49,11 @@ final class FileDownloadManager: FileDownloadManagerProtocol {
 
     private let preferences: DownloadsPreferences
 
+    /// Overridable in tests to simulate write failures without touching the real filesystem.
+    var reservePlaceholderFile: (URL) throws -> Void = { url in
+        try Data().write(to: url, options: .withoutOverwriting)
+    }
+
     init(preferences: DownloadsPreferences) {
         self.preferences = preferences
     }
@@ -71,7 +77,7 @@ final class FileDownloadManager: FileDownloadManagerProtocol {
             destination = .prompt
         }
         let task = WebKitDownloadTask(download: download, destination: destination, fireWindowSession: fireWindowSession)
-        Logger.fileDownload.debug("add \(String(describing: download)): \(download.originalRequest?.url?.absoluteString ?? "<nil>") -> \(destination.debugDescription): \(task)")
+        Logger.fileDownload.debug("add \(String(describing: download)): \(download.originalRequest?.url?.shortDescription ?? "<nil>") -> \(destination.debugDescription): \(task)")
 
         let shouldCancelDownloadIfDelegateIsGone = delegate != nil
         self.downloadTaskDelegates[task] = { [weak delegate] in
@@ -151,7 +157,12 @@ extension FileDownloadManager: WebKitDownloadTaskDelegate {
     private func chooseDestination(for task: WebKitDownloadTask, suggestedFilename: String, suggestedFileType fileType: UTType?) async -> (URL?, UTType?) {
         guard task.shouldPromptForLocation || preferences.alwaysRequestDownloadLocation,
               self.downloadTaskDelegates[task]?() != nil else {
-            return await defaultDownloadLocation(for: task, suggestedFilename: suggestedFilename, fileType: fileType)
+            do {
+                return try await defaultDownloadLocation(for: task, suggestedFilename: suggestedFilename, fileType: fileType)
+            } catch {
+                task.failDestination(with: error)
+                return (nil, nil)
+            }
         }
 
         return await requestDestinationFromUser(for: task, suggestedFilename: suggestedFilename, suggestedFileType: fileType)
@@ -207,11 +218,11 @@ extension FileDownloadManager: WebKitDownloadTaskDelegate {
     }
 
     @MainActor
-    private func defaultDownloadLocation(for task: WebKitDownloadTask, suggestedFilename: String, fileType: UTType?) async -> (URL?, UTType?) {
+    private func defaultDownloadLocation(for task: WebKitDownloadTask, suggestedFilename: String, fileType: UTType?) async throws -> (URL?, UTType?) {
         // download to default Downloads destination
         guard let downloadLocation = preferences.effectiveDownloadLocation ?? DownloadsPreferences.defaultDownloadLocation(validate: false /* verify later */) else {
             pixelAssertionFailure("Failed to access Downloads folder")
-            return (nil, nil)
+            return await requestDestinationFromUser(for: task, suggestedFilename: suggestedFilename, suggestedFileType: fileType)
         }
 
         let fileName = suggestedFilename.isEmpty ? "download".appendingPathExtension(fileType?.preferredFilenameExtension) : suggestedFilename
@@ -226,15 +237,32 @@ extension FileDownloadManager: WebKitDownloadTaskDelegate {
             return await requestDestinationFromUser(for: task, suggestedFilename: suggestedFilename, suggestedFileType: fileType)
         }
 
-        // choose non-existent filename
+        // Reserve a unique placeholder file — throws on TOCTOU race (retried by withNonExistentUrl)
+        // or a real write error (propagated to caller as a legitimate failure).
         do {
             url = try fm.withNonExistentUrl(for: url, incrementingIndexIfExistsUpTo: 10000) { url in
-                // the file will be overwritten in the WebKitDownloadTask
-                try fm.createFile(atPath: url.path, contents: nil) ? url : { throw CocoaError(.fileWriteFileExists) }()
+                // .withoutOverwriting maps to O_EXCL: atomic, no separate fileExists check needed.
+                // • File already exists (TOCTOU race) → throws CocoaError(.fileWriteFileExists) → withNonExistentUrl retries.
+                // • Real failure (disk full, read-only fs, unmounted volume) → throws the actual system error.
+                try self.reservePlaceholderFile(url)
+                return url
             }
         } catch {
-            pixelAssertionFailure("Failed to create file in the Downloads folder")
-            return (nil, nil)
+            // Legitimate write failures: the error carries real diagnostic info (errorCode/errorDomain).
+            // These are NOT retryable — propagate so the download is marked failed with the real cause.
+            let nsError = error as NSError
+            let legitimateWriteErrorCodes: Set<Int> = [
+                NSFileWriteOutOfSpaceError,       // ENOSPC  — disk full
+                NSFileWriteVolumeReadOnlyError,   // EROFS   — read-only filesystem
+                NSFileWriteNoPermissionError,     // EACCES/EPERM — no write permission
+                NSFileNoSuchFileError,            // ENOENT  — parent dir removed / volume unmounted
+                NSFileWriteUnknownError,          // catch-all for unexpected write failures
+            ]
+            Logger.fileDownload.error("Failed to create file in the Downloads folder: \(error)")
+            if !(nsError.domain == NSCocoaErrorDomain && legitimateWriteErrorCodes.contains(nsError.code)) {
+                pixelAssertionFailure("Failed to create file in the Downloads folder with unexpected error", error: error)
+            }
+            throw error
         }
 
         return (url, fileType)

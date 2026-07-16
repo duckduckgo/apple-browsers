@@ -28,8 +28,7 @@ extension MockFeatureFlagger {
         get {
             let updateFlags: [FeatureFlag] = [
                 .autoUpdateInDEBUG,
-                .autoUpdateInREVIEW,
-                .appStoreUpdateFlow
+                .autoUpdateInREVIEW
             ]
             return updateFlags.filter { flag in
                 featuresStub[flag.rawValue] == true
@@ -39,8 +38,7 @@ extension MockFeatureFlagger {
             // Clear all update controller flags first
             let updateFlags: [FeatureFlag] = [
                 .autoUpdateInDEBUG,
-                .autoUpdateInREVIEW,
-                .appStoreUpdateFlow
+                .autoUpdateInREVIEW
             ]
             for flag in updateFlags {
                 featuresStub[flag.rawValue] = false

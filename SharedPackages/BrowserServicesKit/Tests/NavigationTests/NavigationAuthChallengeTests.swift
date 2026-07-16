@@ -23,9 +23,10 @@ import Common
 import Swifter
 import WebKit
 import XCTest
+
 @testable import Navigation
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
 
     func testWhenAuthenticationChallengeReceived_responderChainReceivesEvents() throws {
@@ -56,7 +57,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [data] request in
             guard request.headers["authorization"] == nil else { return nil }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }, { [data] request in
             return .ok(.html(data.html.utf8String()!))
@@ -118,12 +119,12 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
             guard request.path == "/3" else { return nil }
             guard request.headers["authorization"] == nil else { return .ok(.data(data.html)) }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }, { [data] request in
             guard request.headers["authorization"] == nil else { return nil }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }, { [data] request in
             return .ok(.data(data.htmlWithIframe3))
@@ -181,7 +182,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [data] request in
             guard request.headers["authorization"] == nil else { return nil }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }]
         try server.start(8084)
@@ -214,13 +215,20 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         responder(at: 1).onDidReceiveAuthenticationChallenge = { _, _ in .cancel }
         responder(at: 2).onDidReceiveAuthenticationChallenge = { _, _ in XCTFail("Unexpected onDidReceiveAuthenticationChallenge"); return .next }
 
-        let eDidFinish = expectation(description: "onDidFinish")
-        responder(at: 2).onDidFail = { _, _ in eDidFinish.fulfill() }
+        // macOS 26+ changed NSURLSessionAuthChallengeCancelAuthenticationChallenge semantics for
+        // HTTP auth challenges: instead of cancelling the task with NSURLErrorCancelled the
+        // framework now delivers the 401 response (same behaviour as rejectProtectionSpace).
+        let eCompletion = expectation(description: "navigation completion")
+        if #available(macOS 26, *) {
+            responder(at: 2).onDidFinish = { _ in eCompletion.fulfill() }
+        } else {
+            responder(at: 2).onDidFail = { _, _ in eCompletion.fulfill() }
+        }
 
         server.middleware = [{ [data] request in
             guard request.headers["authorization"] == nil else { return nil }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }]
         try server.start(8084)
@@ -229,20 +237,30 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         }
         waitForExpectations()
 
-        assertHistory(ofResponderAt: 0, equalsTo: [
+        var expectedHistory: [TestsNavigationEvent] = [
             .navigationAction(req(urls.local), .other, src: main()),
             .willStart(Nav(action: navAct(1), .approved, isCurrent: false)),
             .didStart(Nav(action: navAct(1), .started)),
             .didReceiveAuthenticationChallenge(.init("localhost", 8084, "http", realm: "localhost", method: "NSURLAuthenticationMethodHTTPBasic"), Nav(action: navAct(1), .started, nil, .gotAuth)),
-            .didFail(Nav(action: navAct(1), .failed(WKError(NSURLErrorCancelled)), nil, .gotAuth), NSURLErrorCancelled)
-        ])
+        ]
+        if #available(macOS 26, *) {
+            expectedHistory += [
+                .response(Nav(action: navAct(1), .responseReceived, resp: .resp(urls.local, status: 401, headers: ["Server": "Swifter Unspecified", "Www-Authenticate": "Basic"]), nil, .gotAuth)),
+                .didCommit(Nav(action: navAct(1), .responseReceived, resp: resp(0), .committed, .gotAuth)),
+                .didFinish(Nav(action: navAct(1), .finished, resp: resp(0), .committed, .gotAuth))
+            ]
+        } else {
+            expectedHistory += [
+                .didFail(Nav(action: navAct(1), .failed(WKError(NSURLErrorCancelled)), nil, .gotAuth), NSURLErrorCancelled)
+            ]
+        }
+        // Responder 2 doesn't receive the didReceiveAuthenticationChallenge event
+        var expectedHistory2 = expectedHistory
+        expectedHistory2.remove(at: 3)
+
+        assertHistory(ofResponderAt: 0, equalsTo: expectedHistory)
         assertHistory(ofResponderAt: 0, equalsToHistoryOfResponderAt: 1)
-        assertHistory(ofResponderAt: 2, equalsTo: [
-            .navigationAction(req(urls.local), .other, src: main()),
-            .willStart(Nav(action: navAct(1), .approved, isCurrent: false)),
-            .didStart(Nav(action: navAct(1), .started)),
-            .didFail(Nav(action: navAct(1), .failed(WKError(NSURLErrorCancelled)), nil, .gotAuth), NSURLErrorCancelled),
-        ])
+        assertHistory(ofResponderAt: 2, equalsTo: expectedHistory2)
     }
 
     func testWhenAuthenticationChallengeRejected_responderChainReceivesEvents() throws {
@@ -262,7 +280,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [data] request in
             guard request.headers["authorization"] == nil else { return nil }
             return .raw(401, "Unauthorized", ["WWW-Authenticate": "Basic"]) { writer in
-                try! writer.write(data.html)
+                try writer.write(data.html)
             }
         }]
         try server.start(8084)

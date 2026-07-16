@@ -29,6 +29,7 @@ struct RemoteMessagingActionHandlerIntegrationTests {
         "Check Navigation Target Asks Delegate To Perform Segue",
         arguments: [
             (.appearance, \MockMessageNavigationDelegate.didCallSegueToSettingsAppearance),
+            (.settingsGeneral, \MockMessageNavigationDelegate.didCallSegueToSettingsGeneral),
             (.sync, \MockMessageNavigationDelegate.didCallSegueToSettingsSync),
             (.settings, \MockMessageNavigationDelegate.didCallSegueToSettings),
             (.duckAISettings, \MockMessageNavigationDelegate.didCallSegueToAIChatSettings),
@@ -53,7 +54,7 @@ struct RemoteMessagingActionHandlerIntegrationTests {
     @Test(
         "Check Navigation Passes Presentation Style To Delegate",
         arguments:
-            [.sync, .settings, .duckAISettings, .feedback, .importPasswords] as [NavigationTarget],
+            [.sync, .settings, .settingsGeneral, .duckAISettings, .feedback, .importPasswords] as [NavigationTarget],
             [.dismissModalsAndPresentFromRoot, .withinCurrentContext] as [PresentationContext.Style]
     )
     func navigationActionPassesPresentationStyleToDelegate(navigationTarget: NavigationTarget, presentationStyle: PresentationContext.Style) async throws {

@@ -27,6 +27,7 @@ final class PromoServiceFactoryTests: XCTestCase {
 
     private var dependencies: PromoDependencies!
 
+    @MainActor
     override func setUp() {
         super.setUp()
         dependencies = makeDependencies()
@@ -118,9 +119,23 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNotNil(promo.delegate)
     }
 
+    func testFactoryCreatesSubscriptionPromoWithCorrectConfiguration() {
+        let promo = PromoServiceFactory.subscriptionPromo(delegate: FireWindowSubscriptionPromoDelegate())
+
+        XCTAssertEqual(promo.id, "subscription-promo-fire-window")
+        XCTAssertTrue(promo.triggers.isEmpty)
+        XCTAssertEqual(promo.initiated, .app)
+        XCTAssertEqual(promo.promoType.severity, .medium)
+        XCTAssertEqual(promo.context, .fireWindow)
+        XCTAssertFalse(promo.respectsGlobalCooldown)
+        XCTAssertFalse(promo.setsGlobalCooldown)
+        XCTAssertNotNil(promo.delegate)
+    }
+
 }
 
 extension PromoServiceFactoryTests {
+    @MainActor
     private func makeDependencies() -> PromoDependencies {
         let activeRemoteMessageModel = ActiveRemoteMessageModel(
             remoteMessagingStore: MockRemoteMessagingStore(),
@@ -144,7 +159,11 @@ extension PromoServiceFactoryTests {
             isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock()
+            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
+            subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
+            featureFlagger: MockFeatureFlagger(),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            windowControllersManager: WindowControllersManagerMock()
         )
     }
 }

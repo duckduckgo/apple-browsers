@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Networking
 import os.log
 
@@ -37,7 +38,8 @@ extension DefaultSubscriptionManager: SubscriptionTokenHandling {
 
     public func adoptToken(_ someKindOfToken: Any) async throws {
         if let tokenContainer = someKindOfToken as? TokenContainer {
-            try await adopt(tokenContainer: tokenContainer)
+            // This entry point is the VPN token-bridge handing a container to the subscription manager.
+            try await adopt(tokenContainer: tokenContainer, source: .vpn)
         } else {
             Logger.subscription.fault("Trying to adopt the wrong kind of token")
             assertionFailure("Trying to adopt the wrong kind of token")

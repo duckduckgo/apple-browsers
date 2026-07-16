@@ -301,8 +301,6 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() {}
     func fireFireButtonConfirmed() {}
-    func firePageContextPlaceholderShown() {}
-    func firePageContextPlaceholderTapped() {}
     func firePageContextAutoAttached() {}
     func firePageContextUpdatedOnNavigation(url: String) {}
     func firePageContextManuallyAttachedNative() {}

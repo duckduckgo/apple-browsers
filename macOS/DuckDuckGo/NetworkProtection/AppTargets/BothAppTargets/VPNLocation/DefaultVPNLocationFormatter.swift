@@ -47,7 +47,6 @@ struct DefaultVPNLocationFormatter: VPNLocationFormatting {
         return preferredLocation.title
     }
 
-    @available(macOS 12, *)
     func string(from location: String?,
                 preferredLocation someLocation: VPNSettings.SelectedLocation,
                 locationTextColor: Color,

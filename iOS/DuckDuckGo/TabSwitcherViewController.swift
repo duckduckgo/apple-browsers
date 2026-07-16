@@ -19,6 +19,7 @@
 
 import UIKit
 import Common
+import FoundationExtensions
 import Core
 import DDGSync
 import WebKit
@@ -32,6 +33,7 @@ import DesignResourcesKitIcons
 import BrowserServicesKit
 import PrivacyConfig
 import AIChat
+import TipKit
 import UIComponents
 
 class TabSwitcherViewController: UIViewController {
@@ -90,16 +92,14 @@ class TabSwitcherViewController: UIViewController {
 
     }
 
-    lazy var borderView = StyledTopBottomBorderView()
-
-    @IBOutlet weak var titleBarView: UINavigationBar!
-    @IBOutlet weak var toolbar: UIToolbar!
+    private(set) var chrome: TabSwitcherChrome!
 
     private(set) var pagingScrollView: UIScrollView!
     private var firePageContainer: UIView!
     private var normalPageContainer: UIView!
     private(set) var firePageController: TabSwitcherPageViewController?
     private(set) var normalPageController: TabSwitcherPageViewController!
+    private var modeChangeFromSwipe = false
 
     var activePageController: TabSwitcherPageViewController {
         if selectedBrowsingMode == .fire, let firePageController {
@@ -129,7 +129,13 @@ class TabSwitcherViewController: UIViewController {
 
     let tabSwitcherSettings: TabSwitcherSettings
     var isProcessingUpdates = false
-    private var canUpdateCollection = true
+
+    private var canUpdateCollection = true {
+        didSet {
+            normalPageController?.canUpdateCollection = canUpdateCollection
+            firePageController?.canUpdateCollection = canUpdateCollection
+        }
+    }
 
     let favicons: FaviconManaging
 
@@ -137,6 +143,8 @@ class TabSwitcherViewController: UIViewController {
     var interfaceMode: InterfaceMode = .regularSize
     var canShowSelectionMenu = false
     var menuBuilder: TabSwitcherMenuBuilding = DefaultTabSwitcherMenuBuilder()
+
+    private let floatingUIManaging: FloatingUIManaging
 
     let featureFlagger: FeatureFlagger
     let tabManager: TabManager
@@ -146,6 +154,8 @@ class TabSwitcherViewController: UIViewController {
     let privacyStats: PrivacyStatsProviding
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
+    private let duckAIGridContentProvider: DuckAIGridContentProviding?
+    private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
     var tabsModel: TabsModelManaging {
         tabManager.tabsModel(for: selectedBrowsingMode)
     }
@@ -154,13 +164,10 @@ class TabSwitcherViewController: UIViewController {
         !tabsModel.allowsEmpty
     }
     
-    var barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
-
     private let appSettings: AppSettings
     private let initialTrackerCountState: TabSwitcherTrackerCountViewModel.State
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
-    private(set) var aichatIPadTabFeature: AIChatIPadTabFeatureProviding
 
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
@@ -168,40 +175,41 @@ class TabSwitcherViewController: UIViewController {
     private let pickerItems: [ImageSegmentedPickerItem]
     private let tabCountModel: TabCountModel
     private(set) var selectedBrowsingMode: BrowsingMode
-    private(set) var segmentedPickerHostingController: UIHostingController<TabSwitcherPickerWrapper>?
+    private(set) var segmentedPickerHostingController: UIHostingController<ImageSegmentedPickerView>?
     private var pickerSelectionCancellable: AnyCancellable?
-    private var fireModeCapability: FireModeCapable {
+    var fireModeCapability: FireModeCapable {
         FireModeCapability.create()
     }
 
-    required init?(coder: NSCoder,
-                   bookmarksDatabase: CoreDataDatabase,
-                   syncService: DDGSyncing,
-                   featureFlagger: FeatureFlagger,
-                   favicons: FaviconManaging,
-                   tabManager: TabManager,
-                   aiChatSettings: AIChatSettingsProvider,
-                   appSettings: AppSettings,
-                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-                   aichatIPadTabFeature: AIChatIPadTabFeatureProviding = AIChatIPadTabFeature(),
-                   privacyStats: PrivacyStatsProviding,
-                   productSurfaceTelemetry: ProductSurfaceTelemetry,
-                   historyManager: HistoryManaging,
-                   fireproofing: Fireproofing,
-                   keyValueStore: ThrowingKeyValueStoring,
-                   tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
-                   daxDialogsManager: DaxDialogsManaging,
-                   initialTrackerCountState: TabSwitcherTrackerCountViewModel.State) {
+    init(bookmarksDatabase: CoreDataDatabase,
+         syncService: DDGSyncing,
+         featureFlagger: FeatureFlagger,
+         favicons: FaviconManaging,
+         tabManager: TabManager,
+         aiChatSettings: AIChatSettingsProvider,
+         appSettings: AppSettings,
+         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+         privacyStats: PrivacyStatsProviding,
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         historyManager: HistoryManaging,
+         fireproofing: Fireproofing,
+         keyValueStore: ThrowingKeyValueStoring,
+         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
+         daxDialogsManager: DaxDialogsManaging,
+         initialTrackerCountState: TabSwitcherTrackerCountViewModel.State,
+         duckAIGridContentProvider: DuckAIGridContentProviding?,
+         duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?,
+         floatingUIManaging: FloatingUIManaging? = nil) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
+        self.floatingUIManaging = floatingUIManaging ?? FloatingUIManager(featureFlagger: featureFlagger)
         self.keyValueStore = keyValueStore
         self.favicons = favicons
         self.tabManager = tabManager
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
-        self.aichatIPadTabFeature = aichatIPadTabFeature
         self.privacyStats = privacyStats
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.historyManager = historyManager
@@ -209,6 +217,8 @@ class TabSwitcherViewController: UIViewController {
         self.tabSwitcherSettings = tabSwitcherSettings
         self.daxDialogsManager = daxDialogsManager
         self.initialTrackerCountState = initialTrackerCountState
+        self.duckAIGridContentProvider = duckAIGridContentProvider
+        self.duckAIVoiceSessionTracker = duckAIVoiceSessionTracker
         let tabCountModel = TabCountModel()
         self.tabCountModel = tabCountModel
         self.pickerItems = BrowsingMode.allCases.map { $0.segmentedPickerItem(tabCountModel: tabCountModel) }
@@ -221,38 +231,31 @@ class TabSwitcherViewController: UIViewController {
                                                                  innerHorizontalPadding: 2),
                 scrollProgress: nil,
                 isScrollProgressDriven: true)
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
     }
 
+    @available(*, unavailable)
     required init?(coder: NSCoder) {
-        fatalError("Not implemented")
-    }
-
-    fileprivate func createTitleBar() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithTransparentBackground()
-        titleBarView.standardAppearance = appearance
-        titleBarView.scrollEdgeAppearance = appearance
-
-        let heightConstraint = titleBarView.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
-        heightConstraint.priority = .required - 1
-        heightConstraint.isActive = true
+        fatalError("init(coder:) has not been implemented")
     }
     
     private func setupModeToggle() {
         guard fireModeCapability.isFireModeEnabled else {
             return
         }
-        let wrapper = TabSwitcherPickerWrapper(viewModel: pickerViewModel)
-        let hostingController = UIHostingController(rootView: wrapper)
+        let pickerView = ImageSegmentedPickerView(viewModel: pickerViewModel)
+        let hostingController = UIHostingController(rootView: pickerView)
         hostingController.view.backgroundColor = .clear
         segmentedPickerHostingController = hostingController
 
         addChild(hostingController)
         hostingController.didMove(toParent: self)
 
-        hostingController.view.frame = CGRect(x: 0, y: 0, width: Constants.modePickerWidth, height: 44)
-        titleBarView.topItem?.titleView = hostingController.view
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            hostingController.view.widthAnchor.constraint(equalToConstant: Constants.modePickerWidth),
+        ])
+        chrome.setCenterView(hostingController.view)
 
         pickerSelectionCancellable = pickerViewModel.$selectedItem
             .receive(on: DispatchQueue.main)
@@ -266,99 +269,39 @@ class TabSwitcherViewController: UIViewController {
         guard newMode != selectedBrowsingMode else {
             return
         }
+        let source = modeChangeFromSwipe ? "swipe" : "tap"
+        modeChangeFromSwipe = false
         selectedBrowsingMode = newMode
+        Pixel.fire(pixel: .tabSwitcherModeToggled, withAdditionalParameters: [
+            PixelParameters.browsingMode: newMode.pixelParamValue,
+            PixelParameters.source: source
+        ])
         syncPagingScrollViewToCurrentMode(animated: true)
         scrollToInitialTab()
         updateUIForSelectionMode()
     }
 
-    private func activateLayoutConstraintsBasedOnBarPosition() {
-        guard let view = self.view else {
-            assertionFailure()
-            return
-        }
-        let isBottomBar = appSettings.currentAddressBarPosition.isBottom
-
-        let isiOS26: Bool
-        if #available(iOS 26, *) {
-            isiOS26 = true
-        } else {
-            isiOS26 = false
-        }
-
-        // Changing this?  Best change MainView too
-        let topOffset = isiOS26 ? 4.0 : -6.0
-        let bottomOffset = 8.0
-        let navHPadding = isiOS26 ? -6.0 : -2.0
-        let toolbarWidthMod = isiOS26 ? 14.0 : 4.0
-
-        // The constants here are to force the ai button to align between the tab switcher and this view
-        NSLayoutConstraint.activate([
-            titleBarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: navHPadding),
-            titleBarView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -navHPadding),
-            isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: topOffset) : nil,
-            !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: bottomOffset) : nil,
-
-            pagingScrollView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
-            pagingScrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            pagingScrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-
-            interfaceMode.isLarge ? pagingScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
-                pagingScrollView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
-
-            borderView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
-            borderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            borderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-
-            // On iPad large mode constrain to the bottom as the toolbar is hidden
-            interfaceMode.isLarge ? borderView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
-                borderView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
-
-            // Always at the bottom
-            toolbar.constrainView(view, by: .width, constant: toolbarWidthMod),
-            toolbar.constrainView(view, by: .centerX),
-            toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        ].compactMap { $0 })
-    }
-
-    private func setupBarsLayout() {
-        // Remove existing constraints to avoid conflicts
-        borderView.translatesAutoresizingMaskIntoConstraints = false
-        titleBarView.translatesAutoresizingMaskIntoConstraints = false
-        toolbar.translatesAutoresizingMaskIntoConstraints = false
-        pagingScrollView.translatesAutoresizingMaskIntoConstraints = false
-
-        let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, toolbar, pagingScrollView, borderView]
-        viewsToRemoveConstraintsFor.forEach { targetView in
-            targetView.removeFromSuperview()
-        }
-
-        view.addSubview(titleBarView)
-        view.addSubview(toolbar)
-        view.addSubview(pagingScrollView)
-        view.addSubview(borderView)
-
-        let toolbarAppearance = UIToolbarAppearance()
-        toolbarAppearance.configureWithTransparentBackground()
-        toolbarAppearance.shadowColor = .clear
-        toolbar.standardAppearance = toolbarAppearance
-        toolbar.compactAppearance = toolbarAppearance
-        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
-        // On large ipad view don't show the bottom divider
-        borderView.isBottomVisible = !interfaceMode.isLarge
-        activateLayoutConstraintsBasedOnBarPosition()
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        createTitleBar()
-        setupModeToggle()
         setupPagingScrollView()
+
+        chrome = makeChrome()
+        chrome.install(in: view, contentView: pagingScrollView)
+        chrome.actions = makeChromeActions()
+        chrome.configurePlusButtonLongPressMenu(isFireModeEnabled: fireModeCapability.isFireModeEnabled)
+
+        setupModeToggle()
 
         decorate()
         becomeFirstResponder()
-        setupBarButtonActions()
+    }
+
+    private func makeChrome() -> TabSwitcherChrome {
+        let isFloating = floatingUIManaging.isFloatingUIEnabled
+        let chrome = TabSwitcherChromeFactory.makeChrome(isFloatingUIEnabled: isFloating,
+                                                         appSettings: appSettings)
+        return chrome
     }
 
     private func setupPagingScrollView() {
@@ -373,6 +316,9 @@ class TabSwitcherViewController: UIViewController {
         pagingScrollView.delegate = self
         pagingScrollView.translatesAutoresizingMaskIntoConstraints = false
         pagingScrollView.contentInsetAdjustmentBehavior = .never
+        if #available(iOS 17.0, *) {
+            pagingScrollView.allowsKeyboardScrolling = false
+        }
 
         normalPageContainer = UIView()
         normalPageContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -420,7 +366,9 @@ class TabSwitcherViewController: UIViewController {
                 previewsSource: previewsSource,
                 tabSwitcherSettings: tabSwitcherSettings,
                 trackerCountViewModel: nil,
-                isFireModeEnabled: isFireModeEnabled)
+                isFireModeEnabled: isFireModeEnabled,
+                duckAIGridContentProvider: duckAIGridContentProvider,
+                duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
             firePageController?.pageDelegate = self
             firePageController?.onNewFireTab = { [weak self] in
                 self?.addNewTab()
@@ -440,7 +388,9 @@ class TabSwitcherViewController: UIViewController {
             previewsSource: previewsSource,
             tabSwitcherSettings: tabSwitcherSettings,
             trackerCountViewModel: trackerCountViewModel,
-            isFireModeEnabled: isFireModeEnabled)
+            isFireModeEnabled: isFireModeEnabled,
+            duckAIGridContentProvider: duckAIGridContentProvider,
+            duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
         normalPageController.pageDelegate = self
         embedPageController(normalPageController, in: normalPageContainer)
 
@@ -460,51 +410,68 @@ class TabSwitcherViewController: UIViewController {
         pageController.didMove(toParent: self)
     }
 
-    private func setupBarButtonActions() {
-        barsHandler.onPlusButtonTapped = { [weak self] in
+    private func makeChromeActions() -> TabSwitcherChromeActions {
+        var actions = TabSwitcherChromeActions()
+
+        actions.onPlusTapped = { [weak self] in
             self?.addNewTab()
         }
 
-        barsHandler.onFireButtonTapped = { [weak self] in
-            self?.burn(sender: self!.barsHandler.fireButton)
+        actions.onNewFireTabTapped = { [weak self] in
+            self?.addNewFireTab(source: .tabSwitcherLongPress)
         }
 
-        barsHandler.onDoneButtonTapped = { [weak self] in
-            self?.onDonePressed(self!.barsHandler.doneButton)
+        actions.onNewNormalTabTapped = { [weak self] in
+            self?.addNewNormalTab()
         }
 
-        barsHandler.onEditButtonTapped = { [weak self] in
+        actions.onFireTapped = { [weak self] in
+            guard let self else { return }
+            self.burn(sender: self.chrome.fireButton)
+        }
+
+        actions.onDoneTapped = { [weak self] in
+            self?.doneAction()
+        }
+
+        actions.onEditMenuRequested = { [weak self] in
             return self?.createEditMenu()
         }
 
-        barsHandler.onTabStyleButtonTapped = { [weak self] in
+        actions.onSelectTabsStyle = { [weak self] style in
+            self?.setTabsStyle(style)
+        }
+
+        actions.onToggleTabsStyle = { [weak self] in
             self?.onTabStyleChange()
         }
 
-        barsHandler.onSelectAllTapped = { [weak self] in
+        actions.onSelectAllTapped = { [weak self] in
             self?.selectAllTabs()
         }
 
-        barsHandler.onDeselectAllTapped = { [weak self] in
+        actions.onDeselectAllTapped = { [weak self] in
             self?.deselectAllTabs()
         }
 
-        barsHandler.onMenuButtonTapped = { [weak self] in
+        actions.onMultiSelectMenuRequested = { [weak self] in
             return self?.createMultiSelectionMenu()
         }
 
-        barsHandler.onCloseTabsTapped = { [weak self] in
+        actions.onCloseTabsTapped = { [weak self] in
             self?.closeSelectedTabs()
         }
 
-        barsHandler.onDuckChatTapped = { [weak self] in
+        actions.onDuckChatTapped = { [weak self] in
             guard let self else { return }
-            if self.aichatFullModeFeature.isAvailable || self.aichatIPadTabFeature.isAvailable {
+            if self.aichatFullModeFeature.isAvailable || DevicePlatform.isIpad {
                 self.addNewAIChatTab()
             } else {
                 self.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self)
             }
         }
+
+        return actions
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -514,8 +481,16 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func showFireButtonPulseIfNeeded() {
-        guard daxDialogsManager.isShowingFireDialog, let window = view.window else { return }
-        ViewHighlighter.showIn(window, focussedOnButton: barsHandler.fireButton)
+        guard daxDialogsManager.isShowingFireDialog,
+              let window = view.window else { return }
+
+        if let view = chrome.fireButton.customView {
+            // Pre-floating UI
+            ViewHighlighter.showIn(window, focussedOnView: view)
+        } else {
+            // Floating UI
+            ViewHighlighter.showIn(window, focussedOnButton: chrome.fireButton)
+        }
     }
 
     func refreshDisplayModeButton() {
@@ -527,7 +502,7 @@ class TabSwitcherViewController: UIViewController {
         refreshTitleViews()
         currentSelection = tabsModel.currentIndex
         updateUIForSelectionMode()
-        setupBarsLayout()
+        chrome.layout(addressBarPosition: appSettings.currentAddressBarPosition, interfaceMode: interfaceMode)
         firePageController?.updateEmptyStateVisibility()
     }
 
@@ -536,7 +511,7 @@ class TabSwitcherViewController: UIViewController {
 
         _ = AppWidthObserver.shared.willResize(toWidth: size.width)
         updateUIForSelectionMode()
-        setupBarsLayout()
+        chrome.layout(addressBarPosition: appSettings.currentAddressBarPosition, interfaceMode: interfaceMode)
         for pageController in [self.firePageController, self.normalPageController].compactMap({ $0 }) {
             pageController.view.setNeedsLayout()
             pageController.collectionView.setNeedsLayout()
@@ -573,7 +548,7 @@ class TabSwitcherViewController: UIViewController {
         // title is always required.
         let tabsCountTitle = (fireModeEnabled && !isEditing) ? nil : UserText.numberOfTabs(tabsModel.count)
         let title = selectedTabs.isEmpty ? tabsCountTitle : UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
-        titleBarView.topItem?.title = title
+        chrome.setTitle(title)
         tabCountModel.count = tabManager.normalTabsModel.count
     }
 
@@ -609,12 +584,36 @@ class TabSwitcherViewController: UIViewController {
         // Will be dismissed, so no need to process incoming updates
         canUpdateCollection = false
 
-        Pixel.fire(pixel: .tabSwitcherNewTab)
+        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: selectedBrowsingMode.pixelParamValue
+        ])
         dismissIfPossible(forceDismissOnEmpty: true)
         // This call needs to be after the dismiss to allow OmniBarEditingStateViewController
         // to present on top of MainVC instead of TabSwitcher.
         // If these calls are switched it'll be immediately dismissed along with this controller.
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
+    }
+
+    func addNewFireTab(source: FireModeSwitchSource) {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+
+        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
+        ])
+        dismissIfPossible(forceDismissOnEmpty: true)
+        delegate.tabSwitcherDidRequestNewFireTab(tabSwitcher: self, source: source)
+    }
+
+    func addNewNormalTab() {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+
+        Pixel.fire(pixel: .tabSwitcherNewTab, withAdditionalParameters: [
+            PixelParameters.browsingMode: BrowsingMode.normal.pixelParamValue
+        ])
+        dismissIfPossible(forceDismissOnEmpty: true)
+        delegate.tabSwitcherDidRequestNewNormalTab(tabSwitcher: self)
     }
     
     func addNewAIChatTab() {
@@ -645,20 +644,12 @@ class TabSwitcherViewController: UIViewController {
         return .init(newCount: newCount, existingCount: tabs.count - newCount, urls: urls)
     }
 
-    @IBAction func onAddPressed(_ sender: UIBarButtonItem) {
-        addNewTab()
-    }
-
-    @IBAction func onDonePressed(_ sender: UIBarButtonItem) {
+    func doneAction() {
         if isEditing {
             transitionFromMultiSelect()
         } else {
             dismissIfPossible()
         }
-    }
-
-    @IBAction func onFirePressed(sender: AnyObject) {
-        burn(sender: sender)
     }
 
     func forgetAll(_ fireRequest: FireRequest) {
@@ -681,6 +672,13 @@ class TabSwitcherViewController: UIViewController {
     }
 
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
+        // When a presented child (e.g. TipKit popover) is being dismissed, skip
+        // tab-switcher teardown — only forward to super so the child is removed.
+        if presentedViewController != nil {
+            super.dismiss(animated: animated, completion: completion)
+            return
+        }
+
         canUpdateCollection = false
         if let firePC = firePageController {
             tabManager.tabsModel(for: .fire).tabs.forEach { $0.removeObserver(firePC) }
@@ -692,7 +690,7 @@ class TabSwitcherViewController: UIViewController {
         let tabsModel = tabManager.tabsModel(for: selectedBrowsingMode)
 
         if selectedBrowsingMode.allowsEmpty && tabsModel.isEmpty {
-            tabManager.setBrowsingMode(selectedBrowsingMode)
+            tabManager.setBrowsingMode(selectedBrowsingMode, source: .tabSelection)
         } else {
             let selectedTab = activePageController.selectedTab
             delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)
@@ -709,17 +707,10 @@ extension TabSwitcherViewController {
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
         view.backgroundColor = theme.backgroundColor
-        
+
         refreshDisplayModeButton()
-        
-        titleBarView.tintColor = theme.barTintColor
-        if #available(iOS 26.0, *) {
-            titleBarView.backItem?.rightBarButtonItem?.hidesSharedBackground = true
-        }
 
-        toolbar.barTintColor = theme.barBackgroundColor
-        toolbar.tintColor = UIColor(singleUseColor: .toolbarButton)
-
+        chrome.decorate(theme: theme)
     }
 
 }
@@ -745,6 +736,7 @@ extension TabSwitcherViewController: UIScrollViewDelegate {
         let newMode: BrowsingMode = currentPage == 0 ? .fire : .normal
 
         if newMode != selectedBrowsingMode {
+            modeChangeFromSwipe = true
             pickerViewModel.selectItem(pickerItems[newMode.rawValue])
         }
     }
@@ -793,7 +785,7 @@ extension TabSwitcherViewController: TabSwitcherPageDelegate {
 
     func page(_ page: TabSwitcherPageViewController, didReorderTabs: Void) {
         if isEditing {
-            barsHandler.configureButtonActions(tabsStyle: tabsStyle, canShowSelectionMenu: canShowSelectionMenu)
+            updateUIForSelectionMode()
         }
         delegate.tabSwitcherDidReorderTabs(tabSwitcher: self)
     }
@@ -824,15 +816,6 @@ extension TabSwitcherViewController: TabSwitcherPageDelegate {
 
     func pageCellDidEndDrag(_ page: TabSwitcherPageViewController) {
         pagingScrollView.isScrollEnabled = firePageController != nil && !isEditing
-    }
-}
-
-struct TabSwitcherPickerWrapper: View {
-    @ObservedObject var viewModel: ImageSegmentedPickerViewModel
-
-    var body: some View {
-        ImageSegmentedPickerView(viewModel: viewModel)
-            .frame(width: TabSwitcherViewController.Constants.modePickerWidth)
     }
 }
 

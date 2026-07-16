@@ -21,6 +21,7 @@ import XCTest
 @testable import DuckDuckGo
 @testable import Core
 import Common
+import FoundationExtensions
 import History
 import AIChat
 import Persistence

@@ -23,6 +23,7 @@ import BrowserServicesKit
 import os.log
 import Networking
 import Common
+import FoundationExtensions
 
 /// Represents single component that is being sent to the server.
 /// Feedback as a whole can consist of multiple components. These components are included both in

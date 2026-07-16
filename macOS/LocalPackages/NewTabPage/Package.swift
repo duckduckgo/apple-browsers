@@ -23,7 +23,7 @@ import PackageDescription
 let package = Package(
     name: "NewTabPage",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
@@ -32,7 +32,9 @@ let package = Package(
             targets: ["NewTabPage"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/AIChat"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../WebKitExtensions"),
         .package(path: "../UserScriptActionsManager"),
         .package(path: "../Utilities"),
@@ -62,6 +64,7 @@ let package = Package(
             dependencies: [
                 "NewTabPage",
                 "Utilities",
+                .product(name: "AIChat", package: "AIChat"),
                 .product(name: "AutoconsentStats", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
             ]

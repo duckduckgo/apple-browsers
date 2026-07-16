@@ -21,7 +21,7 @@ import PackageDescription
 
 let package = Package(
     name: "CrashReporting",
-    platforms: [.macOS("11.4")],
+    platforms: [.macOS("12.3")],
     products: [
         .library(name: "CrashReportingShared", targets: ["CrashReportingShared"]),
         .library(name: "CrashReporting", targets: ["CrashReporting"]),
@@ -29,6 +29,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../FeatureFlags"),
     ],
     targets: [
@@ -36,6 +37,9 @@ let package = Package(
             name: "CrashReportingShared",
             dependencies: [
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Crashes", package: "BrowserServicesKit"),
                 .product(name: "FeatureFlags", package: "FeatureFlags"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
@@ -50,6 +54,9 @@ let package = Package(
             dependencies: [
                 "CrashReportingShared",
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Crashes", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
@@ -64,6 +71,9 @@ let package = Package(
                 "CrashReportingShared",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Crashes", package: "BrowserServicesKit"),
                 .product(name: "FeatureFlags", package: "FeatureFlags"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),

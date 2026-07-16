@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 final public class NetworkProtectionKnownFailureStore {
     private static let lastKnownFailureKey = "com.duckduckgo.NetworkProtectionKnownFailureStore.knownFailure"

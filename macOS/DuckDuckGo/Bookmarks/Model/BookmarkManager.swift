@@ -17,11 +17,13 @@
 //
 
 import Bookmarks
+import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import os.log
-import BrowserServicesKit
 
 protocol BookmarkManager: AnyObject {
 

@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
+import Combine
+import ConcurrencyExtensions
 import Foundation
 import Network
 import os.log
-import Combine
 
 public actor NetworkProtectionLatencyMonitor: LatencyMonitoring {
     public enum ConnectionQuality: String {

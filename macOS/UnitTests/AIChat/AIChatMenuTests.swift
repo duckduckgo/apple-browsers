@@ -277,6 +277,76 @@ final class AIChatMenuTests: XCTestCase {
         XCTAssertEqual(openedChat?.chatId, "abc")
     }
 
+    // MARK: - Delete all chats sync handoff
+
+    func testDeleteAllChats_recordsLocalClearForSyncOnSuccess() async {
+        let historyCleaner = StubAIChatHistoryCleaner(result: .success(()))
+        let syncCleaner = StubAIChatSyncCleaning()
+        let defaultActions = AIChatMenu.Actions.makeDefault(
+            remoteSettings: AIChatRemoteSettings(),
+            tabOpener: MockAIChatTabOpener(),
+            historyCleaner: historyCleaner,
+            windowControllersManager: WindowControllersManagerMock(),
+            aiChatSyncCleaner: { syncCleaner }
+        )
+
+        await defaultActions.deleteAllChats()
+
+        XCTAssertEqual(syncCleaner.recordLocalClearDates.count, 1)
+        XCTAssertNotNil(syncCleaner.recordLocalClearDates.first ?? nil)
+    }
+
+    func testDeleteAllChats_doesNotRecordLocalClearOnFailure() async {
+        let historyCleaner = StubAIChatHistoryCleaner(result: .failure(NSError(domain: "test", code: 0)))
+        let syncCleaner = StubAIChatSyncCleaning()
+        let defaultActions = AIChatMenu.Actions.makeDefault(
+            remoteSettings: AIChatRemoteSettings(),
+            tabOpener: MockAIChatTabOpener(),
+            historyCleaner: historyCleaner,
+            windowControllersManager: WindowControllersManagerMock(),
+            aiChatSyncCleaner: { syncCleaner }
+        )
+
+        await defaultActions.deleteAllChats()
+
+        XCTAssertTrue(syncCleaner.recordLocalClearDates.isEmpty)
+    }
+
+    func testDeleteAllChats_succeedsWhenSyncCleanerIsNil() async {
+        let historyCleaner = StubAIChatHistoryCleaner(result: .success(()))
+        let defaultActions = AIChatMenu.Actions.makeDefault(
+            remoteSettings: AIChatRemoteSettings(),
+            tabOpener: MockAIChatTabOpener(),
+            historyCleaner: historyCleaner,
+            windowControllersManager: WindowControllersManagerMock(),
+            aiChatSyncCleaner: { nil }
+        )
+
+        await defaultActions.deleteAllChats()
+
+        XCTAssertTrue(historyCleaner.cleanAIChatHistoryCalled)
+    }
+
+    func testDeleteAllChats_resolvesSyncCleanerLazilyAtCallTime() async {
+        let historyCleaner = StubAIChatHistoryCleaner(result: .success(()))
+        var syncCleaner: StubAIChatSyncCleaning?
+        let defaultActions = AIChatMenu.Actions.makeDefault(
+            remoteSettings: AIChatRemoteSettings(),
+            tabOpener: MockAIChatTabOpener(),
+            historyCleaner: historyCleaner,
+            windowControllersManager: WindowControllersManagerMock(),
+            aiChatSyncCleaner: { syncCleaner }
+        )
+
+        // Sync cleaner becomes available after the actions are constructed,
+        // mirroring AppDelegate setting `aiChatSyncCleaner` after MainMenu init.
+        syncCleaner = StubAIChatSyncCleaning()
+
+        await defaultActions.deleteAllChats()
+
+        XCTAssertEqual(syncCleaner?.recordLocalClearDates.count, 1)
+    }
+
     // MARK: - Private helpers
 
     private func makeChat(chatId: String, title: String, timestamp: Date = .distantPast) -> AIChatSuggestion {
@@ -284,7 +354,51 @@ final class AIChatMenuTests: XCTestCase {
     }
 }
 
-// MARK: - Mock
+// MARK: - Mocks
+
+private final class StubAIChatHistoryCleaner: AIChatHistoryCleaning {
+    private let result: Result<Void, Error>
+    private(set) var cleanAIChatHistoryCalled = false
+
+    @Published
+    var shouldDisplayCleanAIChatHistoryOption: Bool = false
+
+    var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> {
+        $shouldDisplayCleanAIChatHistoryOption.eraseToAnyPublisher()
+    }
+
+    init(result: Result<Void, Error>) {
+        self.result = result
+    }
+
+    @MainActor
+    func cleanAIChatHistory() async -> Result<Void, Error> {
+        cleanAIChatHistoryCalled = true
+        return result
+    }
+}
+
+private final class StubAIChatSyncCleaning: AIChatSyncCleaning {
+    private(set) var recordLocalClearDates: [Date?] = []
+
+    func recordAutoClearBackgroundTimestamp(date: Date?) async {}
+
+    func recordLocalClear(date: Date?) async {
+        recordLocalClearDates.append(date)
+    }
+
+    func recordLocalClearFromAutoClearBackgroundTimestampIfPresent() async {}
+
+    func recordChatDeletion(chatID: String) async {}
+
+    func deleteIfNeeded() async {}
+
+    func recordChatUpdate(chatID: String) async {}
+
+    func updateIfNeeded() async {}
+
+    func scheduleSync() {}
+}
 
 private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {
     var maxHistoryCount: Int = 10

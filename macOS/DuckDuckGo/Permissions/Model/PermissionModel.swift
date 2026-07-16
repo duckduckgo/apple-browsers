@@ -19,10 +19,8 @@
 import AVFoundation
 import Combine
 import CoreLocation
-import FeatureFlags
 import Foundation
 import Navigation
-import PrivacyConfig
 import UserNotifications
 import WebKit
 import os.log
@@ -48,7 +46,6 @@ final class PermissionModel {
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
     private let systemPermissionManager: SystemPermissionManagerProtocol
-    private let featureFlagger: FeatureFlagger
 
     /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
     private var removedPermissions = Set<PermissionType>()
@@ -72,13 +69,11 @@ final class PermissionModel {
     init(webView: WKWebView? = nil,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
-         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager(),
-         featureFlagger: FeatureFlagger) {
+         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()) {
 
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
         self.systemPermissionManager = systemPermissionManager
-        self.featureFlagger = featureFlagger
         if let webView {
             self.webView = webView
             self.subscribe(to: webView)
@@ -87,14 +82,12 @@ final class PermissionModel {
     }
 
     private func subscribe(to webView: WKWebView) {
-        if #available(macOS 12, *) {
-            webView.publisher(for: \.cameraCaptureState).sink { [weak self] _ in
-                self?.updatePermissions()
-            }.store(in: &cancellables)
-            webView.publisher(for: \.microphoneCaptureState).sink { [weak self] _ in
-                self?.updatePermissions()
-            }.store(in: &cancellables)
-        } // else: will receive mediaCaptureStateDidChange()
+        webView.publisher(for: \.cameraCaptureState).sink { [weak self] _ in
+            self?.updatePermissions()
+        }.store(in: &cancellables)
+        webView.publisher(for: \.microphoneCaptureState).sink { [weak self] _ in
+            self?.updatePermissions()
+        }.store(in: &cancellables)
 
         let geolocationProvider = webView.configuration.processPool.geolocationProvider
         geolocationProvider?.isActivePublisher.sink { [weak self] _ in
@@ -154,10 +147,9 @@ final class PermissionModel {
                 } else {
                     let currentState = webView.geolocationState
 
-                    // With new permission view, keep geolocation as active once it's been granted/used
+                    // Keep geolocation as active once it's been granted/used
                     // (.active or .inactive means it was granted or actively used)
-                    if featureFlagger.isFeatureOn(.newPermissionView),
-                       currentState == .none,
+                    if currentState == .none,
                        permissions.geolocation == .active || permissions.geolocation == .inactive {
                         permissions.geolocation = .active
                     } else {
@@ -215,7 +207,7 @@ final class PermissionModel {
                         let isPersisting = remember == true || persistsWhen(permission: permission, domain: domain)
                         if isPersisting {
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
-                        } else if self.featureFlagger.isFeatureOn(.newPermissionView) {
+                        } else {
                             // Other permissions: one-time decisions store .ask for permission center visibility
                             self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
                         }
@@ -227,17 +219,6 @@ final class PermissionModel {
         }
         // "unowned" query reference to be able to use the pointer when the callback is called on query deinit
         queryPtr = Unmanaged.passUnretained(query).toOpaque()
-
-        // When Geolocation queried by a website but System Permission is denied: switch to `disabled`
-        // Only apply this behavior when new permission view is disabled (old behavior)
-        // When new permission view is enabled, the dialog handles showing the two-step authorization flow
-        if !featureFlagger.isFeatureOn(.newPermissionView),
-           permissions.contains(.geolocation),
-           [.denied, .restricted].contains(self.geolocationService.authorizationStatus)
-            || !geolocationService.locationServicesEnabled() {
-            self.permissions.geolocation
-                .systemAuthorizationDenied(systemWide: !geolocationService.locationServicesEnabled())
-        }
 
         // Set state to .requested so the authorization popover can be shown
         permissions.forEach { self.permissions[$0].authorizationQueried(query, updateQueryIfAlreadyRequested: $0 == .popups) }
@@ -411,9 +392,9 @@ final class PermissionModel {
         for permission in permissions {
             var grant: PersistedPermissionDecision
             let stored = permissionManager.permission(forDomain: domain, permissionType: permission)
-            if case .allow = stored, permission.canPersistGrantedDecision(featureFlagger: featureFlagger) {
+            if case .allow = stored, permission.canPersistGrantedDecision {
                 grant = .allow
-            } else if case .deny = stored, permission.canPersistDeniedDecision(featureFlagger: featureFlagger) {
+            } else if case .deny = stored, permission.canPersistDeniedDecision {
                 grant = .deny
             } else if let state = self.permissions[permission] {
                 switch state {
@@ -435,7 +416,7 @@ final class PermissionModel {
                 return false
             case .allow:
                 // User has "Always Allow" stored - but check system permission first
-                if featureFlagger.isFeatureOn(.newPermissionView), isSystemPermissionDisabled(for: permission) {
+                if isSystemPermissionDisabled(for: permission) {
                     return nil
                 }
             case .ask:
@@ -476,8 +457,7 @@ final class PermissionModel {
             // Check if this is "app=allow but system=disabled" case
             let isSystemDisabled: Bool = {
                 guard let permission = permissions.first,
-                      permission.requiresSystemPermission,
-                      self.featureFlagger.isFeatureOn(.newPermissionView) else { return false }
+                      permission.requiresSystemPermission else { return false }
                 return self.permissionManager.permission(forDomain: domain, permissionType: permission) == .allow
             }()
 
@@ -500,7 +480,7 @@ final class PermissionModel {
             }
         }
     }
-    @available(macOS 12.0, *)
+
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL? = nil, decisionHandler: @escaping (WKPermissionDecision) -> Void) {
         self.permissions(permissions, requestedForDomain: domain, url: url) { isGranted in
             decisionHandler(isGranted ? .grant : .deny)

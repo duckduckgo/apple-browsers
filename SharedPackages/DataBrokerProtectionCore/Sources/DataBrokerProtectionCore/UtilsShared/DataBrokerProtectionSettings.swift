@@ -70,7 +70,7 @@ public final class DataBrokerProtectionSettings {
         }
     }
 
-    private(set) var lastBrokerJSONUpdateCheckTimestamp: TimeInterval {
+    public private(set) var lastBrokerJSONUpdateCheckTimestamp: TimeInterval {
         get {
             defaults.double(forKey: Keys.lastBrokerJSONUpdateCheckTimestampKey)
         }
@@ -111,6 +111,13 @@ public final class DataBrokerProtectionSettings {
     }
 
     public var endpointURL: URL {
+#if DEBUG
+        if serviceRoot.hasPrefix("http://") || serviceRoot.hasPrefix("https://"),
+           let override = URL(string: serviceRoot) {
+            return override
+        }
+#endif
+
         switch selectedEnvironment {
         case .production:
             return URL(string: "https://dbp.duckduckgo.com")!

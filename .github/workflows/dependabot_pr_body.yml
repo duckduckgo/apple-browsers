@@ -10,14 +10,15 @@ jobs:
       pull-requests: write
     steps:
       - name: Prepend CI instructions to PR body
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const prefix = `> **Dependabot SSH access Workaround:**
             >
             > 1. Check out this branch locally
-            > 2. Push an empty commit: \`git commit -m "Ping" --allow-empty\`
-            > 
+            > 2. Re-resolve dependencies so the project lockfiles pick up this bump: \`./scripts/resolve-project-dependencies.sh\`
+            > 3. If it changed any \`Package.resolved\`, commit and push them. Otherwise push an empty commit to re-trigger CI: \`git commit -m "Ping" --allow-empty\`
+            >
 
             ---
 

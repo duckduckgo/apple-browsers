@@ -79,7 +79,7 @@ final class PixelKitEventWithCustomPrefixTests: XCTestCase {
                                     appVersion: "1.0.5",
                                     source: test.key.rawValue,
                                     defaultHeaders: [:],
-                                    dailyPixelCalendar: nil,
+                                    pixelCalendar: nil,
                                     defaults: userDefaults) { firedPixelName, firedHeaders, parameters, _, _, _ in
 
                 XCTAssertEqual(firedPixelName, test.value.expectedName)

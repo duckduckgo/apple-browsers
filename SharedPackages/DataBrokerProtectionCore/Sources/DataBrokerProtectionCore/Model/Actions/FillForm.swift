@@ -21,21 +21,25 @@ import Foundation
 struct FillFormAction: Action {
     let id: String
     let actionType: ActionType
+    let dataSource: String?
     let elements: [PageElement]
     let json: Data?
 
     enum CodingKeys: CodingKey {
         case id
         case actionType
+        case dataSource
         case elements
     }
 
     init(id: String,
          actionType: ActionType,
+         dataSource: String? = nil,
          elements: [PageElement],
          json: Data? = nil) {
         self.id = id
         self.actionType = actionType
+        self.dataSource = dataSource
         self.elements = elements
         self.json = json
     }
@@ -44,6 +48,7 @@ struct FillFormAction: Action {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         actionType = try container.decode(ActionType.self, forKey: .actionType)
+        dataSource = try container.decodeIfPresent(String.self, forKey: .dataSource)
         elements = try container.decode([PageElement].self, forKey: .elements)
         json = nil
     }
@@ -52,16 +57,22 @@ struct FillFormAction: Action {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(actionType, forKey: .actionType)
+        try container.encodeIfPresent(dataSource, forKey: .dataSource)
         try container.encode(elements, forKey: .elements)
     }
 
+    /// True when the action has an email element and the dataSource is not "fetchedEmail".
+    /// Legacy brokers (dataSource "userProfile" or unset) rely on the implicit fetch fallback;
+    /// the new generateEmail flow uses dataSource "fetchedEmail" to opt out of it so the runner's
+    /// cached email isn't overwritten by a second fetch.
     var needsEmail: Bool {
-        elements.contains { $0.type == "email" }
+        elements.contains { $0.type == "email" } && dataSource != "fetchedEmail"
     }
 
     func with(json: Data?) -> FillFormAction {
         FillFormAction(id: id,
                        actionType: actionType,
+                       dataSource: dataSource,
                        elements: elements,
                        json: json)
     }

@@ -6,27 +6,162 @@
         "description": "Fired when the Privacy Pro toolbar button is displayed to a new, non-subscriber user",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+
+    "m_mac_store_privacy-pro_toolbar_button_clicked": {
+        "description": "Fires on every click of the Privacy Pro toolbar button by a non-subscriber. Includes clicks that close an already-open upsell popover. App Store distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_privacy-pro_toolbar_button_clicked": {
+        "description": "Fires on every click of the Privacy Pro toolbar button by a non-subscriber. Includes clicks that close an already-open upsell popover. Direct distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+
+    "m_mac_store_subscription_toolbar_vpn_button_clicked": {
+        "description": "Fires on every click of the subscription VPN toolbar button by a subscribed user (active or revoked). Includes clicks that close an already-open popover. Use the expired-view-shown pixel to distinguish the revoked sub-case. App Store distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_subscription_toolbar_vpn_button_clicked": {
+        "description": "Fires on every click of the subscription VPN toolbar button by a subscribed user (active or revoked). Includes clicks that close an already-open popover. Use the expired-view-shown pixel to distinguish the revoked sub-case. Direct distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     "m_mac_privacy-pro_toolbar_button_popover_shown": {
         "description": "Fired when the Privacy Pro toolbar button popover is displayed to a user",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+
+    "m_mac_store_subscription_toolbar_vpn_popover_shown": {
+        "description": "Fired when the subscription VPN toolbar popover is displayed to a subscribed user (either active subscription or revoked state). Use the expired-view-shown pixel to distinguish the revoked sub-case. App Store distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_subscription_toolbar_vpn_popover_shown": {
+        "description": "Fired when the subscription VPN toolbar popover is displayed to a subscribed user (either active subscription or revoked state). Use the expired-view-shown pixel to distinguish the revoked sub-case. Direct distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     "m_mac_privacy-pro_toolbar_button_popover_dismiss_button_clicked": {
-        "description": "Fired when the dismiss button is clicked in the Privacy Pro toolbar button popover",
+        "description": "Fired when the dismiss button is clicked in the Privacy Pro toolbar button upsell popover",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     "m_mac_privacy-pro_toolbar_button_popover_proceed_button_clicked": {
-        "description": "Fired when the proceed button is clicked in the Privacy Pro toolbar button popover",
+        "description": "Fired when the proceed button is clicked in the Privacy Pro toolbar button upsell popover",
         "owners": ["jozsef-vesza"],
         "triggers": ["user_submitted"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+
+    "m_mac_store_subscription_toolbar_vpn_popover_expired_view_shown": {
+        "description": "Fired when the subscription-expired view is displayed inside the subscription VPN toolbar popover (revoked subscription case). App Store distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_subscription_toolbar_vpn_popover_expired_view_shown": {
+        "description": "Fired when the subscription-expired view is displayed inside the subscription VPN toolbar popover (revoked subscription case). Direct distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+
+    "m_mac_store_subscription_toolbar_vpn_popover_expired_view_subscribe_button_clicked": {
+        "description": "Fired when the subscribe button is clicked in the subscription-expired view inside the subscription VPN toolbar popover. App Store distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_subscription_toolbar_vpn_popover_expired_view_subscribe_button_clicked": {
+        "description": "Fired when the subscribe button is clicked in the subscription-expired view inside the subscription VPN toolbar popover. Direct distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+
+    "m_mac_store_subscription_menu_bar_vpn_button_clicked": {
+        "description": "Fires on every left-click of the VPN menu-bar status item by a subscribed user (active or revoked). Includes clicks that close an already-open popover. Right-clicks (which open the context menu) are excluded. Use the expired-view-shown pixel to distinguish the revoked sub-case. App Store distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_subscription_menu_bar_vpn_button_clicked": {
+        "description": "Fires on every left-click of the VPN menu-bar status item by a subscribed user (active or revoked). Includes clicks that close an already-open popover. Right-clicks (which open the context menu) are excluded. Use the expired-view-shown pixel to distinguish the revoked sub-case. Direct distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+
+    "m_mac_store_subscription_menu_bar_vpn_popover_shown": {
+        "description": "Fired when the subscription VPN menu-bar popover is displayed to a subscribed user (either active subscription or revoked state). Use the expired-view-shown pixel to distinguish the revoked sub-case. App Store distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_subscription_menu_bar_vpn_popover_shown": {
+        "description": "Fired when the subscription VPN menu-bar popover is displayed to a subscribed user (either active subscription or revoked state). Use the expired-view-shown pixel to distinguish the revoked sub-case. Direct distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+
+    "m_mac_store_subscription_menu_bar_vpn_popover_expired_view_shown": {
+        "description": "Fired when the subscription-expired view is displayed inside the subscription VPN menu-bar popover (revoked subscription case). App Store distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_subscription_menu_bar_vpn_popover_expired_view_shown": {
+        "description": "Fired when the subscription-expired view is displayed inside the subscription VPN menu-bar popover (revoked subscription case). Direct distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+
+    "m_mac_store_subscription_menu_bar_vpn_popover_expired_view_subscribe_button_clicked": {
+        "description": "Fired when the subscribe button is clicked in the subscription-expired view inside the subscription VPN menu-bar popover. App Store distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_subscription_menu_bar_vpn_popover_expired_view_subscribe_button_clicked": {
+        "description": "Fired when the subscribe button is clicked in the subscription-expired view inside the subscription VPN menu-bar popover. Direct distribution.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

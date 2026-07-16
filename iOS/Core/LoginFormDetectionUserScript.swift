@@ -30,9 +30,7 @@ public class LoginFormDetectionUserScript: NSObject, UserScript {
 
     public lazy var source: String = {
         do {
-            return try Self.loadJS("login-form-detection", from: Bundle.core, withReplacements: [
-                "$IS_DEBUG$": isDebugBuild ? "true" : "false"
-            ])
+            return try Self.loadJS("login-form-detection", from: Bundle.core, withReplacements: [:])
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()

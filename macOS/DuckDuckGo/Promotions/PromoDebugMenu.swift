@@ -107,7 +107,7 @@ final class PromoDebugMenu: NSMenu {
             parentItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.promoMenuItem(promo.id))
 
             let submenu = NSMenu()
-            if promo.delegate is PromoDelegate {
+            if promo.delegate is InternalPromoDelegate {
                 let forceShowItem = NSMenuItem(title: "Force Show", action: #selector(forceShowPromo(_:)), keyEquivalent: "")
                 forceShowItem.representedObject = promo.id
                 forceShowItem.target = self

@@ -31,11 +31,17 @@ protocol OnboardingAddressBarReporting: AnyObject {
 protocol OnboardingDialogsReporting: AnyObject {
     func measureLastDialogShown()
     func measureFireButtonTryIt()
+    func measureSuggestionPressed()
+    func measureDialogShown(dialogType: ContextualDialogType)
     func measureDialogDismissed(dialogType: ContextualDialogType)
+    func measureDialogManuallyDismissed(dialogType: ContextualDialogType)
+    func measureGotItPressed(dialogType: ContextualDialogType)
 }
 
 protocol OnboardingFireReporting: AnyObject {
     func measureFireButtonPressed()
+    func measureFireDialogBurnAction()
+    func measureFireDialogDismissed()
 }
 
 final class OnboardingPixelReporter {
@@ -43,14 +49,23 @@ final class OnboardingPixelReporter {
     private weak var onboardingStateProvider: (ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater)?
     private let fire: (PixelKitEvent, PixelKit.Frequency) -> Void
     private let userDefaults: UserDefaults
+    private let sharedPixelHandler: OnboardingSharedPixelHandling
 
     init(onboardingStateProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
  = Application.appDelegate.onboardingContextualDialogsManager,
          userDefaults: UserDefaults = UserDefaults.standard,
-         fireAction: @escaping (PixelKitEvent, PixelKit.Frequency) -> Void = { event, frequency in PixelKit.fire(event, frequency: frequency) }) {
+         fireAction: @escaping (PixelKitEvent, PixelKit.Frequency) -> Void = { event, frequency in PixelKit.fire(event, frequency: frequency) },
+         onboardingSharedPixelHandler: OnboardingSharedPixelHandling = OnboardingSharedPixelHandler(
+            platform: .macOS,
+            installTypeProvider: {
+                DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore).isReinstallingUser ? .reinstall : .newInstall
+            },
+            installDateProvider: { AppDelegate.firstLaunchDate }
+         )) {
         self.onboardingStateProvider = onboardingStateProvider
         self.fire = fireAction
         self.userDefaults = userDefaults
+        self.sharedPixelHandler = onboardingSharedPixelHandler
     }
 }
 
@@ -64,9 +79,11 @@ extension OnboardingPixelReporter: OnboardingAddressBarReporting {
     func measureAddressBarTypedIn() {
         if onboardingStateProvider?.lastDialog == .tryASearch {
             fire(ContextualOnboardingPixel.onboardingSearchCustom, .uniqueByName)
+            sharedPixelHandler.fire(.search(.clicked(.custom)))
         }
         if onboardingStateProvider?.lastDialog == .tryASite {
             fire(ContextualOnboardingPixel.onboardingVisitSiteCustom, .uniqueByName)
+            sharedPixelHandler.fire(.visitSite(.clicked(.custom)))
         }
     }
 
@@ -85,6 +102,18 @@ extension OnboardingPixelReporter: OnboardingFireReporting {
     func measureFireButtonPressed() {
         if onboardingStateProvider?.state != .onboardingCompleted {
             fire(ContextualOnboardingPixel.onboardingFireButtonPressed, .uniqueByName)
+        }
+    }
+
+    func measureFireDialogBurnAction() {
+        if onboardingStateProvider?.state != .onboardingCompleted {
+            sharedPixelHandler.fire(.fireButton(.clicked(.engage)))
+        }
+    }
+
+    func measureFireDialogDismissed() {
+        if onboardingStateProvider?.state != .onboardingCompleted {
+            sharedPixelHandler.fire(.fireButton(.clicked(.dismiss)))
         }
     }
 }
@@ -107,11 +136,75 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         }
     }
 
+    func measureDialogManuallyDismissed(dialogType: ContextualDialogType) {
+        switch dialogType {
+        case .tryASearch:
+            sharedPixelHandler.fire(.search(.clicked(.dismiss)))
+        case .searchDone:
+            sharedPixelHandler.fire(.searchResults(.clicked(.dismiss)))
+        case .tryASite:
+            sharedPixelHandler.fire(.visitSite(.clicked(.dismiss)))
+        case .trackers:
+            sharedPixelHandler.fire(.trackersBlocked(.clicked(.dismiss)))
+        case .tryFireButton:
+            sharedPixelHandler.fire(.fireButton(.clicked(.dismiss)))
+        case .highFive:
+            sharedPixelHandler.fire(.end(.clicked(.dismiss)))
+        }
+    }
+
     func measureLastDialogShown() {
         fire(ContextualOnboardingPixel.onboardingFinished, .uniqueByName)
     }
 
     func measureFireButtonTryIt() {
         fire(ContextualOnboardingPixel.onboardingFireButtonTryItPressed, .uniqueByName)
+    }
+
+    func measureDialogShown(dialogType: ContextualDialogType) {
+        switch dialogType {
+        case .tryASearch:
+            sharedPixelHandler.fire(.search(.shown))
+        case .searchDone:
+            sharedPixelHandler.fire(.searchResults(.shown))
+        case .tryASite:
+            sharedPixelHandler.fire(.visitSite(.shown))
+        case .trackers:
+            sharedPixelHandler.fire(.trackersBlocked(.shown))
+        case .tryFireButton:
+            sharedPixelHandler.fire(.fireButton(.shown))
+        case .highFive:
+            sharedPixelHandler.fire(.end(.shown))
+        }
+    }
+
+    func measureGotItPressed(dialogType: ContextualDialogType) {
+        switch dialogType {
+        case .searchDone(let shouldFollowUp):
+            sharedPixelHandler.fire(.searchResults(.clicked(.engage)))
+            if shouldFollowUp {
+                sharedPixelHandler.fire(.visitSite(.shown))
+            }
+        case .trackers(_, let shouldFollowUp):
+            sharedPixelHandler.fire(.trackersBlocked(.clicked(.engage)))
+            if shouldFollowUp {
+                sharedPixelHandler.fire(.fireButton(.shown))
+            }
+        case .highFive:
+            sharedPixelHandler.fire(.end(.clicked(.engage)))
+        case .tryASearch,
+                .tryASite,
+                .tryFireButton:
+            break
+        }
+    }
+
+    func measureSuggestionPressed() {
+        if onboardingStateProvider?.lastDialog == .tryASearch {
+            sharedPixelHandler.fire(.search(.clicked(.suggested)))
+        }
+        if onboardingStateProvider?.lastDialog == .tryASite {
+            sharedPixelHandler.fire(.visitSite(.clicked(.suggested)))
+        }
     }
 }

@@ -24,6 +24,7 @@ protocol AutoClearServiceProtocol {
 
     var autoClearTask: Task<Void, Never>? { get }
     var isClearingEnabled: Bool { get }
+    var isTabClearingEnabled: Bool { get }
     func waitForDataCleared() async
 
 }
@@ -39,6 +40,10 @@ final class AutoClearService: AutoClearServiceProtocol {
 
     var isClearingEnabled: Bool {
         autoClear.isClearingEnabled
+    }
+
+    var isTabClearingEnabled: Bool {
+        autoClear.isTabClearingEnabled
     }
 
     init(autoClear: AutoClearing,

@@ -29,7 +29,9 @@ final class KeyboardShortcutView: NSView {
         static let normalBackgroundColor = NSColor.black.withAlphaComponent(0.08)
         static let selectedBackgroundColor = NSColor.white.withAlphaComponent(0.15)
         static let normalTextColor = NSColor.suggestionText
-        static let selectedTextColor = NSColor.selectedSuggestionTint
+        // Match the chip label and arrow next to the key caps so the whole
+        // "Ask privately" chip reads as one element when the row is highlighted.
+        static let selectedTextColor = NSColor(designSystemColor: .accentContentSecondary)
     }
 
     private let stackView: NSStackView = {
@@ -40,6 +42,7 @@ final class KeyboardShortcutView: NSView {
         return stack
     }()
 
+    private var themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     private var keyCapViews: [KeyCapView] = []
 
     var isHighlighted: Bool = false {
@@ -85,8 +88,17 @@ final class KeyboardShortcutView: NSView {
     }
 
     private func updateAppearance() {
-        let bgColor = isHighlighted ? Constants.selectedBackgroundColor : Constants.normalBackgroundColor
-        let textColor = isHighlighted ? Constants.selectedTextColor : Constants.normalTextColor
+        let palette = themeManager.theme.palette
+        let bgColor: NSColor
+        let textColor: NSColor
+
+        if themeManager.isAppRebranded {
+            bgColor = isHighlighted ? palette.controlsFillSecondary : palette.controlsFillPrimary
+            textColor = isHighlighted ? palette.accentTextPrimary : palette.textPrimary
+        } else {
+            bgColor = isHighlighted ? Constants.selectedBackgroundColor : Constants.normalBackgroundColor
+            textColor = isHighlighted ? Constants.selectedTextColor : Constants.normalTextColor
+        }
 
         keyCapViews.forEach { keyCapView in
             keyCapView.backgroundColor = bgColor
@@ -123,7 +135,9 @@ private final class KeyCapView: NSView {
 
     var backgroundColor: NSColor = .clear {
         didSet {
-            layer?.backgroundColor = backgroundColor.cgColor
+            NSAppearance.withAppAppearance {
+                layer?.backgroundColor = backgroundColor.cgColor
+            }
         }
     }
 

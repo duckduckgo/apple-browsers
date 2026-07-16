@@ -32,19 +32,27 @@ struct OnboardingRestorePromptHandler: OnboardingRestorePromptHandling {
     private let configuration: Configuration
     private let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let authenticator: Authenticating
+    private let appSettings: OnboardingDebugAppSettings
 
     init(configuration: Configuration = .disabled,
          syncAutoRestoreHandler: SyncAutoRestoreHandling,
-         authenticator: Authenticating = Authenticator()) {
+         authenticator: Authenticating = Authenticator(),
+         appSettings: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings) {
         self.configuration = configuration
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.authenticator = authenticator
+        self.appSettings = appSettings
     }
 
     func isEligibleForRestorePrompt() -> Bool {
         guard case .enabled = configuration else {
             return false
         }
+#if DEBUG || ALPHA
+        if appSettings.onboardingForceRestorePromptEligible {
+            return true
+        }
+#endif
         return syncAutoRestoreHandler.isEligibleForAutoRestore() && authenticator.canAuthenticate()
     }
 

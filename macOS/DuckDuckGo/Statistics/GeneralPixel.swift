@@ -25,6 +25,14 @@ import PixelKit
 import Suggestions
 import enum UserScript.UserScriptError
 
+/// Describes why the app session was restored, reported by the `m.mac.session.restored` pixel.
+enum AppStateRestorationTrigger {
+    /// Normal session restoration (the user has session restore enabled, or accepted the restore prompt).
+    case standard
+    /// Restoration forced by an automatic restart-to-update relaunch, regardless of the session-restore setting.
+    case appUpdate
+}
+
 enum GeneralPixel: PixelKitEvent {
 
     case crash(appIdentifier: CrashPixelAppIdentifier?)
@@ -32,6 +40,7 @@ enum GeneralPixel: PixelKitEvent {
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
     case crashReportingFailedToReadContents
+    case crashReportSent
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser
@@ -40,6 +49,7 @@ enum GeneralPixel: PixelKitEvent {
     case dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: Bool)
     case dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(openFireWindowByDefault: Bool)
     case dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: Bool)
+    case dailyAutoClearOnExitEnabled
 
     case navigation(NavigationKind)
     case navigationToExternalURL
@@ -275,15 +285,10 @@ enum GeneralPixel: PixelKitEvent {
     case defaultRequestedFromHomepage
     case defaultRequestedFromHomepageSetupView
     case defaultRequestedFromSettings
-    case defaultRequestedFromOnboarding
     case defaultRequestedFromMainMenu
     case defaultRequestedFromMoreOptionsMenu
 
     // Adding to the Dock
-    case addToDockOnboardingStepPresented
-    case userAddedToDockDuringOnboarding
-    case userSkippedAddingToDockFromOnboarding
-    case startBrowsingOnboardingStepPresented
     case addToDockNewTabPageCardPresented
     case userAddedToDockFromNewTabPageCard
     case userAddedToDockFromSettings
@@ -300,6 +305,26 @@ enum GeneralPixel: PixelKitEvent {
     case serpSettingsKeyValueStoreWriteError
     case hideAIGeneratedImagesButtonClicked
     case openDuckAIButtonClick
+
+    case duckAiNativeStorageMigrationDoneUnique(key: String)
+    case duckAiNativeStorageMigrationDoneCount(key: String)
+    case duckAiNativeStorageMigrationDoneBlankCount
+
+    case duckAiNativeStorageInitSuccess
+    case duckAiNativeStorageInitError
+    case duckAiNativeStorageMigrationStarted
+    case duckAiNativeStorageMigrationAlreadyDone
+    case duckAiNativeStorageMigrationError
+    case duckAiNativeStorageSettingsPutError
+    case duckAiNativeStorageSettingsGetError
+    case duckAiNativeStorageSettingsDeleteError
+    case duckAiNativeStorageChatPutError
+    case duckAiNativeStorageChatGetError
+    case duckAiNativeStorageChatDeleteError
+    case duckAiNativeStorageFilePutError
+    case duckAiNativeStorageFileGetError
+    case duckAiNativeStorageFileListError
+    case duckAiNativeStorageFileDeleteError
 
     case protectionToggledOffBreakageReport
     case debugBreakageExperiment
@@ -415,6 +440,7 @@ enum GeneralPixel: PixelKitEvent {
     case suggestionsFetchFailed
     case appOpenURLFailed
     case appStateRestorationFailed
+    case appStateRestored(trigger: AppStateRestorationTrigger)
 
     case contentBlockingErrorReportingIssue
 
@@ -576,12 +602,20 @@ enum GeneralPixel: PixelKitEvent {
      */
     case userScriptLoadJSFailed(jsFile: String, error: Error, source: UserScriptError.Source)
 
-    case attributionXattrCanary(variantMatch: String, originMatch: String)
-
     // Website Autoplay
     case autoplaySettingAllowAll
     case autoplaySettingBlockAudio
     case autoplaySettingBlockAll
+
+    // Fire Window
+
+    /// Aggregate Fire-Window-open pixel — fires once per user per day on any Fire Window open
+    /// (manual or automatic). Answers "% DAU opened any Fire Window today".
+    case fireWindowOpenedAny
+
+    /// Fires every time a Fire Window is opened, sliced by how the open happened (manual vs.
+    /// automatic). Used to measure per-trigger DAU and per-trigger counts.
+    case fireWindowOpened(trigger: FireWindowOpenTrigger)
 
     var name: String {
         switch self {
@@ -607,6 +641,9 @@ enum GeneralPixel: PixelKitEvent {
         case .crashReportingSubmissionFailed:
             return "m_mac_crashreporting_submission-failed"
 
+        case .crashReportSent:
+            return "m_mac_crash-report_sent"
+
         case .compileRulesWait(onboardingShown: let onboardingShown, waitTime: let waitTime, result: let result):
             return "m_mac_cbr-wait_\(onboardingShown)_\(waitTime)_\(result)"
 
@@ -630,6 +667,9 @@ enum GeneralPixel: PixelKitEvent {
 
         case .dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: let fireAnimationEnabled):
             return "m_mac_fire_window_configuration_fire-animation_\(fireAnimationEnabled ? "enabled" : "disabled")"
+
+        case .dailyAutoClearOnExitEnabled:
+            return "m_mac_settings_auto-clear_on"
 
         case .navigation:
             return "m_mac_navigation"
@@ -993,14 +1033,9 @@ enum GeneralPixel: PixelKitEvent {
         case .defaultRequestedFromHomepage: return "m_mac_default_requested_from_homepage"
         case .defaultRequestedFromHomepageSetupView: return "m_mac_default_requested_from_homepage_setup_view"
         case .defaultRequestedFromSettings: return "m_mac_default_requested_from_settings"
-        case .defaultRequestedFromOnboarding: return "m_mac_default_requested_from_onboarding"
         case .defaultRequestedFromMainMenu: return "m_mac_default_requested_from_main_menu"
         case .defaultRequestedFromMoreOptionsMenu: return "m_mac_default_requested_from_more_options_menu"
 
-        case .addToDockOnboardingStepPresented: return "m_mac_add_to_dock_onboarding_step_presented"
-        case .userAddedToDockDuringOnboarding: return "m_mac_user_added_to_dock_during_onboarding"
-        case .userSkippedAddingToDockFromOnboarding: return "m_mac_user_skipped_adding_to_dock_from_onboarding"
-        case .startBrowsingOnboardingStepPresented: return "m_mac_start_browsing_onboarding_step_presented"
         case .addToDockNewTabPageCardPresented: return "m_mac_add_to_dock_new_tab_page_card_presented_u"
         case .userAddedToDockFromNewTabPageCard: return "m_mac_user_added_to_dock_from_new_tab_page_card"
         case .userAddedToDockFromSettings: return "m_mac_user_added_to_dock_from_settings"
@@ -1015,6 +1050,26 @@ enum GeneralPixel: PixelKitEvent {
         case .serpSettingsKeyValueStoreWriteError: return "m_mac_serp_settings_keyvalue_store_write_error"
         case .hideAIGeneratedImagesButtonClicked: return "m_mac_aichat_hide_ai_generated_images_button_clicked"
         case .openDuckAIButtonClick: return "m_mac_serp_settings_open_duck_ai_button_click"
+
+        case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_mac_duck-ai_native-storage_migration_done_\(key)_u"
+        case .duckAiNativeStorageMigrationDoneCount(let key): return "m_mac_duck-ai_native-storage_migration_done_\(key)_count"
+        case .duckAiNativeStorageMigrationDoneBlankCount: return "m_mac_duck-ai_native-storage_migration_done_blank_count"
+
+        case .duckAiNativeStorageInitSuccess: return "m_mac_duck-ai_native-storage_init_success"
+        case .duckAiNativeStorageInitError: return "m_mac_duck-ai_native-storage_init_error"
+        case .duckAiNativeStorageMigrationStarted: return "m_mac_duck-ai_native-storage_migration_started"
+        case .duckAiNativeStorageMigrationAlreadyDone: return "m_mac_duck-ai_native-storage_migration_already-done"
+        case .duckAiNativeStorageMigrationError: return "m_mac_duck-ai_native-storage_migration_error"
+        case .duckAiNativeStorageSettingsPutError: return "m_mac_duck-ai_native-storage_settings-put_error"
+        case .duckAiNativeStorageSettingsGetError: return "m_mac_duck-ai_native-storage_settings-get_error"
+        case .duckAiNativeStorageSettingsDeleteError: return "m_mac_duck-ai_native-storage_settings-delete_error"
+        case .duckAiNativeStorageChatPutError: return "m_mac_duck-ai_native-storage_chat-put_error"
+        case .duckAiNativeStorageChatGetError: return "m_mac_duck-ai_native-storage_chat-get_error"
+        case .duckAiNativeStorageChatDeleteError: return "m_mac_duck-ai_native-storage_chat-delete_error"
+        case .duckAiNativeStorageFilePutError: return "m_mac_duck-ai_native-storage_file-put_error"
+        case .duckAiNativeStorageFileGetError: return "m_mac_duck-ai_native-storage_file-get_error"
+        case .duckAiNativeStorageFileListError: return "m_mac_duck-ai_native-storage_file-list_error"
+        case .duckAiNativeStorageFileDeleteError: return "m_mac_duck-ai_native-storage_file-delete_error"
 
         case .protectionToggledOffBreakageReport: return "m_mac_protection-toggled-off-breakage-report"
         case .debugBreakageExperiment: return "m_mac_debug_breakage_experiment_u"
@@ -1111,6 +1166,8 @@ enum GeneralPixel: PixelKitEvent {
             return "url"
         case .appStateRestorationFailed:
             return "srf"
+        case .appStateRestored:
+            return "m_mac_session_restored"
 
         case .contentBlockingErrorReportingIssue:
             return "content_blocking_error_reporting_issue"
@@ -1327,8 +1384,6 @@ enum GeneralPixel: PixelKitEvent {
             // UserScript
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
 
-        case .attributionXattrCanary: return "m_mac_attribution-xattr-canary_u"
-
             // Website Autoplay
         case .autoplaySettingAllowAll:
             return "m_mac_autoplay_setting_allow-all"
@@ -1336,6 +1391,12 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_autoplay_setting_block-audio"
         case .autoplaySettingBlockAll:
             return "m_mac_autoplay_setting_block-all"
+
+            // Fire Window
+        case .fireWindowOpenedAny:
+            return "m_mac_firewindow_opened"
+        case .fireWindowOpened(trigger: let trigger):
+            return "m_mac_firewindow_opened_\(trigger)"
         }
     }
 
@@ -1346,6 +1407,9 @@ enum GeneralPixel: PixelKitEvent {
 
         case .navigation(let kind):
             return ["kind": kind.description]
+
+        case .appStateRestored(let trigger):
+            return ["isRestartToUpdate": String(trigger == .appUpdate)]
 
         case .dataImportFailed(source: _, sourceVersion: let version, error: let error):
             var params = error.pixelParameters
@@ -1505,9 +1569,6 @@ enum GeneralPixel: PixelKitEvent {
             params[PixelKit.Parameters.userScriptSource] = source.rawValue
             return params
 
-        case .attributionXattrCanary(let variantMatch, let originMatch):
-            return ["variant_match": variantMatch, "origin_match": originMatch]
-
         default: return nil
         }
     }
@@ -1519,6 +1580,7 @@ enum GeneralPixel: PixelKitEvent {
                 .crashReportingSubmissionFailed,
                 .crashReportCRCIDMissing,
                 .crashReportingFailedToReadContents,
+                .crashReportSent,
                 .compileRulesWait,
                 .launch,
                 .dailyActiveUser,
@@ -1527,6 +1589,9 @@ enum GeneralPixel: PixelKitEvent {
                 .dailyFireWindowConfigurationStartupFireWindowEnabled,
                 .dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled,
                 .dailyFireWindowConfigurationFireAnimationEnabled,
+                .fireWindowOpenedAny,
+                .fireWindowOpened,
+                .dailyAutoClearOnExitEnabled,
                 .navigation,
                 .navigationToExternalURL,
                 .serp,
@@ -1704,13 +1769,8 @@ enum GeneralPixel: PixelKitEvent {
                 .defaultRequestedFromHomepage,
                 .defaultRequestedFromHomepageSetupView,
                 .defaultRequestedFromSettings,
-                .defaultRequestedFromOnboarding,
                 .defaultRequestedFromMainMenu,
                 .defaultRequestedFromMoreOptionsMenu,
-                .addToDockOnboardingStepPresented,
-                .userAddedToDockDuringOnboarding,
-                .userSkippedAddingToDockFromOnboarding,
-                .startBrowsingOnboardingStepPresented,
                 .addToDockNewTabPageCardPresented,
                 .userAddedToDockFromNewTabPageCard,
                 .userAddedToDockFromSettings,
@@ -1723,6 +1783,24 @@ enum GeneralPixel: PixelKitEvent {
                 .serpSettingsKeyValueStoreWriteError,
                 .hideAIGeneratedImagesButtonClicked,
                 .openDuckAIButtonClick,
+                .duckAiNativeStorageMigrationDoneUnique,
+                .duckAiNativeStorageMigrationDoneCount,
+                .duckAiNativeStorageMigrationDoneBlankCount,
+                .duckAiNativeStorageInitSuccess,
+                .duckAiNativeStorageInitError,
+                .duckAiNativeStorageMigrationStarted,
+                .duckAiNativeStorageMigrationAlreadyDone,
+                .duckAiNativeStorageMigrationError,
+                .duckAiNativeStorageSettingsPutError,
+                .duckAiNativeStorageSettingsGetError,
+                .duckAiNativeStorageSettingsDeleteError,
+                .duckAiNativeStorageChatPutError,
+                .duckAiNativeStorageChatGetError,
+                .duckAiNativeStorageChatDeleteError,
+                .duckAiNativeStorageFilePutError,
+                .duckAiNativeStorageFileGetError,
+                .duckAiNativeStorageFileListError,
+                .duckAiNativeStorageFileDeleteError,
                 .protectionToggledOffBreakageReport,
                 .debugBreakageExperiment,
                 .passwordImportKeychainPrompt,
@@ -1773,6 +1851,7 @@ enum GeneralPixel: PixelKitEvent {
                 .suggestionsFetchFailed,
                 .appOpenURLFailed,
                 .appStateRestorationFailed,
+                .appStateRestored,
                 .contentBlockingErrorReportingIssue,
                 .contentBlockingCompilationFailed,
                 .contentBlockingCompilationTime,
@@ -1890,8 +1969,7 @@ enum GeneralPixel: PixelKitEvent {
                 .siteNotWorkingShown,
                 .siteNotWorkingWebsiteIsBroken,
                 .usageSegments,
-                .userScriptLoadJSFailed,
-                .attributionXattrCanary:
+                .userScriptLoadJSFailed:
             return [.pixelSource]
         case .settingsAddToDockShowMeHowClicked:
             return nil

@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if os(macOS)
-
 import Combine
 import Common
 import os.log
@@ -27,10 +25,16 @@ import XCTest
 
 @testable import Navigation
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 class DistributedNavigationDelegateTestsBase: XCTestCase {
 
     let standardTimeout: TimeInterval = 15
+
+    // Counts how many tests have accumulated web content processes without a
+    // bulk termination.  We never kill the current test's process directly
+    // (avoids async IPC crash in resetStateAfterProcessTermination); instead
+    // we call _terminateAllWebContentProcesses on the pool once every ~10 tests.
+    private static var accumulatedWebViewCount = 0
 
     var navigationDelegateProxy: NavigationDelegateProxy!
 
@@ -63,7 +67,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
         server?.stop()
         server = SafeHttpServer()
-        navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        navigationDelegateProxy = DistributedNavigationDelegateTestsBase.makeNavigationDelegateProxy()
         self.navigationDelegate.responders.forEach { responder in
             (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
                 XCTFail("[\(testName)] unexpected event received: \($0)")
@@ -84,8 +88,20 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
                 let navigationDelegateProxyKey = UnsafeRawPointer(bitPattern: "navigationDelegateProxyKey".hashValue)!
                 objc_setAssociatedObject(_webView, navigationDelegateProxyKey, navigationDelegateProxy, .OBJC_ASSOCIATION_RETAIN)
             }
-            _webView.killWebContentProcess()
+
+            // Save the pool before releasing the webView so we can call
+            // _terminateAllWebContentProcesses on it after the webView is gone.
+            let processPool = _webView.configuration.processPool
+            // Nil the webView first: WebPageProxy.close() fires, removeWebPage()
+            // empties m_pageMap for this process.  Any subsequent IPC-close
+            // callback from _terminateAllWebContentProcesses finds no pages and
+            // returns early, never reaching resetStateAfterProcessTermination.
             self._webView = nil
+
+            if Self.accumulatedWebViewCount > 10 {
+                Self.accumulatedWebViewCount = 0
+                processPool.perform(Selector(("_terminateAllWebContentProcesses")))
+            }
         }
         navigationDelegateProxy = nil
         currentHistoryItemIdentityCancellable = nil
@@ -98,7 +114,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 extension DistributedNavigationDelegateTestsBase {
 
     static func makeNavigationDelegateProxy() -> NavigationDelegateProxy {
@@ -106,6 +122,8 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func makeWebView(testURLSchemeHandler: TestNavigationSchemeHandler? = nil) -> WKWebView {
+        Self.accumulatedWebViewCount += 1
+
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         if let testURLSchemeHandler {
@@ -454,7 +472,7 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func response(matching url: URL) -> Int {
-        responder(at: 0).navigationResponses.firstIndex(where: { $0.url.matches(url) })!
+        responder(at: 0).navigationResponses.firstIndex(where: { $0.url.equals(url, by: .fuzzyIdentity) })!
     }
 
     // MARK: FrameInfo mocking
@@ -536,5 +554,3 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
 }
-
-#endif

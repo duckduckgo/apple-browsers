@@ -45,6 +45,9 @@ public protocol AIChatSettingsProvider {
     /// The user settings state for the AI Chat Search Input
     var isAIChatSearchInputUserSettingsEnabled: Bool { get }
 
+    /// Indicates if AI Chat Search Input was explicitly disabled by the user
+    var isAIChatSearchInputUserSettingsDisabledByUser: Bool { get }
+
     /// The user settings state for the AI Chat browsing menu icon.
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool { get }
 
@@ -53,6 +56,13 @@ public protocol AIChatSettingsProvider {
 
     /// The user settings state for the AI Chat in tab manager
     var isAIChatTabSwitcherUserSettingsEnabled: Bool { get }
+
+    /// Master on/off for the iPad tabs-bar Duck.ai shortcut (the single "Tab Bar" Settings toggle).
+    var isAIChatTabBarUserSettingsEnabled: Bool { get }
+
+    /// Per-half visibility, toggled from the chip's long-press menu (not Settings).
+    var isAIChatTabBarDuckAIButtonVisible: Bool { get }
+    var isAIChatTabBarContextualSheetButtonVisible: Bool { get }
 
     /// The user settings state for automatically attaching page context
     var isAutomaticContextAttachmentEnabled: Bool { get }
@@ -74,6 +84,13 @@ public protocol AIChatSettingsProvider {
 
     /// Updates the user settings state for the AI Chat voice search
     func enableAIChatTabSwitcherUserSettings(enable: Bool)
+
+    /// Updates the master on/off for the iPad tabs-bar Duck.ai shortcut. Enabling restores both halves.
+    func enableAIChatTabBarUserSettings(enable: Bool)
+
+    /// Updates per-half visibility (driven by the chip's long-press menu).
+    func setAIChatTabBarDuckAIButtonVisible(_ visible: Bool)
+    func setAIChatTabBarContextualSheetButtonVisible(_ visible: Bool)
 
     /// Updates the user settings state for the AI Chat Search Input
     func enableAIChatSearchInputUserSettings(enable: Bool)

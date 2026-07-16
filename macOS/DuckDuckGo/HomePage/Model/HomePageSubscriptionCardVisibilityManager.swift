@@ -24,6 +24,8 @@ protocol HomePageSubscriptionCardVisibilityManaging {
     var shouldShowSubscriptionCardPublisher: Published<Bool>.Publisher { get }
     var shouldShowSubscriptionCard: Bool { get }
     func dismissSubscriptionCard()
+    /// Re-run visibility setup after persisted subscription card state was cleared (e.g. `subscriptionCardPersistor.clear()`).
+    func refreshVisibilityAfterDebugReset()
 }
 
 final class HomePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging {
@@ -54,12 +56,21 @@ final class HomePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardV
         updateVisibility()
     }
 
+    func refreshVisibilityAfterDebugReset() {
+        cancellables.removeAll()
+        Task { @MainActor in
+            await setup()
+        }
+    }
+
     private func setup() async {
         let userHasCachedSubscription = await hasCachedSubscription()
         if userHasCachedSubscription {
             // Prevent card from showing again, even if user removes subscription from device.
             persistor.userHadSubscription = true
         }
+        // Align in-memory subscription state before subscription to prevent stale value from being used.
+        hasSubscriptionSubject.send(userHasCachedSubscription)
 
         // Avoid setting up the observers if the user has already had a subscription.
         guard !persistor.userHadSubscription else {
@@ -84,12 +95,10 @@ final class HomePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardV
         // Observe eligibility conditions
         observeSubscriptionChanges()
         checkPurchaseEligibility()
-
-        hasSubscriptionSubject.send(userHasCachedSubscription)
     }
 
     private func hasCachedSubscription() async -> Bool {
-        let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+        let currentSubscription = try? await subscriptionManager.getSubscription()
         return currentSubscription != nil
     }
 

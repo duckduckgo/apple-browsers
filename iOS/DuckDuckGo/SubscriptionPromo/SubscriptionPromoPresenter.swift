@@ -18,6 +18,7 @@
 //
 
 import DesignResourcesKit
+import MetricBuilder
 import SwiftUI
 import UIKit
 
@@ -91,7 +92,7 @@ private extension SubscriptionPromoPresenter {
         }
 
         presentationController.prefersGrabberVisible = false
-        presentationController.preferredCornerRadius = 16
+        presentationController.preferredCornerRadius = MainActor.assumeIsolated { SheetMetrics.cornerRadius }
     }
 
     @available(iOS 16.0, *)

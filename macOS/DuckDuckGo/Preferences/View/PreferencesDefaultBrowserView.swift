@@ -107,7 +107,7 @@ extension Preferences {
                         .onAppear {
                             dockModel.refresh()
                         }
-                    } else if dockModel.canShowDockInstructions {
+                    } else {
                         PreferencePaneSection(UserText.shortcuts, spacing: 4) {
                             PreferencePaneSubSection {
                                 HStack(alignment: .top) {

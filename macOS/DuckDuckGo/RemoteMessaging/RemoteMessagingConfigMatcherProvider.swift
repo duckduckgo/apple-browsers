@@ -19,6 +19,7 @@
 import Bookmarks
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import DataBrokerProtection_macOS
 import FeatureFlags
 import Foundation
@@ -131,6 +132,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var isSubscriptionExpiring = false
         var isSubscriptionExpired = false
         var subscriptionPurchasePlatform: String?
+        var subscriptionTier: String?
         var subscriptionFreeTrialActive = false
         let surveyActionMapper: RemoteMessagingSurveyActionMapping
 
@@ -138,30 +140,39 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let featureDiscovery = self.featureDiscovery()
 
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
-            subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
-            subscriptionPurchasePlatform = subscription.platform.rawValue
-            subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
+            if let subscription = try await subscriptionManager.getSubscription() {
+                subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
+                subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
+                subscriptionPurchasePlatform = subscription.platform.rawValue
+                subscriptionTier = subscription.tier?.rawValue
+                subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
-            switch subscription.status {
-            case .autoRenewable, .gracePeriod:
-                isSubscriptionActive = true
-            case .notAutoRenewable:
-                isSubscriptionActive = true
-                isSubscriptionExpiring = true
-            case .expired, .inactive:
-                isSubscriptionExpired = true
-            case .unknown:
-                break // Not supported in RMF
+                switch subscription.status {
+                case .autoRenewable, .gracePeriod:
+                    isSubscriptionActive = true
+                case .notAutoRenewable:
+                    isSubscriptionActive = true
+                    isSubscriptionExpiring = true
+                case .expired, .inactive:
+                    isSubscriptionExpired = true
+                case .unknown:
+                    break // Not supported in RMF
+                }
+
+                surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
+                    statisticsStore: statisticsStore,
+                    vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
+                    subscriptionDataProvider: subscription,
+                    autofillUsageStore: autofillUsageStore
+                )
+            } else {
+                surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
+                    statisticsStore: statisticsStore,
+                    vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
+                    subscriptionDataProvider: nil,
+                    autofillUsageStore: autofillUsageStore
+                )
             }
-
-            surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
-                statisticsStore: statisticsStore,
-                vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
-                subscriptionDataProvider: subscription,
-                autofillUsageStore: autofillUsageStore
-            )
         } catch {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
                 statisticsStore: statisticsStore,
@@ -200,11 +211,15 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
         }.map(\.rawValue)
 
+        let hardwareCanUpgradeOS = SupportedOSChecker(featureFlagger: featureFlagger).osUpgradeCapability.canUpgradeOS
+        let canUpgradeOS = OSUpgradeCapabilityOverridePersistor().canUpgradeOS(default: hardwareCanUpgradeOS)
+
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager(),
                                                      isInternalUser: internalUserDecider.isInternalUser,
-                                                     isInstalledMacAppStore: AppVersion.isAppStoreBuild),
+                                                     isInstalledMacAppStore: AppVersion.isAppStoreBuild,
+                                                     canUpgradeOS: canUpgradeOS),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
                                                        featureDiscovery: featureDiscovery,
                                                        variantManager: variantManager(),
@@ -217,6 +232,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
                                                        subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
                                                        subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+                                                       subscriptionTier: subscriptionTier,
                                                        isSubscriptionActive: isSubscriptionActive,
                                                        isSubscriptionExpiring: isSubscriptionExpiring,
                                                        isSubscriptionExpired: isSubscriptionExpired,
@@ -249,6 +265,10 @@ extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
 
     public var subscriptionBilling: String? {
         return billingPeriod.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionTier: String? {
+        return tier?.rawValue
     }
 
     public var subscriptionStartDate: Date? {

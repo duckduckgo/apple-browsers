@@ -19,6 +19,7 @@
 import AppKit
 import AppKitExtensions
 import Common
+import FoundationExtensions
 import Foundation
 import Persistence
 
@@ -53,6 +54,8 @@ extension UserDefaults {
         case alwaysRequestDownloadLocationKey = "preferences.download-location.always-request"
         case openDownloadsPopupOnCompletionKey = "preferences.downloads.open.on.completion"
         case autoconsentEnabled = "preferences.autoconsent-enabled"
+        case cookiePopupPreference = "preferences.cookie-popup.preference"
+        case didMigrateCookiePopupPreference = "preferences.cookie-popup.preference.did-migrate"
         case duckPlayerMode = "preferences.duck-player"
         case youtubeOverlayInteracted = "preferences.youtube-overlay-interacted"
         case youtubeOverlayButtonsUsed = "preferences.youtube-overlay-user-used-buttons"
@@ -119,7 +122,6 @@ extension UserDefaults {
         // Home Page
         case homePageShowPagesOnHover = "home.page.show.pages.on.hover"
         case homePageShowAllFavorites = "home.page.show.all.favorites"
-        case homePageShowAllFeatures = "home.page.show.all.features"
         case homePageShowMakeDefault = "home.page.show.make.default"
         case homePageShowAddToDock = "home.page.show.add.to.dock"
         case homePageShowImport = "home.page.show.import"

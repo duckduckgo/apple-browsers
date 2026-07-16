@@ -21,31 +21,47 @@ import SwiftUI
 import DuckUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import MetricBuilder
 
 struct CrashCollectionOnboardingView: View {
 
     @ObservedObject var model: CrashCollectionOnboardingViewModel
 
     var body: some View {
-        if #available(iOS 16.0, *) {
-            // Using NavigationStack here in order to fix presentation on the iPad, where `Navigation` would use Split Navigation view.
-            NavigationStack {
+        ZStack(alignment: .topTrailing) {
+            if #available(iOS 16.0, *) {
+                // This is only required because on iPad you get semi-transparent bars either side.
+                // Previously it was closed to place the close button but we're placing that explicitly now like
+                //  in other sheets.
+                NavigationStack {
+                    contents
+                }
+            } else {
                 contents
             }
-            .background(Color(designSystemColor: .backgroundSheets))
-        } else {
-            NavigationView {
-                contents
-            }
-            .background(Color(designSystemColor: .backgroundSheets))
+            closeButton
+                .padding(16)
         }
+        .padding(0)
+        .background(Color(designSystemColor: .backgroundTertiary))
+    }
+
+    private var closeButton: some View {
+        Button {
+            model.onDismiss(.undetermined)
+        } label: {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+        }
+        .buttonStyle(CloseButtonStyle())
+        .accessibilityLabel(UserText.keyCommandClose)
     }
 
     var contents: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(spacing: 24) {
-                    Image(decorative: "Breakage-128")
+                VStack(spacing: SheetMetrics.contentSpacing) {
+                    Image(rebrandable: "Breakage-Alert-128")
+                        .accessibilityHidden(true)
 
                     Text(UserText.crashReportDialogTitle)
                         .daxTitle1()
@@ -79,7 +95,7 @@ struct CrashCollectionOnboardingView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
                 .padding(.vertical, 20)
             }
             .modifier(ScrollDisabledIfAvailable(isDisabled: !model.isReportVisible))
@@ -108,18 +124,6 @@ struct CrashCollectionOnboardingView: View {
                 .frame(maxWidth: 360)
             }
             .padding(.init(top: 24, leading: 24, bottom: 0, trailing: 24))
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarLeading) {
-                Button {
-                    withAnimation {
-                        model.onDismiss(.undetermined)
-                    }
-                } label: {
-                    Text(UserText.keyCommandClose)
-                }
-                .buttonStyle(.plain)
-            }
         }
     }
 

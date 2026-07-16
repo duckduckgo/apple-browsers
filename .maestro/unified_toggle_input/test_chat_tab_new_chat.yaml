@@ -1,0 +1,24 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_chat_tab_new_chat
+
+---
+
+- runFlow:
+    file: ../shared/open_chat_tab.yaml
+
+# "Recent chats" opens the chat panel, which exposes the new-chat actions
+# (verified on-device: New Chat / New Voice Chat / New Image are all present here).
+- tapOn: "Recent chats"
+- assertVisible: "New Chat"
+- assertVisible: "New Voice Chat"
+- assertVisible: "New Image"
+
+# Start a new chat — the panel closes and the chat tab remains open.
+- tapOn: "New Chat"
+- assertVisible: "Close tab"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"

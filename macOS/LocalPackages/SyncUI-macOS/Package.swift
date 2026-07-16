@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "SyncUI-macOS",
     defaultLocalization: "en",
-    platforms: [ .macOS("11.4") ],
+    platforms: [ .macOS("12.3") ],
     products: [
         .library(
             name: "SyncUI-macOS",

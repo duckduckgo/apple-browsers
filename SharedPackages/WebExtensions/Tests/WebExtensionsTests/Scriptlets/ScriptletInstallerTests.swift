@@ -96,6 +96,42 @@ final class ScriptletInstallerTests: XCTestCase {
         XCTAssertEqual(content, "new content")
     }
 
+    // MARK: - Path Traversal Protection
+
+    func testWhenScriptletPathIsAbsolutePathThenInstallThrows() async {
+        let scriptlets = [Scriptlet(path: "/etc/passwd", relativeCachedPath: "ext/1.0/ok.js")]
+        try? writeCacheFile(at: "ext/1.0/ok.js", content: "content")
+
+        do {
+            try await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
+            XCTFail("Expected install to throw")
+        } catch {
+            XCTAssertEqual(error as? ScriptletError, .invalidName(name: "/etc/passwd"))
+        }
+    }
+
+    func testWhenScriptletPathContainsParentSegmentThenInstallThrows() async {
+        let scriptlets = [Scriptlet(path: "../../evil.js", relativeCachedPath: "ext/1.0/ok.js")]
+        try? writeCacheFile(at: "ext/1.0/ok.js", content: "content")
+
+        do {
+            try await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
+            XCTFail("Expected install to throw")
+        } catch {
+            XCTAssertEqual(error as? ScriptletError, .invalidName(name: "../../evil.js"))
+        }
+    }
+
+    func testWhenScriptletPathIsTraversalThenNoFileIsCopiedOutsideInstallationDirectory() async {
+        let scriptlets = [Scriptlet(path: "../escaped.js", relativeCachedPath: "ext/1.0/ok.js")]
+        try? writeCacheFile(at: "ext/1.0/ok.js", content: "evil")
+
+        try? await installer.installScriptlets(scriptlets, cacheRootDirectory: cacheRootDirectory, to: installationDirectory)
+
+        let sibling = installationDirectory.deletingLastPathComponent().appendingPathComponent("escaped.js")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: sibling.path))
+    }
+
     // MARK: - Helpers
 
     private func writeCacheFile(at relativePath: String, content: String) throws {

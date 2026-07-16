@@ -33,7 +33,6 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var pixelHandler: MockNewTabPageNextStepsCardsPixelHandler!
     private var navigator: MockNavigator!
     private var syncLauncher: MockSyncLauncher!
-    private var featureFlagger: MockFeatureFlagger!
 
     @MainActor override func setUp() {
         capturingDefaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -46,7 +45,6 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         pixelHandler = MockNewTabPageNextStepsCardsPixelHandler()
         navigator = MockNavigator()
         syncLauncher = MockSyncLauncher()
-        featureFlagger = MockFeatureFlagger()
 
         actionHandler = NewTabPageNextStepsCardsActionHandler(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -56,8 +54,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
             privacyConfigurationManager: privacyConfigManager,
             pixelHandler: pixelHandler,
             newTabPageNavigator: navigator,
-            syncLauncher: syncLauncher,
-            featureFlagger: featureFlagger
+            syncLauncher: syncLauncher
         )
     }
 
@@ -71,7 +68,6 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         pixelHandler = nil
         navigator = nil
         syncLauncher = nil
-        featureFlagger = nil
     }
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserCardThenItPresentsTheDefaultBrowserPrompt() {
@@ -89,22 +85,12 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertTrue(capturingDefaultBrowserProvider.openSystemPreferencesCalled)
     }
 
-    @MainActor func testWhenAskedToPerformActionForDockAndFeatureFlagEnabledThenItAddsAppToDockAndCallsRefreshCardsAction() {
+    @MainActor func testWhenAskedToPerformActionForDockThenItAddsAppToDockAndCallsRefreshCardsAction() {
         var cardsRefreshed = false
-        featureFlagger.enabledFeatureFlags = [.nextStepsListWidget]
         actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
 
         XCTAssertTrue(dockCustomizer.isAddedToDock)
         XCTAssertTrue(cardsRefreshed)
-    }
-
-    @MainActor func testWhenAskedToPerformActionForDockAndFeatureFlagDisabledThenItAddsAppToDockWithoutRefreshCardsAction() {
-        var cardsRefreshed = false
-        featureFlagger.enabledFeatureFlags = []
-        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
-
-        XCTAssertTrue(dockCustomizer.isAddedToDock)
-        XCTAssertFalse(cardsRefreshed)
     }
 
     @MainActor func testWhenAskedToPerformActionForImportPromptThenItOpensImportWindowAndCallsRefreshCardsAction() {
@@ -203,6 +189,12 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         actionHandler.performAction(for: .sync, refreshCardsAction: nil)
 
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .sync)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForYTAdBlockingThenItFiresPixel() {
+        actionHandler.performAction(for: .youtubeAdBlocking, refreshCardsAction: nil)
+
+        XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .youtubeAdBlocking)
     }
 
 }

@@ -97,18 +97,41 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
     private let appMessageHandler: TransparentProxyAppMessageHandler
     private let eventHandler: TransparentProxyProviderEventHandler
 
+    // MARK: - Orphan detection
+
+    private let heartbeatStore: TunnelHeartbeatStore?
+    private static let orphanCheckInterval: TimeInterval = 15
+    private static let orphanProxyAgeThreshold: TimeInterval = 60
+    private static let orphanHeartbeatAgeThreshold: TimeInterval = 60
+    private static let postWakeGracePeriod: TimeInterval = 60
+
+    @MainActor private var proxyStartedAt: Date?
+    @MainActor private var orphanFiredForCurrentEpisode = false
+    @MainActor private var orphanCheckTask: Task<Never, Error>? {
+        willSet { orphanCheckTask?.cancel() }
+    }
+
+    /// While true, the proxy returns `false` from `handleNewFlow` for every incoming flow
+    /// so the OS routes traffic as if no proxy were installed. Engaged when we detect the
+    /// orphan-proxy state; disengaged when the tunnel heartbeat reappears.
+    /// Read from non-isolated flow callbacks; mutated only from @MainActor. The race on a
+    /// Bool is benign: at worst, one flow either side of the flip gets the previous value.
+    private var isFullBypassEnabled = false
+
     // MARK: - Init
 
     public init(settings: TransparentProxySettings,
                 configuration: Configuration,
                 logger: Logger,
-                eventHandler: TransparentProxyProviderEventHandler) {
+                eventHandler: TransparentProxyProviderEventHandler,
+                heartbeatStore: TunnelHeartbeatStore? = nil) {
 
         appMessageHandler = TransparentProxyAppMessageHandler(settings: settings, logger: logger)
         self.configuration = configuration
         self.logger = logger
         self.settings = settings
         self.eventHandler = eventHandler
+        self.heartbeatStore = heartbeatStore
 
         appRoutingRulesManager = AppRoutingRulesManager(settings: settings)
 
@@ -195,14 +218,6 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
                 NENetworkRule(destinationHost: NWHostEndpoint(hostname: "duckduckgo.com", port: "443"), protocol: .any))
         }
 
-        // Please note that excluding traffic from the proxy does not mean it will be excluded from the VPN.
-        // Traffic captured by the proxy can be excluded from the VPN, so excluding traffic from the proxy actually
-        // means this traffic will always be routed through the VPN.
-        networkSettings.excludedNetworkRules = [
-            // Ref: https://app.asana.com/0/1207603085593419/1209681033289804/f
-            NENetworkRule(destinationHost: NWHostEndpoint(hostname: "push.apple.com", port: ""), protocol: .UDP)
-        ]
-
         return networkSettings
     }
 
@@ -227,6 +242,7 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
             }
 
             isRunning = true
+            startOrphanDetection()
             eventHandler.handle(event: .startAttempt(.success))
         } catch {
             eventHandler.handle(event: .startAttempt(.failure(error)))
@@ -237,6 +253,7 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
     @MainActor
     open override func stopProxy(with reason: NEProviderStopReason) async {
         stopMonitoringNetworkInterfaces()
+        stopOrphanDetection()
         isRunning = false
 
         eventHandler.handle(event: .stopped(reason))
@@ -246,6 +263,7 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
     override public func sleep(completionHandler: @escaping () -> Void) {
         eventHandler.handle(event: .sleep)
         stopMonitoringNetworkInterfaces()
+        orphanCheckTask = nil
         completionHandler()
     }
 
@@ -253,6 +271,85 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
     override public func wake() {
         eventHandler.handle(event: .wake)
         startMonitoringNetworkInterfaces()
+        scheduleOrphanCheckAfterWake()
+    }
+
+    // MARK: - Orphan detection
+
+    @MainActor
+    private func startOrphanDetection() {
+        guard settings.isOrphanProxyDetectionEnabled else { return }
+        guard heartbeatStore != nil else { return }
+        proxyStartedAt = Date()
+        orphanFiredForCurrentEpisode = false
+        orphanCheckTask = Task.periodic(
+            delay: Self.orphanCheckInterval,
+            interval: Self.orphanCheckInterval
+        ) { [weak self] in
+            await self?.checkForOrphan()
+        }
+    }
+
+    @MainActor
+    private func stopOrphanDetection() {
+        orphanCheckTask = nil
+        proxyStartedAt = nil
+        orphanFiredForCurrentEpisode = false
+        isFullBypassEnabled = false
+    }
+
+    @MainActor
+    private func scheduleOrphanCheckAfterWake() {
+        guard settings.isOrphanProxyDetectionEnabled else { return }
+        guard heartbeatStore != nil, proxyStartedAt != nil else { return }
+
+        // The grace period defers *engaging* the bypass after wake, so the tunnel has time to write
+        // a post-wake heartbeat before we judge the proxy orphaned. But if we resumed with the bypass
+        // already engaged, there's nothing to defer — a check can only lift it (or keep it), never
+        // falsely engage or re-fire the pixel — so run on the normal cadence to lift it promptly once
+        // the tunnel recovers, instead of holding traffic off the proxy for the full grace window.
+        let delay = isFullBypassEnabled ? Self.orphanCheckInterval : Self.postWakeGracePeriod
+
+        orphanCheckTask = Task.periodic(
+            delay: delay,
+            interval: Self.orphanCheckInterval
+        ) { [weak self] in
+            await self?.checkForOrphan()
+        }
+    }
+
+    @MainActor
+    private func checkForOrphan() {
+        guard let heartbeatStore, let proxyStartedAt else { return }
+
+        let now = Date()
+        let proxyAge = now.timeIntervalSince(proxyStartedAt)
+        let lastHeartbeat = heartbeatStore.lastHeartbeat
+
+        guard let decision = OrphanProxyTester.decision(
+            proxyAge: proxyAge,
+            heartbeatAge: lastHeartbeat.map { now.timeIntervalSince($0) },
+            bypassEnabled: settings.isOrphanProxyBypassEnabled,
+            isFullBypassEnabled: isFullBypassEnabled,
+            orphanFiredForCurrentEpisode: orphanFiredForCurrentEpisode,
+            proxyAgeThreshold: Self.orphanProxyAgeThreshold,
+            heartbeatAgeThreshold: Self.orphanHeartbeatAgeThreshold
+        ) else { return }
+
+        if isFullBypassEnabled, !decision.isFullBypassEnabled {
+            logger.log("🟢 Tunnel heartbeat detected — disabling proxy full-bypass mode")
+        } else if !isFullBypassEnabled, decision.isFullBypassEnabled {
+            logger.log("🟠 Tunnel heartbeat stale — enabling proxy full-bypass mode")
+        }
+
+        isFullBypassEnabled = decision.isFullBypassEnabled
+        orphanFiredForCurrentEpisode = decision.orphanFiredForCurrentEpisode
+
+        guard decision.shouldFirePixel else { return }
+
+        let heartbeatBucket = HeartbeatAgeBucket.bucket(for: lastHeartbeat, now: now)
+        let proxyBucket = ProxyAgeBucket.bucket(for: proxyAge)
+        eventHandler.handle(event: .orphaned(heartbeatAge: heartbeatBucket, proxyAge: proxyBucket))
     }
 
     private func logFlowMessage(_ flow: NEAppProxyFlow, level: OSLogType, message: String) {
@@ -282,6 +379,10 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
     }
 
     override public func handleNewFlow(_ flow: NEAppProxyFlow) -> Bool {
+        if isFullBypassEnabled {
+            return false
+        }
+
         logNewTCPFlow(flow)
 
         guard let flow = flow as? NEAppProxyTCPFlow else {
@@ -339,6 +440,9 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
     }
 
     override public func handleNewUDPFlow(_ flow: NEAppProxyUDPFlow, initialRemoteEndpoint remoteEndpoint: NWEndpoint) -> Bool {
+        if isFullBypassEnabled {
+            return false
+        }
 
         guard let remoteEndpoint = remoteEndpoint as? NWHostEndpoint,
               !isDnsServer(remoteEndpoint) else {
@@ -470,8 +574,17 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
     }
 
     private func isExcludedDomain(_ hostname: String) -> Bool {
-        settings.excludedDomains.contains { excludedDomain in
-            hostname.hasSuffix(excludedDomain)
+        Self.isExcludedDomain(hostname, excludedDomains: settings.excludedDomains)
+    }
+
+    /// Whether `hostname` should be excluded from the VPN given the list of excluded domains.
+    ///
+    /// A hostname matches an excluded domain only when it's exactly equal to it or is a subdomain of it
+    /// (i.e. ends with `.<excludedDomain>`). This prevents an excluded `bank.com` from also matching an
+    /// unrelated `evilbank.com`, which would steer that traffic around the tunnel.
+    static func isExcludedDomain(_ hostname: String, excludedDomains: [String]) -> Bool {
+        excludedDomains.contains { excludedDomain in
+            hostname == excludedDomain || hostname.hasSuffix(".\(excludedDomain)")
         }
     }
 
@@ -490,6 +603,59 @@ extension TransparentProxyProvider {
         case stopped(_ reason: NEProviderStopReason)
         case sleep
         case wake
+        case orphaned(heartbeatAge: HeartbeatAgeBucket, proxyAge: ProxyAgeBucket)
+    }
+
+    public enum HeartbeatAgeBucket: String {
+        case missing
+        case under5m = "under_5m"
+        case under30m = "under_30m"
+        case over30m = "over_30m"
+
+        static func bucket(for date: Date?, now: Date) -> Self {
+            guard let date else { return .missing }
+            switch now.timeIntervalSince(date) {
+            case ..<300: return .under5m
+            case ..<1800: return .under30m
+            default: return .over30m
+            }
+        }
+    }
+
+    public enum ProxyAgeBucket: String {
+        case under5m = "under_5m"
+        case under30m = "under_30m"
+        case under2h = "under_2h"
+        case over2h = "over_2h"
+
+        static func bucket(for proxyAge: TimeInterval) -> Self {
+            switch proxyAge {
+            case ..<300: return .under5m
+            case ..<1800: return .under30m
+            case ..<7200: return .under2h
+            default: return .over2h
+            }
+        }
+    }
+
+    public struct OrphanedEvent: PixelKitEvent {
+        public let heartbeatAge: HeartbeatAgeBucket
+        public let proxyAge: ProxyAgeBucket
+
+        public var name: String {
+            "vpn_proxy_orphaned"
+        }
+
+        public var parameters: [String: String]? {
+            [
+                "heartbeat_age": heartbeatAge.rawValue,
+                "proxy_age": proxyAge.rawValue
+            ]
+        }
+
+        public var standardParameters: [PixelKitStandardParameter]? {
+            [.pixelSource]
+        }
     }
 
     public enum StartAttemptStep: PixelKitEvent {

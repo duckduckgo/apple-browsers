@@ -39,30 +39,33 @@ final class BrowsingMenuViewController: UIViewController {
     
     private enum Contants {
         static let arrowLayerKey = "arrowLayer"
+        static let entryCellReuseIdentifier = "BrowsingMenuEntryViewCell"
+        static let separatorCellReuseIdentifier = "BrowsingMenuSeparatorViewCell"
     }
     
     typealias DismissHandler = () -> Void
     
-    @IBOutlet weak var horizontalContainer: UIView!
-    @IBOutlet weak var horizontalStackView: UIStackView!
-    @IBOutlet weak var separator: UIView!
-    @IBOutlet weak var separatorHeight: NSLayoutConstraint!
-    @IBOutlet weak var menuView: UIView!
-    @IBOutlet weak var tableView: UITableView!
-    @IBOutlet weak var arrowView: UIView!
+    private let backgroundTapButton = UIButton(type: .custom)
+    let menuView = UIView()
+    private let arrowView = UIView()
+    private let verticalStackView = UIStackView()
+    private let horizontalContainer = UIView()
+    private let horizontalStackView = UIStackView()
+    private let separator = UIView()
+    private let tableView = UITableView(frame: .zero, style: .plain)
 
     // Height to accomodate all content, can be constrained by parent view.
-    @IBOutlet weak var tableViewHeight: NSLayoutConstraint!
-    @IBOutlet var flexibleWidthConstraint: NSLayoutConstraint!
-    @IBOutlet var topConstraint: NSLayoutConstraint!
-    @IBOutlet var bottomConstraint: NSLayoutConstraint!
-    @IBOutlet var rightConstraint: NSLayoutConstraint!
-    @IBOutlet var topConstraintIPad: NSLayoutConstraint!
-    @IBOutlet var bottomConstraintIPad: NSLayoutConstraint!
+    private var tableViewHeight: NSLayoutConstraint!
+    private var flexibleWidthConstraint: NSLayoutConstraint!
+    private var topConstraint: NSLayoutConstraint!
+    private var bottomConstraint: NSLayoutConstraint!
+    private var rightConstraint: NSLayoutConstraint!
+    private var topConstraintIPad: NSLayoutConstraint!
+    private var bottomConstraintIPad: NSLayoutConstraint!
+    private var preferredWidth: NSLayoutConstraint!
+    private var separatorHeight: NSLayoutConstraint!
 
     // Width to accomodate all entries as a single line of text, can be constrained by parent view.
-    @IBOutlet weak var preferredWidth: NSLayoutConstraint!
-
     private let animator = BrowsingMenuAnimator()
 
     private var headerButtons: [BrowsingMenuButton] = []
@@ -70,26 +73,25 @@ final class BrowsingMenuViewController: UIViewController {
     private let menuEntries: [BrowsingMenuEntry]
     private let daxDialogsManager: DaxDialogsManaging
     private let appSettings: AppSettings
-    private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private var wasActionSelected: Bool = false
 
     var onDismiss: ((_ wasActionSelected: Bool) -> Void)?
 
     var isUsingSingleBar: Bool = false
 
-    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, productSurfaceTelemetry: ProductSurfaceTelemetry) -> BrowsingMenuViewController {
-        UIStoryboard(name: "BrowsingMenuViewController", bundle: nil).instantiateInitialViewController { coder in
-            BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, daxDialogsManager: daxDialogsManager, appSettings: appSettings, productSurfaceTelemetry: productSurfaceTelemetry, coder: coder)
-        }!
+    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> BrowsingMenuViewController {
+        BrowsingMenuViewController(headerEntries: headerEntries,
+                                   menuEntries: menuEntries,
+                                   daxDialogsManager: daxDialogsManager,
+                                   appSettings: appSettings)
     }
 
-    init?(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings, productSurfaceTelemetry: ProductSurfaceTelemetry, coder: NSCoder) {
+    init(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings) {
         self.headerEntries = headerEntries
         self.menuEntries = menuEntries
         self.daxDialogsManager = daxDialogsManager
         self.appSettings = appSettings
-        self.productSurfaceTelemetry = productSurfaceTelemetry
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
         self.transitioningDelegate = self
     }
 
@@ -99,15 +101,139 @@ final class BrowsingMenuViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupViews()
+        setupHierarchy()
+        setupConstraints()
+        setupTableView()
 
         configureHeader()
 
         decorate()
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        productSurfaceTelemetry.menuUsed()
+    private func setupViews() {
+        view.backgroundColor = .clear
+
+        backgroundTapButton.translatesAutoresizingMaskIntoConstraints = false
+        backgroundTapButton.accessibilityIdentifier = "browsingMenuBackground"
+        backgroundTapButton.tintColor = .clear
+        backgroundTapButton.addTarget(self, action: #selector(backgroundTapped(_:)), for: .touchUpInside)
+
+        menuView.translatesAutoresizingMaskIntoConstraints = false
+        menuView.insetsLayoutMarginsFromSafeArea = false
+
+        arrowView.translatesAutoresizingMaskIntoConstraints = false
+        arrowView.backgroundColor = .systemBackground
+
+        verticalStackView.translatesAutoresizingMaskIntoConstraints = false
+        verticalStackView.axis = .vertical
+
+        horizontalContainer.translatesAutoresizingMaskIntoConstraints = false
+        horizontalContainer.backgroundColor = .systemBackground
+
+        horizontalStackView.translatesAutoresizingMaskIntoConstraints = false
+        horizontalStackView.clipsToBounds = true
+        horizontalStackView.spacing = 12
+        horizontalStackView.insetsLayoutMarginsFromSafeArea = false
+
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        separator.backgroundColor = .separator
+
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.insetsLayoutMarginsFromSafeArea = false
+        tableView.alwaysBounceVertical = true
+        tableView.separatorStyle = .none
+        tableView.sectionHeaderHeight = 1
+        tableView.sectionFooterHeight = 1
+        tableView.backgroundColor = .systemBackground
+        if #available(iOS 11.0, *) {
+            tableView.contentInsetAdjustmentBehavior = .never
+        }
+    }
+
+    private func setupHierarchy() {
+        view.addSubview(backgroundTapButton)
+        view.addSubview(menuView)
+
+        menuView.addSubview(arrowView)
+        menuView.addSubview(verticalStackView)
+
+        verticalStackView.addArrangedSubview(horizontalContainer)
+        verticalStackView.addArrangedSubview(separator)
+        verticalStackView.addArrangedSubview(tableView)
+
+        horizontalContainer.addSubview(horizontalStackView)
+    }
+
+    private func setupConstraints() {
+        let safeArea = view.safeAreaLayoutGuide
+
+        separatorHeight = separator.heightAnchor.constraint(equalToConstant: 1)
+        tableViewHeight = tableView.heightAnchor.constraint(equalToConstant: 1000)
+        tableViewHeight.priority = .defaultHigh
+
+        preferredWidth = menuView.widthAnchor.constraint(equalToConstant: 280)
+        preferredWidth.priority = .defaultHigh
+
+        let horizontalContainerPreferredHeight = horizontalContainer.heightAnchor.constraint(equalToConstant: 85)
+        horizontalContainerPreferredHeight.priority = .defaultHigh
+
+        NSLayoutConstraint.activate([
+            backgroundTapButton.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundTapButton.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundTapButton.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundTapButton.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            menuView.leadingAnchor.constraint(greaterThanOrEqualTo: safeArea.leadingAnchor),
+
+            verticalStackView.leadingAnchor.constraint(equalTo: menuView.leadingAnchor),
+            verticalStackView.trailingAnchor.constraint(equalTo: menuView.trailingAnchor),
+            verticalStackView.topAnchor.constraint(equalTo: menuView.topAnchor),
+            menuView.bottomAnchor.constraint(equalTo: verticalStackView.bottomAnchor),
+
+            horizontalStackView.topAnchor.constraint(equalTo: horizontalContainer.topAnchor),
+            horizontalContainer.layoutMarginsGuide.trailingAnchor.constraint(equalTo: horizontalStackView.trailingAnchor),
+            horizontalContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 85),
+            horizontalContainer.bottomAnchor.constraint(equalTo: horizontalStackView.bottomAnchor),
+            horizontalStackView.leadingAnchor.constraint(equalTo: horizontalContainer.layoutMarginsGuide.leadingAnchor),
+            horizontalContainerPreferredHeight,
+
+            horizontalContainer.widthAnchor.constraint(equalTo: separator.widthAnchor),
+
+            arrowView.widthAnchor.constraint(equalToConstant: 15),
+            arrowView.heightAnchor.constraint(equalToConstant: 30),
+            arrowView.leadingAnchor.constraint(equalTo: verticalStackView.trailingAnchor),
+            arrowView.leadingAnchor.constraint(equalTo: menuView.trailingAnchor),
+            arrowView.topAnchor.constraint(equalTo: menuView.topAnchor, constant: 21),
+
+            separatorHeight,
+            tableViewHeight,
+            preferredWidth
+        ])
+
+        flexibleWidthConstraint = menuView.leadingAnchor.constraint(greaterThanOrEqualTo: safeArea.leadingAnchor, constant: 30)
+        flexibleWidthConstraint.priority = UILayoutPriority(950)
+        topConstraint = menuView.topAnchor.constraint(greaterThanOrEqualTo: safeArea.topAnchor)
+        bottomConstraint = view.bottomAnchor.constraint(equalTo: menuView.bottomAnchor, constant: -10)
+        rightConstraint = safeArea.trailingAnchor.constraint(equalTo: menuView.trailingAnchor)
+        topConstraintIPad = menuView.topAnchor.constraint(equalTo: safeArea.topAnchor, constant: 27)
+        bottomConstraintIPad = view.bottomAnchor.constraint(greaterThanOrEqualTo: menuView.bottomAnchor)
+        topConstraintIPad.isActive = false
+        bottomConstraintIPad.isActive = false
+
+        NSLayoutConstraint.activate([
+            flexibleWidthConstraint,
+            topConstraint,
+            bottomConstraint,
+            rightConstraint
+        ])
+    }
+
+    private func setupTableView() {
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.register(BrowsingMenuEntryViewCell.self, forCellReuseIdentifier: Contants.entryCellReuseIdentifier)
+        tableView.register(BrowsingMenuSeparatorViewCell.self, forCellReuseIdentifier: Contants.separatorCellReuseIdentifier)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -122,7 +248,7 @@ final class BrowsingMenuViewController: UIViewController {
         separator.isHidden = headerEntries.isEmpty
 
         for entry in headerEntries {
-            let button = BrowsingMenuButton.loadFromXib()
+            let button = BrowsingMenuButton.make()
             button.configure(with: entry) { [weak self] completion in
                 self?.wasActionSelected = true
                 self?.dismiss(animated: true, completion: completion)
@@ -210,7 +336,7 @@ final class BrowsingMenuViewController: UIViewController {
         }
     }
 
-    @IBAction func backgroundTapped(_ sender: Any) {
+    @objc func backgroundTapped(_ sender: Any) {
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
@@ -291,6 +417,15 @@ final class BrowsingMenuViewController: UIViewController {
 
 extension BrowsingMenuViewController: UITableViewDelegate {
     
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        switch menuEntries[indexPath.row] {
+        case .separator:
+            return 20
+        case .regular:
+            return UITableView.automaticDimension
+        }
+    }
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         switch menuEntries[indexPath.row] {
@@ -318,7 +453,7 @@ extension BrowsingMenuViewController: UITableViewDataSource {
         
         switch menuEntries[indexPath.row] {
         case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, _, _, _, _):
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: "BrowsingMenuEntryViewCell",
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: Contants.entryCellReuseIdentifier,
                                                            for: indexPath) as? BrowsingMenuEntryViewCell else {
                 fatalError("Cell should be dequeued")
             }
@@ -326,7 +461,7 @@ extension BrowsingMenuViewController: UITableViewDataSource {
             cell.configure(image: image, label: name, accessibilityLabel: accessibilityLabel, showNotificationDot: showNotificationDot, customDotColor: customDotColor)
             return cell
         case .separator:
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: "BrowsingMenuSeparatorViewCell",
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: Contants.separatorCellReuseIdentifier,
                                                            for: indexPath) as? BrowsingMenuSeparatorViewCell else {
                 fatalError("Cell should be dequeued")
             }

@@ -26,6 +26,8 @@ import Core
 import DataBrokerProtection_iOS
 import AIChat
 import WebExtensions
+import DuckUI
+import Persistence
 
 extension DebugScreensViewModel {
 
@@ -48,8 +50,8 @@ extension DebugScreensViewModel {
                     }
                 }
             }),
-            .action(title: "Reset Autoconsent Prompt", { _ in
-                AppUserDefaults().clearAutoconsentUserSetting()
+            .view(title: "CPM", { d in
+                CPMDebugScreensView(keyValueStore: d.keyValueStore)
             }),
             .action(title: "Reset Sync Promos", { d in
                 let syncPromoPresenter = SyncPromoManager(syncService: d.syncService)
@@ -81,17 +83,23 @@ extension DebugScreensViewModel {
 
                 controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
-            .action(title: "Show New AddressBar Modal", showNewAddressBarModal),
-            .action(title: "Reset New Address Bar Picker Data", resetNewAddressBarPickerData),
-            .action(title: "Reset Fire Mode Promotion", { _ in
-                FireModePromotionsCoordinator.resetState()
-                ActionMessageView.present(message: "Fire Mode Promotion state reset")
-            }),
             .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
 
             // MARK: SwiftUI Views
+            .view(title: "DuckUI", { _ in
+                DuckUIDebugMenuView()
+            }),
+            .view(title: "Ad Blocking", { d in
+                AdBlockingDebugView(keyValueStore: d.keyValueStore)
+            }),
             .view(title: "AI Chat", { dependencies in
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
+            }),
+            .view(title: "Duck.ai Toggle Prompt", { _ in
+                DuckAIToggleDebugView()
+            }),
+            .view(title: "Search Token", { _ in
+                SearchTokenDebugView()
             }),
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()
@@ -179,7 +187,6 @@ extension DebugScreensViewModel {
                 return self.debugStoryboard.instantiateViewController(identifier: "SyncDebugViewController") { coder in
                     SyncDebugViewController(coder: coder,
                                             sync: d.syncService,
-                                            keyValueStore: d.keyValueStore,
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
             }),
@@ -201,7 +208,9 @@ extension DebugScreensViewModel {
                     DataBrokerProtectionDebugViewController(coder: coder,
                                                             databaseDelegate: self.dependencies.databaseDelegate,
                                                             debuggingDelegate: self.dependencies.debuggingDelegate,
-                                                            runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate)
+                                                            runPrequisitesDelegate: self.dependencies.runPrequisitesDelegate,
+                                                            freemiumPIRDebugSettings: self.dependencies.freemiumPIRDebugSettings,
+                                                            freemiumDBPUserStateManager: self.dependencies.freemiumDBPUserStateManager)
                 }
             }) : nil,
             webExtensionsDebugScreen,
@@ -244,6 +253,9 @@ extension DebugScreensViewModel {
             }),
             .controller(title: "Onboarding", { d in
                 class OnboardingDebugViewController: UIHostingController<OnboardingDebugView>, OnboardingDelegate {
+
+                    func didStartOnboardingInterlude(_ interlude: OnboardingIntroStep.Interlude) {}
+
                     func onboardingCompleted(controller: UIViewController) {
                         controller.presentingViewController?.dismiss(animated: true)
                     }
@@ -253,29 +265,23 @@ extension DebugScreensViewModel {
                     func searchFromOnboarding(for query: String) {}
                 }
 
-                let isOnboardingRebranding = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.onboardingRebranding)
-                let defaultFlow: OnboardingDebugFlow = isOnboardingRebranding ? .rebranding : .legacy
-
                 weak var capturedController: OnboardingDebugViewController?
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(initialFlow: defaultFlow) { flow in
+
+                // swiftlint:disable:next empty_parentheses_with_trailing_closure
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView() {
                     guard let capturedController else { return }
 
-                    let controller: Onboarding = if flow.isRebranding {
-                        OnboardingIntroViewController.rebranded(
-                            onboardingPixelReporter: OnboardingPixelReporter(),
-                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
-                            daxDialogsManager: d.daxDialogManager,
-                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
-                        )
-                    } else {
-                        OnboardingIntroViewController.legacy(
-                            onboardingPixelReporter: OnboardingPixelReporter(),
-                            systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
-                            daxDialogsManager: d.daxDialogManager,
-                            syncAutoRestoreHandler: d.syncAutoRestoreHandler
-                        )
-                    }
-                    controller.delegate = capturedController
+                    let viewModel = OnboardingIntroFactory.makeViewModel(
+                        pixelReporter: OnboardingPixelReporter(),
+                        systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
+                        daxDialogsManager: d.daxDialogManager,
+                        syncAutoRestoreHandler: d.syncAutoRestoreHandler,
+                        onboardingManager: OnboardingManager()
+                    )
+                    let controller = OnboardingIntroFactory.makeController(
+                        viewModel: viewModel,
+                        delegate: capturedController
+                    )
                     controller.modalPresentationStyle = .overFullScreen
                     capturedController.parent?.present(controller: controller, fromView: capturedController.view)
                 })
@@ -290,24 +296,6 @@ extension DebugScreensViewModel {
         ].compactMap { $0 }
     }
     
-    private func showNewAddressBarModal(_ dependencies: DebugScreen.Dependencies) {
-        guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
-
-        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: AIChatSettings())
-        pickerViewController.modalPresentationStyle = .pageSheet
-        pickerViewController.modalTransitionStyle = .coverVertical
-        pickerViewController.isModalInPresentation = true
-
-        controller.present(pickerViewController, animated: true)
-    }
-    
-    private func resetNewAddressBarPickerData(_ dependencies: DebugScreen.Dependencies) {
-        let pickerStorage = NewAddressBarPickerStore()
-        pickerStorage.reset()
-        
-        ActionMessageView.present(message: "New Address Bar Picker data reset successfully")
-    }
-
     private func resetModalPromptsCooldownPeriod(_ dependencies: DebugScreen.Dependencies) {
         let store = PromptCooldownKeyValueFilesStore(
             keyValueStore: dependencies.keyValueStore,
@@ -332,4 +320,51 @@ extension DebugScreensViewModel {
         }
     }
 
+}
+
+/// Sub-screen grouping the CPM (Cookie Pop-up Protection) debug actions.
+private struct CPMDebugScreensView: View {
+
+    let keyValueStore: ThrowingKeyValueStoring
+
+    var body: some View {
+        List {
+            Section("Opt-in dialog") {
+                Button("Show opt-in dialog") {
+                    Self.presentOptInDialog()
+                }
+                Button("Reset app launch flag") {
+                    // Clears the shown flag + shown count.
+                    CookiePopupProtectionOptInPromptStore(keyValueStore: keyValueStore).reset()
+                    // Also lift the global modal cooldown — otherwise the queue suppresses all prompts on launch until it expires.
+                    try? keyValueStore.set(nil, forKey: PromptCooldownKeyValueFilesStore.StorageKey.lastPromptShownTimestamp)
+                    ActionMessageView.present(message: "Reset opt-in dialog launch state - DONE")
+                }
+            }
+            Section {
+                Button("Reset Autoconsent Prompt") {
+                    AppUserDefaults().clearAutoconsentUserSetting()
+                    ActionMessageView.present(message: "Reset Autoconsent Prompt - DONE")
+                }
+            }
+        }
+        .navigationTitle("CPM")
+    }
+
+    /// Presents the Cookie Pop-up Protection opt-in dialog as a sheet over the browser.
+    private static func presentOptInDialog() {
+        guard let window = UIApplication.shared.firstKeyWindow else { return }
+
+        let present = {
+            let controller = CookiePopupProtectionOptInModalPromptProvider.makeViewController()
+            window.rootViewController?.present(controller, animated: true)
+        }
+
+        // Dismiss the Settings/debug stack first so the dialog appears over the browser.
+        if let presented = window.rootViewController?.presentedViewController {
+            presented.dismiss(animated: true, completion: present)
+        } else {
+            present()
+        }
+    }
 }

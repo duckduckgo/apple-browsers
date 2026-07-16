@@ -66,55 +66,535 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sorry, dieser Code ist ungültig. Bitte stelle sicher, dass es richtig eingegeben wurde."
+            "value" : "Bitte stelle sicher, dass du den richtigen Code eingegeben oder gescannt hast."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sorry, this code is invalid. Please make sure it was entered correctly."
+            "value" : "Please make sure the correct code was entered or scanned."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lo sentimos, este código no es válido. Asegúrate de que se haya introducido correctamente."
+            "value" : "Asegúrate de haber introducido o escaneado el código correcto."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Désolé, ce code n'est pas valide. Veuillez vérifier qu'il a bien été saisi correctement."
+            "value" : "Veuillez vous assurer que le bon code a été saisi ou scanné."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spiacenti, questo codice non è valido. Assicurati che sia stato inserito correttamente."
+            "value" : "Assicurati che sia stato inserito o scansionato il codice corretto."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sorry, deze code is ongeldig. Controleer of ze correct is ingevoerd."
+            "value" : "Zorg ervoor dat de juiste code is ingevoerd of gescand."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Niestety, ten kod jest nieprawidłowy. Upewnij się, że został wprowadzony poprawnie."
+            "value" : "Upewnij się, że kod został wpisany lub zeskanowany poprawnie."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este código é inválido. Certifica-te de que foi introduzido corretamente."
+            "value" : "Confirma que introduziste ou leste o código correto."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "К сожалению, этот код недействителен. Убедитесь, что он введен правильно."
+            "value" : "Введите или отсканируйте правильный код."
+          }
+        }
+      }
+    },
+    "alert.sync-already-paired-with-account-button" : {
+      "comment" : "Button title for Sync error shown when both devices are already paired with the same account",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verstanden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Got It"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entendido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai compris"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ho capito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik snap het"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozumiem"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entendido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Понятно"
+          }
+        }
+      }
+    },
+    "alert.sync-already-paired-with-account-description" : {
+      "comment" : "Description for Sync error shown when both devices are already paired with the same account",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Geräte sind bereits mit Sync & Backup verbunden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "These devices are already connected to Sync & Backup."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estos dispositivos ya están conectados a Sync & Backup."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ces appareils sont déjà connectés à Sync & Backup."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questi dispositivi sono già connessi a Sync & Backup."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze apparaten zijn al verbonden met Sync & Backup."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te urządzenia są już połączone z usługą Sync & Backup."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estes dispositivos já estão ligados ao Sync & Backup."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эти устройства уже подключены к Sync & Backup."
+          }
+        }
+      }
+    },
+    "alert.sync-already-paired-with-account-title" : {
+      "comment" : "Title for Sync error shown when both devices are already paired with the same account",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bereits synchronisiert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Already synced."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya está sincronizado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déjà synchronisé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Già sincronizzato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al gesynchroniseerd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Już zsynchronizowane."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Já está sincronizado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уже синхронизировано."
+          }
+        }
+      }
+    },
+    "alert.sync-cancelled-from-other-device-button" : {
+      "comment" : "Button title for Sync error shown when setup is canceled from the other device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verstanden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Got It"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entendido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai compris"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ho capito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik snap het"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozumiem"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entendido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Понятно"
+          }
+        }
+      }
+    },
+    "alert.sync-cancelled-from-other-device-description" : {
+      "comment" : "Description for Sync error shown when setup is canceled from the other device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte versuche es noch einmal."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Please try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez réessayer."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riprova."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer het opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spróbuj ponownie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tenta novamente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторите попытку."
+          }
+        }
+      }
+    },
+    "alert.sync-cancelled-from-other-device-title" : {
+      "comment" : "Title for Sync error shown when setup is canceled from the other device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Synchronisierung auf deinem anderen Gerät wurde abgebrochen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync canceled from your other device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronización cancelada desde tu otro dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La synchronisation a été annulée depuis votre autre appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizzazione annullata dall'altro dispositivo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisatie geannuleerd vanaf je andere apparaat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizacja została anulowana na drugim urządzeniu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A sincronização foi cancelada no teu outro dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизация отменена с другого устройства."
+          }
+        }
+      }
+    },
+    "alert.sync-code-only-compatible-with-duckai-description" : {
+      "comment" : "Description for Sync error shown when a third-party recovery code can only be used with Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Besuche in deinem anderen Browser Duck.ai, gehe zu „Einstellungen“, wähle unter „Sync & Backup“ die Option „Aktivieren“ und anschließend „Mit anderem Gerät synchronisieren“."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "In your other browser, visit Duck.ai, go to Settings, then under “Sync & Backup” select “Turn On” and then “Sync with another device”."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En tu otro navegador, visita Duck.ai, ve a Ajustes, luego, en «Sync & Backup», selecciona «Activar» y, después, «Sincronizar con otro dispositivo»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans votre autre navigateur, visitez Duck.ai, allez dans les paramètres, puis dans la section « Sync & Backup » sélectionnez « Activer » et ensuite « Synchroniser avec un autre appareil »."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nell'altro tuo browser, visita Duck.ai, vai a Impostazioni, quindi in \"Sync & Backup\" seleziona \"Attiva\" e poi \"Sincronizza con un altro dispositivo\"."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezoek in je andere browser Duck.ai, ga naar Instellingen, selecteer vervolgens onder ‘Sync & Backup’ de optie ‘Inschakelen’ en daarna ‘Synchroniseren met een ander apparaat’."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W drugiej przeglądarce przejdź do Duck.ai, otwórz Ustawienia, a następnie w sekcji „Sync & Backup” wybierz „Włącz” i „Synchronizuj z innym urządzeniem”."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No outro navegador, acede a Duck.ai, Definições e, em \"Sincronização e cópia de segurança\" seleciona \"Ativar\" e, em seguida, \"Sincronizar com outro dispositivo\"."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте страницу duck.ai в другом вашем браузере, перейдите в «Настройки», затем в разделе «Sync & Backup» нажмите «Включить», а затем «Синхронизировать с другим устройством»."
+          }
+        }
+      }
+    },
+    "alert.sync-code-only-compatible-with-duckai-title" : {
+      "comment" : "Title for Sync error shown when a third-party recovery code can only be used with Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanne diesen Code mit einem anderen Browser als DuckDuckGo."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan this code using a browser other than DuckDuckGo."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escanea este código con un navegador que no sea DuckDuckGo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scannez ce code en utilisant un navigateur autre que DuckDuckGo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scansiona questo codice usando un browser diverso da DuckDuckGo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan deze code met een andere browser dan DuckDuckGo."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeskanuj ten kod za pomocą przeglądarki innej niż DuckDuckGo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digitaliza este código usando um navegador diferente do DuckDuckGo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отсканируйте этот код с помощью другого браузера (не DuckDuckGo)."
           }
         }
       }
@@ -299,6 +779,246 @@
         }
       }
     },
+    "alert.sync-failed-description" : {
+      "comment" : "Description for generic Sync setup failure alerts",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte versuche es noch einmal."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Please try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez réessayer."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riprova."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer het opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spróbuj ponownie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tenta novamente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторите попытку."
+          }
+        }
+      }
+    },
+    "alert.sync-failed-title" : {
+      "comment" : "Title for generic Sync setup failure alerts",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisation fehlgeschlagen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync failed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sincronización falló."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisation échouée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizzazione fallita."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisatie is mislukt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizacja nie powiodła się."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A sincronização falhou."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка синхронизации."
+          }
+        }
+      }
+    },
+    "alert.sync-from-another-connected-device-description" : {
+      "comment" : "Description for Sync error shown when a third-party account already has a native DuckDuckGo Sync credential",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte synchronisiere dieses Gerät mit einem bereits verbundenen DuckDuckGo-Browser auf einem anderen Gerät."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Please Sync this device from an already-connected DuckDuckGo browser on another device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza este dispositivo desde un navegador DuckDuckGo ya conectado en otro dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez synchroniser cet appareil à partir d'un navigateur DuckDuckGo déjà connecté sur un autre appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza questo dispositivo da un browser DuckDuckGo già connesso su un altro dispositivo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniseer dit apparaat via een DuckDuckGo-browser die al op een ander apparaat is verbonden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zsynchronizuj to urządzenie za pomocą przeglądarki DuckDuckGo, która jest już połączona na innym urządzeniu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza este dispositivo a partir de um navegador DuckDuckGo já ligado noutro dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизируйте это устройство с уже подключённым браузером DuckDuckGo на другом устройстве."
+          }
+        }
+      }
+    },
+    "alert.sync-setup-error-got-it-button" : {
+      "comment" : "Button title for Sync setup error alerts",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verstanden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Got It"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entendido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai compris"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ho capito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik snap het"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozumiem"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entendido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Понятно"
+          }
+        }
+      }
+    },
     "alert.sync-switch-account-button" : {
       "comment" : "Switch account title in alert",
       "extractionState" : "extracted_with_value",
@@ -475,6 +1195,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Переключить синхронизацию"
+          }
+        }
+      }
+    },
+    "alert.sync-update-required-title" : {
+      "comment" : "Title for Sync error shown when the app version does not support the scanned Sync code",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualisiere den DuckDuckGo-Browser und versuche es erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update the DuckDuckGo browser and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiza el navegador DuckDuckGo e inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettez à jour votre navigateur DuckDuckGo et réessayez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna il browser DuckDuckGo e riprova."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Werk de DuckDuckGo-browser bij en probeer het opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaktualizuj przeglądarkę DuckDuckGo i spróbuj ponownie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualiza o navegador DuckDuckGo e tenta novamente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновите браузер DuckDuckGo и повторите попытку."
           }
         }
       }
@@ -786,55 +1566,115 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sorry, dieser Code ist ungültig. Bitte stelle sicher, dass du den richtigen Code eingegeben oder gescannt hast."
+            "value" : "Bitte stelle sicher, dass du den richtigen Code eingegeben oder gescannt hast."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Sorry, this code is invalid. Please make sure the correct code was entered or scanned."
+            "value" : "Please make sure the correct code was entered or scanned."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lo sentimos, este código no es válido. Asegúrate de haber introducido o escaneado el código correcto."
+            "value" : "Asegúrate de haber introducido o escaneado el código correcto."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Désolé, ce code n'est pas valide. Veuillez vous assurer que le bon code a été saisi ou scanné."
+            "value" : "Veuillez vous assurer que le bon code a été saisi ou scanné."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spiacenti, questo codice non è valido. Assicurati che sia stato inserito o scansionato il codice corretto."
+            "value" : "Assicurati che sia stato inserito o scansionato il codice corretto."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sorry, deze code is ongeldig. Zorg ervoor dat de juiste code is ingevoerd of gescand."
+            "value" : "Zorg ervoor dat de juiste code is ingevoerd of gescand."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Niestety, ten kod jest nieprawidłowy. Upewnij się, że wprowadzono lub zeskanowano prawidłowy kod."
+            "value" : "Upewnij się, że kod został wpisany lub zeskanowany poprawnie."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este código é inválido. Confirma que introduziste ou leste o código correto."
+            "value" : "Confirma que introduziste ou leste o código correto."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "К сожалению, этот код недействителен. Введите или отсканируйте правильный код."
+            "value" : "Введите или отсканируйте правильный код."
+          }
+        }
+      }
+    },
+    "alert.unable-to-scan-qr-code-title" : {
+      "comment" : "Title for unable to scan qr code error",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dies ist kein gültiger Sync-Code."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This is not a valid Sync code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este no es un código de sincronización válido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce code de synchronisation n'est pas valide."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo non è un codice di sincronizzazione valido."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit is geen geldige synchronisatiecode."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To nie jest prawidłowy kod Sync."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este não é um código de sincronização válido."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недействительный код синхронизации."
           }
         }
       }
@@ -895,66 +1735,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Не удалось подключиться к серверу."
-          }
-        }
-      }
-    },
-    "alert.unable-to-sync-with-another-device-description" : {
-      "comment" : "Description for unable to sync with another device error",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Synchronisierung mit einem anderen Gerät nicht möglich."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Unable to Sync with another device."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se puede sincronizar con otro dispositivo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de synchroniser avec un autre appareil."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossibile sincronizzare con un altro dispositivo."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Er kan niet worden gesynchroniseerd met een ander apparaat."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie można zsynchronizować z innym urządzeniem."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não foi possível sincronizar com outro dispositivo."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось выполнить синхронизацию с другим устройством."
           }
         }
       }
@@ -2399,6 +3179,66 @@
         }
       }
     },
+    "preferences.preparing-to-sync.two-device.dialog-title" : {
+      "comment" : "Preparing to sync dialog title during two-device sync set up.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ende-zu-Ende-Verschlüsselung auf all deinen Geräten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "End-to-end encrypted on all your devices."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encriptado de extremo a extremo en todos tus dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiffrement de bout en bout sur tous vos appareils."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La crittografia end-to-end è attiva su tutti i dispositivi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End-to-end versleuteld op al je apparaten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szyfrowanie end-to-end na wszystkich Twoich urządzeniach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encriptado de ponta a ponta em todos os teus dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защищено сквозным шифрованием на всех ваших устройствах."
+          }
+        }
+      }
+    },
     "preferences.recover-data.link-title" : {
       "comment" : "Sync settings. Link to recover synced data.",
       "extractionState" : "extracted_with_value",
@@ -3419,6 +4259,126 @@
         }
       }
     },
+    "preferences.sync.sync-with-another-device.copy-confirmation.message" : {
+      "comment" : "Message of the reminder shown after the user copies the sync code.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kehre nach dem Einfügen des Codes zu diesem Gerät zurück."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Come back to this device after pasting the code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuelve a este dispositivo después de pegar el código."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revenez sur cet appareil après avoir collé le code."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torna su questo dispositivo dopo aver incollato il codice."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ga terug naar dit apparaat nadat je de code hebt geplakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Po wklejeniu kodu wróć do tego urządzenia."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volta a este dispositivo depois de colares o código."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "После вставки кода вернитесь к этому устройству."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.copy-confirmation.title" : {
+      "comment" : "Title of the reminder shown after the user copies the sync code.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge den Code auf deinem anderen Gerät ein"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Paste the code on your other device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pega el código en tu otro dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collez le code sur votre autre appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incolla il codice sull'altro dispositivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plak de code op je andere apparaat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wklej kod na inne urządzenie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cola o código no teu outro dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вставьте код на другом устройстве"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device.dialog-subtitle1" : {
       "comment" : "Sync with another device dialog subtitle - Instruction with sync menu path item inserted",
       "extractionState" : "stale",
@@ -4200,61 +5160,61 @@
       }
     },
     "preferences.sync.sync-with-another-device.step1" : {
-      "comment" : "First instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around 'DuckDuckGo'.",
+      "comment" : "First instruction for setting up 'Sync with another device'. The [text](url) markdown is a link and must be preserved, keeping 'DuckDuckGo App' as the link text and the URL unchanged.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Öffne auf einem anderen Gerät **DuckDuckGo**"
+            "value" : "Öffne auf einem anderen Gerät die [DuckDuckGo-App](https://duckduckgo.com/app/devices)"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "On another device, open **DuckDuckGo**"
+            "value" : "On another device, open the [DuckDuckGo App](https://duckduckgo.com/app/devices)"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abre **DuckDuckGo** en otro dispositivo"
+            "value" : "En otro dispositivo, abre la [DuckDuckGo App](https://duckduckgo.com/app/devices)"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sur un autre appareil, ouvrez **DuckDuckGo**"
+            "value" : "Sur un autre appareil, ouvre l’application [DuckDuckGo](https://duckduckgo.com/app/devices)"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Su un altro dispositivo, apri **DuckDuckGo**"
+            "value" : "Su un altro dispositivo, apri l'[app DuckDuckGo](https://duckduckgo.com/app/devices)"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open **DuckDuckGo** op een ander apparaat."
+            "value" : "Open op een ander apparaat de [DuckDuckGo-app](https://duckduckgo.com/app/devices)"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Na innym urządzeniu otwórz **DuckDuckGo**"
+            "value" : "Otwórz [DuckDuckGo App](https://duckduckgo.com/app/devices) na innym urządzeniu"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Noutro dispositivo, abre o **DuckDuckGo**"
+            "value" : "Noutro dispositivo, abre a [DuckDuckGo App](https://duckduckgo.com/app/devices)"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Откройте **DuckDuckGo** на втором устройстве."
+            "value" : "На другом устройстве откройте [DuckDuckGo App](https://duckduckgo.com/app/devices)"
           }
         }
       }
@@ -4315,6 +5275,246 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Откройте **Настройки > Sync & Backup > Синхронизировать с другим устройством**."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.step3-enter-code" : {
+      "comment" : "Third instruction for setting up 'Sync with another device', shown while entering a code from the other device. The whole sentence is wrapped in **text** bold markers, which should be preserved.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Kopier auf deinem anderen Gerät den Code und füge ihn unten ein**"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**On your other device, copy the code and paste it below**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**En tu otro dispositivo, copia el código y pégalo abajo**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Sur ton autre appareil, copie le code et colle-le ci-dessous**"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Sull'altro dispositivo, copia il codice e incolla qui sotto**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Kopieer op je andere apparaat de code en plak hem hieronder**"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Skopiuj kod i wklej go poniżej na innym urządzeniu**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**No teu outro dispositivo, copia o código e cola-o abaixo**"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Скопируйте код на другом устройстве и вставьте его ниже**"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.step3-scan-qr-code" : {
+      "comment" : "Third instruction for setting up 'Sync with another device', shown while displaying a QR code. **text** markers indicate bold styling, which should be kept around the emphasized phrase.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Richte dein Handy auf diesen Bildschirm**, um den QR-Code zu scannen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**Point your phone at this screen** to scan the QR code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Apunta tu móvil a esta pantalla** para escanear el código QR"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Pointez votre téléphone vers cet écran** pour scanner le code QR"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Punta il telefono verso questo schermo** per scansionare il codice QR"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Richt je telefoon op dit scherm** om de QR-code te scannen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aby zeskanować kod QR, **skieruj telefon na ten ekran**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Aponta o telemóvel para este ecrã** para ler o código QR"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Наведите телефон на этот экран**, чтобы отсканировать QR-код"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.step3-text-code" : {
+      "comment" : "Third instruction for setting up 'Sync with another device', shown while displaying a text code to copy. The whole sentence is wrapped in **text** bold markers, which should be preserved.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Kopiere diesen Code und füge ihn auf deinem anderen Gerät ein**"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**Copy this code and paste it on your other device**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Copia este código y pégalo en tu otro dispositivo**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Copie ce code et colle-le sur ton autre appareil**"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Copia questo codice e incollalo sull'altro dispositivo**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Kopieer deze code en plak hem op je andere apparaat**"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Skopiuj ten kod i wklej go na inne urządzenie**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Copia este código e cola-o no teu outro dispositivo**"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Скопируйте этот код и вставьте его на другом устройстве**"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.step4" : {
+      "comment" : "Fourth instruction for setting up 'Sync with another device'. **text** markers indicate bold styling, which should be kept around the emphasized phrase.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Schließ dieses Fenster nicht**, während die Verbindung hergestellt wird"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**Don’t close this window** while connecting"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**No cierres esta ventana** mientras se conecta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Ne fermez pas cette fenêtre** pendant la connexion"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Non chiudere questa finestra** durante la connessione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Sluit dit venster niet** tijdens het verbinden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podczas łączenia **nie zamykaj tego okna**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Não feches esta janela** enquanto estabeleces a ligação"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Не закрывайте это окно** во время подключения"
           }
         }
       }
@@ -5646,55 +6846,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diese Geräte werden getrennt und deine synchronisierten Daten werden vom Server gelöscht."
+            "value" : "Dein Backup wird vom Server gelöscht. Alle Geräte werden von der Synchronisierung getrennt, es werden jedoch keine Daten von den Geräten gelöscht."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "These devices will be disconnected and your synced data will be deleted from the server."
+            "value" : "Your backup will be deleted from the server. All devices will be disconnected from sync, but nothing will be deleted from any device."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estos dispositivos se desdesconectarán y tus datos sincronizados se eliminarán del servidor."
+            "value" : "Tu copia de seguridad se eliminará del servidor. Todos los dispositivos se desconectarán de la sincronización, pero no se eliminará nada de ningún dispositivo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ces appareils seront déconnectés et vos données synchronisées seront supprimées du serveur."
+            "value" : "Votre sauvegarde sera supprimée du serveur. Tous les appareils seront déconnectés de la synchronisation, mais rien ne sera supprimé sur aucun appareil."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Questi dispositivi saranno disconnessi e i dati sincronizzati saranno eliminati dal server."
+            "value" : "Il tuo backup verrà eliminato dal server. Tutti i dispositivi verranno disconnessi dalla sincronizzazione, ma nessun dato verrà eliminato da alcun dispositivo."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De verbinding met deze apparaten wordt verbroken en je gesynchroniseerde gegevens worden van de server verwijderd."
+            "value" : "Je back-up wordt verwijderd van de server. Alle apparaten worden losgekoppeld van de synchronisatie, maar er wordt niets van de apparaten verwijderd."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Te urządzenia zostaną odłączone, a zsynchronizowane dane usunięte z serwera."
+            "value" : "Twoja kopia zapasowa zostanie usunięta z serwera. Wszystkie urządzenia zostaną odłączone od synchronizacji, ale nic nie zostanie usunięte z żadnego urządzenia."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estes dispositivos serão desconectados e os dados sincronizados serão eliminados do servidor."
+            "value" : "A tua cópia de segurança será eliminada do servidor. Todos os dispositivos serão desligados da sincronização, mas nada será eliminado dos dispositivos."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Привязка устройств будет отключена, а синхронизированные данные — удалены с сервера."
+            "value" : "Ваша резервная копия будет удалена с сервера. Все устройства будут отключены от синхронизации, но никакие данные с устройств удалены не будут."
           }
         }
       }
@@ -5946,55 +7146,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deine Daten sind synchronisiert!"
+            "value" : "Neues Gerät hinzugefügt!"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Your data is synced!"
+            "value" : "New device added!"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¡Tus datos están sincronizados!"
+            "value" : "¡Nuevo dispositivo añadido!"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vos données sont synchronisées !"
+            "value" : "Nouvel appareil ajouté !"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I tuoi dati sono sincronizzati!"
+            "value" : "Nuovo dispositivo aggiunto."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Je gegevens zijn gesynchroniseerd!"
+            "value" : "Nieuw apparaat toegevoegd!"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Twoje dane są synchronizowane!"
+            "value" : "Dodano nowe urządzenie!"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Os teus dados estão sincronizados!"
+            "value" : "Novo dispositivo adicionado!"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Данные синхронизированы!"
+            "value" : "Добавлено новое устройство!"
           }
         }
       }

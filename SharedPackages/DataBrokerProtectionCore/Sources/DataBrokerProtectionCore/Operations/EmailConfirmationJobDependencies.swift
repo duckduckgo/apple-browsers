@@ -32,8 +32,9 @@ public protocol EmailConfirmationJobDependencyProviding {
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var featureFlagger: DBPFeatureFlagging { get }
-    var applicationNameForUserAgent: String? { get }
+    var applicationNameForUserAgentProvider: () -> String? { get }
     var wideEvent: WideEventManaging? { get }
+    var contentBlocking: DBPWebViewContentBlocking? { get }
 }
 
 public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyProviding {
@@ -46,8 +47,9 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let featureFlagger: DBPFeatureFlagging
-    public let applicationNameForUserAgent: String?
+    public let applicationNameForUserAgentProvider: () -> String?
     public let wideEvent: WideEventManaging?
+    public let contentBlocking: DBPWebViewContentBlocking?
 
     public init(from brokerDependencies: BrokerProfileJobDependencyProviding) {
         self.database = brokerDependencies.database
@@ -59,8 +61,9 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.captchaService = brokerDependencies.captchaService
         self.vpnBypassService = brokerDependencies.vpnBypassService
         self.featureFlagger = brokerDependencies.featureFlagger
-        self.applicationNameForUserAgent = brokerDependencies.applicationNameForUserAgent
+        self.applicationNameForUserAgentProvider = brokerDependencies.applicationNameForUserAgentProvider
         self.wideEvent = brokerDependencies.wideEvent
+        self.contentBlocking = brokerDependencies.contentBlocking
     }
 
     public init(database: DataBrokerProtectionRepository,
@@ -72,8 +75,9 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
                 captchaService: CaptchaServiceProtocol,
                 vpnBypassService: VPNBypassFeatureProvider?,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgent: String?,
-                wideEvent: WideEventManaging? = nil) {
+                applicationNameForUserAgentProvider: @escaping () -> String?,
+                wideEvent: WideEventManaging? = nil,
+                contentBlocking: DBPWebViewContentBlocking? = nil) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties
         self.privacyConfig = privacyConfig
@@ -83,7 +87,8 @@ public struct EmailConfirmationJobDependencies: EmailConfirmationJobDependencyPr
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService
         self.featureFlagger = featureFlagger
-        self.applicationNameForUserAgent = applicationNameForUserAgent
+        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
         self.wideEvent = wideEvent
+        self.contentBlocking = contentBlocking
     }
 }

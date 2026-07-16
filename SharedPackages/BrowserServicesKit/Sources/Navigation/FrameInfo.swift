@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import WebKit
 
@@ -77,13 +78,13 @@ public struct FrameInfo {
 #if _FRAME_HANDLE_ENABLED
 extension FrameInfo: Equatable {
     public static func == (lhs: FrameInfo, rhs: FrameInfo) -> Bool {
-        return lhs.handle == rhs.handle && lhs.webView == rhs.webView && lhs.isMainFrame == rhs.isMainFrame && lhs.url.matches(rhs.url) && lhs.securityOrigin == rhs.securityOrigin
+        return lhs.handle == rhs.handle && lhs.webView == rhs.webView && lhs.isMainFrame == rhs.isMainFrame && lhs.url.equals(rhs.url, by: .fuzzyIdentity) && lhs.securityOrigin == rhs.securityOrigin
     }
 }
 #else
 extension FrameInfo: Equatable {
     public static func == (lhs: FrameInfo, rhs: FrameInfo) -> Bool {
-        return lhs.webView == rhs.webView && lhs.isMainFrame && rhs.isMainFrame && lhs.url.matches(rhs.url) && lhs.securityOrigin == rhs.securityOrigin
+        return lhs.webView == rhs.webView && lhs.isMainFrame && rhs.isMainFrame && lhs.url.equals(rhs.url, by: .fuzzyIdentity) && lhs.securityOrigin == rhs.securityOrigin
     }
 }
 #endif
@@ -102,6 +103,6 @@ extension FrameInfo: CustomDebugStringConvertible {
 #else
         let handle = ""
 #endif
-        return "<Frame \(webViewPtr)_\(handle)\(isMainFrame ? ": Main" : ""); current url: \(url.absoluteString.isEmpty ? "empty" : url.absoluteString)>"
+        return "<Frame \(webViewPtr)_\(handle)\(isMainFrame ? ": Main" : ""); current url: \(url.isEmpty ? "empty" : url.shortDescription)>"
     }
 }

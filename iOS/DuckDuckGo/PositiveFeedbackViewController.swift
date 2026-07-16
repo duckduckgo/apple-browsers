@@ -18,21 +18,30 @@
 //
 
 import UIKit
+import DesignResourcesKitIcons
 
 class PositiveFeedbackViewController: UIViewController {
-    
+
     @IBOutlet weak var headerText: UILabel!
-    
+    @IBOutlet weak var headerImage: UIImageView!
+
     @IBOutlet weak var leaveFeedbackButton: UIButton!
     @IBOutlet weak var doneButton: UIButton!
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         configureLabels()
         configureButtons()
+        configureImages()
 
         decorate()
+    }
+
+    private func configureImages() {
+        if AppRebrand.isAppRebranded() {
+            headerImage.image = UIImage(resource: .responseGood56)
+        }
     }
     
     private func configureLabels() {

@@ -25,7 +25,7 @@ public final class ScanWideEventData: WideEventData {
         featureName: "pir-scan-attempt",
         mobileMetaType: "ios-pir-scan-attempt",
         desktopMetaType: "macos-pir-scan-attempt",
-        version: "1.1.0"
+        version: "1.2.0"
     )
 
     public enum AttemptType: String, Codable {

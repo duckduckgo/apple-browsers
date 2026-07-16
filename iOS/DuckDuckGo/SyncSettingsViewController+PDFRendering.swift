@@ -22,8 +22,48 @@ import Combine
 import SyncUI_iOS
 import DDGSync
 import Core
+import UniformTypeIdentifiers
 
 extension SyncSettingsViewController {
+
+    // Base list of activity types that don't make sense for sharing a sync recovery code in any form (plain text or PDF).
+    private var recoveryShareBaseExcludedActivityTypes: [UIActivity.ActivityType] {
+        var types: [UIActivity.ActivityType] = [
+            .postToFacebook,
+            .postToTwitter,
+            .postToWeibo,
+            .postToTencentWeibo,
+            .postToFlickr,
+            .postToVimeo,
+            .assignToContact,
+            .saveToCameraRoll,
+            .addToReadingList
+        ]
+        if #available(iOS 15.4, *) {
+            types.append(.sharePlay)
+        }
+        if #available(iOS 16.0, *) {
+            types.append(contentsOf: [.collaborationInviteWithLink, .collaborationCopyLink])
+        }
+        if #available(iOS 16.4, *) {
+            types.append(.addToHomeScreen)
+        }
+        return types
+    }
+
+    // Text-code share: also exclude activities that only make sense for rich documents.
+    private var recoveryCodeExcludedActivityTypes: [UIActivity.ActivityType] {
+        recoveryShareBaseExcludedActivityTypes + [
+            .openInIBooks,
+            .markupAsPDF,
+            .print
+        ]
+    }
+
+    // PDF share: allow Books and Print.
+    private var recoveryPDFExcludedActivityTypes: [UIActivity.ActivityType] {
+        recoveryShareBaseExcludedActivityTypes
+    }
 
     func shareRecoveryPDF() {
 
@@ -34,33 +74,45 @@ extension SyncSettingsViewController {
                 .generate(recoveryCode)
 
             let pdf = RecoveryCodeItem(data: data)
-            navigationController?.visibleViewController?.presentShareSheet(withItems: [pdf],
-                                                                           fromView: view)
+
+            // Present from the top-most presented controller (e.g. the V2 connecting sheet) rather than
+            // the settings VC underneath, which would already be presenting and cause the share sheet to fail.
+            let presenter = topmostPresentedViewController
+            presenter?.presentShareSheet(withItems: [pdf],
+                                         fromView: presenter?.view ?? view,
+                                         additionalExcludedActivityTypes: recoveryPDFExcludedActivityTypes)
         }
     }
 
-    func shareCode(_ code: String) {
+    private var topmostPresentedViewController: UIViewController? {
+        var presenter: UIViewController? = navigationController?.visibleViewController ?? self
+        while let presented = presenter?.presentedViewController {
+            presenter = presented
+        }
+        return presenter
+    }
 
-        navigationController?.visibleViewController?.presentShareSheet(withItems: [code],
-                                                                       fromView: view,
-                                                                       overrideInterfaceStyle: .dark) { activity, didComplete, _, _  in
+    func shareCode(_ code: String, source: CodeCollectionSource) {
+
+        let presenter = topmostPresentedViewController
+        presenter?.presentShareSheet(withItems: [code],
+                                     fromView: presenter?.view ?? view,
+                                     overrideInterfaceStyle: .dark,
+                                     additionalExcludedActivityTypes: recoveryCodeExcludedActivityTypes) { activity, didComplete, _, _  in
             guard case .copyToPasteboard = activity, didComplete else {
                 return
             }
-            guard let code = try? SyncCode.decodeBase64String(code) else {
-                return
-            }
-            if code.connect != nil {
-                Pixel.fire(pixel: .syncSetupBarcodeCodeCopied, withAdditionalParameters: [PixelParameters.source: SyncSetupSource.connect.rawValue])
-            } else if code.exchangeKey != nil {
-                Pixel.fire(pixel: .syncSetupBarcodeCodeCopied, withAdditionalParameters: [PixelParameters.source: SyncSetupSource.exchange.rawValue])
-            }
+            self.fireBarcodeCodeCopiedPixel(for: code, sourceHint: source)
         }
     }
 
 }
 
 private class RecoveryCodeItem: NSObject, UIActivityItemSource {
+
+    private enum Constants {
+        static let suggestedFileName = "Sync Data Recovery - DuckDuckGo.pdf"
+    }
 
     let data: Data
 
@@ -70,11 +122,18 @@ private class RecoveryCodeItem: NSObject, UIActivityItemSource {
     }
 
     func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
-        return URL(fileURLWithPath: "Sync Data Recovery - DuckDuckGo.pdf")
+        return URL(fileURLWithPath: Constants.suggestedFileName)
     }
 
-    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
-        data
+    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType _: UIActivity.ActivityType?) -> Any? {
+        let itemProvider = NSItemProvider(item: data as NSData, typeIdentifier: UTType.pdf.identifier)
+        itemProvider.suggestedName = Constants.suggestedFileName
+        return itemProvider
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController,
+                                dataTypeIdentifierForActivityType _: UIActivity.ActivityType?) -> String {
+        UTType.pdf.identifier
     }
 
 }

@@ -20,6 +20,7 @@ import AppKit
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import PixelKit
 import os.log
 

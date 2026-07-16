@@ -19,6 +19,7 @@
 import Foundation
 import DataBrokerProtection_macOS
 import Common
+import FoundationExtensions
 import os.log
 
 public extension Notification.Name {

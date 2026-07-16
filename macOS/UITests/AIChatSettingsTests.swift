@@ -34,7 +34,7 @@ class AIChatSettingsTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["aiChatOmnibarToggle": true, "aiChatChromeSidebar": true, "aiChatSidebarFloating": true])
+        app = XCUIApplication.setUp(featureFlags: ["aiChatChromeSidebar": true, "aiChatSidebarFloating": true, "aiFeaturesNativeControls": true])
 
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
@@ -135,15 +135,14 @@ class AIChatSettingsTests: UITestCase {
             showToggleCheckbox.click()
         }
 
-        // Disable the main Duck.ai setting
-        let disableButton = app.buttons[Identifiers.aiFeaturesToggle]
-        XCTAssertTrue(disableButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        disableButton.click()
-
-        // Confirm in the dialog
-        let confirmButton = app.buttons["Disable Duck.ai"]
-        XCTAssertTrue(confirmButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        confirmButton.click()
+        // Disable Duck.ai via the native On/Off Picker (renders as an NSPopUpButton). Selecting "Off"
+        // flips the setting directly through its binding - there is no confirmation dialog in this path.
+        let duckAIPicker = app.popUpButtons[Identifiers.aiFeaturesToggle]
+        XCTAssertTrue(duckAIPicker.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        duckAIPicker.click()
+        let offMenuItem = app.menuItems["Off"]
+        XCTAssertTrue(offMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        offMenuItem.click()
 
         // Tab bar buttons should be hidden
         let titleButton = app.windows.firstMatch.buttons[Identifiers.duckAITitleButton]
@@ -190,8 +189,11 @@ class AIChatSettingsTests: UITestCase {
         app.activateAddressBar()
         addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
-        let enableButton = app.buttons[Identifiers.aiFeaturesToggle]
-        XCTAssertTrue(enableButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        enableButton.click()
+        let restorePicker = app.popUpButtons[Identifiers.aiFeaturesToggle]
+        XCTAssertTrue(restorePicker.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        restorePicker.click()
+        let onMenuItem = app.menuItems["On"]
+        XCTAssertTrue(onMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        onMenuItem.click()
     }
 }

@@ -19,6 +19,7 @@
 import AppKit
 import Carbon
 import Combine
+import Common
 import SwiftUI
 import PixelKit
 
@@ -33,6 +34,7 @@ final class BookmarkListViewController: NSViewController {
 
     fileprivate enum Constants {
         static let preferredContentSize = CGSize(width: 420, height: 500)
+        static var panelInset: CGFloat { AppVersion.isLiquidGlassSupported ? 14 : 0 }
     }
 
     weak var delegate: BookmarkListViewControllerDelegate?
@@ -141,7 +143,7 @@ final class BookmarkListViewController: NSViewController {
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
 
     private lazy var syncPromoViewHostingView: NSHostingView<SyncPromoView> = {
-        let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
+        let model = SyncPromoViewModel(isAppRebranded: themeManager.isAppRebranded, touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
             self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
         }, dismissButtonAction: { [weak self] in
             self?.syncPromoManager.dismissPromoFor(.bookmarks)
@@ -277,6 +279,7 @@ final class BookmarkListViewController: NSViewController {
         manageBookmarksButton.imageHugsTitle = true
 
         scrollView.borderType = .noBorder
+        scrollView.focusRingType = .none
         scrollView.drawsBackground = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasHorizontalScroller = false
@@ -285,13 +288,17 @@ final class BookmarkListViewController: NSViewController {
         scrollView.usesPredominantAxisScrolling = false
         scrollView.autohidesScrollers = true
         scrollView.automaticallyAdjustsContentInsets = false
-        scrollView.scrollerInsets = NSEdgeInsets(top: 5, left: 0, bottom: 5, right: 0)
-        scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 12)
+        scrollView.scrollerInsets = NSEdgeInsets(top: 5, left: 0, bottom: 5, right: AppVersion.isLiquidGlassSupported ? -10 : 0)
+        scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: AppVersion.isLiquidGlassSupported ? 4 : -2, right: 0)
 
         let column = NSTableColumn()
-        column.width = scrollView.frame.width - (showSyncPromo ? 44 : 32)
+        column.width = scrollView.frame.width - (showSyncPromo ? 44 : 32) - 2 * Constants.panelInset
+        column.minWidth = column.width
+        column.maxWidth = column.width
+        column.resizingMask = []
         outlineView.addTableColumn(column)
-        outlineView.translatesAutoresizingMaskIntoConstraints = showSyncPromo ? false : true
+        outlineView.columnAutoresizingStyle = .noColumnAutoresizing
+        outlineView.focusRingType = .none
         if showSyncPromo {
             outlineView.translatesAutoresizingMaskIntoConstraints = false
         } else {
@@ -340,7 +347,7 @@ final class BookmarkListViewController: NSViewController {
         titleTextField.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
 
         NSLayoutConstraint.activate([
-            titleTextField.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
+            titleTextField.topAnchor.constraint(equalTo: view.topAnchor, constant: 13),
             titleTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
 
             newBookmarkButton.heightAnchor.constraint(equalToConstant: 28),
@@ -367,10 +374,10 @@ final class BookmarkListViewController: NSViewController {
             }()),
 
             stackView.centerYAnchor.constraint(equalTo: titleTextField.centerYAnchor),
-            view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 20),
+            view.trailingAnchor.constraint(equalTo: stackView.trailingAnchor, constant: 16),
 
             {
-                boxDividerTopConstraint = boxDivider.topAnchor.constraint(equalTo: titleTextField.bottomAnchor, constant: 12)
+                boxDividerTopConstraint = boxDivider.topAnchor.constraint(equalTo: titleTextField.bottomAnchor, constant: 13)
                 return boxDividerTopConstraint
             }(),
             boxDivider.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -378,8 +385,8 @@ final class BookmarkListViewController: NSViewController {
 
             scrollView.topAnchor.constraint(equalTo: boxDivider.bottomAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.panelInset),
+            view.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: Constants.panelInset),
 
             emptyStateHostingView.topAnchor.constraint(equalTo: boxDivider.bottomAnchor),
             emptyStateHostingView.centerXAnchor.constraint(equalTo: boxDivider.centerXAnchor),
@@ -455,6 +462,19 @@ final class BookmarkListViewController: NSViewController {
                 self?.updateDocumentViewHeight()
             }
         }.store(in: &cancellables)
+
+        // Bookmark favicons are lazy-loaded: `Bookmark.favicon(.small)` may return `nil` on a cache miss and the
+        // cell falls back to a default icon. When the image is decoded later, `.faviconCacheUpdated` is posted; reload
+        // the outline when the update relates to a host of one of our bookmarks (or defensively if no payload).
+        NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let update = notification.faviconsCacheUpdate, update.hosts.isDisjoint(with: self.bookmarkManager.allHosts()) {
+                    return
+                }
+                self.reloadData()
+            }.store(in: &cancellables)
     }
 
     private func reloadData() {
@@ -929,11 +949,11 @@ extension BookmarkListViewController {
                                         documentView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
                                         documentView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
                                         documentView.trailingAnchor.constraint(lessThanOrEqualTo: scrollView.contentView.trailingAnchor),
-                                        documentView.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor, constant: -12),
+                                        documentView.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
 
-                                        syncPromoViewHostingView.topAnchor.constraint(equalTo: documentView.topAnchor, constant: 8),
-                                        syncPromoViewHostingView.leadingAnchor.constraint(equalTo: documentView.leadingAnchor, constant: 8),
-                                        syncPromoViewHostingView.trailingAnchor.constraint(equalTo: documentView.trailingAnchor, constant: -8),
+                                        syncPromoViewHostingView.topAnchor.constraint(equalTo: documentView.topAnchor, constant: AppVersion.isLiquidGlassSupported ? 14 : 8),
+                                        syncPromoViewHostingView.leadingAnchor.constraint(equalTo: documentView.leadingAnchor, constant: AppVersion.isLiquidGlassSupported ? 0 : 8),
+                                        syncPromoViewHostingView.trailingAnchor.constraint(equalTo: documentView.trailingAnchor, constant: AppVersion.isLiquidGlassSupported ? 0 : -8),
 
                                         outlineView.leadingAnchor.constraint(equalTo: documentView.leadingAnchor),
                                         outlineView.trailingAnchor.constraint(equalTo: documentView.trailingAnchor),

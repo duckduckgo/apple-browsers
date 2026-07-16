@@ -195,8 +195,7 @@ final class ModalPromptCoordinationServiceTests {
         launchSourceManagerMock.source = .standard
         contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = OmniBarEditingStateViewController(
-            switchBarHandler: MockSwitchBarHandler(),
-            escapeHatch: nil
+            switchBarHandler: MockSwitchBarHandler()
         )
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
@@ -237,7 +236,8 @@ final class ModalPromptCoordinationServiceTests {
             .subscriptionPromo,
             .newAddressBarPicker,
             .defaultBrowser,
-            .whatsNew
+            .whatsNew,
+            .cookiePopupProtectionOptIn
         ]
     )
     func whenHigherPriorityProvidersReturnNilThenCorrectProviderIsUsed(priority: ProviderPriority) throws {
@@ -251,6 +251,7 @@ final class ModalPromptCoordinationServiceTests {
             winBackOffer: MockModalPromptProvider(shouldReturnPrompt: priority == .winBackOffer),
             subscriptionPromo: MockModalPromptProvider(shouldReturnPrompt: priority == .subscriptionPromo),
             whatsNew: MockModalPromptProvider(shouldReturnPrompt: priority == .whatsNew),
+            cookiePopupProtectionOptIn: MockModalPromptProvider(shouldReturnPrompt: priority == .cookiePopupProtectionOptIn),
         )
 
         launchSourceManagerMock.source = .standard
@@ -290,9 +291,10 @@ extension ModalPromptProviders {
         case .defaultBrowser: return defaultBrowser
         case .newAddressBarPicker: return newAddressBarPicker
         case .whatsNew: return whatsNew
+        case .cookiePopupProtectionOptIn: return cookiePopupProtectionOptIn
         }
     }
-    
+
 }
 
 enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
@@ -301,6 +303,7 @@ enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
     case newAddressBarPicker = 2
     case defaultBrowser = 3
     case whatsNew = 4
+    case cookiePopupProtectionOptIn = 5
 
     var index: Int { rawValue }
 
@@ -311,6 +314,7 @@ enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
         case .newAddressBarPicker: return "NewAddressBarPicker"
         case .defaultBrowser: return "DefaultBrowser"
         case .whatsNew: return "WhatsNew"
+        case .cookiePopupProtectionOptIn: return "CookiePopupProtectionOptIn"
         }
     }
 }
@@ -334,8 +338,10 @@ private final class MockSwitchBarHandler: SwitchBarHandling {
     var isTopBarPosition: Bool = true
     var isToggleEnabled: Bool = false
     var isFireTab: Bool = false
+    var hidesVoiceButton: Bool = false
     var isUsingExpandedBottomBarHeight: Bool = false
     var isUsingFadeOutAnimation: Bool = false
+    var shouldDisableAutocorrectOnEmpty: Bool = false
     var hasSubmittedPrompt: Bool = false
     let isAIVoiceChatEnabled: Bool = false
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
@@ -344,7 +350,6 @@ private final class MockSwitchBarHandler: SwitchBarHandling {
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
-    var searchGoToButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
     var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { Empty().eraseToAnyPublisher() }
@@ -356,7 +361,6 @@ private final class MockSwitchBarHandler: SwitchBarHandling {
     func microphoneButtonTapped() {}
     func markUserInteraction() {}
     func clearButtonTapped() {}
-    func searchGoToButtonTapped() {}
     func stopGeneratingButtonTapped() {}
     func updateBarPosition(isTop: Bool) {}
 }

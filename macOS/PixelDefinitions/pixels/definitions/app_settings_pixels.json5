@@ -1,45 +1,66 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
+    "settings_email_protection_opened": {
+        "description": "Fires when the user opens the Email Protection settings pane.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "subscribed"]
+    },
+    "browser_menu_email_protection": {
+        "description": "Fires when the user clicks the Email Protection submenu item in the browser overflow menu.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "subscribed"]
+    },
     "m_mac_settings_sync_app_icon_with_theme_turned_on": {
         "description": "Fired when the user turns on the setting to sync the app icon with the selected theme",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_settings_sync_app_icon_with_theme_turned_off": {
         "description": "Fired when the user turns off the setting to sync the app icon with the selected theme",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_settings_theme_appearance_changed": {
         "description": "Fired when Browser Theme Appearance setting is changed",
         "owners": ["jleandroperez"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "themeChangeSource"]
+        "parameters": ["appVersion", "pixelSource", "channel", "themeChangeSource"]
     },
     "m_mac_settings_theme_name_changed": {
         "description": "Fired when Browser Theme Name setting is changed",
         "owners": ["jleandroperez"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "themeChangeSource", "themeName"]
+        "parameters": ["appVersion", "pixelSource", "channel", "themeChangeSource", "themeName"]
     },
     "m_mac_settings_add-to-dock_show-me-how-clicked": {
         "description": "Fired when Add to Dock Show Me How link in settings is clicked to open the demo video",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "m_mac_settings_youtubeadblocking_opened": {
         "description": "Fired daily when the YouTube Ad Blocking settings pane is opened",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_settings_auto-clear_on": {
+        "description": "Fires once per day when the user has the Burn-On-Exit (auto-clear data on quit) setting enabled.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

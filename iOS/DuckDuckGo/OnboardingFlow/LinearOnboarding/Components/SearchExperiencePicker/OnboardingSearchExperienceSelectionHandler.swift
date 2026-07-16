@@ -19,20 +19,17 @@
 
 import Combine
 import AIChat
-import PrivacyConfig
 
 final class OnboardingSearchExperienceSelectionHandler {
     private let daxDialogs: DaxDialogs
     private let aiChatSettings: AIChatSettingsProvider
-    private let featureFlagger: FeatureFlagger
     private var onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
 
     private var cancellables: Set<AnyCancellable> = []
 
-    init(daxDialogs: DaxDialogs, aiChatSettings: AIChatSettingsProvider, featureFlagger: FeatureFlagger, onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider) {
+    init(daxDialogs: DaxDialogs, aiChatSettings: AIChatSettingsProvider, onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider) {
         self.daxDialogs = daxDialogs
         self.aiChatSettings = aiChatSettings
-        self.featureFlagger = featureFlagger
         self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         setupSubscriptions()
     }
@@ -44,8 +41,8 @@ final class OnboardingSearchExperienceSelectionHandler {
             }
             .store(in: &cancellables)
     }
+
     private func updateAIChatSettings() {
-        guard featureFlagger.isFeatureOn(.onboardingSearchExperience) else { return }
         guard !daxDialogs.isEnabled else { return }
         guard !onboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings else { return }
         guard onboardingSearchExperienceProvider.didMakeChoiceDuringOnboarding else { return }

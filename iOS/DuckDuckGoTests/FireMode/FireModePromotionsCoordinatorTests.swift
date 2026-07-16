@@ -19,25 +19,26 @@
 
 import XCTest
 import Core
+import Persistence
+import PersistenceTestingUtils
 @testable import DuckDuckGo
 
 final class FireModePromotionsCoordinatorTests: XCTestCase {
 
     private var sut: FireModePromotionsCoordinator!
     private var mockCapability: MockFireModeCapability!
-    private var userDefaults: UserDefaults!
+    private var keyValueStore: InMemoryKeyValueStore!
+    private var storage: any KeyedStoring<FireModePromotionKeys> { keyValueStore.keyedStoring() }
 
     override func setUp() {
         super.setUp()
         mockCapability = MockFireModeCapability()
-        userDefaults = UserDefaults(suiteName: "\(type(of: self))")!
-        userDefaults.removePersistentDomain(forName: "\(type(of: self))")
+        keyValueStore = InMemoryKeyValueStore()
         sut = makeSUT()
     }
 
     override func tearDown() {
-        userDefaults.removePersistentDomain(forName: "\(type(of: self))")
-        userDefaults = nil
+        keyValueStore = nil
         mockCapability = nil
         sut = nil
         super.tearDown()
@@ -52,10 +53,10 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
-    func testWhenFeatureFlagIsEnabledAndConditionsMetThenEligible() {
+    func testWhenFeatureFlagIsEnabledAndConditionsMetThenStillNotEligible() {
         setNTPEligibleState()
 
-        XCTAssertTrue(sut.isNTPPromotionEligible)
+        XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
     // MARK: - NTP Promotion: Burn Prerequisite
@@ -66,18 +67,18 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
-    func testWhenUserHasBurnedTabsThenEligible() {
+    func testWhenUserHasBurnedTabsThenStillNotEligible() {
         setNTPEligibleState()
 
-        XCTAssertTrue(sut.isNTPPromotionEligible)
+        XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
-    func testWhenMarkBurnPerformedCalledThenBurnStateIsPersisted() {
+    func testWhenMarkBurnPerformedCalledThenStillNotEligible() {
         mockCapability.isFireModeEnabled = true
         sut.markBurnPerformed()
 
         let freshSUT = makeSUT()
-        XCTAssertTrue(freshSUT.isNTPPromotionEligible)
+        XCTAssertFalse(freshSUT.isNTPPromotionEligible)
     }
 
     // MARK: - NTP Promotion: Fire Mode Visited
@@ -98,27 +99,13 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isNTPPromotionEligible)
     }
 
-    // MARK: - NTP Promotion: Expiration
+    // MARK: - NTP Promotion: Show At Most Once
 
-    func testWhenPromotionShownWithinThreeDaysThenEligible() {
+    func testWhenPromotionShownThenNotEligibleAgain() {
         setNTPEligibleState()
         sut.markNTPPromotionShown()
 
-        XCTAssertTrue(sut.isNTPPromotionEligible)
-    }
-
-    func testWhenPromotionShownMoreThanThreeDaysAgoThenNotEligible() {
-        setNTPEligibleState()
-        let fourDaysAgo = Date().addingTimeInterval(-4 * 24 * 60 * 60)
-        userDefaults.set(fourDaysAgo, forKey: "com.duckduckgo.ios.firePromotion.ntp.firstSeenDate")
-
         XCTAssertFalse(sut.isNTPPromotionEligible)
-    }
-
-    func testWhenPromotionNeverShownAndConditionsMetThenEligible() {
-        setNTPEligibleState()
-
-        XCTAssertTrue(sut.isNTPPromotionEligible)
     }
 
     // MARK: - NTP Promotion: markNTPPromotionShown
@@ -126,105 +113,62 @@ final class FireModePromotionsCoordinatorTests: XCTestCase {
     func testWhenMarkShownCalledFirstTimeThenSetsFirstSeenDate() {
         sut.markNTPPromotionShown()
 
-        let storedDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.ntp.firstSeenDate") as? Date
-        XCTAssertNotNil(storedDate)
+        XCTAssertNotNil(storage.ntpFirstSeenDate)
     }
 
     func testWhenMarkShownCalledMultipleTimesThenDoesNotOverwriteFirstSeenDate() {
         sut.markNTPPromotionShown()
-        let firstDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.ntp.firstSeenDate") as? Date
+        let firstDate = storage.ntpFirstSeenDate
 
         sut.markNTPPromotionShown()
-        let secondDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.ntp.firstSeenDate") as? Date
+        let secondDate = storage.ntpFirstSeenDate
 
         XCTAssertEqual(firstDate, secondDate)
     }
 
-    // MARK: - Menu Promotion: Feature Flag
+    // MARK: - Tab Switcher Tip: Not Expired Initially
 
-    func testWhenFeatureFlagDisabledThenMenuNotEligible() {
-        XCTAssertFalse(sut.isMenuPromotionEligible)
+    func testWhenTipNeverShownThenNotExpired() {
+        XCTAssertFalse(sut.isTabSwitcherTipExpired)
     }
 
-    func testWhenFeatureFlagEnabledThenMenuEligible() {
-        mockCapability.isFireModeEnabled = true
+    // MARK: - Tab Switcher Tip: markTabSwitcherTipShown
 
-        XCTAssertTrue(sut.isMenuPromotionEligible)
+    func testWhenMarkTabSwitcherTipShownCalledFirstTimeThenSetsFirstSeenDate() {
+        sut.markTabSwitcherTipShown()
+
+        XCTAssertNotNil(storage.tabSwitcherTipFirstSeenDate)
     }
 
-    // MARK: - Menu Promotion: Fire Mode Visited
+    func testWhenMarkTabSwitcherTipShownCalledMultipleTimesThenDoesNotOverwriteFirstSeenDate() {
+        sut.markTabSwitcherTipShown()
+        let firstDate = storage.tabSwitcherTipFirstSeenDate
 
-    func testWhenFireModeVisitedThenMenuNotEligible() {
-        mockCapability.isFireModeEnabled = true
-        sut.markFireModeVisited()
-
-        XCTAssertFalse(sut.isMenuPromotionEligible)
-    }
-
-    // MARK: - Menu Promotion: Engaged
-
-    func testWhenMenuPromotionEngagedThenMenuNotEligible() {
-        mockCapability.isFireModeEnabled = true
-        sut.markMenuPromotionEngaged()
-
-        XCTAssertFalse(sut.isMenuPromotionEligible)
-    }
-
-    // MARK: - Menu Promotion: Shown Count
-
-    func testWhenPromotionShownFiveTimesThenMenuStillEligibleOnFifthAndIneligibleOnSixth() {
-        mockCapability.isFireModeEnabled = true
-        for _ in 0..<4 {
-            sut.markMenuPromotionShown()
-        }
-
-        XCTAssertTrue(sut.isMenuPromotionEligible, "Should still be eligible before 5th showing")
-
-        sut.markMenuPromotionShown()
-
-        XCTAssertFalse(sut.isMenuPromotionEligible, "Should become ineligible after 5th showing")
-    }
-
-    // MARK: - Menu Promotion: Expiration
-
-    func testWhenPromotionFirstShownWithinFourteenDaysThenMenuEligible() {
-        mockCapability.isFireModeEnabled = true
-        sut.markMenuPromotionShown()
-
-        XCTAssertTrue(sut.isMenuPromotionEligible)
-    }
-
-    func testWhenPromotionFirstShownMoreThanFourteenDaysAgoThenMenuNotEligible() {
-        mockCapability.isFireModeEnabled = true
-        let fifteenDaysAgo = Date().addingTimeInterval(-15 * 24 * 60 * 60)
-        userDefaults.set(fifteenDaysAgo, forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate")
-
-        XCTAssertFalse(sut.isMenuPromotionEligible)
-    }
-
-    // MARK: - Menu Promotion: markMenuPromotionShown
-
-    func testWhenMarkMenuPromotionShownCalledFirstTimeThenSetsFirstShownDate() {
-        sut.markMenuPromotionShown()
-
-        let storedDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate") as? Date
-        XCTAssertNotNil(storedDate)
-    }
-
-    func testWhenMarkMenuPromotionShownCalledMultipleTimesThenDoesNotOverwriteFirstShownDate() {
-        sut.markMenuPromotionShown()
-        let firstDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate") as? Date
-
-        sut.markMenuPromotionShown()
-        let secondDate = userDefaults.object(forKey: "com.duckduckgo.ios.firePromotion.menu.promotionFirstShownDate") as? Date
+        sut.markTabSwitcherTipShown()
+        let secondDate = storage.tabSwitcherTipFirstSeenDate
 
         XCTAssertEqual(firstDate, secondDate)
+    }
+
+    // MARK: - Tab Switcher Tip: Expiration
+
+    func testWhenTipShownWithinThreeDaysThenNotExpired() {
+        sut.markTabSwitcherTipShown()
+
+        XCTAssertFalse(sut.isTabSwitcherTipExpired)
+    }
+
+    func testWhenTipShownMoreThanThreeDaysAgoThenExpired() {
+        let fourDaysAgo = Date().addingTimeInterval(-4 * 24 * 60 * 60)
+        storage.tabSwitcherTipFirstSeenDate = fourDaysAgo
+
+        XCTAssertTrue(sut.isTabSwitcherTipExpired)
     }
 
     // MARK: - Helpers
 
     private func makeSUT() -> FireModePromotionsCoordinator {
-        FireModePromotionsCoordinator(fireModeCapability: mockCapability, userDefaults: userDefaults)
+        FireModePromotionsCoordinator(fireModeCapability: mockCapability, storage: storage)
     }
 
     private func setNTPEligibleState() {

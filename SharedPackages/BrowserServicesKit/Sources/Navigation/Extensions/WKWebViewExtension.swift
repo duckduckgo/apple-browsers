@@ -110,13 +110,11 @@ extension WKWebView {
             NSSelectorFromString("reload"): #selector(navigation_reload),
             NSSelectorFromString("reloadFromOrigin"): #selector(navigation_reloadFromOrigin),
         ]
-        if #available(macOS 12.0, iOS 15.0, *) {
-            selectors.merge([
-                #selector(loadFileRequest(_:allowingReadAccessTo:)): #selector(navigation_loadFileRequest(_:allowingReadAccessTo:)),
-                #selector(loadSimulatedRequest(_:response:responseData:)): #selector(navigation_loadSimulatedRequest(_:response:responseData:)),
-                #selector(loadSimulatedRequest(_:responseHTML:)): #selector(navigation_loadSimulatedRequest(_:responseHTML:)),
-            ]) { _, _ in fatalError() }
-        }
+        selectors.merge([
+            #selector(loadFileRequest(_:allowingReadAccessTo:)): #selector(navigation_loadFileRequest(_:allowingReadAccessTo:)),
+            #selector(loadSimulatedRequest(_:response:responseData:)): #selector(navigation_loadSimulatedRequest(_:response:responseData:)),
+            #selector(loadSimulatedRequest(_:responseHTML:)): #selector(navigation_loadSimulatedRequest(_:responseHTML:)),
+        ]) { _, _ in fatalError() }
         for (selector, swizzledSelector) in selectors {
             let originalMethod = class_getInstanceMethod(WKWebView.self, selector)!
             let swizzledMethod = class_getInstanceMethod(WKWebView.self, swizzledSelector)!

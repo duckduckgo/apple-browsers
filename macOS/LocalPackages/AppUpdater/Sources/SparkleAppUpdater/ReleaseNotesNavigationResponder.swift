@@ -20,7 +20,9 @@ import AppUpdaterShared
 import BrowserServicesKit
 import Combine
 import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import Navigation
 import WebKit
 
@@ -101,7 +103,7 @@ public final class ReleaseNotesNavigationResponder: NavigationResponder {
             return
         }
         Publishers.CombineLatest(updateController.updateProgressPublisher, updateController.latestUpdatePublisher)
-            .receive(on: DispatchQueue.main)
+            .throttle(for: .milliseconds(250), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.releaseNotesUserScript?.onUpdate()
@@ -112,7 +114,7 @@ public final class ReleaseNotesNavigationResponder: NavigationResponder {
     @MainActor
     public func navigationDidFinish(_ navigation: Navigation) {
         guard AppVersion.runType != .uiTests, navigation.url == releaseNotesURL else { return }
-        if updateController.needsLatestReleaseNote {
+        if updateController.shouldAutoCheckOnReleaseNotesLoad, updateController.needsLatestReleaseNote {
             updateController.checkForUpdateSkippingRollout()
         }
     }

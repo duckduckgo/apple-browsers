@@ -21,8 +21,10 @@ import Carbon.HIToolbox
 import BrowserServicesKit
 import Combine
 import Common
+import DesignResourcesKitIcons
 import DDGSync
 import Foundation
+import FoundationExtensions
 import SecureStorage
 import SwiftUI
 import PixelKit
@@ -56,8 +58,9 @@ final class PasswordManagementViewController: NSViewController {
     @IBOutlet weak var backgroundView: ColorView!
     @IBOutlet weak var lockMenuItem: NSMenuItem!
     @IBOutlet weak var importPasswordMenuItem: NSMenuItem!
-    @IBOutlet weak var settingsMenuItem: NSMenuItem!
+    @IBOutlet weak var exportLoginItem: NSMenuItem!
     @IBOutlet weak var deleteAllPasswordsMenuItem: NSMenuItem!
+    @IBOutlet weak var settingsMenuItem: NSMenuItem!
     @IBOutlet weak var unlockYourAutofillLabel: FlatButton!
     @IBOutlet weak var autofillTitleLabel: NSTextField!
     @IBOutlet weak var unlockYourAutofillInfo: NSButtonCell!
@@ -74,7 +77,6 @@ final class PasswordManagementViewController: NSViewController {
     @IBOutlet var emptyStateMessageContainer: NSView!
     @IBOutlet var emptyStateImportButton: NSButton!
     @IBOutlet var emptyStateSyncButton: NSButton!
-    @IBOutlet weak var exportLoginItem: NSMenuItem!
     @IBOutlet var lockScreen: NSView!
     @IBOutlet var lockScreenIconImageView: NSImageView! {
         didSet {
@@ -193,8 +195,11 @@ final class PasswordManagementViewController: NSViewController {
 
     private var escapeKeyMonitor: Any?
 
-    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    private let themeManagerModel: ThemeManager = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
+    var themeManager: ThemeManaging {
+        themeManagerModel
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -233,6 +238,12 @@ final class PasswordManagementViewController: NSViewController {
 
         subscribeToThemeChanges()
         applyThemeStyle()
+
+        lockMenuItem.image = DesignSystemImages.Glyphs.Size12.lock
+        importPasswordMenuItem.image = DesignSystemImages.Glyphs.Size12.import
+        exportLoginItem.image = DesignSystemImages.Glyphs.Size12.export
+        deleteAllPasswordsMenuItem.image = DesignSystemImages.Glyphs.Size12.trash
+        settingsMenuItem.image = DesignSystemImages.Glyphs.Size12.settings
     }
 
     private func setUpEmptyStateMessageView() {
@@ -1007,7 +1018,9 @@ final class PasswordManagementViewController: NSViewController {
         })
 
         self.listModel = listModel
-        self.listView = NSHostingView(rootView: PasswordManagementItemListView().environmentObject(listModel))
+        self.listView = NSHostingView(rootView: PasswordManagementItemListView()
+            .environmentObject(themeManagerModel)
+            .environmentObject(listModel))
 
         passwordManagerSelectionCancellable = listModel.$externalPasswordManagerSelected
             .receive(on: DispatchQueue.main)
@@ -1056,6 +1069,7 @@ final class PasswordManagementViewController: NSViewController {
         }
 
         let syncPromoViewModel = SyncPromoViewModel(
+            isAppRebranded: themeManager.isAppRebranded,
             touchpointType: touchpoint,
             primaryButtonAction: { [weak self] in
                 self?.syncPromoManager.goToSyncSettings(for: touchpoint)
@@ -1242,11 +1256,20 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private func showEmptyState(category: SecureVaultSorting.Category) {
+        let isAppRebranded = themeManager.isAppRebranded
+        let passwordsAddImage: NSImage = isAppRebranded ? .passwordsAdd128 : .passwordsAddLegacy128
+
         switch category {
-        case .allItems: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateDefaultTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
-        case .logins: showEmptyState(image: .passwordsAdd128, title: UserText.pmEmptyStateLoginsTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
-        case .identities: showEmptyState(image: .identityAdd128, title: UserText.pmEmptyStateIdentitiesTitle, hideMessage: true, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities))
-        case .cards: showEmptyState(image: .creditCardsAdd128, title: UserText.pmEmptyStateCardsTitle, hideMessage: false, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards))
+        case .allItems:
+            showEmptyState(image: passwordsAddImage, title: UserText.pmEmptyStateDefaultTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
+        case .logins:
+            showEmptyState(image: passwordsAddImage, title: UserText.pmEmptyStateLoginsTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
+        case .identities:
+            let identityAddImage: NSImage = isAppRebranded ? .identityAdd128 : .identityAddLegacy128
+            showEmptyState(image: identityAddImage, title: UserText.pmEmptyStateIdentitiesTitle, hideMessage: false, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities))
+        case .cards:
+            let creditCardsAddImage: NSImage = isAppRebranded ? .creditCardsAdd128 : .creditCardsAddLegacy128
+            showEmptyState(image: creditCardsAddImage, title: UserText.pmEmptyStateCardsTitle, hideMessage: false, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards))
         }
     }
 
@@ -1264,13 +1287,23 @@ final class PasswordManagementViewController: NSViewController {
         emptyStateImportButton.isHidden = hideImportButton
         emptyStateSyncButton.isHidden = hideSyncButton || !syncButtonModel.shouldShowSyncButton
         emptyStateMessageContainer.isHidden = hideMessage
-        if hideImportButton {
-            // Setting title to empty string when hidden since there is a width constraint dependency between the import and sync buttons
-            emptyStateImportButton.title = ""
+
+        // Setting title to empty string when hidden since there is a width constraint dependency between the import and sync buttons
+        let importTitle = hideImportButton ? "" : (listModel?.emptyStateImportButtonText ?? UserText.pmEmptyStateDefaultButtonTitle)
+        let syncTitle = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitlePasswords
+
+        emptyStateImportButton.title = importTitle
+        emptyStateSyncButton.title = syncTitle
+
+        if themeManager.isAppRebranded {
+            emptyStateImportButton.layer?.cornerRadius = 14
+            emptyStateSyncButton.layer?.cornerRadius = 14
         } else {
-            emptyStateImportButton.title = listModel?.emptyStateImportButtonText ?? UserText.pmEmptyStateDefaultButtonTitle
+            emptyStateImportButton.isBordered = true
+            emptyStateSyncButton.isBordered = true
+            emptyStateImportButton.bezelStyle = .rounded
+            emptyStateSyncButton.bezelStyle = .rounded
         }
-        emptyStateSyncButton.title = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitlePasswords
     }
 
     private func requestSync() {
@@ -1293,6 +1326,21 @@ extension PasswordManagementViewController: ThemeUpdateListening {
         searchField.borderColor = palette.controlsBorderPrimary
         searchField.borderHighlightColor = palette.accentPrimary
         searchField.innerBackgroundColor = palette.surfaceTertiary
+
+        guard themeManager.isAppRebranded else {
+            return
+        }
+
+        NSAppearance.withAppAppearance {
+            emptyStateImportButton.wantsLayer = true
+            emptyStateSyncButton.wantsLayer = true
+
+            emptyStateImportButton.contentTintColor = palette.accentContentPrimary
+            emptyStateSyncButton.contentTintColor = palette.textPrimary
+
+            emptyStateImportButton.layer?.backgroundColor = palette.accentPrimary.cgColor
+            emptyStateSyncButton.layer?.backgroundColor = palette.controlsFillPrimary.cgColor
+        }
     }
 }
 

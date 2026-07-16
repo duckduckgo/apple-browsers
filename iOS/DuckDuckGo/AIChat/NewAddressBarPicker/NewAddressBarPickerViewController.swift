@@ -25,34 +25,32 @@ import Core
 final class NewAddressBarPickerViewController: UIViewController {
     
     private let aiChatSettings: AIChatSettingsProvider
-    
-    init(aiChatSettings: AIChatSettingsProvider) {
+    private let omniBarFocuser: OmniBarFocuserProvider?
+
+    init(aiChatSettings: AIChatSettingsProvider,
+         omniBarFocuser: OmniBarFocuserProvider? = nil) {
         self.aiChatSettings = aiChatSettings
+        self.omniBarFocuser = omniBarFocuser
         super.init(nibName: nil, bundle: nil)
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    private var contentView: NewAddressBarPickerContentView!
-    private var hostingController: UIHostingController<NewAddressBarPickerContentView>!
-    
+
+    private var hostingController: UIHostingController<NewAddressBarPickerRefreshContentView>!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupContentView()
-        DailyPixel.fireDailyAndCount(pixel: .aiChatNewAddressBarPickerDisplayed)
+        DailyPixel.fireDailyAndCount(pixel: .aiChatNewAddressBarPickerV2Displayed)
     }
     
     private func setupContentView() {
-        contentView = NewAddressBarPickerContentView(
-            aiChatSettings: aiChatSettings
-        ) { [weak self] in
-            self?.dismiss(animated: true)
-        }
-        
-        hostingController = UIHostingController(rootView: contentView)
+        let rootView = buildContentView()
+
+        hostingController = UIHostingController(rootView: rootView)
         hostingController.view.backgroundColor = .clear
         
         addChild(hostingController)
@@ -68,7 +66,27 @@ final class NewAddressBarPickerViewController: UIViewController {
         
         hostingController.didMove(toParent: self)
     }
-    
+
+    private func buildContentView() -> NewAddressBarPickerRefreshContentView {
+        let viewModel = NewAddressBarPickerViewModel(aiChatSettings: aiChatSettings) { [weak self] isToggleEnabled in
+            self?.dismissAndFocusOmnibarIfNeeded(isToggleEnabled: isToggleEnabled)
+        }
+
+        return NewAddressBarPickerRefreshContentView(viewModel: viewModel)
+    }
+
+    private func dismissAndFocusOmnibarIfNeeded(animated: Bool = true, isToggleEnabled: Bool) {
+        let omniBarFocuser = self.omniBarFocuser
+
+        dismiss(animated: animated) {
+            guard isToggleEnabled, let omniBarFocuser else {
+                return
+            }
+
+            omniBarFocuser.focusOmniBar()
+        }
+    }
+
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         switch UIDevice.current.userInterfaceIdiom {
         case .phone:

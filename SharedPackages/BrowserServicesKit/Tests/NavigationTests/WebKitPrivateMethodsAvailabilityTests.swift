@@ -16,18 +16,18 @@
 //  limitations under the License.
 //
 
-#if _SESSION_STATE_WITH_FILTER_ENABLED
-
 import Combine
 import Foundation
 import WebKit
 import XCTest
 
 @testable import Navigation
+@testable import Common
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsBase {
 
+#if _SESSION_STATE_WITH_FILTER_ENABLED
     func testSessionStateDataAvailability() throws {
         XCTAssertTrue(WKWebView.instancesRespond(to: WKWebView.Selector.sessionStateData))
     }
@@ -62,13 +62,6 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
                           "WebContent process info object should respond to 'pid'")
         }
     }
-
-#if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
-    func testWKWebpagePreferencesRespondsTo_autoplayPolicy() {
-        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.autoplayPolicy))
-        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.setAutoplayPolicy))
-    }
-#endif
 
     // MARK: - Functional Tests
 
@@ -296,6 +289,19 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         }
     }
 
-}
-
 #endif
+
+#if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
+    func testWKWebpagePreferencesRespondsTo_autoplayPolicy() {
+        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.autoplayPolicy))
+        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.setAutoplayPolicy))
+    }
+#endif
+
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
+    func testOriginalWebKitStringAvailability() throws {
+        XCTAssertTrue(NSURL.instancesRespond(to: NSSelectorFromString(URL.Selector.originalDataAsString)))
+    }
+#endif
+
+}

@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Persistence
 
 /// These features don't have a way to see if have been used before so storage is provided here.

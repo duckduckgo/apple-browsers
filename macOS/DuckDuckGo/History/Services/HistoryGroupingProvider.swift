@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import Foundation
 import History
 import os.log

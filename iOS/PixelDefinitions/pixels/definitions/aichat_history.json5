@@ -1,0 +1,117 @@
+// Pixel definitions for the native Duck.ai chat history screen (iOS).
+// Sibling of the existing aichat_open_history entry pixel in aichat_native_storage_pixels.json5.
+{
+    "aichat_history_screen_shown": {
+        "description": "The native Duck.ai chat history screen was shown. The `source` parameter identifies the entry point",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "The entry point from which the chat history screen was opened",
+                "type": "string",
+                "enum": ["browser_menu", "address_bar", "contextual_chat"]
+            }
+        ]
+    },
+    "aichat_history_chat_opened": {
+        "description": "User tapped a chat row on the chat history screen to resume that conversation in Duck.ai",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_chat_deleted": {
+        "description": "User deleted a single chat via the trailing swipe action on a chat row on the chat history screen",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_empty_cta_tapped": {
+        "description": "User tapped the empty-state 'Open Duck.ai' CTA on the chat history screen (shown when there is no chat history); opens a new Duck.ai tab",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_search_activated": {
+        "description": "User activated the search bar on the chat history screen",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_fire_all_tapped": {
+        "description": "User tapped the Fire icon in default mode on the chat history screen, initiating a delete of all chats",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_fire_all_confirmed": {
+        "description": "User confirmed the delete-all action on the chat history screen",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_pin_added": {
+        "description": "User pinned a chat from the chat history screen via swipe action",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_pin_removed": {
+        "description": "User unpinned a chat from the chat history screen via swipe action",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_download_started": {
+        "description": "User tapped Download on a chat row on the chat history screen",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_edit_mode_entered": {
+        "description": "User entered select/edit mode on the chat history screen via the toolbar button",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_new_chat_tapped": {
+        "description": "User tapped the New chat (compose) button in the toolbar on the chat history screen",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_load_failed": {
+        "description": "The chat history list failed to load (native storage unavailable or an observer error). This is what drives the load-error alert shown on the chat history screen; use it to gauge how often the error surfaces and how many users are affected",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "aichat_history_pin_toggle_failed": {
+        "description": "Persisting a pin/unpin toggle failed after the optimistic in-memory move on the chat history screen",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "aichat_history_download_failed": {
+        "description": "Exporting a chat for download failed on the chat history screen",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    }
+}

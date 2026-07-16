@@ -50,7 +50,11 @@ final class PromoRegistryTests: XCTestCase {
             isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock())
+            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
+            subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
+            featureFlagger: MockFeatureFlagger(),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            windowControllersManager: WindowControllersManagerMock())
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

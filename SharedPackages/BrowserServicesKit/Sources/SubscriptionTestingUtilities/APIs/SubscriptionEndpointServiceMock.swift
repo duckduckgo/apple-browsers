@@ -22,72 +22,59 @@ import Networking
 
 public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService {
 
-    public var onSignOut: (() -> Void)?
-    public var signOutCalled: Bool = false
-
     public init() { }
 
-    public var updateCacheWithSubscriptionCalled: Bool = false
-    public var onUpdateCache: ((DuckDuckGoSubscription) -> Void)?
-    public func updateCache(with subscription: Subscription.DuckDuckGoSubscription) {
-        onUpdateCache?(subscription)
-        updateCacheWithSubscriptionCalled = true
+    // MARK: - Subscription
+
+    public var getSubscriptionCalled: Bool = false
+    public var onGetSubscription: ((String) -> Void)?
+    public var getSubscriptionResult: Result<DuckDuckGoSubscription, SubscriptionEndpointServiceError>?
+    public func getSubscription(accessToken: String) async throws -> DuckDuckGoSubscription {
+        getSubscriptionCalled = true
+        onGetSubscription?(accessToken)
+        switch getSubscriptionResult! {
+        case .success(let subscription): return subscription
+        case .failure(let error): throw error
+        }
     }
 
-    public func clearSubscription() {}
+    // MARK: - Products
 
     public var getTierProductsResult: Result<GetTierProductsResponse, APIRequestV2Error>?
-    public func getTierProducts(region: String?, platform: String?) async throws -> Subscription.GetTierProductsResponse {
+    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
         switch getTierProductsResult! {
         case .success(let result): return result
         case .failure(let error): throw error
         }
     }
 
-    public var getSubscriptionCalled: Bool = false
-    public var onGetSubscription: ((String?, SubscriptionCachePolicy) -> Void)?
-    public var getSubscriptionResult: Result<DuckDuckGoSubscription, SubscriptionEndpointServiceError>?
-    public func getSubscription(accessToken: String?, cachePolicy: Subscription.SubscriptionCachePolicy) async throws -> Subscription.DuckDuckGoSubscription {
-        getSubscriptionCalled = true
-        onGetSubscription?(accessToken, cachePolicy)
-        switch getSubscriptionResult! {
-        case .success(let subscription): return subscription
-        case .failure(let error): throw error
-        }
-    }
+    // MARK: - Customer Portal
 
     public var getCustomerPortalURLResult: Result<GetCustomerPortalURLResponse, APIRequestV2Error>?
-    public func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> Subscription.GetCustomerPortalURLResponse {
+    public func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> GetCustomerPortalURLResponse {
         switch getCustomerPortalURLResult! {
         case .success(let result): return result
         case .failure(let error): throw error
         }
     }
 
+    // MARK: - Purchase Confirmation
+
     public var confirmPurchaseResult: Result<ConfirmPurchaseResponse, APIRequestV2Error>?
-    public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> Subscription.ConfirmPurchaseResponse {
+    public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> ConfirmPurchaseResponse {
         switch confirmPurchaseResult! {
         case .success(let result): return result
         case .failure(let error): throw error
         }
     }
 
-    public var getSubscriptionTierFeaturesResult: Result<Subscription.GetSubscriptionTierFeaturesResponse, Error>?
-    public func getSubscriptionTierFeatures(for subscriptionIDs: [String]) async throws -> Subscription.GetSubscriptionTierFeaturesResponse {
+    // MARK: - Tier Features
+
+    public var getSubscriptionTierFeaturesResult: Result<GetSubscriptionTierFeaturesResponse, Error>?
+    public func getSubscriptionTierFeatures(for subscriptionIDs: [String]) async throws -> GetSubscriptionTierFeaturesResponse {
         switch getSubscriptionTierFeaturesResult! {
         case .success(let result): return result
         case .failure(let error): throw error
-        }
-    }
-
-    public func ingestSubscription(_ subscription: Subscription.DuckDuckGoSubscription) async throws {
-        getSubscriptionResult = .success(subscription)
-    }
-
-    public func getCachedSubscription() -> Subscription.DuckDuckGoSubscription? {
-        switch getSubscriptionResult! {
-        case .success(let subscription): return subscription
-        case .failure: return nil
         }
     }
 }

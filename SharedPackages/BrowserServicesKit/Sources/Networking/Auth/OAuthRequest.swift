@@ -19,6 +19,7 @@
 import Foundation
 import os.log
 import Common
+import FoundationExtensions
 
 /// Auth API v2 Endpoints: https://dub.duckduckgo.com/duckduckgo/ddg/blob/main/components/auth/docs/AuthAPIV2Documentation.md#auth-api-v2-endpoints
 public struct OAuthRequest {

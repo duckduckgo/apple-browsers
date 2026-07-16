@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
 import Persistence
 import PrivacyConfig
@@ -30,4 +31,8 @@ struct PromoDependencies {
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     let sessionRestoreCoordinator: SessionRestorePromptCoordinating
+    let subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate
+    let featureFlagger: FeatureFlagger
+    let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
+    let windowControllersManager: WindowControllersManagerProtocol
 }

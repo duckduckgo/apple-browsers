@@ -19,8 +19,10 @@
 import AppKit
 import Combine
 import Common
+import ConcurrencyExtensions
 import ContentBlocking
 import FeatureFlags
+import FoundationExtensions
 import Navigation
 import OSLog
 import PrivacyConfig
@@ -148,11 +150,11 @@ final class PopupHandlingTabExtension {
             }
             // apply selecting the tab if `switchToNewTabWhenOpened` is `true`.
             targetKind = targetKind.preferringSelectedTabs(tabsPreferences.switchToNewTabWhenOpened)
-            Logger.navigation.debug("handleCreateWebViewRequest: newWindowPolicy: \(targetKind) for \(url?.absoluteString ??? "<nil>")")
+            Logger.navigation.debug("handleCreateWebViewRequest: newWindowPolicy: \(targetKind) for \(url?.shortDescription ??? "<nil>")")
             return createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: true)
 
         case .cancel:
-            Logger.navigation.debug("handleCreateWebViewRequest: canceling request for `\(url?.absoluteString ??? "<nil>")` per newWindowPolicy")
+            Logger.navigation.debug("handleCreateWebViewRequest: canceling request for `\(url?.shortDescription ??? "<nil>")` per newWindowPolicy")
             return nil
 
         case .none: break
@@ -172,13 +174,13 @@ final class PopupHandlingTabExtension {
 
         // Disable pop-ups from unknown sources
         guard let sourceSecurityOrigin = navigationAction.safeSourceFrame.map({ SecurityOrigin($0.securityOrigin) }) else {
-            Logger.navigation.debug("handleCreateWebViewRequest: disabling pop-ups from unknown source for `\(url?.absoluteString ??? "<nil>")`")
+            Logger.navigation.debug("handleCreateWebViewRequest: disabling pop-ups from unknown source for `\(url?.shortDescription ??? "<nil>")`")
             return nil
         }
 
         // Action doesn't require pop-up permission
         if let bypassReason = shouldAllowPopupBypassingPermissionRequest(for: navigationAction, windowFeatures: windowFeatures) {
-            Logger.navigation.debug("handleCreateWebViewRequest: allowing pop-up bypassing permission request for `\(url?.absoluteString ??? "<nil>")`: \(bypassReason)")
+            Logger.navigation.debug("handleCreateWebViewRequest: allowing pop-up bypassing permission request for `\(url?.shortDescription ??? "<nil>")`: \(bypassReason)")
             // Reset last user interaction event to block future pop-ups within the throttle window (only for user-initiated popups)
             if bypassReason.isUserInitiated {
                 lastUserInteractionEvent = nil
@@ -186,7 +188,7 @@ final class PopupHandlingTabExtension {
             return createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: bypassReason.isUserInitiated)
         }
 
-        Logger.navigation.debug("handleCreateWebViewRequest: requesting pop-up permission for `\(url?.absoluteString ??? "<nil>")`")
+        Logger.navigation.debug("handleCreateWebViewRequest: requesting pop-up permission for `\(url?.shortDescription ??? "<nil>")`")
 
         // Pop-up permission is needed: firing an async PermissionAuthorizationQuery.
         // ---
@@ -230,7 +232,7 @@ final class PopupHandlingTabExtension {
         let url = navigationAction.request.url
         guard case .success(true) = permissionRequestResult else {
             // pop-up permission denied
-            Logger.navigation.info("handleCreateWebViewRequest: pop-up permission denied for `\(url?.absoluteString ??? "<nil>")`")
+            Logger.navigation.info("handleCreateWebViewRequest: pop-up permission denied for `\(url?.shortDescription ??? "<nil>")`")
             result = nil
             return
         }
@@ -241,7 +243,7 @@ final class PopupHandlingTabExtension {
         if !isCalledSynchronously,
            featureFlagger.isFeatureOn(.popupBlocking),
            url?.isEmpty ?? true || url?.navigationalScheme == .about {
-            Logger.navigation.info("handleCreateWebViewRequest: suppressing pop-up for `\(url?.absoluteString ??? "<nil>")`")
+            Logger.navigation.info("handleCreateWebViewRequest: suppressing pop-up for `\(url?.shortDescription ??? "<nil>")`")
             self.popupsTemporarilyAllowedForCurrentPage = true
 
             result = nil
@@ -249,7 +251,7 @@ final class PopupHandlingTabExtension {
         }
 
         // Permission granted: create and present new tab for the pop-up
-        Logger.navigation.debug("handleCreateWebViewRequest: permission granted for `\(url?.absoluteString ??? "<nil>")`")
+        Logger.navigation.debug("handleCreateWebViewRequest: permission granted for `\(url?.shortDescription ??? "<nil>")`")
         result = self.createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: false)
         // `defer` calls the completionHandler 
     }
@@ -274,7 +276,7 @@ final class PopupHandlingTabExtension {
                                     of kind: NewWindowPolicy,
                                     isUserInitiated: Bool) -> WKWebView? {
         // disable opening 'javascript:' links in new tab
-        guard navigationAction.request.url?.navigationalScheme != .javascript else { return nil }
+        guard ![.javascript, .data].contains(navigationAction.request.url?.navigationalScheme) else { return nil }
         // disable opening internal pages in pop-up windows
         guard TabContent.contentFromURL(navigationAction.request.url, source: .link).isExternalUrl || !kind.isPopup else { return nil }
 
@@ -441,7 +443,16 @@ extension PopupHandlingTabExtension: NavigationResponder {
         // Links clicked in a pinned tab navigating to another domain should open in a new tab
         let canOpenLinkInCurrentTab: Bool = {
             let isNavigatingToAnotherDomain = navigationAction.url.host != targetFrame.url.host && !targetFrame.url.isEmpty
-            let isNavigatingAwayFromPinnedTab = isLinkActivated && self.isTabPinned() && isNavigatingToAnotherDomain && navigationAction.isForMainFrame
+            // Don't treat leaving an internal error page as navigating away from a pinned tab: the SSL
+            // "Accept risk and visit site" reload navigates from duck://error back to the failing site,
+            // whose host differs from the error page's, so it would otherwise wrongly spawn a new tab
+            // (which re-shows the warning, as the SSL bypass flag lives only on the original tab).
+            let isLeavingErrorPage = targetFrame.url.isErrorURL
+            let isNavigatingAwayFromPinnedTab = isLinkActivated
+                && self.isTabPinned()
+                && isNavigatingToAnotherDomain
+                && navigationAction.isForMainFrame
+                && !isLeavingErrorPage
             return !isNavigatingAwayFromPinnedTab
         }()
 
@@ -475,11 +486,11 @@ extension PopupHandlingTabExtension: NavigationResponder {
             self.onNewWindow = { [isBurner] newWindowNavigationAction -> NewWindowPolicyDecision? in
                 // Only allow the new window/tab if the URL matches the original navigation action URL.
                 // Fallback to default createWebViewWithConfiguration handling otherwise.
-                guard newWindowNavigationAction.request.url?.matches(url) ?? false else {
-                    Logger.navigation.debug("PopupHandlingTabExtension.onNewWindow: ignoring `\(newWindowNavigationAction.request.url?.absoluteString ??? "<nil>")`")
+                guard newWindowNavigationAction.request.url?.equals(url, by: .fuzzyIdentity) ?? false else {
+                    Logger.navigation.debug("PopupHandlingTabExtension.onNewWindow: ignoring `\(newWindowNavigationAction.request.url?.shortDescription ??? "<nil>")`")
                     return nil
                 }
-                Logger.navigation.debug("PopupHandlingTabExtension.onNewWindow: allowing \(linkOpenBehavior) for `\(url.absoluteString)`")
+                Logger.navigation.debug("PopupHandlingTabExtension.onNewWindow: allowing \(linkOpenBehavior) for `\(url.shortDescription)`")
 
                 return linkOpenBehavior.newWindowPolicy(isBurner: isBurner).map(NewWindowPolicyDecision.allow)
             }

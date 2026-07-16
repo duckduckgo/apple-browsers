@@ -100,8 +100,7 @@ final class StartupOptionsTests: XCTestCase {
             selectedServer: .automatic,
             selectedLocation: .nearest,
             dnsSettings: .ddg(blockRiskyDomains: true),
-            excludeLocalNetworks: false,
-            wideEventPostEndpointEnabled: true
+            excludeLocalNetworks: false
         )
 
         // Encode it
@@ -128,7 +127,6 @@ final class StartupOptionsTests: XCTestCase {
         XCTAssertEqual(parsedSnapshot.selectedServer, .automatic)
         XCTAssertEqual(parsedSnapshot.selectedLocation, .nearest)
         XCTAssertEqual(parsedSnapshot.excludeLocalNetworks, false)
-        XCTAssertEqual(parsedSnapshot.wideEventPostEndpointEnabled, true)
     }
 
     func testVPNSettingsSnapshotCanBeCapturedFromVPNSettings() {
@@ -138,7 +136,6 @@ final class StartupOptionsTests: XCTestCase {
         vpnSettings.selectedLocation = .nearest
         vpnSettings.registrationKeyValidity = .custom(3600)
         vpnSettings.excludeLocalNetworks = true
-        vpnSettings.wideEventPostEndpointEnabled = true
 
         let snapshot = VPNSettingsSnapshot(from: vpnSettings)
 
@@ -147,7 +144,6 @@ final class StartupOptionsTests: XCTestCase {
         XCTAssertEqual(snapshot.selectedLocation, .nearest)
         XCTAssertEqual(snapshot.registrationKeyValidity, .custom(3600))
         XCTAssertEqual(snapshot.excludeLocalNetworks, true)
-        XCTAssertEqual(snapshot.wideEventPostEndpointEnabled, true)
     }
 
     func testVPNSettingsSnapshotCanApplyToVPNSettings() {
@@ -159,8 +155,7 @@ final class StartupOptionsTests: XCTestCase {
             selectedServer: .endpoint("apply-server"),
             selectedLocation: .nearest,
             dnsSettings: .ddg(blockRiskyDomains: false),
-            excludeLocalNetworks: true,
-            wideEventPostEndpointEnabled: true
+            excludeLocalNetworks: true
         )
 
         snapshot.applyTo(vpnSettings)
@@ -170,7 +165,58 @@ final class StartupOptionsTests: XCTestCase {
         XCTAssertEqual(vpnSettings.selectedServer, .endpoint("apply-server"))
         XCTAssertEqual(vpnSettings.selectedLocation, .nearest)
         XCTAssertEqual(vpnSettings.excludeLocalNetworks, true)
-        XCTAssertEqual(vpnSettings.wideEventPostEndpointEnabled, true)
+    }
+
+    func testVPNSettingsSnapshotRoundTripsOrphanProxyDetectionFlag() throws {
+        let snapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(3600),
+            selectedEnvironment: .production,
+            selectedServer: .automatic,
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: true),
+            excludeLocalNetworks: false,
+            isOrphanProxyDetectionEnabled: false
+        )
+
+        let decoded = try JSONDecoder().decode(VPNSettingsSnapshot.self, from: JSONEncoder().encode(snapshot))
+
+        XCTAssertFalse(decoded.isOrphanProxyDetectionEnabled)
+    }
+
+    func testVPNSettingsSnapshotDefaultsOrphanProxyDetectionEnabledWhenMissingFromPayload() throws {
+        // Simulate a snapshot persisted by an older version that predates the flag.
+        let snapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(3600),
+            selectedEnvironment: .production,
+            selectedServer: .automatic,
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: true),
+            excludeLocalNetworks: false
+        )
+        let encoded = try JSONEncoder().encode(snapshot)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        json.removeValue(forKey: "isOrphanProxyDetectionEnabled")
+        let legacyData = try JSONSerialization.data(withJSONObject: json)
+
+        let decoded = try JSONDecoder().decode(VPNSettingsSnapshot.self, from: legacyData)
+
+        XCTAssertTrue(decoded.isOrphanProxyDetectionEnabled)
+    }
+
+    func testVPNSettingsSnapshotCarriesOrphanProxyDetectionFromSettings() {
+        let sourceDefaults = UserDefaults(suiteName: "orphan-proxy-source-test")!
+        defer { sourceDefaults.removePersistentDomain(forName: "orphan-proxy-source-test") }
+        let vpnSettings = VPNSettings(defaults: sourceDefaults)
+        vpnSettings.isOrphanProxyDetectionEnabled = false
+
+        let snapshot = VPNSettingsSnapshot(from: vpnSettings)
+        XCTAssertFalse(snapshot.isOrphanProxyDetectionEnabled)
+
+        let targetDefaults = UserDefaults(suiteName: "orphan-proxy-apply-test")!
+        defer { targetDefaults.removePersistentDomain(forName: "orphan-proxy-apply-test") }
+        let other = VPNSettings(defaults: targetDefaults)
+        snapshot.applyTo(other)
+        XCTAssertFalse(other.isOrphanProxyDetectionEnabled)
     }
 
     func testCorruptedVPNSettingsResultInResetOption() {

@@ -9,6 +9,29 @@
         "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
         "examples": ["7.175.1"]
     },
+    "unified_input_surface": {
+        "key": "surface",
+        "type": "string",
+        "description": "The Unified Toggle Input surface the pixel was fired from, distinguishing the contextual chat sheet from the Duck.ai tab and the address bar.",
+        "enum": ["address_bar", "duck_ai", "contextual_chat"]
+    },
+    "cookie_popup_preference": {
+        "key": "cookie_popup_preference",
+        "type": "string",
+        "description": "The resulting Cookie Pop-up Protection preference after the user confirms the opt-in dialog",
+        "enum": ["max", "default", "off"]
+    },
+    "autoconsent_enabled": {
+        "key": "autoconsent_enabled",
+        "type": "boolean",
+        "description": "Whether Cookie Pop-up Protection (autoconsent) was enabled at the moment the pixel fired"
+    },
+    "time_since_shown": {
+        "key": "time_since_shown",
+        "type": "string",
+        "description": "Bucketed time elapsed from when the opt-in dialog was first shown to when it was confirmed",
+        "enum": ["0-1min", "1-5min", "5-60min", "1h-1d", "1d+"]
+    },
     "atb": {
         "key": "atb",
         "type": "string",
@@ -38,6 +61,12 @@
         "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
         "type": "integer",
         "enum": [0, 1]
+    },
+    "consentHeuristicEnabled": {
+        "key": "consentHeuristicEnabled",
+        "description": "The mode of the consent heuristic feature: '', off, reject, tier1, tier2",
+        "type": "string",
+        "enum": ["", "off", "reject", "tier1", "tier2"]
     },
     "isInternalUser": {
         "key": "is_internal_user",
@@ -114,23 +143,17 @@
         "description": "Optional reason accompanying the feature status"
     },
     "wideEventErrorDomain": {
-        "key": "feature.data.error.domain",
+        "key": "feature.data.ext.error.domain",
         "type": "string",
         "description": "Error domain for the failure, when applicable, e.g. SKErrorDomain"
     },
     "wideEventErrorCode": {
-        "key": "feature.data.error.code",
+        "key": "feature.data.ext.error.code",
         "type": "integer",
         "description": "Error code for the failure, when applicable"
     },
-    "wideEventErrorDescription": {
-        "key": "feature.data.error.description",
-        "type": "string",
-        "description": "Error description for the failure, when applicable",
-        "examples": ["saveToPreferencesFailed", "startVPNFailed"]
-    },
     "wideEventUnderlyingErrorDomain": {
-        "keyPattern": "feature\\.data\\.error\\.underlying_domain[0-9]?",
+        "keyPattern": "^feature\\.data\\.ext\\.error\\.underlying_domain[0-9]?$",
         "type": "string",
         "description": "Underlying error domain (supports optional numeric index for nested errors)"
     },
@@ -168,7 +191,7 @@
         ]
     },
     "wideEventUnderlyingErrorCode": {
-        "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]?",
+        "keyPattern": "^feature\\.data\\.ext\\.error\\.underlying_code[0-9]?$",
         "type": "integer",
         "description": "Underlying error code (supports optional numeric index for nested errors)"
     },
@@ -194,15 +217,13 @@
     },
     "dbpIsAuthenticated": {
         "key": "isAuthenticated",
-        "type": "string",
-        "description": "Whether the user is authenticated",
-        "enum": ["true", "false"]
+        "type": "boolean",
+        "description": "Whether the user is authenticated"
     },
     "dbpIsFreeScan": {
         "key": "free_scan",
-        "type": "string",
-        "description": "Whether this is a free (unauthenticated) scan",
-        "enum": ["true", "false"]
+        "type": "boolean",
+        "description": "Whether this is a free (unauthenticated) scan"
     },
     "dbpStageDuration": {
         "key": "duration",
@@ -230,6 +251,8 @@
             "click",
             "expectation",
             "emailConfirmation",
+            "generateEmail",
+            "getEmailData",
             "getCaptchaInfo",
             "solveCaptcha",
             "condition",
@@ -278,11 +301,17 @@
         "description": "Location selection for the VPN latency test",
         "enum": ["nearest", "custom"]
     },
+    "connectionAttemptSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The origin of a VPN connection attempt",
+        "enum": ["start", "rekey", "serverChange", "locationChange", "adapterRestart", "failureRecovery", "serverMigration"]
+    },
     "burnSource": {
         "key": "source",
         "type": "string",
         "description": "Source of the burn action",
-        "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear"]
+        "enum": ["browsing", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear", "escapeHatch"]
     },
     "tabType": {
         "key": "tabType",
@@ -292,9 +321,8 @@
     },
     "is_enabled": {
         "key": "is_enabled",
-        "type": "string",
-        "description": "Whether the feature or setting is enabled",
-        "enum": ["true", "false"]
+        "type": "boolean",
+        "description": "Whether the feature or setting is enabled"
     },
     "returningUser": {
         "key": "ru",
@@ -305,5 +333,106 @@
         "key": "free_trial",
         "type": "boolean",
         "description": "Whether the user is eligible for a free trial"
+    },
+    "subscriptionFunnelOrigin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Values follow the convention `funnel_<entry-point>_<platform>[_<modifier>]`.",
+        "pattern": "^funnel_",
+        "examples": ["funnel_appmenu_ios", "funnel_appsettings_ios", "funnel_onboarding_ios", "funnel_appsettings_ios_winback"]
+    },
+    "locale": {
+        "key": "locale",
+        "type": "string",
+        "description": "User locale",
+        "examples": ["en-US", "hu-HU"]
+    },
+    "browsingMode": {
+        "key": "browsing_mode",
+        "type": "string",
+        "description": "The current browsing mode: fire (Fire Tabs) or normal",
+        "enum": ["fire", "normal"]
+    },
+    "durationSeconds": {
+        "key": "dur",
+        "type": "string",
+        "description": "Duration in seconds (as a floating-point string)"
+    },
+    "onboardingEventType": {
+        "key": "e",
+        "type": "string",
+        "description": "Event type to classify what happened at each onboarding step",
+        "enum": ["shown", "clicked", "confirmed"]
+    },
+    "onboardingClickedValue": {
+        "key": "value",
+        "type": "string",
+        "description": "Whether the user clicked the primary CTA or skipped/closed the onboarding step",
+        "enum": ["engage", "dismiss"]
+    },
+    "onboardingInstallType": {
+        "key": "it",
+        "type": "string",
+        "description": "Install type to distinguish between first-time installs and reinstalls during onboarding",
+        "enum": ["new", "reinstall"]
+    },
+    "onboardingDaysSinceInstall": {
+        "key": "d",
+        "type": "integer",
+        "description": "Days since install when the value is between 0 and 28 inclusive during onboarding"
+    },
+    "onboardingSource": {
+        "key": "source",
+        "type": "string",
+        "description": "User's entry point into the onboarding flow",
+        "enum": ["default", "duckai_cpp"]
+    },
+    "onboardingFlow": {
+        "key": "flow",
+        "type": "string",
+        "description": "Version of the onboarding flow the user entered",
+        "enum": ["default", "duckai"]
+    },
+    "onboardingFlowVariant": {
+        "key": "variant",
+        "type": "string",
+        "description": "Variant of the onboarding flow the user selected after branching on the 'Try a search or AI chat' step",
+        "enum": ["search_plus_duckai-search", "search_plus_duckai-chat"]
+    },
+    "tabCount": {
+        "key": "tab_count",
+        "type": "string",
+        "description": "Bucketed total tab count.",
+        "enum": ["1", "2-5", "6-10", "11-20", "21-40", "41-60", "61-80", "81+"]
+    },
+    "newTabCount": {
+        "key": "new_tab_count",
+        "type": "string",
+        "description": "Bucketed count of tabs with no link (blank/new tab pages).",
+        "enum": ["0-1", "2-10", "11+"]
+    },
+    "tabActive7d": {
+        "key": "tab_active_7d",
+        "type": "string",
+        "description": "Bucketed count of tabs last viewed within the past 7 days.",
+        "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+    },
+    "tabInactive1w": {
+        "key": "tab_inactive_1w",
+        "type": "string",
+        "description": "Bucketed count of tabs last viewed 8-14 days ago.",
+        "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+    },
+    "tabInactive2w": {
+        "key": "tab_inactive_2w",
+        "type": "string",
+        "description": "Bucketed count of tabs last viewed 15-21 days ago.",
+        "enum": ["0", "1-5", "6-10", "11-20", "21+"]
+    },
+    "tabInactive3w": {
+        "key": "tab_inactive_3w",
+        "type": "string",
+        "description": "Bucketed count of tabs last viewed 22+ days ago.",
+        "enum": ["0", "1-5", "6-10", "11-20", "21+"]
     }
 }

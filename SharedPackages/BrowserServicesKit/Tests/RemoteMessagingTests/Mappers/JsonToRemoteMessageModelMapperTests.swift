@@ -212,6 +212,87 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         XCTAssertEqual(items.first?.descriptionText, "Original Item Description")
     }
 
+    func testThatCardsListPreservesPerItemImageUrlThroughTranslation() throws {
+        // GIVEN
+        let imageUrl = URL(string: "https://example.com/item.png")
+        let item = RemoteMessageModelType.ListItem(
+            id: "item1",
+            type: .twoLinesItem(
+                titleText: "Original Title",
+                descriptionText: "Original Description",
+                placeholderImage: .announce,
+                imageUrl: imageUrl,
+                action: nil
+            ),
+            matchingRules: [],
+            exclusionRules: []
+        )
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Title", items: [item], primaryActionText: "Done")
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "item1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Title",
+                descriptionText: "Translated Description",
+                primaryActionText: nil
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+        guard case let .twoLinesItem(_, _, _, translatedImageUrl, _) = items.first?.type else {
+            XCTFail("Expected twoLinesItem type")
+            return
+        }
+        XCTAssertEqual(translatedImageUrl, imageUrl, "imageUrl should be preserved across translation")
+    }
+
+    func testThatFeaturedItemPreservesImageUrlThroughTranslation() throws {
+        // GIVEN
+        let imageUrl = URL(string: "https://example.com/featured.png")
+        let item = RemoteMessageModelType.ListItem(
+            id: "featured1",
+            type: .featuredTwoLinesSingleActionItem(
+                titleText: "Original Title",
+                descriptionText: "Original Description",
+                placeholderImage: .announce,
+                imageUrl: imageUrl,
+                primaryActionText: "Original Action",
+                primaryAction: .dismiss
+            ),
+            matchingRules: [],
+            exclusionRules: []
+        )
+        var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Title", items: [item], primaryActionText: "Done")
+        let translatedItems: [String: RemoteMessageResponse.JsonListItemTranslation] = [
+            "featured1": RemoteMessageResponse.JsonListItemTranslation(
+                titleText: "Translated Title",
+                descriptionText: "Translated Description",
+                primaryActionText: "Translated Action"
+            )
+        ]
+        let translation = jsonTranslation(listItems: translatedItems)
+
+        // WHEN
+        message.localizeContent(translation: translation)
+
+        // THEN
+        guard case let .cardsList(_, _, _, items, _, _) = message.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+        guard case let .featuredTwoLinesSingleActionItem(_, _, _, translatedImageUrl, _, _) = items.first?.type else {
+            XCTFail("Expected featuredTwoLinesSingleActionItem type")
+            return
+        }
+        XCTAssertEqual(translatedImageUrl, imageUrl, "imageUrl should be preserved across translation")
+    }
+
     func testThatCardsListPreservesNonTranslatableFields() throws {
         // GIVEN
         let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", titleText: "Original Title", descriptionText: "Original Description", placeholder: .keyImport, action: .urlInContext(value: "www.duckduckgo.com"), matchingRules: [5], exclusionRules: [6])
@@ -249,6 +330,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
                 titleText: "Translated Title",
                 descriptionText: "Translated Description",
                 placeholderImage: .keyImport,
+                imageUrl: nil,
                 action: .urlInContext(value: "www.duckduckgo.com")
             )
         )
@@ -553,6 +635,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
                 titleText: "Translated Title",
                 descriptionText: "Translated Description",
                 placeholderImage: .visualDesignUpdate,
+                imageUrl: nil,
                 primaryActionText: "Translated Action",
                 primaryAction: .navigation(value: .settings)
             )
@@ -664,6 +747,164 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         XCTAssertEqual(resultItem.descriptionText, "Translated Description 1")
     }
 
+    // MARK: - DisplayConditions Mapping Tests
+
+    func testWhenMessageHasDisplayConditionsWithTriggerThenItIsMappedCorrectly() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-trigger",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: "after_idle", dismissAfterDaysShown: nil)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.trigger, .afterIdle)
+        XCTAssertNil(result.first?.displayConditions?.dismissAfterDaysShown)
+    }
+
+    func testWhenMessageHasDisplayConditionsWithTriggerAndDismissThenBothAreMapped() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-both",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: "after_idle", dismissAfterDaysShown: 5)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.trigger, .afterIdle)
+        XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 5)
+    }
+
+    func testWhenMessageHasDisplayConditionsWithDismissOnlyThenTriggerIsNil() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-dismiss-only",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: nil, dismissAfterDaysShown: 3)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertNil(result.first?.displayConditions?.trigger)
+        XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 3)
+    }
+
+    func testWhenMessageHasUnknownTriggerThenMessageIsDiscarded() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-unknown",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: "some_future_trigger", dismissAfterDaysShown: nil)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    func testWhenMessageHasNoDisplayConditionsThenDisplayConditionsIsNil() {
+        let jsonMessage = makeJsonMessage(id: "msg-no-conditions", displayConditions: nil)
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertNil(result.first?.displayConditions)
+    }
+
+    func testWhenDismissAfterDaysShownIsZeroThenItIsClampedToOne() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-clamp",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: nil, dismissAfterDaysShown: 0)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 1)
+    }
+
+    func testWhenDismissAfterDaysShownIsNegativeThenItIsClampedToOne() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-negative",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: nil, dismissAfterDaysShown: -5)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 1)
+    }
+
+    func testWhenMultipleMessagesAndOneHasUnknownTriggerThenOnlyThatOneIsDiscarded() {
+        let validMessage = makeJsonMessage(
+            id: "msg-valid",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: "after_idle", dismissAfterDaysShown: nil)
+        )
+        let invalidMessage = makeJsonMessage(
+            id: "msg-invalid",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: "unknown_trigger", dismissAfterDaysShown: nil)
+        )
+        let noConditionsMessage = makeJsonMessage(id: "msg-plain", displayConditions: nil)
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [validMessage, invalidMessage, noConditionsMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 2)
+        XCTAssertEqual(result.map(\.id), ["msg-valid", "msg-plain"])
+    }
+
+    // MARK: - Helpers
+
+    private func makeJsonMessage(id: String,
+                                 displayConditions: RemoteMessageResponse.JsonDisplayConditions?) -> RemoteMessageResponse.JsonRemoteMessage {
+        RemoteMessageResponse.JsonRemoteMessage(
+            id: id,
+            surfaces: nil,
+            content: .init(messageType: "small",
+                           titleText: "Title",
+                           descriptionText: "Description",
+                           listItems: nil,
+                           placeholder: nil,
+                           imageUrl: nil,
+                           actionText: nil,
+                           action: nil,
+                           primaryActionText: nil,
+                           primaryAction: nil,
+                           secondaryActionText: nil,
+                           secondaryAction: nil),
+            translations: nil,
+            matchingRules: [],
+            exclusionRules: [],
+            metrics: nil,
+            displayConditions: displayConditions
+        )
+    }
+}
+
+private struct MockSurveyActionMapper: RemoteMessagingSurveyActionMapping {
+    func add(parameters: [RemoteMessagingSurveyActionParameter], to url: URL) -> URL {
+        url
+    }
 }
 
 extension JsonToRemoteMessageModelMapperTests {

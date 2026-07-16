@@ -36,11 +36,11 @@ struct QuickActionsWidgetView: View {
                 Spacer()
 
                 HStack {
-                    Link(destination: entry.configuration.leftShortcut.destination) {
+                    Link(destination: entry.configuration.leftShortcut.destination(for: .quickActions)) {
                         ResponsiveIconView(image: entry.configuration.leftShortcut.icon)
                     }
                     Spacer(minLength: 16)
-                    Link(destination: entry.configuration.rightShortcut.destination) {
+                    Link(destination: entry.configuration.rightShortcut.destination(for: .quickActions)) {
                         ResponsiveIconView(image: entry.configuration.rightShortcut.icon)
                     }
                 }

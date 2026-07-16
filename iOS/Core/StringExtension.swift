@@ -22,10 +22,6 @@ import BrowserServicesKit
 
 extension String {
 
-    public func truncated(length: Int, trailing: String = "…") -> String {
-      return (self.count > length) ? self.prefix(length) + trailing : self
-    }
-
     /// Useful if loaded from UserText, for example
     public func format(arguments: CVarArg...) -> String {
         return String(format: self, arguments: arguments)
@@ -79,5 +75,19 @@ extension String {
 extension String {
     public var toTrimmedURL: URL? {
         return URL(trimmedAddressBarString: self)
+    }
+}
+
+// MARK: - Input Sanitization
+
+extension String {
+    /// A "listening" placeholder inserted by iOS dictation
+    /// before the recognised text is committed or cancelled.
+    private static let dictationPlaceholder: Character = "\u{FFFC}"
+
+    /// Returns the string with the dictation-placeholder character removed.
+    public var strippingDictationPlaceholder: String {
+        guard contains(Self.dictationPlaceholder) else { return self }
+        return replacingOccurrences(of: String(Self.dictationPlaceholder), with: "")
     }
 }

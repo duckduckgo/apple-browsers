@@ -17,18 +17,22 @@
 //  limitations under the License.
 //
 
-import UIKit
+import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import Network
 import NetworkExtension
-import VPN
 import Subscription
+import UIKit
+import VPN
 
 final class NetworkProtectionDebugViewController: UITableViewController {
     private let titles = [
         Sections.featureVisibility: "Feature Visibility",
         Sections.clearData: "Clear Data",
         Sections.debugFeature: "Debug Features",
+        Sections.tunnelSettings: "Tunnel Settings",
         Sections.debugCommand: "Debug Commands",
         Sections.simulateFailure: "Simulate Failure",
         Sections.registrationKey: "Registration Key",
@@ -39,9 +43,11 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     ]
 
     enum Sections: Int, CaseIterable {
+        case vpn
         case featureVisibility
         case clearData
         case debugFeature
+        case tunnelSettings
         case debugCommand
         case simulateFailure
         case registrationKey
@@ -49,6 +55,10 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         case networkPath
         case vpnConfiguration
         case vpnMetadata
+    }
+
+    enum VPNRows: Int, CaseIterable {
+        case toggle
     }
 
     enum FeatureVisibilityRows: Int, CaseIterable {
@@ -63,8 +73,17 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
     enum DebugFeatureRows: Int, CaseIterable {
         case toggleAlwaysOn
-        case enforceRoutes
         case showDebugEventNotifications
+    }
+
+    enum TunnelSettingsRows: Int, CaseIterable {
+        case enforceRoutes
+        case includeAllNetworks
+        case excludeLocalNetworks
+        case excludeAPNs
+        case excludeCellularServices
+        case excludeDeviceCommunication
+        case resetToDefaults
     }
 
     enum SimulateFailureRows: Int, CaseIterable {
@@ -87,6 +106,7 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         case startSnooze
         case createLogSnapshot
         case viewLogSnapshots
+        case triggerLeakCheck
     }
 
     enum NetworkPathRows: Int, CaseIterable {
@@ -128,6 +148,8 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     private var connectionTestResultError: String?
     private let connectionTestQueue = DispatchQueue(label: "com.duckduckgo.ios.vpnDebugConnectionTestQueue")
 
+    private var statusCancellable: AnyCancellable?
+
     // MARK: Lifecycle
 
     required init?(coder: NSCoder,
@@ -140,6 +162,19 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
     required convenience init?(coder: NSCoder) {
         self.init(coder: coder, debugFeatures: NetworkProtectionDebugFeatures())
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        decorateNavigationBar()
+
+        statusCancellable = AppDependencyProvider.shared.connectionObserver.publisher
+            .removeDuplicates(by: { $0.description == $1.description })
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.tableView.reloadSections(IndexSet(integer: Sections.vpn.rawValue), with: .none)
+                self?.loadConfigurationData()
+            }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -167,10 +202,17 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
         cell.textLabel?.font = .daxBodyRegular()
+        cell.textLabel?.textColor = .label
         cell.detailTextLabel?.text = nil
         cell.accessoryType = .none
+        cell.accessoryView = nil
+        cell.isUserInteractionEnabled = true
+        cell.selectionStyle = .default
 
         switch Sections(rawValue: indexPath.section) {
+
+        case .vpn:
+            configure(cell, forVPNRow: indexPath.row)
 
         case .clearData:
             switch ClearDataRows(rawValue: indexPath.row) {
@@ -182,6 +224,9 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
         case .debugFeature:
             configure(cell, forDebugFeatureAtRow: indexPath.row)
+
+        case .tunnelSettings:
+            configure(cell, forTunnelSettingsAtRow: indexPath.row)
 
         case .debugCommand:
             configure(cell, forNotificationRow: indexPath.row)
@@ -216,8 +261,10 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch Sections(rawValue: section) {
+        case .vpn: return VPNRows.allCases.count
         case .clearData: return ClearDataRows.allCases.count
         case .debugFeature: return DebugFeatureRows.allCases.count
+        case .tunnelSettings: return TunnelSettingsRows.allCases.count
         case .debugCommand: return ExtensionDebugCommandRows.allCases.count
         case .simulateFailure: return SimulateFailureRows.allCases.count
         case .registrationKey: return RegistrationKeyRows.allCases.count
@@ -233,6 +280,8 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         switch Sections(rawValue: indexPath.section) {
+        case .vpn:
+            break
         case .clearData:
             switch ClearDataRows(rawValue: indexPath.row) {
             case .removeVPNConfiguration: deleteVPNConfiguration()
@@ -240,6 +289,8 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             }
         case .debugFeature:
             didSelectDebugFeature(at: indexPath)
+        case .tunnelSettings:
+            didSelectTunnelSettingsRow(at: indexPath)
         case .debugCommand:
             didSelectDebugCommand(at: indexPath)
         case .simulateFailure:
@@ -265,6 +316,44 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         }
 
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+
+    // MARK: VPN Toggle
+
+    private func configure(_ cell: UITableViewCell, forVPNRow row: Int) {
+        switch VPNRows(rawValue: row) {
+        case .toggle:
+            cell.textLabel?.text = "VPN"
+            cell.selectionStyle = .none
+
+            let toggle = UISwitch()
+            toggle.isOn = isVPNActive(AppDependencyProvider.shared.connectionObserver.recentValue)
+            toggle.addTarget(self, action: #selector(vpnToggleChanged(_:)), for: .valueChanged)
+            cell.accessoryView = toggle
+        case .none:
+            break
+        }
+    }
+
+    private func isVPNActive(_ status: ConnectionStatus) -> Bool {
+        switch status {
+        case .connected, .connecting, .reasserting, .snoozing:
+            return true
+        case .disconnected, .disconnecting, .notConfigured:
+            return false
+        }
+    }
+
+    @objc private func vpnToggleChanged(_ sender: UISwitch) {
+        let shouldStart = sender.isOn
+        Task {
+            let controller = AppDependencyProvider.shared.networkProtectionTunnelController
+            if shouldStart {
+                await controller.start()
+            } else {
+                await controller.stop()
+            }
+        }
     }
 
     // MARK: Simulate Failures
@@ -321,14 +410,6 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             } else {
                 cell.accessoryType = .checkmark
             }
-        case .enforceRoutes:
-            cell.textLabel?.text = "Enforce Routes"
-
-            if !AppDependencyProvider.shared.vpnSettings.enforceRoutes {
-                cell.accessoryType = .none
-            } else {
-                cell.accessoryType = .checkmark
-            }
         case .showDebugEventNotifications:
             cell.textLabel?.text = "Debug Event Notifications"
 
@@ -347,13 +428,100 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         case .toggleAlwaysOn:
             debugFeatures.alwaysOnDisabled.toggle()
             tableView.reloadRows(at: [indexPath], with: .none)
-        case .enforceRoutes:
-            AppDependencyProvider.shared.vpnSettings.enforceRoutes.toggle()
-            tableView.reloadRows(at: [indexPath], with: .none)
         case .showDebugEventNotifications:
             AppDependencyProvider.shared.vpnSettings.showDebugVPNEventNotifications.toggle()
             tableView.reloadRows(at: [indexPath], with: .none)
         default:
+            break
+        }
+    }
+
+    // MARK: Tunnel Settings
+
+    private func configure(_ cell: UITableViewCell, forTunnelSettingsAtRow row: Int) {
+        let settings = AppDependencyProvider.shared.vpnSettings
+
+        switch TunnelSettingsRows(rawValue: row) {
+        case .enforceRoutes:
+            cell.textLabel?.text = "Enforce Routes"
+            cell.accessoryType = settings.enforceRoutes ? .checkmark : .none
+        case .includeAllNetworks:
+            cell.textLabel?.text = "Include All Networks"
+            cell.accessoryType = settings.includeAllNetworks ? .checkmark : .none
+        case .excludeLocalNetworks:
+            cell.textLabel?.text = "Exclude Local Networks"
+            cell.accessoryType = settings.excludeLocalNetworks ? .checkmark : .none
+        case .excludeAPNs:
+            if #available(iOS 16.4, *) {
+                cell.textLabel?.text = "Exclude APNs"
+                cell.accessoryType = settings.excludeAPNs ? .checkmark : .none
+                cell.isUserInteractionEnabled = true
+            } else {
+                cell.textLabel?.text = "Exclude APNs (iOS 16.4+)"
+                cell.accessoryType = .none
+                cell.isUserInteractionEnabled = false
+            }
+        case .excludeCellularServices:
+            if #available(iOS 16.4, *) {
+                cell.textLabel?.text = "Exclude Cellular Services"
+                cell.accessoryType = settings.excludeCellularServices ? .checkmark : .none
+                cell.isUserInteractionEnabled = true
+            } else {
+                cell.textLabel?.text = "Exclude Cellular Services (iOS 16.4+)"
+                cell.accessoryType = .none
+                cell.isUserInteractionEnabled = false
+            }
+        case .excludeDeviceCommunication:
+            if #available(iOS 17.4, *) {
+                cell.textLabel?.text = "Exclude Device Communication"
+                cell.accessoryType = settings.excludeDeviceCommunication ? .checkmark : .none
+                cell.isUserInteractionEnabled = true
+            } else {
+                cell.textLabel?.text = "Exclude Device Communication (iOS 17.4+)"
+                cell.accessoryType = .none
+                cell.isUserInteractionEnabled = false
+            }
+        case .resetToDefaults:
+            cell.textLabel?.text = "Reset to Defaults"
+            cell.textLabel?.textColor = .systemRed
+            cell.accessoryType = .none
+        case .none:
+            break
+        }
+    }
+
+    private func didSelectTunnelSettingsRow(at indexPath: IndexPath) {
+        let settings = AppDependencyProvider.shared.vpnSettings
+
+        switch TunnelSettingsRows(rawValue: indexPath.row) {
+        case .enforceRoutes:
+            settings.enforceRoutes.toggle()
+            tableView.reloadRows(at: [indexPath], with: .none)
+        case .includeAllNetworks:
+            settings.includeAllNetworks.toggle()
+            tableView.reloadRows(at: [indexPath], with: .none)
+        case .excludeLocalNetworks:
+            settings.excludeLocalNetworks.toggle()
+            tableView.reloadRows(at: [indexPath], with: .none)
+        case .excludeAPNs:
+            if #available(iOS 16.4, *) {
+                settings.excludeAPNs.toggle()
+                tableView.reloadRows(at: [indexPath], with: .none)
+            }
+        case .excludeCellularServices:
+            if #available(iOS 16.4, *) {
+                settings.excludeCellularServices.toggle()
+                tableView.reloadRows(at: [indexPath], with: .none)
+            }
+        case .excludeDeviceCommunication:
+            if #available(iOS 17.4, *) {
+                settings.excludeDeviceCommunication.toggle()
+                tableView.reloadRows(at: [indexPath], with: .none)
+            }
+        case .resetToDefaults:
+            settings.resetTunnelFlagsToDefaults()
+            tableView.reloadSections(IndexSet(integer: indexPath.section), with: .none)
+        case .none:
             break
         }
     }
@@ -398,6 +566,8 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             cell.textLabel?.text = "Create Log Snapshot"
         case .viewLogSnapshots:
             cell.textLabel?.text = "View Log Snapshots"
+        case .triggerLeakCheck:
+            cell.textLabel?.text = "Trigger VPN Leak Check Now"
         case .none:
             break
         }
@@ -442,6 +612,10 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             }
         case .viewLogSnapshots:
             showLogSnapshotsViewer()
+        case .triggerLeakCheck:
+            Task {
+                await NetworkProtectionDebugUtilities().triggerLeakCheck()
+            }
         case .none:
             break
         }

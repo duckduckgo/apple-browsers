@@ -57,7 +57,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     var webViewModel: AsyncHeadlessWebViewViewModel
     let subscriptionManager: any SubscriptionManager
     weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
-    let purchaseURL: URL
+    let initialURL: URL
     let flowType: SubscriptionFlowType
 
     private let urlOpener: URLOpener
@@ -108,7 +108,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     private let webViewSettings: AsyncHeadlessWebViewSettings
 
-    init(purchaseURL: URL,
+    init(initialURL: URL,
          flowType: SubscriptionFlowType,
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
@@ -120,7 +120,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
-        self.purchaseURL = purchaseURL
+        self.initialURL = initialURL
         self.flowType = flowType
         self.userScript = userScript
         self.userScriptsDependencies = userScriptsDependencies
@@ -373,12 +373,20 @@ final class SubscriptionFlowViewModel: ObservableObject {
             self.resetState()
         }
         if webViewModel.url != subscriptionManager.url(for: currentSubscriptionURL).forComparison() {
-            self.webViewModel.navigationCoordinator.navigateTo(url: purchaseURL)
+            self.webViewModel.navigationCoordinator.navigateTo(url: initialURL)
         }
         await self.setupTransactionObserver()
         await self.setupWebViewObservers()
-        if let pixel = flowType.impressionPixel {
-            Pixel.fire(pixel: pixel)
+        if let pixel = flowType.impressionPixel,
+           initialURL.forComparison() != subscriptionManager.url(for: .welcome).forComparison() {
+            let origin = URLComponents(url: initialURL, resolvingAgainstBaseURL: false)?
+                .queryItems?
+                .first(where: { $0.name == AttributionParameter.origin })?
+                .value
+            Pixel.fire(
+                pixel: pixel,
+                withAdditionalParameters: origin.map { [AttributionParameter.origin: $0] } ?? [:]
+            )
         }
     }
 

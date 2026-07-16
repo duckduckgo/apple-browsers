@@ -18,12 +18,14 @@
 //
 
 import Foundation
+import Onboarding
 @testable import DuckDuckGo
 
 class MockTutorialSettings: TutorialSettings {
     var lastVersionSeen: Int { 0 }
     var hasSeenOnboarding: Bool
     var hasSkippedOnboarding: Bool
+    var onboardingFlowType: OnboardingFlowType?
 
     init(hasSeenOnboarding: Bool, hasSkippedOnboarding: Bool = false) {
         self.hasSeenOnboarding = hasSeenOnboarding

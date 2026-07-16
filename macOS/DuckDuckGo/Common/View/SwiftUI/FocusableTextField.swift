@@ -19,20 +19,11 @@
 import SwiftUI
 
 extension TextField {
-
-    @available(macOS, deprecated: 12.0, message: "This needs to be cleaned-up when macOS 11 support is dropped.")
-    @ViewBuilder
     func focusedOnAppear() -> some View {
-        if #available(macOS 12.0, *) {
-            TextFieldFocusedOnAppear(textField: self)
-        } else {
-            self
-        }
+        TextFieldFocusedOnAppear(textField: self)
     }
-
 }
 
-@available(macOS 12.0, *)
 struct TextFieldFocusedOnAppear<Label: View>: View {
 
     let textField: TextField<Label>

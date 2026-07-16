@@ -10,6 +10,7 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
+      - 'scripts/translation-pr-checks/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
@@ -19,6 +20,7 @@ on:
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'iOS/**'
+      - 'scripts/translation-pr-checks/**'
   schedule:
     - cron: '10,35,50 4,5,6 * * *'
   workflow_call:
@@ -111,7 +113,7 @@ jobs:
     steps:
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
@@ -146,7 +148,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
@@ -157,7 +159,7 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-unit-tests
@@ -182,8 +184,11 @@ jobs:
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          -test-iterations 3 \
+          -retry-tests-on-failure \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
 
@@ -200,22 +205,33 @@ jobs:
 
     - name: Save Xcode Compilation Cache
       if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-unit-tests-${{ steps.compilation-cache-hash.outputs.hash }}
 
+    - name: Process test results
+      if: always()
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: iOS
+        junit-path: unittests.xml
+        log-path: xcodebuild.log
+        title: iOS PR Checks
+        test-outcome: ${{ steps.run-unit-tests.outcome }}
+
     - name: Upload JUnit XML as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always()
       with:
         name: ios-unittests.xml
         path: |
           iOS/unittests.xml
+          iOS/unittests-crash-details.json
         retention-days: 7
 
     - name: Upload logs if workflow failed
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
         name: BuildLogs
@@ -224,10 +240,24 @@ jobs:
           iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
+    - name: Upload crash reports
+      uses: actions/upload-artifact@v6
+      if: failure() || cancelled()
+      with:
+        name: ios-pr-crash-reports
+        path: |
+          ~/Library/Logs/DiagnosticReports/*.ips
+          ~/Library/Logs/DiagnosticReports/*.crash
+        if-no-files-found: ignore
+        retention-days: 7
+
     - name: Publish unit tests report
-      uses: mikepenz/action-junit-report@v3
+      uses: mikepenz/action-junit-report@v6
+      if: always()
       with:
         report_paths: iOS/unittests.xml
+        check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+        job_summary: 'false'
 
     - name: Update Asana with failed unit tests
       if: always() && steps.run-unit-tests.outcome == 'failure'
@@ -289,7 +319,7 @@ jobs:
     steps:
 
     - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.10.0
       with:
         ssh-private-key: |
           ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -322,7 +352,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-release-${{ env.cache_key_hash }}
@@ -333,7 +363,7 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Restore Xcode Compilation Cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-release
@@ -372,6 +402,7 @@ jobs:
         -skipPackagePluginValidation \
         -skipMacroValidation \
         COMPILATION_CACHE_ENABLE_CACHING=YES \
+        OTHER_CODE_SIGN_FLAGS=--timestamp=none \
         | xcbeautify
 
     - name: Compute Compilation Cache hash
@@ -387,7 +418,7 @@ jobs:
 
     - name: Save Xcode Compilation Cache
       if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-release-${{ steps.compilation-cache-hash.outputs.hash }}
@@ -436,7 +467,7 @@ jobs:
           fetch-depth: 0 # Allows scripts to diff against the base branch
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -462,6 +493,36 @@ jobs:
 
       - name: Check translations
         run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform iOS
+
+      - name: Check markdown markers
+        id: marker-check
+        run: |
+          output=$(python3 scripts/translation-pr-checks/check_marker_consistency.py --platform iOS 2>&1) || marker_failed=1
+          echo "$output"
+          if [ "${marker_failed:-0}" = "1" ]; then
+            echo "has_issues=true" >> "$GITHUB_OUTPUT"
+            EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+            echo "message<<$EOF" >> "$GITHUB_OUTPUT"
+            echo "$output" >> "$GITHUB_OUTPUT"
+            echo "$EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment on PR with marker mismatches
+        if: steps.marker-check.outputs.has_issues == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MARKER_MESSAGE: ${{ steps.marker-check.outputs.message }}
+        run: |
+          body=$(printf '## ⚠️ Markdown Marker Mismatches\n\nBold marker (`**`) counts must match the English source. Fix the affected translations at the Smartling source.\n\n```\n%s\n```' "$MARKER_MESSAGE")
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$body"
+
+      - name: Fail if marker mismatches
+        if: steps.marker-check.outputs.has_issues == 'true'
+        run: |
+          echo "Markdown marker mismatches detected (see PR comment and output above)."
+          exit 1
 
       - name: Check for orphaned translations
         id: orphaned-translations

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Common
+import FoundationExtensions
 import Foundation
 import PixelKit
 import UserScript
@@ -43,9 +45,11 @@ final class OnboardingUserScript: NSObject, Subfeature {
         case setDuckAiInAddressBar
         case requestAddToDock
         case requestImport
+        case requestChromeExtensionInstall
         case requestSetAsDefault
         case reportInitException
         case reportPageException
+        case telemetryEvent
     }
 
     init(onboardingActionsManager: OnboardingActionsManaging) {
@@ -62,6 +66,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
             .dismissToSettings: dismissToSettings,
             .requestDockOptIn: requestDockOptIn,
             .requestImport: requestImport,
+            .requestChromeExtensionInstall: requestChromeExtensionInstall,
             .requestSetAsDefault: requestSetAsDefault,
             .setBookmarksBar: setBookmarksBar,
             .setSessionRestore: setSessionRestore,
@@ -69,7 +74,8 @@ final class OnboardingUserScript: NSObject, Subfeature {
             .setDuckAiInAddressBar: setDuckAiInAddressBar,
             .stepCompleted: stepCompleted,
             .reportInitException: reportException,
-            .reportPageException: reportException
+            .reportPageException: reportException,
+            .telemetryEvent: reportTelemetryEvent
     ]
 
     @MainActor
@@ -116,6 +122,12 @@ extension OnboardingUserScript {
         return OnboardingImportResponse(enabled: isDataImported)
     }
 
+    @MainActor
+    private func requestChromeExtensionInstall(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        onboardingActionsManager.installChromeExtension()
+        return nil
+    }
+
     private func requestSetAsDefault(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         onboardingActionsManager.setAsDefault()
         return Result()
@@ -152,12 +164,21 @@ extension OnboardingUserScript {
         if let params = params as? [String: String], let stepString = params["id"], let step = OnboardingSteps(rawValue: stepString) {
             onboardingActionsManager.stepCompleted(step: step)
         }
+        if let params = params as? [String: String], let stepString = params["next"], let step = OnboardingSteps(rawValue: stepString) {
+            onboardingActionsManager.stepShown(step: step)
+        }
         return nil
     }
 
     private func reportException(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let params = params as? [String: String] else { return nil }
         onboardingActionsManager.reportException(with: params)
+        return nil
+    }
+
+    private func reportTelemetryEvent(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let event: OnboardingUserScript.TelemetryEvent = DecodableHelper.decode(from: params) else { return nil }
+        onboardingActionsManager.reportTelemetryEvent(event)
         return nil
     }
 

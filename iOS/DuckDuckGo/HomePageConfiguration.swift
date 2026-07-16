@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import RemoteMessaging
 import Common
+import FoundationExtensions
 import Core
 import Bookmarks
 import os.log
@@ -33,41 +34,33 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private var remoteMessagingStore: RemoteMessagingStoring
     private let subscriptionDataReporter: SubscriptionDataReporting
     private let isStillOnboarding: () -> Bool
-    private let fireModePromotionEligibility: FireModePromotionCoordinating?
 
     var homeMessages: [HomeMessage] = []
 
     init(variantManager: VariantManager? = nil,
          remoteMessagingStore: RemoteMessagingStoring,
          subscriptionDataReporter: SubscriptionDataReporting,
-         fireModePromotionEligibility: FireModePromotionCoordinating? = nil,
          isStillOnboarding: @escaping () -> Bool
     ) {
         homeMessageStorage = HomeMessageStorage(variantManager: variantManager)
         self.remoteMessagingStore = remoteMessagingStore
         self.subscriptionDataReporter = subscriptionDataReporter
-        self.fireModePromotionEligibility = fireModePromotionEligibility
         self.isStillOnboarding = isStillOnboarding
-        homeMessages = buildHomeMessages()
+        homeMessages = buildHomeMessages(openedAfterIdle: false)
     }
 
-    func refresh() {
-        homeMessages = buildHomeMessages()
+    func refresh(openedAfterIdle: Bool = false) {
+        homeMessages = buildHomeMessages(openedAfterIdle: openedAfterIdle)
     }
 
-    private func buildHomeMessages() -> [HomeMessage] {
+    private func buildHomeMessages(openedAfterIdle: Bool) -> [HomeMessage] {
         var messages = homeMessageStorage.messagesToBeShown
 
         if isStillOnboarding() {
             return messages
         }
 
-        if fireModePromotionEligibility?.isNTPPromotionEligible == true {
-            messages.append(.firePromotion)
-            return messages
-        }
-
-        guard let remoteMessage = remoteMessageToShow() else {
+        guard let remoteMessage = remoteMessageToShow(openedAfterIdle: openedAfterIdle) else {
             return messages
         }
 
@@ -75,8 +68,15 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         return messages
     }
 
-    private func remoteMessageToShow() -> HomeMessage? {
-        guard let remoteMessageToPresent = remoteMessagingStore.fetchScheduledRemoteMessage(surfaces: .newTabPage) else { return nil }
+    private func remoteMessageToShow(openedAfterIdle: Bool) -> HomeMessage? {
+        let remoteMessageToPresent: RemoteMessageModel?
+        if openedAfterIdle,
+           let idleMessage = remoteMessagingStore.fetchScheduledRemoteMessage(surfaces: .newTabPage, triggerFilter: .specific(.afterIdle)) {
+            remoteMessageToPresent = idleMessage
+        } else {
+            remoteMessageToPresent = remoteMessagingStore.fetchScheduledRemoteMessage(surfaces: .newTabPage, triggerFilter: .noTrigger)
+        }
+        guard let remoteMessageToPresent else { return nil }
         Logger.remoteMessaging.info("Remote message to show: \(remoteMessageToPresent.id, privacy: .public)")
         return .remoteMessage(remoteMessage: remoteMessageToPresent)
     }
@@ -87,11 +87,6 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         case .remoteMessage(let remoteMessage):
             Logger.remoteMessaging.info("Home message dismissed: \(remoteMessage.id)")
             await remoteMessagingStore.dismissRemoteMessage(withID: remoteMessage.id)
-            if let index = homeMessages.firstIndex(of: homeMessage) {
-                homeMessages.remove(at: index)
-            }
-            NotificationCenter.default.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
-        case .firePromotion:
             if let index = homeMessages.firstIndex(of: homeMessage) {
                 homeMessages.remove(at: index)
             }

@@ -54,6 +54,10 @@ public protocol XPCServerInterface: AnyObject {
     ///
     func fetchLastError(completion: @escaping (Error?) -> Void)
 
+    /// Refreshes the login item's view of VPN system state and publishes any resulting state changes.
+    ///
+    func refreshSystemState(completion: @escaping (Error?) -> Void)
+
     /// Commands
     ///
     func command(_ command: VPNCommand) async throws
@@ -90,6 +94,10 @@ protocol XPCServerInterfaceObjC {
     /// Fetches the last error directly from the tunnel manager.
     ///
     func fetchLastError(completion: @escaping (Error?) -> Void)
+
+    /// Refreshes the login item's view of VPN system state and publishes any resulting state changes.
+    ///
+    func refreshSystemState(completion: @escaping (Error?) -> Void)
 
     /// Commands
     ///
@@ -229,6 +237,10 @@ extension VPNControllerXPCServer: XPCServerInterfaceObjC {
 
     func fetchLastError(completion: @escaping (Error?) -> Void) {
         serverDelegate?.fetchLastError(completion: completion)
+    }
+
+    func refreshSystemState(completion: @escaping (Error?) -> Void) {
+        serverDelegate?.refreshSystemState(completion: completion)
     }
 
     func command(_ payload: Data, completion: @escaping (Error?) -> Void) {

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import ConcurrencyExtensions
 import Foundation
 import SharedTestUtilities
 import UniformTypeIdentifiers
@@ -281,6 +282,76 @@ final class FileDownloadManagerTests: XCTestCase {
         download.delegate?.download(download.asWKDownload(), decideDestinationUsing: response, suggestedFilename: "") { url in
             XCTAssertEqual(url?.lastPathComponent, "download.html")
             XCTAssertTrue(url?.lastPathComponent.count ?? 0 > WebKitDownloadTask.downloadExtension.count + 1)
+            e.fulfill()
+        }
+
+        waitForExpectations(timeout: 5)
+    }
+
+    // Regression test: when writing the placeholder file fails for a real reason (disk full, read-only fs,
+    // unmounted volume), the download should be marked as .failed with the real underlying error — not
+    // silently cancelled — and the pixel assertion should fire with the right message.
+    @MainActor
+    func testWhenFileCreationFailsWithPersistentErrorThenDownloadIsMarkedFailed() {
+        // Use a real writable directory so effectiveDownloadLocation resolves it correctly.
+        let downloadsURL = fm.temporaryDirectory
+        preferences.selectedDownloadLocation = downloadsURL
+
+        // Inject a write failure to simulate a persistent OS error (e.g. disk full).
+        let writeError = CocoaError(.fileWriteOutOfSpace)
+        dm.reservePlaceholderFile = { _ in throw writeError }
+
+        let download = WKDownloadMock(url: .duckDuckGo)
+        let task = dm.add(download, fireWindowSession: nil, delegate: self, destination: .auto)
+
+        self.chooseDestination = { _, _, _ in
+            XCTFail("Unexpected chooseDestination call — download should have failed, not prompted")
+        }
+
+        let e = expectation(description: "WKDownload callback called")
+        download.delegate?.download(download.asWKDownload(), decideDestinationUsing: response, suggestedFilename: "file.pdf") { url in
+            XCTAssertNil(url, "Download should be cancelled when file creation fails")
+            e.fulfill()
+        }
+
+        waitForExpectations(timeout: 5)
+
+        // The task must be in .failed state with the real underlying error — not silently cancelled.
+        if case .failed(_, _, _, let error) = task.state {
+            let nsError = error.underlyingError as NSError?
+            XCTAssertEqual(nsError?.domain, NSCocoaErrorDomain)
+            XCTAssertEqual(nsError?.code, NSFileWriteOutOfSpaceError)
+        } else {
+            XCTFail("Expected task state .failed, got \(task.state)")
+        }
+    }
+
+    // When the preferred filename is already taken on disk (TOCTOU race: another process claimed it),
+    // the download manager should retry with the next available filename rather than aborting.
+    @MainActor
+    func testWhenFileCreationFailsDueToRaceConditionThenRetriesWithNextAvailableName() throws {
+        let downloadsURL = fm.temporaryDirectory
+        preferences.selectedDownloadLocation = downloadsURL
+
+        // Pre-create "file.pdf" so withNonExistentUrl skips it and tries "file 1.pdf".
+        let takenURL = downloadsURL.appendingPathComponent("file.pdf")
+        try Data().write(to: takenURL)
+        defer {
+            try? FileManager.default.removeItem(at: takenURL)
+            try? FileManager.default.removeItem(at: downloadsURL.appendingPathComponent("file 1.pdf"))
+        }
+
+        let download = WKDownloadMock(url: .duckDuckGo)
+        dm.add(download, fireWindowSession: nil, delegate: self, destination: .auto)
+
+        self.chooseDestination = { _, _, _ in
+            XCTFail("Unexpected chooseDestination call")
+        }
+
+        let e = expectation(description: "WKDownload callback called")
+        download.delegate?.download(download.asWKDownload(), decideDestinationUsing: response, suggestedFilename: "file.pdf") { url in
+            XCTAssertNotNil(url, "Download should succeed by retrying with a different name")
+            XCTAssertEqual(url?.lastPathComponent, "file 1.pdf", "Should pick the next available filename")
             e.fulfill()
         }
 

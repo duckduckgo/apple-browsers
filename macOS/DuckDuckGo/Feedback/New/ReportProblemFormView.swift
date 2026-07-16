@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
@@ -25,7 +26,9 @@ final class ReportProblemFormViewController: NSHostingController<ReportProblemFo
 
     enum Constants {
         static let width: CGFloat = 448
-        static let height: CGFloat = 560
+        // Liquid Glass uses taller pill buttons (8/8 padding) and a larger bottom inset, so the
+        // fixed-height categories screen needs extra room to avoid clipping the footer.
+        static var height: CGFloat { AppVersion.isLiquidGlassSupported ? 575 : 571 }
 
         // Constants for the sub-categories screen
         static let detailsFormHeight: CGFloat = 356
@@ -48,6 +51,8 @@ final class ReportProblemFormViewController: NSHostingController<ReportProblemFo
 struct ReportProblemFormFlowView: View {
     @StateObject private var viewModel: ReportProblemFormViewModel
 
+    let isAppRebranded: Bool
+
     var onClose: () -> Void
     var onSeeWhatsNew: () -> Void
     var onResize: (CGFloat, CGFloat) -> Void
@@ -57,6 +62,7 @@ struct ReportProblemFormFlowView: View {
         onReportBrokenSite: (() -> Void)?,
         preselectedCategory: ProblemCategory? = nil,
         preselectedSubCategory: SubCategory? = nil,
+        isAppRebranded: Bool,
         onClose: @escaping () -> Void,
         onSeeWhatsNew: @escaping () -> Void,
         onResize: @escaping (CGFloat, CGFloat) -> Void
@@ -67,6 +73,7 @@ struct ReportProblemFormFlowView: View {
             preselectedCategory: preselectedCategory,
             preselectedSubCategory: preselectedSubCategory
         ))
+        self.isAppRebranded = isAppRebranded
         self.onClose = onClose
         self.onSeeWhatsNew = onSeeWhatsNew
         self.onResize = onResize
@@ -109,6 +116,7 @@ struct ReportProblemFormFlowView: View {
             } else if viewModel.isShowingCategorySelection {
                 ProblemCategoriesView(
                     viewModel: viewModel,
+                    isAppRebranded: isAppRebranded,
                     onClose: onClose
                 )
                 .onAppear {
@@ -128,6 +136,7 @@ struct ReportProblemFormFlowView: View {
 
 struct ProblemCategoriesView: View {
     @ObservedObject var viewModel: ReportProblemFormViewModel
+    let isAppRebranded: Bool
     var onClose: () -> Void
 
     var body: some View {
@@ -142,7 +151,7 @@ struct ProblemCategoriesView: View {
 
     private func header() -> some View {
         HStack(spacing: 12) {
-            Image(.feedbackAsk)
+            Image(isAppRebranded ? .feedbackNegative56 : .feedbackAsk)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(UserText.reportBrowserProblem)
@@ -154,7 +163,8 @@ struct ProblemCategoriesView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 20)
-        .padding([.leading, .trailing, .bottom], 24)
+        .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+        .padding(.bottom, 24)
     }
 
     @State private var hoveredCategoryId: String?
@@ -193,6 +203,7 @@ struct ProblemCategoriesView: View {
         VStack(spacing: 0) {
             ForEach(Array(viewModel.availableCategories.enumerated()), id: \.element.id) { _, category in
                 ProblemCategoryView(
+                    isAppRebranded: isAppRebranded,
                     category: category,
                     shouldShowDivider: shouldShowDivider(for: category),
                     isTopCategory: category.id == viewModel.availableCategories.first?.id,
@@ -210,23 +221,24 @@ struct ProblemCategoriesView: View {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: isAppRebranded ? 16 : 6)
                 .stroke(Color.divider, lineWidth: 1)
         )
-        .padding([.leading, .trailing, .bottom], 24)
+        .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+        .padding(.bottom, 24)
     }
 
     private func footer() -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            Divider()
-                .background(Color.divider)
-                .frame(maxWidth: .infinity)
+            Rectangle()
+                .fill(Color(.separatorColor))
                 .frame(height: 1)
+                .frame(maxWidth: .infinity)
 
             Text(UserText.feedbackDisclaimer)
                 .caption2()
                 .multilineTextAlignment(.leading)
-                .padding([.leading, .trailing], 24)
+                .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
 
             Button {
                 onClose()
@@ -234,9 +246,9 @@ struct ProblemCategoriesView: View {
                 Text(UserText.cancel)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(DismissActionButtonStyle())
-            .padding([.leading, .trailing], 24)
-            .padding(.bottom, 16)
+            .buttonStyle(DismissActionButtonStyle(topPadding: 8, bottomPadding: 8, pillShape: true))
+            .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+            .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
         }
     }
 }
@@ -244,6 +256,7 @@ struct ProblemCategoriesView: View {
 // MARK: - Problem Category Row View
 
 struct ProblemCategoryView: View {
+    let isAppRebranded: Bool
     let category: ProblemCategory
     let shouldShowDivider: Bool
     let isTopCategory: Bool
@@ -271,20 +284,22 @@ struct ProblemCategoryView: View {
         .buttonStyle(.plain)
         .background(isHovered ? Color.controlsFillPrimary : Color.clear)
         .if(isTopCategory) { view in
-            view.cornerRadius(6, corners: [.topLeft, .topRight])
+            view.cornerRadius(isAppRebranded ? 16 : 6, corners: [.topLeft, .topRight])
         }
         .if(isLastCategory) { view in
-            view.cornerRadius(6, corners: [.bottomLeft, .bottomRight])
+            view.cornerRadius(isAppRebranded ? 16 : 6, corners: [.bottomLeft, .bottomRight])
         }
         .onHover { hovering in
             isHovered = hovering
             onHoverChanged(category.id, hovering)
         }
 
-        Rectangle()
-            .stroke(shouldShowDivider ? Color.divider : Color.clear, lineWidth: 1)
-            .frame(height: 1)
-            .padding(.horizontal, 8)
+        if !isLastCategory {
+            Rectangle()
+                .fill(shouldShowDivider ? Color.divider : Color.clear)
+                .frame(height: 1)
+                .padding(.horizontal, 8)
+        }
     }
 }
 
@@ -323,7 +338,8 @@ struct ProblemDetailFormView: View {
     private enum ComponentHeights {
         static let header: CGFloat = 72  // 24 padding + ~24 button/text + 24 padding
         static let textInputSection: CGFloat = 159  // Calculated from original height difference (515 - 356 = 159)
-        static let footer: CGFloat = 122  // 16 spacing + 1 divider + ~10 disclaimer + 16 spacing + ~32 buttons + 16 bottom padding + ~31 button spacing
+        // 16 spacing + 1 divider + ~10 disclaimer + 16 spacing + ~43 pill buttons (8/8 padding) + bottom padding + ~31 button spacing
+        static var footer: CGFloat { AppVersion.isLiquidGlassSupported ? 137 : 133 }
     }
 
     private func calculateTotalHeight() -> CGFloat {
@@ -366,11 +382,12 @@ struct ProblemDetailFormView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(24)
+        .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+        .padding(.vertical, 24)
     }
 
     private func optionsPills() -> some View {
-        let horizontalPadding: CGFloat = 24
+        let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 24
         return FlexibleView(
             availableWidth: ReportProblemFormViewController.Constants.width - (horizontalPadding * 2),
             data: viewModel.availableOptions,
@@ -410,21 +427,21 @@ struct ProblemDetailFormView: View {
             AdaptiveTextEditor(text: $viewModel.customText)
                 .textEditorStyling(isEmpty: viewModel.customText.isEmpty)
         }
-        .padding([.leading, .trailing], 24)
+        .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
         .padding(.bottom, 8)
     }
 
     private func footer() -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            Divider()
-                .background(Color.divider)
-                .frame(maxWidth: .infinity)
+            Rectangle()
+                .fill(Color(.separatorColor))
                 .frame(height: 1)
+                .frame(maxWidth: .infinity)
 
             Text(UserText.feedbackDisclaimer)
                 .caption2()
                 .multilineTextAlignment(.leading)
-                .padding([.leading, .trailing], 24)
+                .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
 
             HStack(spacing: 10) {
                 Button {
@@ -433,7 +450,7 @@ struct ProblemDetailFormView: View {
                     Text(UserText.cancel)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(DismissActionButtonStyle())
+                .buttonStyle(DismissActionButtonStyle(topPadding: 8, bottomPadding: 8, pillShape: true))
 
                 Button {
                     viewModel.submitFeedback()
@@ -442,10 +459,10 @@ struct ProblemDetailFormView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .disabled(!viewModel.shouldEnableSubmit)
-                .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit))
+                .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit, topPadding: 8, bottomPadding: 8, pillShape: true))
             }
-            .padding([.leading, .trailing], 24)
-            .padding(.bottom, 16)
+            .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+            .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
         }
     }
 }
@@ -456,15 +473,10 @@ private struct AdaptiveTextEditor: View {
     @Binding var text: String
 
     var body: some View {
-        if #available(macOS 12, *) {
-            AutoFocusTextEditor(text: $text)
-        } else {
-            TextEditor(text: $text)
-        }
+        AutoFocusTextEditor(text: $text)
     }
 }
 
-@available(macOS 12.0, *)
 private struct AutoFocusTextEditor: View {
     @Binding var text: String
     @FocusState private var focusState: Bool

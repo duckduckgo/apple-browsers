@@ -233,13 +233,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.printMenuItem)
         XCTAssertTrue(moreOptionsMenu.items[24].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[25].title, UserText.mainMenuHelp)
-
-        if NSApp.isSandboxed {
-            XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
-            XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
-        } else {
-            XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.settings)
-        }
+        XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.settings)
     }
 
     @MainActor
@@ -281,13 +275,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(moreOptionsMenu.items[24].title, UserText.printMenuItem)
         XCTAssertTrue(moreOptionsMenu.items[25].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuHelp)
-
-        if NSApp.isSandboxed {
-            XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""))
-            XCTAssertEqual(moreOptionsMenu.items[28].title, UserText.settings)
-        } else {
-            XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
-        }
+        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
     }
 
     @MainActor
@@ -989,6 +977,7 @@ final class MockFreemiumDBPFeature: FreemiumDBPFeature {
     var isAvailableSubject = PassthroughSubject<Bool, Never>()
 
     var mockFeatureFlagEnabled: Bool?
+    var mockIsAvailableIgnoringPurchaseCapability: Bool?
 
     var isFeatureFlagEnabled: Bool {
         mockFeatureFlagEnabled ?? featureAvailable
@@ -996,6 +985,10 @@ final class MockFreemiumDBPFeature: FreemiumDBPFeature {
 
     var isAvailable: Bool {
         featureAvailable
+    }
+
+    var isAvailableIgnoringPurchaseCapability: Bool {
+        mockIsAvailableIgnoringPurchaseCapability ?? featureAvailable
     }
 
     var isAvailablePublisher: AnyPublisher<Bool, Never> {

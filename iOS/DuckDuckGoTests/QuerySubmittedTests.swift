@@ -32,7 +32,8 @@ class QuerySubmittedTests: XCTestCase {
             voiceSearchHelper: MockVoiceSearchHelper(
                 isSpeechRecognizerAvailable: true,
                 voiceSearchEnabled: true)
-        )
+        ),
+        isFloatingUIEnabled: false
     )
 
     override func setUp() {
@@ -97,7 +98,7 @@ class QuerySubmittedTests: XCTestCase {
 
     func testWhenSubmittingValidURLInIPadDuckAIModeThenSubmitsAsQuery() {
         sut.loadViewIfNeeded()
-        sut.setSelectedTextEntryMode(.aiChat)
+        sut.setSelectedTextEntryMode(TextEntryMode.aiChat)
 
         let textView = UITextView()
         textView.text = "https://example.com/path"
@@ -114,7 +115,7 @@ class QuerySubmittedTests: XCTestCase {
 
     func testWhenSubmittingTextInIPadDuckAIModeThenSubmitsAsPrompt() {
         sut.loadViewIfNeeded()
-        sut.setSelectedTextEntryMode(.aiChat)
+        sut.setSelectedTextEntryMode(TextEntryMode.aiChat)
 
         let textView = UITextView()
         textView.text = "best places to visit in japan"
@@ -127,6 +128,53 @@ class QuerySubmittedTests: XCTestCase {
         XCTAssertTrue(mock.wasOnPromptSubmittedCalled)
         XCTAssertEqual(mock.promptQuery, "best places to visit in japan")
         XCTAssertFalse(mock.wasOnOmniQuerySubmittedCalled)
+    }
+
+    // MARK: - Clear button visibility (iPad duck.ai expanded panel)
+
+    func testWhenSearchAreaExpandedAndDuckAIFieldEmptyThenClearButtonIsHidden() throws {
+        sut.loadViewIfNeeded()
+        let expandable = try XCTUnwrap(sut.expandableBarView, "iPad omni bar should expose an expandable bar view")
+
+        // Set the text after expanding: expansion transfers the (empty) search field text into the
+        // aiChatTextView, so seeding it beforehand would be overwritten.
+        expandable.setSearchAreaExpanded(true, animated: false)
+        expandable.aiChatTextView.text = ""
+        XCTAssertTrue(expandable.isSearchAreaExpanded, "Precondition: the duck.ai panel must be expanded")
+
+        // A text-editing state reports showClear == true; before the fix the clear button followed
+        // the state machine and lingered over the empty duck.ai field (the reported bug).
+        let textEditingState = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(), isLoading: false)
+        XCTAssertTrue(textEditingState.showClear)
+        XCTAssertTrue(sut.shouldHideClearButton(for: textEditingState))
+    }
+
+    func testWhenSearchAreaExpandedAndDuckAIFieldHasTextThenClearButtonIsVisible() throws {
+        sut.loadViewIfNeeded()
+        let expandable = try XCTUnwrap(sut.expandableBarView)
+
+        // Set the text after expanding: expansion transfers the (empty) search field text into the
+        // aiChatTextView, so seeding it beforehand would be overwritten.
+        expandable.setSearchAreaExpanded(true, animated: false)
+        expandable.aiChatTextView.text = "best places to visit in japan"
+        XCTAssertTrue(expandable.isSearchAreaExpanded, "Precondition: the duck.ai panel must be expanded")
+
+        let textEditingState = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(), isLoading: false)
+        XCTAssertFalse(sut.shouldHideClearButton(for: textEditingState))
+    }
+
+    func testWhenSearchAreaNotExpandedThenClearButtonFollowsStateShowClear() throws {
+        sut.loadViewIfNeeded()
+        let expandable = try XCTUnwrap(sut.expandableBarView)
+
+        // Not expanded: the search text field governs, so the state machine's showClear is
+        // authoritative regardless of the (unused) aiChatTextView content.
+        expandable.aiChatTextView.text = "stale text"
+        expandable.setSearchAreaExpanded(false, animated: false)
+
+        let dependencies = MockOmnibarDependency()
+        XCTAssertFalse(sut.shouldHideClearButton(for: LargeOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: false)))
+        XCTAssertTrue(sut.shouldHideClearButton(for: LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false)))
     }
 
     // MARK: - Helper Methods
@@ -229,7 +277,5 @@ final class MockOmniBarDelegate: OmniBarDelegate {
     func shouldAutoSelectTextForSERPQuery() -> Bool { false }
     
     func isCurrentTabFireTab() -> Bool { false }
-
-    func onFireModeRequested() { }
 
 }

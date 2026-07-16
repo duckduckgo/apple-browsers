@@ -20,6 +20,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import os.log
@@ -44,7 +45,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
-                                  featureFlagger: DBPFeatureFlagging,
+                                  featureFlagger: DBPFeatureFlagging & FreemiumPIRFeatureFlagging,
                                   userNotificationService: DataBrokerProtectionUserNotificationService,
                                   pixelKit: PixelKit,
                                   wideEvent: WideEventManaging,
@@ -52,8 +53,12 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
                                   feedbackViewCreator: @escaping () -> (any View),
                                   eventsHandler: EventMapping<JobEvent>,
+                                  applicationNameForUserAgentProvider: @escaping () -> String?,
+                                  freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+                                  profileStateManager: DBPProfileStateManaging,
                                   isWebViewInspectable: Bool = false,
-                                  freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil) -> DataBrokerProtectionIOSManager? {
+                                  freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil,
+                                  contentBlocking: DBPWebViewContentBlocking) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
@@ -96,9 +101,16 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
                                                         runTypeProvider: dbpSettings,
-                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated })
+                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated },
+                                                        optOutRetryErrorFeatureFlagger: featureFlagger)
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
+        do {
+            profileStateManager.reconcileProfileState(hasSavedProfile: try database.fetchProfile() != nil)
+        } catch {
+            profileStateManager.recordProfileStateUnknown()
+            Logger.dataBrokerProtection.error("Error reconciling profile state, error: \(error.localizedDescription, privacy: .public)")
+        }
 
         let operationQueue = OperationQueue()
         let jobProvider = BrokerProfileJobProvider()
@@ -123,7 +135,6 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                                         database: database,
                                                                         emailServiceV0: emailService,
                                                                         emailServiceV1: emailServiceV1,
-                                                                        featureFlagger: featureFlagger,
                                                                         pixelHandler: sharedPixelsHandler)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
         let executionConfig = BrokerJobExecutionConfig()
@@ -139,10 +150,11 @@ public class DataBrokerProtectionIOSManagerProvider {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
-            applicationNameForUserAgent: nil,
+            applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
             vpnBypassService: nil,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask,
             wideEvent: wideEvent,
+            contentBlocking: contentBlocking,
             isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated }
         )
 
@@ -164,7 +176,9 @@ public class DataBrokerProtectionIOSManagerProvider {
             wideEvent: wideEvent,
             eventsHandler: eventsHandler,
             isWebViewInspectable: isWebViewInspectable,
-            freeTrialConversionService: freeTrialConversionService
+            freeTrialConversionService: freeTrialConversionService,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: profileStateManager
         )
     }
 }

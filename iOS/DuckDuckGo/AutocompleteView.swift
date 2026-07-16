@@ -40,16 +40,6 @@ struct AutocompleteView: View {
                 .listRowInsets(EdgeInsets(top: 10, leading: 2, bottom: 0, trailing: 0))
             }
 
-            if model.isMessageVisible {
-                HistoryMessageView {
-                    model.onDismissMessage()
-                }
-                .listRowBackground(Color(designSystemColor: .surface))
-                .onAppear {
-                    model.onShownToUser()
-                }
-            }
-
             SuggestionsSection(suggestions: model.topHits,
                                query: model.query,
                                onSuggestionSelected: model.onSuggestionSelected,
@@ -76,49 +66,17 @@ struct AutocompleteView: View {
         .padding(.top, model.isPad ? 10 : 0)
         .modifier(HideScrollContentBackground())
         .background(Color(designSystemColor: .background))
+        .onHover { isHovering in
+            if !isHovering {
+                model.clearSelection()
+            }
+        }
         .modifier(CompactSectionSpacing())
         .modifier(DisableSelection())
         .modifier(DismissKeyboardOnSwipe())
         .environmentObject(model)
         .ignoresSafeArea(.keyboard, edges: .bottom)
    }
-
-}
-
-private struct HistoryMessageView: View {
-
-    var onDismiss: () -> Void
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Button {
-                onDismiss()
-            } label: {
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                    .foregroundColor(.primary)
-            }
-            .padding(.top, 4)
-            .buttonStyle(.plain)
-
-            VStack {
-                Image(.remoteMessageAnnouncement)
-                    .padding(8)
-
-                Text(UserText.autocompleteHistoryWarningTitle)
-                    .multilineTextAlignment(.center)
-                    .daxHeadline()
-                    .padding(2)
-
-                Text(UserText.autocompleteHistoryWarningDescription)
-                    .multilineTextAlignment(.center)
-                    .daxFootnoteRegular()
-                    .frame(maxWidth: 536)
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity)
-    }
 
 }
 
@@ -168,6 +126,17 @@ private struct HideScrollContentBackground: ViewModifier {
     }
 }
 
+private struct SuggestionSelectedKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+private extension EnvironmentValues {
+    var suggestionIsSelected: Bool {
+        get { self[SuggestionSelectedKey.self] }
+        set { self[SuggestionSelectedKey.self] = newValue }
+    }
+}
+
 private struct SuggestionsSection: View {
 
     @EnvironmentObject var autocompleteViewModel: AutocompleteViewModel
@@ -177,12 +146,15 @@ private struct SuggestionsSection: View {
     var onSuggestionSelected: (AutocompleteViewModel.SuggestionModel) -> Void
     var onSuggestionDeleted: (AutocompleteViewModel.SuggestionModel) -> Void
 
-    let selectedColor = Color(designSystemColor: .accent)
+    let selectedColor = Color(designSystemColor: .accentPrimary)
 
     let unselectedColor = Color(designSystemColor: .surface)
 
     private struct Metrics {
-        static let rowInsets = EdgeInsets(top: 10, leading: 10, bottom: 8, trailing: 14)
+        // Horizontal insets stay on the row to keep the separator's leading inset. Vertical insets
+        // move inside the row content (below) so the hover/tap area covers the full row height.
+        static let horizontalRowInsets = EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 14)
+        static let verticalRowInsets = EdgeInsets(top: 10, leading: 0, bottom: 8, trailing: 0)
     }
 
     var body: some View {
@@ -191,47 +163,21 @@ private struct SuggestionsSection: View {
                  Button {
                      onSuggestionSelected(suggestions[index])
                  } label: {
-                    SuggestionView(model: suggestions[index], query: query)
+                    SuggestionView(model: suggestions[index],
+                                   query: query,
+                                   onDelete: { onSuggestionDeleted(suggestions[index]) })
+                        .padding(Metrics.verticalRowInsets)
+                        .contentShape(Rectangle())
                  }
                  .listRowBackground(autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
-                 .listRowInsets(Metrics.rowInsets)
+                 .listRowInsets(Metrics.horizontalRowInsets)
                  .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
-                 .modifier(SwipeDeleteHistoryModifier(suggestion: suggestions[index], onSuggestionDeleted: onSuggestionDeleted))
+                 .onHover { isHovering in
+                     if isHovering {
+                         autocompleteViewModel.selection = suggestions[index]
+                     }
+                 }
             }
-        }
-    }
-
-}
-
-private struct SwipeDeleteHistoryModifier: ViewModifier {
-
-    @EnvironmentObject var autocompleteViewModel: AutocompleteViewModel
-
-    let suggestion: AutocompleteViewModel.SuggestionModel
-    var onSuggestionDeleted: (AutocompleteViewModel.SuggestionModel) -> Void
-
-    func body(content: Content) -> some View {
-        /// Swipe-to-delete is disabled when Duck.ai toggle is enabled to avoid gesture conflict
-        if autocompleteViewModel.isSwipeToDeleteEnabled {
-            switch suggestion.suggestion {
-            case .historyEntry:
-                content.swipeActions {
-                    Button(role: .destructive) {
-                        onSuggestionDeleted(suggestion)
-                    } label: {
-                        Label {
-                            Text("Delete")
-                        } icon: {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size24.trash)
-                        }
-                    }
-                }
-
-            default:
-                content
-            }
-        } else {
-            content
         }
     }
 
@@ -243,11 +189,16 @@ private struct SuggestionView: View {
 
     let model: AutocompleteViewModel.SuggestionModel
     let query: String?
+    let onDelete: () -> Void
 
     var tapAheadImage: Image? {
         guard model.canShowTapAhead else { return nil }
         return Image(uiImage: autocompleteModel.isAddressBarAtBottom ?
                      DesignSystemImages.Glyphs.Size16.arrowCircleDownLeft : DesignSystemImages.Glyphs.Size16.arrowCircleUpLeft)
+    }
+
+    private var isSelected: Bool {
+        autocompleteModel.selection == model
     }
 
     var body: some View {
@@ -258,9 +209,9 @@ private struct SuggestionView: View {
                 SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.findSearchSmall),
                                    title: phrase,
                                    query: query,
-                                   indicator: tapAheadImage) {
-                    autocompleteModel.onTapAhead(model)
-                }.accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SearchPhrase-\(phrase)")
+                                   indicator: tapAheadImage,
+                                   onTapIndicator: { autocompleteModel.onTapAhead(model) })
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SearchPhrase-\(phrase)")
 
             case .website(let url):
                 SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),
@@ -282,13 +233,15 @@ private struct SuggestionView: View {
             case .historyEntry(_, let url, _) where url.isDuckDuckGoSearch:
                 SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
                                    title: url.searchQuery ?? "",
-                                   subtitle: UserText.autocompleteSearchDuckDuckGo)
+                                   subtitle: UserText.autocompleteSearchDuckDuckGo,
+                                   onDelete: onDelete)
                 .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SERPHistory-\(url.searchQuery ?? "")")
 
             case .historyEntry(let title, let url, _):
                 SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
                                    title: title ?? "",
-                                   subtitle: url.formattedForSuggestion())
+                                   subtitle: url.formattedForSuggestion(),
+                                   onDelete: onDelete)
                 .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.History-\(url.formattedForSuggestion())")
 
             case .openTab(title: let title, url: let url, _, _):
@@ -310,6 +263,7 @@ private struct SuggestionView: View {
 
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .environment(\.suggestionIsSelected, isSelected)
     }
 
 }
@@ -318,19 +272,23 @@ private struct SuggestionListItem: View {
 
     @EnvironmentObject var autocompleteModel: AutocompleteViewModel
 
+    @Environment(\.suggestionIsSelected) private var isSelected: Bool
+
     let icon: Image
     let title: String
     let subtitle: String?
     let query: String?
     let indicator: Image?
     let onTapIndicator: (() -> Void)?
+    let onDelete: (() -> Void)?
 
     init(icon: Image,
          title: String,
          subtitle: String? = nil,
          query: String? = nil,
          indicator: Image? = nil,
-         onTapIndicator: ( () -> Void)? = nil) {
+         onTapIndicator: ( () -> Void)? = nil,
+         onDelete: (() -> Void)? = nil) {
 
         self.icon = icon
         self.title = title
@@ -338,6 +296,12 @@ private struct SuggestionListItem: View {
         self.query = query
         self.indicator = indicator
         self.onTapIndicator = onTapIndicator
+        self.onDelete = onDelete
+    }
+
+    // On a selected row the background is the accent fill, so content switches to the on-accent color to stay legible.
+    private func contentColor(_ base: DesignSystemColor) -> Color {
+        Color(designSystemColor: isSelected ? .accentContentPrimary : base)
     }
 
     var body: some View {
@@ -345,7 +309,7 @@ private struct SuggestionListItem: View {
             icon
                 .resizable()
                 .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                .tintIfAvailable(Color(designSystemColor: .icons))
+                .tintIfAvailable(contentColor(.icons))
 
             VStack(alignment: .leading, spacing: 0) {
 
@@ -354,15 +318,15 @@ private struct SuggestionListItem: View {
                     if let query, title.hasPrefix(query) {
                         Text(query)
                             .font(Font(uiFont: UIFont.daxBodyRegular()))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .foregroundColor(contentColor(.textPrimary))
                         +
                         Text(title.dropping(prefix: query))
                             .font(Font(uiFont: UIFont.daxBodyBold()))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .foregroundColor(contentColor(.textPrimary))
                     } else {
                         Text(title)
                             .font(Font(uiFont: UIFont.daxBodyRegular()))
-                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .foregroundColor(contentColor(.textPrimary))
                     }
                 }
                 .lineLimit(1)
@@ -370,15 +334,15 @@ private struct SuggestionListItem: View {
                 if let subtitle {
                     Text(subtitle)
                         .daxFootnoteRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .foregroundColor(contentColor(.textSecondary))
                         .lineLimit(1)
                         .frame(minHeight: Metrics.subtitleMinHeight)
                 }
             }
             .padding(.leading, Metrics.verticalSpacing)
 
-            if indicator == nil {
-                // No indicator means we want to preserve the room for icon,
+            if indicator == nil && onDelete == nil {
+                // No trailing accessory means we want to preserve the room for icon,
                 // so all the titles from other cells are aligned.
                 Spacer(minLength: Metrics.trailingPadding)
             } else {
@@ -390,8 +354,17 @@ private struct SuggestionListItem: View {
                     .highPriorityGesture(TapGesture().onEnded {
                         onTapIndicator?()
                     })
-                    .tintIfAvailable(Color.init(designSystemColor: .iconsSecondary))
+                    .tintIfAvailable(contentColor(.iconsSecondary))
                     .padding(.leading, Metrics.indicatorLeadingPadding)
+            } else if let onDelete {
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.clear)
+                    .highPriorityGesture(TapGesture().onEnded {
+                        onDelete()
+                    })
+                    .tintIfAvailable(contentColor(.iconsSecondary))
+                    .padding(.leading, Metrics.indicatorLeadingPadding)
+                    .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.DeleteButton")
+                    .accessibilityLabel(UserText.actionDelete)
             }
         }
     }
@@ -403,18 +376,6 @@ private struct SuggestionListItem: View {
         static let indicatorLeadingPadding: CGFloat = 4
         static let contentPadding: CGFloat = 3
         static let subtitleMinHeight: CGFloat = 21
-    }
-
-}
-
-private extension URL {
-
-    func formattedForSuggestion() -> String {
-        let string = absoluteString
-            .dropping(prefix: "https://")
-            .dropping(prefix: "http://")
-            .droppingWwwPrefix()
-        return pathComponents.isEmpty ? string : string.dropping(suffix: "/")
     }
 
 }

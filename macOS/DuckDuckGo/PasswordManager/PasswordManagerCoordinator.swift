@@ -16,11 +16,14 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import BrowserServicesKit
 import Combine
 import BWManagementShared
 import Common
+import FeatureFlags
+import FoundationExtensions
 import PixelKit
 import os.log
 
@@ -40,6 +43,8 @@ enum BWManagerProvider {
 
         return factory.makeManager(isBitwardenPasswordManagerProvider: {
             AutofillPreferences().passwordManager == .bitwarden
+        }, isConnectionHardeningEnabled: {
+            NSApp.delegateTyped.featureFlagger.isFeatureOn(.bitwardenConnectionHardening)
         }, showRestartBitwardenAlert: { restart in
             BWNotRespondingAlert().present(restartBitwarden: restart)
         })

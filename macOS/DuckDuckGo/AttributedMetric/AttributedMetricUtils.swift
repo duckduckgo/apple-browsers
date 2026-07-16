@@ -18,6 +18,9 @@
 
 import Foundation
 import AttributedMetric
+import BrowserServicesKit
+import Common
+import FoundationExtensions
 import PrivacyConfig
 import Subscription
 import AppKit
@@ -54,7 +57,7 @@ struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
     let subscriptionManager: SubscriptionManager
 
     func isFreeTrial() async -> Bool {
-        (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).hasActiveTrialOffer) ?? false
+        (try? await subscriptionManager.getSubscription())?.hasActiveTrialOffer ?? false
     }
 
     var isActive: Bool {
@@ -72,6 +75,30 @@ struct AttributedMetricReturningUserProvider: AttributedMetricReturningUserProvi
 
     var isReturningUser: Bool {
         reinstallUserDetection.isReinstallingUser
+    }
+}
+
+struct AttributedMetricATBInstallDateProvider: AttributedMetricInstallDateProviding {
+
+    private let installDateLoader: () -> Date?
+
+    init(installDateLoader: @escaping () -> Date? = Self.defaultInstallDate) {
+        self.installDateLoader = installDateLoader
+    }
+
+    var installDate: Date? {
+        installDateLoader()
+    }
+
+    private static func defaultInstallDate() -> Date? {
+#if DEBUG
+        // LocalStatisticsStore() force-unwraps `Application.appDelegate.database.db`,
+        // which is nil in unit tests where `requiresEnvironment` is false.
+        if [.unitTests, .xcPreviews].contains(AppVersion.runType) {
+            return nil
+        }
+#endif
+        return LocalStatisticsStore().installDate
     }
 }
 

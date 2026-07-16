@@ -1,0 +1,803 @@
+{
+    "epbf": {
+        "description": "Broken site report submitted by user via Privacy Dashboard or app menu",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Device platform",
+                "enum": ["macos"]
+            },
+            {
+                "description": "Device form-factor",
+                "enum": ["desktop"]
+            }
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "siteUrl",
+                "type": "string",
+                "description": "The URL of the broken site (query items and fragment trimmed)"
+            },
+            {
+                "key": "category",
+                "type": "string",
+                "description": "Breakage category selected by the user",
+                "enum": [
+                    "",
+                    "comments",
+                    "blocked",
+                    "content",
+                    "dislike",
+                    "empty-spaces",
+                    "images",
+                    "layout",
+                    "links",
+                    "login",
+                    "other",
+                    "paywall",
+                    "popups-not-opening",
+                    "shopping",
+                    "videos"
+                ]
+            },
+            {
+                "key": "description",
+                "type": "string",
+                "description": "Free-text description of the breakage provided by the user"
+            },
+            {
+                "key": "protectionsState",
+                "type": "boolean",
+                "description": "Whether protections are enabled for the site"
+            },
+            {
+                "key": "upgradedHttps",
+                "type": "boolean",
+                "description": "Whether the connection was upgraded to HTTPS"
+            },
+            {
+                "key": "tds",
+                "type": "string",
+                "description": "Tracker data set ETag"
+            },
+            {
+                "key": "remoteConfigVersion",
+                "type": "string",
+                "description": "Privacy remote config version"
+            },
+            {
+                "key": "blockedTrackers",
+                "type": "string",
+                "description": "Comma-separated list of blocked tracker domains"
+            },
+            {
+                "key": "surrogates",
+                "type": "string",
+                "description": "Comma-separated list of installed surrogates"
+            },
+            {
+                "key": "gpc",
+                "type": "boolean",
+                "description": "Whether Global Privacy Control is enabled"
+            },
+            {
+                "key": "ampUrl",
+                "type": "string",
+                "description": "AMP URL if applicable"
+            },
+            {
+                "key": "urlParametersRemoved",
+                "type": "boolean",
+                "description": "Whether URL tracking parameters were removed"
+            },
+            {
+                "key": "os",
+                "type": "string",
+                "description": "OS version"
+            },
+            {
+                "key": "manufacturer",
+                "type": "string",
+                "description": "Device manufacturer"
+            },
+            {
+                "key": "reportFlow",
+                "type": "string",
+                "description": "Source of the report",
+                "enum": [
+                    "menu",
+                    "dashboard",
+                    "on_protections_off_menu",
+                    "on_protections_off_dashboard_main",
+                    "reload-three-times-within-20-seconds",
+                    "after_toggle_prompt"
+                ]
+            },
+            {
+                "key": "openerContext",
+                "type": "string",
+                "description": "Context in which the page was opened",
+                "enum": ["serp", "external", "navigation", ""]
+            },
+            {
+                "key": "vpnOn",
+                "type": "boolean",
+                "description": "Whether VPN is enabled"
+            },
+            {
+                "key": "userRefreshCount",
+                "type": "integer",
+                "description": "Number of user-initiated refreshes"
+            },
+            {
+                "key": "locale",
+                "type": "string",
+                "description": "User locale",
+                "pattern": "[a-z][a-z](-[A-Z][A-Z])?"
+            },
+            {
+                "key": "consentManaged",
+                "type": "string",
+                "description": "Whether cookie consent was managed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentOptoutFailed",
+                "type": "string",
+                "description": "Whether cookie consent opt-out failed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentSelftestFailed",
+                "type": "string",
+                "description": "Whether cookie consent self-test failed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentReloadLoop",
+                "type": "string",
+                "description": "Whether a cookie consent reload loop was detected",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentHeuristicEnabled",
+                "type": "string",
+                "description": "Whether cookie consent heuristic is enabled",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentRule",
+                "type": "string",
+                "description": "Cookie consent rule applied"
+            },
+            {
+                "key": "cpmExtensionDroppedCallbacks",
+                "type": "string",
+                "description": "Number of web extension callbacks dropped before a native controller was available",
+                "pattern": "^[0-9]*$"
+            },
+            {
+                "key": "cpmExtensionLoaded",
+                "type": "string",
+                "description": "Whether the embedded cookie prompt management extension was loaded when the report was assembled",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "cpmDashboardState",
+                "type": "string",
+                "description": "Whether native was still waiting for a cookie prompt management dashboard state or had applied one for the current page",
+                "enum": ["waiting", "applied", ""]
+            },
+            {
+                "key": "cpmStage",
+                "type": "string",
+                "description": "Most recent cookie prompt management lifecycle stage observed for the page",
+                "enum": [
+                    "not_started",
+                    "config_unavailable",
+                    "settings_missing",
+                    "setting_disabled",
+                    "site_disabled",
+                    "init_received",
+                    "popup_found",
+                    "optout_failed",
+                    "done",
+                    ""
+                ]
+            },
+            {
+                "key": "cpmErrors",
+                "type": "string",
+                "description": "Deduplicated comma-separated cookie prompt management diagnostic errors, capped at 255 characters"
+            },
+            {
+                "key": "cpmQueueSize",
+                "type": "string",
+                "description": "Native callback queue size observed by the embedded cookie prompt management extension",
+                "pattern": "^[0-9]*$"
+            },
+            {
+                "key": "cpmConfigVersion",
+                "type": "string",
+                "description": "Privacy remote config version observed by cookie prompt management diagnostics"
+            },
+            {
+                "key": "debugFlags",
+                "type": "string",
+                "description": "Debug flags"
+            },
+            {
+                "key": "contentScopeExperiments",
+                "type": "string",
+                "description": "Privacy experiments configuration"
+            },
+            {
+                "key": "lastSentDay",
+                "description": "Last day a report was sent for this site",
+                "format": "date"
+            },
+            {
+                "key": "httpErrorCodes",
+                "type": "string",
+                "description": "Comma-separated HTTP error status codes"
+            },
+            {
+                "key": "errorDescriptions",
+                "type": "string",
+                "description": "JSON-encoded array of error descriptions"
+            },
+            {
+                "key": "jsPerformance",
+                "type": "string",
+                "description": "Comma-separated JS performance values"
+            },
+            {
+                "key": "breakageData",
+                "type": "string",
+                "description": "Breakage detector payload"
+            },
+            {
+                "key": "isPirEnabled",
+                "type": "string",
+                "description": "Whether Personal Information Removal is enabled. Only sent when true.",
+                "enum": ["true"]
+            },
+            {
+                "key": "isForceDarkModeEnabled",
+                "type": "boolean",
+                "description": "Whether force dark mode is enabled. Only sent when value is known."
+            },
+            {
+                "key": "autoplayBlockingMode",
+                "type": "string",
+                "description": "The user's autoplay blocking setting. Only sent when the feature is enabled.",
+                "enum": ["allowAll", "blockAudio", "blockAll"]
+            },
+            {
+                "key": "lastTabSuspension",
+                "type": "string",
+                "description": "Last tab suspension state relative to current URL.",
+                "enum": ["never", "sameURL", "samePath", "sameHostname", "sameDomain", "differentDomain"]
+            },
+            {
+                "key": "webKitFirstVisualLayoutMs",
+                "type": "integer",
+                "description": "Time to first visual layout in milliseconds from navigation start"
+            },
+            {
+                "key": "webKitFirstMeaningfulPaintMs",
+                "type": "integer",
+                "description": "Time to first meaningful paint in milliseconds from navigation start"
+            },
+            {
+                "key": "webKitDocumentCompleteMs",
+                "type": "integer",
+                "description": "Time to document finished loading in milliseconds from navigation start"
+            },
+            {
+                "key": "webKitAllResourcesCompleteMs",
+                "type": "integer",
+                "description": "Time to all subresources finished loading in milliseconds from navigation start"
+            },
+            {
+                "key": "adwallDetection.detected",
+                "type": "boolean",
+                "description": "Whether an ad wall was detected by the detector"
+            },
+            {
+                "key": "adwallDetection.results",
+                "type": "string",
+                "description": "Ad wall detection results"
+            },
+            {
+                "key": "botDetection.detected",
+                "type": "boolean",
+                "description": "Whether bot detection was triggered"
+            },
+            {
+                "key": "botDetection.results",
+                "type": "string",
+                "description": "Bot detection results"
+            },
+            {
+                "key": "fraudDetection.detected",
+                "type": "boolean",
+                "description": "Whether fraud detection was triggered"
+            },
+            {
+                "key": "fraudDetection.results",
+                "type": "string",
+                "description": "Fraud detection results"
+            },
+            {
+                "key": "youtubeAds.detected",
+                "type": "boolean",
+                "description": "Whether YouTube ads were detected"
+            },
+            {
+                "key": "youtubeAds.results",
+                "type": "string",
+                "description": "YouTube ads detection results"
+            },
+            {
+                "key": "extendedPerformance.firstContentfulPaintMs",
+                "type": "integer",
+                "description": "First Contentful Paint in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.largestContentfulPaintMs",
+                "type": "integer",
+                "description": "Largest Contentful Paint in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domInteractiveMs",
+                "type": "integer",
+                "description": "DOM Interactive time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domContentLoadedMs",
+                "type": "integer",
+                "description": "DOM Content Loaded time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domCompleteMs",
+                "type": "integer",
+                "description": "DOM Complete time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.loadCompleteMs",
+                "type": "integer",
+                "description": "Load Complete time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.timeToFirstByteMs",
+                "type": "integer",
+                "description": "Time to First Byte in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.redirectCountBucket",
+                "type": "string",
+                "description": "Redirect count bucket"
+            },
+            {
+                "key": "extendedPerformance.resourceCountBucket",
+                "type": "string",
+                "description": "Resource count bucket"
+            },
+            {
+                "key": "extendedPerformance.transferSizeBucket",
+                "type": "string",
+                "description": "Transfer size bucket"
+            },
+            {
+                "key": "extendedPerformance.decodedBodySizeBucket",
+                "type": "string",
+                "description": "Decoded body size bucket"
+            },
+            {
+                "key": "extendedPerformance.encodedBodySizeBucket",
+                "type": "string",
+                "description": "Encoded body size bucket"
+            },
+            {
+                "key": "extendedPerformance.totalResourcesSizeBucket",
+                "type": "string",
+                "description": "Total resources size bucket"
+            },
+            {
+                "key": "loadedWebExtensions",
+                "type": "string",
+                "description": "Comma-separated short labels of currently installed web extensions (e.g. embedded,darkMode,adBlocking)"
+            },
+            {
+                "key": "adBlockingExtensionScriptletsVersion",
+                "type": "string",
+                "description": "Cached scriptlets version for the ad-blocking web extension"
+            },
+            "channel"
+        ]
+    },
+
+    "m_mac_protection-toggled-off-breakage-report": {
+        "description": "Automatic breakage report sent when user toggles off protections for a site",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "siteUrl",
+                "type": "string",
+                "description": "The URL of the broken site (query items and fragment trimmed)"
+            },
+            {
+                "key": "upgradedHttps",
+                "type": "boolean",
+                "description": "Whether the connection was upgraded to HTTPS"
+            },
+            {
+                "key": "tds",
+                "type": "string",
+                "description": "Tracker data set ETag"
+            },
+            {
+                "key": "remoteConfigVersion",
+                "type": "string",
+                "description": "Privacy remote config version"
+            },
+            {
+                "key": "blockedTrackers",
+                "type": "string",
+                "description": "Comma-separated list of blocked tracker domains"
+            },
+            {
+                "key": "surrogates",
+                "type": "string",
+                "description": "Comma-separated list of installed surrogates"
+            },
+            {
+                "key": "gpc",
+                "type": "boolean",
+                "description": "Whether Global Privacy Control is enabled"
+            },
+            {
+                "key": "ampUrl",
+                "type": "string",
+                "description": "AMP URL if applicable"
+            },
+            {
+                "key": "urlParametersRemoved",
+                "type": "boolean",
+                "description": "Whether URL tracking parameters were removed"
+            },
+            {
+                "key": "os",
+                "type": "string",
+                "description": "OS version"
+            },
+            {
+                "key": "manufacturer",
+                "type": "string",
+                "description": "Device manufacturer"
+            },
+            {
+                "key": "reportFlow",
+                "type": "string",
+                "description": "Source of the report",
+                "enum": [
+                    "menu",
+                    "dashboard",
+                    "on_protections_off_menu",
+                    "on_protections_off_dashboard_main",
+                    "reload-three-times-within-20-seconds",
+                    "after_toggle_prompt"
+                ]
+            },
+            {
+                "key": "openerContext",
+                "type": "string",
+                "description": "Context in which the page was opened",
+                "enum": ["serp", "external", "navigation", ""]
+            },
+            {
+                "key": "vpnOn",
+                "type": "boolean",
+                "description": "Whether VPN is enabled"
+            },
+            {
+                "key": "userRefreshCount",
+                "type": "integer",
+                "description": "Number of user-initiated refreshes"
+            },
+            {
+                "key": "locale",
+                "type": "string",
+                "description": "User locale",
+                "pattern": "[a-z][a-z](-[A-Z][A-Z])?"
+            },
+            {
+                "key": "consentManaged",
+                "type": "string",
+                "description": "Whether cookie consent was managed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentOptoutFailed",
+                "type": "string",
+                "description": "Whether cookie consent opt-out failed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentSelftestFailed",
+                "type": "string",
+                "description": "Whether cookie consent self-test failed",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentReloadLoop",
+                "type": "string",
+                "description": "Whether a cookie consent reload loop was detected",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentHeuristicEnabled",
+                "type": "string",
+                "description": "Whether cookie consent heuristic is enabled",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "consentRule",
+                "type": "string",
+                "description": "Cookie consent rule applied"
+            },
+            {
+                "key": "cpmExtensionDroppedCallbacks",
+                "type": "string",
+                "description": "Number of web extension callbacks dropped before a native controller was available",
+                "pattern": "^[0-9]*$"
+            },
+            {
+                "key": "cpmExtensionLoaded",
+                "type": "string",
+                "description": "Whether the embedded cookie prompt management extension was loaded when the report was assembled",
+                "enum": ["1", "0", ""]
+            },
+            {
+                "key": "cpmDashboardState",
+                "type": "string",
+                "description": "Whether native was still waiting for a cookie prompt management dashboard state or had applied one for the current page",
+                "enum": ["waiting", "applied", ""]
+            },
+            {
+                "key": "cpmStage",
+                "type": "string",
+                "description": "Most recent cookie prompt management lifecycle stage observed for the page",
+                "enum": [
+                    "not_started",
+                    "config_unavailable",
+                    "settings_missing",
+                    "setting_disabled",
+                    "site_disabled",
+                    "init_received",
+                    "popup_found",
+                    "optout_failed",
+                    "done",
+                    ""
+                ]
+            },
+            {
+                "key": "cpmErrors",
+                "type": "string",
+                "description": "Deduplicated comma-separated cookie prompt management diagnostic errors, capped at 255 characters"
+            },
+            {
+                "key": "cpmQueueSize",
+                "type": "string",
+                "description": "Native callback queue size observed by the embedded cookie prompt management extension",
+                "pattern": "^[0-9]*$"
+            },
+            {
+                "key": "cpmConfigVersion",
+                "type": "string",
+                "description": "Privacy remote config version observed by cookie prompt management diagnostics"
+            },
+            {
+                "key": "debugFlags",
+                "type": "string",
+                "description": "Debug flags"
+            },
+            {
+                "key": "contentScopeExperiments",
+                "type": "string",
+                "description": "Privacy experiments configuration"
+            },
+            {
+                "key": "lastSentDay",
+                "description": "Last day a report was sent for this site",
+                "format": "date"
+            },
+            {
+                "key": "httpErrorCodes",
+                "type": "string",
+                "description": "Comma-separated HTTP error status codes"
+            },
+            {
+                "key": "errorDescriptions",
+                "type": "string",
+                "description": "JSON-encoded array of error descriptions"
+            },
+            {
+                "key": "jsPerformance",
+                "type": "string",
+                "description": "Comma-separated JS performance values"
+            },
+            {
+                "key": "breakageData",
+                "type": "string",
+                "description": "Breakage detector payload"
+            },
+            {
+                "key": "isPirEnabled",
+                "type": "string",
+                "description": "Whether Personal Information Removal is enabled. Only sent when true.",
+                "enum": ["true"]
+            },
+            {
+                "key": "isForceDarkModeEnabled",
+                "type": "boolean",
+                "description": "Whether force dark mode is enabled. Only sent when value is known."
+            },
+            {
+                "key": "autoplayBlockingMode",
+                "type": "string",
+                "description": "The user's autoplay blocking setting. Only sent when the feature is enabled.",
+                "enum": ["allowAll", "blockAudio", "blockAll"]
+            },
+            {
+                "key": "lastTabSuspension",
+                "type": "string",
+                "description": "Last tab suspension state relative to current URL.",
+                "enum": ["never", "sameURL", "samePath", "sameHostname", "sameDomain", "differentDomain"]
+            },
+            {
+                "key": "webKitFirstVisualLayoutMs",
+                "type": "integer",
+                "description": "Time to first visual layout in milliseconds from navigation start"
+            },
+            {
+                "key": "webKitFirstMeaningfulPaintMs",
+                "type": "integer",
+                "description": "Time to first meaningful paint in milliseconds from navigation start"
+            },
+            {
+                "key": "webKitDocumentCompleteMs",
+                "type": "integer",
+                "description": "Time to document finished loading in milliseconds from navigation start"
+            },
+            {
+                "key": "webKitAllResourcesCompleteMs",
+                "type": "integer",
+                "description": "Time to all subresources finished loading in milliseconds from navigation start"
+            },
+            {
+                "key": "adwallDetection.detected",
+                "type": "boolean",
+                "description": "Whether an ad wall was detected by the detector"
+            },
+            {
+                "key": "adwallDetection.results",
+                "type": "string",
+                "description": "Ad wall detection results"
+            },
+            {
+                "key": "botDetection.detected",
+                "type": "boolean",
+                "description": "Whether bot detection was triggered"
+            },
+            {
+                "key": "botDetection.results",
+                "type": "string",
+                "description": "Bot detection results"
+            },
+            {
+                "key": "fraudDetection.detected",
+                "type": "boolean",
+                "description": "Whether fraud detection was triggered"
+            },
+            {
+                "key": "fraudDetection.results",
+                "type": "string",
+                "description": "Fraud detection results"
+            },
+            {
+                "key": "youtubeAds.detected",
+                "type": "boolean",
+                "description": "Whether YouTube ads were detected"
+            },
+            {
+                "key": "youtubeAds.results",
+                "type": "string",
+                "description": "YouTube ads detection results"
+            },
+            {
+                "key": "extendedPerformance.firstContentfulPaintMs",
+                "type": "integer",
+                "description": "First Contentful Paint in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.largestContentfulPaintMs",
+                "type": "integer",
+                "description": "Largest Contentful Paint in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domInteractiveMs",
+                "type": "integer",
+                "description": "DOM Interactive time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domContentLoadedMs",
+                "type": "integer",
+                "description": "DOM Content Loaded time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.domCompleteMs",
+                "type": "integer",
+                "description": "DOM Complete time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.loadCompleteMs",
+                "type": "integer",
+                "description": "Load Complete time in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.timeToFirstByteMs",
+                "type": "integer",
+                "description": "Time to First Byte in milliseconds"
+            },
+            {
+                "key": "extendedPerformance.redirectCountBucket",
+                "type": "string",
+                "description": "Redirect count bucket"
+            },
+            {
+                "key": "extendedPerformance.resourceCountBucket",
+                "type": "string",
+                "description": "Resource count bucket"
+            },
+            {
+                "key": "extendedPerformance.transferSizeBucket",
+                "type": "string",
+                "description": "Transfer size bucket"
+            },
+            {
+                "key": "extendedPerformance.decodedBodySizeBucket",
+                "type": "string",
+                "description": "Decoded body size bucket"
+            },
+            {
+                "key": "extendedPerformance.encodedBodySizeBucket",
+                "type": "string",
+                "description": "Encoded body size bucket"
+            },
+            {
+                "key": "extendedPerformance.totalResourcesSizeBucket",
+                "type": "string",
+                "description": "Total resources size bucket"
+            },
+            {
+                "key": "loadedWebExtensions",
+                "type": "string",
+                "description": "Comma-separated short labels of currently installed web extensions (e.g. embedded,darkMode,adBlocking)"
+            },
+            {
+                "key": "adBlockingExtensionScriptletsVersion",
+                "type": "string",
+                "description": "Cached scriptlets version for the ad-blocking web extension"
+            },
+            "channel"
+        ]
+    }
+}

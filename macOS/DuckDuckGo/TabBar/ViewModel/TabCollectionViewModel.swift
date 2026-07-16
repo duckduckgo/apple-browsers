@@ -19,10 +19,13 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
+import FeatureFlags
 import Foundation
 import History
 import os.log
 import PixelKit
+import PrivacyConfig
 import WebKit
 
 /**
@@ -162,6 +165,7 @@ final class TabCollectionViewModel: NSObject {
         case noTabSelected
     }
 
+    private let featureFlagger: FeatureFlagger
     private let dataClearingPixelsReporter: DataClearingPixelsReporter
 
     init(
@@ -172,6 +176,7 @@ final class TabCollectionViewModel: NSObject {
         startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
         tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences,
         accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         windowControllersManager: WindowControllersManagerProtocol? = nil,
         dataClearingPixelsReporter: DataClearingPixelsReporter = .init()
     ) {
@@ -182,6 +187,7 @@ final class TabCollectionViewModel: NSObject {
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
         self.accessibilityPreferences = accessibilityPreferences
+        self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
         self.dataClearingPixelsReporter = DataClearingPixelsReporter()
         super.init()
@@ -439,15 +445,19 @@ final class TabCollectionViewModel: NSObject {
         shouldReturnToPreviousActiveTab = true
         tabCollection.append(tab: tab)
         if tab.content == .newtab {
-            NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
+            NotificationCenter.default.post(name: .newTabPageOpen, object: nil)
+            if isBurner {
+                var persistor = SubscriptionPromoUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
+                if persistor.fireTabVisitCount < SubscriptionPromoConstants.requiredVisitCount {
+                    persistor.fireTabVisitCount += 1
+                }
+            }
         }
         let insertionIndex = tabCollection.tabs.indices.index(before: tabCollection.tabs.endIndex)
         if selected {
             selectUnpinnedTab(at: insertionIndex, forceChange: forceChange)
-            delegate?.tabCollectionViewModelDidAppend(self, selected: true)
-        } else {
-            delegate?.tabCollectionViewModelDidAppend(self, selected: false)
         }
+        delegate?.tabCollectionViewModelDidAppend(self, selected: selected)
         return insertionIndex
     }
 
@@ -468,12 +478,19 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        tabCollection.append(tabs: tabs)
+        // Materialize the to-be-selected last tab before insertion — see `insert(_:at:selected:)`.
+        var tabsToAppend = tabs
+        if shouldSelectLastTab,
+           let lastIndex = tabsToAppend.indices.last,
+           case .unloaded(let unloaded) = tabsToAppend[lastIndex] {
+            tabsToAppend[lastIndex] = .loaded(unloaded.materialize())
+        }
+
+        tabCollection.append(tabs: tabsToAppend)
         if shouldSelectLastTab {
             let newSelectionIndex = tabCollection.tabs.count - 1
             selectUnpinnedTab(at: newSelectionIndex)
         }
-
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
@@ -504,7 +521,17 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        tabCollection.insert(tab, at: index.item)
+        // Selection requires a loaded tab (see `AnyTab` doc-comment). Materialize
+        // before insertion so the materialize-on-select branch in
+        // `selectUnpinnedTab` is a no-op when `select(at:)` runs.
+        let tabToInsert: AnyTab = {
+            if selected, case .unloaded(let unloaded) = tab {
+                return .loaded(unloaded.materialize())
+            }
+            return tab
+        }()
+
+        tabCollection.insert(tabToInsert, at: index.item)
         if selected {
             select(at: index)
         }
@@ -787,13 +814,14 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        let tabCopy = AnyTab.unloaded(UnloadedTab(
+        let tabCopy = Tab(
             content: tab.content.loadedFromCache(),
             title: tab.title,
             favicon: tab.favicon,
-            burnerMode: tab.burnerMode,
-            interactionStateData: tab.interactionStateData
-        ))
+            interactionStateData: tab.interactionStateData,
+            shouldLoadInBackground: true,
+            burnerMode: tab.burnerMode
+        )
         let newIndex = tabIndex.makeNext()
 
         tabCollection(for: tabIndex)?.insert(tabCopy, at: newIndex.item)

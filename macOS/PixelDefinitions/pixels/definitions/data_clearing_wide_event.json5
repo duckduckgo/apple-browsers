@@ -17,7 +17,6 @@
             "wideEventFeatureStatus",
             "wideEventErrorDomain",
             "wideEventErrorCode",
-            "wideEventErrorDescription",
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",
@@ -95,7 +94,7 @@
 
             // Per-action status - all 22 actions
             {
-                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_status",
+                "keyPattern": "^feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_status$",
                 "type": "string",
                 "description": "Final status of each clearing action",
                 "enum": ["SUCCESS", "FAILURE"]
@@ -103,14 +102,14 @@
 
             // Per-action latency - all 22 actions
             {
-                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_latency_ms",
+                "keyPattern": "^feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_latency_ms$",
                 "type": "integer",
                 "description": "Duration from start of action to end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
             },
 
             // Per-action error domains - all 22 actions
             {
-                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_error\\.domain",
+                "keyPattern": "^feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_error\\.domain$",
                 "type": "string",
                 "description": "Top level error domain for action failures",
                 "examples": ["DataClearingWideEventError", "NSCocoaErrorDomain", "com.duckduckgo.history"]
@@ -118,30 +117,30 @@
 
             // Per-action error codes - all 22 actions
             {
-                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_error\\.code",
+                "keyPattern": "^feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_error\\.code$",
                 "type": "integer",
                 "description": "Top level error code for action failures"
             },
 
             // Per-action error descriptions - all 22 actions
             {
-                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_error\\.description",
+                "keyPattern": "^feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_error\\.description$",
                 "type": "string",
                 "description": "Human-readable error description for action failures",
-                "examples": [
-                    "coordinatorNotInitialized",
-                    "fileRemovalFailed",
-                    "databaseSaveFailed",
-                    "historyNotLoaded",
-                    "directoryCreationFailed",
-                    "fileMoveOperationFailed",
-                    "databaseOpenFailed"
+                "enum": [
+                    "Could not get bundle ID or library URL",
+                    "cookieStore not available",
+                    "Could not open observations database",
+                    "visitedLinkStore not available",
+                    "No pinned tabs manager",
+                    "autoconsentStats is nil",
+                    "stateRestorationManager is nil"
                 ]
             },
 
             // Per-action underlying error domains - all 22 actions
             {
-                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_error\\.underlying_domain[0-9]?",
+                "keyPattern": "^feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_error\\.underlying_domain[0-9]?$",
                 "type": "string",
                 "description": "Underlying error domain for action failures",
                 "examples": ["NSPOSIXErrorDomain", "NSURLErrorDomain", "SQLite.Result"]
@@ -149,7 +148,7 @@
 
             // Per-action underlying error codes - all 22 actions
             {
-                "keyPattern": "feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_error\\.underlying_code[0-9]?",
+                "keyPattern": "^feature\\.data\\.ext\\.(clear_tabs|clear_website_data\\.clear_safely_removable_website_data|clear_website_data\\.clear_fireproofable_data_for_nonFireproof_domains|clear_website_data\\.clear_cookies_for_nonFireproofed_domains|clear_all_history|clear_aiChat_history|clear_autoconsent_management_cache|clear_favicon_cache|cancel_all_downloads|clear_bookmark_database|forget_text_zoom|clear_privacy_stats|clear_permissions|clear_visited_links|clear_recently_closed|clear_last_session_state|reset_cookie_popup_blocked_flag|clear_autoconsent_stats|clear_visits|clear_website_data\\.clear_file_cache|clear_website_data\\.clear_device_hash_salts|clear_website_data\\.clear_remove_resource_load_statistics_database)_error\\.underlying_code[0-9]?$",
                 "type": "integer",
                 "description": "Underlying error code for action failures"
             },
@@ -158,7 +157,8 @@
                 "type": "string",
                 "description": "Context name for the flow",
                 "enum": ["funnel_default_macos"]
-            }
+            },
+            "channel"
         ]
     }
 }

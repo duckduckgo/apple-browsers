@@ -5,28 +5,28 @@
         "owners": ["diegoreymendez", "quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_debug_updater_attempt_to_restart_without_resume_block": {
         "description": "Fired when restart/update is attempted without a resumable Sparkle callback.",
         "owners": ["diegoreymendez", "quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_debug_updater_did_find_update": {
         "description": "Fired when Sparkle reports that a valid update is available.",
         "owners": ["diegoreymendez", "quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_debug_updater_did_download_update": {
         "description": "Fired when Sparkle completes downloading an available update.",
         "owners": ["diegoreymendez", "quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_debug_updater_aborted": {
         "description": "Fired when the Sparkle update framework aborts its update due to an error",
@@ -66,7 +66,8 @@
                     "An error occurred while parsing the update feed",
                     "unknown"
                 ]
-            }
+            },
+            "channel"
         ]
     }
 }

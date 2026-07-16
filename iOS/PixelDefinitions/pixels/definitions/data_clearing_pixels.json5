@@ -45,5 +45,21 @@
                 "enum": ["fireRising", "fireRisingLegacy", "waterSwirl", "airstream", "none"]
             }
         ]
+    },
+
+    "data-clearing_all-tabs-time-": {
+        "description": "Fires when website data clearing completes for an all-tabs (full scope) burn, reporting how long the operation took. Tracked separately from the single-tab timing.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["time_bucket", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "data-clearing_single-tab-time-": {
+        "description": "Fires when website data clearing completes for a single-tab (limited scope) burn, reporting how long the operation took. Tracked separately from the all-tabs timing because clearing a single tab must enumerate and selectively delete per-domain, making it inherently slower.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["time_bucket", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

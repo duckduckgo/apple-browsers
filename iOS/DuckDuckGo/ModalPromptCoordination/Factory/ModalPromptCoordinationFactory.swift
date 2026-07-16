@@ -50,6 +50,10 @@ enum ModalPromptCoordinationFactory {
             imageLoader: dependency.remoteMessagingImageLoader,
             featureFlagger: dependency.featureFlagger
         )
+        let cookiePopupProtectionOptInModalPromptProvider = CookiePopupProtectionOptInModalPromptProvider(
+            store: CookiePopupProtectionOptInPromptStore(keyValueStore: dependency.keyValueFileStoreService),
+            featureFlagger: dependency.featureFlagger
+        )
 
         return ModalPromptCoordinationService(
             launchSourceManager: dependency.launchSourceManager,
@@ -61,7 +65,8 @@ enum ModalPromptCoordinationFactory {
                 defaultBrowser: defaultBrowserModalPromptProvider,
                 winBackOffer: winBackOfferModalPromptProvider,
                 subscriptionPromo: subscriptionPromoModalPromptProvider,
-                whatsNew: whatsNewModalPromptProvider
+                whatsNew: whatsNewModalPromptProvider,
+                cookiePopupProtectionOptIn: cookiePopupProtectionOptInModalPromptProvider
             )
         )
     }
@@ -91,7 +96,8 @@ private extension ModalPromptCoordinationFactory {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: isIPad
+            isIPad: isIPad,
+            omniBarFocuser: dependency.omniBarFocuser
         )
     }
 
@@ -120,6 +126,7 @@ extension ModalPromptCoordinationFactory {
         let subscriptionPromoPresenter: SubscriptionPromoPresenting
         let subscriptionPromoCoordinator: SubscriptionPromoCoordinating
         let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+        let omniBarFocuser: OmniBarFocuserProvider
     }
 
 }

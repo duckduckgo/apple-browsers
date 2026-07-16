@@ -22,6 +22,7 @@ import Core
 import PrivacyConfig
 import Combine
 import Common
+import FoundationExtensions
 
 public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging {
 

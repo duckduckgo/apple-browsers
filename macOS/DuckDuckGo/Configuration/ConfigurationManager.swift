@@ -24,6 +24,7 @@ import Persistence
 import PrivacyConfig
 import Configuration
 import Common
+import FoundationExtensions
 import Networking
 import PixelKit
 
@@ -185,7 +186,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
         }
 
         Logger.config.error("Failed to complete configuration update \(error.localizedDescription, privacy: .public)")
-        PixelKit.fire(DebugEvent(GeneralPixel.configurationFetchError(error: error)))
+        PixelKit.fire(DebugEvent(GeneralPixel.configurationFetchError(error: error), error: error))
         tryAgainSoon()
     }
 

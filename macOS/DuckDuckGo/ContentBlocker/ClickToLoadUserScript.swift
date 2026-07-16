@@ -18,6 +18,7 @@
 
 import WebKit
 import Common
+import FoundationExtensions
 import UserScript
 
 protocol ClickToLoadUserScriptDelegate: AnyObject {

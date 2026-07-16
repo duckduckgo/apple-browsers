@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import UserScript
 import WebKit
 import Combine
@@ -122,24 +123,32 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     }
 
     func handshake(params: Any, message: any UserScriptMessage) async throws -> DataModel.HandshakeResponse {
-        return .init(availableMessages: [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .openSubscriptionUpgrade, .authUpdate], platform: platform)
+        let response = DataModel.HandshakeResponse(
+            availableMessages: [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .openSubscriptionUpgrade, .authUpdate],
+            platform: platform
+        )
+        return response
     }
 
     func subscriptionDetails(params: Any, message: any UserScriptMessage) async throws -> DataModel.SubscriptionDetails {
-        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) else {
+        guard let subscription = try? await subscriptionManager.getSubscription() else {
             return .notSubscribed
         }
-        return .init(subscription)
+        let details = DataModel.SubscriptionDetails(subscription)
+        return details
     }
 
     func getAuthAccessToken(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetAuthAccessTokenResponse {
-        guard let accessToken = try? await subscriptionManager.getAccessToken() else { return .init(accessToken: "") }
+        guard let accessToken = try? await subscriptionManager.getAccessToken() else {
+            return .init(accessToken: "")
+        }
         return .init(accessToken: accessToken)
     }
 
     @MainActor
     func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetFeatureConfigurationResponse {
-        return .init(usePaidDuckAi: featureFlagProvider.usePaidDuckAi, useProTier: featureFlagProvider.useProTier)
+        let response = DataModel.GetFeatureConfigurationResponse(usePaidDuckAi: featureFlagProvider.usePaidDuckAi, useProTier: featureFlagProvider.useProTier)
+        return response
     }
 
     @MainActor
@@ -194,7 +203,9 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     }
 
     private func handleSubscriptionChanged() {
-        guard let webView, let userScript else { return }
+        guard let webView, let userScript else {
+            return
+        }
         broker?.push(method: SubscriptionUserScript.MessageName.authUpdate.rawValue, params: nil, for: userScript, into: webView)
     }
 

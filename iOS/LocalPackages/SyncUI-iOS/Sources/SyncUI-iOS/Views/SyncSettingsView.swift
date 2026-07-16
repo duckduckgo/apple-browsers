@@ -17,175 +17,23 @@
 //  limitations under the License.
 //
 
-import DesignResourcesKit
-import DesignResourcesKitIcons
-import DuckUI
 import SwiftUI
 
-
-// Temporary, to enable the simplifiedSyncSetup experiment.
-// https://app.asana.com/1/137249556945/project/1203822806345703/task/1213248575226817?focus=true
 public struct SyncSettingsRootView: View {
     @ObservedObject var model: SyncSettingsViewModel
 
-    private let useSimplifiedLayout: Bool
+    private let useSimplifiedLayoutV2: Bool
 
-    public init(model: SyncSettingsViewModel, useSimplifiedLayout: Bool) {
+    public init(model: SyncSettingsViewModel, useSimplifiedLayoutV2: Bool) {
         self.model = model
-        self.useSimplifiedLayout = useSimplifiedLayout
+        self.useSimplifiedLayoutV2 = useSimplifiedLayoutV2
     }
 
     public var body: some View {
-        if useSimplifiedLayout {
+        if useSimplifiedLayoutV2 {
+            SimplifiedSyncSettingsViewV2(model: model)
+        } else {
             SimplifiedSyncSettingsView(model: model)
-        } else {
-            SyncSettingsView(model: model)
         }
     }
-}
-
-
-public struct SyncSettingsView: View {
-
-    @ObservedObject public var model: SyncSettingsViewModel
-
-    let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    @State var isEnvironmentSwitcherInstructionsVisible = false
-    @State var isDeviceAuthenticationSetupAlertVisible = false
-
-    public init(model: SyncSettingsViewModel) {
-        self.model = model
-    }
-
-    public var body: some View {
-        if model.isSyncingDevices {
-            SwiftUI.ProgressView()
-                .onReceive(timer) { _ in
-                    if selectedDevice == nil {
-                        model.delegate?.refreshDevices(clearDevices: false)
-                    }
-                }
-        } else {
-            List {
-                if model.isSyncEnabled {
-
-                    syncUnavailableViewWhileLoggedIn()
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                    turnOffSync()
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                    // Sync Paused Errors
-                    if $model.isSyncPaused.wrappedValue {
-                        syncPaused()
-                            .listRowBackground(Color(designSystemColor: .surface))
-                    }
-                    if $model.isSyncBookmarksPaused.wrappedValue {
-                        syncPaused(for: .bookmarks)
-                            .listRowBackground(Color(designSystemColor: .surface))
-                    }
-                    if $model.isSyncCredentialsPaused.wrappedValue {
-                        syncPaused(for: .credentials)
-                            .listRowBackground(Color(designSystemColor: .surface))
-                    }
-                    if $model.isSyncCreditCardsPaused.wrappedValue {
-                        syncPaused(for: .creditCards)
-                            .listRowBackground(Color(designSystemColor: .surface))
-                    }
-
-                    if !model.invalidBookmarksTitles.isEmpty {
-                        syncHasInvalidItems(for: .bookmarks)
-                            .listRowBackground(Color(designSystemColor: .surface))
-                    }
-
-                    if !model.invalidCredentialsTitles.isEmpty {
-                        syncHasInvalidItems(for: .credentials)
-                            .listRowBackground(Color(designSystemColor: .surface))
-                    }
-
-                    if !model.invalidCreditCardsTitles.isEmpty {
-                        syncHasInvalidItems(for: .creditCards)
-                            .listRowBackground(Color(designSystemColor: .surface))
-                    }
-
-                    devices()
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                    otherPlatformsLinks(source: .activated)
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                    options()
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                    saveRecoveryPDF()
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                    deleteAllData()
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                } else {
-
-                    syncUnavailableViewWhileLoggedOut()
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                    syncWithAnotherDeviceView()
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                    otherOptions()
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                    otherPlatformsLinks(source: .notActivated)
-                        .listRowBackground(Color(designSystemColor: .surface))
-                }
-            }
-            .navigationTitle(UserText.syncTitle)
-            .applyListStyle()
-            .environmentObject(model)
-            .alert(isPresented: $model.shouldShowPasscodeRequiredAlert) {
-                Alert(
-                    title: Text(UserText.syncPasscodeRequiredAlertTitle),
-                    message: Text(UserText.syncPasscodeRequiredAlertMessage),
-                    dismissButton: .default(Text(UserText.syncPasscodeRequiredAlertGoToSettingsButton), action: {
-                        UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
-                        model.shouldShowPasscodeRequiredAlert = false
-                    })
-                )
-            }
-            .sheet(item: $selectedDevice) { device in
-                Group {
-                    if device.isThisDevice {
-                        EditDeviceView(model: model.createEditDeviceModel(device))
-                    } else {
-                        RemoveDeviceView(model: model.createRemoveDeviceModel(device))
-                    }
-                }
-                .modifier {
-                    if #available(iOS 16.0, *) {
-                        $0.presentationDetents([.medium])
-                    } else {
-                        $0
-                    }
-                }
-            }
-        }
-
-    }
-
-    // At some point work out how to change at least the fallback image to a resource.
-    @ViewBuilder
-    func deviceTypeImage(_ device: SyncSettingsViewModel.Device) -> some View {
-        switch device.type {
-        case "desktop":
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceDesktop)
-
-        case "tablet":
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceTablet)
-
-        default: // including phone
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceMobile)
-        }
-
-    }
-
-    @State var selectedDevice: SyncSettingsViewModel.Device?
 }

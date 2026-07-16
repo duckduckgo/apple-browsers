@@ -613,6 +613,10 @@ class MockFeatureFlagger: FeatureFlagger {
         nil
     }
 
+    func assignedCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        nil
+    }
+
     var experiments: Experiments = [:]
 
     var internalUserDecider: any InternalUserDecider = MockInternalUserDecider()

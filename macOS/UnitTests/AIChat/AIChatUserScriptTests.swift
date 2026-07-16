@@ -143,6 +143,75 @@ final class AIChatUserScriptTests: XCTestCase {
 
         XCTAssertTrue(mockHandler.didGetAIChatTabContent, "getAIChatTabContent should be called")
     }
+
+    // MARK: - Open Settings handshake
+
+    @MainActor func testRequestOpenSettingsActionArmsHandshake() {
+        XCTAssertFalse(userScript.pendingOpenSettingsAction, "Handshake should not be armed by default")
+
+        userScript.requestOpenSettingsAction()
+
+        XCTAssertTrue(userScript.pendingOpenSettingsAction, "requestOpenSettingsAction should arm the handshake")
+    }
+
+    @MainActor func testOpenSettingsHandshakeStaysPendingAfterFirstMessage() {
+        userScript.requestOpenSettingsAction()
+
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+
+        XCTAssertTrue(userScript.pendingOpenSettingsAction,
+                      "Single page message must not fire the push — JS subscriptions are not guaranteed wired yet")
+    }
+
+    @MainActor func testOpenSettingsHandshakeFiresAfterSecondMessage() {
+        userScript.requestOpenSettingsAction()
+
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativePrompt.rawValue)
+
+        XCTAssertFalse(userScript.pendingOpenSettingsAction,
+                       "Second page message must clear the pending flag (push fired)")
+    }
+
+    @MainActor func testOpenSettingsHandshakeIgnoresUnknownMethods() {
+        userScript.requestOpenSettingsAction()
+
+        // Two unknown method names — resolveHandler returns nil, so neither should count.
+        _ = userScript.handler(forMethodNamed: "definitelyNotAKnownMethod")
+        _ = userScript.handler(forMethodNamed: "stillNotKnown")
+
+        XCTAssertTrue(userScript.pendingOpenSettingsAction,
+                      "Unknown methods must not count toward the readiness handshake")
+    }
+
+    @MainActor func testMessagesWithoutRequestDoNotArmHandshake() {
+        // Two known messages, but no requestOpenSettingsAction() — the handshake must stay unarmed
+        // so the next time it IS armed, it starts fresh from zero.
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativePrompt.rawValue)
+
+        XCTAssertFalse(userScript.pendingOpenSettingsAction)
+
+        userScript.requestOpenSettingsAction()
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+
+        XCTAssertTrue(userScript.pendingOpenSettingsAction,
+                      "Pre-arm messages must not be counted: one post-arm message should still leave the handshake pending")
+    }
+
+    @MainActor func testOpenSettingsHandshakeIsOneShot() {
+        userScript.requestOpenSettingsAction()
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativePrompt.rawValue)
+        XCTAssertFalse(userScript.pendingOpenSettingsAction)
+
+        // Subsequent messages must not re-fire — the next request must be explicitly armed.
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue)
+        _ = userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativePrompt.rawValue)
+
+        XCTAssertFalse(userScript.pendingOpenSettingsAction,
+                       "Handshake must not re-arm itself after firing")
+    }
 }
 
 // swiftlint:disable inclusive_language
@@ -166,8 +235,11 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var didGetAIChatPageContext = false
     var didSubmitAIChatPageContext = false
+    var didGetAIChatSelectionContext = false
+    var didSubmitAIChatSelectionContext = false
     var didTogglePageContextTelemetry = false
     var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    var selectionContextSubject = PassthroughSubject<AIChatSelectionContextData, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     var chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     var syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
@@ -189,6 +261,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didSendToSetupSync = false
 
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
+    var isFireWindowProvider: (() -> Bool)?
 
     init(messageHandling: any AIChatMessageHandling = MockAIChatMessageHandling()) {
         self.messageHandling = messageHandling
@@ -262,13 +335,22 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    func getAIChatPageContext(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+    func getAIChatPageContext(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         didGetAIChatPageContext = true
+        return nil
+    }
+
+    func getAIChatSelectionContext(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didGetAIChatSelectionContext = true
         return nil
     }
 
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> {
         pageContextSubject.eraseToAnyPublisher()
+    }
+
+    var selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never> {
+        selectionContextSubject.eraseToAnyPublisher()
     }
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> {
@@ -306,6 +388,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         didSubmitAIChatPageContext = true
+    }
+
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
+        didSubmitAIChatSelectionContext = true
     }
 
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -354,6 +440,22 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    func voiceSessionStarted(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
+    func voiceSessionEnded(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
+    func voiceChatStartFailed(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
+    func dictationStartFailed(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
     // Migration data mocks
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         didStoreMigrationData = true
@@ -369,6 +471,9 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     }
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         didClearMigrationData = true
+        return nil
+    }
+    func customizeResponsesModalClosed(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         return nil
     }
 }
@@ -388,4 +493,8 @@ private final class MockAIChatMessageHandling: AIChatMessageHandling {
     }
 
     func setData(_ data: Any?, forMessageType type: DuckDuckGo_Privacy_Browser.AIChatMessageType) {}
+
+    func appendSelectionContext(_ selection: AIChatSelectionContextData) {}
+    func getSelectionContexts() -> [AIChatSelectionContextData] { [] }
+    func clearSelectionContexts() {}
 }

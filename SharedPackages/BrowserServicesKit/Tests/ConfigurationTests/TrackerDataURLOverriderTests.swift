@@ -161,6 +161,10 @@ private class MockFeatureFlaggerMockSettings: FeatureFlagger {
         return mockCohorts[featureFlag.rawValue]
     }
 
+    func assignedCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        return mockCohorts[featureFlag.rawValue]
+    }
+
     var allActiveExperiments: Experiments {
         return [:]
     }

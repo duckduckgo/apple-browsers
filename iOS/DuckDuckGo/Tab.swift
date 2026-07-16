@@ -51,7 +51,9 @@ public class Tab: NSObject, NSCoding {
         static let fireTab = "fireTab"
         static let isExternalLaunch = "isExternalLaunch"
         static let shouldSuppressTrackerAnimationOnFirstLoad = "shouldSuppressTrackerAnimationOnFirstLoad"
-        static let preferredTextEntryMode = "preferredTextEntryMode"
+        static let selectedModelID = "selectedModelID"
+        static let selectedReasoningMode = "selectedReasoningMode"
+        static let selectedTool = "selectedTool"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
@@ -89,6 +91,10 @@ public class Tab: NSObject, NSCoding {
     /// Returns true if the tab is a `aiChat` tab
     var isAITab: Bool {
         type == .aiChat
+    }
+
+    var isHomeTab: Bool {
+        link == nil
     }
 
     /// The conversation-specific title for Duck.ai tabs (e.g. "Pricing notation in decimals").
@@ -130,8 +136,9 @@ public class Tab: NSObject, NSCoding {
     /// Set based on launch source: suppressed for all tabs on cold start with standard launch.
     var shouldSuppressTrackerAnimationOnFirstLoad: Bool = false
 
-    /// The preferred text entry mode (search or aiChat) for this tab, inherited from settings on creation.
-    var preferredTextEntryMode: TextEntryMode
+    /// Per-tab AI Chat configuration (model, reasoning mode, tool). Persisted via
+    /// NSCoding so reopening the app restores the tab's selected AI settings.
+    var unifiedInputState: UnifiedInputTabState
 
     /// Type of tab: web or AI Chat, derived from the current URL
     private var type: TabType {
@@ -154,7 +161,7 @@ public class Tab: NSObject, NSCoding {
                 fireTab: Bool,
                 isExternalLaunch: Bool = false,
                 shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
-                preferredTextEntryMode: TextEntryMode = .search,
+                unifiedInputState: UnifiedInputTabState = UnifiedInputTabState(),
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
@@ -167,7 +174,7 @@ public class Tab: NSObject, NSCoding {
         self.fireTab = fireTab
         self.isExternalLaunch = isExternalLaunch
         self.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppressTrackerAnimationOnFirstLoad
-        self.preferredTextEntryMode = preferredTextEntryMode
+        self.unifiedInputState = unifiedInputState
         self.aichatDebugSettings = aichatDebugSettings
     }
 
@@ -185,19 +192,20 @@ public class Tab: NSObject, NSCoding {
         // External launch flags are transient and always reset to false on decode
         let isExternalLaunch = false
         let shouldSuppressTrackerAnimationOnFirstLoad = false
-        let preferredTextEntryModeRaw = decoder.decodeObject(forKey: NSCodingKeys.preferredTextEntryMode) as? String
-        let preferredTextEntryMode: TextEntryMode
-        if let raw = preferredTextEntryModeRaw, let mode = TextEntryMode(rawValue: raw) {
-            preferredTextEntryMode = mode
-        } else {
-            // Legacy tab without stored mode — infer from URL
-            let isDuckAI = link?.url.isDuckAIURL(debugSettings: AIChatDebugSettings()) ?? false
-            preferredTextEntryMode = isDuckAI ? .aiChat : .search
-        }
+        let selectedModelID = decoder.decodeObject(forKey: NSCodingKeys.selectedModelID) as? String
+        let selectedReasoningModeRaw = decoder.decodeObject(forKey: NSCodingKeys.selectedReasoningMode) as? String
+        let selectedReasoningMode = selectedReasoningModeRaw.flatMap(AIChatReasoningMode.init(rawValue:))
+        let selectedToolRaw = decoder.decodeObject(forKey: NSCodingKeys.selectedTool) as? String
+        let selectedTool = selectedToolRaw.flatMap(AIChatRAGTool.init(rawValue:))
+        let unifiedInputState = UnifiedInputTabState(
+            selectedModelID: selectedModelID,
+            selectedReasoningMode: selectedReasoningMode,
+            selectedTool: selectedTool
+        )
 
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, preferredTextEntryMode: preferredTextEntryMode)
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, unifiedInputState: unifiedInputState)
     }
 
     public func encode(with coder: NSCoder) {
@@ -212,9 +220,25 @@ public class Tab: NSObject, NSCoding {
         coder.encode(contextualChatURL, forKey: NSCodingKeys.contextualChatURL)
         coder.encode(supportsTabHistory, forKey: NSCodingKeys.supportsTabHistory)
         coder.encode(fireTab, forKey: NSCodingKeys.fireTab)
-        coder.encode(preferredTextEntryMode.rawValue, forKey: NSCodingKeys.preferredTextEntryMode)
+        coder.encode(unifiedInputState.selectedModelID, forKey: NSCodingKeys.selectedModelID)
+        coder.encode(unifiedInputState.selectedReasoningMode?.rawValue, forKey: NSCodingKeys.selectedReasoningMode)
+        coder.encode(unifiedInputState.selectedTool?.rawValue, forKey: NSCodingKeys.selectedTool)
         // Note: isExternalLaunch and shouldSuppressTrackerAnimationOnFirstLoad are not encoded as they are transient flags
         // Note: type is not encoded as it's now a computed property based on the link URL
+    }
+
+    /// Returns a frozen deep copy containing only the fields that are persisted via NSCoding.
+    func archivalSnapshot() -> Tab {
+        Tab(uid: uid,
+            link: link?.copy() as? Link,
+            viewed: viewed,
+            desktop: isDesktop,
+            lastViewedDate: lastViewedDate,
+            daxEasterEggLogoURL: daxEasterEggLogoURL,
+            contextualChatURL: contextualChatURL,
+            supportsTabHistory: supportsTabHistory,
+            fireTab: fireTab,
+            unifiedInputState: unifiedInputState)
     }
 
     public override func isEqual(_ other: Any?) -> Bool {
@@ -222,6 +246,10 @@ public class Tab: NSObject, NSCoding {
         return uid == other.uid
     }
     
+    public override var hash: Int {
+        return uid.hashValue
+    }
+
     func toggleDesktopMode() {
         isDesktop = !isDesktop
     }
@@ -259,6 +287,8 @@ public class Tab: NSObject, NSCoding {
     }
 
 }
+
+extension Tab: UnifiedInputTabStateProviding {}
 
 // MARK: - URL+AIChat Debug Support
 

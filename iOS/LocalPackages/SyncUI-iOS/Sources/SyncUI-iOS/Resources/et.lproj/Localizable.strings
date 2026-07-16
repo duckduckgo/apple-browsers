@@ -1,5 +1,5 @@
-/* Auto-Restore - Description */
-"auto.restore.description" = "Rakenduse uuesti installimisel taastatakse selle seadme andmed automaatselt.";
+/* No comment provided by engineer. */
+"%@\n%@" = "%@\n %@";
 
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Jätka funktsiooni Sync & Backup seanssi, et taastada järjehoidjad, paroolid ja muu või jätka uue seadistusega.";
@@ -28,12 +28,6 @@
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Sees";
 
-/* Auto-restore section - Footer */
-"auto.restore.toggle.footer" = "Rakenduse uuesti installimisel taastatakse su andmed automaatselt. Funktsiooni Sync & Backup andmeid ei saa taastada pärast 18-kuulist mitteaktiivsust.";
-
-/* Auto-Restore - Toggle Label */
-"auto.restore.toggle.label" = "Taasta andmed rakenduse uuesti installimisel";
-
 /* Standard Buttons - Back Button */
 "back.button" = "Tagasi";
 
@@ -55,32 +49,11 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Kaamera luba on vajalik";
 
-/* Camera View - Point Camera Indication */
-"camera.point.camera.indication" = "Suuna kaamera sünkroonimiseks QR-koodile";
-
 /* No comment provided by engineer. */
 "Cancel" = "Tühista";
 
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Tühista";
-
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Lülita sünkroonimine ja varundamine sisse";
-
-/* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "\"See loob krüptitud varukoopia sinu järjehoidjatest ja autofill andmetest DuckDuckGo turvalises serveris, mida saab sünkroonida sinu teiste seadmetega.\"";
-
-/* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1-updated" = "See loob sinu salvestatud järjehoidjate, paroolide, krediitkaartide ja Duck.ai vestluste krüpteeritud varukoopia DuckDuckGo turvalises serveris, mida saab sünkroonida sinu teiste seadmetega.";
-
-/* Connect With Server Sheet - Description Part 2 */
-"connect.with.server.sheet.description.part2" = "Krüptimisvõti salvestatakse ainult sinu seadmesse, DuckDuckGo ei pääse sellele juurde.";
-
-/* Connect With Server Sheet - Footer */
-"connect.with.server.sheet.footer" = "Saad hiljem sünkroonida teiste seadmetega.";
-
-/* Connect With Server Sheet - Title */
-"connect.with.server.sheet.title" = "Selle seadme sünkroonimine ja varundamine";
 
 /* Standard Buttons - Copy Button */
 "copy.button" = "Kopeeri";
@@ -97,17 +70,8 @@
 /* Alert title for invalid credit cards being filtered out of synced data */
 "creditCards.invalid.objects.present.title" = "\"Mõned krediitkaardid ei sünkroonita teatud väljade liiga pika sisu tõttu.\"";
 
-/* Delete Server Data - Button */
-"delete.server.data" = "Lülita välja ja kustuta serveri andmed ...";
-
 /* No comment provided by engineer. */
 "Dev environment" = "Arenduskeskkond";
-
-/* Device SyncedSheet Button to go get DuckDuckGo on other devices */
-"device.synced.sheet.button.get.other.devices" = "Hangi DuckDuckGo teistele seadmetele";
-
-/* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Sinu andmed on sünkroonitud!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Valmis";
@@ -127,38 +91,17 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Kas laadida alla puuduvad ikoonid?";
 
-/* Options - Fetch Favicons Description */
-"fetch.favicons.option.caption" = "Laadi automaatselt alla oma sünkroonitud järjehoidjate ikoonid. Ikoonide allalaadimine toimub sinu võrgus.";
-
 /* Options - Fetch Favicons Title */
 "fetch.favicons.option.title" = "Ikoonide automaatne allalaadimine";
 
 /* No comment provided by engineer. */
 "Keep Development" = "Säilita arendus";
 
-/* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
-"manually.enter.code.instruction.attributed" = "Ava teises sünkroonitud seadmes DuckDuckGo rakenduses %1$@, vali %2$@ ja kleebi kood selle seadme sünkroonimiseks siia.";
-
 /* Manually Enter Code View - Title */
 "manually.enter.code.title" = "Sisesta kood käsitsi";
 
-/* Manually Enter Code View - Validating Code Action */
-"manually.enter.code.validating.code.action" = "Koodi valideerimine";
-
-/* Manually Enter Code View - Validating Code Failed Action */
-"manually.enter.code.validating.code.failed.action" = "Vale kood.";
-
-/* Standard Buttons - Next Button */
-"next.button" = "Järgmine";
-
 /* Standard Buttons - Not Now Button */
 "not.now.button" = "Mitte praegu";
-
-/* Options - Section Header */
-"options.section.header" = "Valikud";
-
-/* Section header for other syncing options */
-"other.options.section.header" = "Muud valikud";
 
 /* Standard Buttons - Paste Button */
 "paste.button" = "Kleebi";
@@ -172,20 +115,8 @@
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Halda krediitkaarte…";
 
-/* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Teie järjehoidjad ja automaattäitmise andmed valmistatakse sünkroonimiseks ette. See peaks võtma vaid hetke.";
-
-/* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description-updated" = "Sinu järjehoidjad, paroolid ja Duck.ai vestlused valmistatakse sünkroonimiseks ette. See peaks võtma vaid hetke.";
-
-/* Preparing To Sync Sheet - Footer */
-"preparing.to.sync.sheet.footer" = "Ühendamine ...";
-
-/* Preparing To Sync Sheet - Title */
-"preparing.to.sync.sheet.title" = "Sünkroonimise ja varundamise seadistamine";
-
-/* Link label for recovering synced data */
-"recover.synced.data.link" = "Taasta sünkroonitud andmed";
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Sünkroonimiseks ettevalmistumine";
 
 /* Recover Synced Data Sheet - Button */
 "recover.synced.data.sheet.button" = "Taasta sünkroonitud andmed";
@@ -214,86 +145,8 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Kas seade eemaldada?";
 
-/* Save Recovery Code Sheet - Card Title */
-"save.recovery.code.card.title" = "Taastamiskood";
-
-/* Save Recovery Code Sheet - Copy Code Toast */
-"save.recovery.code.code.copied.button" = "Taastamiskood kopeeriti lõikelauale";
-
-/* Save Recovery Code Sheet - Copy Code Button */
-"save.recovery.code.copy.code.button" = "Kopeeri kood";
-
-/* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Laadi alla PDF-ina";
-
-/* Save Recovery Code Sheet - Footer */
-"save.recovery.code.sheet.footer" = "Igaüks, kellel on juurdepääs sellele koodile, võib saada juurdepääsu sinu sünkroonitud andmetele, seega hoia seda turvalises kohas.";
-
-/* Recovery Code Sheet - Description */
-"save.recovery.key.body" = "Salvesta see kood, et saaksid oma andmed taastada, kui kaotad juurdepääsu sellele seadmele – hoia seda turvalises kohas.";
-
-/* Recovery Code Sheet - Title */
-"save.recovery.key.title" = "Taasta oma andmed hõlpsasti";
-
-/* Save RecoveryPDF - Button */
-"save.recovery.pdf.button" = "Salvesta taastamise PDF";
-
-/* Save RecoveryPDF - Footer + Learn More, with markdown link */
-"save.recovery.pdf.footer" = "Kasuta seda koodi oma andmete taastamiseks, kui kaotad juurdepääsu sellele seadmele. Funktsiooni Sync & Backup andmeid ei saa taastada pärast 18-kuulist mitteaktiivsust. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
-
-/* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
-"scan.code.to.recover.synced.data.enter.code.link" = "Sisesta tekstiline kood käsitsi";
-
-/* Scan Or Enter Code To Recover Synced Data View - Explanation */
-"scan.code.to.recover.synced.data.explanation" = "Andmete taastamiseks skanni QR-koodi oma taastamise PDF-ist või mõnest teisest sünkroonitud seadmest.";
-
-/* Scan Or Enter Code To Recover Synced Data View - Footer */
-"scan.code.to.recover.synced.data.footer" = "Kas sa ei saa skannida?";
-
-/* Scan Or Enter Code To Recover Synced Data View - Title */
-"scan.code.to.recover.synced.data.title" = "Taasta sünkroonitud andmed";
-
-/* Scan or See Code View - Footer */
-"scan.or.see.code.footer" = "Kas sa ei saa skannida?";
-
-/* Scan or See Code View - Instruction */
-"scan.or.see.code.instruction" = "Ava teises seadmes DuckDuckGo brauseris Seaded > Sünkroonimine ja varundus ning vali käsk „Sünkrooni teise seadmega“.";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.instruction.attributed" = "Ava teises seadmes DuckDuckGo brauseris %@. Vali käsk Sünkrooni teise seadmega.";
-
-/* Scan or See Code View - Manually Enter Code Link */
-"scan.or.see.code.manually.enter.code.link" = "Sisesta kood käsitsi";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.other.device.instruction.attributed" = "Ava oma teises seadmes DuckDuckGo rakendus ja mine aadressile %@.";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.instructions.body" = "Sünkroonimiseks skanni see kood teise seadmega.";
-
-/* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.instructions.title" = "Mobiililt mobiilile?";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.qr.instructions.body" = "Sünkroonimiseks ava DuckDuckGo oma teises sja skanni see kood.";
-
-/* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.qr.instructions.title" = "Või skanni DuckDuckGo abil oma teises seadmes";
-
-/* Scan or See Code View - Share Code Link */
-"scan.or.see.code.share.code.link" = "Jaga tekstikoodi";
-
-/* Scan or See Code View - Title */
-"scan.or.see.code.title" = "QR-koodi skannimine";
-
 /* No comment provided by engineer. */
 "Switch to Production" = "Lülitu töökeskkonnale";
-
-/* Link label for syncing and backing up the device */
-"sync.and.backup.this.device.link" = "Sünkroonimi ja varunda see seade";
-
-/* Button to get DuckDuckGo on other devices */
-"sync.get.other.devices" = "Hangi DuckDuckGo teistele seadmetele";
 
 /* Button title to share link for downloading DuckDuckGo on other devices */
 "sync.get.other.devices.card.button.title" = "Jaga allalaadimise linki";
@@ -310,9 +163,6 @@
 /* Message included when sharing a url via the system share sheet */
 "sync.get.other.devices.share.link.message" = "Installi DuckDuckGo brauser oma seadmetesse, et alustada oma järjehoidjate ja automaattäitmise andmete turvalise sünkroonimisega:";
 
-/* Sync Menu Path */
-"sync.menu.path" = "Seaded > Sünkroonimine ja varundamine > Sünkrooni teise seadmega";
-
 /* Sync passcode required alert - button */
 "sync.passcode.required.alert.go.to.settings.button" = "Ava Sätted";
 
@@ -324,6 +174,114 @@
 
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Taastamine";
+
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Kas oled need juba teises seadmes seadistanud?";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Sinu järjehoidjad, automaatse täitmise andmed ja Duck.ai vestlused on turvaliselt varundatud. Hoia neid nüüd oma arvuti või tahvelarvutiga sünkroonis.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Sünkrooni teise seadmega";
+
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Mitte praegu";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Kas sünkroonida oma andmed teise seadmega?";
+
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Laadib ikoonid veebisaitidelt, mille oled järjehoidjatesse lisanud. Ikoonide allalaadimine toimub sinu võrgus.";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Järjehoidjad";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Kasuta samu lemmikuid järjehoidjaid nii mobiilis kui ka lauaarvutis.";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Ühendamine...";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Kopeeri taastamiskood";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Lülita sünkroonimine välja ja kustuta serveri andmed";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Laadi taastamiskood alla";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo Maci ja Windowsi jaoks";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Hangi töölaua brauser";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Salvesta oma järjehoidjad, automaatse täitmise andmed ja Duck.ai vestlused ning sünkrooni need oma seadmete vahel otspunktkrüpteerimisega.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Salvesta oma järjehoidjad ja automaatse täitmise andmed ning sünkrooni need oma seadmete vahel otspunktkrüpteerimise abil.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Kasuta seda koodi oma andmete taastamiseks, kui kaotad juurdepääsu sellele seadmele. Funktsiooni Sync & Backup andmeid ei saa taastada pärast 18-kuulist mitteaktiivsust. [Loe edasi](%@)";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo rakendus";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Suuna kaamera QR-koodile, et seda skannida";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Ühendamine...";
+
+/* Instruction shown during sync setup flow. */
+"sync.simplified.scan-or-view-code.connecting.title" = "Otsast lõpuni krüptitud kõigis sinu seadmetes.";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Pärast koodi kleepimist tule selle seadme juurde tagasi.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Kopeeri kood teise seadmesse";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Sisesta kood käsitsi";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "Ava teises sünkroonitud seadmes DuckDuckGo rakenduses **Seaded > Sync & Backup > Sünkrooni teise seadmega**, vali **Kuva tekstikood** tee ja kleebi kood selle seadme sünkroonimiseks siia.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Koodi kontrollimine";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Ava DuckDuckGo rakendus oma teises seadmes.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "QR-koodi leiad menüüst Seaded > Sync & Backup > Sünkroonimine teise seadmega.";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Jaga koodi";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "QR-koodi skannimine";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Vaata koodi";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Sünkrooni oma seadmed";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Skanni või kopeeri see kood oma teise seadmesse";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Sünkroonimine ja varundamine";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Kasuta taastamiskoodi";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Sünkrooni teise seadmega";
 
 /* Sync & Backup Title */
 "sync.title" = "Sünkroonimine ja varundamine";
@@ -337,47 +295,14 @@
 /* Title of the warning message */
 "sync.warning.sync.unavailable" = "Sünkroonimine ja varundamine pole saadaval";
 
-/* Button label for syncing with another device */
-"sync.with.another.device.button" = "Sünkrooni teise seadmega";
-
-/* Footer message for syncing with another device */
-"sync.with.another.device.footer" = "Sinu andmed on otsast lõpuni krüptitud ja DuckDuckGo ei pääse krüpteerimisvõtmele ligi.";
-
-/* Message for syncing with another device */
-"sync.with.another.device.message" = "Sünkrooni järjehoidjaid ja paroole turvaliselt oma seadmete vahel.";
-
-/* Message for syncing with another device */
-"sync.with.another.device.message-updated" = "Sünkroniseeri järjehoidjaid, automaatse täitmise andmeid ja Duck.ai vestlusi turvaliselt oma seadmete vahel.";
-
-/* Title for syncing with another device */
-"sync.with.another.device.title" = "Alusta sünkroonimist";
-
 /* Synced Devices - Section Header */
 "synced.devices.section.header" = "Sünkroonitud seadmed";
-
-/* Synced Devices - Sync with Another Device Label */
-"synced.devices.sync.with.another.device.label" = "Sünkrooni teise seadmega";
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "See seade";
 
-/* Turn Sync Off - Button */
-"turn.sync.off" = "Lülita sünkroonimine ja varundamine välja ...";
-
-/* Sync enabled - footer description of data that is syncing */
-"turn.sync.off.section.footer" = "Järjehoidjad, automaatse täitmise andmed ja Duck.ai vestlused on praegu sinu seadmetes sünkroonis.";
-
-/* Turn Sync Off - Section Header */
-"turn.sync.off.section.header" = "Sünkroonimine lubatud";
-
-/* Options - Unify Favorites Instruction */
-"unified.favorites.instruction" = "Kasuta kõigis oma seadmetes samu lemmikjärjehoidjaid. Kui soovid mobiili ja arvuti lemmikud lahus hoida, siis ära seda sisse lülita.";
-
 /* Options - Unify Favorites Title */
 "unified.favorites.title" = "Lemmikute sünkroonimine kõigis seadmetes";
-
-/* View Text Code menu item */
-"view.text.code.menu.item" = "Kuva tekstikood";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Kasutad sünkroonimise arenduskeskkonda";

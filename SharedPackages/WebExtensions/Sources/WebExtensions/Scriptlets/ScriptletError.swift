@@ -24,6 +24,8 @@ public enum ScriptletError: Error, Equatable {
     case invalidSignatureFormat(name: String)
     case signatureVerificationFailed(name: String)
     case invalidEncoding(name: String)
+    case invalidName(name: String)
+    case pathEscapesBase(name: String)
     case storageFailed(underlying: String)
     case configMissing
 }

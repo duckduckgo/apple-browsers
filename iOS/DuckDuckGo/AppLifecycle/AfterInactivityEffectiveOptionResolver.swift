@@ -18,7 +18,9 @@
 //
 
 import Foundation
+import Core
 import Persistence
+import PrivacyConfig
 import UIKit
 
 protocol AfterInactivityEffectiveOptionResolving {
@@ -29,27 +31,42 @@ protocol AfterInactivityEffectiveOptionResolving {
 final class AfterInactivityEffectiveOptionResolver: AfterInactivityEffectiveOptionResolving {
 
     private let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys>
+    private let featureFlagger: FeatureFlagger
     private let isPad: Bool
 
     init(storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys>,
+         featureFlagger: FeatureFlagger,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
         self.storage = storage
+        self.featureFlagger = featureFlagger
         self.isPad = isPad
     }
 
-    /// Returns the effective option and, when it is .newTab for a new user with no stored value,
-    /// persists that choice and clears `idleReturnNewUser`.
-    /// iPad always defaults to `.lastUsedTab` when no preference is stored.
+    /// Returns the user's explicit preference when stored.
+    ///
+    /// On iPhone with no stored preference:
+    /// - **New users** (`idleReturnNewUser == true`): New Tab, persisted so it sticks.
+    /// - **`defaultExistingIPhoneUsersToNewTabAfterIdle` on**: New Tab for existing users, **not** persisted (volatile — reverts to LUT if flag is turned off).
+    /// - **Flag off + existing user**: Last Used Tab, **not** persisted.
+    ///
+    /// iPad and all other cases default to Last Used Tab without persisting.
+    /// Users who manually selected an option in Settings always keep that choice.
     func resolveEffectiveOption() -> AfterInactivityOption {
         if let raw = try? storage.afterInactivityOption,
            let option = AfterInactivityOption(rawValue: raw) {
             return option
         } else if !isPad, (try? storage.idleReturnNewUser) == true {
-            try? storage.set(AfterInactivityOption.newTab.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
-            try? storage.set(false, for: \AfterInactivitySettingKeys.idleReturnNewUser)
+            persistImplicitNewTabDefaultForIPhone()
+            return .newTab
+        } else if !isPad, featureFlagger.isFeatureOn(.defaultExistingIPhoneUsersToNewTabAfterIdle) {
             return .newTab
         } else {
             return .lastUsedTab
         }
+    }
+
+    private func persistImplicitNewTabDefaultForIPhone() {
+        try? storage.set(AfterInactivityOption.newTab.rawValue, for: \AfterInactivitySettingKeys.afterInactivityOption)
+        try? storage.set(false, for: \AfterInactivitySettingKeys.idleReturnNewUser)
     }
 }

@@ -98,11 +98,18 @@ final class DefaultOmniBarSearchView: UIView {
 
         textField.alpha = 1
     }
+
+    /// Sets `alpha` on the search-area containers whose alpha cascades to every icon-bearing child.
+    func setIconContainersAlpha(_ alpha: CGFloat) {
+        leftIconContainerPlaceholder.alpha = alpha
+        privacyInfoContainer.alpha = alpha
+        trailingItemsContainer.alpha = alpha
+    }
     
     func updateFireModeAppearance(fireMode: Bool) {
         textField.tintColor = fireMode
         ? UIColor(singleUseColor: .fireModeAccent)
-        : UIColor(designSystemColor: .accent)
+        : UIColor(designSystemColor: .accentPrimary)
     }
 
     private func setUpSubviews() {
@@ -199,7 +206,7 @@ final class DefaultOmniBarSearchView: UIView {
         textField.contentVerticalAlignment = .center
         textField.font = UIFont.daxBodyRegular()
         textField.textColor = UIColor(designSystemColor: .textPrimary)
-        textField.tintColor = UIColor(designSystemColor: .accent)
+        textField.tintColor = UIColor(designSystemColor: .accentPrimary)
         textField.autocapitalizationType = .none
         textField.autocorrectionType = .no
         textField.spellCheckingType = .no
@@ -209,7 +216,10 @@ final class DefaultOmniBarSearchView: UIView {
         DefaultOmniBarView.setUpCommonProperties(for: aiChatButton)
 
         isModeToggleHidden = true
-        trailingItemsContainer.setCustomSpacing(8, after: separatorView)
+
+        if UnifiedToggleInputFeature().isAvailable {
+            separatorView.lineColor = UIColor(designSystemColor: .decorationPrimary)
+        }
 
         reloadButton.setImage(DesignSystemImages.Glyphs.Size24.reload)
         DefaultOmniBarView.setUpCommonProperties(for: reloadButton)

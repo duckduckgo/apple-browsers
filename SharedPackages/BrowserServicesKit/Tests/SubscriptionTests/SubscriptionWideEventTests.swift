@@ -36,7 +36,7 @@ final class SubscriptionWideEventTests: XCTestCase {
         wideEvent = WideEvent(
             useMockRequests: true,
             storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
-            featureFlagProvider: MockWideEventFeatureFlagProvider(isPostEndpointEnabled: true)
+            featureFlagProvider: MockWideEventFeatureFlagProvider()
         )
         firedPixels.removeAll()
     }
@@ -60,6 +60,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             dryRun: false, // We set a mock `fireRequest` value to ensure no network requests are actually sent
             appVersion: "1.0.0",
             source: "test",
+            session: "test",
             defaultHeaders: [:],
             dateGenerator: Date.init,
             defaults: testDefaults,
@@ -233,10 +234,14 @@ final class SubscriptionWideEventTests: XCTestCase {
 
         XCTAssertEqual(params["feature.status"], "FAILURE")
         XCTAssertEqual(params["feature.data.ext.failing_step"], "ACCOUNT_CREATE")
-        XCTAssertEqual(params["feature.data.error.domain"], "Error")
-        XCTAssertEqual(params["feature.data.error.code"], "123")
-        XCTAssertEqual(params["feature.data.error.underlying_domain"], "UnderlyingError")
-        XCTAssertEqual(params["feature.data.error.underlying_code"], "456")
+        XCTAssertEqual(params["feature.data.ext.error.domain"], "Error")
+        XCTAssertEqual(params["feature.data.ext.error.code"], "123")
+        XCTAssertEqual(params["feature.data.ext.error.underlying_domain"], "UnderlyingError")
+        XCTAssertEqual(params["feature.data.ext.error.underlying_code"], "456")
+        XCTAssertNil(params["feature.data.error.domain"])
+        XCTAssertNil(params["feature.data.error.code"])
+        XCTAssertNil(params["feature.data.error.underlying_domain"])
+        XCTAssertNil(params["feature.data.error.underlying_code"])
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "10000") // Bucketed from 8000
     }
 
@@ -276,8 +281,10 @@ final class SubscriptionWideEventTests: XCTestCase {
 
         XCTAssertEqual(params["feature.status"], "FAILURE")
         XCTAssertEqual(params["feature.data.ext.failing_step"], "ACCOUNT_PAYMENT")
-        XCTAssertEqual(params["feature.data.error.domain"], "SKErrorDomain")
-        XCTAssertEqual(params["feature.data.error.code"], "2")
+        XCTAssertEqual(params["feature.data.ext.error.domain"], "SKErrorDomain")
+        XCTAssertEqual(params["feature.data.ext.error.code"], "2")
+        XCTAssertNil(params["feature.data.error.domain"])
+        XCTAssertNil(params["feature.data.error.code"])
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "30000")
     }
@@ -472,12 +479,8 @@ final class SubscriptionWideEventTests: XCTestCase {
 }
 
 struct MockWideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
-    let isPostEndpointEnabled: Bool
-
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-            return isPostEndpointEnabled
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }

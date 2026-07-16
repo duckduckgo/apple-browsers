@@ -29,4 +29,19 @@ public enum BrowsingMode: Int, CaseIterable {
             return false
         }
     }
+    
+    var pixelParamValue: String {
+        switch self {
+        case .fire:
+            return "fire"
+        case .normal:
+            return "normal"
+        }
+    }
+}
+
+extension Tab {
+    var pixelParamValue: String {
+        return mode.pixelParamValue
+    }
 }

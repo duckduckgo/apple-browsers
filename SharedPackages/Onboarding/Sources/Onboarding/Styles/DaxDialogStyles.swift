@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUI
+import UIComponents
 
 public enum OnboardingStyles {}
 
@@ -34,6 +36,12 @@ public extension OnboardingStyles {
         private var maxWidth: CGFloat? = .infinity
         private let cornerRadius: CGFloat
 
+        /// Applies pill shape to the button **ONLY** when Liquid Glass is supported.
+        ///
+        /// Setting this to `true` when Liquid Glass is not supported has no effect
+        /// and falls back to using `cornerRadius`.
+        private let pillShape: Bool
+
 #if os(macOS)
         private let fontSize = 12.0
 #else
@@ -44,14 +52,18 @@ public extension OnboardingStyles {
 
         public init(maxWidth: CGFloat? = .infinity,
                     maxHeight: CGFloat = Self.defaultMaxHeight,
-                    cornerRadius: CGFloat = 12) {
+                    cornerRadius: CGFloat = 12,
+                    pillShape: Bool = false) {
             self.maxWidth = maxWidth
             self.maxHeight = maxHeight
             self.cornerRadius = cornerRadius
+            self.pillShape = pillShape
         }
 
         public func makeBody(configuration: Configuration) -> some View {
-            configuration.label
+            let usePillShape = pillShape && AppVersion.isLiquidGlassSupported
+
+            return configuration.label
                 .font(.system(size: fontSize, weight: .bold))
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.center)
@@ -60,7 +72,8 @@ public extension OnboardingStyles {
                 .padding()
                 .frame(minWidth: 0, maxWidth: maxWidth, maxHeight: maxHeight)
                 .background(backgroundColor(isPressed: configuration.isPressed, isHovered: isHovered))
-                .cornerRadius(cornerRadius)
+                .if(usePillShape) { $0.clipShape(Capsule()) }
+                .if(!usePillShape) { $0.cornerRadius(cornerRadius) }
                 .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
                 .onHover { hovering in
                     #if os(macOS)

@@ -65,6 +65,10 @@ class MockSyncFeatureFlagger: FeatureFlagger {
         return cohort
     }
 
+    func assignedCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        return cohort
+    }
+
     var allActiveExperiments: Experiments = [:]
 }
 
@@ -84,7 +88,7 @@ final class SyncPreferencesTests: XCTestCase {
     var connectionController: MockSyncConnectionControlling!
     var featureFlagger: MockSyncFeatureFlagger!
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
-    lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!
+    lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!.defaultCredentialRecoveryKey()
     var cancellables: Set<AnyCancellable>!
 
     var bookmarksDatabase: CoreDataDatabase!
@@ -140,6 +144,9 @@ final class SyncPreferencesTests: XCTestCase {
         syncCredentialsAdapter = nil
         syncCreditCardsAdapter = nil
         syncIdentitiesAdapter = nil
+
+        UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsEligibleForFaviconsFetcherOnboarding.rawValue)
+        UserDefaultsWrapper<Bool>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.syncIsFaviconsFetcherEnabled.rawValue)
     }
 
     private func setUpDatabase() {

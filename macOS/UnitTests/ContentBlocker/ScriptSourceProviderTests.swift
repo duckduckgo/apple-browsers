@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import PersistenceTestingUtils
@@ -74,6 +75,7 @@ final class ScriptSourceProviderTests: XCTestCase {
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
                                               windowControllersManager: windowControllersManager,
+                                              dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
         let sourceProvider = ScriptSourceProvider(
@@ -101,7 +103,9 @@ final class ScriptSourceProviderTests: XCTestCase {
             syncServiceProvider: { nil },
             syncErrorHandler: SyncErrorHandler(),
             webExtensionAvailability: nil,
-            dockCustomization: DockCustomizerMock()
+            dockCustomization: DockCustomizerMock(),
+            reinstallUserDetection: MockReinstallingUserDetecting(),
+            installDateProvider: { Date() }
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

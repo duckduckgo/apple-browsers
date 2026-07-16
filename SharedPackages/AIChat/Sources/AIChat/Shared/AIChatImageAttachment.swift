@@ -133,3 +133,13 @@ public struct AIChatImageAttachment: Identifiable {
     }
     #endif
 }
+
+extension AIChatImageAttachment: Equatable {
+    /// Image attachments compare by `id` + image instance identity. We use `===` on the image
+    /// because the underlying `NSImage` / `UIImage` aren't structurally comparable, and the
+    /// only mutation we care about in practice is "did the resized image replace the
+    /// original?" — same id, fresh instance — which `===` captures exactly.
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id && lhs.image === rhs.image
+    }
+}

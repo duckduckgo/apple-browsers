@@ -24,18 +24,23 @@ let package = Package(
     name: "DataBrokerProtectionCore",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(
             name: "DataBrokerProtectionCore",
             targets: ["DataBrokerProtectionCore"]),
+        .library(
+            name: "DataBrokerProtectionDebugServer",
+            targets: ["DataBrokerProtectionDebugServer"]),
         .library(name: "DataBrokerProtectionCoreTestsUtils", targets: ["DataBrokerProtectionCoreTestsUtils"]),
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../DebugServer"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
-        .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.0"),
+        .package(url: "https://github.com/apple/swift-algorithms", exact: "1.2.1"),
+        .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.1.0"),
     ],
     targets: [
         .target(
@@ -48,8 +53,19 @@ let package = Package(
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 "ZIPFoundation",
                 .product(name: "Algorithms", package: "swift-algorithms"),
+                "TrackerRadarKit",
             ],
             resources: [.copy("BundleResources")],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "DataBrokerProtectionDebugServer",
+            dependencies: [
+                "DataBrokerProtectionCore",
+                .product(name: "DebugServer", package: "DebugServer"),
+            ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]

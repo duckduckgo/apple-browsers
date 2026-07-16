@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import os.log
 import PrivacyConfig
 import QuartzCore

@@ -19,7 +19,9 @@
 import BrowserServicesKit
 import Combine
 import Common
+import ConcurrencyExtensions
 import FeatureFlags
+import FoundationExtensions
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
@@ -49,7 +51,6 @@ import XCTest
 ///
 /// **Note:** `window.open()` has **no** `'opener'` feature token. Anchors/forms can opt back into
 /// opener behavior via `rel="opener"`.
-@available(macOS 12.0, *)
 final class WindowOpenSecurityTests: XCTestCase {
 
     private var contentBlockingMock: ContentBlockingMock!
@@ -882,7 +883,6 @@ final class WindowOpenSecurityTests: XCTestCase {
 
 }
 // MARK: - TabDelegate
-@available(macOS 12.0, *)
 extension WindowOpenSecurityTests: TabDelegate {
     var isInPopUpWindow: Bool { false }
 

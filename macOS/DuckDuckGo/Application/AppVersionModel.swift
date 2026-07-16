@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import PrivacyConfig
 
 /// This class provides unified interface for app version and prerelease labels.
@@ -68,6 +69,15 @@ final class AppVersionModel {
             if !commitSHA.isEmpty {
                 label.append("_\(commitSHA)")
             }
+        }
+        return label
+    }
+
+    /// Distribution channel label (e.g. "App Store", "DMG", "DMG Alpha").
+    var distributionLabel: String {
+        var label = buildType.isAppStoreBuild ? "App Store" : "DMG"
+        if buildType.isAlphaBuild {
+            label.append(" Alpha")
         }
         return label
     }

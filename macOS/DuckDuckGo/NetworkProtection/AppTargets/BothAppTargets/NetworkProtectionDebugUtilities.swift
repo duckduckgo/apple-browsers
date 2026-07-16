@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import VPN
 import NetworkProtectionUI
@@ -71,6 +72,10 @@ final class NetworkProtectionDebugUtilities {
         try await ipcClient.command(.restartAdapter)
     }
 
+    func triggerLeakCheck() async throws {
+        try await ipcClient.command(.triggerLeakCheck)
+    }
+
     func resetAllState(keepAuthToken: Bool) async throws {
         try await vpnUninstaller.uninstall(
             removeSystemExtension: true,
@@ -90,13 +95,13 @@ final class NetworkProtectionDebugUtilities {
         vpnAppState.resetDontAskAgainExclusionSuggestion()
     }
 
-    func disableLoginItems() {
-        vpnUninstaller.removeAgents()
+    func disableLoginItems() async {
+        await vpnUninstaller.removeAgents()
     }
 
     func removeVPNNetworkExtensionAndAgents() async throws {
         try await vpnUninstaller.removeSystemExtension()
-        vpnUninstaller.removeAgents()
+        await vpnUninstaller.removeAgents()
     }
 
     func removeVPNConfiguration() async throws {

@@ -40,7 +40,7 @@ extension URL {
      - Parameter queryItem: The query item to add or replace.
      - Returns: A new URL with the query item added or replaced, or the original URL if the query item's value is invalid.
      */
-    func addingOrReplacing(_ queryItem: URLQueryItem) -> URL {
+    public func addingOrReplacing(_ queryItem: URLQueryItem) -> URL {
         guard let queryValue = queryItem.value,
               !queryValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return self
@@ -77,11 +77,35 @@ extension URL {
         return false
     }
 
+    /// Returns `true` for the bare DuckDuckGo homepage, including variants that carry only
+    /// non-search query parameters (e.g. `?ia=web`, `?atb=…`). Returns `false` for SERP URLs
+    /// (which require a `q=` parameter) and for sub-pages like `/settings` or `/about`.
+    var isDuckDuckGoHomepage: Bool {
+        guard host == DuckDuckGo.host, path.isEmpty || path == "/" else { return false }
+        return queryItems?.contains { $0.name == DuckDuckGo.bangQueryName } != true
+    }
+
     /// Returns `true` if the URL points to Duck AI voice mode (`?mode=voice`).
     public var isDuckAIVoiceMode: Bool {
         guard isDuckAIURL else { return false }
         return queryItems?.contains {
             $0.name == AIChatURLParameters.modeName && $0.value == AIChatURLParameters.voiceModeValue
+        } == true
+    }
+
+    /// Returns `true` if the URL requests the Duck AI sidebar to be open on load (`?sidebar=open`).
+    public var isDuckAISidebarOpen: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.sidebarName && $0.value == AIChatURLParameters.sidebarOpenValue
+        } == true
+    }
+
+    /// Returns `true` if the URL requests the Duck AI settings to be open on load (`?settings=open`).
+    public var isDuckAISettingsOpen: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.settingsName && $0.value == AIChatURLParameters.settingsOpenValue
         } == true
     }
 

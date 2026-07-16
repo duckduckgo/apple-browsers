@@ -47,6 +47,7 @@ public final class AIChatNativeInputView: UIView {
         static let placeholderHorizontalOffset: CGFloat = 16
         static let placeholderTrailingSpacing: CGFloat = 8
         static let buttonSize: CGFloat = 40
+        static let minimumButtonHitSize: CGFloat = 44
         static let bottomBarHeight: CGFloat = 56
         static let bottomBarHorizontalPadding: CGFloat = 8
         static let cornerRadius: CGFloat = 16
@@ -117,11 +118,12 @@ public final class AIChatNativeInputView: UIView {
         textView.font = fontMetrics.scaledFont(for: UIFont.systemFont(ofSize: Constants.fontSize))
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
-        textView.tintColor = UIColor(designSystemColor: .accent)
+        textView.tintColor = UIColor(designSystemColor: .accentPrimary)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.textContainerInset = Constants.textContainerInset
         textView.isScrollEnabled = false
         textView.delegate = self
+        textView.accessibilityIdentifier = "AIChatNativeInputView.textView"
         textView.translatesAutoresizingMaskIntoConstraints = false
         return textView
     }()
@@ -164,6 +166,7 @@ public final class AIChatNativeInputView: UIView {
         let view = UIView()
         view.backgroundColor = .clear
         view.layer.cornerRadius = Constants.buttonSize / 2
+        view.isUserInteractionEnabled = false
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -171,7 +174,8 @@ public final class AIChatNativeInputView: UIView {
     private lazy var submitButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.arrowUp, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .accent)
+        button.tintColor = UIColor(designSystemColor: .accentPrimary)
+        button.accessibilityIdentifier = "AIChatNativeInputView.submitButton"
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(submitButtonTapped), for: .touchUpInside)
         button.isEnabled = false
@@ -266,10 +270,9 @@ public final class AIChatNativeInputView: UIView {
         chipView.configure(state: state)
     }
 
-    /// Sets the tap-to-attach callback on the current chip view (for placeholder taps).
+    /// Placeholder chips are no longer rendered; attach is handled by the attachment menu.
     public func setChipTapCallback(_ callback: @escaping () -> Void) {
-        guard let chipView = currentChipView as? AIChatContextChipView else { return }
-        chipView.onTapToAttach = callback
+        _ = callback
     }
 }
 
@@ -285,7 +288,7 @@ private extension AIChatNativeInputView {
         mainContainer.addSubview(chipContainer)
         mainContainer.addSubview(bottomBar)
         bottomBar.addSubview(submitButtonContainer)
-        submitButtonContainer.addSubview(submitButton)
+        bottomBar.addSubview(submitButton)
 
         setupConstraints()
         updateButtonStates()
@@ -337,6 +340,8 @@ private extension AIChatNativeInputView {
 
             submitButton.centerXAnchor.constraint(equalTo: submitButtonContainer.centerXAnchor),
             submitButton.centerYAnchor.constraint(equalTo: submitButtonContainer.centerYAnchor),
+            submitButton.widthAnchor.constraint(equalToConstant: Constants.minimumButtonHitSize),
+            submitButton.heightAnchor.constraint(equalToConstant: Constants.minimumButtonHitSize),
         ])
     }
 
@@ -370,7 +375,7 @@ private extension AIChatNativeInputView {
 
         submitButton.isEnabled = hasSubmittableText
         if hasSubmittableText {
-            submitButtonContainer.backgroundColor = UIColor(designSystemColor: .accent)
+            submitButtonContainer.backgroundColor = UIColor(designSystemColor: .accentPrimary)
             submitButton.tintColor = .white
         } else {
             submitButtonContainer.backgroundColor = .clear

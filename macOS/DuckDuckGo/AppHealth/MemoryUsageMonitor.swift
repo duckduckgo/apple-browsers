@@ -318,31 +318,33 @@ final class MemoryUsageMonitor: @unchecked Sendable, MemoryUsageMonitoring {
 
         guard let pids else { return nil }
 
+        let readMemory: (pid_t) -> UInt64? = memoryProvider ?? Self.residentMemorySize(forPID:)
+
         var totalBytes: UInt64 = 0
         var processCount = 0
 
         for pid in pids {
             guard pid > 0 else { continue }
-            let residentSize: UInt64?
-            if let memoryProvider {
-                residentSize = memoryProvider(pid)
-            } else {
-                var taskInfo = proc_taskinfo()
-                let size = Int32(MemoryLayout<proc_taskinfo>.size)
-                let result = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskInfo, size)
-                // A reused PID between collectPIDs() and proc_pidinfo() could attribute another
-                // process's memory to WebContent, slightly inflating the total. The window is
-                // vanishingly small and the over-count is acceptable for telemetry purposes.
-                residentSize = result == size ? taskInfo.pti_resident_size : nil
-            }
-
-            if let residentSize {
+            if let residentSize = readMemory(pid) {
                 totalBytes += residentSize
                 processCount += 1
             }
         }
 
         return (totalBytes, processCount)
+    }
+
+    /// Returns the resident memory size in bytes for the process with the given PID,
+    /// or `nil` if the process no longer exists or its info is otherwise unreadable.
+    ///
+    /// A reused PID between the caller's PID collection and this call could attribute another
+    /// process's memory to the caller, slightly inflating totals. The window is vanishingly
+    /// small and the over-count is acceptable for telemetry purposes.
+    static func residentMemorySize(forPID pid: pid_t) -> UInt64? {
+        var taskInfo = proc_taskinfo()
+        let size = Int32(MemoryLayout<proc_taskinfo>.size)
+        let result = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskInfo, size)
+        return result == size ? taskInfo.pti_resident_size : nil
     }
 
     deinit {

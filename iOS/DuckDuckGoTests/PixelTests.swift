@@ -23,6 +23,7 @@ import OHHTTPStubsSwift
 import Networking
 @testable import Core
 import Common
+import FoundationExtensions
 
 class PixelTests: XCTestCase {
     
@@ -41,6 +42,55 @@ class PixelTests: XCTestCase {
         
         HTTPStubs.removeAllStubs()
         super.tearDown()
+    }
+
+    func testUnifiedToggleInputPixelEventNames() {
+        let expectedNames: [(Pixel.Event, String)] = [
+            (.unifiedToggleInputImageGenerationSelected, "m_aichat_unified_input_image_generation_selected"),
+            (.unifiedToggleInputImageGenerationDeselected, "m_aichat_unified_input_image_generation_deselected"),
+            (.unifiedToggleInputImageGenerationSubmitted, "m_aichat_unified_input_image_generation_submitted"),
+            (.unifiedToggleInputWebSearchSelected, "m_aichat_unified_input_web_search_selected"),
+            (.unifiedToggleInputWebSearchDeselected, "m_aichat_unified_input_web_search_deselected"),
+            (.unifiedToggleInputWebSearchSubmitted, "m_aichat_unified_input_web_search_submitted"),
+            (.unifiedToggleInputModelSelected, "m_aichat_unified_input_model_selected"),
+            (.unifiedToggleInputModelPickerShown, "m_aichat_unified_input_model_picker_shown"),
+            (.unifiedToggleInputReasoningEffortSelected, "m_aichat_unified_input_reasoning_effort_selected"),
+            (.unifiedToggleInputReasoningEffortPickerShown, "m_aichat_unified_input_reasoning_effort_picker_shown"),
+            (.unifiedToggleInputImageAttached, "m_aichat_unified_input_image_attached"),
+            (.unifiedToggleInputImageRemoved, "m_aichat_unified_input_image_removed"),
+            (.unifiedToggleInputFileAttached, "m_aichat_unified_input_file_attached"),
+            (.unifiedToggleInputFileRemoved, "m_aichat_unified_input_file_removed"),
+            (.unifiedToggleInputFileValidationFailed, "m_aichat_unified_input_file_validation_failed"),
+            (.unifiedToggleInputVoiceTapped, "m_aichat_unified_input_voice_tapped"),
+            (.unifiedToggleInputStopGenerationTapped, "m_aichat_unified_input_stop_generation_tapped"),
+            (.unifiedToggleInputSubscriptionUpsellTriggered, "m_aichat_unified_input_subscription_upsell_triggered"),
+            (.unifiedToggleInputChatHeaderUpgradeTapped, "m_aichat_unified_input_chat_header_upgrade_tapped"),
+            (.unifiedToggleInputPromptSubmitted, "m_aichat_unified_input_prompt_submitted"),
+            (.unifiedToggleInputShowModelPicker, "aichat_unified_input_show_model_picker"),
+            (.unifiedToggleInputSubmitChangeModel, "aichat_unified_input_submit_change_model"),
+            (.unifiedToggleInputSubmitChangeModelPromptSent, "aichat_unified_input_submit_change_model_prompt_sent")
+        ]
+
+        for (event, expectedName) in expectedNames {
+            XCTAssertEqual(event.name, expectedName)
+        }
+    }
+
+    func testDuckAIAutocompletePixelEventNames() {
+        let expectedNames: [(Pixel.Event, String)] = [
+            (.autocompleteDuckAIClickWebsite, "m_autocomplete_duckai_click_website"),
+            (.autocompleteDuckAIClickBookmark, "m_autocomplete_duckai_click_bookmark"),
+            (.autocompleteDuckAIClickFavorite, "m_autocomplete_duckai_click_favorite"),
+            (.autocompleteDuckAIClickHistorySearch, "m_autocomplete_duckai_click_history_search"),
+            (.autocompleteDuckAIClickHistorySite, "m_autocomplete_duckai_click_history_site"),
+            (.autocompleteDuckAIClickSwitchToTab, "m_autocomplete_duckai_click_switch_to_tab"),
+            (.autocompleteDuckAIClickChatHistory, "m_autocomplete_duckai_click_chat_history"),
+            (.autocompleteDuckAIClickSearchDuckDuckGo, "m_autocomplete_duckai_click_search_duckduckgo")
+        ]
+
+        for (event, expectedName) in expectedNames {
+            XCTAssertEqual(event.name, expectedName)
+        }
     }
 
     func testWhenPixelFiredAndOverridesAppVersionThenOverrideIsUsed() {

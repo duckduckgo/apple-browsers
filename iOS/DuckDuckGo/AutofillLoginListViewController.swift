@@ -22,6 +22,7 @@ import Combine
 import Core
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import DDGSync
 import DesignResourcesKit
 import DesignResourcesKitIcons
@@ -46,7 +47,9 @@ final class AutofillLoginListViewController: UIViewController {
     private lazy var emptyView: UIView = {
         let emptyView = AutofillItemsEmptyView(importButtonAction: { [weak self] in
             self?.segueToFileImport()
-            Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped)
+            if case .legacy = DataImportEntryPointHandler().destination(for: .passwords) {
+                Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped)
+            }
         }, importViaSyncButtonAction: { [weak self] in
             self?.segueToImportViaSync()
             Pixel.fire(pixel: .autofillLoginsImportNoPasswords)
@@ -154,16 +157,6 @@ final class AutofillLoginListViewController: UIViewController {
     private var importPromoPresented: Bool = false
     private var syncPromoPresented: Bool = false
     private var extensionPromoPresented: Bool = false
-
-    private lazy var lockedViewBottomConstraint: NSLayoutConstraint = {
-        NSLayoutConstraint(item: tableView,
-                           attribute: .bottom,
-                           relatedBy: .equal,
-                           toItem: lockedView,
-                           attribute: .bottom,
-                           multiplier: 1,
-                           constant: 144)
-    }()
 
     private lazy var emptySearchViewCenterYConstraint: NSLayoutConstraint = {
         NSLayoutConstraint(item: emptySearchView,
@@ -276,7 +269,6 @@ final class AutofillLoginListViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         coordinator.animate(alongsideTransition: { _ in
-            self.updateConstraintConstants()
             if self.view.subviews.contains(self.noAuthAvailableView) {
                 self.noAuthAvailableView.refreshConstraints()
             }
@@ -377,6 +369,10 @@ final class AutofillLoginListViewController: UIViewController {
     }
 
     @objc private func appDidBecomeActiveCallback() {
+        // New hub import flow requires app switching to source apps (e.g. Chrome/Safari).
+        // Avoid intrusive re-auth while user remains in that flow.
+        guard !isInNewImportFlow else { return }
+
         // AutofillLoginDetailsViewController will handle calling authenticate() if it is the top view controller
         guard navigationController?.topViewController is AutofillLoginDetailsViewController else {
             authenticate()
@@ -385,7 +381,17 @@ final class AutofillLoginListViewController: UIViewController {
     }
 
     @objc private func appWillResignActiveCallback() {
+        // Keep the import flow uninterrupted when users background to export data.
+        guard !isInNewImportFlow else { return }
         viewModel.lockUI()
+    }
+
+    private var isInNewImportFlow: Bool {
+        guard let navigationController else { return false }
+
+        return navigationController.viewControllers.contains { viewController in
+            viewController is DataImportHubViewController || viewController is ImportSourceDetailViewController
+        }
     }
 
     @objc private func authenticatorInvalidateContext() {
@@ -418,7 +424,9 @@ final class AutofillLoginListViewController: UIViewController {
     private func importFileAction() -> UIAction {
         return UIAction(title: UserText.autofillEmptyViewImportButtonTitle, image: DesignSystemImages.Glyphs.Size16.import) { [weak self] _ in
             self?.segueToFileImport()
-            Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
+            if case .legacy = DataImportEntryPointHandler().destination(for: .passwords) {
+                Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
+            }
         }
     }
 
@@ -429,17 +437,36 @@ final class AutofillLoginListViewController: UIViewController {
         }
     }
 
-    private func segueToFileImport(source: DataImportViewModel.ImportScreen = DataImportViewModel.ImportScreen.passwords) {
+    private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen) -> DataImportViewController {
         let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: favoritesDisplayMode,
                                                   tld: tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: source,
+                                                                importScreen: importScreen,
                                                                 syncService: syncService,
                                                                 keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
-        navigationController?.pushViewController(dataImportViewController, animated: true)
+        return dataImportViewController
+    }
+
+    private func segueToFileImport(source: DataImportViewModel.ImportScreen = .passwords) {
+        let destinationViewController: UIViewController
+        switch DataImportEntryPointHandler().destination(for: source) {
+        case .legacy(let importScreen):
+            destinationViewController = makeDataImportViewController(importScreen: importScreen)
+        case .hub:
+            destinationViewController = DataImportHubViewController(syncService: syncService,
+                                                                    keyValueStore: keyValueStore,
+                                                                    bookmarksDatabase: bookmarksDatabase,
+                                                                    favoritesDisplayMode: favoritesDisplayMode,
+                                                                    entryPoint: source,
+                                                                    onFinished: { [weak self] in
+                                                                        self?.handleDataImportCompletion()
+                                                                    })
+            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: source.importHubEntryPointParameters)
+        }
+        navigationController?.pushViewController(destinationViewController, animated: true)
     }
 
     private func segueToImportViaSync() {
@@ -461,6 +488,12 @@ final class AutofillLoginListViewController: UIViewController {
                 mainVC.segueToSettingsSync(with: source)
             }
         }
+    }
+
+    private func handleDataImportCompletion() {
+        clearTableHeaderView()
+        importPromoPresented = false
+        viewModel.updateData()
     }
 
     private func segueToExtensionManagement() {
@@ -826,8 +859,6 @@ final class AutofillLoginListViewController: UIViewController {
         lockedView.translatesAutoresizingMaskIntoConstraints = false
         noAuthAvailableView.translatesAutoresizingMaskIntoConstraints = false
 
-        updateConstraintConstants()
-
         NSLayoutConstraint.activate([
             tableView.leftAnchor.constraint(equalTo: view.leftAnchor),
             tableView.rightAnchor.constraint(equalTo: view.rightAnchor),
@@ -840,24 +871,15 @@ final class AutofillLoginListViewController: UIViewController {
             emptySearchView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding),
 
             lockedView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            lockedView.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
             lockedView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.padding),
             lockedView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding),
-            lockedViewBottomConstraint,
 
             noAuthAvailableView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             noAuthAvailableView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             noAuthAvailableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.padding),
             noAuthAvailableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding)
         ])
-    }
-
-    private func updateConstraintConstants() {
-        let isIPhoneLandscape = traitCollection.containsTraits(in: UITraitCollection(verticalSizeClass: .compact))
-        if isIPhoneLandscape {
-            lockedViewBottomConstraint.constant = (view.frame.height / 2.0 - max(lockedView.frame.height, 120.0) / 2.0)
-        } else {
-            lockedViewBottomConstraint.constant = view.frame.height * 0.15
-        }
     }
 
     // MARK: Cell Methods
@@ -1214,9 +1236,7 @@ extension AutofillLoginListViewController: AutofillExtensionSettingsViewControll
 extension AutofillLoginListViewController: DataImportViewControllerDelegate {
 
     func dataImportViewControllerDidFinish(_ viewController: DataImportViewController) {
-        clearTableHeaderView()
-        importPromoPresented = false
-        viewModel.updateData()
+        handleDataImportCompletion()
     }
 }
 

@@ -20,7 +20,9 @@ import AppKitExtensions
 import BrowserServicesKit
 import Combine
 import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import Navigation
 import os.log
 import PixelKit
@@ -131,7 +133,7 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
         return if case .initial(.prompt) = state { true } else { false }
     }
 
-    @MainActor(unsafe)
+    @preconcurrency @MainActor
     init(download: WebKitDownload, destination: DownloadDestination, fireWindowSession: FireWindowSessionRef?) {
         self.download = download
         self.progress = DownloadProgress(download: download)
@@ -275,7 +277,9 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
                 Logger.fileDownload.error("🛑 download task callback: \(self): \(error)")
 
                 self.download.cancel()
-                self.finish(with: .failure(.failedToCompleteDownloadTask(underlyingError: error, resumeData: nil, isRetryable: false)))
+                self.finish(with: .failure(.failedToCompleteDownloadTask(underlyingError: error,
+                                                                         resumeData: nil,
+                                                                         isRetryable: state.isDownloading)))
                 PixelKit.fire(DebugEvent(GeneralPixel.fileGetDownloadLocationFailed, error: error))
             }
             return nil
@@ -331,11 +335,16 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
             self.state = .downloading(destination: presenters.destinationFile, tempFile: presenters.tempFile)
 
         } catch {
+            if state.isCompleted {
+                Logger.fileDownload.error("🛑 file presenters failure; download already marked as `.failed`: \(self): \(error)")
+                return
+            }
             Logger.fileDownload.error("🛑 file presenters failure: \(self): \(error)")
 
             self.download.cancel()
-
-            self.finish(with: .failure(.failedToCompleteDownloadTask(underlyingError: error, resumeData: nil, isRetryable: false)))
+            self.finish(with: .failure(.failedToCompleteDownloadTask(underlyingError: error,
+                                                                     resumeData: nil,
+                                                                     isRetryable: state.isDownloading)))
 
             PixelKit.fire(DebugEvent(GeneralPixel.fileDownloadCreatePresentersFailed(osVersion: "\(ProcessInfo.processInfo.operatingSystemVersion)"), error: error))
         }
@@ -353,9 +362,8 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
         // 1. create our final destination file (let‘s say myfile.zip) and setup a File Presenter for it
         //    doing this we preserve access to the file until it‘s actually downloaded
         let destinationFilePresenter = try BookmarkFilePresenter(url: destinationURL, consumeUnbalancedStartAccessingResource: true) { url in
-            try fm.createFile(atPath: url.path, contents: nil) ? url : {
-                throw CocoaError(.fileWriteNoPermission, userInfo: [NSFilePathErrorKey: url.path])
-            }()
+            try Data().write(to: url, options: .withoutOverwriting)
+            return url
         }
         if duckloadURL == destinationURL {
             // corner-case when downloading a `.duckload` file - the source and destination files will be the same then
@@ -364,7 +372,15 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
 
         // 2. mark the file as hidden until it‘s downloaded to not to confuse user
         //    and prevent from unintentional opening of the empty file
-        try destinationURL.setFileHidden(true)
+        do {
+            try destinationURL.setFileHidden(true)
+        } catch {
+            // rollback hiding on failure
+            try? destinationURL.setFileHidden(false)
+            // cleanup created file on failure
+            try? fm.removeItem(at: destinationURL)
+            throw error
+        }
         Logger.fileDownload.debug("🧙‍♂️ \"\(destinationURL.path)\" hidden")
 
         // 3. then we move the temporary download file to the destination directory (myfile.duckload)
@@ -444,6 +460,15 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
         return (tempFile: tempFile, destinationFile: destination)
     }
 
+    /// Call when a legitimate write error prevents the destination from being chosen (e.g. disk full, read-only fs).
+    /// Marks the task as failed immediately with the real underlying error so it appears in the download list.
+    @MainActor
+    func failDestination(with error: Error) {
+        assert(state.isInitial, "Unexpected state in `failDestination`: `.\(state)`)")
+        Logger.fileDownload.error("🛑 failDestination \(self): \(error)")
+        finish(with: .failure(.failedToCompleteDownloadTask(underlyingError: error, resumeData: nil, isRetryable: false)))
+    }
+
     func cancel() {
         guard Thread.isMainThread else {
             DispatchQueue.main.async {
@@ -462,7 +487,7 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
 
     @MainActor
     private func finish(with result: Result<FilePresenter, FileDownloadError>) {
-        assert(state.isInitial || state.isDownloading)
+        assert(state.isInitial || state.isDownloading, "Unexpected state in `finish`: `.\(state)`)")
         fileProgressPresenter = nil
         itemReplacementDirectoryFSOCancellable = nil // in case we‘ve failed without the temp file been created
 
@@ -476,35 +501,32 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
             }
             progress.completedUnitCount = progress.totalUnitCount
 
+            let tempFilePresenter = self.state.tempFilePresenter
             self.state = .downloaded(presenter)
+
+            // cleanup keeping the downloaded file
+            cleanupNonRetryableDownload(destinationFile: nil, tempFile: tempFilePresenter)
 
         case .failure(let error):
             Logger.fileDownload.debug("finish \(self) with .failure(\(error))")
 
-            self.state = .failed(destination: error.isRetryable ? self.state.destinationFilePresenter : nil, // stop tracking removed files for non-retryable downloads
+            // keep files for retryable error
+            cleanupNonRetryableDownload(destinationFile: error.isRetryable ? nil : self.state.destinationFilePresenter,
+                                        tempFile: error.isRetryable ? nil : self.state.tempFilePresenter)
+
+            // stop tracking removed files for non-retryable downloads
+            self.state = .failed(destination: error.isRetryable ? self.state.destinationFilePresenter : nil,
                                  tempFile: error.isRetryable ? self.state.tempFilePresenter : nil,
                                  resumeData: error.resumeData,
                                  error: error)
         }
 
         self.delegate?.fileDownloadTask(self, didFinishWith: result.map { _ in })
-
-        // temp dir cleanup
-        if let itemReplacementDirectory,
-           // don‘t remove itemReplacementDirectory if we‘re keeping the temp file in it for a retryable error
-           self.state.tempFilePresenter?.url?.path.hasPrefix(itemReplacementDirectory.path) != true {
-
-            DispatchQueue.global().async { [itemReplacementDirectory] in
-                Logger.fileDownload.debug("removing \"\(itemReplacementDirectory.path)\"")
-                try? FileManager.default.removeItem(at: itemReplacementDirectory)
-            }
-            self.itemReplacementDirectory = nil
-        }
     }
 
     @MainActor
     private func downloadDidFail(with error: Error, resumeData: Data?) {
-        guard case .downloading(destination: let destinationFile, tempFile: let tempFile) = self.state else {
+        guard case .downloading(destination: _, tempFile: let tempFile) = self.state else {
             // cancelled at early stage
             if state.isInitial {
                 self.finish(with: .failure(.failedToCompleteDownloadTask(underlyingError: error, resumeData: nil, isRetryable: false)))
@@ -527,26 +549,51 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
 
         Logger.fileDownload.debug("❗️ downloadDidFail \(self): \(error), retryable: \(isRetryable)")
         self.finish(with: .failure(.failedToCompleteDownloadTask(underlyingError: error, resumeData: resumeData, isRetryable: isRetryable)))
+    }
 
-        if !isRetryable {
-            DispatchQueue.global().async { [itemReplacementDirectory] in
-                let fm = FileManager()
-                try? destinationFile.coordinateWrite(with: .forDeleting) { url in
-                    Logger.fileDownload.debug("removing \"\(url.path)\"")
-                    try fm.removeItem(at: url)
-                }
-                try? tempFile.coordinateWrite(with: .forDeleting) { url in
-                    var url = url
-                    // if temp file is still in the itemReplacementDirectory - remove the itemReplacementDirectory
-                    if let itemReplacementDirectory, url.path.hasPrefix(itemReplacementDirectory.path) {
-                        url = itemReplacementDirectory
-                    }
-                    Logger.fileDownload.debug("removing \"\(url.path)\"")
-                    try fm.removeItem(at: url)
+    @MainActor
+    private func cleanupNonRetryableDownload(destinationFile: FilePresenter?, tempFile: FilePresenter?) {
+        DispatchQueue.global().async { [itemReplacementDirectory, tempFileUrl=tempFile?.url] in
+            let fm = FileManager()
+            // remove temp if it doesn‘t contain the temp file
+            // if it still contains the temp file, remove it via `tempFile.coordinateWrite` (see below)
+            if let itemReplacementDirectory, tempFileUrl?.path.hasPrefix(itemReplacementDirectory.path) != true {
+                do {
+                    Logger.fileDownload.debug("🧹 removing \"\(itemReplacementDirectory.path)\"")
+                    try FileManager.default.removeItem(at: itemReplacementDirectory)
+                } catch {
+                    Logger.fileDownload.error("failed to remove itemReplacementDirectory: \(error)")
                 }
             }
-            self.itemReplacementDirectory = nil
+
+            if let destinationFile, let url = destinationFile.url, !fm.isInTrash(url) {
+                do {
+                    try destinationFile.coordinateWrite(with: .forDeleting) { url in
+                        Logger.fileDownload.debug("🧹 removing \"\(url.path)\"")
+                        try fm.removeItem(at: url)
+                    }
+                } catch {
+                    Logger.fileDownload.error("failed to remove destination file: \(error)")
+                }
+            }
+
+            if let tempFile, let url = tempFile.url, !fm.isInTrash(url) {
+                do {
+                    try tempFile.coordinateWrite(with: .forDeleting) { url in
+                        var url = url
+                        // if temp file is still in the itemReplacementDirectory - remove the itemReplacementDirectory
+                        if let itemReplacementDirectory, url.path.hasPrefix(itemReplacementDirectory.path) {
+                            url = itemReplacementDirectory
+                        }
+                        Logger.fileDownload.debug("removing \"\(url.path)\"")
+                        try fm.removeItem(at: url)
+                    }
+                } catch {
+                    Logger.fileDownload.error("failed to remove temp file: \(error)")
+                }
+            }
         }
+        self.itemReplacementDirectory = nil
     }
 
     /// when `downloadDidFinish` or `downloadDidFail` callback is received before File Presenters finish initialization -
@@ -574,23 +621,12 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
     deinit {
 #if DEBUG
         let downloadDescr = download.debugDescription
-        @MainActor(unsafe) func performRegardlessOfMainThread() {
+        @preconcurrency @MainActor func performRegardlessOfMainThread() {
             Logger.fileDownload.debug("<Task \(downloadDescr)>.deinit")
             assert(state.isCompleted || [.unitTests, .integrationTests].contains(AppVersion.runType), "WebKitDownloadTask is deallocated without finish(with:) been called")
         }
         performRegardlessOfMainThread()
 #endif
-
-        // WebKit objects must be deallocated on the main thread on pre-macOS 12
-        if #unavailable(macOS 12), !Thread.isMainThread {
-            let extendLifetime = DispatchWorkItem { [download] in
-                withExtendedLifetime(download) {}
-            }
-            // to avoid race condition we clear the ivar first,
-            // then pass the WKDownload lifetime extension to the main queue
-            self.download = nil
-            DispatchQueue.main.async(execute: extendLifetime)
-        }
     }
 
 }
@@ -633,12 +669,14 @@ extension WebKitDownloadTask: WKDownloadDelegate {
             await delegate.fileDownloadTaskNeedsDestinationURL(self, suggestedFilename: suggestedFilename, suggestedFileType: suggestedFileType).0
         case .initial(.preset(let destinationURL)):
             destinationURL
-        case .initial(.resume(destination: let destination, tempFile: _)): {
+        case .initial(.resume(destination: let destination, tempFile: _)),
+             // the download is “resumed” as a new download (replacing the destination file)
+             .downloading(destination: let destination, tempFile: _): {
             cleanupStyle = .clear
             return destination.url
         }()
-        case .downloading, .downloaded, .failed: {
-            assertionFailure("Unexpected state in decideDestination callback – \(state)")
+        case .downloaded, .failed: {
+            assertionFailure("Unexpected state in `decideDestination` callback: `.\(state)`")
             return nil
         }()
         } else {
@@ -661,7 +699,7 @@ extension WebKitDownloadTask: WKDownloadDelegate {
     @MainActor
     func download(_: WKDownload,
                   didReceive challenge: URLAuthenticationChallenge,
-                  completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+                  completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         Logger.fileDownload.debug("did receive challenge \(self): \(challenge)")
         download.targetWebView?.navigationDelegate?.webView?(download.targetWebView!, didReceive: challenge, completionHandler: completionHandler) ?? {
             completionHandler(.performDefaultHandling, nil)
@@ -707,7 +745,7 @@ extension WebKitDownloadTask: WKDownloadDelegate {
         } catch {
             PixelKit.fire(DebugEvent(GeneralPixel.fileMoveToDownloadsFailed, error: error))
             Logger.fileDownload.error("fileMoveToDownloadsFailed: \(error)")
-            self.finish(with: .failure(.failedToCompleteDownloadTask(underlyingError: error, resumeData: nil, isRetryable: false)))
+            self.finish(with: .failure(.failedToCompleteDownloadTask(underlyingError: error, resumeData: nil, isRetryable: true)))
         }
     }
 

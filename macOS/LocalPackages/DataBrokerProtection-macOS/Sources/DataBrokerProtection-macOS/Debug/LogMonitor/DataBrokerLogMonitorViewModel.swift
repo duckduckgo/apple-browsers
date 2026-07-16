@@ -18,6 +18,7 @@
 
 import Foundation
 import Combine
+import AppKit
 import DataBrokerProtectionCore
 import os.log
 
@@ -27,26 +28,18 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
     @Published var filteredLogs: [LogEntry] = []
     @Published var isMonitoring: Bool = false
     @Published var filterSettings = LogFilterSettings() {
-        didSet { applyFiltersToExistingLogs() }
+        didSet {
+            if oldValue.subsystemPresets != filterSettings.subsystemPresets
+                || oldValue.shouldUseCustomSubsystem != filterSettings.shouldUseCustomSubsystem
+                || oldValue.customSubsystem != filterSettings.customSubsystem {
+                allLogs.removeAll()
+                logService.resetPosition()
+            }
+            applyFiltersToExistingLogs()
+        }
     }
     @Published var retentionLimitText: String = "2000"
     @Published var errorMessage: String?
-
-    // Subsystem selection
-    @Published var shouldUseCustomSubsystem: Bool = false {
-        didSet { updateSubsystemIfNeeded() }
-    }
-    @Published var customSubsystem: String = "" {
-        didSet { updateSubsystemIfNeeded() }
-    }
-
-    // Category selection
-    @Published var shouldUseCustomCategory: Bool = false {
-        didSet { updateCategoryFiltering() }
-    }
-    @Published var customCategory: String = "" {
-        didSet { updateCategoryFiltering() }
-    }
 
     private var allLogs: [LogEntry] = []
     private var monitoringTask: Task<Void, Never>?
@@ -56,14 +49,17 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
     var logCount: Int { filteredLogs.count }
     var totalLogCount: Int { allLogs.count }
 
-    /// Returns the effective subsystem being monitored
-    var effectiveSubsystem: String {
-        shouldUseCustomSubsystem ? customSubsystem : Logger.dbpSubsystem
-    }
-
-    /// Returns the display name for the current subsystem
+    /// Read-only summary of the active subsystem filter, shown in the toolbar.
     var subsystemDisplayName: String {
-        shouldUseCustomSubsystem ? (customSubsystem.isEmpty ? "(enter subsystem)" : customSubsystem) : "PIR"
+        if filterSettings.shouldUseCustomSubsystem {
+            return filterSettings.customSubsystem.isEmpty
+                ? "(enter subsystem)"
+                : filterSettings.customSubsystem
+        }
+        if filterSettings.subsystemPresets.isEmpty {
+            return "(all)"
+        }
+        return filterSettings.subsystemPresets.map(\.rawValue).sorted().joined(separator: " + ")
     }
 
     init(logService: DataBrokerLogMonitorService = DataBrokerLogMonitorService()) {
@@ -92,6 +88,39 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
         Logger.dataBrokerProtection.info("Log monitoring stopped")
     }
 
+    private static let exportFilenameFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd-HH-mm-ss"
+        return formatter
+    }()
+
+    private static let exportTimestampFormatter = ISO8601DateFormatter()
+
+    /// Writes the currently filtered logs to a timestamped `.log` file on the Desktop and reveals it in Finder.
+    func exportFilteredLogs() {
+        guard !filteredLogs.isEmpty else { return }
+
+        let filename = "log_monitor_\(Self.exportFilenameFormatter.string(from: Date())).log"
+        let url = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Desktop")
+            .appendingPathComponent(filename)
+
+        let lines: [String] = filteredLogs.map { log in
+            let timestamp = Self.exportTimestampFormatter.string(from: log.timestamp)
+            return "\(log.levelDescription)\t[\(timestamp)]\t[\(log.process)]\t[\(log.subsystem)]\t[\(log.rawCategory)]\t\(log.message)"
+        }
+        let content = lines.joined(separator: "\n")
+
+        do {
+            try content.write(to: url, atomically: true, encoding: .utf8)
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+            Logger.dataBrokerProtection.info("Exported \(self.filteredLogs.count) log entries to \(url.path, privacy: .public)")
+        } catch {
+            errorMessage = "Failed to export logs: \(error.localizedDescription)"
+        }
+    }
+
     func clearLogs() {
         allLogs.removeAll()
         filteredLogs.removeAll()
@@ -109,7 +138,10 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
             guard let self = self else { return }
             while !Task.isCancelled && isMonitoring {
                 do {
-                    let newLogs = try await logService.fetchRecentLogs(since: logService.currentPosition)
+                    let newLogs = try await logService.fetchRecentLogs(
+                        matching: filterSettings.subsystemPredicate,
+                        since: logService.currentPosition
+                    )
 
                     if !newLogs.isEmpty {
                         allLogs.append(contentsOf: newLogs)
@@ -141,34 +173,6 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
 
     private func applyFiltersToExistingLogs() {
         filteredLogs = allLogs.filter { filterSettings.matches($0) }
-    }
-
-    /// Updates the monitored subsystem when the selection changes
-    private func updateSubsystemIfNeeded() {
-        guard !shouldUseCustomSubsystem || !customSubsystem.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return
-        }
-
-        let newSubsystem = effectiveSubsystem
-        logService.updateSubsystem(newSubsystem)
-
-        if isMonitoring {
-            let wasMonitoring = isMonitoring
-            stopMonitoring()
-            if wasMonitoring {
-                startMonitoring()
-            }
-        }
-
-        Logger.dataBrokerProtection.debug("Updated log monitor subsystem to: \(newSubsystem, privacy: .public)")
-    }
-
-    /// Updates the category filtering when the selection changes
-    private func updateCategoryFiltering() {
-        filterSettings.shouldUseCustomCategory = shouldUseCustomCategory
-        filterSettings.customCategory = customCategory
-
-        Logger.dataBrokerProtection.debug("Updated log monitor category filtering: custom=\(self.filterSettings.shouldUseCustomCategory, privacy: .public) category=\(self.filterSettings.customCategory, privacy: .public)")
     }
 
     deinit {

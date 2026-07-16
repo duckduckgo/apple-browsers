@@ -21,6 +21,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import AppKit
 import Common
+import FoundationExtensions
 import SwiftUI
 import BrowserServicesKit
 import PixelKit
@@ -35,6 +36,15 @@ final class DBPHomeViewController: NSViewController {
     private let dataBrokerProtectionManager: DataBrokerProtectionManager
     private let vpnBypassService: VPNBypassFeatureProvider
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler()
+    private lazy var sharedPixelsHandler: DataBrokerProtectionSharedPixelsHandler? = PixelKit.shared.map {
+        DataBrokerProtectionSharedPixelsHandler(pixelKit: $0, platform: .macOS)
+    }
+    private lazy var interactionPixels: DataBrokerProtectionInteractionPixels? = sharedPixelsHandler.map {
+        DataBrokerProtectionInteractionPixels(
+            handler: $0,
+            repository: DataBrokerProtectionInteractionPixelsUserDefaults(userDefaults: .dbp)
+        )
+    }
     private var currentChildViewController: NSViewController?
     private var observer: NSObjectProtocol?
     private var freemiumDBPFeature: FreemiumDBPFeature
@@ -77,6 +87,7 @@ final class DBPHomeViewController: NSViewController {
             privacyConfig: privacyConfigurationManager,
             prefs: prefs,
             webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
+            isUserSubscribed: { Application.appDelegate.subscriptionManager.isUserAuthenticated },
             openURLHandler: { url in
                 Application.appDelegate.windowControllersManager.show(url: url, source: .link, newTab: true)
             })
@@ -116,10 +127,14 @@ final class DBPHomeViewController: NSViewController {
         super.viewDidAppear()
 
         Task { @MainActor in
-            if !(await dataBrokerProtectionManager.isUserAuthenticated()) && !freemiumDBPFeature.isAvailable {
+            let isAuthenticated = await dataBrokerProtectionManager.isUserAuthenticated()
+            if !isAuthenticated && !freemiumDBPFeature.isAvailable {
                 assertionFailure("This UI should never be presented if the user is not authenticated")
                 closeUI()
+                return
             }
+
+            await fireDashboardOpenPixelsIfNeeded(isAuthenticated: isAuthenticated)
         }
     }
 
@@ -141,7 +156,9 @@ final class DBPHomeViewController: NSViewController {
     }
 
     private func setupUIWithCurrentStatus() {
-        setupUIWithStatus(prerequisiteVerifier.checkStatus())
+        Task { @MainActor in
+            setupUIWithStatus(await prerequisiteVerifier.checkStatus())
+        }
     }
 
     private func setupUIWithStatus(_ status: DataBrokerPrerequisitesStatus) {
@@ -156,6 +173,13 @@ final class DBPHomeViewController: NSViewController {
             displayDBPUI()
             pixelHandler.fire(.homeViewShowWebUI)
         }
+    }
+
+    private func fireDashboardOpenPixelsIfNeeded(isAuthenticated: Bool) async {
+        guard await prerequisiteVerifier.checkStatus() == .valid else { return }
+
+        interactionPixels?.fireInteractionPixel(isAuthenticated: isAuthenticated)
+        sharedPixelsHandler?.fire(.dashboardOpen(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
     }
 
     private func displayDBPUI() {

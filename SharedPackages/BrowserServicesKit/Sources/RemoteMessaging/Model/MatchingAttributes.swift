@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 struct LocaleMatchingAttribute: SingleValueMatching {
     var value: [String]? = []
@@ -174,6 +175,11 @@ struct SubscriptionStatusMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct SubscriptionTierMatchingAttribute: SingleValueMatching {
+    var value: [String]? = []
+    var fallback: Bool?
+}
+
 struct SubscriptionFreeTrialActiveMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?
@@ -190,6 +196,11 @@ struct InteractedWithDeprecatedMacRemoteMessageMatchingAttribute: SingleValueMat
 }
 
 struct IsInstalledMacAppStoreMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct OSUpgradeCapabilityMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?
 }
@@ -221,6 +232,21 @@ struct FreemiumPIRCurrentUserMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct FreemiumPIREligibleMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct FreemiumPIRDidActivateMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct FreemiumPIRFirstScanResultMatchingAttribute: SingleValueMatching {
+    var value: String?
+    var fallback: Bool?
+}
+
 struct PIRCurrentUserMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?
@@ -238,6 +264,11 @@ struct AllFeatureFlagsEnabledMatchingAttribute: ArrayContainsAllMatching {
 
 struct SyncEnabledMatchingAttribute: SingleValueMatching {
     var value: Bool?
+    var fallback: Bool?
+}
+
+struct NTPAfterIdleStateMatchingAttribute: SingleValueMatching {
+    var value: [String]? = []
     var fallback: Bool?
 }
 

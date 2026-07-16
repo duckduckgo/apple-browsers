@@ -1,0 +1,15 @@
+# sync_setup.yaml
+# Shared setup for the sync_tests suite.
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        isInternalUser: ${INTERNAL_USER_MODE}

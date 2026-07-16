@@ -27,32 +27,6 @@ class WebViewTransition: TabSwitcherTransition {
         return self.tabSwitcherViewController.collectionView.convert(attributes.frame,
                                                                      to: self.tabSwitcherViewController.view)
     }
-    
-    fileprivate func previewFrame(for cellBounds: CGSize, preview: UIImage) -> CGRect {
-        guard tabSwitcherSettings.isGridViewEnabled else {
-            return CGRect(origin: .zero, size: cellBounds)
-        }
-        
-        let previewAspectRatio = preview.size.height / preview.size.width
-        let containerAspectRatio = (cellBounds.height - TabViewCell.Constants.cellHeaderHeight) / cellBounds.width
-        let strechedVerically = containerAspectRatio < previewAspectRatio
-        
-        var targetSize = CGSize.zero
-        if strechedVerically {
-            targetSize.width = cellBounds.width
-            targetSize.height = cellBounds.width * previewAspectRatio
-        } else {
-            targetSize.height = cellBounds.height - TabViewCell.Constants.cellHeaderHeight
-            targetSize.width = targetSize.height / previewAspectRatio
-        }
-        
-        let targetFrame = CGRect(x: 0,
-                                 y: TabViewCell.Constants.cellHeaderHeight,
-                                 width: targetSize.width,
-                                 height: targetSize.height - 8)
-            .insetBy(dx: 4, dy: 4)
-        return targetFrame
-    }
 }
 
 class FromWebViewTransition: WebViewTransition {
@@ -107,20 +81,53 @@ class FromWebViewTransition: WebViewTransition {
         imageView.frame = imageContainer.bounds
         imageView.image = preview
 
+        // Duck.ai tabs land on a rich card, not a screenshot. Crossfade a snapshot of the
+        // destination cell over the webview preview so the shrink ends on matching content
+        // instead of popping from screenshot to card. Gated on the rich-card flag: with it off
+        // the AI cell is a screenshot, so there's nothing to crossfade to
+        var cellSnapshot: UIView?
+        if tab.isAITab, mainViewController.featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) {
+            tabSwitcherViewController.collectionView.layoutIfNeeded()
+            if let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
+                // Force the .image thumbnail in synchronously — its async load won't finish
+                // before snapshotView captures the cell.
+                cell.prepareForSnapshot()
+                let currentBorderHidden = cell.border.isHidden
+                cell.border.isHidden = true
+                if let snapshot = cell.snapshotView(afterScreenUpdates: true) {
+                    snapshot.frame = imageContainer.bounds
+                    snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                    snapshot.alpha = 0
+                    imageContainer.addSubview(snapshot)
+                    cellSnapshot = snapshot
+                }
+                cell.border.isHidden = currentBorderHidden
+            }
+               
+        }
+
         UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
 
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
                 self.imageContainer.frame = containerFrame
                 self.imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
-                self.imageView.frame = self.previewFrame(for: containerFrame.size, preview: preview)
+                self.imageView.frame = WebViewTransitionGeometry.previewFrame(for: containerFrame.size,
+                                                                              previewSize: preview.size,
+                                                                              isGridViewEnabled: self.tabSwitcherSettings.isGridViewEnabled)
             }
             
             UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.7) {
                 self.tabSwitcherViewController.view.alpha = 1
             }
-            
-            if !self.tabSwitcherSettings.isGridViewEnabled {
+
+            if let cellSnapshot {
+                // Crossfade webview preview out / cell snapshot in over the first half.
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.5) {
+                    self.imageView.alpha = 0
+                    cellSnapshot.alpha = 1
+                }
+            } else if !self.tabSwitcherSettings.isGridViewEnabled {
                 UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.5) {
                     self.imageView.alpha = 0
                 }
@@ -145,7 +152,17 @@ class ToWebViewTransition: WebViewTransition {
               let rowIndex = tabSwitcherViewController.tabsModel.indexOf(tab: tab),
               let layoutAttr = tabSwitcherViewController.collectionView.layoutAttributesForItem(at: IndexPath(row: rowIndex, section: 0))
         else {
-            transitionContext.completeTransition(true)
+            // Crossfade fallback when destination is no longer a web view; mirrors ToHomeScreenTransition.
+            if let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController {
+                mainViewController.view.alpha = 1
+            }
+            UIView.animate(withDuration: TabSwitcherTransition.Constants.duration, animations: {
+                self.tabSwitcherViewController.view.alpha = 0
+            }, completion: { _ in
+                self.solidBackground.removeFromSuperview()
+                self.imageContainer.removeFromSuperview()
+                transitionContext.completeTransition(true)
+            })
             return
         }
                 
@@ -164,8 +181,9 @@ class ToWebViewTransition: WebViewTransition {
         
         let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         if let preview = preview {
-            imageView.frame = previewFrame(for: imageContainer.bounds.size,
-                                           preview: preview)
+            imageView.frame = WebViewTransitionGeometry.previewFrame(for: imageContainer.bounds.size,
+                                                                     previewSize: preview.size,
+                                                                     isGridViewEnabled: tabSwitcherSettings.isGridViewEnabled)
         } else {
             imageView.frame = CGRect(origin: .zero, size: imageContainer.bounds.size)
         }
@@ -181,8 +199,8 @@ class ToWebViewTransition: WebViewTransition {
             self.imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
             self.imageContainer.layer.cornerRadius = 0
 
-            self.imageView.frame = self.destinationImageFrame(for: webViewFrame.size,
-                                                              preview: preview)
+            self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: webViewFrame.size,
+                                                                                   previewSize: preview?.size)
             self.imageView.alpha = 1
             
             self.solidBackground.alpha = 1
@@ -192,19 +210,6 @@ class ToWebViewTransition: WebViewTransition {
             self.imageContainer.removeFromSuperview()
             transitionContext.completeTransition(true)
         })
-    }
-    
-    private func destinationImageFrame(for containerSize: CGSize,
-                                       preview: UIImage?) -> CGRect {
-        guard let preview = preview else {
-            return CGRect(origin: .zero, size: containerSize)
-        }
-        
-        let targetFrame = CGRect(x: 0,
-                                 y: 0,
-                                 width: containerSize.width,
-                                 height: containerSize.width * (preview.size.height / preview.size.width))
-        return targetFrame
     }
 
 }

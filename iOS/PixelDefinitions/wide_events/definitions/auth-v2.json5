@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "ios-authv2-token-refresh",
-            "version": "0.1"
+            "version": "2.0"
         },
         "feature": {
             "name": "authv2-token-refresh",
@@ -20,7 +20,7 @@
                     "refresh_trigger": {
                         "type": "string",
                         "description": "The reason for the refresh.",
-                        "enum": ["backend", "client", "token_adoption"]
+                        "enum": ["backend", "client", "create_if_needed", "token_adoption"]
                     },
                     "failing_step": {
                         "type": "string",
@@ -31,7 +31,8 @@
                             "fetch_jwks",
                             "verify_access_token",
                             "verify_refresh_token",
-                            "token_write"
+                            "token_write",
+                            "recover_invalid_token"
                         ]
                     },
                     "refresh_token_latency_ms_bucketed": {
@@ -43,25 +44,50 @@
                         "type": "integer",
                         "description": "The latency value of the JWKS call.",
                         "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
-                    }
-                },
-                "error": {
-                    "domain": {
-                        "type": "string",
-                        "description": "The top level error domain"
                     },
-                    "code": {
+                    "recovery_latency_ms_bucketed": {
                         "type": "integer",
-                        "description": "The top level error code"
+                        "description": "Bucketed latency from invalid-token detection to recovery outcome (ms).",
+                        "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
                     },
-                    "underlying_domain": {
+                    "recovery_outcome": {
                         "type": "string",
-                        "description": "The underlying error domain"
+                        "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed.",
+                        "enum": ["not_attempted", "succeeded", "failed"]
                     },
-                    "underlying_code": {
-                        "type": "integer",
-                        "description": "The underlying error code"
-                    }
+                    "error": "errorParameters"
+                }
+            }
+        }
+    },
+    "ios-authv2-token-adoption": {
+        "description": "Sent when AuthV2 has completed a token adoption event",
+        "owners": ["samsymons"],
+        "meta": {
+            "type": "ios-authv2-token-adoption",
+            "version": "2.0"
+        },
+        "feature": {
+            "name": "authv2-token-adoption",
+            "status": ["SUCCESS", "FAILURE", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "The reason provided when the status is UNKNOWN",
+                        "enum": ["partial_data"]
+                    },
+                    "failing_step": {
+                        "type": "string",
+                        "description": "The step that the event failed on, if relevant.",
+                        "enum": ["token_adoption", "token_refresh"]
+                    },
+                    "adoption_source": {
+                        "type": "string",
+                        "description": "What caused the token to be adopted, when known.",
+                        "enum": ["web_restore", "vpn"]
+                    },
+                    "error": "errorParameters"
                 }
             }
         }

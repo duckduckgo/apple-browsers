@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 
 @MainActor
 protocol RecentlyClosedCoordinating: AnyObject {

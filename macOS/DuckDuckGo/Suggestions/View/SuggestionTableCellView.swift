@@ -19,6 +19,7 @@
 import AIChat
 import Cocoa
 import Common
+import FoundationExtensions
 import os.log
 import Suggestions
 
@@ -34,18 +35,11 @@ final class SuggestionTableCellView: NSTableCellView {
     }
 
     private enum Constants {
-        static let textColor: NSColor = .suggestionText
-        static let suffixColor: NSColor = NSColor(designSystemColor: .accentTextPrimary)
-        static let burnerSuffixColor: NSColor = .burnerAccent
-        static let iconColor: NSColor = .suggestionIcon
-        static let selectedTintColor: NSColor = NSColor(designSystemColor: .accentContentPrimary)
-
         static let switchToTabExtraSpace: CGFloat = 12 + 6 + 9 + 12
         static let switchToTabSuffixPadding: CGFloat = 8
 
         static let trailingSpace: CGFloat = 8
         static let iconImageViewLeadingSpace: CGFloat = 13
-        static let suggestionTextFieldLeadingSpace: CGFloat = 7
     }
 
     @IBOutlet var iconImageView: NSImageView!
@@ -144,7 +138,9 @@ final class SuggestionTableCellView: NSTableCellView {
     }
 
     override func awakeFromNib() {
-        suffixTextField.textColor = Constants.suffixColor
+        let colorsProvider = theme?.colorsProvider
+
+        suffixTextField.textColor = colorsProvider?.suggestionsSuffixColor
         removeButton.toolTip = UserText.removeSuggestionTooltip
         switchToTabLabel.attributedStringValue = Self.switchToTabAttributedString
     }
@@ -202,7 +198,8 @@ final class SuggestionTableCellView: NSTableCellView {
         self.suggestion = nil
 
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 13)
+            .font: NSFont.systemFont(ofSize: 13),
+            .paragraphStyle: SuggestionViewModel.paragraphStyle
         ]
         attributedString = NSAttributedString(string: userText, attributes: attributes)
         iconImageView.image = icon
@@ -240,6 +237,11 @@ final class SuggestionTableCellView: NSTableCellView {
             return
         }
 
+        guard let theme else {
+            assertionFailure()
+            return
+        }
+
         let usesTransparentBox: Bool
         if case .default = cellStyle {
             usesTransparentBox = false
@@ -247,32 +249,36 @@ final class SuggestionTableCellView: NSTableCellView {
             usesTransparentBox = true
         }
 
+        let colorsProvider = theme.colorsProvider
+        let textColor = isSelected ? colorsProvider.suggestionsHighlightTextColor : colorsProvider.suggestionsTextColor
+        let suffixColor = isSelected ? colorsProvider.suggestionsHighlightSuffixColor : colorsProvider.suggestionsSuffixColor
+
+        textField?.attributedStringValue = attributedString
+        textField?.textColor = textColor
+        suffixTextField.textColor = suffixColor
+        switchToTabLabel.textColor = suffixColor
+        switchToTabArrowView.contentTintColor = suffixColor
+
         if isSelected {
-            textField?.attributedStringValue = attributedString
-            textField?.textColor = Constants.selectedTintColor
-            suffixTextField.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
-            switchToTabLabel.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
-            switchToTabArrowView.contentTintColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
             switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .white.withAlphaComponent(0.09)
         } else {
-            textField?.attributedStringValue = attributedString
-            textField?.textColor = theme?.colorsProvider.addressBarTextFieldColor ?? Constants.textColor
-            switchToTabLabel.textColor = theme?.palette.accentPrimary ?? Constants.textColor
-            switchToTabArrowView.contentTintColor = theme?.palette.accentPrimary ?? Constants.textColor
             switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .buttonMouseOver
-            if isBurner {
-                suffixTextField.textColor = Constants.burnerSuffixColor
-            } else {
-                suffixTextField.textColor = theme?.palette.accentPrimary ?? Constants.suffixColor
-            }
         }
 
         updateKeyboardShortcutVisibility()
     }
 
     private func updateImageViews() {
-        iconImageView.contentTintColor = isSelected ? Constants.selectedTintColor : Constants.iconColor
-        removeButton.contentTintColor = isSelected ? Constants.selectedTintColor : Constants.iconColor
+        guard let theme else {
+            assertionFailure()
+            return
+        }
+
+        let colorsProvider = theme.colorsProvider
+        let tintColor = isSelected ? colorsProvider.suggestionsHighlightTextColor : colorsProvider.suggestionsTextColor
+
+        iconImageView.contentTintColor = tintColor
+        removeButton.contentTintColor = tintColor
     }
 
     func updateDeleteImageViewVisibility() {
@@ -345,12 +351,17 @@ final class SuggestionTableCellView: NSTableCellView {
             }
         }
 
-        var iconLeadingPadding = theme?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
+        guard let styleProvider = theme?.addressBarStyleProvider else {
+            assertionFailure()
+            return
+        }
+
+        var iconLeadingPadding = styleProvider.suggestionIconViewLeadingPadding
         if isAIChatToggleBeingDisplayed {
             iconLeadingPadding += 8
         }
         iconImageViewLeadingConstraint.constant = iconLeadingPadding
-        searchSuggestionTextFieldLeadingConstraint.constant = theme?.addressBarStyleProvider.suggestionTextFieldLeadingPadding ?? Constants.suggestionTextFieldLeadingSpace
+        searchSuggestionTextFieldLeadingConstraint.constant = styleProvider.suggestionTextFieldLeadingPadding
 
         super.layout()
     }

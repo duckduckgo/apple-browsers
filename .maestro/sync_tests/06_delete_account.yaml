@@ -5,9 +5,9 @@ tags:
 name: 06_delete_account
 ---
 
-# Set up 
-- runFlow: 
-    file: ../shared/setup.yaml
+# Set up
+- runFlow:
+    file: ../shared/sync_setup.yaml
 
 # Set Internal User
 - tapOn: Browsing menu
@@ -28,8 +28,9 @@ name: 06_delete_account
     file: ../shared/sync_delete.yaml
 
 # Try to login and check for error
-- assertVisible: Begin Syncing
+- assertVisible: Sync With Another Device
 - tapOn: Sync With Another Device
+- tapOn: Passcode field
 - inputText: "0000"
 - pressKey: Enter
 - runFlow:
@@ -40,5 +41,6 @@ name: 06_delete_account
 - assertVisible: Scan QR Code
 - tapOn: Manually Enter Code
 - tapOn: Paste
-- assertVisible: Sync & Backup Error
-- tapOn: OK
+- assertVisible: Sync failed.
+- assertVisible: Please try again.
+- tapOn: Got It

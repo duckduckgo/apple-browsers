@@ -9,6 +9,23 @@
         "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
         "examples": ["1.146.0"]
     },
+    "cookie_popup_preference": {
+        "key": "cookie_popup_preference",
+        "type": "string",
+        "description": "The resulting Cookie Pop-up Protection preference after the user confirms the opt-in dialog",
+        "enum": ["max", "default", "off"]
+    },
+    "autoconsent_enabled": {
+        "key": "autoconsent_enabled",
+        "type": "boolean",
+        "description": "Whether Cookie Pop-up Protection (autoconsent) was enabled at the moment the dialog was shown"
+    },
+    "time_since_shown": {
+        "key": "time_since_shown",
+        "type": "string",
+        "description": "Bucketed time elapsed from when the opt-in dialog was first shown to when it was confirmed",
+        "enum": ["0-1min", "1-5min", "5-60min", "1h-1d", "1d+"]
+    },
     "atb": {
         "key": "atb",
         "type": "string",
@@ -31,6 +48,12 @@
             "dbpBackgroundAgent"
         ]
     },
+    "channel": {
+        "key": "channel",
+        "type": "string",
+        "description": "Identifies non-production pixels. 'canary' for internal users; 'dev' for alpha/review builds. Omitted for production builds.",
+        "enum": ["canary", "dev"]
+    },
     "errorDomain": {
         "key": "d",
         "type": "string",
@@ -41,6 +64,11 @@
         "key": "e",
         "type": "number",
         "description": "NSError code"
+    },
+    "keychainErrorCode": {
+        "key": "keychain_error_code",
+        "type": "string",
+        "description": "OSStatus code returned by the Keychain when reading or writing the encryption key failed"
     },
     "fromExtension": {
         "key": "fromExtension",
@@ -119,28 +147,22 @@
         "description": "Optional reason accompanying the feature status"
     },
     "wideEventErrorDomain": {
-        "key": "feature.data.error.domain",
+        "key": "feature.data.ext.error.domain",
         "type": "string",
         "description": "Error domain for the failure, when applicable, e.g. SKErrorDomain"
     },
     "wideEventErrorCode": {
-        "key": "feature.data.error.code",
+        "key": "feature.data.ext.error.code",
         "type": "integer",
         "description": "Error code for the failure, when applicable"
     },
-    "wideEventErrorDescription": {
-        "key": "feature.data.error.description",
-        "type": "string",
-        "description": "Error description for the failure, when applicable",
-        "examples": ["saveToPreferencesFailed", "startVPNFailed"]
-    },
     "wideEventUnderlyingErrorDomain": {
-        "keyPattern": "feature\\.data\\.error\\.underlying_domain[0-9]?",
+        "keyPattern": "^feature\\.data\\.ext\\.error\\.underlying_domain[0-9]?$",
         "type": "string",
         "description": "Underlying error domain (supports optional numeric index for nested errors)"
     },
     "wideEventUnderlyingErrorCode": {
-        "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]?",
+        "keyPattern": "^feature\\.data\\.ext\\.error\\.underlying_code[0-9]?$",
         "type": "integer",
         "description": "Underlying error code (supports optional numeric index for nested errors)"
     },
@@ -199,15 +221,13 @@
     },
     "dbpIsAuthenticated": {
         "key": "isAuthenticated",
-        "type": "string",
-        "description": "Whether the user is authenticated",
-        "enum": ["true", "false"]
+        "type": "boolean",
+        "description": "Whether the user is authenticated"
     },
     "dbpIsFreeScan": {
         "key": "free_scan",
-        "type": "string",
-        "description": "Whether this is a free (unauthenticated) scan",
-        "enum": ["true", "false"]
+        "type": "boolean",
+        "description": "Whether this is a free (unauthenticated) scan"
     },
     "dbpStageDuration": {
         "key": "duration",
@@ -235,6 +255,8 @@
             "click",
             "expectation",
             "emailConfirmation",
+            "generateEmail",
+            "getEmailData",
             "getCaptchaInfo",
             "solveCaptcha",
             "condition",
@@ -282,5 +304,93 @@
         "type": "string",
         "description": "Location selection for the VPN latency test",
         "enum": ["nearest", "custom"]
+    },
+    "connectionAttemptSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The origin of a VPN connection attempt",
+        "enum": ["start", "rekey", "serverChange", "locationChange", "adapterRestart", "failureRecovery", "serverMigration"]
+    },
+    "locale": {
+        "key": "locale",
+        "type": "string",
+        "description": "User locale",
+        "examples": ["en-US", "hu-HU"]
+    },
+    "freeTrial": {
+        "key": "free_trial",
+        "type": "boolean",
+        "description": "Whether the user is eligible for a free trial"
+    },
+    "subscribed": {
+        "key": "subscribed",
+        "type": "boolean",
+        "description": "Whether the user has an active subscription at the time the pixel fires."
+    },
+    "subscriptionEntryStatus": {
+        "key": "status",
+        "type": "string",
+        "description": "Visual state of the subscription entry-point promo at impression time. Indicates which badge variant the user saw on a non-subscriber surface (App Menu, Preferences).",
+        "enum": ["churned", "free-eligible", "free-ineligible"]
+    },
+    "subscriptionFunnelOrigin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Values follow the convention `funnel_<entry-point>_<platform>[_<modifier>]`.",
+        "pattern": "^funnel_",
+        "examples": ["funnel_appmenu_macos", "funnel_appsettings_macos", "funnel_freescan_macos", "funnel_appmenu_macos_winback"]
+    },
+    "onboardingEventType": {
+        "key": "e",
+        "type": "string",
+        "description": "Event type to classify what happened at each onboarding step",
+        "enum": ["shown", "clicked", "confirmed"]
+    },
+    "onboardingClickedValue": {
+        "key": "value",
+        "type": "string",
+        "description": "Whether the user clicked the primary CTA or skipped/closed the onboarding step",
+        "enum": ["engage", "dismiss"]
+    },
+    "onboardingInstallType": {
+        "key": "it",
+        "type": "string",
+        "description": "Install type to distinguish between first-time installs and reinstalls during onboarding",
+        "enum": ["new", "reinstall"]
+    },
+    "onboardingDaysSinceInstall": {
+        "key": "d",
+        "type": "integer",
+        "description": "Days since install when the value is between 0 and 28 inclusive during onboarding"
+    },
+    "nextStepsDaysSinceInstall": {
+        "key": "daysSinceInstall",
+        "type": "integer",
+        "description": "Days since app install (in buckets of 0, 1, 2-3, 4+)",
+        "enum": [0, 1, 2, 4]
+    },
+    "nextStepsActiveUsageDays": {
+        "key": "nextStepsActiveUsageDays",
+        "type": "integer",
+        "description": "Number of days the New Tab Page has been opened with Next Steps cards visible",
+        "enum": [0, 1, 2, 3, 4, 6, 9, 14]
+    },
+    "ntpImpressionCount": {
+        "key": "ntpImpressionCount",
+        "type": "integer",
+        "description": "Number of times the New Tab Page has been opened (newTabPageWebViewDidAppear)",
+        "enum": [1, 2, 3, 4, 5, 6, 7, 8, 10, 15, 25, 50]
+    },
+    "nextStepsCardImpressionCount": {
+        "key": "cardImpressionCount",
+        "type": "integer",
+        "description": "Number of times a Next Steps card was shown (appeared at the top of the Next Steps card stack)",
+        "maximum": 10
+    },
+    "consentHeuristicEnabled": {
+        "key": "consentHeuristicEnabled",
+        "description": "The mode of the consent heuristic feature: '', off, reject, tier1, tier2",
+        "type": "string",
+        "enum": ["", "off", "reject", "tier1", "tier2"]
     }
 }

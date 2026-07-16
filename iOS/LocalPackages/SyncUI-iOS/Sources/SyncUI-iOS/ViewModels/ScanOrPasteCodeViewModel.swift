@@ -25,6 +25,12 @@ public enum CodeEntrySource: String {
     case pastedCode
 }
 
+public enum CodeCollectionSource: String {
+    case connect
+    case exchange
+    case recovery
+}
+
 public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
 
     var pasteboardString: String? { get }
@@ -34,12 +40,13 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
     /// Returns true if we were able to use the code. Either way, stop validating.
     func syncCodeEntered(code: String, source: CodeEntrySource) async -> Bool
 
-    func codeCollectionCancelled()
+    func codeCollectionCancelled(source: CodeCollectionSource)
     func gotoSettings()
-    func shareCode(_ code: String)
+    func requestCameraPermission(for model: ScanOrPasteCodeViewModel)
+    func shareCode(_ code: String, source: CodeCollectionSource)
 
     func codeEntryScreenShown()
-    func codeCopied()
+    func codeCopied(_ code: String, source: CodeCollectionSource)
 }
 
 public class ScanOrPasteCodeViewModel: ObservableObject {
@@ -71,9 +78,11 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     public weak var delegate: ScanOrPasteCodeViewModelDelegate?
 
     var showQRCodeModel: ShowQRCodeViewModel
+    private let source: CodeCollectionSource
 
-    public init(codeForDisplayOrPasting: String, qrCodeString: String) {
+    public init(codeForDisplayOrPasting: String, qrCodeString: String, source: CodeCollectionSource) {
         showQRCodeModel = ShowQRCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: qrCodeString)
+        self.source = source
     }
 
     func codeScanned(_ code: String) async -> Bool {
@@ -89,12 +98,16 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
         showCamera = false
     }
 
+    func introAnimationCompleted() {
+        delegate?.requestCameraPermission(for: self)
+    }
+
     @MainActor
     func copyCode() {
         guard showQRCodeModel.codeForDisplayOrPasting.isEmpty == false else { return }
         showQRCodeModel.copy()
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        delegate?.codeCopied()
+        delegate?.codeCopied(showQRCodeModel.codeForDisplayOrPasting, source: source)
     }
 
     @MainActor
@@ -119,11 +132,11 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func cancel() {
-        delegate?.codeCollectionCancelled()
+        delegate?.codeCollectionCancelled(source: source)
     }
 
     func showShareCodeSheet() {
-        delegate?.shareCode(showQRCodeModel.codeForDisplayOrPasting)
+        delegate?.shareCode(showQRCodeModel.codeForDisplayOrPasting, source: source)
     }
 
     func endConnectMode() {

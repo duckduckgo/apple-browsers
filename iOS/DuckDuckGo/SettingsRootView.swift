@@ -148,8 +148,10 @@ struct SettingsRootView: View {
         }
     }
 
-    @ViewBuilder func subscriptionFlowNavigationDestination(redirectURLComponents: URLComponents?) -> some View {
+    @ViewBuilder func subscriptionFlowNavigationDestination(redirectURLComponents: URLComponents?,
+                                                            landingURL: URL? = nil) -> some View {
         SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
+                                                             landingURL: landingURL,
                                                              navigationCoordinator: subscriptionNavigationCoordinator,
                                                              subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                              subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
@@ -239,6 +241,10 @@ struct SettingsRootView: View {
         case let .subscriptionPlanChangeFlow(redirectURLComponents):
             subscriptionPlanChangeFlowNavigationDestination(redirectURLComponents: redirectURLComponents)
                 .environmentObject(subscriptionNavigationCoordinator)
+        case .subscriptionWelcome:
+            subscriptionFlowNavigationDestination(redirectURLComponents: nil,
+                                                  landingURL: AppDependencyProvider.shared.subscriptionManager.url(for: .welcome))
+                .environmentObject(subscriptionNavigationCoordinator)
         case .restoreFlow:
             emailFlowNavigationDestination()
         case .duckPlayer:
@@ -255,6 +261,8 @@ struct SettingsRootView: View {
             PrivateSearchView().environmentObject(viewModel)
         case .appearance, .customizeAddressBarButton, .customizeToolbarButton:
             SettingsAppearanceView().environmentObject(viewModel)
+        case .general:
+            SettingsGeneralView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
                 let model = SubscriptionSettingsViewModel(userScriptsDependencies: viewModel.userScriptsDependencies)

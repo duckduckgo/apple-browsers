@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Common
-import os.log
 import BrowserServicesKit
+import Common
+import ConcurrencyExtensions
+import Foundation
+import os.log
 
 public enum JobType {
     case manualScan
@@ -153,22 +154,22 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     }
 
     private func runJob() async {
-        let allBrokerProfileQueryData: [BrokerProfileQueryData]
+        let brokerProfileQueryData: [BrokerProfileQueryData]
 
         do {
-            // Jobs for removed brokers will already be prevented from being scheduled upstream and are filtered below to the specific broker ID
-            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
+            // Jobs for removed brokers are already prevented from being scheduled upstream.
+            brokerProfileQueryData = try jobDependencies.database.fetchBrokerProfileQueryData(forBrokerId: dataBrokerID)
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return
         }
 
-        let brokerProfileQueriesData = allBrokerProfileQueryData.filter { $0.dataBroker.id == dataBrokerID }
+        let isAuthenticatedUser = await jobDependencies.isAuthenticatedUser()
+        let isFreeScan = !isAuthenticatedUser
+        let brokerProfileQueriesData = brokerProfileQueryData
+            .excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
-        let filteredAndSortedJobData = Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
-                                                               jobType: jobType,
-                                                               priorityDate: priorityDate,
-                                                               sortPredicate: jobDependencies.jobSortPredicate)
+        let filteredAndSortedJobData = makeFilteredAndSortedJobData(brokerProfileQueriesData, isFreeScan: isFreeScan)
 
         Logger.dataBrokerProtection.log("filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for brokerID \(self.dataBrokerID, privacy: .public)")
 
@@ -188,7 +189,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
             Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
 
-            let isFreeScan = !(await jobDependencies.isAuthenticatedUser())
             let stepType: StepType? = {
                 switch jobData {
                 case is ScanJobData:
@@ -260,6 +260,36 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                                                      isFreeScan: isFreeScan)
             }
         }
+    }
+
+    private func makeFilteredAndSortedJobData(_ brokerProfileQueriesData: [BrokerProfileQueryData], isFreeScan: Bool) -> [BrokerJobData] {
+        var didFireFreemiumMaintenanceScanSkippedPixel = false
+        return Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
+                                       jobType: jobType,
+                                       priorityDate: priorityDate,
+                                       sortPredicate: jobDependencies.jobSortPredicate)
+            .filter { jobData in
+                guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
+                    return true
+                }
+
+                let scanType = scanJobData.scanType()
+                didFireFreemiumMaintenanceScanSkippedPixel = fireFreemiumMaintenanceScanSkippedPixelIfNeeded(
+                    for: scanType,
+                    didFirePixel: didFireFreemiumMaintenanceScanSkippedPixel
+                )
+
+                return scanType != .maintenance
+            }
+    }
+
+    private func fireFreemiumMaintenanceScanSkippedPixelIfNeeded(for scanType: ScanJobData.ScanType, didFirePixel: Bool) -> Bool {
+        guard scanType == .maintenance, !didFirePixel else {
+            return didFirePixel
+        }
+
+        jobDependencies.pixelHandler.fire(.freemiumPIRMaintenanceScanSkipped)
+        return true
     }
 
     private func finish() {

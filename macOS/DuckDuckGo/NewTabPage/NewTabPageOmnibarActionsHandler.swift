@@ -20,6 +20,7 @@ import NewTabPage
 import AppKit
 import Suggestions
 import Common
+import FoundationExtensions
 import AIChat
 import os.log
 import PixelKit
@@ -32,6 +33,13 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKitEvent) -> Void
+
+    /// Called after the Customize Responses modal closes or the toggle is set, so the NTP config
+    /// (sub-label + toggle state) is re-pushed to open New Tab Pages.
+    var onCustomizeResponsesChanged: () -> Void = {}
+
+    /// Retains the Customize Responses modal host while it is presented over the NTP window.
+    private var customizeResponsesModal: CustomizeResponsesModalController?
 
     init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
          windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
@@ -50,7 +58,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil)
             return
         }
 
@@ -117,11 +125,27 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
     }
 
-    func submitChat(_ chat: String, target: NewTabPage.NewTabPageDataModel.OpenTarget, modelId: String?, images: [NewTabPage.NewTabPageDataModel.SubmitChatImage]?) {
+    func submitChat(_ chat: String,
+                    target: NewTabPage.NewTabPageDataModel.OpenTarget,
+                    modelId: String?,
+                    images: [NewTabPage.NewTabPageDataModel.SubmitChatImage]?,
+                    mode: String?,
+                    toolChoice: [String]?,
+                    reasoningEffort: String?,
+                    pageContexts: [NewTabPage.NewTabPageDataModel.OmnibarPageContext]?,
+                    files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?) {
         firePixel(NewTabPagePixel.promptSubmitted)
 
         if let images, !images.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
+
+        if mode == AIChatNativePrompt.imageGenerationMode {
+            PixelKit.fire(AIChatPixel.aiChatNtpImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        } else if mode == AIChatNativePrompt.voiceMode {
+            PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNtp, frequency: .dailyAndStandard, includeAppVersionParameter: true)
+        } else if toolChoice?.contains(AIChatRAGTool.webSearch.rawValue) == true {
+            PixelKit.fire(AIChatPixel.aiChatNtpWebSearchSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 
         let tabOpener = AIChatTabOpener(
@@ -135,13 +159,52 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
+        // Voice handoff: focus an existing voice tab in the same window if one is active,
+        // otherwise open a fresh tab via `.mode(voiceMode)`. We must NOT fall through to
+        // `.query(chat)` + `setData(nativePrompt)` below — the existing voice tab keeps its
+        // in-progress state, and pushing a stale prompt would override the user's next real
+        // submission (matches the Windows-browser `WillActivateExistingVoiceTab` guard).
+        if mode == AIChatNativePrompt.voiceMode {
+            let sourceCollection = windowControllersManager.lastKeyMainWindowController?
+                .mainViewController.tabCollectionViewModel
+            tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: behavior)
+            return
+        }
+
         tabOpener.openAIChatTab(with: .query(chat), behavior: behavior)
 
-        // Re-set prompt after tab opener to include images and model selection
-        // (tab opener overwrites with a plain query)
+        // Re-set prompt after tab opener to include images, files, attached page contexts, mode,
+        // tool choice, model selection, and reasoning effort (tab opener overwrites with a plain query)
         let nativeImages = images?.map { AIChatNativePrompt.NativePromptImage(data: $0.data, format: $0.format) }
-        let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true, images: nativeImages, modelId: modelId)
+        let nativeFiles = files?.map { AIChatNativePrompt.NativePromptFile(data: $0.data, fileName: $0.fileName, mimeType: $0.mimeType) }
+        let nativeReasoningEffort = reasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
+        let pageContextPayload = (pageContexts?.map(Self.pageContextData(from:))).flatMap { $0.isEmpty ? nil : AIChatPageContextPayload.multiple($0) }
+        let nativePrompt = AIChatNativePrompt.queryPrompt(chat,
+                                                          autoSubmit: true,
+                                                          toolChoice: toolChoice,
+                                                          images: nativeImages,
+                                                          files: nativeFiles,
+                                                          modelId: modelId,
+                                                          pageContext: pageContextPayload,
+                                                          mode: mode,
+                                                          reasoningEffort: nativeReasoningEffort)
         promptHandler.setData(nativePrompt)
+    }
+
+    /// Converts a web-echoed `OmnibarPageContext` (the shape native originally returned from
+    /// `omnibar_getTabContent`) into the `AIChatPageContextData` the Duck.ai native prompt carries.
+    /// The base64 favicon `src` round-trips back into a `PageContextFavicon` href.
+    private static func pageContextData(from context: NewTabPage.NewTabPageDataModel.OmnibarPageContext) -> AIChatPageContextData {
+        let favicon = context.favicon.map { [AIChatPageContextData.PageContextFavicon(href: $0.src, rel: "icon")] } ?? []
+        return AIChatPageContextData(
+            title: context.title,
+            favicon: favicon,
+            url: context.url,
+            content: context.content ?? "",
+            truncated: context.truncated ?? false,
+            fullContentLength: context.fullContentLength ?? 0,
+            tabId: context.tabId
+        )
     }
 
     @MainActor
@@ -182,6 +245,32 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
 
         tabOpener.openNewAIChat(in: behavior)
+    }
+
+    @MainActor
+    func openCustomizeResponses() {
+        guard customizeResponsesModal == nil else { return }
+        guard let mainWindowController = windowControllersManager.lastKeyMainWindowController,
+              let window = mainWindowController.window else {
+            Logger.newTabPageOmnibar.error("Failed to get key window in openCustomizeResponses")
+            return
+        }
+        PixelKit.fire(AIChatPixel.aiChatNtpCustomizeResponsesOpened, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        let modal = CustomizeResponsesModalController(burnerMode: mainWindowController.mainViewController.tabCollectionViewModel.burnerMode)
+        modal.onClose = { [weak self] in
+            self?.customizeResponsesModal = nil
+            self?.onCustomizeResponsesChanged()
+        }
+        customizeResponsesModal = modal
+        modal.present(over: window)
+    }
+
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool) {
+        let burnerMode = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.burnerMode ?? .regular
+        let handler = NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+        CustomizeResponsesStore(storageHandler: handler).setActive(active)
+        onCustomizeResponsesChanged()
     }
 
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {

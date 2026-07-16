@@ -19,7 +19,9 @@
 import Foundation
 import DDGSync
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import SystemConfiguration
 import SyncUI_macOS
 import SwiftUI
@@ -35,7 +37,12 @@ extension SyncDevice {
     }
 
     init(_ device: RegisteredDevice) {
-        let kind: Kind = device.type == "desktop" ? .desktop : .mobile
+        let kind: Kind
+        if device.credentialId == SyncCredentialID.thirdParty {
+            kind = .thirdParty
+        } else {
+            kind = device.type == "desktop" ? .desktop : .mobile
+        }
         self.init(kind: kind, name: device.name, id: device.id)
     }
 }
@@ -260,10 +267,10 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     private func updateInvalidObjects() {
         invalidBookmarksTitles = syncBookmarksAdapter.provider?
             .fetchDescriptionsForObjectsThatFailedValidation()
-            .map { $0.truncated(length: 15) } ?? []
+            .map { $0.truncated(to: 15, position: .tail) } ?? []
 
         let invalidCredentialsObjects: [String] = (try? syncCredentialsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
-        invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(length: 15) })
+        invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(to: 15, position: .tail) })
 
         if let syncCreditCardsAdapter = syncCreditCardsAdapter {
             let invalidCreditCardsObjects: [String] = (try? syncCreditCardsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []

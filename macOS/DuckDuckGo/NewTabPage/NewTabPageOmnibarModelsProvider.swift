@@ -23,9 +23,11 @@ import Subscription
 
 /// Fetches AI models from the duck.ai API and builds sectioned model lists
 /// using the shared section builder for the NTP dropdown.
+@MainActor
 final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
     private(set) var lastFetchedSections: [NewTabPageDataModel.AIModelSection]?
+    private(set) var attachmentLimits: NewTabPageDataModel.AttachmentLimits?
     private let modelsService: AIChatModelsProviding
     private let subscriptionManager: any SubscriptionManager
 
@@ -39,9 +41,10 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
 
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection] {
         do {
-            let remoteModels = try await modelsService.fetchModels()
+            let response = try await modelsService.fetchModels()
             let userTier = await resolveUserTier()
-            let models = remoteModels.map { AIChatModel(remoteModel: $0, userTier: userTier) }
+            attachmentLimits = mapAttachmentLimits(response.attachmentLimits?.limits(for: userTier))
+            let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
             let hasActiveSubscription = userTier != .free
 
             let sections = AIChatModelSectionBuilder.buildSections(
@@ -60,7 +63,10 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
                             name: model.name,
                             shortName: model.shortName,
                             isEnabled: model.entityHasAccess,
-                            supportsImageUpload: model.supportsImageUpload
+                            supportsImageUpload: model.supportsImageUpload,
+                            supportedTools: model.supportedTools.map(\.rawValue),
+                            supportedReasoningEffort: model.supportedReasoningEffort.map(\.rawValue),
+                            supportedFileTypes: model.supportedFileTypes
                         )
                     }
                 )
@@ -73,10 +79,27 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
         }
     }
 
+    private func mapAttachmentLimits(_ limits: AIChatAttachmentTierLimits?) -> NewTabPageDataModel.AttachmentLimits? {
+        guard let limits else { return nil }
+        return NewTabPageDataModel.AttachmentLimits(
+            files: .init(
+                maxPerConversation: limits.files.maxPerConversation,
+                maxFileSizeMB: limits.files.maxFileSizeMB,
+                maxTotalFileSizeBytes: limits.files.maxTotalFileSizeBytes,
+                maxPagesPerFile: limits.files.maxPagesPerFile
+            ),
+            images: .init(
+                maxPerTurn: limits.images.maxPerTurn,
+                maxPerConversation: limits.images.maxPerConversation,
+                maxInputCharsWithAttachments: limits.images.maxInputCharsWithAttachments
+            )
+        )
+    }
+
     private func resolveUserTier() async -> AIChatUserTier {
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            guard subscription.isActive else { return .free }
+            guard let subscription = try await subscriptionManager.getSubscription(),
+                  subscription.isActive else { return .free }
             switch subscription.tier {
             case .plus: return .plus
             case .pro: return .pro

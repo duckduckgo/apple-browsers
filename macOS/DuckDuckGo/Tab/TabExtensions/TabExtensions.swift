@@ -21,6 +21,7 @@ import AutoconsentStats
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import ContentBlocking
 import Foundation
 import History
@@ -149,8 +150,9 @@ extension TabExtensionsBuilder {
                                         userContentControllerFuture: args.userContentControllerFuture,
                                         cbaTimeReporter: dependencies.cbaTimeReporter,
                                         privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
-                                        contentBlockerRulesUserScriptPublisher: userScripts.map(\.?.contentBlockerRulesScript),
-                                        surrogatesUserScriptPublisher: userScripts.map(\.?.surrogatesScript))
+                                        trackerProtectionSubfeaturePublisher: userScripts.map(\.?.trackerProtectionSubfeature),
+                                        tld: dependencies.privacyFeatures.contentBlocking.tld,
+                                        contentBlockingManager: dependencies.privacyFeatures.contentBlocking.contentBlockingManager)
         }
 
         let specialErrorPageTabExtension = add {
@@ -192,8 +194,8 @@ extension TabExtensionsBuilder {
         add {
             AdClickAttributionTabExtension(inheritedAttribution: args.inheritedAttribution,
                                            userContentControllerFuture: args.userContentControllerFuture,
-                                           contentBlockerRulesScriptPublisher: userScripts.map { $0?.contentBlockerRulesScript },
                                            trackerInfoPublisher: contentBlocking.trackersPublisher.map { $0.request },
+                                           trackerProtectionSubfeaturePublisher: userScripts.map(\.?.trackerProtectionSubfeature).eraseToAnyPublisher(),
                                            dependencies: dependencies.privacyFeatures.contentBlocking)
         }
 
@@ -251,6 +253,11 @@ extension TabExtensionsBuilder {
         add {
             FindInPageTabExtension()
         }
+        if args.isTabBurner {
+            add {
+                SubscriptionPromoTabExtension()
+            }
+        }
         add {
             DownloadsTabExtension(downloadManager: dependencies.downloadManager,
                                   downloadsPreferences: dependencies.downloadsPreferences,
@@ -303,7 +310,9 @@ extension TabExtensionsBuilder {
         add {
             AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                webViewPublisher: args.webViewFuture,
-                               isLoadedInSidebar: args.isTabLoadedInSidebar)
+                               isLoadedInSidebar: args.isTabLoadedInSidebar,
+                               isTabBurner: args.isTabBurner,
+                               burnerMode: args.burnerMode)
         }
 
         add {
@@ -312,6 +321,8 @@ extension TabExtensionsBuilder {
                                     contentPublisher: args.contentPublisher,
                                     tabID: args.tabID,
                                     featureFlagger: dependencies.featureFlagger,
+                                    privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                    extractionPixelHandler: PageContextExtractionPixelHandler(),
                                     aiChatSessionStore: dependencies.aiChatSessionStore,
                                     aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
                                     isLoadedInSidebar: args.isTabLoadedInSidebar,

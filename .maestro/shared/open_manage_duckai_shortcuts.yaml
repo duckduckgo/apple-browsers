@@ -1,0 +1,16 @@
+# open_manage_duckai_shortcuts.yaml
+#
+# Opens Settings -> AI Features -> Manage Duck.ai Shortcuts. The row sits below
+# the Enable Duck.ai toggle, so scroll it into view before tapping.
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- runFlow: ./open_ai_features_settings.yaml
+- scrollUntilVisible:
+    element:
+      text: "Manage Duck.ai Shortcuts"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Manage Duck.ai Shortcuts"
+- waitForAnimationToEnd

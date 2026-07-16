@@ -21,10 +21,8 @@
 import SwiftUI
 import Combine
 import AIChat
-#if DEBUG
 import AIChatDebugServer
 import DebugServer
-#endif
 
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
@@ -36,9 +34,7 @@ struct AIChatDebugView: View {
 
     var body: some View {
         List {
-            #if DEBUG
             AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
-            #endif
 
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
                 NavigationLink(destination: AIChatDebugHostnameEntryView(viewModel: viewModel)) {
@@ -307,52 +303,58 @@ private struct AIChatDebugSessionTimerEntryView: View {
     }
 }
 
-#if DEBUG
 private struct AIChatStorageServerSection: View {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
-    @StateObject private var serverState = StorageServerState()
+    @ObservedObject private var serverState = StorageServerState.shared
 
     var body: some View {
-        Section(header: Text("Native Storage Server")) {
+        Section(header: Text(verbatim: "Native Storage Server")) {
             if serverState.isRunning {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Server running")
+                    Text(verbatim: "Server running")
                         .foregroundColor(.green)
                     if let ip = serverState.localIPAddress {
-                        Text("http://\(ip):8080")
+                        Text(verbatim: "http://\(ip):8473")
                             .font(.system(.body, design: .monospaced))
                             .textSelection(.enabled)
                     }
                 }
-                Button("Stop Server") {
+                Button {
                     serverState.stop()
+                } label: {
+                    Text(verbatim: "Stop Server")
                 }
                 .foregroundColor(.red)
             } else {
                 if let error = serverState.errorMessage {
                     Text(error).foregroundColor(.red).font(.caption)
                 }
-                Button("Start Server") {
+                Button {
                     serverState.start(handler: duckAiNativeStorageHandler)
+                } label: {
+                    Text(verbatim: "Start Server")
                 }
             }
         }
     }
 }
 
+/// Owns the native-storage debug server for the app session.
 @MainActor
 private final class StorageServerState: ObservableObject {
+    /// Deliberate singleton: keeps the server alive across the debug view's lifecycle.
+    /// A DI-based owner would mean threading this through production code, which isn't
+    /// warranted for debug-only tooling.
+    static let shared = StorageServerState()
+
     @Published var errorMessage: String?
     @Published var localIPAddress: String?
 
     var isRunning: Bool { server != nil }
 
     @Published private var server: DuckAiStorageDebugServer?
-    private nonisolated(unsafe) var serverForDeinit: DuckAiStorageDebugServer?
 
-    deinit {
-        serverForDeinit?.stop()
-    }
+    private init() {}
 
     func start(handler: DuckAiNativeStorageHandling?) {
         guard let handler else {
@@ -369,9 +371,8 @@ private final class StorageServerState: ObservableObject {
             }
             try server.start()
             self.server = server
-            self.serverForDeinit = server
             self.errorMessage = nil
-            self.localIPAddress = Self.getWiFiAddress()
+            self.localIPAddress = DebugServerNetworkInterface.wiFiAddress()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -382,7 +383,6 @@ private final class StorageServerState: ObservableObject {
         case .failed(let message):
             errorMessage = message
             server = nil
-            serverForDeinit = nil
             localIPAddress = nil
         default:
             break
@@ -392,33 +392,9 @@ private final class StorageServerState: ObservableObject {
     func stop() {
         server?.stop()
         server = nil
-        serverForDeinit = nil
         localIPAddress = nil
     }
-
-    private static func getWiFiAddress() -> String? {
-        var address: String?
-        var ifaddr: UnsafeMutablePointer<ifaddrs>?
-        guard getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr else { return nil }
-        defer { freeifaddrs(ifaddr) }
-
-        for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
-            let interface = ptr.pointee
-            guard let addr = interface.ifa_addr else { continue }
-            guard addr.pointee.sa_family == UInt8(AF_INET) else { continue }
-
-            let name = String(cString: interface.ifa_name)
-            guard name == "en0" else { continue }
-
-            var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-            getnameinfo(addr, socklen_t(addr.pointee.sa_len),
-                        &hostname, socklen_t(hostname.count), nil, 0, NI_NUMERICHOST)
-            address = String(cString: hostname)
-        }
-        return address
-    }
 }
-#endif
 
 #Preview {
     AIChatDebugView()

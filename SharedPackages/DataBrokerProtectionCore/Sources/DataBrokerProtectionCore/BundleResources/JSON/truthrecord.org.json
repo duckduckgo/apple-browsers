@@ -1,9 +1,9 @@
 {
   "name": "TruthRecord",
   "url": "truthrecord.org",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "parent": "privatereports.com",
-  "optOutUrl": "https://www.truthrecord.org/opt_out/name/landing_page",
+  "optOutUrl": "https://www.truthrecord.org/api/helper/optOutLight/search",
   "steps": [
     {
       "stepType": "scan",
@@ -11,227 +11,158 @@
       "actions": [
         {
           "actionType": "navigate",
-          "url": "https://www.truthrecord.org/opt_out/name/landing_page",
-          "id": "07693f63-db90-42c7-b9aa-5cdaab2f6fff"
+          "url": "https://www.truthrecord.org/api/helper/optOutLight/search",
+          "id": "68957c56-bc98-4714-a193-22d34f37fbea"
         },
         {
           "actionType": "expectation",
           "expectations": [
             {
               "type": "element",
-              "selector": ".search-wrapper"
+              "selector": "#pageForm"
             }
           ],
-          "id": "eb503687-d056-4913-9260-480b9256c999"
+          "id": "83904dad-b92f-4d17-bc10-f682ff3020fe"
         },
         {
           "actionType": "fillForm",
           "dataSource": "userProfile",
-          "selector": ".search-wrapper",
+          "selector": "#pageForm",
           "elements": [
             {
               "type": "firstName",
-              "selector": "#firstName"
+              "selector": "input[name='fname']"
             },
             {
               "type": "lastName",
-              "selector": "#lastName"
+              "selector": "input[name='lname']"
+            },
+            {
+              "type": "city",
+              "selector": "input[name='city']"
             },
             {
               "type": "state",
-              "selector": "#state"
+              "selector": "select[name='state']"
             }
           ],
-          "id": "cddf7e50-75be-4374-885f-3a1e310be2c8"
+          "id": "15b4a36f-1b7d-4f99-a6d9-1e602bfdb0ab"
         },
         {
           "actionType": "click",
           "elements": [
             {
               "type": "button",
-              "selector": "button[type='submit']"
+              "selector": "#pageFormSubmitBtn"
             }
           ],
-          "id": "df6d3ee8-43d9-47ac-96cd-2081140b9acd"
+          "id": "28e8131d-11f0-452c-baf5-4a2abb72942d"
+        },
+        {
+          "_comment": "Turnstile auto-completes (there are two sequential turnstiles). This one should disappear after clicking, so we'll use a negative selector to ensure it's not present.",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//body[not(.//input[@name='cf-turnstile-response'])]"
+            }
+          ],
+          "id": "cft-5c31954f-2549-4cbc-ae13-925e1bd6aad1"
         },
         {
           "actionType": "expectation",
           "expectations": [
             {
               "type": "element",
-              "selector": ".container"
+              "selector": "//div[.//*[local-name()='svg'] and .//input and .//button]"
             }
           ],
-          "id": "06cf7d97-43cc-42a1-956b-a0147921e705"
+          "id": "01b021eb-decf-4da4-9f2a-8c8851a81646"
         },
         {
-          "actionType": "expectation",
-          "expectations": [
-            {
-              "type": "element",
-              "selector": "//div[@data-key='comp.name-search.rule.question.reSearch.cityState']",
-              "failSilently": true
-            }
-          ],
-          "actions": [
-            {
-              "actionType": "click",
-              "elements": [
-                {
-                  "type": "button",
-                  "selector": "button[class~='btn-primary']"
-                }
-              ],
-              "id": "5917281e-5b99-4a3b-9845-8020ccb9e19f"
-            }
-          ],
-          "id": "f2da5bce-ccab-42f4-b019-91c985d89299"
+          "actionType": "getCaptchaInfo",
+          "captchaType": "image",
+          "selector": "//div[.//*[local-name()='svg'] and .//input and .//button]//*[local-name()='svg']",
+          "id": "ee5e5f5a-fb29-4de3-9fcc-6b691042209f"
         },
         {
-          "actionType": "expectation",
-          "expectations": [
-            {
-              "type": "element",
-              "selector": ".container"
-            }
-          ],
-          "id": "6058cfcc-841c-481a-8fd4-dcf3c1ad4d42"
-        },
-        {
-          "actionType": "expectation",
-          "expectations": [
-            {
-              "type": "element",
-              "selector": "//div[@data-key='comp.name-search.rule.question.reSearch.moreThanAge']",
-              "failSilently": true
-            }
-          ],
-          "actions": [
-            {
-              "actionType": "click",
-              "choices": [
-                {
-                  "condition": {
-                    "left": "${age}",
-                    "operation": ">=",
-                    "right": "45"
-                  },
-                  "elements": [
-                    {
-                      "type": "button",
-                      "selector": "//button[contains(text(), 'Yes')]"
-                    }
-                  ]
-                }
-              ],
-              "default": {
-                "elements": [
-                  {
-                    "type": "button",
-                    "selector": "//button[contains(text(), 'No')]"
-                  }
-                ]
-              },
-              "id": "3a4bb3f4-58ef-4137-9973-2ed45ff3705b"
-            }
-          ],
-          "id": "4b9ffa94-51a9-4fc8-954b-18853b9f6824"
-        },
-        {
-          "actionType": "expectation",
-          "_comment": "add a bit more wait time for the captchas to complete",
-          "expectations": [
-            {
-              "type": "element",
-              "selector": ".container"
-            }
-          ],
-          "id": "c4e2dd85-36b6-48b6-8226-b58c99bde850"
-        },
-        {
-          "actionType": "condition",
-          "_comment": "captcha is not always present at this stage",
-          "expectations": [
-            {
-              "type": "element",
-              "selector": "#svg-captcha-rendering svg",
-              "failSilently": true
-            }
-          ],
-          "actions": [
-            {
-              "actionType": "getCaptchaInfo",
-              "captchaType": "image",
-              "selector": "#svg-captcha-rendering svg",
-              "id": "1f1fb68f-9bf5-44d5-a3fa-54043d67e780"
-            },
-            {
-              "actionType": "solveCaptcha",
-              "captchaType": "image",
-              "selector": "#svgCaptchaInputId",
-              "id": "4e0eabf5-f1d0-4102-a60b-9904da93efe9"
-            },
-            {
-              "actionType": "click",
-              "failSilently": true,
-              "elements": [
-                {
-                  "type": "button",
-                  "selector": "#svgCaptchaButtonId"
-                }
-              ],
-              "id": "23cd35e7-29a8-4ad2-9ba5-c936893aeb12"
-            }
-          ],
-          "id": "5c3b80a2-ee41-4494-b3e5-d92dc88091b0"
-        },
-        {
-          "actionType": "expectation",
-          "expectations": [
-            {
-              "type": "element",
-              "selector": ".container"
-            }
-          ],
-          "id": "cd50b12f-71ad-4b51-911e-011dd696886c"
+          "actionType": "solveCaptcha",
+          "captchaType": "image",
+          "selector": "//div[.//*[local-name()='svg'] and .//input and .//button]//input",
+          "id": "e68c0777-7bc0-4d28-acd8-65ebfcb8dd3c"
         },
         {
           "actionType": "click",
           "elements": [
             {
               "type": "button",
-              "selector": ".result .more",
-              "multiple": true,
-              "failSilently": true
+              "selector": "//div[.//*[local-name()='svg'] and .//input and .//button]//button"
             }
           ],
-          "id": "10d4eb1c-bc24-4096-9020-8ed5818bf248"
+          "id": "a1780169-c68b-4f7b-86a9-6f6585444759"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//div[.//img[starts-with(@src, 'data:')] and .//input and .//button]"
+            }
+          ],
+          "id": "493d67c1-e48d-4bc7-8072-d5891776bc16"
+        },
+        {
+          "actionType": "getCaptchaInfo",
+          "captchaType": "basic-math",
+          "selector": "//div[.//img[starts-with(@src, 'data:')] and .//input and .//button]//img[starts-with(@src, 'data:')]",
+          "id": "218673fa-19d7-4f29-b7d1-fef3e71bfbd3"
+        },
+        {
+          "actionType": "solveCaptcha",
+          "captchaType": "basic-math",
+          "selector": "//div[.//img[starts-with(@src, 'data:')] and .//input and .//button]//input",
+          "id": "1fe2f061-50bc-48da-9abf-1b01caf7e864"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "//div[.//img[starts-with(@src, 'data:')] and .//input and .//button]//button"
+            }
+          ],
+          "id": "78c59409-9cc7-400d-b5bd-cba7067536a7"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//h2[contains(text(), 'Select the person')]"
+            }
+          ],
+          "id": "cd5a8990-5691-4313-b223-317bb46c1ae5"
         },
         {
           "actionType": "extract",
-          "selector": "//li[contains(@class, 'searchedPerson')]",
-          "noResultsSelector": "//div[contains(text(), 'unable to find')]|//h2[contains(text(), 'too many results')]",
+          "selector": "//h2[contains(text(), 'Select the person')]/following-sibling::div/div",
+          "noResultsSelector": "//h1[contains(text(), 'unable to find')]",
           "profile": {
             "name": {
-              "selector": ".//a/div[1]//h3"
+              "selector": ".//span[contains(text(), 'Name')]/following-sibling::span[1]"
             },
             "age": {
-              "selector": ".//a/div[1]//h4",
-              "afterText": "Age:"
+              "selector": ".//span[contains(text(), 'Age')]/following-sibling::span[1]"
             },
-            "relativesList": {
-              "selector": ".//strong[contains(text(), 'relative')]/following-sibling::text()",
-              "findElements": true
-            },
-            "addressCityState": {
-              "selector": ".//strong[contains(text(), 'Locations:')]/following-sibling::text()",
-              "findElements": true
+            "addressCityStateList": {
+              "selector": ".//span[contains(text(), 'Locations')]/following-sibling::span[1]",
+              "separator": "/(?<=, [A-Z]{2}), /"
             },
             "profileUrl": {
               "identifierType": "hash"
             }
           },
-          "id": "43c02b53-bfce-4df6-9cfa-ff1a3256b3e0"
+          "id": "5c0cb149-e5e8-4331-b928-b419b3ffd99e"
         }
       ]
     },

@@ -24,7 +24,7 @@ let package = Package(
     name: "NetworkProtectionMac",
     defaultLocalization: "en",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(name: "NetworkProtectionIPC", targets: ["NetworkProtectionIPC"]),
@@ -37,12 +37,15 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.2"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../AppInfoRetriever"),
         .package(path: "../AppLauncher"),
         .package(path: "../UDSHelper"),
         .package(path: "../XPCHelper"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../LoginItems"),
+        .package(path: "../SystemExtensionManager"),
         .package(path: "../../../SharedPackages/VPN"),
     ],
     targets: [
@@ -130,10 +133,12 @@ let package = Package(
                 "NetworkProtectionProxy",
                 "VPNAppState",
                 "VPNPixels",
+                .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
                 .product(name: "VPN", package: "VPN"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "LoginItems", package: "LoginItems"),
+                .product(name: "SystemExtensionManager", package: "SystemExtensionManager"),
                 .product(name: "Lottie", package: "lottie-spm")
             ],
             resources: [

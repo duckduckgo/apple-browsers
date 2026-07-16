@@ -25,13 +25,33 @@ import UIComponents
 
 class TabsBarCell: UICollectionViewCell {
 
-    @IBOutlet weak var label: FadeOutLabel!
-    @IBOutlet weak var removeButton: BrowserChromeButton!
-    @IBOutlet weak var faviconImage: UIImageView!
-    @IBOutlet weak var topBackgroundView: UIView!
-    @IBOutlet weak var bottomBackgroundView: UIView!
-    @IBOutlet weak var separatorView: UIView!
-    @IBOutlet var labelRemoveButtonConstraint: NSLayoutConstraint!
+    static let reuseIdentifier = "Tab"
+
+    private enum Constants {
+        static let cornerRadius: CGFloat = 12
+        static let faviconCornerRadius: CGFloat = 4
+        static let faviconSize: CGFloat = 16
+        static let faviconContainerWidth: CGFloat = 24
+        static let titleStackSpacing: CGFloat = 4
+        static let titleLeadingInset: CGFloat = 12
+        static let titleTrailingInset: CGFloat = 8
+        static let titleCloseButtonTrailingOffset: CGFloat = 32
+        static let bottomBackgroundHeightMultiplier: CGFloat = 0.75
+        static let separatorInset: CGFloat = 16
+        static let separatorWidth: CGFloat = 1
+        static let labelFontSize: CGFloat = 15
+    }
+
+    private let label = FadeOutLabel()
+    let removeButton = BrowserChromeButton(.tabSwitcher)
+    private let faviconImage = UIImageView()
+    private let topBackgroundView = UIView()
+    private let bottomBackgroundView = UIView()
+    private let separatorView = UIView()
+
+    private let titleStackView = UIStackView()
+    private let faviconContainerView = UIView()
+    private var labelRemoveButtonConstraint: NSLayoutConstraint?
     
     var isPressed = false {
         didSet {
@@ -43,20 +63,109 @@ class TabsBarCell: UICollectionViewCell {
 
     private weak var model: Tab?
     private var isFireModeEnabled = false
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
 
-        faviconImage.layer.cornerRadius = 4
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        setUpSubviews()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setUpSubviews() {
+        clipsToBounds = true
+        contentView.clipsToBounds = true
+
+        topBackgroundView.translatesAutoresizingMaskIntoConstraints = false
+        topBackgroundView.layer.cornerRadius = Constants.cornerRadius
+
+        bottomBackgroundView.translatesAutoresizingMaskIntoConstraints = false
+
+        faviconContainerView.translatesAutoresizingMaskIntoConstraints = false
+
+        faviconImage.translatesAutoresizingMaskIntoConstraints = false
+        faviconImage.contentMode = .scaleAspectFit
+        faviconImage.layer.cornerRadius = Constants.faviconCornerRadius
         faviconImage.layer.masksToBounds = true
+
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: Constants.labelFontSize, weight: .semibold)
+        label.lineBreakMode = .byCharWrapping
+        label.accessibilityTraits = [.button, .staticText]
+
+        titleStackView.translatesAutoresizingMaskIntoConstraints = false
+        titleStackView.spacing = Constants.titleStackSpacing
+        titleStackView.addArrangedSubview(faviconContainerView)
+        titleStackView.addArrangedSubview(label)
+
+        separatorView.translatesAutoresizingMaskIntoConstraints = false
+
+        removeButton.translatesAutoresizingMaskIntoConstraints = false
         removeButton.type = .tabSwitcher
         removeButton.setImage(DesignSystemImages.Glyphs.Size16.close)
         removeButton.isPointerInteractionEnabled = true
+        removeButton.contentHorizontalAlignment = .left
+        removeButton.addTarget(self, action: #selector(onRemovePressed), for: .touchUpInside)
 
+        faviconContainerView.addSubview(faviconImage)
+        contentView.addSubview(topBackgroundView)
+        contentView.addSubview(bottomBackgroundView)
+        contentView.addSubview(titleStackView)
+        contentView.addSubview(separatorView)
+        contentView.addSubview(removeButton)
         contentView.addInteraction(UIPointerInteraction(delegate: self))
+
+        let titleTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor,
+                                                                            constant: Constants.titleTrailingInset)
+        titleTrailingConstraint.priority = UILayoutPriority(999)
+
+        labelRemoveButtonConstraint = removeButton.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor,
+                                                                             constant: Constants.titleCloseButtonTrailingOffset)
+        labelRemoveButtonConstraint?.isActive = false
+
+        NSLayoutConstraint.activate([
+            topBackgroundView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            topBackgroundView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            topBackgroundView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            topBackgroundView.heightAnchor.constraint(equalTo: contentView.heightAnchor),
+
+            bottomBackgroundView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            bottomBackgroundView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            bottomBackgroundView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            bottomBackgroundView.heightAnchor.constraint(equalTo: contentView.heightAnchor,
+                                                         multiplier: Constants.bottomBackgroundHeightMultiplier),
+
+            titleStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor,
+                                                    constant: Constants.titleLeadingInset),
+            titleStackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            titleStackView.heightAnchor.constraint(equalTo: contentView.heightAnchor),
+            titleTrailingConstraint,
+
+            faviconContainerView.widthAnchor.constraint(equalToConstant: Constants.faviconContainerWidth),
+            faviconImage.leadingAnchor.constraint(equalTo: faviconContainerView.leadingAnchor),
+            faviconImage.trailingAnchor.constraint(equalTo: faviconContainerView.trailingAnchor,
+                                                   constant: -Constants.titleTrailingInset),
+            faviconImage.centerYAnchor.constraint(equalTo: faviconContainerView.centerYAnchor),
+            faviconImage.widthAnchor.constraint(equalToConstant: Constants.faviconSize),
+            faviconImage.heightAnchor.constraint(equalToConstant: Constants.faviconSize),
+
+            separatorView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            separatorView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            separatorView.widthAnchor.constraint(equalToConstant: Constants.separatorWidth),
+            separatorView.heightAnchor.constraint(equalTo: contentView.heightAnchor,
+                                                  constant: -Constants.separatorInset),
+
+            removeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            removeButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            removeButton.heightAnchor.constraint(equalTo: contentView.heightAnchor),
+            removeButton.widthAnchor.constraint(equalTo: removeButton.heightAnchor),
+        ])
     }
-    
-    @IBAction func onRemovePressed() {
+
+    @objc private func onRemovePressed() {
         onRemove?()
     }
     
@@ -82,8 +191,7 @@ class TabsBarCell: UICollectionViewCell {
                 isNextCurrent: Bool,
                 isFireModeEnabled: Bool,
                 withTheme theme: Theme) {
-        
-        accessibilityElements = [label as Any, removeButton as Any]
+        accessibilityElements = [label, removeButton]
         
         self.model?.removeObserver(self)
         
@@ -101,18 +209,41 @@ class TabsBarCell: UICollectionViewCell {
             separatorView.backgroundColor = theme.tabsBarSeparatorColor
         }
 
-        labelRemoveButtonConstraint.isActive = isCurrent
+        labelRemoveButtonConstraint?.isActive = isCurrent
         separatorView.isHidden = isCurrent || isNextCurrent
         removeButton.isHidden = !isCurrent
         
         applyModel(model)
     }
-    
-    private func applyModel(_ model: Tab) {
 
+    /// Configures the cell to render without a backing `Tab`.
+    ///
+    /// Used as a defensive fallback when the collection view requests a cell for an index that no
+    /// longer exists in the tabs model (e.g. during a desync between the layout and the model). The
+    /// cell is left visually empty and non-interactive; a subsequent refresh replaces it.
+    func configurePlaceholder(withTheme theme: Theme) {
+        self.model?.removeObserver(self)
+        self.model = nil
+        onRemove = nil
+
+        label.primaryColor = theme.barTintColor
+        label.text = nil
+        label.accessibilityLabel = nil
+        faviconImage.image = nil
+
+        topBackgroundView.backgroundColor = .clear
+        bottomBackgroundView.backgroundColor = .clear
+        separatorView.backgroundColor = theme.tabsBarSeparatorColor
+
+        labelRemoveButtonConstraint?.isActive = false
+        separatorView.isHidden = true
+        removeButton.isHidden = true
+    }
+
+    private func applyModel(_ model: Tab) {
         if model.link == nil {
             faviconImage.loadFavicon(forDomain: URL.ddg.host, usingCache: .tabs)
-            updateEmptyTabLabel(for: model)
+            updateEmptyTabLabel(for: model, label: label)
             removeButton.accessibilityLabel = closeButtonAccessibilityLabel(for: model)
         } else if model.isAITab {
             let aiChatTitle = UserText.omnibarFullAIChatModeDisplayTitle
@@ -133,7 +264,7 @@ class TabsBarCell: UICollectionViewCell {
 
     }
     
-    private func updateEmptyTabLabel(for tab: Tab) {
+    private func updateEmptyTabLabel(for tab: Tab, label: FadeOutLabel) {
         if isFireModeEnabled {
             label.text = tab.fireTab ? UserText.fireTabTitle : UserText.newTabTitle
             label.accessibilityLabel = tab.fireTab ? UserText.openNewFireTab : UserText.openNewTab

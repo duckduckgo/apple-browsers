@@ -16,307 +16,75 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Persistence
-import PersistenceTestingUtils
+import Combine
 import DuckAiDataStore
+import XCTest
 @testable import AIChat
 
+/// Exercises `DuckAiNativeStorageHandler`'s forwarding to its backing using the `.memory`
+/// mode (no disk / key material required).
 final class DuckAiNativeStorageHandlerTests: XCTestCase {
 
-    private var settingsStore: InMemoryThrowingKeyValueStore!
-    private var mockDataStore: MockDuckAiNativeDataStore!
-    private var handler: DuckAiNativeStorageHandler!
-
-    override func setUp() {
-        super.setUp()
-        settingsStore = InMemoryThrowingKeyValueStore()
-        mockDataStore = MockDuckAiNativeDataStore()
-        handler = DuckAiNativeStorageHandler(
-            settingsStore: settingsStore.throwingKeyedStoring(),
-            dataStore: mockDataStore
-        )
-    }
+    private var cancellables: Set<AnyCancellable> = []
 
     override func tearDown() {
-        settingsStore = nil
-        mockDataStore = nil
-        handler = nil
+        cancellables.removeAll()
         super.tearDown()
     }
 
-    // MARK: - Entries
+    func testMemoryMode_forwardsPutAndGetAllChats() throws {
+        let sut = try DuckAiNativeStorageHandler(.memory())
 
-    func testWhenPutEntryThenGetEntryReturnsValue() throws {
-        try handler.putEntry(key: "theme", value: "dark")
+        try sut.putChat(chatId: "chat-1", data: Data("one".utf8))
+        try sut.putChat(chatId: "chat-2", data: Data("two".utf8))
 
-        let result = try handler.getEntry(key: "theme") as? String
-        XCTAssertEqual(result, "dark")
+        let chats = try sut.getAllChats()
+        XCTAssertEqual(Set(chats.map(\.chatId)), ["chat-1", "chat-2"])
     }
 
-    func testWhenGetAllEntriesThenReturnsDictionary() throws {
-        try handler.putEntry(key: "theme", value: "dark")
-        try handler.putEntry(key: "lang", value: "en")
+    func testMemoryMode_forwardsGetChatById() throws {
+        let sut = try DuckAiNativeStorageHandler(.memory())
+        try sut.putChat(chatId: "chat-1", data: Data("one".utf8))
 
-        let all = try handler.getAllEntries()
-        XCTAssertEqual(all["theme"] as? String, "dark")
-        XCTAssertEqual(all["lang"] as? String, "en")
+        XCTAssertEqual(try sut.getChat(chatId: "chat-1"), DuckAiChatRecord(chatId: "chat-1", data: Data("one".utf8)))
+        XCTAssertNil(try sut.getChat(chatId: "missing"))
     }
 
-    func testWhenDeleteEntryThenItIsRemoved() throws {
-        try handler.putEntry(key: "theme", value: "dark")
-        try handler.deleteEntry(key: "theme")
+    func testMemoryMode_forwardsDeleteChat() throws {
+        let sut = try DuckAiNativeStorageHandler(.memory())
+        try sut.putChat(chatId: "chat-1", data: Data("one".utf8))
 
-        let result = try handler.getEntry(key: "theme")
-        XCTAssertNil(result)
+        try sut.deleteChat(chatId: "chat-1")
+
+        XCTAssertTrue(try sut.getAllChats().isEmpty)
     }
 
-    func testWhenReplaceAllEntriesThenPreviousEntriesCleared() throws {
-        try handler.putEntry(key: "theme", value: "dark")
-        try handler.replaceAllEntries(["lang": "fr"])
+    func testMemoryMode_deleteChatRecordsLocallyDeletedChatId() throws {
+        let sut = try DuckAiNativeStorageHandler(.memory())
 
-        let all = try handler.getAllEntries()
-        XCTAssertNil(all["theme"])
-        XCTAssertEqual(all["lang"] as? String, "fr")
+        try sut.deleteChat(chatId: "chat-1")
+
+        let recorded = try sut.getEntry(key: DuckAiNativeStorageReservedEntryKeys.locallyDeletedChatIds.rawValue) as? [String]
+        XCTAssertEqual(recorded, ["chat-1"])
     }
 
-    func testWhenDeleteAllEntriesThenAllCleared() throws {
-        try handler.putEntry(key: "theme", value: "dark")
-        try handler.deleteAllEntries()
+    func testMemoryMode_chatsPublisherEmitsCurrentStateOnce() throws {
+        let sut = try DuckAiNativeStorageHandler(.memory())
+        try sut.putChat(chatId: "chat-1", data: Data("one".utf8))
 
-        let all = try handler.getAllEntries()
-        XCTAssertTrue(all.isEmpty)
-    }
+        var received: [DuckAiChatRecord] = []
+        let emitted = expectation(description: "emits current chats")
+        sut.chatsPublisher()
+            .sink(
+                receiveCompletion: { _ in },
+                receiveValue: { records in
+                    received = records
+                    emitted.fulfill()
+                }
+            )
+            .store(in: &cancellables)
 
-    func testWhenGetEntryOnEmptyStoreThenReturnsNil() throws {
-        let result = try handler.getEntry(key: "nonexistent")
-        XCTAssertNil(result)
-    }
-
-    // MARK: - Concurrency
-
-    func testWhenConcurrentPutEntriesThenNoUpdatesAreLost() throws {
-        let iterations = 100
-        let queue1 = DispatchQueue(label: "test.queue1", qos: .userInitiated)
-        let queue2 = DispatchQueue(label: "test.queue2", qos: .userInitiated)
-        let group = DispatchGroup()
-
-        for i in 0..<iterations {
-            group.enter()
-            queue1.async {
-                try? self.handler.putEntry(key: "q1_\(i)", value: i)
-                group.leave()
-            }
-            group.enter()
-            queue2.async {
-                try? self.handler.putEntry(key: "q2_\(i)", value: i)
-                group.leave()
-            }
-        }
-
-        group.wait()
-
-        let all = try handler.getAllEntries()
-        XCTAssertEqual(all.count, iterations * 2, "Expected \(iterations * 2) keys but got \(all.count) — updates were lost")
-        for i in 0..<iterations {
-            XCTAssertNotNil(all["q1_\(i)"], "Missing key q1_\(i)")
-            XCTAssertNotNil(all["q2_\(i)"], "Missing key q2_\(i)")
-        }
-    }
-
-    func testWhenConcurrentDeleteEntriesThenNoUpdatesAreLost() throws {
-        // Pre-populate entries that should survive
-        for i in 0..<100 {
-            try handler.putEntry(key: "keep_\(i)", value: i)
-            try handler.putEntry(key: "delete_\(i)", value: i)
-        }
-
-        let queue1 = DispatchQueue(label: "test.delete1", qos: .userInitiated)
-        let queue2 = DispatchQueue(label: "test.delete2", qos: .userInitiated)
-        let group = DispatchGroup()
-
-        for i in 0..<100 {
-            group.enter()
-            queue1.async {
-                try? self.handler.deleteEntry(key: "delete_\(i)")
-                group.leave()
-            }
-            // Concurrently add new entries while deleting others
-            group.enter()
-            queue2.async {
-                try? self.handler.putEntry(key: "new_\(i)", value: i)
-                group.leave()
-            }
-        }
-
-        group.wait()
-
-        let all = try handler.getAllEntries()
-        for i in 0..<100 {
-            XCTAssertNotNil(all["keep_\(i)"], "Surviving key keep_\(i) was lost")
-            XCTAssertNil(all["delete_\(i)"], "Deleted key delete_\(i) still present")
-            XCTAssertNotNil(all["new_\(i)"], "Concurrently added key new_\(i) was lost")
-        }
-    }
-
-    // MARK: - Migration
-
-    func testWhenMigrationNotDoneThenReturnsFalse() throws {
-        let result = try handler.isMigrationDone(key: DuckAiMigrationKey.chats)
-        XCTAssertFalse(result)
-    }
-
-    func testWhenMarkMigrationDoneThenReturnsTrue() throws {
-        try handler.markMigrationDone(key: DuckAiMigrationKey.chats)
-
-        let result = try handler.isMigrationDone(key: DuckAiMigrationKey.chats)
-        XCTAssertTrue(result)
-    }
-
-    func testWhenMarkMigrationDoneForKeyThenOtherKeyStillFalse() throws {
-        try handler.markMigrationDone(key: DuckAiMigrationKey.chats)
-
-        XCTAssertTrue(try handler.isMigrationDone(key: DuckAiMigrationKey.chats))
-        XCTAssertFalse(try handler.isMigrationDone(key: DuckAiMigrationKey.files))
-    }
-
-    // MARK: - Chat delegation
-
-    func testWhenPutChatThenDelegatesToDataStore() throws {
-        let data = Data("test".utf8)
-        try handler.putChat(chatId: "chat-1", data: data)
-
-        XCTAssertEqual(mockDataStore.putChatCallCount, 1)
-        XCTAssertEqual(mockDataStore.lastPutChatId, "chat-1")
-        XCTAssertEqual(mockDataStore.lastPutChatData, data)
-    }
-
-    func testWhenPutChatsThenDelegatesToDataStore() throws {
-        let chats = [
-            DuckAiChatRecord(chatId: "chat-1", data: Data("a".utf8)),
-            DuckAiChatRecord(chatId: "chat-2", data: Data("b".utf8))
-        ]
-        try handler.putChats(chats)
-
-        XCTAssertEqual(mockDataStore.putChatsCallCount, 1)
-        XCTAssertEqual(mockDataStore.lastPutChats?.count, 2)
-        XCTAssertEqual(mockDataStore.lastPutChats?[0].chatId, "chat-1")
-        XCTAssertEqual(mockDataStore.lastPutChats?[1].chatId, "chat-2")
-    }
-
-    func testWhenDeleteChatThenDelegatesToDataStore() throws {
-        try handler.deleteChat(chatId: "chat-1")
-
-        XCTAssertEqual(mockDataStore.deleteChatCallCount, 1)
-        XCTAssertEqual(mockDataStore.lastDeleteChatId, "chat-1")
-    }
-
-    func testWhenGetAllChatsThenDelegatesToDataStore() throws {
-        mockDataStore.stubbedChats = [DuckAiChatRecord(chatId: "c1", data: Data())]
-        let result = try handler.getAllChats()
-        XCTAssertEqual(result.count, 1)
-        XCTAssertEqual(result[0].chatId, "c1")
-    }
-
-    func testWhenDeleteAllChatsThenDelegatesToDataStore() throws {
-        try handler.deleteAllChats()
-        XCTAssertEqual(mockDataStore.deleteAllChatsCallCount, 1)
-    }
-
-    func testWhenPutFileThenDelegatesToDataStore() throws {
-        try handler.putFile(uuid: "f1", chatId: "c1", data: Data())
-        XCTAssertEqual(mockDataStore.putFileCallCount, 1)
-    }
-
-    func testWhenDeleteAllFilesThenDelegatesToDataStore() throws {
-        try handler.deleteAllFiles()
-        XCTAssertEqual(mockDataStore.deleteAllFilesCallCount, 1)
-    }
-}
-
-// MARK: - Mock
-
-private final class MockDuckAiNativeDataStore: DuckAiNativeDataStoring {
-
-    var putChatCallCount = 0
-    var lastPutChatId: String?
-    var lastPutChatData: Data?
-
-    var getAllChatsCallCount = 0
-    var stubbedChats: [DuckAiChatRecord] = []
-
-    var putChatsCallCount = 0
-    var lastPutChats: [DuckAiChatRecord]?
-
-    var deleteChatCallCount = 0
-    var lastDeleteChatId: String?
-
-    var deleteAllChatsCallCount = 0
-
-    var putFileCallCount = 0
-    var lastPutFileUuid: String?
-    var lastPutFileChatId: String?
-    var lastPutFileData: Data?
-
-    var getFileCallCount = 0
-    var stubbedFile: DuckAiFileContent?
-
-    var listFilesCallCount = 0
-    var stubbedFiles: [DuckAiFileMetadata] = []
-
-    var deleteFileCallCount = 0
-    var lastDeleteFileUuid: String?
-
-    var deleteAllFilesCallCount = 0
-
-    func putChat(chatId: String, data: Data) throws {
-        putChatCallCount += 1
-        lastPutChatId = chatId
-        lastPutChatData = data
-    }
-
-    func putChats(_ chats: [DuckAiChatRecord]) throws {
-        putChatsCallCount += 1
-        lastPutChats = chats
-    }
-
-    func getAllChats() throws -> [DuckAiChatRecord] {
-        getAllChatsCallCount += 1
-        return stubbedChats
-    }
-
-    func deleteChat(chatId: String) throws {
-        deleteChatCallCount += 1
-        lastDeleteChatId = chatId
-    }
-
-    func deleteAllChats() throws {
-        deleteAllChatsCallCount += 1
-    }
-
-    func putFile(uuid: String, chatId: String, data: Data) throws {
-        putFileCallCount += 1
-        lastPutFileUuid = uuid
-        lastPutFileChatId = chatId
-        lastPutFileData = data
-    }
-
-    func getFile(uuid: String) throws -> DuckAiFileContent? {
-        getFileCallCount += 1
-        return stubbedFile
-    }
-
-    func listFiles() throws -> [DuckAiFileMetadata] {
-        listFilesCallCount += 1
-        return stubbedFiles
-    }
-
-    func deleteFile(uuid: String) throws {
-        deleteFileCallCount += 1
-        lastDeleteFileUuid = uuid
-    }
-
-    func deleteAllFiles() throws {
-        deleteAllFilesCallCount += 1
+        wait(for: [emitted], timeout: 2)
+        XCTAssertEqual(received.map(\.chatId), ["chat-1"])
     }
 }

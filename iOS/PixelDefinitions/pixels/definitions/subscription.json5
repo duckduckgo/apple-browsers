@@ -259,6 +259,52 @@
         "parameters": ["appVersion", "pixelSource"]
     },
 
+    // Subscription Funnel Entry-Point Pixels (App Menu, App Settings)
+    "m_subscription_appmenu_impression": {
+        "description": "Fired when the VPN/subscription entry is rendered in the iOS overflow menu to a non-subscriber. Gated on the vpnMenuItem feature flag, App Store products availability, and non-subscribed status. Used to count subscription-funnel entry-point exposure.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_subscription_appmenu_subscription_click": {
+        "description": "Fired when the user taps the VPN/subscription entry in the iOS overflow menu. Used to count subscription-funnel entry-point click-through.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_subscription_settings_impression": {
+        "description": "Fired when the Subscribe-to-DuckDuckGo row is rendered in iOS Settings to a non-subscriber. Used to count subscription-funnel entry-point exposure.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_subscription_settings_subscription_click": {
+        "description": "Fired when the user taps the Subscribe-to-DuckDuckGo row in iOS Settings. Used to count subscription-funnel entry-point click-through.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    // VPN Access-Revoked Alert Pixels
+    "m_vpn_access_revoked_alert_shown": {
+        "description": "Fired when the VPN access-revoked alert is presented to the user after their subscription expired. Used to count exposure of the revoked-subscription funnel entry-point on iOS.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_vpn_access_revoked_alert_subscribe_button_clicked": {
+        "description": "Fired when the user taps the Subscribe button in the VPN access-revoked alert. Used to count revoked-subscription funnel click-through on iOS.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
     // Onboarding Subscription Promotion Pixels
     "m_privacy-pro_onboarding_promotion_impression": {
         "description": "Fired when the subscription promotion is shown during onboarding",
@@ -359,6 +405,29 @@
         ]
     },
 
+    "m_privacy-pro_offer_screen_impression": {
+        "description": "Fired when the subscription offer page is shown to the user. Mid-funnel pixel that closes the loop between an entry-point click and the purchase attempt.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+    },
+    "m_privacy-pro_terms-conditions_subscribe_click": {
+        "description": "Fired when the user taps the Subscribe CTA on the subscription offer page. Mid-funnel pixel preceding the purchase attempt outcome.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["legacy_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+    },
+
+    "m_subscribe": {
+        "description": "Fired when a subscription purchase is completed successfully. Used for attribution tracking.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "subscriptionFunnelOrigin", "locale", "freeTrial"]
+    },
+
     // Defined in https://app.asana.com/1/137249556945/task/1210959493759232
     "m_ios_wide_subscription_purchase": {
         "description": "Wide pixel sent at the end of a subscription purchase flow",
@@ -443,6 +512,11 @@
                 "type": "string",
                 "description": "The funnel that led to the subscription flow",
                 "pattern": "^funnel_"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Legacy context name carried over from flows started on older app versions, prior to the funnel_name migration. New flows use feature.data.ext.funnel_name."
             }
         ]
     },
@@ -520,6 +594,11 @@
                 "type": "string",
                 "description": "The funnel that led to the restore flow",
                 "pattern": "^funnel_"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Legacy context name carried over from flows started on older app versions, prior to the funnel_name migration. New flows use feature.data.ext.funnel_name."
             }
         ]
     },
@@ -609,8 +688,7 @@
             {
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
-                "description": "The funnel that led to the plan change flow",
-                "pattern": "^funnel_"
+                "description": "The funnel that led to the plan change flow. Note: older app versions sent shorter, non-prefixed values (e.g. 'cancel-downgrade')."
             }
         ]
     },
@@ -663,13 +741,21 @@
                 "key": "feature.data.ext.refresh_trigger",
                 "type": "string",
                 "description": "String representing what caused the token refresh to begin",
-                "enum": ["backend", "client", "token_adoption"]
+                "enum": ["backend", "client", "create_if_needed", "token_adoption"]
             },
             {
                 "key": "feature.data.ext.failing_step",
                 "type": "string",
                 "description": "The step at which the flow failed, when applicable",
-                "enum": ["token_read", "refresh_access_token", "fetch_jwks", "verify_access_token", "verify_refresh_token", "token_write"]
+                "enum": [
+                    "token_read",
+                    "refresh_access_token",
+                    "fetch_jwks",
+                    "verify_access_token",
+                    "verify_refresh_token",
+                    "token_write",
+                    "recover_invalid_token"
+                ]
             },
             {
                 "key": "feature.data.ext.refresh_token_latency_ms_bucketed",
@@ -682,6 +768,71 @@
                 "type": "integer",
                 "description": "Bucketed latency for the JWKS fetch step (ms)",
                 "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "feature.data.ext.recovery_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency from invalid-token detection to recovery outcome (ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
+            },
+            {
+                "key": "feature.data.ext.recovery_outcome",
+                "type": "string",
+                "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed",
+                "enum": ["not_attempted", "succeeded", "failed"]
+            }
+        ]
+    },
+    // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211468169482228?focus=true
+    "m_ios_wide_auth_v2_token_adoption": {
+        "description": "Wide pixel sent after an AuthV2 token adoption event",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-authv2-token-adoption"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide event",
+                "enum": ["authv2-token-adoption"]
+            },
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status events",
+                "enum": ["partial_data"]
+            },
+            {
+                "key": "feature.data.ext.failing_step",
+                "type": "string",
+                "description": "The step at which the flow failed, when applicable",
+                "enum": ["token_adoption", "token_refresh"]
+            },
+            {
+                "key": "feature.data.ext.adoption_source",
+                "type": "string",
+                "description": "What caused the token to be adopted, when known",
+                "enum": ["web_restore", "vpn"]
             }
         ]
     }

@@ -18,15 +18,17 @@
 
 import AppKit
 import Bookmarks
-import PrivacyConfig
+import Combine
 import Common
+import ConcurrencyExtensions
 import FeatureFlags
 import Foundation
+import FoundationExtensions
 import NewTabPage
+import os.log
 import Persistence
 import PixelKit
-import os.log
-import Combine
+import PrivacyConfig
 
 protocol AppearancePreferencesPersistor {
     var showFullURL: Bool { get set }
@@ -319,9 +321,7 @@ final class AppearancePreferences: ObservableObject {
     }
 
     var maxNextStepsCardsDemonstrationDays: Int {
-        if let featureFlagger,
-           featureFlagger.isFeatureOn(.nextStepsListWidget) &&
-            featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) {
+        if let featureFlagger, featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) {
             return Constants.maxNextStepsCardsDemonstrationDays
         } else {
             return Constants.legacyDismissNextStepsCardsAfterDays
@@ -444,11 +444,6 @@ final class AppearancePreferences: ObservableObject {
             darkReaderFeatureSettings?.setForceDarkModeEnabled(newValue)
             objectWillChange.send()
         }
-    }
-
-    var isContinueSetUpAvailable: Bool {
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        return (privacyConfigurationManager?.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) ?? true) && osVersion.majorVersion >= 12
     }
 
     func updateUserInterfaceStyle() {

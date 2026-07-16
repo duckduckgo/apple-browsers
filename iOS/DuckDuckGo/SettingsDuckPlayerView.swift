@@ -49,7 +49,8 @@ struct SettingsDuckPlayerView: View {
 
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
                 VStack(alignment: .center) {
-                    Image(.settingsDuckPlayerHero)
+                    Image(rebrandable: "SettingsDuckPlayerHero")
+                        .accessibilityIdentifier("SettingsDuckPlayerHero")
                         .padding(.top, -20) // Adjust for the image padding
 
                     Text(UserText.duckPlayerFeatureName)
@@ -64,7 +65,7 @@ struct SettingsDuckPlayerView: View {
                     Link(UserText.settingsDuckPlayerLearnMore,
                          destination: SettingsDuckPlayerView.learnMoreURL)
                     .daxBodyRegular()
-                    .accentColor(Color.init(designSystemColor: .accent))
+                    .accentColor(Color.init(designSystemColor: .accentPrimary))
                 }
                 .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)

@@ -20,13 +20,14 @@
 import SwiftUI
 import Subscription
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PrivacyConfig
 import DataBrokerProtection_iOS
 import PixelKit
 
 enum SubscriptionContainerViewFactory {
-    
+
     private static var subscriptionUserDefaults: UserDefaults {
         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
         return UserDefaults(suiteName: subscriptionAppGroup)!
@@ -52,6 +53,7 @@ enum SubscriptionContainerViewFactory {
     }
 
     static func makeSubscribeFlowV2(redirectURLComponents: URLComponents?,
+                                    landingURL: URL? = nil,
                                     navigationCoordinator: SubscriptionNavigationCoordinator,
                                     subscriptionManager: SubscriptionManager,
                                     subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -84,12 +86,14 @@ enum SubscriptionContainerViewFactory {
             return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
         }()
 
+        let initialURL = landingURL ?? redirectPurchaseURL
+
         let origin = redirectURLComponents?.queryItems?.first(where: { $0.name == AttributionParameter.origin })?.value
 
 
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
-            redirectPurchaseURL: redirectPurchaseURL,
+            initialURL: initialURL,
             isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
             userScriptsDependencies: userScriptsDependencies,
@@ -103,7 +107,9 @@ enum SubscriptionContainerViewFactory {
                                                                        wideEvent: wideEvent,
                                                                        pendingTransactionHandler: pendingTransactionHandler,
                                                                        subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)),
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
+                                                                       expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
+                                                                       isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
@@ -111,6 +117,43 @@ enum SubscriptionContainerViewFactory {
             .environmentObject(navigationCoordinator)
     }
 
+    @ViewBuilder
+    static func makePurchaseFlowV2(redirectURLComponents: URLComponents?,
+                                   navigationCoordinator: SubscriptionNavigationCoordinator,
+                                   subscriptionManager: SubscriptionManager,
+                                   subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                   subscriptionDataReporter: SubscriptionDataReporting?,
+                                   userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                                   tld: TLD,
+                                   internalUserDecider: InternalUserDecider,
+                                   dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+                                   wideEvent: WideEventManaging,
+                                   featureFlagger: FeatureFlagger) -> some View {
+        if let redirectURLComponents,
+           SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
+            makePlansFlowV2(redirectURLComponents: redirectURLComponents,
+                            navigationCoordinator: navigationCoordinator,
+                            subscriptionManager: subscriptionManager,
+                            subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                            userScriptsDependencies: userScriptsDependencies,
+                            internalUserDecider: internalUserDecider,
+                            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+                            wideEvent: wideEvent,
+                            featureFlagger: featureFlagger)
+        } else {
+            makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
+                                navigationCoordinator: navigationCoordinator,
+                                subscriptionManager: subscriptionManager,
+                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                subscriptionDataReporter: subscriptionDataReporter,
+                                userScriptsDependencies: userScriptsDependencies,
+                                tld: tld,
+                                internalUserDecider: internalUserDecider,
+                                dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+                                wideEvent: wideEvent,
+                                featureFlagger: featureFlagger)
+        }
+    }
 
     static func makeRestoreFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
                                   subscriptionManager: SubscriptionManager,
@@ -145,7 +188,9 @@ enum SubscriptionContainerViewFactory {
                                                                                                      wideEvent: wideEvent,
                                                                                                      pendingTransactionHandler: pendingTransactionHandler,
                                                                                                      subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-                                                                                                     requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
+                                                                                                     requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
+                                                                                                     expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
+                                                                                                     isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) })
 
         let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
                                                        isInternalUser: internalUserDecider.isInternalUser,
@@ -199,7 +244,7 @@ enum SubscriptionContainerViewFactory {
 
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
-            redirectPurchaseURL: plansURL,
+            initialURL: plansURL,
             flowType: .planUpdate,
             isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
@@ -213,7 +258,9 @@ enum SubscriptionContainerViewFactory {
                                                                        wideEvent: wideEvent,
                                                                        pendingTransactionHandler: pendingTransactionHandler,
                                                                        subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)),
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
+                                                                       expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
+                                                                       isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
@@ -259,7 +306,9 @@ enum SubscriptionContainerViewFactory {
                                                                        wideEvent: wideEvent,
                                                                        pendingTransactionHandler: pendingTransactionHandler,
                                                                        subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)),
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
+                                                                       expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
+                                                                       isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
 

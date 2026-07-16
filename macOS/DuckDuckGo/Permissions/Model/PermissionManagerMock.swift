@@ -18,9 +18,11 @@
 
 #if DEBUG
 
-import Foundation
 import Combine
 import Common
+import ConcurrencyExtensions
+import Foundation
+import FoundationExtensions
 
 final class PermissionManagerMock: PermissionManagerProtocol {
 
@@ -54,6 +56,10 @@ final class PermissionManagerMock: PermissionManagerProtocol {
 
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
         savedPermissions[domain.droppingWwwPrefix()]?[permissionType] ?? .ask
+    }
+
+    func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
+        savedPermissions[domain.droppingWwwPrefix()]?[permissionType]
     }
 
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {

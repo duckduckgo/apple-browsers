@@ -20,6 +20,7 @@ import AppKit
 import PreferencesUI_macOS
 import Subscription
 import Combine
+import CombineExtensions
 
 public final class PreferencesIdentityTheftRestorationModel: ObservableObject {
 

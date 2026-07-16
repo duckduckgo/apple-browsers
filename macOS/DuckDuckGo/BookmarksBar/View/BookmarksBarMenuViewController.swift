@@ -19,6 +19,8 @@
 import AppKit
 import Carbon
 import Combine
+import Common
+import FoundationExtensions
 import Foundation
 
 protocol BookmarksBarMenuViewControllerDelegate: AnyObject {
@@ -54,7 +56,7 @@ final class BookmarksBarMenuViewController: NSViewController {
     private let treeController: BookmarkTreeController
     private let themeManager: ThemeManaging
 
-    private var submenuPopover: BookmarksBarMenuPopover?
+    private var submenuPopover: (any BookmarksBarMenuPopoverPresenting)?
     private(set) var preferredContentOffset: CGPoint = .zero
 
     private var cancellables = Set<AnyCancellable>()
@@ -110,10 +112,33 @@ final class BookmarksBarMenuViewController: NSViewController {
         fatalError("\(type(of: self)): Bad initializer")
     }
 
+    private static let popoverCornerRadius: CGFloat = AppVersion.isLiquidGlassSupported ? 12 : 8
+
     // MARK: View Lifecycle
     override func loadView() {
+        // Custom panel chrome (no NSPopover) — provide our own clipped corners and a
+        // `.menu` material backdrop. `NSGlassEffectView` was tried here on macOS 26 to
+        // match liquid-glass context menus but its `.regular` style samples the screen
+        // behind the panel and drifts dark over dark content; neither `tintColor`
+        // (any alpha) nor an in-window backdrop suppressed the sampling effectively.
         view = NSView()
         view.autoresizesSubviews = false
+        view.wantsLayer = true
+        view.layer?.cornerRadius = Self.popoverCornerRadius
+        view.layer?.masksToBounds = true
+
+        let backdrop = NSVisualEffectView()
+        backdrop.material = .popover
+        backdrop.blendingMode = .behindWindow
+        backdrop.state = .active
+        backdrop.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(backdrop)
+        NSLayoutConstraint.activate([
+            backdrop.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backdrop.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backdrop.topAnchor.constraint(equalTo: view.topAnchor),
+            backdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.drawsBackground = false
@@ -224,6 +249,20 @@ final class BookmarksBarMenuViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.reloadData()
+            }
+            .store(in: &cancellables)
+
+        // Favicon images are decoded lazily; when new favicons are available, refresh cells in place.
+        // We aren't calling `reloadData()` as a full reload would dismiss the submenu.
+        NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let update = notification.faviconsCacheUpdate,
+                   update.hosts.isDisjoint(with: self.bookmarkManager.allHosts()) {
+                    return
+                }
+                self.refreshVisibleFavicons()
             }
             .store(in: &cancellables)
 
@@ -397,7 +436,7 @@ final class BookmarksBarMenuViewController: NSViewController {
                       // always close on global event
                       let eventWindow = event.window else { return true /* close */}
                 // is showing submenu?
-                if let popover = nextResponder as? BookmarksBarMenuPopover,
+                if let popover = nextResponder as? (any BookmarksBarMenuPopoverPresenting),
                    let positioningView = popover.positioningView,
                    positioningView.isMouseLocationInsideBounds(event.locationInWindow) {
                     // don‘t close when the button used to open the popover is
@@ -411,7 +450,15 @@ final class BookmarksBarMenuViewController: NSViewController {
             }.asVoid()
         )
         .sink { [weak self] _ in
-            self?.delegate?.closeBookmarksPopovers(self!) // close
+            guard let self else { return }
+            // Honor an `.applicationDefined` popover behavior: a sticky popover
+            // (e.g. while a modal dialog is up) shouldn't be torn down by the
+            // click-outside / menu-tracking auto-close.
+            if let popover = nextResponder as? (any BookmarksBarMenuPopoverPresenting),
+               popover.behavior == .applicationDefined {
+                return
+            }
+            delegate?.closeBookmarksPopovers(self)
         }
         .store(in: &cancellables)
     }
@@ -450,7 +497,7 @@ final class BookmarksBarMenuViewController: NSViewController {
         outlineView.reloadData()
 
         if !isChangingRootFolder,
-            let popover = nextResponder as? BookmarksBarMenuPopover, popover.isShown,
+            let popover = nextResponder as? (any BookmarksBarMenuPopoverPresenting), popover.isShown,
             let preferredEdge = popover.preferredEdge {
 
             updatePositionAndContentSize(oldContentSize: oldContentSize,
@@ -459,6 +506,20 @@ final class BookmarksBarMenuViewController: NSViewController {
 
         if outlineView.numberOfRows > 0 {
             updateHighlightedRowAfterReload(isChangingRootFolder: isChangingRootFolder)
+        }
+    }
+
+    /// Refresh favicons in place for the currently visible bookmark rows, without a full `reloadData()`.
+    private func refreshVisibleFavicons() {
+        let visibleRows = outlineView.rows(in: outlineView.visibleRect)
+        guard visibleRows.length > 0 else { return }
+        for row in visibleRows.location..<(visibleRows.location + visibleRows.length) {
+            guard let node = outlineView.item(atRow: row) as? BookmarkNode,
+                  let bookmark = node.representedObject as? Bookmark,
+                  let cell = outlineView.view(atColumn: 0, row: row, makeIfNecessary: false) as? BookmarkOutlineCellView else {
+                continue
+            }
+            cell.refreshFavicon(for: bookmark)
         }
     }
 
@@ -504,7 +565,7 @@ final class BookmarksBarMenuViewController: NSViewController {
         }
 
         // popover borders
-        let contentInsets = BookmarksBarMenuPopover.popoverInsets
+        let contentInsets = BookmarksBarMenuCustomPopover.popoverInsets
         // positioning rect in Screen coordinates
         let windowRect = positioningView.convert(positioningRect, to: nil)
         let screenPosRect = mainWindow.convertToScreen(windowRect)
@@ -551,7 +612,7 @@ final class BookmarksBarMenuViewController: NSViewController {
     }
 
     private func calculatePreferredContentSize() -> NSSize {
-        let contentInsets = BookmarksBarMenuPopover.popoverInsets
+        let contentInsets = BookmarksBarMenuCustomPopover.popoverInsets
         var contentSize = NSSize(width: 0, height: 20)
         for row in 0..<outlineView.numberOfRows {
             let node = outlineView.item(atRow: row) as? BookmarkNode
@@ -605,6 +666,7 @@ final class BookmarksBarMenuViewController: NSViewController {
         }
 
         preferredContentSize = contentSize
+        (nextResponder as? (any BookmarksBarMenuPopoverPresenting))?.updatePresentedFrameIfNeeded()
         updateScrollButtons()
     }
 
@@ -617,7 +679,7 @@ final class BookmarksBarMenuViewController: NSViewController {
     private func showSubmenu(for folder: BookmarkFolder, atRow row: Int) {
         guard let cell = outlineView.view(atColumn: 0, row: row, makeIfNecessary: false) else { return }
 
-        let submenuPopover: BookmarksBarMenuPopover
+        let submenuPopover: any BookmarksBarMenuPopoverPresenting
         if let popover = self.submenuPopover {
             submenuPopover = popover
             if submenuPopover.isShown {
@@ -630,8 +692,8 @@ final class BookmarksBarMenuViewController: NSViewController {
             // reuse the popover for another folder
             submenuPopover.reloadData(withRootFolder: folder)
         } else {
-            submenuPopover = BookmarksBarMenuPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
-            submenuPopover.delegate = self
+            submenuPopover = BookmarksBarMenuCustomPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
+            submenuPopover.bookmarksBarMenuDelegate = self
             self.submenuPopover = submenuPopover
         }
 
@@ -658,7 +720,7 @@ final class BookmarksBarMenuViewController: NSViewController {
         case kVK_LeftArrow:
             // if in submenu: close this submenu
             if view.window?.parent?.contentViewController is Self,
-               let popover = nextResponder as? NSPopover {
+               let popover = nextResponder as? (any BookmarksBarMenuPopoverPresenting) {
                 popover.close()
             } else /* we‘re in root menu */ {
                 // switch between bookmarks menus on left/right
@@ -877,6 +939,7 @@ final class BookmarksBarMenuViewController: NSViewController {
             if popoverHeightIncrement > 0 {
                 preferredContentOffset.y = popoverHeightIncrement
                 preferredContentSize.height += popoverHeightIncrement
+                (nextResponder as? (any BookmarksBarMenuPopoverPresenting))?.updatePresentedFrameIfNeeded()
                 // decrement scrolling position
                 if preferredContentSize.height + popoverHeightIncrement > contentHeight {
                     scrollView.contentView.bounds.origin.y = 0
@@ -960,13 +1023,13 @@ extension BookmarksBarMenuViewController: MouseOverButtonDelegate {
     }
 
 }
-// MARK: - BookmarkListPopoverDelegate
+// MARK: - BookmarksBarMenuPopoverDelegate
 extension BookmarksBarMenuViewController: BookmarksBarMenuPopoverDelegate {
     // pass delegate calls up when called from submenu
-    func openNextBookmarksMenu(_ sender: BookmarksBarMenuPopover) {
+    func openNextBookmarksMenu(_ sender: any BookmarksBarMenuPopoverPresenting) {
         delegate?.openNextBookmarksMenu(self)
     }
-    func openPreviousBookmarksMenu(_ sender: BookmarksBarMenuPopover) {
+    func openPreviousBookmarksMenu(_ sender: any BookmarksBarMenuPopoverPresenting) {
         delegate?.openPreviousBookmarksMenu(self)
     }
 }

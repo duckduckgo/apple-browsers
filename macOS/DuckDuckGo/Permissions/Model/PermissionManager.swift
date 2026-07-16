@@ -19,9 +19,17 @@
 import Foundation
 import Combine
 import Common
-import FeatureFlags
+import FoundationExtensions
 import os.log
-import PrivacyConfig
+
+/// Read-path interceptor used by `PermissionManager.permission(forDomain:permissionType:)`. When
+/// the override returns a non-nil decision, it is returned as the effective permission without
+/// touching storage. Use this to force a decision for a known (domain, permission) pair without
+/// writing anything to disk — keeps storage representing actual user intent and lets a rollback
+/// (override removed) restore the underlying persisted decision cleanly.
+protocol PermissionDecisionOverriding: AnyObject {
+    func decision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision?
+}
 
 protocol PermissionManagerProtocol: AnyObject {
 
@@ -32,6 +40,10 @@ protocol PermissionManagerProtocol: AnyObject {
     func hasAnyPermissionPersisted(forDomain domain: String) -> Bool
     func persistedPermissionTypes(forDomain domain: String) -> [PermissionType]
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision
+    /// Returns the underlying persisted decision, ignoring any active `PermissionDecisionOverriding`.
+    /// `nil` when nothing is persisted. Use only for cleanup or migration paths that genuinely need
+    /// to know the on-disk state; everything else should call `permission(forDomain:permissionType:)`.
+    func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision?
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType)
 
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
@@ -46,15 +58,15 @@ protocol PermissionManagerProtocol: AnyObject {
 final class PermissionManager: PermissionManagerProtocol {
 
     private let store: PermissionStore
-    private let featureFlagger: FeatureFlagger
     private var permissions = [String: [PermissionType: StoredPermission]]()
+    private let decisionOverride: PermissionDecisionOverriding?
 
     private let permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { permissionSubject.eraseToAnyPublisher() }
 
-    init(store: PermissionStore, featureFlagger: FeatureFlagger) {
+    init(store: PermissionStore, decisionOverride: PermissionDecisionOverriding? = nil) {
         self.store = store
-        self.featureFlagger = featureFlagger
+        self.decisionOverride = decisionOverride
         loadPermissions()
     }
 
@@ -77,7 +89,15 @@ final class PermissionManager: PermissionManagerProtocol {
     private(set) var persistedPermissionTypes = Set<PermissionType>()
 
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
-        return permissions[domain.droppingWwwPrefix()]?[permissionType]?.decision ?? .ask
+        let normalized = domain.droppingWwwPrefix()
+        if let override = decisionOverride?.decision(forDomain: normalized, permissionType: permissionType) {
+            return override
+        }
+        return permissions[normalized]?[permissionType]?.decision ?? .ask
+    }
+
+    func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
+        return permissions[domain.droppingWwwPrefix()]?[permissionType]?.decision
     }
 
     func hasPermissionPersisted(forDomain domain: String, permissionType: PermissionType) -> Bool {
@@ -100,15 +120,10 @@ final class PermissionManager: PermissionManagerProtocol {
         let domain = domain.droppingWwwPrefix()
 
         // Check if permission is already stored with the same decision
-        // Note: permission(forDomain:...) returns .ask by default, so we also check hasPermissionPersisted
-        // when newPermissionView is enabled (to allow storing .ask explicitly)
+        // Also check hasPermissionPersisted to allow storing .ask explicitly for permission center visibility
         let currentDecision = self.permission(forDomain: domain, permissionType: permissionType)
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            let isAlreadyPersisted = hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
-            guard currentDecision != decision || !isAlreadyPersisted else { return }
-        } else {
-            guard currentDecision != decision else { return }
-        }
+        let isAlreadyPersisted = hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
+        guard currentDecision != decision || !isAlreadyPersisted else { return }
 
         defer {
             self.permissionSubject.send( (domain, permissionType, decision) )

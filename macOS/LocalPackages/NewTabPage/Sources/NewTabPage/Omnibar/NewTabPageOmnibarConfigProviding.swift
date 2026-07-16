@@ -17,6 +17,7 @@
 //
 
 import Combine
+import WebKit
 
 public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
@@ -39,5 +40,54 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isAIChatToolsEnabled: Bool { get }
 
+    var isImageGenerationEnabled: Bool { get }
+
+    var isWebSearchEnabled: Bool { get }
+
+    /// Whether the "Customize Responses" tool is shown in the NTP omnibar Tools menu.
+    var isCustomizeResponsesEnabled: Bool { get }
+
+    /// Customize Responses row state (sub-label + toggle) for the window hosting `requestingWebView`;
+    /// pass `nil` to resolve the current key window.
+    @MainActor
+    func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState
+
+    /// Fires when the stored response customization changes, so the client re-pushes the config.
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> { get }
+
+    /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
+    /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
+    /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.
+    var isAttachTabsEnabled: Bool { get }
+    var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the 1-click voice-chat affordance is currently enabled. Published so the client
+    /// can push an `omnibar_onConfigUpdate` when the underlying feature flag flips at runtime,
+    /// keeping an open NTP in sync without a reload.
+    var isVoiceChatAccessEnabled: Bool { get }
+    var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the inline "Ask Duck.ai: <query>" entry should be shown in the NTP omnibar's
+    /// suggestions dropdown. Mirrors the user's "Autocomplete suggestions" preference so the
+    /// dropdown matches the address bar. Published so the client can push an
+    /// `omnibar_onConfigUpdate` when the toggle flips, keeping an open NTP in sync.
+    var showAskAiSuggestion: Bool { get }
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> { get }
+
     var selectedModelId: String? { get set }
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { get }
+
+    /// Short display name that the native omnibar can show before its own models fetch completes.
+    /// Mirrors the native `AIChatPreferencesPersisting.selectedModelShortName`.
+    var selectedModelShortName: String? { get set }
+
+    /// Whether the reasoning-effort picker feature is available. Combines the dedicated
+    /// reasoning-effort feature flag with `isAIChatToolsEnabled`, since reasoning effort depends
+    /// on the model picker being available.
+    var isReasoningEffortEnabled: Bool { get }
+
+    /// The user's persisted reasoning effort (e.g. `"none"`, `"low"`, `"medium"`). `nil` when
+    /// nothing is selected or when `isReasoningEffortEnabled` is false.
+    var selectedReasoningEffort: String? { get set }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { get }
 }

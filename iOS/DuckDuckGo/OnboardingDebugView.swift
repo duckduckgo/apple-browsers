@@ -19,6 +19,8 @@
 
 import SwiftUI
 import Core
+import Onboarding
+import Persistence
 
 struct OnboardingDebugView: View {
 
@@ -27,12 +29,10 @@ struct OnboardingDebugView: View {
     @State private var isShowingResetOnboardingAlert = false
     @State private var isShowingSubscriptionPromoCooldownAlert = false
 
-    private let newOnboardingIntroStartAction: (OnboardingDebugFlow) -> Void
-    @State private var selectedFlow: OnboardingDebugFlow
+    private let newOnboardingIntroStartAction: () -> Void
 
-    init(initialFlow: OnboardingDebugFlow, onNewOnboardingIntroStartAction: @escaping (OnboardingDebugFlow) -> Void) {
+    init(onNewOnboardingIntroStartAction: @escaping @MainActor () -> Void) {
         newOnboardingIntroStartAction = onNewOnboardingIntroStartAction
-        _selectedFlow = State(initialValue: initialFlow)
     }
 
     var body: some View {
@@ -85,29 +85,43 @@ struct OnboardingDebugView: View {
                         Text(verbatim: "Type:")
                     }
                 )
+
+                Toggle(
+                    isOn: $viewModel.forceRestorePromptEligible,
+                    label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(verbatim: "Force Restore Prompt Eligible")
+                            Text(verbatim: "Sets Returning User and forces the .restoreData intro on next launch.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                )
             } header: {
                 Text(verbatim: "Onboarding User Type")
             }
 
             Section {
                 Picker(
-                    selection: $selectedFlow,
+                    selection: $viewModel.forcedOnboardingFlowType,
                     content: {
-                        ForEach(OnboardingDebugFlow.allCases) { flow in
-                            Text(verbatim: flow.description).tag(flow)
-                        }
+                        Text(verbatim: "Auto-detect (URL evaluator)").tag(Optional<OnboardingFlowType>.none)
+                        Text(verbatim: "Default").tag(OnboardingFlowType.default)
+                        Text(verbatim: "Duck.ai Tailored").tag(OnboardingFlowType.duckAI)
                     },
                     label: {
-                        Text(verbatim: "Flow:")
+                        Text(verbatim: "Flow Type:")
                     }
                 )
             } header: {
-                Text(verbatim: "Onboarding Flow")
+                Text(verbatim: "Force Onboarding Flow Type")
+            } footer: {
+                Text(verbatim: "Honoured on next launch by OnboardingManager.configureOnboardingFlow when no flow is already configured. Reset Onboarding above and kill+relaunch the app to apply.")
             }
 
             Section {
-                Button(action: { newOnboardingIntroStartAction(selectedFlow) }, label: {
-                    Text(verbatim: "Preview Onboarding \(selectedFlow.description) Intro - \(viewModel.onboardingUserType.description)")
+                Button(action: { newOnboardingIntroStartAction() }, label: {
+                    Text(verbatim: "Preview Onboarding Intro - \(viewModel.onboardingUserType.description)")
                 })
             }
         }
@@ -122,26 +136,82 @@ final class OnboardingDebugViewModel: ObservableObject {
         }
     }
 
+    @Published var forceRestorePromptEligible: Bool {
+        didSet {
+            appSettings.onboardingForceRestorePromptEligible = forceRestorePromptEligible
+            // Restore prompt only shows for returning users — flip the picker so the
+            // combination needed to reach Intro (.restoreData) is set from one toggle.
+            if forceRestorePromptEligible, onboardingUserType != .returningUser {
+                onboardingUserType = .returningUser
+            }
+        }
+    }
+
+    /// Debug override for the resolved onboarding flow type on next launch.
+    /// `nil` means "no override — use the real evaluator (URL-based)."
+    /// Honoured by `OnboardingManager.configureOnboardingFlow(from:)` only in DEBUG/ALPHA builds.
+    @Published var forcedOnboardingFlowType: OnboardingFlowType? {
+        didSet {
+            appSettings.onboardingFlowType = forcedOnboardingFlowType
+        }
+    }
+
     private let manager: OnboardingNewUserProviderDebugging
     private var settings: DaxDialogsSettings
     private let tutorialSettings: TutorialSettings
     private let statisticsStore: StatisticsUserDefaults
+    private let userDefaults: UserDefaults
+    private var appSettings: OnboardingDebugAppSettings
+
+    /// Keys duplicated here (rather than exposed publicly) so production types don't grow
+    /// a debug-only reset surface. Keep in sync with the originals:
+    /// - `OnboardingPixelReporter.siteVisitedUserDefaultsKey`
+    /// - `OnboardingSearchExperienceProvider` private `String` constants
+    private static let siteVisitedUserDefaultsKey = "com.duckduckgo.ios.site-visited"
+    private static let didEnableAIChatSearchInputDuringOnboardingKey = "com.duckduckgo.ios.onboarding.didEnableAIChatSearchInputDuringOnboarding"
+    private static let didApplyOnboardingChoiceSettingsKey = "com.duckduckgo.ios.onboarding.didApplyOnboardingChoiceSettings"
 
     init(
         manager: OnboardingNewUserProviderDebugging = OnboardingManager(),
         settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
-        statisticsStore: StatisticsUserDefaults = StatisticsUserDefaults()
+        statisticsStore: StatisticsUserDefaults = StatisticsUserDefaults(),
+        userDefaults: UserDefaults = .app,
+        appSettings: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings
     ) {
         self.manager = manager
         self.settings = settings
         self.tutorialSettings = tutorialSettings
         self.statisticsStore = statisticsStore
+        self.userDefaults = userDefaults
+        self.appSettings = appSettings
         onboardingUserType = manager.onboardingUserTypeDebugValue
+        forceRestorePromptEligible = appSettings.onboardingForceRestorePromptEligible
+        forcedOnboardingFlowType = appSettings.onboardingFlowType
     }
 
     func resetAllOnboarding() {
         tutorialSettings.hasSeenOnboarding = false
+        // Clear the persisted flow type so the next launch re-evaluates default vs Duck.ai.
+        tutorialSettings.onboardingFlowType = nil
+        // Drop any resume-step checkpoint left over from a partial onboarding run, and
+        // clear the onboarding pixel context (source/flow/variant) so it's re-recorded
+        // when the next onboarding run begins. `KeyedStorage` is constructed directly
+        // (rather than via `UserDefaults.app.keyedStoring()` whose opaque return type
+        // would require iOS 16+ runtime support for parameterized existentials on iOS 15).
+        OnboardingResumeCheckpointStore.clearAll(in: KeyedStorage<OnboardingStoringKeys>(storage: UserDefaults.app))
+        let sharedPixelsStorage = KeyedStorage<OnboardingSharedPixelsKeys>(storage: UserDefaults.app)
+        sharedPixelsStorage.onboardingSource = nil
+        sharedPixelsStorage.onboardingFlow = nil
+        sharedPixelsStorage.onboardingVariant = nil
+        // Forget the Search-vs-Duck.ai choice and the post-onboarding settings flag.
+        // `OnboardingSearchExperience` uses `UserDefaults.standard` for these keys.
+        UserDefaults.standard.removeObject(forKey: Self.didEnableAIChatSearchInputDuringOnboardingKey)
+        UserDefaults.standard.removeObject(forKey: Self.didApplyOnboardingChoiceSettingsKey)
+        // Reset the "user already visited a second site" flag used by pixel reporting.
+        userDefaults.removeObject(forKey: Self.siteVisitedUserDefaultsKey)
+        // Clear the debug override that forces the restore prompt to be eligible.
+        forceRestorePromptEligible = false
         resetDaxDialogs()
     }
 
@@ -162,6 +232,8 @@ final class OnboardingDebugViewModel: ObservableObject {
         settings.privacyButtonPulseShown = false
         settings.browsingFinalDialogShown = false
         settings.subscriptionPromotionDialogShown = false
+        settings.chatPathVisitSiteSeen = false
+        settings.isChatFirstPath = false
         tutorialSettings.hasSkippedOnboarding = false
     }
 
@@ -178,26 +250,6 @@ extension OnboardingUserType: Identifiable {
     }
 }
 
-enum OnboardingDebugFlow: String, CaseIterable, CustomStringConvertible, Identifiable {
-    case rebranding
-    case legacy
-
-    var id: OnboardingDebugFlow { self }
-
-    var description: String {
-        switch self {
-        case .rebranding:
-            return "Rebranding"
-        case .legacy:
-            return "Original (Legacy)"
-        }
-    }
-
-    var isRebranding: Bool {
-        self == .rebranding
-    }
-}
-
 #Preview {
-    OnboardingDebugView(initialFlow: .legacy, onNewOnboardingIntroStartAction: { _ in })
+    OnboardingDebugView(onNewOnboardingIntroStartAction: { })
 }

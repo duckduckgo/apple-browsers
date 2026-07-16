@@ -11,6 +11,6 @@
                 "enum": ["allow-all", "block-audio", "block-all"]
             }
         ],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

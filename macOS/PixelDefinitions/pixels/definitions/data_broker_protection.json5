@@ -1,4 +1,22 @@
 {
+    "m_mac_dbp_web_ui_loading_success": {
+        "description": "Fires when the DBP (Personal Information Removal) Web UI loads successfully. The `subscribed` param distinguishes subscriber traffic (Settings → PIR) from non-subscriber freemium traffic.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "environment",
+                "type": "string",
+                "description": "Whether the WebUI is loading from staging or production",
+                "enum": ["staging", "production"]
+            },
+            "subscribed"
+        ]
+    },
     "m_mac_dbp_secure_vault_database_recreated": {
         "description": "Fired when the DBP secure vault database has been recreated in response to SQLITE_NOTADB or SQLITE_CORRUPT errors",
         "owners": ["quanganhdo"],
@@ -10,100 +28,21 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string",
-                "enum": ["true", "false"]
-            }
+                "type": "boolean"
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_start": {
         "description": "Fired at the start stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpParentBroker",
-            "dbpAttemptId",
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId", "channel"]
     },
     "m_mac_dbp_optout_stage_email-generate": {
         "description": "Fired at the email generation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
-        "triggers": ["other"],
-        "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpParentBroker",
-            "dbpBrokerVersion",
-            "dbpAttemptId",
-            "dbpStageDuration",
-            "dbpStageTries",
-            "dbpActionId"
-        ]
-    },
-    "m_mac_dbp_optout_stage_captcha-parse": {
-        "description": "Fired at the captcha parse stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
-        "triggers": ["other"],
-        "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpParentBroker",
-            "dbpBrokerVersion",
-            "dbpAttemptId",
-            "dbpStageDuration",
-            "dbpStageTries",
-            "dbpActionId"
-        ]
-    },
-    "m_mac_dbp_optout_stage_captcha-send": {
-        "description": "Fired at the captcha send stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
-        "triggers": ["other"],
-        "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpParentBroker",
-            "dbpBrokerVersion",
-            "dbpAttemptId",
-            "dbpStageDuration",
-            "dbpStageTries",
-            "dbpActionId"
-        ]
-    },
-    "m_mac_dbp_optout_stage_captcha-solve": {
-        "description": "Fired at the captcha solve stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
-        "triggers": ["other"],
-        "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpParentBroker",
-            "dbpBrokerVersion",
-            "dbpAttemptId",
-            "dbpStageDuration",
-            "dbpStageTries",
-            "dbpActionId"
-        ]
-    },
-    "m_mac_dbp_optout_stage_submit": {
-        "description": "Fired at the submit stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -116,16 +55,84 @@
             "dbpStageDuration",
             "dbpStageTries",
             "dbpActionId",
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
+            "channel"
+        ]
+    },
+    "m_mac_dbp_optout_stage_captcha-parse": {
+        "description": "Fired at the captcha parse stage of an opt-out attempt.",
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId",
+            "channel"
+        ]
+    },
+    "m_mac_dbp_optout_stage_captcha-send": {
+        "description": "Fired at the captcha send stage of an opt-out attempt.",
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId",
+            "channel"
+        ]
+    },
+    "m_mac_dbp_optout_stage_captcha-solve": {
+        "description": "Fired at the captcha solve stage of an opt-out attempt.",
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId",
+            "channel"
+        ]
+    },
+    "m_mac_dbp_optout_stage_submit": {
+        "description": "Fired at the submit stage of an opt-out attempt.",
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_email-receive": {
         "description": "Fired at the email receive stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -137,12 +144,13 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_email-confirm": {
         "description": "Fired at the email confirmation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -154,12 +162,31 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
+        ]
+    },
+    "m_mac_dbp_optout_stage_email-get-data": {
+        "description": "Fired at the email get-data stage of an opt-out attempt.",
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_validate": {
         "description": "Fired at the validation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -171,12 +198,13 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_fill-form": {
         "description": "Fired at the fill-form stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -188,12 +216,13 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_finish": {
         "description": "Fired at the finish stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -206,12 +235,13 @@
                 "key": "duration",
                 "description": "Duration of the final stage in milliseconds",
                 "type": "string"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_optout_process_submit-success": {
         "description": "Fired when an opt-out submission succeeds.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -241,12 +271,13 @@
                 "description": "VPN bypass status when the submission succeeded",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_optout_process_success": {
         "description": "Fired when an opt-out attempt completes successfully.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -273,16 +304,12 @@
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
             },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
+            "channel"
         ]
     },
     "m_mac_dbp_optout_process_failure": {
         "description": "Fired when an opt-out attempt fails.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -293,6 +320,16 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpAttemptDuration",
+            {
+                "key": "error_category",
+                "description": "High-level error classification",
+                "type": "string"
+            },
+            {
+                "key": "error_details",
+                "description": "Error description supplied by the failing stage",
+                "type": "string"
+            },
             {
                 "key": "stage",
                 "description": "The stage where the failure occurred",
@@ -321,11 +358,7 @@
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
             },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
+            "channel"
         ]
     },
     "m_mac_dbp_optoutjob_at-42-days_confirmed": {
@@ -333,14 +366,14 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "channel"]
     },
     "m_mac_dbp_optoutjob_at-42-days_unconfirmed": {
         "description": "Fired when a successfully submitted opt-out reaches 42 days since submission and remains unconfirmed (record not removed).",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "channel"]
     },
     "m_mac_dbp_optout_stage_condition-found": {
         "description": "Fired at the condition-found stage of an opt-out attempt.",
@@ -356,7 +389,8 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpActionId",
-            "dbpActionDuration"
+            "dbpActionDuration",
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_condition-not-found": {
@@ -370,8 +404,7 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             "dbpActionTries",
             "dbpDataBroker",
@@ -379,7 +412,8 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpActionId",
-            "dbpActionDuration"
+            "dbpActionDuration",
+            "channel"
         ]
     },
     "m_mac_dbp_service_generate-email_http-error": {
@@ -399,7 +433,8 @@
                 "key": "http_code",
                 "description": "HTTP status code from backend email generation",
                 "type": "string"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_service_empty-auth-token": {
@@ -438,7 +473,8 @@
                 "key": "broker_version",
                 "description": "The version of the broker JSON file (unknown when not available)",
                 "type": "string"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation-link_client-received": {
@@ -455,7 +491,8 @@
                 "key": "link_age_ms",
                 "description": "Time from when the link is received on BE till it's retrieved on the client (in milliseconds)",
                 "type": "number"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation-link_backend-status_error": {
@@ -478,8 +515,9 @@
                 "key": "error_code",
                 "description": "Backend item error code",
                 "type": "string",
-                "enum": ["server_error", "extraction_error", "request_error"]
-            }
+                "enum": ["server_error", "extraction_error", "request_error", "unknown"]
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_optout_stage_submit-awaiting-email-confirmation": {
@@ -495,7 +533,8 @@
             "dbpAttemptId",
             "dbpActionId",
             "dbpActionDuration",
-            "dbpActionTries"
+            "dbpActionTries",
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation_attempt-start": {
@@ -510,7 +549,8 @@
             "dbpBrokerVersion",
             "dbpConfirmationAttemptNumber",
             "dbpAttemptId",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation_attempt-success": {
@@ -526,7 +566,8 @@
             "dbpConfirmationAttemptNumber",
             "dbpAttemptDuration",
             "dbpAttemptId",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation_attempt-failure": {
@@ -542,7 +583,8 @@
             "dbpConfirmationAttemptNumber",
             "dbpAttemptDuration",
             "dbpAttemptId",
-            "dbpActionId"
+            "dbpActionId",
+            "channel"
         ]
     },
     "m_mac_dbp_service_email-confirmation_max-retries-exceeded": {
@@ -550,7 +592,7 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpBrokerVersion", "dbpAttemptId", "dbpActionId"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpBrokerVersion", "dbpAttemptId", "dbpActionId", "channel"]
     },
     "m_mac_dbp_service_email-confirmation_job-success": {
         "description": "Fired when the email confirmation job finishes successfully (after any number of attempts).",
@@ -563,16 +605,16 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             "dbpDataBroker",
-            "dbpBrokerVersion"
+            "dbpBrokerVersion",
+            "channel"
         ]
     },
     "m_mac_dbp_update_databrokers_success": {
         "description": "Fired when a data broker JSON is updated successfuly.",
-        "owners": ["edulpn", "jozsef-vesza"],
+        "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -588,12 +630,13 @@
                 "key": "removed_at",
                 "description": "Timestamp, in milliseconds, when the broker was removed at (contained on the JSON)",
                 "type": "string"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_update_databrokers_failure": {
         "description": "Fired when a data broker JSON update has failed.",
-        "owners": ["edulpn", "jozsef-vesza"],
+        "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": [
@@ -613,7 +656,13 @@
                 "key": "removed_at",
                 "description": "Timestamp, in milliseconds, when the broker was removed at (contained on the JSON)",
                 "type": "string"
-            }
+            },
+            {
+                "key": "keystoreField",
+                "description": "Present only when the underlying failure is a SecureVault keystore read error. Identifies the keychain account that failed to read (free-form string set by the secure storage layer).",
+                "type": "string"
+            },
+            "channel"
         ]
     },
     "m_mac_wide_pir_opt_out_submission": {
@@ -658,7 +707,8 @@
                 "key": "feature.data.ext.submission_latency_ms",
                 "type": "string",
                 "description": "Duration in milliseconds between the record being found and submission completing"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_wide_pir_scan_attempt": {
@@ -712,15 +762,15 @@
             },
             {
                 "key": "feature.data.ext.scan.free_scan",
-                "type": "string",
-                "description": "Whether this scan attempt belongs to a free (unauthenticated) user",
-                "enum": ["true", "false"]
+                "type": "boolean",
+                "description": "Whether this scan attempt belongs to a free (unauthenticated) user"
             },
             {
                 "key": "feature.data.ext.scan.latency_ms",
                 "type": "string",
                 "description": "Duration in milliseconds between the scan attempt start and completion"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_wide_pir_opt_out_confirmation": {
@@ -765,7 +815,8 @@
                 "key": "feature.data.ext.confirmation_latency_ms",
                 "type": "string",
                 "description": "Duration in milliseconds between the record being found and the opt-out confirmation"
-            }
+            },
+            "channel"
         ]
     },
     "m_mac_dbp_search_stage_main_status_success": {
@@ -791,8 +842,7 @@
             {
                 "key": "is_manual_scan",
                 "description": "Whether the scan was initiated manually by the user",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "vpn_connection_state",
@@ -807,7 +857,8 @@
             },
             "dbpParentBroker",
             "dbpIsAuthenticated",
-            "dbpIsFreeScan"
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_search_stage_main_status_no_results": {
@@ -829,8 +880,7 @@
             {
                 "key": "is_manual_scan",
                 "description": "Whether the scan was initiated manually by the user",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "vpn_connection_state",
@@ -847,7 +897,8 @@
             "dbpActionId",
             "dbpActionType",
             "dbpIsAuthenticated",
-            "dbpIsFreeScan"
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_search_stage_main_status_error": {
@@ -879,8 +930,7 @@
             {
                 "key": "is_manual_scan",
                 "description": "Whether the scan was initiated manually by the user",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             },
             {
                 "key": "vpn_connection_state",
@@ -897,14 +947,15 @@
             "dbpActionId",
             "dbpActionType",
             "dbpIsAuthenticated",
-            "dbpIsFreeScan"
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_data_broker_action-failed_error": {
         "description": "Fired when a scan or opt-out action fails while processing a data broker.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -929,14 +980,15 @@
                 "enum": ["scan", "optOut", "unknown"]
             },
             "dbpParentBroker",
-            "dbpIsFreeScan"
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_data_broker_http_error": {
         "description": "Fired when a data broker scan or opt-out operation fails with an HTTP error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -949,14 +1001,15 @@
                 "description": "The HTTP status code returned by the failing operation",
                 "type": "string"
             },
-            "dbpIsFreeScan"
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_data_broker_other_error": {
         "description": "Fired when a data broker scan or opt-out operation fails with a non-HTTP, non-action error.",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -969,45 +1022,190 @@
                 "description": "The normalized data broker protection error kind",
                 "type": "string"
             },
-            "dbpIsFreeScan"
-        ]
-    },
-    "m_mac_dbp_data_broker_action-payload_typed-fallback_unexpected": {
-        "description": "Fired when a broker action is unexpectedly injected using typed fallback payload instead of raw JSON.",
-        "owners": ["quanganhdo"],
-        "triggers": ["other"],
-        "suffixes": ["legacy_daily_count", "count"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            "dbpDataBroker",
-            "dbpBrokerVersion",
-            "dbpActionType",
-            {
-                "key": "stepType",
-                "description": "Step type where typed-fallback payload injection occurred",
-                "type": "string",
-                "enum": ["scan", "optOut", "unknown"]
-            }
+            "dbpIsFreeScan",
+            "channel"
         ]
     },
     "m_mac_dbp_engagement_dau": {
         "description": "Fired daily for active PIR users",
         "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["scheduled"],
-        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
     },
     "m_mac_dbp_engagement_wau": {
         "description": "Fired weekly for active PIR users",
         "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["scheduled"],
-        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
     },
     "m_mac_dbp_engagement_mau": {
         "description": "Fired monthly for active PIR users",
         "owners": ["quanganhdo", "jozsef-vesza"],
         "triggers": ["scheduled"],
-        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan"]
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
+    },
+    "m_mac_dbp_interaction_dau": {
+        "description": "Fired daily when a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
+    },
+    "m_mac_dbp_interaction_wau": {
+        "description": "Fired weekly when a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
+    },
+    "m_mac_dbp_interaction_mau": {
+        "description": "Fired monthly when a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
+    },
+    "m_mac_dbp_dashboard_open": {
+        "description": "Fired every time a user opens the PIR dashboard",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
+    },
+    "m_mac_dbp_first_scan_u": {
+        "description": "Fired once when a user starts their first scan",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "dbpIsAuthenticated", "dbpIsFreeScan", "channel"]
+    },
+    "m_mac_dbp_freemium_upsell_u": {
+        "description": "Fired once when a freemium PIR user activates a paid subscription. Replaces legacy dbp-free_subscription_u (dual-fired during transition).",
+        "owners": ["quanganhdo", "jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_dbp_freemium_pir_maintenance_scan_skipped": {
+        "description": "Temporary telemetry fired when PIR skips at least one maintenance scan job for an unauthenticated freemium user.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"],
+        "expires": "2026-08-31"
+    },
+    "dbp-free_newtab_scan_impression_u": {
+        "description": "Fires once per user when the Freemium DBP promo banner first becomes eligible to be shown on the New Tab Page, in the pre-scan state (no scan results available yet).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_scan_impression_c": {
+        "description": "Fires every time the user sees the Freemium DBP promo banner on the New Tab Page in the pre-scan state — emitted when the NTP becomes the active tab and the banner is renderable. Counted variant of dbp-free_newtab_scan_impression_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_results_impression_u": {
+        "description": "Fires once per user when the Freemium DBP promo banner first becomes eligible to be shown on the New Tab Page, while showing scan results (one or more matches found).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_results_impression_c": {
+        "description": "Fires every time the user sees the Freemium DBP promo banner on the New Tab Page while it is showing scan results (one or more matches found) — emitted when the NTP becomes the active tab and the banner is renderable. Counted variant of dbp-free_newtab_results_impression_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_no-results_impression_u": {
+        "description": "Fires once per user when the Freemium DBP promo banner first becomes eligible to be shown on the New Tab Page, while showing the no-results state (scan completed with zero matches).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_no-results_impression_c": {
+        "description": "Fires every time the user sees the Freemium DBP promo banner on the New Tab Page while it is showing the no-results state (scan completed with zero matches) — emitted when the NTP becomes the active tab and the banner is renderable. Counted variant of dbp-free_newtab_no-results_impression_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_scan_click_u": {
+        "description": "Fires once per user when they click the scan CTA on the Freemium DBP promo banner on the New Tab Page, in the pre-scan state (no scan results available yet).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_scan_click_c": {
+        "description": "Fires every time the user clicks the scan CTA on the Freemium DBP promo banner on the New Tab Page, in the pre-scan state (no scan results available yet). Counted variant of dbp-free_newtab_scan_click_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_results_click_u": {
+        "description": "Fires once per user when they click the proceed CTA on the Freemium DBP promo banner on the New Tab Page, while the banner is showing scan results (one or more matches found).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_results_click_c": {
+        "description": "Fires every time the user clicks the proceed CTA on the Freemium DBP promo banner on the New Tab Page, while the banner is showing scan results (one or more matches found). Counted variant of dbp-free_newtab_results_click_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_no-results_click_u": {
+        "description": "Fires once per user when they click the proceed CTA on the Freemium DBP promo banner on the New Tab Page, while the banner is showing the no-results state (scan completed with zero matches).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_newtab_no-results_click_c": {
+        "description": "Fires every time the user clicks the proceed CTA on the Freemium DBP promo banner on the New Tab Page, while the banner is showing the no-results state (scan completed with zero matches). Counted variant of dbp-free_newtab_no-results_click_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_overflow_scan_u": {
+        "description": "Fires once per user when they click the Personal Information Removal entry in the More Options menu, before any scan has been completed (pre-scan state).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_overflow_scan_c": {
+        "description": "Fires every time the user clicks the Personal Information Removal entry in the More Options menu, before any scan has been completed (pre-scan state). Counted variant of dbp-free_overflow_scan_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_overflow_results_u": {
+        "description": "Fires once per user when they click the Personal Information Removal entry in the More Options menu, after the first profile has been saved (post-scan state).",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "dbp-free_overflow_results_c": {
+        "description": "Fires every time the user clicks the Personal Information Removal entry in the More Options menu, after the first profile has been saved (post-scan state). Counted variant of dbp-free_overflow_results_u.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "browser_menu_data_broker_protection": {
+        "description": "Fires when the user clicks the Personal Information Removal entry in the More Options menu.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
     },
     "m_mac_dbp_weekly_child-broker_orphaned-optouts": {
         "description": "Fired weekly with metrics about orphaned opt-outs for child brokers",
@@ -1027,26 +1225,27 @@
                 "description": "Number of calculated orphaned records",
                 "type": "number"
             },
-            "dbpIsAuthenticated"
+            "dbpIsAuthenticated",
+            "channel"
         ]
     },
     "m_mac_dbp_event_scanning-events_new-match": {
         "description": "Fired when a new matching profile is found during a scan",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "channel"]
     },
     "m_mac_dbp_event_scanning-events_re-appearance": {
         "description": "Fired when a previously removed profile re-appears on a data broker during a scan",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "channel"]
     },
     "m_mac_dbp_databroker_custom_stats_optoutsubmit": {
         "description": "Fired daily with per-broker opt-out submission success rate stats.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["scheduled"],
         "suffixes": [],
         "parameters": [
@@ -1058,16 +1257,12 @@
                 "description": "The opt-out submission success rate for this broker",
                 "type": "number"
             },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
+            "channel"
         ]
     },
     "m_mac_dbp_custom_stats_optoutsubmit": {
         "description": "Fired daily with global opt-out submission success rate stats.",
-        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
+        "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["scheduled"],
         "suffixes": [],
         "parameters": [
@@ -1078,11 +1273,7 @@
                 "description": "The global opt-out submission success rate",
                 "type": "number"
             },
-            {
-                "key": "click_action_delay_reduction_optimization",
-                "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "boolean"
-            }
+            "channel"
         ]
     }
 }

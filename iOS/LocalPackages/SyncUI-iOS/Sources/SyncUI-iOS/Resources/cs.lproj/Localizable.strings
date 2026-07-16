@@ -1,5 +1,5 @@
-/* Auto-Restore - Description */
-"auto.restore.description" = "Automaticky obnovit data v tomto zařízení, když aplikaci přeinstaluješ.";
+/* No comment provided by engineer. */
+"%@\n%@" = "%@\n%@";
 
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Obnov svou relaci Sync & Backup a obnovíš si záložky, hesla a další položky, anebo pokračuj v nastavování od nuly.";
@@ -28,12 +28,6 @@
 /* Auto-Restore Settings Row - On */
 "auto.restore.settings.row.on" = "Aktivní";
 
-/* Auto-restore section - Footer */
-"auto.restore.toggle.footer" = "Automatická obnova data při opakované instalaci aplikace. Data Sync & Backup nelze obnovit po 18 měsících nečinnosti.";
-
-/* Auto-Restore - Toggle Label */
-"auto.restore.toggle.label" = "Obnovit při přeinstalaci aplikace";
-
 /* Standard Buttons - Back Button */
 "back.button" = "Zpět";
 
@@ -55,32 +49,11 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Je potřeba přístup k fotoaparátu";
 
-/* Camera View - Point Camera Indication */
-"camera.point.camera.indication" = "Pro synchronizaci namiř fotoaparát na QR kód";
-
 /* No comment provided by engineer. */
 "Cancel" = "Zrušit";
 
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Zrušit";
-
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Zapnout synchronizaci a zálohování";
-
-/* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Na zabezpečeném serveru DuckDuckGo se vytvoří šifrovaná záloha záložek a dat automatického vyplňování, kterou můžeš synchronizovat s ostatními zařízeními.";
-
-/* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1-updated" = "Na zabezpečeném serveru DuckDuckGo se vytvoří šifrovaná záloha uložených záložek, hesel, kreditních karet a chatů Duck.ai, kterou můžeš synchronizovat s ostatními zařízeními.\n\n";
-
-/* Connect With Server Sheet - Description Part 2 */
-"connect.with.server.sheet.description.part2" = "Šifrovací klíč se ukládá jenom na tvé zařízení, DuckDuckGo k němu nemá přístup.";
-
-/* Connect With Server Sheet - Footer */
-"connect.with.server.sheet.footer" = "Synchronizaci s dalšími zařízeními můžeš provést později.";
-
-/* Connect With Server Sheet - Title */
-"connect.with.server.sheet.title" = "Synchronizace a záloha tohoto zařízení";
 
 /* Standard Buttons - Copy Button */
 "copy.button" = "Kopírovat";
@@ -97,17 +70,8 @@
 /* Alert title for invalid credit cards being filtered out of synced data */
 "creditCards.invalid.objects.present.title" = "Některé platební karty se nesynchronizují kvůli příliš dlouhému obsahu v určitých polích.";
 
-/* Delete Server Data - Button */
-"delete.server.data" = "Vypnout a smazat data serveru...";
-
 /* No comment provided by engineer. */
 "Dev environment" = "Vývojářské prostředí";
-
-/* Device SyncedSheet Button to go get DuckDuckGo on other devices */
-"device.synced.sheet.button.get.other.devices" = "Získat DuckDuckGo na jiných zařízeních";
-
-/* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Tvoje data už se zase synchronizují!";
 
 /* Standard Buttons - Done Button */
 "done.button" = "Hotovo";
@@ -127,38 +91,17 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Stáhnout chybějící ikony?";
 
-/* Options - Fetch Favicons Description */
-"fetch.favicons.option.caption" = "Automatické stahování ikon synchronizovaných záložek. Stažené ikony jsou vidět ve tvé síti.";
-
 /* Options - Fetch Favicons Title */
 "fetch.favicons.option.title" = "Automatické stahování ikon";
 
 /* No comment provided by engineer. */
 "Keep Development" = "Nechat vývojovou verzi";
 
-/* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
-"manually.enter.code.instruction.attributed" = "V aplikaci DuckDuckGo na synchronizovaném zařízení přejdi do %1$@ a vyber %2$@. Pro synchronizaci tohoto zařízení už stačí jen vložit kód.";
-
 /* Manually Enter Code View - Title */
 "manually.enter.code.title" = "Ruční zadání kódu";
 
-/* Manually Enter Code View - Validating Code Action */
-"manually.enter.code.validating.code.action" = "Ověřování kódu";
-
-/* Manually Enter Code View - Validating Code Failed Action */
-"manually.enter.code.validating.code.failed.action" = "Neplatný kód.";
-
-/* Standard Buttons - Next Button */
-"next.button" = "Další";
-
 /* Standard Buttons - Not Now Button */
 "not.now.button" = "Teď ne";
-
-/* Options - Section Header */
-"options.section.header" = "Možnosti";
-
-/* Section header for other syncing options */
-"other.options.section.header" = "Další možnosti";
 
 /* Standard Buttons - Paste Button */
 "paste.button" = "Vložit";
@@ -172,20 +115,8 @@
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Spravovat platební karty…";
 
-/* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Tvoje záložky a data automatického vyplňování připravujeme na synchronizaci. Nemělo by to trvat dlouho.";
-
-/* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description-updated" = "Tvoje záložky, hesla a chaty Duck.ai připravujeme k synchronizaci. Nemělo by to trvat dlouho.";
-
-/* Preparing To Sync Sheet - Footer */
-"preparing.to.sync.sheet.footer" = "Připojování...";
-
-/* Preparing To Sync Sheet - Title */
-"preparing.to.sync.sheet.title" = "Nastavení synchronizace a zálohování";
-
-/* Link label for recovering synced data */
-"recover.synced.data.link" = "Obnovit synchronizovaná data";
+/* Preparing to sync title */
+"preparing.to.sync.title" = "Příprava na synchronizaci";
 
 /* Recover Synced Data Sheet - Button */
 "recover.synced.data.sheet.button" = "Obnovení synchronizovaných dat";
@@ -214,86 +145,8 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Smazat zařízení?";
 
-/* Save Recovery Code Sheet - Card Title */
-"save.recovery.code.card.title" = "Kód pro obnovení";
-
-/* Save Recovery Code Sheet - Copy Code Toast */
-"save.recovery.code.code.copied.button" = "Kód pro obnovení je zkopírovaný do schránky";
-
-/* Save Recovery Code Sheet - Copy Code Button */
-"save.recovery.code.copy.code.button" = "Kopírovat kód";
-
-/* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Stáhnout jako PDF";
-
-/* Save Recovery Code Sheet - Footer */
-"save.recovery.code.sheet.footer" = "Kdokoli s přístupem k tomuhle kódu může získat přístup ke tvým synchronizovaným datům, proto ho uchovávej na bezpečném místě.";
-
-/* Recovery Code Sheet - Description */
-"save.recovery.key.body" = "Ulož si tento kód, abys sis mohl(a) obnovit svá data, pokud ztratíš přístup k tomuto zařízení – bezpečně si ho uschovej.";
-
-/* Recovery Code Sheet - Title */
-"save.recovery.key.title" = "Snadné obnovení dat";
-
-/* Save RecoveryPDF - Button */
-"save.recovery.pdf.button" = "Uložit PDF pro obnovení";
-
-/* Save RecoveryPDF - Footer + Learn More, with markdown link */
-"save.recovery.pdf.footer" = "Použij tento kód k případnému obnovení dat, pokud ztratíš přístup k tomuto zařízení. Data Sync & Backup nelze obnovit po 18 měsících nečinnosti. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
-
-/* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
-"scan.code.to.recover.synced.data.enter.code.link" = "Zadat textový kód ručně";
-
-/* Scan Or Enter Code To Recover Synced Data View - Explanation */
-"scan.code.to.recover.synced.data.explanation" = "Naskenuj QR kód ze souboru PDF pro obnovení nebo jiného synchronizovaného zařízení a obnov svá data.";
-
-/* Scan Or Enter Code To Recover Synced Data View - Footer */
-"scan.code.to.recover.synced.data.footer" = "Skenování nefunguje?";
-
-/* Scan Or Enter Code To Recover Synced Data View - Title */
-"scan.code.to.recover.synced.data.title" = "Obnovit synchronizovaná data";
-
-/* Scan or See Code View - Footer */
-"scan.or.see.code.footer" = "Nemůžeš skenovat?";
-
-/* Scan or See Code View - Instruction */
-"scan.or.see.code.instruction" = "Přejdi na jiném zařízení v prohlížeči DuckDuckGo do Nastavení › Synchronizace a zálohování a vyber možnost Synchronizace s jiným zařízením.";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.instruction.attributed" = "Přejdi na jiném zařízení v prohlížeči DuckDuckGo do %@ a vyber možnost Synchronizace s jiným zařízením.";
-
-/* Scan or See Code View - Manually Enter Code Link */
-"scan.or.see.code.manually.enter.code.link" = "Ruční zadání kódu";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.other.device.instruction.attributed" = "Otevři aplikaci DuckDuckGo na druhém zařízení a přejdi na %@.";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.instructions.body" = "Pro synchronizaci naskenuj tenhle kód pomocí jiného zařízení.";
-
-/* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.instructions.title" = "Z mobilu na mobil?";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.qr.instructions.body" = "Pro synchronizaci spusť DuckDuckGo na svém druhém zařízení a naskenuj kód.";
-
-/* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.qr.instructions.title" = "Nebo skenuj pomocí DuckDuckGo na svém druhém zařízení.";
-
-/* Scan or See Code View - Share Code Link */
-"scan.or.see.code.share.code.link" = "Sdílet textový kód?";
-
-/* Scan or See Code View - Title */
-"scan.or.see.code.title" = "Skenování QR kódu";
-
 /* No comment provided by engineer. */
 "Switch to Production" = "Přepnout na produkční verzi";
-
-/* Link label for syncing and backing up the device */
-"sync.and.backup.this.device.link" = "Synchronizace a záloha tohoto zařízení";
-
-/* Button to get DuckDuckGo on other devices */
-"sync.get.other.devices" = "Získat DuckDuckGo na jiných zařízeních";
 
 /* Button title to share link for downloading DuckDuckGo on other devices */
 "sync.get.other.devices.card.button.title" = "Sdílet odkaz ke stažení";
@@ -310,9 +163,6 @@
 /* Message included when sharing a url via the system share sheet */
 "sync.get.other.devices.share.link.message" = "Nainstaluj si do svých zařízení prohlížeč DuckDuckGo a začni bezpečně synchronizovat svoje záložky a data automatického vyplňování:";
 
-/* Sync Menu Path */
-"sync.menu.path" = "Nastavení > Synchronizace a zálohování > Synchronizace s jiným zařízením";
-
 /* Sync passcode required alert - button */
 "sync.passcode.required.alert.go.to.settings.button" = "Přejdi do Nastavení";
 
@@ -324,6 +174,114 @@
 
 /* Sync Settings - Recovery section header */
 "sync.settings.recovery.section.header" = "Obnova";
+
+/* Sync settings 'Already set up' section header containing useful options */
+"sync.simplified.already.set.up.section.header" = "Už máš nastaveno na jiném zařízení?";
+
+/* Prompt body text after enabling sync */
+"sync.simplified.another.device.body" = "Záložky, data pro automatické vyplnění a chaty Duck.ai jsou bezpečně zálohované. Nyní je můžeš synchronizovat s počítačem nebo tabletem.";
+
+/* Primary button to sync another device when sync is enabled */
+"sync.simplified.another.device.button" = "Synchronizovat s jiným zařízením";
+
+/* Prompt secondary button */
+"sync.simplified.another.device.notnow" = "Teď ne";
+
+/* Prompt title after enabling sync */
+"sync.simplified.another.device.title" = "Synchronizovat data s jiným zařízením?";
+
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Načte ikony z webových stránek uložených do záložek. Stažené ikony jsou vidět ve tvé síti.";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Záložky";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Používej stejné oblíbené záložky na mobilu i počítači.";
+
+/* Text shown next to toggle while sync is being set up */
+"sync.simplified.connecting" = "Připojování...";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Kopírovat kód pro obnovení";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Vypnout synchronizaci a smazat data na serveru";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Stáhnout kód pro obnovení";
+
+/* Button subtitle to get the DuckDuckGo desktop browser */
+"sync.simplified.get.desktop.browser.subtitle" = "DuckDuckGo pro Mac a Windows";
+
+/* Button title to get the DuckDuckGo desktop browser. */
+"sync.simplified.get.desktop.browser.title" = "Nainstalovat prohlížeč pro počítač";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message" = "Ukládej si záložky, data pro automatické vyplnění a chaty Duck.ai a synchronizuj je mezi svými zařízeními se šifrováním end-to-end.";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic" = "Ukládej si záložky a data pro automatické vyplnění a synchronizuj je mezi svými zařízeními se šifrováním end-to-end.";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Použij tento kód k případnému obnovení dat, pokud ztratíš přístup k tomuto zařízení. Data Sync & Backup nelze obnovit po 18 měsících nečinnosti. [Více informací](%@)";
+
+/* Part of instruction prompt referring to the DuckDuckGo app. */
+"sync.simplified.scan-or-view-code.app.name" = "Aplikace DuckDuckGo";
+
+/* Floating prompt over QR code scanner preview */
+"sync.simplified.scan-or-view-code.camera.prompt" = "Namiř fotoaparát na QR kód a naskenuj ho";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Připojování...";
+
+/* Instruction shown during sync setup flow. */
+"sync.simplified.scan-or-view-code.connecting.title" = "End-to-end šifrované na všech tvých zařízeních.";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Po vložení kódu se vrať zpět na toto zařízení.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Vlož kód do svého druhého zařízení.";
+
+/* Button to navigate to manual sync code entry */
+"sync.simplified.scan-or-view-code.manually.enter.code" = "Ruční zadání kódu";
+
+/* Instructions on manual sync code entry screen. **bold** marks are rendered as bold text. */
+"sync.simplified.scan-or-view-code.paste.code.instructions" = "V aplikaci DuckDuckGo na synchronizovaném zařízení přejdi do **Nastavení > Sync & Backup > Synchronizovat s jiným zařízením** a vyber **Zobrazit textový kód**. Pro synchronizaci tohoto zařízení stačí už jen vložit kód.";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Ověřování kódu";
+
+/* First line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line1" = "Otevři aplikaci DuckDuckGo na druhém zařízení.";
+
+/* Second line of QR code scanning instructions */
+"sync.simplified.scan-or-view-code.scan.instructions.line2" = "QR kód najdeš v Nastavení > Sync & Backup > Synchronizace s jiným zařízením.";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Sdílet kód";
+
+/* Button title to show QR code scanner */
+"sync.simplified.scan-or-view-code.tab.scan" = "Skenování QR kódu";
+
+/* Button title to view your sync code */
+"sync.simplified.scan-or-view-code.tab.view.code" = "Zobrazit kód";
+
+/* Navigation title for simplified QR scanning screen */
+"sync.simplified.scan-or-view-code.title" = "Synchronizace tvých zařízení";
+
+/* Instructions on sync QR code display screen (will be shown above the DuckDuckGo app icon and name) */
+"sync.simplified.scan-or-view-code.view.instructions" = "Naskenuj nebo vlož tento kód na druhém zařízení.";
+
+/* Sync & Backup enabled / disabled toggle title */
+"sync.simplified.toggle.title" = "Synchronizace a zálohování";
+
+/* Use Recovery Code sync setup button label */
+"sync.simplified.use.recovery.code.button" = "Použít kód pro obnovení";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Synchronizovat s jiným zařízením";
 
 /* Sync & Backup Title */
 "sync.title" = "Synchronizace a zálohování";
@@ -337,47 +295,14 @@
 /* Title of the warning message */
 "sync.warning.sync.unavailable" = "Synchronizace a zálohování není k dispozici";
 
-/* Button label for syncing with another device */
-"sync.with.another.device.button" = "Synchronizovat s jiným zařízením";
-
-/* Footer message for syncing with another device */
-"sync.with.another.device.footer" = "U tvých dat se uplatňuje end-to-end šifrování a DuckDuckGo nemá přístup k šifrovacímu klíči.";
-
-/* Message for syncing with another device */
-"sync.with.another.device.message" = "Bezpečně synchronizuj záložky a hesla mezi svými zařízeními.";
-
-/* Message for syncing with another device */
-"sync.with.another.device.message-updated" = "Bezpečně synchronizuj záložky, data pro automatické vyplnění a chaty Duck.ai mezi svými zařízeními.";
-
-/* Title for syncing with another device */
-"sync.with.another.device.title" = "Zahájení synchronizace";
-
 /* Synced Devices - Section Header */
 "synced.devices.section.header" = "Synchronizovaná zařízení";
-
-/* Synced Devices - Sync with Another Device Label */
-"synced.devices.sync.with.another.device.label" = "Synchronizovat s jiným zařízením";
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Tohle zařízení";
 
-/* Turn Sync Off - Button */
-"turn.sync.off" = "Vypnout synchronizaci a zálohování...";
-
-/* Sync enabled - footer description of data that is syncing */
-"turn.sync.off.section.footer" = "Záložky, data pro automatické vyplnění a chaty Duck.ai jsou aktuálně synchronizované na všech tvých zařízeních.";
-
-/* Turn Sync Off - Section Header */
-"turn.sync.off.section.header" = "Synchronizace je aktivní";
-
-/* Options - Unify Favorites Instruction */
-"unified.favorites.instruction" = "Používej na všech svých zařízeních stejné oblíbené záložky. Nech volbu vypnutou, pokud chceš mít záložky na mobilu a na počítači oddělené.";
-
 /* Options - Unify Favorites Title */
 "unified.favorites.title" = "Sjednocení oblíbených položek napříč zařízeními";
-
-/* View Text Code menu item */
-"view.text.code.menu.item" = "Zobrazit textový kód";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Používáš synchronizaci vývojového prostředí";

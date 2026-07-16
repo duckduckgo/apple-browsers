@@ -40,6 +40,7 @@ final class UnloadedTabViewModel: TabBarViewModel, Previewable {
 
     // MARK: - TabBarViewModel
 
+    var uuid: TabIdentifier { unloadedTab.uuid }
     var tabContent: Tab.TabContent { unloadedTab.content }
     var isPinned: Bool { false }
     var title: String {

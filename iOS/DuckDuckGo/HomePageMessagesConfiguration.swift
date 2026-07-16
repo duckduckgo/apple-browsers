@@ -22,8 +22,14 @@ import Foundation
 protocol HomePageMessagesConfiguration {
     var homeMessages: [HomeMessage] { get }
 
-    func refresh()
+    func refresh(openedAfterIdle: Bool)
     
     func dismissHomeMessage(_ homeMessage: HomeMessage) async
     func didAppear(_ homeMessage: HomeMessage)
+}
+
+extension HomePageMessagesConfiguration {
+    func refresh() {
+        refresh(openedAfterIdle: false)
+    }
 }

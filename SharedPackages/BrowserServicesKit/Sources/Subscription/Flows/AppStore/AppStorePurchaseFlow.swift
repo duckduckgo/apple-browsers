@@ -21,6 +21,7 @@ import StoreKit
 import os.log
 import Networking
 import Common
+import FoundationExtensions
 import PixelKit
 
 public enum AppStorePurchaseFlowError: DDGError {
@@ -93,7 +94,7 @@ public enum AppStorePurchaseFlowError: DDGError {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public protocol AppStorePurchaseFlow {
     typealias TransactionJWS = String
     typealias PurchaseResult = (transactionJWS: TransactionJWS, accountCreationDuration: WideEvent.MeasuredInterval?)
@@ -121,7 +122,7 @@ public protocol AppStorePurchaseFlow {
     func changeTier(to subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError>
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
     private let subscriptionManager: any SubscriptionManager
     private let storePurchaseManager: any StorePurchaseManager
@@ -281,7 +282,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
 
     private func getExpiredSubscriptionID() async -> String? {
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else { return nil }
             // Only return an externalID if the subscription is expired so to prevent creating multiple subscriptions in the same account
             if !subscription.isActive,
                subscription.platform != .apple {

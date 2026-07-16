@@ -23,8 +23,48 @@ import UniformTypeIdentifiers
 import Core
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import DesignResourcesKit
 import PixelKit
+
+enum DataImportFileError {
+    case unsupportedFile
+    case noDataInZip
+    case fileUnreadable(fileType: String)
+
+    var title: String {
+        switch self {
+        case .unsupportedFile:
+            return UserText.fileImportErrorUnsupportedTitle
+        case .noDataInZip:
+            return UserText.fileImportErrorNoDataTitle
+        case .fileUnreadable:
+            return UserText.fileImportErrorCorruptTitle
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .unsupportedFile:
+            return UserText.fileImportErrorUnsupportedMessage
+        case .noDataInZip:
+            return UserText.fileImportErrorNoDataMessage
+        case .fileUnreadable(let fileType):
+            return String(format: UserText.fileImportErrorCorruptMessage, fileType)
+        }
+    }
+
+    var legacyMessage: String {
+        switch self {
+        case .unsupportedFile:
+            return UserText.dataImportFailedUnsupportedFileErrorMessage
+        case .noDataInZip:
+            return UserText.dataImportFailedNoDataInZipErrorMessage
+        case .fileUnreadable(let fileType):
+            return String(format: UserText.dataImportFailedReadErrorMessage, fileType)
+        }
+    }
+}
 
 protocol DataImportViewModelDelegate: AnyObject {
     func dataImportViewModelDidRequestImportFile(_ viewModel: DataImportViewModel)
@@ -38,13 +78,14 @@ final class DataImportViewModel: ObservableObject {
         case passwords
         case bookmarks
         case settings
+        case completeSetup = "complete_setup"
         case promo
         case inBrowserPromo = "in_browser_promo"
-        case whatsNew
+        case whatsNew = "whats_new"
 
         var documentTypes: [UTType] {
             switch self {
-            case .passwords, .settings, .promo, .inBrowserPromo, .whatsNew: return [.zip, .commaSeparatedText]
+            case .passwords, .settings, .completeSetup, .promo, .inBrowserPromo, .whatsNew: return [.zip, .commaSeparatedText]
             case .bookmarks: return [.zip, .html]
             }
         }
@@ -154,9 +195,9 @@ final class DataImportViewModel: ObservableObject {
         var image: Image {
             switch importScreen {
             case .bookmarks:
-                return Image(.bookmarksImport96)
+                return Image(rebrandable: "Bookmarks-Import-96")
             default:
-                return Image(.passwordsImport128)
+                return Image(rebrandable: "Passwords-Import-128")
             }
         }
 
@@ -197,8 +238,10 @@ final class DataImportViewModel: ObservableObject {
     }
 
     weak var delegate: DataImportViewModelDelegate?
+    var onFileError: ((DataImportFileError) -> Void)?
 
     private let importManager: DataImportManaging
+    private let shouldFireLegacyPixels: Bool
 
     @Published var state: BrowserImportState
     @Published var isLoading = false
@@ -221,8 +264,12 @@ final class DataImportViewModel: ObservableObject {
         }
     }
 
-    init(importScreen: ImportScreen, importManager: DataImportManaging, wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent) {
+    init(importScreen: ImportScreen,
+         importManager: DataImportManaging,
+         shouldFireLegacyPixels: Bool = true,
+         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent) {
         self.importManager = importManager
+        self.shouldFireLegacyPixels = shouldFireLegacyPixels
         self.state = BrowserImportState(browser: .safari, importScreen: importScreen)
         self.wideEvent = wideEvent
     }
@@ -256,21 +303,21 @@ final class DataImportViewModel: ObservableObject {
                 case .none:
                     DispatchQueue.main.async { [weak self] in
                         self?.isLoading = false
-                        ActionMessageView.present(message: UserText.dataImportFailedNoDataInZipErrorMessage)
+                        self?.presentFileError(.noDataInZip)
                     }
                     let error = dataImportWideEventError.noSupportedDataInZip
                     completeAndCleanupWideEvent(with: .failure, error: error, description: error.description)
-                    Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+                    fireLegacyResultPixel(.importResultUnzipping)
                 default:
                     delegate?.dataImportViewModelDidRequestPresentDataPicker(self, contents: contents)
                 }
             } catch {
                 DispatchQueue.main.async { [weak self] in
                     self?.isLoading = false
-                    ActionMessageView.present(message: String(format: UserText.dataImportFailedReadErrorMessage, UserText.dataImportFileTypeZip))
+                    self?.presentFileError(.fileUnreadable(fileType: UserText.dataImportFileTypeZip))
                 }
                 completeAndCleanupWideEvent(with: .failure, error: error, description: "The zip file could not be read.")
-                Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+                fireLegacyResultPixel(.importResultUnzipping)
             }
         default:
             importFile(at: url, for: type)
@@ -368,22 +415,37 @@ final class DataImportViewModel: ObservableObject {
         switch fileType {
         case .csv:
             fileName = UserText.dataImportFileTypeCsv
-            Pixel.fire(pixel: .importResultPasswordsParsing, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+            fireLegacyResultPixel(.importResultPasswordsParsing)
         case .html:
             fileName = UserText.dataImportFileTypeHtml
-            Pixel.fire(pixel: .importResultBookmarksParsing, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+            fireLegacyResultPixel(.importResultBookmarksParsing)
         case .zip:
             fileName = UserText.dataImportFileTypeZip
-            Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+            fireLegacyResultPixel(.importResultUnzipping)
         case .json:
-            // JSON files aren't supported for standalone import (only as part of a zip archive)
             return
         }
 
-        DispatchQueue.main.async {
-            ActionMessageView.present(message: String(format: UserText.dataImportFailedReadErrorMessage, fileName))
+        DispatchQueue.main.async { [weak self] in
+            self?.presentFileError(.fileUnreadable(fileType: fileName))
         }
      }
+
+    private func presentFileError(_ error: DataImportFileError) {
+        if let onFileError {
+            onFileError(error)
+        } else {
+            ActionMessageView.present(message: error.legacyMessage)
+        }
+    }
+
+    private func fireLegacyResultPixel(_ pixel: Pixel.Event) {
+        guard shouldFireLegacyPixels else {
+            return
+        }
+
+        Pixel.fire(pixel: pixel, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+    }
 
 }
 

@@ -69,16 +69,30 @@ struct AutofillSettingsView: View {
                     Button {
                         viewModel.navigateToFileImport()
                     } label: {
-                        Text(UserText.autofillEmptyViewImportButtonTitle)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                        HStack {
+                            Image(uiImage: DesignSystemImages.Color.Size24.`import`)
+                            Text(UserText.autofillEmptyViewImportButtonTitle)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                            Spacer()
+
+                            SettingsCellComponents.chevron
+                        }
                     }
                     Button {
                         viewModel.navigateToImportViaSync()
                     } label: {
-                        Text(UserText.autofillEmptyViewImportViaSyncButtonTitle)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                        HStack {
+                            Image(uiImage: DesignSystemImages.Color.Size24.sync)
+                            Text(UserText.autofillEmptyViewImportViaSyncButtonTitle)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                            Spacer()
+
+                            SettingsCellComponents.chevron
+                        }
                     }
                 } else {
                     Button {
@@ -86,7 +100,7 @@ struct AutofillSettingsView: View {
                     } label: {
                         Text(UserText.autofillEmptyViewImportButtonTitle)
                             .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .accent))
+                            .foregroundColor(Color(designSystemColor: .accentPrimary))
                     }
                 }
             }
@@ -106,7 +120,21 @@ struct AutofillSettingsView: View {
                             viewModel.resetExcludedSites()
                         } label: {
                             Text(UserText.autofillNeverSavedSettings)
-                                .foregroundColor(Color(designSystemColor: .accent))
+                                .foregroundColor(Color(designSystemColor: .accentPrimary))
+                        }
+                        .confirmationDialog(
+                            "",
+                            isPresented: $viewModel.showingResetConfirmation,
+                            titleVisibility: .hidden
+                        ) {
+                            Button(UserText.autofillResetNeverSavedActionConfirmButton, role: .destructive) {
+                                viewModel.confirmResetExcludedSites()
+                            }
+                            Button(UserText.autofillResetNeverSavedActionCancelButton, role: .cancel) {
+                                viewModel.cancelResetExcludedSites()
+                            }
+                        } message: {
+                            Text(UserText.autofillResetNeverSavedActionTitle)
                         }
                     }
                 }
@@ -115,20 +143,6 @@ struct AutofillSettingsView: View {
 
         }
         .applyInsetGroupedListStyle()
-        .confirmationDialog(
-            "",
-            isPresented: $viewModel.showingResetConfirmation,
-            titleVisibility: .hidden
-        ) {
-            Button(UserText.autofillResetNeverSavedActionConfirmButton, role: .destructive) {
-                viewModel.confirmResetExcludedSites()
-            }
-            Button(UserText.autofillResetNeverSavedActionCancelButton, role: .cancel) {
-                viewModel.cancelResetExcludedSites()
-            }
-        } message: {
-            Text(UserText.autofillResetNeverSavedActionTitle)
-        }
         .onAppear {
             viewModel.refreshData()
         }
@@ -160,9 +174,7 @@ struct AutofillSettingsView: View {
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
 
-                Image(systemName: "chevron.forward")
-                    .font(Font.system(.footnote).weight(.bold))
-                    .foregroundColor(Color(UIColor.tertiaryLabel))
+                SettingsCellComponents.chevron
             }
         }
     }
@@ -182,9 +194,7 @@ struct AutofillSettingsView: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
 
-                Image(systemName: "chevron.forward")
-                    .font(Font.system(.footnote).weight(.bold))
-                    .foregroundColor(Color(UIColor.tertiaryLabel))
+                SettingsCellComponents.chevron
             }
         }
     }
@@ -196,7 +206,7 @@ struct AutofillSettingsView: View {
         var body: some View {
             return Toggle(title, isOn: $toggleStatus)
                 .toggleStyle(.switch)
-                .tint(Color(designSystemColor: .accent))
+                .tint(Color(designSystemColor: .accentPrimary))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .daxBodyRegular()
         }

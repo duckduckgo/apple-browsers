@@ -19,7 +19,9 @@
 import AIChat
 import Combine
 import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import OSLog
 import UserScript
 import WebKit
@@ -30,6 +32,10 @@ struct PageContextCollectionPayload: Codable {
 
 struct PageContextResponse: Codable {
     let pageContext: AIChatPageContextData?
+}
+
+struct SelectionContextResponse: Codable {
+    let selections: [AIChatSelectionContextData]
 }
 
 final class PageContextUserScript: NSObject, Subfeature {

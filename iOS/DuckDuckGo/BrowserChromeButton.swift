@@ -18,7 +18,9 @@
 //
 
 import UIKit
+import ObjectiveC
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class BrowserChromeButton: UIButton {
 
@@ -106,6 +108,14 @@ class BrowserChromeButton: UIButton {
 
     func setImage(_ image: UIImage?) {
         configuration?.image = image
+    }
+
+    var hasImage: Bool {
+        configuration?.image != nil
+    }
+
+    var hasTitle: Bool {
+        !(configuration?.title?.isEmpty ?? true) || !(currentTitle?.isEmpty ?? true)
     }
 
     override func setNeedsDisplay() {
@@ -229,19 +239,34 @@ private extension UIButton.Configuration {
 
 extension BrowserChromeButton {
 
-    static func createToolbarButtonItem(title: String, image: UIImage?, action: (() -> Void)? = nil) -> UIBarButtonItem {
+    static func createToolbarButton(title: String, image: UIImage?, fixedWidth: CGFloat? = 34, action: (() -> Void)? = nil) -> BrowserChromeButton {
         let button = BrowserChromeButton(.toolbar)
-        if let image = image {
+        if let image {
             button.setImage(image)
+        } else {
+            // Text buttons (no icon) render `title` as their visible label; icon buttons use it only for accessibility.
+            button.setTitle(title, for: .normal)
         }
 
-        if let action = action {
-            button.addAction(UIAction{ _ in
+        if let action {
+            button.addAction(UIAction { _ in
                 action()
             }, for: .touchUpInside)
         }
 
-        button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        button.accessibilityLabel = title
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        // Icon buttons use a fixed width; text buttons pass nil and size to their title (see applyTextConstraints).
+        if let fixedWidth {
+            button.widthAnchor.constraint(equalToConstant: fixedWidth).isActive = true
+        }
+
+        return button
+    }
+
+    static func createToolbarButtonItem(title: String, image: UIImage?, fixedWidth: CGFloat? = 34, action: (() -> Void)? = nil) -> UIBarButtonItem {
+        let button = createToolbarButton(title: title, image: image, fixedWidth: fixedWidth, action: action)
 
         let barItem = UIBarButtonItem(customView: button)
 
@@ -254,4 +279,135 @@ extension BrowserChromeButton {
         return barItem
     }
 
+}
+
+extension UIButton {
+
+    func setMenuAlertVisible(_ isVisible: Bool, animated: Bool = true) {
+        let state = menuAlertState
+        let isChangingVisibility = state.isVisible != isVisible
+        state.isVisible = isVisible
+        state.cancelAnimation()
+        setMenuAlertIconTransform(.identity)
+
+        let updateIcon = {
+            self.setMenuAlertImage(isVisible ? DesignSystemImages.Glyphs.Size24.menuHamburgerAlert : DesignSystemImages.Glyphs.Size24.menuHamburger)
+            self.setMenuAlertDotHidden(!isVisible)
+        }
+
+        guard animated, isVisible, isChangingVisibility else {
+            updateIcon()
+            return
+        }
+
+        // Matches `TabSwitcherStaticButton.animateUpdate`.
+        let shrinkAnimator = UIViewPropertyAnimator(duration: 0.25, curve: .easeIn) {
+            self.setMenuAlertIconTransform(CGAffineTransform(scaleX: 0.5, y: 0.5))
+        }
+
+        let expandAnimator = UIViewPropertyAnimator(duration: 0.8, dampingRatio: 0.3) {
+            self.setMenuAlertIconTransform(.identity)
+        }
+
+        state.shrinkAnimator = shrinkAnimator
+        state.expandAnimator = expandAnimator
+
+        shrinkAnimator.addCompletion { [weak self, weak state] position in
+            guard let self, let state, state.isVisible, position == .end else { return }
+            updateIcon()
+            self.setMenuAlertIconTransform(CGAffineTransform(scaleX: 0.5, y: 0.5))
+            state.shrinkAnimator = nil
+            expandAnimator.startAnimation()
+        }
+
+        expandAnimator.addCompletion { [weak state] _ in
+            state?.expandAnimator = nil
+        }
+
+        shrinkAnimator.startAnimation()
+    }
+
+    private var menuAlertState: MenuAlertButtonState {
+        if let state = objc_getAssociatedObject(self, &menuAlertButtonStateKey) as? MenuAlertButtonState {
+            return state
+        }
+
+        let state = MenuAlertButtonState()
+        objc_setAssociatedObject(self, &menuAlertButtonStateKey, state, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return state
+    }
+
+    private func setMenuAlertImage(_ image: UIImage?) {
+        if let browserChromeButton = self as? BrowserChromeButton {
+            browserChromeButton.setImage(image)
+        } else if configuration != nil {
+            configuration?.image = image
+        } else {
+            setImage(image, for: .normal)
+        }
+    }
+
+    private func setMenuAlertDotHidden(_ hidden: Bool) {
+        guard !hidden else {
+            menuAlertDotImageViewIfPresent?.isHidden = true
+            return
+        }
+
+        let dotImageView = menuAlertDotImageView()
+        dotImageView.isHidden = false
+        dotImageView.tintColor = UIColor(designSystemColor: .accentPrimary)
+        bringSubviewToFront(dotImageView)
+    }
+
+    private func setMenuAlertIconTransform(_ transform: CGAffineTransform) {
+        imageView?.transform = transform
+        menuAlertDotImageViewIfPresent?.transform = transform
+    }
+
+    private var menuAlertDotImageViewIfPresent: UIImageView? {
+        subviews.first { $0.tag == MenuAlertMetrics.dotViewTag } as? UIImageView
+    }
+
+    private func menuAlertDotImageView() -> UIImageView {
+        if let menuAlertDotImageView = menuAlertDotImageViewIfPresent {
+            return menuAlertDotImageView
+        }
+
+        let imageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.menuHamburgerAlertDot)
+        imageView.tag = MenuAlertMetrics.dotViewTag
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.isUserInteractionEnabled = false
+        imageView.tintColor = UIColor(designSystemColor: .accentPrimary)
+        imageView.accessibilityElementsHidden = true
+
+        addSubview(imageView)
+        NSLayoutConstraint.activate([
+            imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: MenuAlertMetrics.iconSize),
+            imageView.heightAnchor.constraint(equalToConstant: MenuAlertMetrics.iconSize),
+        ])
+
+        return imageView
+    }
+}
+
+private enum MenuAlertMetrics {
+    static let dotViewTag = 0xDDBA7
+    static let iconSize: CGFloat = 24
+}
+
+private var menuAlertButtonStateKey: UInt8 = 0
+
+private final class MenuAlertButtonState {
+    var isVisible = false
+    var shrinkAnimator: UIViewPropertyAnimator?
+    var expandAnimator: UIViewPropertyAnimator?
+
+    func cancelAnimation() {
+        shrinkAnimator?.stopAnimation(true)
+        expandAnimator?.stopAnimation(true)
+        shrinkAnimator = nil
+        expandAnimator = nil
+    }
 }

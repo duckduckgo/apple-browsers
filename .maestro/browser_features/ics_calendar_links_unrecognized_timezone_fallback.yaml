@@ -1,0 +1,24 @@
+# ics_calendar_links_unrecognized_timezone_fallback.yaml
+# .ics with an unresolvable TZID should fall back to QuickLook (and show the
+# unsupported-timezone toast).
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+
+---
+
+- runFlow:
+    file: ../shared/setup.yaml
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/features/download/calendar-unrecognized-timezone.ics"
+- pressKey: Enter
+
+- extendedWaitUntil:
+    visible:
+        id: "QLOverlayDoneButtonAccessibilityIdentifier"
+    timeout: 10000

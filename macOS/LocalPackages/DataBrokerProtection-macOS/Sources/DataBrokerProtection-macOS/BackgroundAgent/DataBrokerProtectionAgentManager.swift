@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import Configuration
 import PixelKit
@@ -28,6 +29,7 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import DataBrokerProtectionDebugServer
 import PrivacyConfig
 import FeatureFlags
 
@@ -44,7 +46,7 @@ public class DataBrokerProtectionAgentManagerProvider {
                                     featureFlagger: DBPFeatureFlagging,
                                     wideEvent: WideEventManaging,
                                     vpnBypassService: VPNBypassFeatureProvider,
-                                    applicationNameForUserAgent: String?) -> DataBrokerProtectionAgentManager? {
+                                    applicationNameForUserAgentProvider: @escaping () -> String?) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")
             return nil
@@ -64,24 +66,7 @@ public class DataBrokerProtectionAgentManagerProvider {
 
         let ipcServer = DefaultDataBrokerProtectionIPCServer(machServiceName: Bundle.main.bundleIdentifier!)
 
-        let features = ContentScopeFeatureToggles(emailProtection: false,
-                                                  emailProtectionIncontextSignup: false,
-                                                  credentialsAutofill: false,
-                                                  identitiesAutofill: false,
-                                                  creditCardsAutofill: false,
-                                                  credentialsSaving: false,
-                                                  passwordGeneration: false,
-                                                  inlineIconCredentials: false,
-                                                  thirdPartyCredentialsProvider: false,
-                                                  unknownUsernameCategorization: false,
-                                                  partialFormSaves: false,
-                                                  passwordVariantCategorization: false,
-                                                  inputFocusApi: false,
-                                                  autocompleteAttributeSupport: false)
-        let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
-                                                            sessionKey: UUID().uuidString,
-                                                            messageSecret: UUID().uuidString,
-                                                            featureToggles: features)
+        let contentScopeProperties = ContentScopeProperties.contentScopePropertiesForDBP()
 
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
@@ -101,7 +86,8 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                         vault: vault,
                                                         pixelHandler: sharedPixelsHandler,
                                                         runTypeProvider: dbpSettings,
-                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated })
+                                                        isAuthenticatedUser: { await authenticationManager.isUserAuthenticated },
+                                                        optOutRetryErrorFeatureFlagger: featureFlagger)
         let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                                     settings: dbpSettings,
                                                     vault: vault,
@@ -136,7 +122,6 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                                         database: dataManager.database,
                                                                         emailServiceV0: emailService,
                                                                         emailServiceV1: emailServiceV1,
-                                                                        featureFlagger: featureFlagger,
                                                                         pixelHandler: sharedPixelsHandler)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
@@ -159,7 +144,7 @@ public class DataBrokerProtectionAgentManagerProvider {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
-            applicationNameForUserAgent: applicationNameForUserAgent,
+            applicationNameForUserAgentProvider: applicationNameForUserAgentProvider,
             vpnBypassService: vpnBypassService,
             wideEvent: wideEvent,
             isAuthenticatedUserProvider: { await authenticationManager.isUserAuthenticated })
@@ -219,6 +204,8 @@ public final class DataBrokerProtectionAgentManager {
 
     // Used for debug functions only, so not injected
     private lazy var browserWindowManager = BrowserWindowManager()
+
+    private var debugServer: DataBrokerProtectionDebugHTTPServer?
 
     private var didStartActivityScheduler = false
     private var currentRunIsFreeScan: Bool?
@@ -295,7 +282,8 @@ public final class DataBrokerProtectionAgentManager {
             await fireMonitoringPixels()
             Logger.dataBrokerProtection.debug("PIR wide event sweep requested (agent launch)")
             sweepWideEvents()
-            let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database)
+            let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database,
+                                                                              featureFlagger: jobDependencies.featureFlagger)
             operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
             await checkForEmailConfirmationData()
 
@@ -317,7 +305,7 @@ extension DataBrokerProtectionAgentManager {
         let database = jobDependencies.database
         let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler, repository: engagementPixelRepository)
         let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
-        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler, featureFlagger: jobDependencies.featureFlagger, repository: statsPixelRepository)
+        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler, repository: statsPixelRepository)
 
         // This will fire the DAU/WAU/MAU pixels,
         engagementPixels.fireEngagementPixel(isAuthenticated: isAuthenticated)
@@ -353,9 +341,17 @@ private extension DataBrokerProtectionAgentManager {
         Task {
             let isAuthenticated = await refreshIsAuthenticatedState()
             if isAuthenticated {
-                queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
+                queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView,
+                                                                    isAuthenticatedUser: true,
+                                                                    jobDependencies: jobDependencies,
+                                                                    errorHandler: errorHandler,
+                                                                    completion: completion)
             } else {
-                queueManager.startScheduledScanOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
+                queueManager.startScheduledScanOperationsIfPermitted(showWebView: showWebView,
+                                                                     isAuthenticatedUser: false,
+                                                                     jobDependencies: jobDependencies,
+                                                                     errorHandler: errorHandler,
+                                                                     completion: completion)
             }
         }
     }
@@ -415,7 +411,7 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
         }
 
         do {
-            let hasCompletedInitialScans = try database.haveAllScansRunAtLeastOnce()
+            let hasCompletedInitialScans = try database.haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: currentRunIsFreeScan != true)
             if hasCompletedInitialScans {
                 let profile = try database.fetchProfile()
                 eventPixels.fireInitialScansTotalDurationPixel(numberOfProfileQueries: profile?.profileQueries.count ?? 0, isFreeScan: currentRunIsFreeScan)
@@ -440,7 +436,9 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
         await fireMonitoringPixels()
         await checkForEmailConfirmationData()
 
-        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies) { [weak self] errors in
+        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                             isAuthenticatedUser: currentRunIsFreeScan != true,
+                                                             jobDependencies: jobDependencies) { [weak self] errors in
             guard let self = self else { return }
 
             if let errors = errors {
@@ -519,6 +517,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
     public func startImmediateOperations(showWebView: Bool) {
         queueManager.startImmediateScanOperationsIfPermitted(showWebView: showWebView,
+                                                             isAuthenticatedUser: currentRunIsFreeScan != true,
                                                              jobDependencies: jobDependencies,
                                                              errorHandler: nil,
                                                              completion: nil)
@@ -533,6 +532,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
     public func runAllOptOuts(showWebView: Bool) {
         queueManager.startImmediateOptOutOperationsIfPermitted(showWebView: showWebView,
+                                                               isAuthenticatedUser: true,
                                                                jobDependencies: jobDependencies,
                                                                errorHandler: nil,
                                                                completion: nil)
@@ -559,10 +559,81 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
                                               lastSchedulerSessionStartTimestamp: activityScheduler.lastTriggerTimestamp?.timeIntervalSince1970)
         }
     }
+
+    private var canStartDebugServer: Bool {
+        #if DEBUG
+        return true
+        #else
+        return privacyConfigurationManager.internalUserDecider.isInternalUser
+        #endif
+    }
+
+    public func startDebugServer() async -> Bool {
+        guard canStartDebugServer else {
+            Logger.dataBrokerProtection.error("Blocked PIR debug server start outside debug/internal-user context.")
+            return false
+        }
+
+        if let debugServer {
+            if debugServer.isStartingOrRunning {
+                return true
+            }
+            debugServer.stop()
+            self.debugServer = nil
+        }
+
+        let server = DataBrokerProtectionDebugHTTPServer(provider: self, logReader: DataBrokerProtectionOSLogReader())
+        do {
+            try server.start()
+            debugServer = server
+            return true
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to start PIR debug server: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
+
+    public func stopDebugServer() {
+        debugServer?.stop()
+        debugServer = nil
+    }
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAppToAgentInterface {
 
+}
+
+// MARK: - Debug HTTP server read access
+
+extension DataBrokerProtectionAgentManager: DataBrokerProtectionDebugReadProviding {
+
+    private var debugSettings: DataBrokerProtectionSettings { DataBrokerProtectionSettings(defaults: .dbp) }
+
+    public var agentVersion: String {
+        let version = Bundle.main.releaseVersionNumber ?? "unknown"
+        let build = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "unknown"
+        return "\(version) (build: \(build))"
+    }
+
+    public var schedulerStateString: String { queueManager.debugRunningStatusString }
+
+    public var lastSchedulerTrigger: Date? { activityScheduler.lastTriggerTimestamp }
+
+    public var environmentName: String {
+        debugSettings.selectedEnvironment == .production ? "production" : "staging"
+    }
+
+    public var endpointURL: URL { debugSettings.endpointURL }
+
+    public var mainConfigETag: String? { debugSettings.mainConfigETag }
+
+    public var lastBrokerJSONUpdateCheck: Date {
+        Date(timeIntervalSince1970: debugSettings.lastBrokerJSONUpdateCheckTimestamp)
+    }
+
+    public func brokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+        try dataManager.fetchBrokerProfileQueryData(ignoresCache: true)
+    }
 }
 
 extension DataBrokerProtectionAgentManager: EmailConfirmationDataDelegate {
@@ -578,5 +649,29 @@ extension DataBrokerProtectionAgentManager: EmailConfirmationDataDelegate {
 extension DataBrokerProtectionAgentManager: DBPWideEventsDelegate {
     public func sweepWideEvents() {
         wideEventSweeper?.sweep()
+    }
+}
+
+public extension ContentScopeProperties {
+    // Used to make sure debug tools and actual operations use the same properties
+    static func contentScopePropertiesForDBP() -> ContentScopeProperties {
+        let features = ContentScopeFeatureToggles(emailProtection: false,
+                                                  emailProtectionIncontextSignup: false,
+                                                  credentialsAutofill: false,
+                                                  identitiesAutofill: false,
+                                                  creditCardsAutofill: false,
+                                                  credentialsSaving: false,
+                                                  passwordGeneration: false,
+                                                  inlineIconCredentials: false,
+                                                  thirdPartyCredentialsProvider: false,
+                                                  unknownUsernameCategorization: false,
+                                                  partialFormSaves: false,
+                                                  passwordVariantCategorization: false,
+                                                  inputFocusApi: false,
+                                                  autocompleteAttributeSupport: false)
+        return ContentScopeProperties(gpcEnabled: false,
+                                      sessionKey: UUID().uuidString,
+                                      messageSecret: UUID().uuidString,
+                                      featureToggles: features)
     }
 }

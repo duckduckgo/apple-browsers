@@ -49,6 +49,9 @@ protocol OmniBarDelegate: AnyObject {
     func onSettingsPressed()
 
     func onMenuLongPressed()
+    
+    func menuForOmniBarLongPress(in state: OmniBarState) -> UIMenu?
+    func onOmniBarLongPressMenuDisplayed()
 
     func onClearTextPressed()
 
@@ -104,8 +107,15 @@ protocol OmniBarDelegate: AnyObject {
     /// Called when user selects a chat from the AI Chat history list
     func onChatHistorySelected(url: URL)
 
+    /// Called when user taps the "View all chats" row to open the native chat history page
+    func onViewAllChatsSelected()
+
     // MARK: - iPad Expanded Omnibar
     func onOmniBarExpandedStateChanged(isExpanded: Bool)
+
+    /// Called when the expanded iPad omnibar changes height while staying expanded (e.g. an
+    /// attachment is added or removed), so an anchored popover can be repositioned to follow it.
+    func onOmniBarExpandedContentSizeChanged()
 
     /// Called when text changes in the AI Chat text view (iPad tab mode), for filtering chat history suggestions.
     func onAIChatQueryUpdated(_ query: String)
@@ -122,6 +132,7 @@ protocol OmniBarDelegate: AnyObject {
     // MARK: - Escape Hatch
     func escapeHatchForEditingState() -> EscapeHatchModel?
     func onSwitchToTab(_ tab: Tab)
+    func onTabSwitcherRequested()
 
     // MARK: - Toggle
     func onToggleModeSwitched()
@@ -135,8 +146,17 @@ protocol OmniBarDelegate: AnyObject {
     func onDuckAIVoiceModeRequested()
 
     // MARK: - Fire Mode
-    func onFireModeRequested()
     func isCurrentTabFireTab() -> Bool
+
+    // MARK: - AI Chat suggestions keyboard navigation (iPad)
+    func isAIChatSuggestionsNavigationAvailable() -> Bool
+    func hasAIChatSuggestionsHighlight() -> Bool
+    func onAIChatSuggestionsMoveSelectionDown()
+    func onAIChatSuggestionsMoveSelectionUp()
+    /// Activates the highlighted row; returns whether one was activated.
+    func onAIChatSuggestionsActivateHighlight() -> Bool
+    /// Clears the highlight, e.g. when the user taps back into the text view.
+    func onAIChatSuggestionsClearHighlight()
 }
 
 extension OmniBarDelegate {
@@ -152,7 +172,14 @@ extension OmniBarDelegate {
     func onPrivacyIconPressed(isHighlighted: Bool) {
 
     }
-    
+
+    func isAIChatSuggestionsNavigationAvailable() -> Bool { false }
+    func hasAIChatSuggestionsHighlight() -> Bool { false }
+    func onAIChatSuggestionsMoveSelectionDown() { }
+    func onAIChatSuggestionsMoveSelectionUp() { }
+    func onAIChatSuggestionsActivateHighlight() -> Bool { false }
+    func onAIChatSuggestionsClearHighlight() { }
+
     func onMenuPressed() {
         
     }
@@ -171,6 +198,13 @@ extension OmniBarDelegate {
 
     func onMenuLongPressed() {
 
+    }
+
+    func menuForOmniBarLongPress(in state: OmniBarState) -> UIMenu? {
+        nil
+    }
+
+    func onOmniBarLongPressMenuDisplayed() {
     }
 
     func onCancelPressed() {
@@ -206,7 +240,12 @@ extension OmniBarDelegate {
     func onChatHistorySelected(url: URL) {
     }
 
+    func onViewAllChatsSelected() {
+    }
+
     func onOmniBarExpandedStateChanged(isExpanded: Bool) {}
+
+    func onOmniBarExpandedContentSizeChanged() {}
 
     func onAIChatQueryUpdated(_ query: String) {}
 
@@ -222,6 +261,8 @@ extension OmniBarDelegate {
     }
 
     func onSwitchToTab(_ tab: Tab) {}
+
+    func onTabSwitcherRequested() {}
 
     func onToggleModeSwitched() {}
 

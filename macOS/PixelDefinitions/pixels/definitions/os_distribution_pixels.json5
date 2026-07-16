@@ -1,0 +1,74 @@
+{
+    "os_distribution_client_major_version": {
+        "description": "Fires at most once per calendar month, on app open.",
+        "owners": ["jdjackson"],
+        "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1215252656518903?focus=true"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
+            },
+            "channel"
+        ],
+        "suffixes": [
+            {
+                "description": "OS major version",
+                "type": "string",
+                "pattern": "^[0-9]{1,2}$"
+            },
+            "platform",
+            "form_factor",
+            "monthly"
+        ]
+    },
+    "os_distribution_searches_major_version": {
+        "description": "Fires on each search or Duck.ai prompt submission (total search + AI-query traffic).",
+        "owners": ["jdjackson"],
+        "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1215252656518903?focus=true"],
+        "triggers": ["search_ddg"],
+        "parameters": [
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
+            },
+            "channel"
+        ],
+        "suffixes": [
+            {
+                "description": "OS major version",
+                "type": "string",
+                "pattern": "^[0-9]{1,2}$"
+            },
+            "platform",
+            "form_factor",
+            "monthly" // Legacy: present only to suppress pixel validation warnings for the deprecated monthly version of this pixel
+        ]
+    },
+    "os_distribution_active_subscriptions_major_version": {
+        "description": "Fires at most once per calendar month, on subscription status.",
+        "owners": ["jdjackson"],
+        "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1215252656518903?focus=true"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline",
+                "enum": ["randomize"]
+            },
+            "channel"
+        ],
+        "suffixes": [
+            {
+                "description": "OS major version",
+                "type": "string",
+                "pattern": "^[0-9]{1,2}$"
+            },
+            "platform",
+            "form_factor",
+            "monthly"
+        ]
+    }
+}

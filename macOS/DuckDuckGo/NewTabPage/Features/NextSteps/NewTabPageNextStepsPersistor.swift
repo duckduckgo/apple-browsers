@@ -22,8 +22,11 @@ import Persistence
 
 protocol NewTabPageNextStepsCardsPersisting {
     var orderedCardIDs: [NewTabPageDataModel.CardID]? { get set }
+    var dailyVisibleStack: [NewTabPageDataModel.CardID]? { get set }
+    var visibleStackDayIdentifier: Int? { get set }
     var firstCardLevel: NewTabPageDataModel.CardLevel { get set }
     var isFirstSession: Bool { get set }
+    var ntpImpressionCount: Int { get set }
 
     func timesShown(for card: NewTabPageDataModel.CardID) -> Int
     func setTimesShown(_ value: Int, for card: NewTabPageDataModel.CardID)
@@ -43,12 +46,24 @@ final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersistin
 
     enum Keys {
         static let cardOrder = "new.tab.page.next.steps.card.order"
+        static let dailyVisibleStack = "new.tab.page.next.steps.daily.visible.stack"
+        static let visibleStackDayIdentifier = "new.tab.page.next.steps.visible.stack.day.identifier"
         static let firstCardLevel = "new.tab.page.next.steps.first.card.level"
         static let isFirstSession = "new.tab.page.next.steps.is.first.session"
+        static let ntpImpressionCount = "new.tab.page.next.steps.ntp.impression.count"
     }
 
     init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
+    }
+
+    var ntpImpressionCount: Int {
+        get {
+            return (try? keyValueStore.object(forKey: Keys.ntpImpressionCount) as? Int) ?? 0
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Keys.ntpImpressionCount)
+        }
     }
 
     var orderedCardIDs: [NewTabPageDataModel.CardID]? {
@@ -69,6 +84,44 @@ final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersistin
                 lock.unlock()
             }
             try? keyValueStore.set(newValue?.map { $0.rawValue }, forKey: Keys.cardOrder)
+        }
+    }
+
+    var dailyVisibleStack: [NewTabPageDataModel.CardID]? {
+        get {
+            lock.lock()
+            defer {
+                lock.unlock()
+            }
+            if let rawCardIDs = (try? keyValueStore.object(forKey: Keys.dailyVisibleStack) as? [String]) {
+                return rawCardIDs.compactMap { NewTabPageDataModel.CardID(rawValue: $0) }
+            } else {
+                return nil
+            }
+        }
+        set {
+            lock.lock()
+            defer {
+                lock.unlock()
+            }
+            try? keyValueStore.set(newValue?.map { $0.rawValue }, forKey: Keys.dailyVisibleStack)
+        }
+    }
+
+    var visibleStackDayIdentifier: Int? {
+        get {
+            lock.lock()
+            defer {
+                lock.unlock()
+            }
+            return try? keyValueStore.object(forKey: Keys.visibleStackDayIdentifier) as? Int
+        }
+        set {
+            lock.lock()
+            defer {
+                lock.unlock()
+            }
+            try? keyValueStore.set(newValue, forKey: Keys.visibleStackDayIdentifier)
         }
     }
 
@@ -167,8 +220,11 @@ final class NewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersistin
             try? keyValueStore.removeObject(forKey: dismissedKey(for: card))
         }
         try? keyValueStore.removeObject(forKey: Keys.cardOrder)
+        try? keyValueStore.removeObject(forKey: Keys.dailyVisibleStack)
+        try? keyValueStore.removeObject(forKey: Keys.visibleStackDayIdentifier)
         try? keyValueStore.removeObject(forKey: Keys.firstCardLevel)
         try? keyValueStore.removeObject(forKey: Keys.isFirstSession)
+        try? keyValueStore.removeObject(forKey: Keys.ntpImpressionCount)
     }
 
     private func shownKey(for card: NewTabPageDataModel.CardID) -> String {

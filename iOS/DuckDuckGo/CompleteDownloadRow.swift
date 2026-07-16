@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Contacts
 import GRDB
 import DesignResourcesKit
 import DesignResourcesKitIcons
@@ -27,18 +28,25 @@ private struct ShareButtonFramePreferenceKey: PreferenceKey {
     static func reduce(value: inout CGRect, nextValue: () -> CGRect) {}
 }
 
+/// Atomic sheet payload to avoid SwiftUI staleness when both flag and content come from one tap.
+private struct DownloadPreview: Identifiable {
+    let id = UUID()
+    let event: PreparedCalendarEvent?
+    let contact: CNContact?
+}
+
 struct CompleteDownloadRow: View {
-    @State private var isPreviewPresented = false
+    @State private var preview: DownloadPreview?
     @State private var shareButtonFrame: CGRect = .zero
-    
+
     var rowModel: CompleteDownloadRowViewModel
-    
+
     var shareButtonAction: (CGRect) -> Void
-    
+
     var body: some View {
         HStack {
             Button {
-                self.isPreviewPresented = true
+                preview = DownloadPreview(event: rowModel.preparePreviewEvent(), contact: rowModel.preparePreviewContact())
             } label: {
                 VStack(alignment: .leading) {
                     Text(rowModel.filename)
@@ -59,12 +67,42 @@ struct CompleteDownloadRow: View {
         .frame(height: Const.Size.rowHeight)
         .listRowInsets(EdgeInsets.rowInsets)
         .contentShape(Rectangle())
-        .sheet(isPresented: $isPreviewPresented, content: {
+        .sheet(item: $preview) { preview in
+            previewSheet(for: preview)
+        }
+    }
+
+    @ViewBuilder
+    private func previewSheet(for preview: DownloadPreview) -> some View {
+        if #available(iOS 17, *), let preparedEvent = preview.event {
+            CalendarEventEditView(
+                preparedEvent: preparedEvent,
+                onSaved: {
+                    ActionMessageView.present(
+                        message: UserText.icsEventAddedToCalendar,
+                        presentationLocation: .withBottomBar(andAddressBarBottom: false)
+                    )
+                },
+                onDismiss: { self.preview = nil }
+            )
+        } else if let contact = preview.contact {
+            ContactCardView(
+                contact: contact,
+                onSaved: {
+                    ActionMessageView.present(
+                        message: UserText.vcardContactAdded,
+                        presentationLocation: .withBottomBar(andAddressBarBottom: false)
+                    )
+                },
+                onDismiss: { self.preview = nil }
+            )
+            .edgesIgnoringSafeArea(.all)
+        } else {
             QuickLookPreviewView(localFileURL: rowModel.fileURL)
                 .edgesIgnoringSafeArea(.all)
-        })
+        }
     }
-    
+
     private var shareButton: some View {
         Button {
             self.shareButtonAction(shareButtonFrame)

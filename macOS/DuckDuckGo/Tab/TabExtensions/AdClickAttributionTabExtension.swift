@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import ContentBlocking
 import Foundation
 import Navigation
@@ -75,12 +76,6 @@ protocol AdClickLogicProtocol: AnyObject {
 }
 extension AdClickAttributionLogic: AdClickLogicProtocol {}
 
-protocol ContentBlockerScriptProtocol: AnyObject {
-    var currentAdClickAttributionVendor: String? { get set }
-    var supplementaryTrackerData: [TrackerData] { get set }
-}
-extension ContentBlockerRulesUserScript: ContentBlockerScriptProtocol {}
-
 final class AdClickAttributionTabExtension: TabExtension {
 
     private static func makeAdClickAttributionDetection(with dependencies: any AdClickAttributionDependencies, delegate: AdClickAttributionLogic) -> AdClickAttributionDetection {
@@ -110,7 +105,7 @@ final class AdClickAttributionTabExtension: TabExtension {
     private let dependencies: any AdClickAttributionDependencies
 
     private weak var userContentController: UserContentControllerProtocol?
-    private weak var contentBlockerRulesScript: ContentBlockerScriptProtocol?
+    private weak var trackerProtectionSubfeature: TrackerProtectionSubfeature?
     private let dateTimeProvider: () -> Date
 
     private let detection: AdClickAttributionDetecting
@@ -126,8 +121,8 @@ final class AdClickAttributionTabExtension: TabExtension {
 
     init(inheritedAttribution: AdClickAttributionLogic.State?,
          userContentControllerFuture: some Publisher<some UserContentControllerProtocol, Never>,
-         contentBlockerRulesScriptPublisher: some Publisher<(any ContentBlockerScriptProtocol)?, Never>,
          trackerInfoPublisher: some Publisher<DetectedRequest, Never>,
+         trackerProtectionSubfeaturePublisher: AnyPublisher<TrackerProtectionSubfeature?, Never>? = nil,
          dependencies: some AdClickAttributionDependencies,
          dateTimeProvider: @escaping () -> Date = Date.init,
          logicsProvider: (AdClickAttributionDependencies) -> (AdClickLogicProtocol, AdClickAttributionDetecting) = AdClickAttributionTabExtension.makeAdClickAttribution) {
@@ -143,12 +138,15 @@ final class AdClickAttributionTabExtension: TabExtension {
         userContentControllerFuture.sink { [weak self] userContentController in
             self?.delayedInitialization(with: userContentController,
                                         inheritedAttribution: inheritedAttribution,
-                                        contentBlockerRulesScriptPublisher: contentBlockerRulesScriptPublisher,
-                                        trackerInfoPublisher: trackerInfoPublisher)
+                                        trackerInfoPublisher: trackerInfoPublisher,
+                                        trackerProtectionSubfeaturePublisher: trackerProtectionSubfeaturePublisher)
         }.store(in: &cancellables)
     }
 
-    private func delayedInitialization(with userContentController: UserContentControllerProtocol, inheritedAttribution: AdClickAttributionLogic.State?, contentBlockerRulesScriptPublisher: some Publisher<(any ContentBlockerScriptProtocol)?, Never>, trackerInfoPublisher: some Publisher<DetectedRequest, Never>) {
+    private func delayedInitialization(with userContentController: UserContentControllerProtocol,
+                                       inheritedAttribution: AdClickAttributionLogic.State?,
+                                       trackerInfoPublisher: some Publisher<DetectedRequest, Never>,
+                                       trackerProtectionSubfeaturePublisher: AnyPublisher<TrackerProtectionSubfeature?, Never>?) {
 
         Logger.contentBlocking.debug("<\(self.logic.debugID)> Performing delayed initialization")
 
@@ -159,12 +157,11 @@ final class AdClickAttributionTabExtension: TabExtension {
             logic.applyInheritedAttribution(state: inheritedAttribution)
         }
 
-        contentBlockerRulesScriptPublisher
+        trackerProtectionSubfeaturePublisher?
             .compactMap { $0 }
-            .sink { [weak self] contentBlockerRulesScript in
+            .sink { [weak self] trackerProtectionSubfeature in
                 guard let self else { return }
-
-                self.contentBlockerRulesScript = contentBlockerRulesScript
+                self.trackerProtectionSubfeature = trackerProtectionSubfeature
                 self.logic.onRulesChanged(latestRules: self.dependencies.contentBlockingManager.currentRules)
             }
             .store(in: &cancellables)
@@ -192,30 +189,28 @@ extension AdClickAttributionTabExtension: AdClickAttributionLogicDelegate {
 
         let attributedTempListName = AdClickAttributionRulesProvider.Constants.attributedTempRuleListName
 
+        trackerProtectionSubfeature?.currentAdClickAttributionVendor = vendor
+        trackerProtectionSubfeature?.currentAttributionTrackerData = rules?.trackerData
+
         guard dependencies.privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking) else {
             userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
-            contentBlockerRulesScript?.currentAdClickAttributionVendor = nil
-            contentBlockerRulesScript?.supplementaryTrackerData = []
+            trackerProtectionSubfeature?.currentAdClickAttributionVendor = nil
+            trackerProtectionSubfeature?.currentAttributionTrackerData = nil
             return
         }
 
-        contentBlockerRulesScript?.currentAdClickAttributionVendor = vendor
-        if let rules = rules {
+        let globalListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
+        let globalAttributionListName = AdClickAttributionRulesSplitter.blockingAttributionRuleListName(forListNamed: globalListName)
 
-            let globalListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
-            let globalAttributionListName = AdClickAttributionRulesSplitter.blockingAttributionRuleListName(forListNamed: globalListName)
-
-            if vendor != nil {
-                userContentController.installLocalContentRuleList(rules.rulesList, identifier: attributedTempListName)
-                try? userContentController.disableGlobalContentRuleList(withIdentifier: globalAttributionListName)
-            } else {
-                userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
-                try? userContentController.enableGlobalContentRuleList(withIdentifier: globalAttributionListName)
-            }
-
-            contentBlockerRulesScript?.supplementaryTrackerData = [rules.trackerData]
-        } else {
-            contentBlockerRulesScript?.supplementaryTrackerData = []
+        if let rules, vendor != nil {
+            userContentController.installLocalContentRuleList(rules.rulesList, identifier: attributedTempListName)
+            try? userContentController.disableGlobalContentRuleList(withIdentifier: globalAttributionListName)
+        } else if vendor == nil {
+            // No active attribution — tear down any previously installed local list and
+            // re-enable the global attribution list, even when `rules` is nil (e.g. on the
+            // initial pre-compilation call from `AdClickAttributionLogic.applyRules`).
+            userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
+            try? userContentController.enableGlobalContentRuleList(withIdentifier: globalAttributionListName)
         }
     }
 

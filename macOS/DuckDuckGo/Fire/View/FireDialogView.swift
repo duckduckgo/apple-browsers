@@ -1,7 +1,7 @@
 //
 //  FireDialogView.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,28 +18,15 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import History
+import Lottie
 import SwiftUI
 import SwiftUIExtensions
 import BrowserServicesKit
 import Combine
-
-// Result returned by FireDialogView when using onConfirm callback
-struct FireDialogResult {
-    let clearingOption: FireDialogViewModel.ClearingOption
-    let includeHistory: Bool
-    let includeTabsAndWindows: Bool
-    let includeCookiesAndSiteData: Bool
-    let includeChatHistory: Bool
-    /// Optional selection of cookie domains (eTLD+1). When provided, cookie/site data clearing is limited to this set.
-    var selectedCookieDomains: Set<String>?
-    /// Optional explicit visits selection for history flows
-    var selectedVisits: [Visit]?
-    /// Burn all windows in case we are burning visits for today (respecting closeWindows flag)
-    var isToday: Bool = false
-}
 
 @MainActor
 struct FireDialogView: ModalView {
@@ -50,8 +37,12 @@ struct FireDialogView: ModalView {
     }
 
     fileprivate enum Constants {
-        static let viewSize = CGSize(width: 440, height: 592)
+        static let viewSize = CGSize(width: 428, height: 592)
         static let footerReservedHeight: CGFloat = 52
+        static let toolbarHorizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
+        static let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 16
+        static let bottomPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
+        static var sectionRowWidth: CGFloat { viewSize.width - 2 * horizontalPadding }
     }
 
     @State private var viewHeight: CGFloat = Constants.viewSize.height
@@ -61,11 +52,10 @@ struct FireDialogView: ModalView {
         let baseMessage: String
         switch viewModel.clearingOption {
         case .currentTab:
-            baseMessage = UserText.fireDialogCloseThisTab
-        case .currentWindow:
-            baseMessage = UserText.fireDialogCloseThisWindow
-        case .allData:
-            baseMessage = UserText.fireDialogCloseAllTabsWindows
+            baseMessage = UserText.fireDialogCloseThisTabAfterDeleting
+        case .currentWindow, // current window is pending removal, not supported by the simplified fire dialog, and defaults to burning all data.
+                .allData:
+            baseMessage = UserText.fireDialogCloseAllTabsWindowsAfterDeleting
         }
 
         // Append pinned tabs message if applicable
@@ -82,6 +72,7 @@ struct FireDialogView: ModalView {
 
     @ObservedObject var viewModel: FireDialogViewModel
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+    private let style = FireDialogStyle.current
     private let showIndividualSitesLink: Bool
     private let onConfirm: ((FireDialogView.Response) -> Void)?
     @Environment(\.dismiss) private var dismiss
@@ -142,9 +133,9 @@ struct FireDialogView: ModalView {
     var body: some View {
         VStack(spacing: 16) {
             ZStack {
-                VStack(spacing: 16) {
+                VStack(spacing: 24) {
                     headerView
-                        .padding(.top, 10) // presenter sheet crops the padding 🤷‍♂️
+                        .padding(.top, 14) // presenter sheet crops the padding 🤷‍♂️
                         .accessibilityHidden(isShowingSitesOverlay)
                     if viewModel.mode.shouldShowSegmentedControl {
                         segmentedControlView
@@ -155,7 +146,8 @@ struct FireDialogView: ModalView {
                         individualSitesLink
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Constants.horizontalPadding)
+                .padding(.bottom, Constants.horizontalPadding)
 
                 // Sites Overlay
                 if isShowingSitesOverlay {
@@ -177,12 +169,14 @@ struct FireDialogView: ModalView {
                     .transition(.move(edge: .bottom))
                 }
             }
+            .background(alignment: .top) {
+                toolbarView
+            }
             .animation(.easeOut(duration: NSAnimationContext.current.duration),
                        value: isAnimatingSitesOverlay)
 
             footerView
                 .zIndex(11)
-                .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
                 .background(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
         }
         .readSize { size in
@@ -195,9 +189,134 @@ struct FireDialogView: ModalView {
         .accessibilityLabel(viewModel.mode.dialogTitle)
     }
 
+    private var toolbarView: some View {
+        HStack {
+            Button {
+                onConfirm?(.noAction)
+                dismiss()
+            } label: {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+            }
+            .buttonStyle(
+                StandardButtonStyle(topPadding: 4,
+                                    bottomPadding: 4,
+                                    horizontalPadding: 4,
+                                    backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                    backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary))
+            )
+            .clipShape(Circle())
+            .accessibilityLabel(UserText.close)
+            .accessibilityIdentifier("FireDialogView.toolbarCloseButton")
+            .keyboardShortcut(.cancelAction)
+
+            Spacer()
+
+            moreOptionsMenu
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .accessibilityLabel(UserText.fireDialogMoreOptions)
+                .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
+        }
+        .padding(.top, 16)
+        .padding(.horizontal, Constants.toolbarHorizontalPadding)
+    }
+
+    private var moreOptionsMenuDotsIcon: some View {
+        Image(nsImage: DesignSystemImages.Glyphs.Size16.menuDots)
+            .resizable()
+            .frame(width: 16, height: 16)
+            .foregroundColor(Color(designSystemColor: .iconsSecondary))
+    }
+
+    @ViewBuilder
+    private var moreOptionsMenu: some View {
+        if #available(macOS 13.0, *) {
+            // `.button` menu style adopts the ambient button style, preserving the
+            // toolbar button's pressed state (see the sibling close button).
+            Menu {
+                moreOptionsMenuItems
+            } label: {
+                moreOptionsMenuDotsIcon
+            }
+            .menuStyle(.button)
+            .buttonStyle(
+                StandardButtonStyle(topPadding: 4,
+                                    bottomPadding: 4,
+                                    horizontalPadding: 4,
+                                    backgroundColor: .clear,
+                                    backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary))
+            )
+            .clipShape(Circle())
+        } else {
+            Menu {
+                moreOptionsMenuItems
+            } label: {
+                moreOptionsMenuDotsIcon
+                    .padding(4)
+                    .contentShape(Circle())
+            }
+            .menuStyle(.borderlessButton)
+        }
+    }
+
+    @ViewBuilder
+    private var moreOptionsMenuItems: some View {
+        Button {
+            viewModel.openNewFireWindow()
+        } label: {
+            HStack {
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.fireWindow)
+                Text(UserText.newBurnerWindowMenuItem)
+            }
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.newFireWindow")
+
+        Divider()
+
+        Button {
+            viewModel.toggleCurrentSiteFireproofing()
+        } label: {
+            Text(viewModel.isCurrentSiteFireproof ? UserText.removeFireproofing : UserText.fireproofSite)
+        }
+        .disabled(!viewModel.canFireproofCurrentSite)
+        .accessibilityIdentifier("FireDialogView.moreOptions.fireproofSite")
+
+        Button {
+            viewModel.showManageFireproofSites()
+        } label: {
+            Text(UserText.manageFireproofSites)
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.manageFireproofSites")
+
+        Divider()
+
+        Button {
+            viewModel.deleteIndividualSites()
+        } label: {
+            Text(UserText.fireDialogMenuDeleteIndividualSites)
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.deleteIndividualSites")
+
+        Divider()
+
+        Button {
+            viewModel.openDataDeletionSettings()
+        } label: {
+            HStack {
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.settings)
+                Text(UserText.fireDialogMenuDataDeletionSettings)
+            }
+        }
+        .accessibilityIdentifier("FireDialogView.moreOptions.dataDeletionSettings")
+    }
+
     private var headerView: some View {
-        VStack(spacing: 8) {
-            Image(nsImage: DesignSystemImages.Color.Size72.fire)
+        VStack(spacing: 6) {
+            FirePictogramAnimation(isAppRebranded: themeManager.isAppRebranded)
+                .frame(width: 72, height: 72)
                 .padding(.top, 8)
 
             Text(viewModel.mode.dialogTitle)
@@ -218,11 +337,12 @@ struct FireDialogView: ModalView {
             ),
             segments: [
                 .init(id: FireDialogViewModel.ClearingOption.currentTab.rawValue, title: UserText.fireDialogSegmentTab, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.tabDesktop)),
-                .init(id: FireDialogViewModel.ClearingOption.currentWindow.rawValue, title: UserText.fireDialogSegmentWindow, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.window)),
                 .init(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
             ],
-            containerBackground: Color(designSystemColor: .containerFillPrimary),
-            containerBorder: Color(designSystemColor: .containerBorderPrimary),
+            containerBackground: .clear,
+            containerBorder: .clear,
+            containerCornerRadius: style.segmentedControlCornerRadius,
+            segmentCornerRadius: style.segmentedControlItemCornerRadius,
             selectedForeground: Color(designSystemColor: .accentPrimary),
             unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
             selectedIconBackground: Color(designSystemColor: .accentGlowSecondary),
@@ -242,19 +362,6 @@ struct FireDialogView: ModalView {
 
     private var sectionsView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if viewModel.mode.shouldShowCloseTabsToggle {
-                sectionRow(
-                    icon: DesignSystemImages.Glyphs.Size16.windowsAndTabs,
-                    title: UserText.fireDialogTabsAndWindows,
-                    subtitle: tabsSubtitle,
-                    isOn: $viewModel.includeTabsAndWindows,
-                    cornerRadius: .top,
-                    toggleId: "FireDialogView.tabsToggle"
-                )
-                .accessibilityHidden(isShowingSitesOverlay)
-                sectionDivider()
-            }
-
             // Row 2: History
             sectionRow(
                 icon: DesignSystemImages.Glyphs.Size16.history,
@@ -266,7 +373,7 @@ struct FireDialogView: ModalView {
                     viewModel.includeHistory = $0
                 },
                 isEnabled: isIncludeHistoryEnabled,
-                cornerRadius: viewModel.mode.shouldShowCloseTabsToggle ? .none : .top,
+                roundedCorners: .top,
                 toggleId: "FireDialogView.historyToggle"
             )
             .accessibilityHidden(isShowingSitesOverlay)
@@ -283,7 +390,7 @@ struct FireDialogView: ModalView {
                 // grey-out the ℹ button when the toggle is Off
                 infoEnabled: viewModel.includeCookiesAndSiteData,
                 isEnabled: isIncludeCookiesAndSiteDataEnabled,
-                cornerRadius: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
+                roundedCorners: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
                 toggleId: "FireDialogView.cookiesToggle"
             )
             .disabled(!isIncludeCookiesAndSiteDataEnabled)
@@ -311,37 +418,16 @@ struct FireDialogView: ModalView {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 12.0, style: .continuous)
+            RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
                 .fill(Color(designSystemColor: .containerFillPrimary))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12.0, style: .continuous)
+                    RoundedRectangle(cornerRadius: style.rowCornerRadius, style: .continuous)
                         .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
                 )
         )
         .padding(.top, 4)
         .padding(.bottom, 8)
         .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func presentManageFireproof() {
-        // Use the app's preferences presenter to begin a sheet on the parent window (stacks above the Fire sheet)
-        Task { @MainActor in
-            // await for the dialog to complete and trigger data reload
-            await Application.appDelegate.dataClearingPreferences.presentManageFireproofSitesDialog()
-            viewModel.clearingOption = viewModel.clearingOption
-        }
-    }
-
-    private func presentIndividualSites() {
-        // Close the dialog and open History->Sites management
-        if let window = NSApp.mainWindow {
-            window.endSheet(window.attachedSheet ?? window)
-        }
-        Application.appDelegate.windowControllersManager
-            .lastKeyMainWindowController?
-            .mainViewController
-            .browserTabViewController
-            .openNewTab(with: .history(pane: .allSites))
     }
 
     // MARK: - Sites overlay
@@ -434,8 +520,8 @@ struct FireDialogView: ModalView {
         )
     }
 
-    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, cornerRadius: RowCornerRadius = .none, toggleId: String) -> some View {
-        RowWithPressEffect(cornerRadius: cornerRadius, isEnabled: isEnabled) {
+    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, roundedCorners: RowCornerRadius = .none, toggleId: String) -> some View {
+        RowWithPressEffect(roundedCorners: roundedCorners, rowCornerRadius: style.rowCornerRadius, isEnabled: isEnabled) {
             guard isEnabled else { return }
             isOn.wrappedValue.toggle()
         } content: {
@@ -478,14 +564,14 @@ struct FireDialogView: ModalView {
 
                 Group {
                     Toggle(isOn: isOn)
-                        .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accentPrimary), knobFill: Color(designSystemColor: .accentContentPrimary)))
+                        .toggleStyle(FireToggleStyle(onFill: style.knobFillColor, knobFill: Color(designSystemColor: .accentContentPrimary)))
                         .accessibilityLabel(title)
                         .accessibilityIdentifier(toggleId)
                 }
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
-            .frame(width: Constants.viewSize.width - 32, alignment: .leading)
+            .frame(width: Constants.sectionRowWidth, alignment: .leading)
         }
     }
 
@@ -497,8 +583,8 @@ struct FireDialogView: ModalView {
     }
 
     private var fireproofSectionView: some View {
-        RowWithPressEffect(cornerRadius: .bottom, isEnabled: true) {
-            presentManageFireproof()
+        RowWithPressEffect(roundedCorners: .bottom, rowCornerRadius: style.rowCornerRadius, isEnabled: true) {
+            viewModel.showManageFireproofSites()
         } content: {
             HStack(alignment: .center, spacing: 0) {
                 HStack(spacing: 6) {
@@ -517,7 +603,7 @@ struct FireDialogView: ModalView {
 
                 Spacer(minLength: 4)
 
-                Button(UserText.fireDialogFireproofSitesManage) { presentManageFireproof() }
+                Button(UserText.fireDialogFireproofSitesManage) { viewModel.showManageFireproofSites() }
                     .buttonStyle(
                         StandardButtonStyle(
                             fontSize: 11,
@@ -535,12 +621,12 @@ struct FireDialogView: ModalView {
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
-            .frame(width: Constants.viewSize.width - 32, alignment: .leading)
+            .frame(width: Constants.sectionRowWidth, alignment: .leading)
         }
     }
 
     private var individualSitesColor: NSColor {
-        NSColor(designSystemColor: .accentTextPrimary)
+        style.individualSitesColor
     }
 
     private var individualSitesLink: some View {
@@ -549,7 +635,7 @@ struct FireDialogView: ModalView {
                 .tinted(with: individualSitesColor))
                 .accessibilityHidden(true)
             TextButton(UserText.fireDialogManageIndividualSitesLink, textColor: Color(individualSitesColor), fontSize: 11) {
-                presentIndividualSites()
+                viewModel.deleteIndividualSites()
             }
             .accessibilityIdentifier("FireDialogView.individualSitesLink")
             .accessibilityHidden(isShowingSitesOverlay)
@@ -564,24 +650,25 @@ struct FireDialogView: ModalView {
 
     private var footerView: some View {
         // Buttons
-        HStack(spacing: 8) {
-            Button {
-                onConfirm?(.noAction)
-                dismiss()
-            } label: {
-                Text(UserText.cancel)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 32)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
-                    )
+        HStack(spacing: 0) {
+            if viewModel.mode.shouldShowCloseTabsToggle {
+                Toggle("", isOn: $viewModel.includeTabsAndWindows)
+                    .toggleStyle(.checkbox)
+                    .tint(style.knobFillColor)
+                    .padding(.bottom, 2)
+                    .accessibilityLabel(tabsSubtitle)
+                    .accessibilityIdentifier("FireDialogView.tabsToggle")
+                    .accessibilityHidden(isShowingSitesOverlay)
+                Text(tabsSubtitle)
+                    .font(.system(size: 11))
+                    .padding(.leading, 4)
+                    .accessibilityHidden(true)
+                    .onTapGesture {
+                        viewModel.includeTabsAndWindows.toggle()
+                    }
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(UserText.cancel)
-            .accessibilityIdentifier("FireDialogView.cancelButton")
-            .keyboardShortcut(.cancelAction)
+
+            Spacer(minLength: 8)
 
             Button {
                 let result = FireDialogResult(
@@ -596,7 +683,7 @@ struct FireDialogView: ModalView {
                 onConfirm?(.burn(options: result))
                 dismiss()
             } label: {
-                Text(UserText.delete)
+                Text(viewModel.includeTabsAndWindows ? UserText.fireDialogDeleteAndClose : UserText.delete)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
                     .frame(height: 32)
@@ -607,17 +694,40 @@ struct FireDialogView: ModalView {
                     topPadding: 0,
                     bottomPadding: 0,
                     backgroundColor: Color(designSystemColor: .destructivePrimary),
-                    backgroundPressedColor: Color(designSystemColor: .destructiveSecondary)
+                    backgroundPressedColor: Color(designSystemColor: .destructiveSecondary),
+                    pillShape: true
                 )
             )
             .disabled(!isDeleteEnabled)
-            .accessibilityLabel(UserText.delete)
+            .accessibilityLabel(viewModel.includeTabsAndWindows ? UserText.fireDialogDeleteAndClose : UserText.delete)
             .keyboardShortcut(.defaultAction)
             .accessibilityIdentifier("FireDialogView.burnButton")
+            .accessibilityHidden(isShowingSitesOverlay)
+            .frame(width: 156)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, Constants.horizontalPadding)
         .padding(.top, 8)
-        .padding(.bottom, 6)
+        .padding(.bottom, Constants.bottomPadding)
+    }
+}
+
+private struct FireDialogStyle {
+    let knobFillColor: Color
+    let individualSitesColor: NSColor
+    let rowCornerRadius: CGFloat
+    let segmentedControlCornerRadius: CGFloat
+    let segmentedControlItemCornerRadius: CGFloat
+
+    private static var `default`: FireDialogStyle {
+        FireDialogStyle(knobFillColor: Color(designSystemColor: .accentPrimary), individualSitesColor: NSColor(designSystemColor: .accentTextPrimary), rowCornerRadius: 12, segmentedControlCornerRadius: 12, segmentedControlItemCornerRadius: 10)
+    }
+
+    private static var rebranded: FireDialogStyle {
+        FireDialogStyle(knobFillColor: Color(singleUseColor: .fireModeAccent), individualSitesColor: NSColor(designSystemColor: .textPrimary), rowCornerRadius: 16, segmentedControlCornerRadius: 16, segmentedControlItemCornerRadius: 14)
+    }
+
+    static var current: FireDialogStyle {
+        DesignSystemRebrand.isAppRebranded() ? .rebranded : .default
     }
 }
 
@@ -625,31 +735,30 @@ struct FireDialogView: ModalView {
 private enum RowCornerRadius {
     case top
     case bottom
-    case both
     case none
 }
 
 // Modifier to apply corner clipping based on row position
 private struct RowCornerClipModifier: ViewModifier {
-    let cornerRadius: RowCornerRadius
+    let roundedCorners: RowCornerRadius
+    let roundedCornerRadius: CGFloat
 
     func body(content: Content) -> some View {
-        switch cornerRadius {
+        switch roundedCorners {
         case .none:
             content
         case .top:
-            content.clipShape(CustomRoundedCornersShape(tl: 8, tr: 8, bl: 0, br: 0))
+            content.clipShape(CustomRoundedCornersShape(tl: roundedCornerRadius, tr: roundedCornerRadius, bl: 0, br: 0))
         case .bottom:
-            content.clipShape(CustomRoundedCornersShape(tl: 0, tr: 0, bl: 8, br: 8))
-        case .both:
-            content.clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            content.clipShape(CustomRoundedCornersShape(tl: 0, tr: 0, bl: roundedCornerRadius, br: roundedCornerRadius))
         }
     }
 }
 
 // Row with press effect - visual feedback without blocking child interactions
 private struct RowWithPressEffect<Content: View>: View {
-    let cornerRadius: RowCornerRadius
+    let roundedCorners: RowCornerRadius
+    let rowCornerRadius: CGFloat
     let isEnabled: Bool
     let action: () -> Void
     @ViewBuilder let content: () -> Content
@@ -680,27 +789,62 @@ private struct RowWithPressEffect<Content: View>: View {
             }
         }
         .animation(.easeOut(duration: showFeedback ? 0.06 : 0.12), value: showFeedback)
-        .modifier(RowCornerClipModifier(cornerRadius: cornerRadius))
+        .modifier(RowCornerClipModifier(roundedCorners: roundedCorners, roundedCornerRadius: rowCornerRadius))
     }
 
     @ViewBuilder
     private var pressBackground: some View {
         let background = Color.buttonMouseDown
 
-        switch cornerRadius {
+        switch roundedCorners {
         case .top:
-            CustomRoundedCornersShape(tl: 12, tr: 12, bl: 0, br: 0)
+            CustomRoundedCornersShape(tl: rowCornerRadius, tr: rowCornerRadius, bl: 0, br: 0)
                 .fill(background)
         case .bottom:
-            CustomRoundedCornersShape(tl: 0, tr: 0, bl: 12, br: 12)
-                .fill(background)
-        case .both:
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            CustomRoundedCornersShape(tl: 0, tr: 0, bl: rowCornerRadius, br: rowCornerRadius)
                 .fill(background)
         case .none:
             Rectangle()
                 .fill(background)
         }
+    }
+}
+
+// MARK: - Fire Pictogram Lottie
+
+/// Loads the fire pictogram Lottie animation.
+private struct FirePictogramAnimation: NSViewRepresentable {
+
+    let isAppRebranded: Bool
+
+    private var assetName: String {
+        isAppRebranded ? "fire-pictogram-new" : "fire-pictogram"
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let container = NSView()
+        container.wantsLayer = true
+        container.layer?.masksToBounds = true
+        attachAnimation(to: container)
+        return container
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private func attachAnimation(to container: NSView) {
+        guard let animation = LottieAnimation.asset(assetName, bundle: .main) else {
+            return
+        }
+        let view = LottieAnimationView(animation: animation)
+        view.contentMode = .scaleAspectFit
+        view.loopMode = .playOnce
+        view.animationSpeed = 1.0
+        view.wantsLayer = true
+        view.layer?.masksToBounds = true
+        view.autoresizingMask = [.width, .height]
+        view.frame = container.bounds
+        container.addSubview(view)
+        view.play()
     }
 }
 
@@ -732,7 +876,10 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         aiChatHistoryCleaner: MockAIChatHistoryCleaner(),
         fireproofDomains: Application.appDelegate.fireproofDomains,
         faviconManagement: Application.appDelegate.faviconManager,
-        tld: tld
+        featureFlagger: Application.appDelegate.featureFlagger,
+        tld: tld,
+        windowControllersManager: Application.appDelegate.windowControllersManager,
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
     )
 
     PreviewView(showWindowTitle: false) {
@@ -773,8 +920,11 @@ private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
         aiChatHistoryCleaner: MockAIChatHistoryCleaner(),
         fireproofDomains: fireproofDomains,
         faviconManagement: faviconMock,
+        featureFlagger: Application.appDelegate.featureFlagger,
         clearingOption: .allData,
-        tld: tld
+        tld: tld,
+        windowControllersManager: Application.appDelegate.windowControllersManager,
+        dataClearingPreferences: Application.appDelegate.dataClearingPreferences
     )
 
     return PreviewView(showWindowTitle: false) {

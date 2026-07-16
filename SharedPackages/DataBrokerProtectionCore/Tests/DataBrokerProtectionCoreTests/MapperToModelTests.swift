@@ -248,7 +248,7 @@ final class MapperToModelTests: XCTestCase {
         // When: broker JSON is decoded to typed model and action request payload is encoded for WebView injection.
         let mappedBroker = try sut.mapToModel(brokerDB)
         let action = try XCTUnwrap(mappedBroker.steps.first?.actions.first)
-        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil)))
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
         let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
 
         // Then: DB -> model mapping still preserves new fields for final action payload encoding.
@@ -307,7 +307,7 @@ final class MapperToModelTests: XCTestCase {
         // When: broker JSON is mapped and then encoded as a WebView action payload.
         let mappedBroker = try sut.mapToModel(brokerDB)
         let action = try XCTUnwrap(mappedBroker.steps.first?.actions.first)
-        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil)))
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
         let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
 
         // Then: legacy fields are still forwarded because encoding uses attached action JSON.

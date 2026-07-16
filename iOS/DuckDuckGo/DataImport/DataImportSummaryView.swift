@@ -17,103 +17,209 @@
 //  limitations under the License.
 //
 
+import UIKit
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
 import BrowserServicesKit
 import Lottie
+import MetricBuilder
 
 struct DataImportSummaryView: View {
 
     @ObservedObject var viewModel: DataImportSummaryViewModel
 
     @State private var isAnimating = false
-    
+    @State private var summaryViewWidth: CGFloat = 0
+    @State private var summaryRowWidth: CGFloat = 0
+
+    private var isPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
+    private var summaryRowHorizontalInset: CGFloat {
+        guard summaryViewWidth > 0, summaryRowWidth > 0 else {
+            return 16
+        }
+
+        return max(0, (summaryViewWidth - summaryRowWidth) / 2)
+    }
+
+    private var summaryRowWidthChangeHandler: (CGFloat) -> Void {
+        { width in
+            updateMeasuredWidth(width, currentWidth: summaryRowWidth) { nextWidth in
+                summaryRowWidth = nextWidth
+            }
+        }
+    }
+
     init(viewModel: DataImportSummaryViewModel) {
         self.viewModel = viewModel
     }
 
     var body: some View {
-        VStack {
-            VStack(spacing: 0) {
-                AnimationView(isAnimating: $isAnimating)
-                
-                Text(UserText.dataImportSummaryTitle)
-                    .daxTitle1()
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 8)
-                
-                if viewModel.isAllSuccessful() {
-                    SuccessContainer(
-                        passwordsSuccessCount: viewModel.passwordsSummary?.successful ?? 0,
-                        bookmarksSuccessCount: viewModel.bookmarksSummary?.successful ?? 0,
-                        creditCardsSuccessCount: viewModel.creditCardsSummary?.successful
-                    )
-                } else {
-                    if viewModel.passwordsSummary != nil {
-                        Text(UserText.dataImportSummaryPasswordsSubtitle)
-                            .daxSubheadRegular()
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                            .padding(.horizontal)
-                            .padding(.top, 8)
-                    }
-                    
-                    ScrollView {
-                        
-                        VStack(spacing: 28) {
-                            if let passwordsSummary = viewModel.passwordsSummary {
-                                StatsContainer(
-                                    successString: UserText.dataImportSummaryPasswordsSuccess,
-                                    successCount: passwordsSummary.successful,
-                                    failureCount: passwordsSummary.failed,
-                                    duplicatesCount: passwordsSummary.duplicate
-                                )
-                            }
-                            
-                            if let bookmarksSummary = viewModel.bookmarksSummary {
-                                StatsContainer(
-                                    successString: UserText.dataImportSummaryBookmarksSuccess,
-                                    successCount: bookmarksSummary.successful,
-                                    failureCount: bookmarksSummary.failed,
-                                    duplicatesCount: bookmarksSummary.duplicate
-                                )
-                            }
-                            
-                            if let creditCardsSummary = viewModel.creditCardsSummary {
-                                StatsContainer(
-                                    successString: UserText.dataImportSummaryCreditCardsSuccess,
-                                    successCount: creditCardsSummary.successful,
-                                    failureCount: creditCardsSummary.failed,
-                                    duplicatesCount: creditCardsSummary.duplicate
-                                )
-                            }
-                        }
-                        .padding(.trailing, 16) // Used to position scroll indicator outside of content area
-                        
-                    }
-                    .padding(.trailing, -16)
-                    .padding(.top, 28)
-                }
-            }
-            .frame(maxWidth: 360)
-            
-            
-            Spacer()
-            
-            footer
-            
+        adjustedSummaryList
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            footerOverlay
         }
-        .frame(maxWidth: .infinity)
-        .ignoresSafeArea()
-        .padding(.horizontal, 24)
-        .background(Rectangle()
-            .foregroundColor(Color(designSystemColor: .surfaceTertiary))
-            .ignoresSafeArea())
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(
+            Rectangle()
+                .foregroundColor(Color(designSystemColor: .surfaceTertiary))
+                .ignoresSafeArea()
+        )
         .onFirstAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isAnimating = true
+            }
+        }
+        .background(GeometryReader { proxy -> Color in
+            DispatchQueue.main.async {
+                updateMeasuredWidth(proxy.size.width, currentWidth: summaryViewWidth) { nextWidth in
+                    summaryViewWidth = nextWidth
+                }
+            }
+            return Color.clear
+        })
+    }
+
+    @ViewBuilder
+    private var adjustedSummaryList: some View {
+        if #available(iOS 17.0, *), isPad {
+            summaryList
+                .contentMargins(.top, 0)
+        } else {
+            summaryList
+        }
+    }
+
+    private var footerOverlay: some View {
+        footer
+            .frame(width: summaryRowWidth > 0 ? summaryRowWidth : nil)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .background(
+                Color(designSystemColor: .surfaceTertiary)
+                    .ignoresSafeArea(edges: .bottom)
+            )
+    }
+
+    private var summaryList: some View {
+        List {
+            summaryHeader
+                .removeGroupedListStyleInsets()
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+
+            if viewModel.isAllSuccessful() {
+                allSuccessSection
+            } else {
+                if let passwordsSummary = viewModel.passwordsSummary {
+                    summarySection(
+                        dataType: .passwords,
+                        successString: UserText.dataImportSummaryPasswordsSuccess,
+                        summary: passwordsSummary
+                    )
+                }
+
+                if let bookmarksSummary = viewModel.bookmarksSummary {
+                    summarySection(
+                        dataType: .bookmarks,
+                        successString: UserText.dataImportSummaryBookmarksSuccess,
+                        summary: bookmarksSummary
+                    )
+                }
+
+                if let creditCardsSummary = viewModel.creditCardsSummary {
+                    summarySection(
+                        dataType: .creditCards,
+                        successString: UserText.dataImportSummaryCreditCardsSuccess,
+                        summary: creditCardsSummary
+                    )
+                }
+            }
+        }
+        .compactSectionSpacingIfAvailable()
+        .listStyle(.insetGrouped)
+        .hideScrollContentBackground()
+    }
+
+    private var summaryHeader: some View {
+        VStack(spacing: 0) {
+            AnimationView(isAnimating: $isAnimating)
+
+            Text(UserText.dataImportSummaryTitle)
+                .daxTitle1()
+                .multilineTextAlignment(.center)
+                .padding(.top, 8)
+
+            if viewModel.shouldShowPasswordsFileDeletionHint {
+                Text(UserText.dataImportSummaryPasswordsSubtitle)
+                    .daxSubheadRegular()
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .padding(.top, 8)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
+    }
+
+    private var allSuccessSection: some View {
+        Section {
+            SummaryListRow(
+                icon: .success(DataImport.DataType.passwords.summarySuccessIcon),
+                label: UserText.dataImportSummaryPasswordsSuccess,
+                count: viewModel.passwordsSummary?.successful ?? 0,
+                onFrameChange: summaryRowWidthChangeHandler
+            )
+
+            SummaryListRow(
+                icon: .success(DataImport.DataType.bookmarks.summarySuccessIcon),
+                label: UserText.dataImportSummaryBookmarksSuccess,
+                count: viewModel.bookmarksSummary?.successful ?? 0,
+                onFrameChange: summaryRowWidthChangeHandler
+            )
+
+            if let creditCardsSummary = viewModel.creditCardsSummary {
+                SummaryListRow(
+                    icon: .success(DataImport.DataType.creditCards.summarySuccessIcon),
+                    label: UserText.dataImportSummaryCreditCardsSuccess,
+                    count: creditCardsSummary.successful,
+                    onFrameChange: summaryRowWidthChangeHandler
+                )
+            }
+        }
+    }
+
+    private func summarySection(dataType: DataImport.DataType,
+                                successString: String,
+                                summary: DataImport.DataTypeSummary) -> some View {
+        Section {
+            SummaryListRow(
+                icon: .success(dataType.summarySuccessIcon),
+                label: successString,
+                count: summary.successful,
+                onFrameChange: summaryRowWidthChangeHandler
+            )
+
+            if summary.failed > 0 {
+                SummaryListRow(
+                    icon: .failure,
+                    label: UserText.dataImportSummaryFailed,
+                    count: summary.failed,
+                    onFrameChange: summaryRowWidthChangeHandler
+                )
+            }
+
+            if summary.duplicate > 0 {
+                SummaryListRow(
+                    icon: .failure,
+                    label: UserText.dataImportSummaryDuplicates,
+                    count: summary.duplicate,
+                    onFrameChange: summaryRowWidthChangeHandler
+                )
             }
         }
     }
@@ -144,10 +250,34 @@ struct DataImportSummaryView: View {
                 syncButton(title: title)
             case .syncPromo(let title):
                 SyncAndBackupCard(title: title, onSyncTapped: {
-                    viewModel.launchSync(source: SyncSettingsViewController.SourceConstants.dataImportSummarySyncPromotion)
+                    viewModel.launchSync(source: SyncSettingsViewController.SourceConstants.dataImportSummarySyncPromotion, fromSyncPromo: true)
                 }, viewModel: viewModel)
                 .onFirstAppear {
                     viewModel.fireSyncPromoDisplayedPixel()
+                }
+            case .passwordsPromo:
+                ContinueImportCard(
+                    title: UserText.dataImportSummaryPasswordsPromoTitle,
+                    icon: Image(uiImage: DesignSystemImages.Color.Size96.passwordsKeychainFeature),
+                    dismissButtonTitle: UserText.dataImportSummaryPromoDismissAction,
+                    continueButtonTitle: UserText.dataImportSummaryPromoContinueAction,
+                    onDismissTapped: { viewModel.handleContinueImportAction(.dismissTapped, for: .passwords) },
+                    onContinueTapped: { viewModel.handleContinueImportAction(.continueTapped, for: .passwords) }
+                )
+                .onFirstAppear {
+                    viewModel.handleContinueImportAction(.shown, for: .passwords)
+                }
+            case .bookmarksPromo:
+                ContinueImportCard(
+                    title: UserText.dataImportSummaryBookmarksPromoTitle,
+                    icon: Image(uiImage: DesignSystemImages.Color.Size96.extensionSafari),
+                    dismissButtonTitle: UserText.dataImportSummaryPromoDismissAction,
+                    continueButtonTitle: UserText.dataImportSummaryPromoContinueAction,
+                    onDismissTapped: { viewModel.handleContinueImportAction(.dismissTapped, for: .bookmarks) },
+                    onContinueTapped: { viewModel.handleContinueImportAction(.continueTapped, for: .bookmarks) }
+                )
+                .onFirstAppear {
+                    viewModel.handleContinueImportAction(.shown, for: .bookmarks)
                 }
             case .message(let body):
                 dismissButton
@@ -158,18 +288,29 @@ struct DataImportSummaryView: View {
                 dismissButton
             }
         }
-        .frame(maxWidth: 360)
+        .frame(maxWidth: .infinity, alignment: .center)
         .padding(.top, 16)
-        .padding(.bottom, 36)
+        .padding(.bottom, isPad ? summaryRowHorizontalInset : 0)
     }
-    
+
+    private func updateMeasuredWidth(_ width: CGFloat,
+                                     currentWidth: CGFloat,
+                                     setWidth: (CGFloat) -> Void) {
+        let nextWidth = max(0, width)
+
+        guard nextWidth > 0 else { return }
+        guard abs(nextWidth - currentWidth) > 0.5 else { return }
+        setWidth(nextWidth)
+    }
+
     private var dismissButton: some View {
         Button {
-            viewModel.dismiss()
+            viewModel.doneTapped()
         } label: {
             Text(UserText.dataImportSummaryDone)
         }
         .buttonStyle(PrimaryButtonStyle())
+        .frame(maxWidth: 360)
     }
 
     private func footerMessage(body: String) -> some View {
@@ -181,134 +322,108 @@ struct DataImportSummaryView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private struct AnimationView: View {
+    fileprivate struct AnimationView: View {
         @Binding var isAnimating: Bool
 
         var body: some View {
             LottieView(
-                lottieFile: "burst-blob-passwords",
-                isAnimating: $isAnimating
+                lottieFile: AppRebrand.isAppRebranded() ? "success" : "success-legacy",
+                isAnimating: $isAnimating,
+                contentSize: CGSize(width: 200, height: 128)
             )
             .frame(width: 200, height: 128)
-            .padding(.top, 64)
         }
     }
 
-
-    private struct SuccessContainer: View {
-        var passwordsSuccessCount: Int
-        var bookmarksSuccessCount: Int
-        var creditCardsSuccessCount: Int?
-
-        var body: some View {
-            Text(UserText.dataImportSummaryPasswordsSubtitle)
-                .daxSubheadRegular()
-                .multilineTextAlignment(.center)
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .padding(.bottom, 28)
-
-            VStack(spacing: 12) {
-                StatRow(isSuccess: true,
-                        label: UserText.dataImportSummaryPasswordsSuccess,
-                        count: passwordsSuccessCount,
-                        showSeparator: true)
-
-                StatRow(isSuccess: true,
-                        label: UserText.dataImportSummaryBookmarksSuccess,
-                        count: bookmarksSuccessCount,
-                        showSeparator: creditCardsSuccessCount != nil ? true : false)
-
-                if let creditCardsSuccessCount = creditCardsSuccessCount {
-                    StatRow(isSuccess: true,
-                            label: UserText.dataImportSummaryCreditCardsSuccess,
-                            count: creditCardsSuccessCount,
-                            showSeparator: false)
-                }
-            }
-            .padding(.vertical, 12)
-            .background(Color(designSystemColor: .panel))
-            .cornerRadius(10)
+    fileprivate struct SummaryListRow: View {
+        enum Icon {
+            case success(UIImage)
+            case failure
         }
-    }
 
-    private struct StatsContainer: View {
-        var successString: String
-        var successCount: Int
-        var failureCount: Int
-        var duplicatesCount: Int
-
-        var body: some View {
-            VStack(spacing: 12) {
-                StatRow(isSuccess: true,
-                        label: successString,
-                        count: successCount,
-                        showSeparator: failureCount != 0 || duplicatesCount != 0)
-
-                if failureCount > 0 {
-                    StatRow(isSuccess: false,
-                            label: UserText.dataImportSummaryFailed,
-                            count: failureCount,
-                            showSeparator: duplicatesCount != 0)
-                }
-
-                if duplicatesCount > 0 {
-                    StatRow(isSuccess: false,
-                            label: UserText.dataImportSummaryDuplicates,
-                            count: duplicatesCount,
-                            showSeparator: false)
-                }
-            }
-            .padding(.vertical, 12)
-            .background(Color(designSystemColor: .panel))
-            .cornerRadius(10)
-        }
-    }
-
-    private struct StatRow: View {
-        let isSuccess: Bool
+        let icon: Icon
         let label: String
         let count: Int
-        let showSeparator: Bool
+        let onFrameChange: ((CGFloat) -> Void)?
 
         var body: some View {
-            VStack(spacing: 0) {
-                HStack {
-                    HStack(spacing: 12) {
-                        if isSuccess {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size24.checkRecolorable).renderingMode(.template)
-                                .resizable()
-                                .frame(width: 21, height: 21)
-                                .foregroundStyle(Color(designSystemColor: .alertGreen))
-                                .padding(.leading, 2)
-                        } else {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size24.crossRecolorable)
-                        }
-                        Text(label)
-                            .daxBodyRegular()
-                            .foregroundStyle(Color(designSystemColor: .textPrimary))
+            HStack {
+                HStack(spacing: 12) {
+                    switch icon {
+                    case .success(let successIcon):
+                        Image(uiImage: successIcon)
+                    case .failure:
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.crossRecolorable)
                     }
-                    Spacer()
-                    Text("\(count)")
+
+                    Text(label)
                         .daxBodyRegular()
-                        .foregroundStyle(Color(designSystemColor: .textSecondary))
-
+                        .foregroundStyle(Color(designSystemColor: .textPrimary))
                 }
-                .padding(.horizontal, 16)
 
-                if showSeparator {
-                    Divider()
-                        .padding(.top, 12)
-                        .padding(.leading, 54)
-                        .padding(.trailing, 0)
-                        .foregroundStyle(Color(designSystemColor: .lines))
-                }
+                Spacer()
+
+                Text("\(count)")
+                    .daxBodyRegular()
+                    .foregroundStyle(Color(designSystemColor: .textSecondary))
             }
-
+            .listRowBackground(
+                Color(designSystemColor: .surface)
+                    .background(GeometryReader { proxy -> Color in
+                        DispatchQueue.main.async {
+                            onFrameChange?(proxy.size.width)
+                        }
+                        return Color.clear
+                    })
+            )
         }
     }
-        
+
+    fileprivate struct ContinueImportCard: View {
+        let title: String
+        let icon: Image
+        let dismissButtonTitle: String
+        let continueButtonTitle: String
+        let onDismissTapped: () -> Void
+        let onContinueTapped: () -> Void
+
+        var body: some View {
+            VStack(alignment: .center, spacing: 0) {
+                icon
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: Metrics.imageSize, height: Metrics.imageSize)
+                    .padding(.top, 16)
+
+                Text(title)
+                    .daxHeadline()
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 12)
+
+                HStack(spacing: 8) {
+                    Button(dismissButtonTitle, action: onDismissTapped)
+                        .buttonStyle(SecondaryFillButtonStyle(compact: true))
+
+                    Button(continueButtonTitle, action: onContinueTapped)
+                        .buttonStyle(DuckUI.PrimaryButtonStyle(compact: true))
+                }
+                .padding(.top, 24)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+            }
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
+                    .fill(Color(designSystemColor: .surface))
+            )
+        }
+
+        fileprivate enum Metrics {
+            static var imageSize: CGFloat { AppRebrand.isAppRebranded() ? 96 : 64 }
+        }
+    }
+
     private struct SyncAndBackupCard: View {
         let title: String
         let onSyncTapped: () -> Void
@@ -316,7 +431,7 @@ struct DataImportSummaryView: View {
         
         var body: some View {
             VStack(alignment: .center, spacing: 0) {
-                Image("Sync-Pending-96")
+                Image(rebrandable: "Sync-Pending-96")
                     .resizable()
                     .frame(width: Metrics.imageSize, height: Metrics.imageSize)
                     .padding(.top, 16)
@@ -328,62 +443,75 @@ struct DataImportSummaryView: View {
                     .padding(.top, 12)
                 
                 HStack(spacing: 8) {
-                    Button {
-                        viewModel.dismissSyncPromo()
-                    } label: {
-                        Text(UserText.syncPromoDismissAction)
-                            .font(Font(UIFont.boldSystemFont(ofSize: Metrics.buttonFontSize)))
-                            .foregroundStyle(Color(designSystemColor: .textPrimary))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: Metrics.buttonHeight)
-                    }
-                    .buttonStyle(SecondarySyncButtonStyle())
-                    
-                    Button {
-                        onSyncTapped()
-                    } label: {
-                        Text(UserText.syncPromoConfirmAction)
-                            .font(Font(UIFont.boldSystemFont(ofSize: Metrics.buttonFontSize)))
-                            .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: Metrics.buttonHeight)
-                    }
-                    .buttonStyle(PrimarySyncButtonStyle())
-                    .onFirstAppear {
-                        viewModel.fireSyncButtonShownPixel()
-                    }
+                    Button(UserText.syncPromoDismissAction, action: viewModel.dismissSyncPromo)
+                        .buttonStyle(SecondaryFillButtonStyle(compact: true))
+
+                    Button(UserText.syncPromoConfirmAction, action: onSyncTapped)
+                        .buttonStyle(DuckUI.PrimaryButtonStyle(compact: true))
+                        .onFirstAppear {
+                            viewModel.fireSyncButtonShownPixel()
+                        }
                 }
                 .padding(.top, 24)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
+            .frame(maxWidth: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color(designSystemColor: .panel))
+                RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
+                    .fill(Color(designSystemColor: .surface))
             )
         }
-        
+
         fileprivate enum Metrics {
-            static let buttonCornerRadius: CGFloat = 12
-            static let buttonHeight: CGFloat = 40
-            static let buttonFontSize: CGFloat = 15
             static let imageSize: CGFloat = 64
         }
-        
-        private struct SecondarySyncButtonStyle: ButtonStyle {
-            func makeBody(configuration: Configuration) -> some View {
-                configuration.label
-                    .background(configuration.isPressed ? Color(designSystemColor: .controlsFillSecondary) : Color(designSystemColor: .controlsFillPrimary))
-                    .cornerRadius(Metrics.buttonCornerRadius)
-            }
-        }
-        
-        private struct PrimarySyncButtonStyle: ButtonStyle {
-            func makeBody(configuration: Configuration) -> some View {
-                configuration.label
-                    .background(configuration.isPressed ? Color(designSystemColor: .buttonsPrimaryPressed) : Color(designSystemColor: .buttonsPrimaryDefault))
-                    .cornerRadius(Metrics.buttonCornerRadius)
-            }
+    }
+
+}
+
+private extension DataImport.DataType {
+
+    var summarySuccessIcon: UIImage {
+        switch self {
+        case .bookmarks:
+            return DesignSystemImages.Color.Size24.bookmarkCheck
+        case .passwords:
+            return DesignSystemImages.Color.Size24.keyCheck
+        case .creditCards:
+            return DesignSystemImages.Color.Size24.creditCardCheck
         }
     }
+}
+
+#Preview("Summary Rows") {
+    List {
+        DataImportSummaryView.SummaryListRow(
+            icon: .success(DataImport.DataType.passwords.summarySuccessIcon),
+            label: "Passwords",
+            count: 42,
+            onFrameChange: nil
+        )
+        DataImportSummaryView.SummaryListRow(
+            icon: .failure,
+            label: "Failed",
+            count: 3,
+            onFrameChange: nil
+        )
+    }
+}
+
+#Preview("Continue Import Card") {
+    DataImportSummaryView.ContinueImportCard(
+        title: "Continue importing your passwords?",
+        icon: Image(uiImage: DesignSystemImages.Color.Size96.passwordsKeychainFeature),
+        dismissButtonTitle: "Not Now",
+        continueButtonTitle: "Continue",
+        onDismissTapped: {},
+        onContinueTapped: {}
+    )
+}
+
+#Preview("Summary Animation") {
+    DataImportSummaryView.AnimationView(isAnimating: .constant(true))
 }

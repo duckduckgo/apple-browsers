@@ -76,11 +76,12 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
         delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
     }
 
-    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL, shouldToggleSidebar: Bool) {
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL) {
         delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
-        if shouldToggleSidebar {
-            delegate?.tabDidRequestToggleSidebarOnCurrentTab(self)
-        }
+    }
+
+    func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {
+        delegate?.tabDidRequestAIChatHistory(tab: self, source: .contextualChat)
     }
 
     func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator) {
@@ -102,5 +103,9 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestDeleteChatWithID chatID: String) {
         delegate?.tabDidRequestDeleteContextualChat(tab: self, chatID: chatID)
+    }
+
+    func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator) {
+        delegate?.tabDidRequestNewVoiceChat(self)
     }
 }

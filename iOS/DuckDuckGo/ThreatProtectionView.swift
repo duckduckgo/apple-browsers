@@ -19,6 +19,7 @@
 
 import Core
 import SwiftUI
+import UIComponents
 import DesignResourcesKit
 
 struct ThreatProtectionView: View {
@@ -53,7 +54,7 @@ struct ThreatProtectionViewSettings: View {
     var body: some View {
         // Smarter Encryption
         Section(footer: Text(LocalizedStringKey(UserText.smarterEncryptionDescription))
-            .tint(Color(designSystemColor: .accent))) {
+            .tint(Color(designSystemColor: .accentPrimary))) {
                 SettingsCellView(label: UserText.smarterEncryptionTitle,
                                  statusIndicator: StatusIndicatorView(status: .alwaysOn, isDotHidden: true))
         }
@@ -62,7 +63,7 @@ struct ThreatProtectionViewSettings: View {
         if model.shouldShowMaliciousSiteProtectionSection {
             Section(footer: VStack(alignment: .leading, spacing: 8) {
                 Text(LocalizedStringKey(UserText.scamBlockerToggleLabel))
-                    .tint(Color(designSystemColor: .accent))
+                    .tint(Color(designSystemColor: .accentPrimary))
                 if !model.isMaliciousSiteProtectionOn {
                     Text(UserText.scamBlockerToggleCaption)
                         .foregroundColor(.red)

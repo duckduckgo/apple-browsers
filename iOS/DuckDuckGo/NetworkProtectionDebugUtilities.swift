@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import VPN
 import NetworkExtension
@@ -54,6 +55,16 @@ final class NetworkProtectionDebugUtilities {
         }
 
         try? await activeSession.sendProviderRequest(.command(.simulateSubscriptionExpirationInTunnel))
+    }
+
+    // MARK: - Leak Check
+
+    func triggerLeakCheck() async {
+        guard let activeSession = await AppDependencyProvider.shared.networkProtectionTunnelController.activeSession() else {
+            return
+        }
+
+        try? await activeSession.sendProviderRequest(.command(.triggerLeakCheck))
     }
 
     // MARK: - Failure Simulation

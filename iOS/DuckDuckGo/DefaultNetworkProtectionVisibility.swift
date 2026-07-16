@@ -19,12 +19,12 @@
 
 import Foundation
 import BrowserServicesKit
-import Waitlist
 import VPN
 import Core
 import Subscription
 import Networking
 import Common
+import FoundationExtensions
 
 struct DefaultNetworkProtectionVisibility: NetworkProtectionFeatureVisibility {
 

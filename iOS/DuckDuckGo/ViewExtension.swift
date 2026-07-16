@@ -95,3 +95,15 @@ extension View {
         }
     }
 }
+
+extension View {
+
+    @ViewBuilder
+    func contextMenuWithPreviewIfAvailable<M: View, P: View>(@ViewBuilder menuItems: () -> M, @ViewBuilder preview: () -> P) -> some View {
+        if #available(iOS 16, *) {
+            contextMenu(menuItems: menuItems, preview: preview)
+        } else {
+            contextMenu(menuItems: menuItems)
+        }
+    }
+}

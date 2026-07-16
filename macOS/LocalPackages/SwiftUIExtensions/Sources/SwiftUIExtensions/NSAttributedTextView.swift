@@ -80,25 +80,25 @@ public class SelfSizingTextView: NSTextView {
     }
 
     private func heightForWidth(_ width: CGFloat) -> CGFloat {
-        guard let textContainer = textContainer,
-              let layoutManager = layoutManager else {
+        // Measure on a throwaway TextKit stack so we never mutate the live
+        // textContainer / layoutManager that NSTextView is drawing from.
+        // On Big Sur, mutating them here raced with click-driven glyph
+        // layout and caused the visible text to vanish.
+        guard let source = textStorage else {
             return 0
         }
 
-        // Save current container size
-        let originalSize = textContainer.containerSize
+        let storage = NSTextStorage(attributedString: source)
+        let manager = NSLayoutManager()
+        let container = NSTextContainer(
+            size: CGSize(width: width, height: CGFloat.greatestFiniteMagnitude)
+        )
+        container.lineFragmentPadding = textContainer?.lineFragmentPadding ?? 0
+        storage.addLayoutManager(manager)
+        manager.addTextContainer(container)
 
-        // Set container to use specified width with unlimited height
-        textContainer.containerSize = CGSize(width: width, height: CGFloat.greatestFiniteMagnitude)
-
-        // Force layout and get used rect
-        layoutManager.ensureLayout(for: textContainer)
-        let usedRect = layoutManager.usedRect(for: textContainer)
-
-        // Restore original container size
-        textContainer.containerSize = originalSize
-
-        return max(usedRect.height, 1)
+        manager.ensureLayout(for: container)
+        return max(manager.usedRect(for: container).height, 1)
     }
 
     public override func setFrameSize(_ newSize: NSSize) {

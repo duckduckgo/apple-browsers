@@ -17,10 +17,8 @@
 //
 
 import AIChat
-#if DEBUG
 import AIChatDebugServer
 import DebugServer
-#endif
 import AppKit
 import Persistence
 
@@ -29,14 +27,12 @@ final class AIChatDebugMenu: NSMenu {
     private let customURLLabelMenuItem = NSMenuItem(title: "")
     private let debugStorage: any KeyedStoring<AIChatDebugURLSettings>
 
-    #if DEBUG
     private var storageDebugServer: DuckAiStorageDebugServer?
     private lazy var storageServerMenuItem = NSMenuItem(
         title: "Start Storage Server",
         action: #selector(toggleStorageServer),
         target: self
     )
-    #endif
 
     init(debugStorage: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
         self.debugStorage = if let debugStorage { debugStorage } else { UserDefaults.standard.keyedStoring() }
@@ -56,11 +52,9 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem(title: "Reset Toggle Animation", action: #selector(resetToggleAnimation))
                 .targetting(self)
 
-            #if DEBUG
             NSMenuItem.separator()
 
             storageServerMenuItem
-            #endif
         }
     }
 
@@ -93,7 +87,6 @@ final class AIChatDebugMenu: NSMenu {
         UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = false
     }
 
-    #if DEBUG
     @objc func toggleStorageServer() {
         if let server = storageDebugServer {
             server.stop()
@@ -149,7 +142,6 @@ final class AIChatDebugMenu: NSMenu {
             break
         }
     }
-    #endif
 
     private func updateWebUIMenuItemsState() {
         customURLLabelMenuItem.title = "Custom URL: [\(debugStorage.customURL ?? "")]"

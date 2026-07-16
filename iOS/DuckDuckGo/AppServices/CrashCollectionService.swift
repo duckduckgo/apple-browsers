@@ -18,6 +18,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Core
 import Crashes
 import PrivacyConfig

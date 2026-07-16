@@ -29,11 +29,16 @@ public protocol AIChatInputBoxHandling {
     var didPressCustomizeResponsesButton: PassthroughSubject<Void, Never> { get }
 
     var persistedModelId: String? { get }
+    var persistedReasoningEffort: AIChatReasoningEffort? { get }
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { get }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { get }
     var aiChatStatus: AIChatStatusValue { get set }
     var aiChatInputBoxVisibility: AIChatInputBoxVisibility { get set }
+
+    /// Set by the FE's `disableChatInput` (cleared by `enableChatInput`) while the subscription
+    /// recovery card is active for the current chat.
+    var isSubmitBlockedByRecoveryCard: Bool { get set }
 
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { get }
     var attachmentUsage: AIChatAttachmentUsage? { get set }

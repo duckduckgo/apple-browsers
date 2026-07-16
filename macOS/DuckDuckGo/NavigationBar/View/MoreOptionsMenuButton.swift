@@ -20,6 +20,7 @@ import AppUpdaterShared
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 
 final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
 

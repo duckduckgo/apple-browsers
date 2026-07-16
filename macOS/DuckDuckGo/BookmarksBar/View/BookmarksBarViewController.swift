@@ -19,9 +19,12 @@
 import AppKit
 import Combine
 import Common
-import Foundation
-import os.log
+import ConcurrencyExtensions
 import DesignResourcesKitIcons
+import Foundation
+import FoundationExtensions
+import os.log
+import PrivacyConfig
 
 final class BookmarksBarViewController: NSViewController {
 
@@ -42,7 +45,14 @@ final class BookmarksBarViewController: NSViewController {
     @IBOutlet weak var syncButtonIcon: NSImageView!
     @IBOutlet weak var syncButtonLabel: NSTextField!
 
-    private var bookmarkMenuPopover: BookmarksBarMenuPopover?
+    private var bookmarkMenuPopover: (any BookmarksBarMenuPopoverPresenting)?
+
+    /// Monitor + saved state used while a bookmarks bar menu is open so cursor moves
+    /// over the bar (now the parent of a key NSPanel popover) still trigger menu
+    /// switching. The hover tracking areas in the bar items use `.activeInKeyWindow`,
+    /// which stops firing when our popover takes key focus.
+    private var bookmarksBarHoverMonitor: Any?
+    private var savedAcceptsMouseMovedEvents: Bool?
 
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
@@ -200,11 +210,15 @@ final class BookmarksBarViewController: NSViewController {
     override func removeFromParent() {
         super.removeFromParent()
         unsubscribeFromEvents()
+        stopBookmarksBarHoverTracking()
     }
 
     deinit {
+        if let monitor = bookmarksBarHoverMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
 #if DEBUG
-        bookmarkMenuPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        (bookmarkMenuPopover as? NSObject)?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 #endif
     }
 
@@ -219,9 +233,18 @@ final class BookmarksBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
+        // Favicon images are decoded lazily and `.faviconCacheUpdated` fires for every favicon that
+        // becomes available anywhere in the app. Reloading the bar on each post rebuilds every item and
+        // makes the bar's favicons flicker during the decode cascade. Reload only when an updated host
+        // belongs to a bookmark, using the notification payload (matches `BookmarksBarMenuViewController`).
         NotificationCenter.default.publisher(for: .faviconCacheUpdated)
-            .sink { [weak self] _ in
-                self?.refreshFavicons()
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let update = notification.faviconsCacheUpdate,
+                   update.hosts.isDisjoint(with: self.bookmarkManager.allHosts()) {
+                    return
+                }
+                self.refreshFavicons()
             }
             .store(in: &cancellables)
 
@@ -273,7 +296,7 @@ final class BookmarksBarViewController: NSViewController {
         guard let view, let folder, let cursorPosition = info?.draggingLocation else {
             dragDestination = nil
             // close all Bookmarks popovers including the Bookmarks Button popover
-            BookmarksBarMenuPopover.closeBookmarkListPopovers(shownIn: self.view.window)
+            BookmarksBarMenuCustomPopover.closeBookmarkListPopovers(shownIn: self.view.window)
             return false
         }
         if let bookmarkMenuPopover, bookmarkMenuPopover.isShown,
@@ -316,7 +339,12 @@ final class BookmarksBarViewController: NSViewController {
 
     private func refreshFavicons() {
         dispatchPrecondition(condition: .onQueue(.main))
-        bookmarksBarCollectionView.reloadData()
+        // Update favicons in place on the existing cells rather than `reloadData()`. Rebuilding every
+        // cell on each favicon-cache update would cause favicons flickering. In-place refresh only
+        // upgrades placeholder → image and never "downgrades" to a placeholder image.
+        for case let item as BookmarksBarCollectionViewItem in bookmarksBarCollectionView.visibleItems() {
+            item.refreshDisplayedFavicon()
+        }
     }
 
     @IBAction func importBookmarksClicked(_ sender: Any) {
@@ -493,7 +521,7 @@ private extension BookmarksBarViewController {
     }
 
     func showSubmenu(for folder: BookmarkFolder, from view: NSView) {
-        let bookmarkMenuPopover: BookmarksBarMenuPopover
+        let bookmarkMenuPopover: any BookmarksBarMenuPopoverPresenting
         if let popover = self.bookmarkMenuPopover {
             bookmarkMenuPopover = popover
             if bookmarkMenuPopover.isShown {
@@ -504,13 +532,14 @@ private extension BookmarksBarViewController {
             }
             bookmarkMenuPopover.reloadData(withRootFolder: folder)
         } else {
-            bookmarkMenuPopover = BookmarksBarMenuPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
-            bookmarkMenuPopover.delegate = self
+            bookmarkMenuPopover = BookmarksBarMenuCustomPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
+            bookmarkMenuPopover.bookmarksBarMenuDelegate = self
             self.bookmarkMenuPopover = bookmarkMenuPopover
         }
 
         view.window?.makeKeyAndOrderFront(nil)
         bookmarkMenuPopover.show(positionedBelow: view)
+        startBookmarksBarHoverTracking()
 
         if view === clippedItemsIndicator {
             // display pressed state
@@ -545,10 +574,10 @@ extension BookmarksBarViewController: NSMenuDelegate {
     }
 
 }
-// MARK: - BookmarkListPopoverDelegate
+// MARK: - BookmarksBarMenuPopoverDelegate
 extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
 
-    func popoverShouldClose(_ popover: NSPopover) -> Bool {
+    func bookmarksBarMenuPopoverShouldClose(_ popover: any BookmarksBarMenuPopoverPresenting) -> Bool {
         if NSApp.currentEvent?.type == .leftMouseUp {
            if let point = bookmarksBarCollectionView.mouseLocationInsideBounds(),
               let indexPath = bookmarksBarCollectionView.indexPathForItem(at: point),
@@ -563,9 +592,10 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
         return true
     }
 
-    func popoverDidClose(_ notification: Notification) {
-        guard let bookmarkMenuPopover = notification.object as? BookmarksBarMenuPopover,
-              let positioningView = bookmarkMenuPopover.positioningView else { return }
+    func bookmarksBarMenuPopoverDidClose(_ popover: any BookmarksBarMenuPopoverPresenting) {
+        stopBookmarksBarHoverTracking()
+
+        guard let positioningView = popover.positioningView else { return }
 
         if positioningView === clippedItemsIndicator {
             clippedItemsIndicator.backgroundColor = .clear
@@ -575,7 +605,49 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
         }
     }
 
-    func openNextBookmarksMenu(_ sender: BookmarksBarMenuPopover) {
+    private func startBookmarksBarHoverTracking() {
+        if savedAcceptsMouseMovedEvents == nil, let mainWindow = view.window {
+            savedAcceptsMouseMovedEvents = mainWindow.acceptsMouseMovedEvents
+            mainWindow.acceptsMouseMovedEvents = true
+        }
+        if bookmarksBarHoverMonitor == nil {
+            bookmarksBarHoverMonitor = NSEvent.addLocalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
+                self?.dispatchBookmarksBarHover()
+                return event
+            }
+        }
+    }
+
+    private func stopBookmarksBarHoverTracking() {
+        if let monitor = bookmarksBarHoverMonitor {
+            NSEvent.removeMonitor(monitor)
+            bookmarksBarHoverMonitor = nil
+        }
+        if let saved = savedAcceptsMouseMovedEvents, let mainWindow = view.window {
+            mainWindow.acceptsMouseMovedEvents = saved
+        }
+        savedAcceptsMouseMovedEvents = nil
+    }
+
+    private func dispatchBookmarksBarHover() {
+        guard let mainWindow = view.window else { return }
+        let windowPoint = mainWindow.convertPoint(fromScreen: NSEvent.mouseLocation)
+        let cvPoint = bookmarksBarCollectionView.convert(windowPoint, from: nil)
+        if bookmarksBarCollectionView.bounds.contains(cvPoint),
+           let indexPath = bookmarksBarCollectionView.indexPathForItem(at: cvPoint),
+           let item = bookmarksBarCollectionView.item(at: indexPath) as? BookmarksBarCollectionViewItem {
+            mouseDidHover(over: item)
+            return
+        }
+        if let indicatorSuper = clippedItemsIndicator.superview {
+            let indicatorPoint = indicatorSuper.convert(windowPoint, from: nil)
+            if clippedItemsIndicator.frame.contains(indicatorPoint), !clippedItemsIndicator.isHidden {
+                mouseDidHover(over: clippedItemsIndicator as Any)
+            }
+        }
+    }
+
+    func openNextBookmarksMenu(_ sender: any BookmarksBarMenuPopoverPresenting) {
         guard let folder = sender.rootFolder else {
             assertionFailure("No root folder set in BookmarkListPopover")
             return
@@ -612,7 +684,7 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
         }
     }
 
-    func openPreviousBookmarksMenu(_ sender: BookmarksBarMenuPopover) {
+    func openPreviousBookmarksMenu(_ sender: any BookmarksBarMenuPopoverPresenting) {
         guard let folder = sender.rootFolder else {
             assertionFailure("No root folder set in BookmarkListPopover")
             return

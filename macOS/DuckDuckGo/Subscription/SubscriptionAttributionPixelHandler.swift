@@ -21,7 +21,7 @@ import Subscription
 
 protocol SubscriptionAttributionPixelHandling: AnyObject {
     var origin: String? { get set }
-    func fireSuccessfulSubscriptionAttributionPixel()
+    func fireSuccessfulSubscriptionAttributionPixel(freeTrial: Bool)
 }
 
 // MARK: - SubscriptionAttributionPixelHandler
@@ -35,12 +35,12 @@ final class SubscriptionAttributionPixelHandler: SubscriptionAttributionPixelHan
         decoratedAttributionPixelHandler = attributionPixelHandler
     }
 
-    func fireSuccessfulSubscriptionAttributionPixel() {
+    func fireSuccessfulSubscriptionAttributionPixel(freeTrial: Bool) {
         decoratedAttributionPixelHandler.fireAttributionPixel(
             event: SubscriptionPixel.subscriptionSuccessfulSubscriptionAttribution,
             frequency: .standard,
             origin: origin,
-            additionalParameters: nil
+            additionalParameters: [GenericAttributionPixelHandler.Parameters.freeTrial: String(freeTrial)]
         )
     }
 

@@ -19,6 +19,7 @@
 import Combine
 import NetworkExtension
 import Common
+import FoundationExtensions
 
 /// Classes that implement this protocol are in charge of relaying status changes.
 ///

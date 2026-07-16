@@ -31,25 +31,23 @@ struct DataBrokerLogMonitorView: View {
                     viewModel.isMonitoring ? viewModel.stopMonitoring() : viewModel.startMonitoring()
                 },
                 onClear: viewModel.clearLogs,
+                onExport: viewModel.exportFilteredLogs,
                 retentionLimit: $viewModel.retentionLimitText,
-                shouldUseCustomSubsystem: $viewModel.shouldUseCustomSubsystem,
-                customSubsystem: $viewModel.customSubsystem
+                searchText: $viewModel.filterSettings.searchText
             )
             .fixedSize(horizontal: false, vertical: true)
 
             Divider()
 
             LogFilterControlsView(
-                filterSettings: $viewModel.filterSettings,
-                shouldUseCustomCategory: $viewModel.shouldUseCustomCategory,
-                customCategory: $viewModel.customCategory
+                filterSettings: $viewModel.filterSettings
             )
             .fixedSize(horizontal: false, vertical: true)
 
             Divider()
 
             if viewModel.filteredLogs.isEmpty {
-                LogEmptyStateView(isMonitoring: viewModel.isMonitoring)
+                LogEmptyStateView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 LogListView(

@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import WebKit
 
@@ -310,7 +311,7 @@ extension NavigationAction: CustomDebugStringConvertible {
 #else
         let fromHistoryItem = ""
 #endif
-        return "<NavigationAction #\(identifier)\(isUserInitiatedStr): url: \"\(url.absoluteString)\" type: \(navigationType.debugDescription)\(shouldDownload ? " Download" : "") frame: \(sourceFrame)\(targetFrame.debugDescription)\(fromHistoryItem)>"
+        return "<NavigationAction #\(identifier)\(isUserInitiatedStr): url: \"\(url.shortDescription)\" type: \(navigationType.debugDescription)\(shouldDownload ? " Download" : "") frame: \(sourceFrame)\(targetFrame.debugDescription)\(fromHistoryItem)>"
     }
 }
 
@@ -333,6 +334,6 @@ extension NavigationPreferences: CustomDebugStringConvertible {
 
 extension HistoryItemIdentity: CustomDebugStringConvertible {
     public var debugDescription: String {
-        "<\(identifier) url: \(url?.absoluteString ?? "") title: \(title ?? "<nil>")>"
+        "<\(identifier) url: \(url?.shortDescription ?? "") title: \(title ?? "<nil>")>"
     }
 }

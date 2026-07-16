@@ -37,6 +37,22 @@ final class MockEventMapper: EventMapping<CredentialsCleanupError> {
     }
 }
 
+/// On iOS, `DefaultAutofillDatabaseProvider` ignores its `file` parameter and routes
+/// the database through `migrateDatabaseToSharedStorageIfNeeded`, which redirects to a
+/// fixed default path.  Injecting this manager makes the provider use the caller-supplied
+/// URL instead, giving each test its own isolated database.
+final class TemporaryDatabaseFileStorageManager: FileStorageManaging {
+    private let databaseURL: URL
+
+    init(databaseURL: URL) {
+        self.databaseURL = databaseURL
+    }
+
+    func migrateDatabaseToSharedStorageIfNeeded(from: URL, to: URL) throws -> URL {
+        return databaseURL
+    }
+}
+
 final class MockSecureVaultErrorReporter: SecureVaultReporting {
     var _secureVaultInitFailed: (SecureStorageError) -> Void = { _ in }
     func secureVaultError(_ error: SecureStorageError) {
@@ -75,7 +91,11 @@ final class CredentialsDatabaseCleanerTests: XCTestCase {
         try super.setUpWithError()
 
         databaseLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".db")
-        databaseProvider = try DefaultAutofillDatabaseProvider(file: databaseLocation, key: simpleL1Key)
+        databaseProvider = try DefaultAutofillDatabaseProvider(
+            file: databaseLocation,
+            key: simpleL1Key,
+            fileStorageManager: TemporaryDatabaseFileStorageManager(databaseURL: databaseLocation)
+        )
         secureVaultFactory = AutofillVaultFactory.testFactory(databaseProvider: databaseProvider)
         secureVault = try secureVaultFactory.makeVault(reporter: nil)
         _ = try secureVault.authWith(password: "abcd".data(using: .utf8)!)
@@ -85,6 +105,10 @@ final class CredentialsDatabaseCleanerTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        databaseCleaner = nil
+        secureVault = nil
+        secureVaultFactory = nil
+        databaseProvider = nil
         try deleteDbFile()
         try super.tearDownWithError()
     }

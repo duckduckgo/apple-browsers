@@ -36,8 +36,8 @@ PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match Direct com.d
 PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match Direct com.duckduckgo.macos.browser.review macos
 PROVISIONING_PROFILE_SPECIFIER[config=Alpha][sdk=macosx*] = match Direct com.duckduckgo.macos.browser.alpha macos
 
-// Install to /Applications/DEBUG/
-DEPLOYMENT_LOCATION[config=Debug] = YES;
+// To install to /Applications/DEBUG/ for VPN testing, set DEPLOYMENT_LOCATION to YES
+DEPLOYMENT_LOCATION[config=Debug] = NO
 DSTROOT[config=Debug] = ${BUILT_PRODUCTS_DIR}
 INSTALL_PATH[config=Debug] = Applications/DEBUG
 

@@ -19,6 +19,7 @@
 import Foundation
 import DataBrokerProtection_macOS
 import Common
+import FoundationExtensions
 
 public extension Notification.Name {
     static let dbpLoginItemEnabled = Notification.Name("com.duckduckgo.DBP.LoginItemEnabled")
@@ -49,29 +50,31 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
 
     // MARK: - Login Item Management
 
-    private func disableLoginItem() {
+    private func disableLoginItem() async {
         DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerDisableLoginItemDaily, frequency: .legacyDaily)
-        loginItemsManager.disableLoginItems([.dbpBackgroundAgent])
+        await loginItemsManager.disableLoginItems([.dbpBackgroundAgent])
         NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
     }
 
-    private func enableLoginItem() {
+    private func enableLoginItem() async {
         DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerEnableLoginItemDaily, frequency: .legacyDaily)
-        loginItemsManager.enableLoginItems([.dbpBackgroundAgent])
+        await loginItemsManager.enableLoginItems([.dbpBackgroundAgent])
         NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
     }
 
     // MARK: - DataBrokerProtectionLoginItemInterface
 
     func dataDeleted() {
-        disableLoginItem()
+        Task {
+            await disableLoginItem()
+        }
     }
 
     // MARK: - DataBrokerProtectionAppToAgentInterface
     // MARK: - DataBrokerProtectionAgentAppEvents
 
-    func profileSaved() {
-        enableLoginItem()
+    func profileSaved() async {
+        await enableLoginItem()
 
         Task {
             // Wait to make sure the agent has had time to launch
@@ -126,5 +129,13 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
 
     func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
         return await ipcClient.getDebugMetadata()
+    }
+
+    func startDebugServer() async -> Bool {
+        return await ipcClient.startDebugServer()
+    }
+
+    func stopDebugServer() {
+        ipcClient.stopDebugServer()
     }
 }

@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import Persistence
@@ -66,9 +67,11 @@ final class FireCoordinator {
     private let faviconManagement: FaviconManagement
     private let onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)?
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let dataClearingPreferences: DataClearingPreferences
     private let tabViewModelGetter: (NSWindow) -> TabCollectionViewModel?
     private let pixelFiring: PixelFiring?
     private let aiChatSyncCleaner: (() -> AIChatSyncCleaning?)?
+    private let onboardingFireReporting: (() -> OnboardingFireReporting)?
     private let visualizeFireAnimationDecider: OverridableVisualizeFireSettingsDecider
     let dataClearingPixelsReporter: DataClearingPixelsReporter
     let dataClearingWideEventService: DataClearingWideEventService?
@@ -81,13 +84,15 @@ final class FireCoordinator {
          fireproofDomains: FireproofDomains,
          faviconManagement: FaviconManagement,
          windowControllersManager: WindowControllersManagerProtocol,
+         dataClearingPreferences: DataClearingPreferences,
          pixelFiring: PixelFiring?,
          wideEventManaging: WideEventManaging? = nil,
          aiChatSyncCleaner: (() -> AIChatSyncCleaning?)? = nil,
          historyProvider: HistoryViewDataProviding? = nil, // for testing: created if not provided
          fireViewModel: FireViewModel? = nil, // for testing: created if not provided
          tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil, // for testing: created if not provided
-         fireDialogViewFactory: FireDialogViewFactory? = nil // for testing: created if not provided
+         fireDialogViewFactory: FireDialogViewFactory? = nil, // for testing: created if not provided
+         onboardingFireReporting: (() -> OnboardingFireReporting)? = nil // for testing: created if not provided
     ) {
 
         self.tld = tld
@@ -97,11 +102,13 @@ final class FireCoordinator {
         self.faviconManagement = faviconManagement
         self.onboardingContextualDialogsManager = onboardingContextualDialogsManager
         self.windowControllersManager = windowControllersManager
+        self.dataClearingPreferences = dataClearingPreferences
         self.tabViewModelGetter = tabViewModelGetter ?? { window in
             (window.contentViewController as? MainViewController)?.tabCollectionViewModel
         }
         self.pixelFiring = pixelFiring
         self.aiChatSyncCleaner = aiChatSyncCleaner
+        self.onboardingFireReporting = onboardingFireReporting ?? { OnboardingPixelReporter() }
         self.dataClearingPixelsReporter = .init(pixelFiring: self.pixelFiring)
         if let wideEventManaging = wideEventManaging {
             self.dataClearingWideEventService = .init(wideEvent: wideEventManaging)
@@ -111,6 +118,14 @@ final class FireCoordinator {
         self.visualizeFireAnimationDecider = OverridableVisualizeFireSettingsDecider(internalDecider: visualizeFireAnimationDecider)
 
         self.fireDialogViewFactory = fireDialogViewFactory ?? { config in
+            guard featureFlagger.isFeatureOn(.fireDialogSimplified) else {
+                let view = LegacyFireDialogView(
+                    viewModel: config.viewModel,
+                    showIndividualSitesLink: config.showIndividualSitesLink,
+                    onConfirm: config.onConfirm
+                )
+                return DefaultFireDialogPresenter(view: view)
+            }
             let view = FireDialogView(
                 viewModel: config.viewModel,
                 showIndividualSitesLink: config.showIndividualSitesLink,
@@ -225,6 +240,7 @@ extension FireCoordinator {
                                                        nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler),
             fireproofDomains: self.fireproofDomains,
             faviconManagement: self.faviconManagement,
+            featureFlagger: self.featureFlagger,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
             includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
             includeChatHistory: mode.shouldShowChatHistoryToggle ? nil /* last selected */ : false,
@@ -232,7 +248,9 @@ extension FireCoordinator {
             settings: settings,
             scopeCookieDomains: scopeCookieDomains,
             scopeVisits: scopeVisits,
-            tld: tld
+            tld: tld,
+            windowControllersManager: self.windowControllersManager,
+            dataClearingPreferences: self.dataClearingPreferences
         )
 
         let response: FireDialogView.Response = await withCheckedContinuation { (continuation: CheckedContinuation<FireDialogView.Response, Never>) in
@@ -260,6 +278,7 @@ extension FireCoordinator {
 
         switch response {
         case .noAction:
+            onboardingFireReporting?().measureFireDialogDismissed()
             return .noAction
 
         case .burn(let options):
@@ -285,6 +304,7 @@ extension FireCoordinator {
                 // Record fire button usage for contextual onboarding flows
                 onboardingContextualDialogsManager?().fireButtonUsed()
             }
+            onboardingFireReporting?().measureFireDialogBurnAction()
             return .burn(options: options)
         }
     }

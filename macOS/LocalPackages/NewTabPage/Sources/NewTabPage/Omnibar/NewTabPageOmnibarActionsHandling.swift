@@ -25,12 +25,28 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget)
 
     @MainActor
-    func submitChat(_ chat: String, target: NewTabPageDataModel.OpenTarget, modelId: String?, images: [NewTabPageDataModel.SubmitChatImage]?)
+    func submitChat(_ chat: String,
+                    target: NewTabPageDataModel.OpenTarget,
+                    modelId: String?,
+                    images: [NewTabPageDataModel.SubmitChatImage]?,
+                    mode: String?,
+                    toolChoice: [String]?,
+                    reasoningEffort: String?,
+                    pageContexts: [NewTabPageDataModel.OmnibarPageContext]?,
+                    files: [NewTabPageDataModel.OmnibarPromptFile]?)
 
     @MainActor
     func openAiChat(_ chatId: String, isPinned: Bool, trigger: NewTabPageDataModel.OpenAiChatTrigger, target: NewTabPageDataModel.OpenTarget)
 
     @MainActor
     func viewAllAiChats(target: NewTabPageDataModel.OpenTarget)
+
+    /// Opens the Duck.ai Customize Responses modal from the NTP omnibar Tools menu.
+    @MainActor
+    func openCustomizeResponses()
+
+    /// Persists whether the stored response customization is applied (from the row's toggle).
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool)
 
 }

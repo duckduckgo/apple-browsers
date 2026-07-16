@@ -24,7 +24,7 @@ let package = Package(
     name: "DesignResourcesKit",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(
@@ -40,7 +40,10 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "DesignResourcesKit",
-            dependencies: []),
+            dependencies: [],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]),
         .testTarget(
             name: "DesignResourcesKitTests",
             dependencies: ["DesignResourcesKit"]),

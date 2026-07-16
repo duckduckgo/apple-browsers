@@ -20,6 +20,7 @@ import XCTest
 import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 import Common
+import FoundationExtensions
 
 final class RecentlyClosedCoordinatorMock: RecentlyClosedCoordinating {
 

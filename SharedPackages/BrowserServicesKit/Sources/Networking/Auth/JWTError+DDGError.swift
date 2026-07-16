@@ -19,6 +19,7 @@
 import Foundation
 import JWTKit
 import Common
+import FoundationExtensions
 
 extension JWTError: @retroactive Equatable {}
 extension JWTError: @retroactive CustomNSError {}

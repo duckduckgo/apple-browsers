@@ -120,6 +120,9 @@ struct DataImportTypePicker: View {
 extension DataImportViewModel {
 
     mutating func setDataType(_ dataType: DataType, selected: Bool) {
+        // Ignore no-op writes so confirming the type sheet unchanged isn't treated as user intent.
+        guard selectedDataTypes.contains(dataType) != selected else { return }
+        hasUserModifiedDataTypeSelection = true
         if selected {
             selectedDataTypes.insert(dataType)
         } else {

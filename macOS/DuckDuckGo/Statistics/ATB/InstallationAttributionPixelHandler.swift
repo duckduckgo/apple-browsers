@@ -31,7 +31,9 @@ final class AppInstallationAttributionPixelHandler: InstallationAttributionsPixe
     private let decoratedAttributionPixelHandler: AttributionPixelHandler
 
     init(
-        originProvider: AttributedMetricOriginProvider = AttributedMetricOriginFileProvider(),
+        originProvider: AttributedMetricOriginProvider = DefaultAttributedMetricOriginProvider(loadOrigin: {
+            getXattr(named: AttributionXattr.origin, from: Bundle.main.bundlePath)
+        }),
         attributionPixelHandler: AttributionPixelHandler = GenericAttributionPixelHandler()
     ) {
         self.originProvider = originProvider

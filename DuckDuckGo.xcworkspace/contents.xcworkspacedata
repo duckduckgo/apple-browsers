@@ -5,6 +5,9 @@
       location = "group:SharedPackages"
       name = "SharedPackages">
       <FileRef
+         location = "group:ICSParser">
+      </FileRef>
+      <FileRef
          location = "group:DebugServer">
       </FileRef>
       <FileRef
@@ -31,6 +34,9 @@
       </FileRef>
       <FileRef
          location = "group:ScreenTimeDataCleaner">
+      </FileRef>
+      <FileRef
+         location = "group:SERPInstallOrigin">
       </FileRef>
       <FileRef
          location = "group:SERPSettings">

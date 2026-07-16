@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import os.log
 import PixelKit
 import PrivacyConfig
@@ -37,7 +38,8 @@ protocol UserScriptWithAutoconsent: UserScript {
 final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, UserScriptWithAutoconsent {
 
     private struct Constants {
-        static let filterListCmpName = "filterList" // special CMP name used for reports from the cosmetic filterlist
+        static let maximumCPMErrorsLength = 255
+        static let multipleCMPsError = "multiple_cmps"
     }
 
     static let newSitePopupHiddenNotification = Notification.Name("newSitePopupHidden")
@@ -63,6 +65,9 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private var lastHandledCMPName: String?
     private var reloadLoopDetected: Bool = false
     private var consentHeuristicEnabled: Bool?
+    private var cpmStage: CookieConsentCPMStage = .notStarted
+    private var cpmErrors: [String] = []
+    private var lastConsentStatus: CookieConsentInfo?
 
     init(config: PrivacyConfiguration,
          management: AutoconsentManagement,
@@ -100,8 +105,16 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
             selftestFailed: selftestFailed,
             consentReloadLoop: consentReloadLoop,
             consentRule: consentRule,
-            consentHeuristicEnabled: consentHeuristicEnabled
+            consentHeuristicEnabled: consentHeuristicEnabled,
+            cpmExtensionDroppedCallbacks: 0,
+            cpmExtensionLoaded: webExtensionAvailability?.isAutoconsentExtensionAvailable == true,
+            cpmDashboardState: .applied,
+            cpmStage: cpmStage,
+            cpmErrors: serializedCPMErrors,
+            cpmQueueSize: 0,
+            cpmConfigVersion: config.version ?? ""
         )
+        lastConsentStatus = consentStatus
         Logger.autoconsent.debug("Refreshing dashboard state: \(String(describing: consentStatus))")
         self.delegate?.autoconsentUserScript(consentStatus: consentStatus)
     }
@@ -287,6 +300,21 @@ extension AutoconsentUserScript {
     }
 
     @MainActor
+    private func heuristicModeValue() -> String {
+        // If the new preferences menu is not enabled, use reject only, otherwise use the value from the setting.
+        if !(consentHeuristicEnabled ?? false) {
+            return "off"
+        }
+        if preferences.cookiePopupPreference == .max {
+            return "tier2"
+        }
+        if preferences.cookiePopupPreference == .default {
+            return config.isSubfeatureEnabled(AutoconsentSubfeature.cookiePopupPreferenceSetting) ? "tier1" : "reject"
+        }
+        return "off"
+    }
+
+    @MainActor
     func handleInit(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let messageData: InitMessage = decodeMessageBody(from: message.body),
               let url = URL(string: messageData.url) else {
@@ -308,28 +336,39 @@ extension AutoconsentUserScript {
             return
         }
 
-        if preferences.isAutoconsentEnabled == false {
+        if message.frameInfo.isMainFrame {
+            resetCPMDiagnostics()
+        }
+
+        // do the navigation check before checking user settings or whether the domain is allowlisted
+        checkMainFrameNavigation(message: message, url: url)
+
+        if preferences.cookiePopupPreference == .off {
             // this will only happen if the user has just declined a prompt in this tab
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
+            if message.frameInfo.isMainFrame {
+                cpmStage = .settingDisabled
+                refreshCPMDiagnostics()
+            }
             return
         }
 
         self.consentHeuristicEnabled = isHeuristicActionEnabled()
 
-        // do the navigation check before checking if the domain is allowlisted
-        checkMainFrameNavigation(message: message, url: url)
-
         let topURLDomain = message.webView?.url?.host
         guard config.isFeature(.autoconsent, enabledForDomain: topURLDomain) else {
-            Logger.autoconsent.info("disabled for site: \(String(describing: url.absoluteString))")
+            Logger.autoconsent.info("disabled for site: \(url.shortDescription)")
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
             if message.frameInfo.isMainFrame {
+                cpmStage = .siteDisabled
+                refreshCPMDiagnostics()
                 firePixel(pixel: .disabledForSite)
             }
             return
         }
 
         if message.frameInfo.isMainFrame {
+            cpmStage = .initReceived
             // reset dashboard state
             refreshDashboardState(
                 // keep "cookies managed" if we did it for this site since app launch
@@ -345,31 +384,14 @@ extension AutoconsentUserScript {
         }
         let remoteConfig = self.config.settings(for: .autoconsent)
         let disabledCMPs = remoteConfig["disabledCMPs"] as? [String] ?? []
-        let filterlistExceptions = remoteConfig["filterlistExceptions"] as? [String] ?? []
 
-#if DEBUG
-        // The `filterList` feature flag being disabled causes the integration test suite to fail - this is a temporary change to hardcode the
-        // flag to true when integration tests are running. In all other cases, continue to use the flag as usual.
-        let enableFilterList: Bool
-        if [.integrationTests].contains(AppVersion.runType) {
-            enableFilterList = true
+        let autoAction: String?
+        if reloadLoopDetected {
+            // prevent further reloads
+            Logger.autoconsent.debug("Reload loop prevention: disabling autoAction for \(messageData.url)")
+            autoAction = nil
         } else {
-            enableFilterList = config.isSubfeatureEnabled(AutoconsentSubfeature.filterlist) && !self.matchDomainList(domain: topURLDomain, domainsList: filterlistExceptions)
-        }
-#else
-        let enableFilterList = config.isSubfeatureEnabled(AutoconsentSubfeature.filterlist) && !self.matchDomainList(domain: topURLDomain, domainsList: filterlistExceptions)
-#endif
-
-        var autoAction: String?
-        if preferences.isAutoconsentEnabled == true {
-            // Check for reload loop and disable autoAction if needed
-            if reloadLoopDetected {
-                // prevent further reloads
-                Logger.autoconsent.debug("Reload loop prevention: disabling autoAction for \(messageData.url)")
-            } else {
-                // normal case: autoconsent feature is enabled, and no reload loop detected
-                autoAction = "optOut"
-            }
+            autoAction = "optOut"
         }
 
         let autoconsentConfig = [
@@ -385,9 +407,8 @@ extension AutoconsentUserScript {
                 "enableCosmeticRules": true,
                 "detectRetries": 20,
                 "isMainWorld": false,
-                "enableFilterList": enableFilterList,
                 "enableHeuristicDetection": true,
-                "enableHeuristicAction": consentHeuristicEnabled ?? false // default to false if not enrolled
+                "heuristicMode": heuristicModeValue()
             ] as [String: Any?]
         ] as [String: Any?]
 
@@ -437,13 +458,14 @@ extension AutoconsentUserScript {
     func handlePopupFound(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let messageData: PopupFoundMessage = decodeMessageBody(from: message.body),
               let url = URL(string: messageData.url),
-              let host = url.host else {
+              url.host != nil else {
             assertionFailure("Received a malformed message from autoconsent")
             replyHandler(nil, "cannot decode message")
             return
         }
         Logger.autoconsent.debug("Cookie popup found: \(String(describing: messageData))")
         firePixel(pixel: .popupFound)
+        cpmStage = .popupFound
 
         // measure: at least one popup handled within X days
         PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...1, value: "true")
@@ -458,26 +480,7 @@ extension AutoconsentUserScript {
         // Check for reload loop
         detectReloadLoop(cmpName: messageData.cmp)
 
-        // if popupFound is sent with "filterList", it indicates that cosmetic filterlist matched in the prehide stage,
-        // but a real opt-out may still follow. See https://github.com/duckduckgo/autoconsent/blob/main/api.md#messaging-api
-        if messageData.cmp == Constants.filterListCmpName {
-            refreshDashboardState(
-                consentManaged: true,
-                cosmetic: true,
-                optoutFailed: false,
-                selftestFailed: nil,
-                consentReloadLoop: reloadLoopDetected,
-                consentRule: messageData.cmp,
-                consentHeuristicEnabled: consentHeuristicEnabled
-            )
-            // trigger animation
-            Logger.autoconsent.debug("Starting animation for cosmetic filters")
-            // post popover notification
-            NotificationCenter.default.post(name: Self.newSitePopupHiddenNotification, object: self, userInfo: [
-                "topUrl": self.topUrl ?? url,
-                "isCosmetic": true
-            ])
-        }
+        refreshCPMDiagnostics()
 
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
     }
@@ -492,6 +495,7 @@ extension AutoconsentUserScript {
         Logger.autoconsent.debug("opt-out result: \(String(describing: messageData))")
 
         if !messageData.result {
+            cpmStage = .optoutFailed
             refreshDashboardState(
                 consentManaged: true,
                 cosmetic: nil,
@@ -523,6 +527,7 @@ extension AutoconsentUserScript {
         }
 
         Logger.autoconsent.debug("opt-out successful: \(String(describing: messageData))")
+        cpmStage = .done
 
         // Remember the last handled CMP for reload loop detection
         rememberLastHandledCMP(
@@ -539,7 +544,7 @@ extension AutoconsentUserScript {
             consentRule: messageData.cmp,
             consentHeuristicEnabled: consentHeuristicEnabled
         )
-        if messageData.cmp == "HEURISTIC" {
+        if messageData.cmp.hasPrefix("HEURISTIC") {
             firePixel(pixel: .doneHeuristic)
         } else {
             firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
@@ -559,15 +564,13 @@ extension AutoconsentUserScript {
 
         // Show animation and remember that we did it for this site
         management.sitesNotifiedCache.insert(host)
-        if messageData.cmp != Constants.filterListCmpName { // filterlist animation should have been triggered already (see handlePopupFound)
-            Logger.autoconsent.debug("Starting animation for the handled cookie popup")
-            // post popover notification
-            NotificationCenter.default.post(name: Self.newSitePopupHiddenNotification, object: self, userInfo: [
-                "topUrl": self.topUrl ?? url,
-                "isCosmetic": messageData.isCosmetic
-            ])
-            firePixel(pixel: messageData.isCosmetic ? .animationShownCosmetic : .animationShown)
-        }
+        Logger.autoconsent.debug("Starting animation for the handled cookie popup")
+        // post popover notification
+        NotificationCenter.default.post(name: Self.newSitePopupHiddenNotification, object: self, userInfo: [
+            "topUrl": self.topUrl ?? url,
+            "isCosmetic": messageData.isCosmetic
+        ])
+        firePixel(pixel: messageData.isCosmetic ? .animationShownCosmetic : .animationShown)
 
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
 
@@ -621,6 +624,8 @@ extension AutoconsentUserScript {
     private func handleAutoconsentError(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         Logger.autoconsent.error("Autoconsent error: \(String(describing: message.body))")
         // Currently the only type of error that can be sent here is due to multiple popups on the page.
+        recordCPMError(Constants.multipleCMPsError)
+        refreshCPMDiagnostics()
         firePixel(pixel: .errorMultiplePopups)
         replyHandler([ "type": "ok" ], nil)
     }
@@ -678,6 +683,39 @@ extension AutoconsentUserScript {
 
         // fire daily pixel if needed
         PixelKit.fire(pixel, frequency: .daily, withAdditionalParameters: additionalParams)
+    }
+
+    private var serializedCPMErrors: String? {
+        let errors = cpmErrors.joined(separator: ",")
+        guard !errors.isEmpty else { return nil }
+        return String(errors.prefix(Constants.maximumCPMErrorsLength))
+    }
+
+    @MainActor
+    private func resetCPMDiagnostics() {
+        cpmStage = .notStarted
+        cpmErrors.removeAll()
+        consentHeuristicEnabled = nil
+        lastConsentStatus = nil
+    }
+
+    @MainActor
+    private func refreshCPMDiagnostics() {
+        let lastConsentStatus = lastConsentStatus
+        refreshDashboardState(
+            consentManaged: lastConsentStatus?.consentManaged ?? management.sitesNotifiedCache.contains(topUrl?.host ?? ""),
+            cosmetic: lastConsentStatus?.cosmetic,
+            optoutFailed: lastConsentStatus?.optoutFailed,
+            selftestFailed: lastConsentStatus?.selftestFailed,
+            consentReloadLoop: reloadLoopDetected || (lastConsentStatus?.consentReloadLoop ?? false),
+            consentRule: lastConsentStatus?.consentRule ?? lastHandledCMPName,
+            consentHeuristicEnabled: lastConsentStatus?.consentHeuristicEnabled ?? consentHeuristicEnabled
+        )
+    }
+
+    private func recordCPMError(_ error: String) {
+        guard !cpmErrors.contains(error) else { return }
+        cpmErrors.append(error)
     }
 
     // MARK: - Reload Loop Detection

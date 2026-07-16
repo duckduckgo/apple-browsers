@@ -20,7 +20,7 @@ print_usage_and_exit() {
 
 	cat <<- EOF
 	Usage:
-	  $ $(basename "$0") <review|release|alpha> [-a <asana_task_url>] [-d] [-s] [-r] [-v <version>]
+	  $ $(basename "$0") <review|sandbox-review|release|alpha> [-a <asana_task_url>] [-d] [-s] [-r] [-v <version>]
 
 	Options:
 	 -a <asana_task_url>  Update Asana task after building the app (implies -d)
@@ -51,6 +51,13 @@ read_command_line_arguments() {
 			app_name="DuckDuckGo Review"
 			scheme="macOS Browser Review"
 			configuration="Review"
+			;;
+		sandbox-review)
+			release_type="sandbox-review"
+			app_name="DuckDuckGo App Store Review"
+			scheme="macOS Browser Review App Store"
+			configuration="Review"
+			extra_xcargs="UI_TESTS_TARGET_APP=sandbox"
 			;;
 		release)
 			release_type="release"
@@ -254,8 +261,18 @@ archive_and_export() {
 		MARKETING_VERSION="${app_version}" \
 		CURRENT_PROJECT_VERSION="${build_number}" \
 		RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo \
+		${extra_xcargs:+"${extra_xcargs}"} \
 		2>&1 \
 		| ${log_formatter}
+
+	if [[ "${release_type}" == "sandbox-review" ]]; then
+		# App Store entitlements (non-systemextension networkextension values) can't
+		# be re-signed with Developer ID provisioning profiles, so sandbox-review
+		# keeps the archived App Store signatures and is used unsigned-for-DMG
+		# purposes (local UI tests only; Gatekeeper will require manual approval).
+		copy_app_from_archive
+		return
+	fi
 
 	echo "Exporting archive ..."
 
@@ -267,8 +284,21 @@ archive_and_export() {
 		-exportOptionsPlist "${export_options_plist}" \
 		-configuration "${configuration}" \
 		-skipPackagePluginValidation -skipMacroValidation \
+		${extra_xcargs:+"${extra_xcargs}"} \
 		2>&1 \
 		| ${log_formatter}
+}
+
+copy_app_from_archive() {
+	local archived_app
+	archived_app=$(find "${archive}/Products/Applications" -maxdepth 1 -name "*.app" -type d | head -1)
+	if [[ -z "${archived_app}" ]]; then
+		die "Could not find .app bundle in ${archive}/Products/Applications"
+	fi
+
+	echo "Copying ${archived_app} to ${app_path}"
+	ditto "${archived_app}" "${app_path}"
+	xattr -dr com.apple.quarantine "${app_path}" 2>/dev/null || true
 }
 
 notarize() {
@@ -406,8 +436,10 @@ main() {
 
 	clear_working_directory
 	archive_and_export
-	notarize
-	staple_notarized_app
+	if [[ "${release_type}" != "sandbox-review" ]]; then
+		notarize
+		staple_notarized_app
+	fi
 	compress_app_and_dsym
 
 	if [[ ${create_dmg} ]]; then

@@ -126,17 +126,6 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "WaitlistTests"
-               BuildableName = "WaitlistTests"
-               BlueprintName = "WaitlistTests"
-               ReferencedContainer = "container:LocalPackages/Waitlist">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "984249BD2CED4F430071C7DB"
                BuildableName = "WebViewUnitTests.xctest"
                BlueprintName = "WebViewUnitTests"
@@ -231,6 +220,36 @@
                BuildableName = "WebExtensionsTests"
                BlueprintName = "WebExtensionsTests"
                ReferencedContainer = "container:../SharedPackages/WebExtensions">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "ICSParserTests"
+               BuildableName = "ICSParserTests"
+               BlueprintName = "ICSParserTests"
+               ReferencedContainer = "container:../SharedPackages/ICSParser">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "9825F9CB293F2DE900F220F2"
+               BuildableName = "PerformanceTests.xctest"
+               BlueprintName = "PerformanceTests"
+               ReferencedContainer = "container:DuckDuckGo-iOS.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SyncUI-iOSTests"
+               BuildableName = "SyncUI-iOSTests"
+               BlueprintName = "SyncUI-iOSTests"
+               ReferencedContainer = "container:LocalPackages/SyncUI-iOS">
             </BuildableReference>
          </TestableReference>
       </Testables>

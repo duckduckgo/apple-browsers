@@ -90,9 +90,12 @@ final class VPNService: NSObject {
     @MainActor
     private func presentExpiredEntitlementAlert() {
         let alertController = CriticalAlerts.makeExpiredEntitlementAlert {
-            self.mainCoordinator.segueToDuckDuckGoSubscription()
+            Pixel.fire(pixel: .vpnAccessRevokedAlertSubscribeButtonClicked)
+            self.mainCoordinator.segueToDuckDuckGoSubscription(origin: SubscriptionFunnelOrigin.vpnAccessRevokedAlert.rawValue)
         }
-        application.firstKeyWindow?.rootViewController?.present(alertController, animated: true) {
+        guard let rootViewController = application.firstKeyWindow?.rootViewController else { return }
+        Pixel.fire(pixel: .vpnAccessRevokedAlertShown)
+        rootViewController.present(alertController, animated: true) {
             self.tunnelDefaults.showEntitlementAlert = false
         }
     }
@@ -113,9 +116,10 @@ final class VPNService: NSObject {
         // No-op
     }
 
+    /// Checks if the shortcut item should be shown by asking if a subscription is present, and if so, is the network protection feature included - avoiding calls to the API.
     @MainActor
     func shortcutItem() async -> UIApplicationShortcutItem? {
-        guard await vpnFeatureVisibility.shouldShowVPNShortcut(),
+        guard subscriptionManager.isSubscriptionPresent(),
            let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
            canShowVPNInUI else {
             return nil

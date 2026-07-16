@@ -68,7 +68,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         XCTAssertNotNil(host.view)
 
         // Then
-        let trySearchDialog = find(OnboardingTrySearchDialog.self, in: host)
+        let trySearchDialog = find(OnboardingRebranding.OnboardingTrySearchDialog.self, in: host)
         XCTAssertNotNil(trySearchDialog)
         XCTAssertTrue(trySearchDialog?.viewModel.delegate === mockDelegate)
     }
@@ -83,7 +83,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         XCTAssertNotNil(host.view)
 
         // Then
-        let trySiteDialog = find(OnboardingTryVisitingSiteDialog.self, in: host)
+        let trySiteDialog = find(OnboardingRebranding.OnboardingTrySiteDialog.self, in: host)
         XCTAssertNotNil(trySiteDialog)
         XCTAssertTrue(trySiteDialog?.viewModel.delegate === mockDelegate)
     }
@@ -103,7 +103,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         XCTAssertNotNil(host.view)
 
         // Then
-        let finalDialog = find(OnboardingFinalDialog.self, in: host)
+        let finalDialog = find(OnboardingRebranding.OnboardingEndOfJourneyDialog.self, in: host)
         XCTAssertNotNil(finalDialog)
         finalDialog?.dismissAction()
         XCTAssertTrue(onDismissedRun)
@@ -121,9 +121,9 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         XCTAssertNotNil(host.view)
 
         // Then
-        let addFavoriteDialog = find(ContextualDaxDialogContent.self, in: host)
+        let addFavoriteDialog = find(OnboardingRebranding.OnboardingAddFavorite.self, in: host)
         XCTAssertNotNil(addFavoriteDialog)
-        XCTAssertEqual(addFavoriteDialog?.message.string, UserText.Onboarding.ContextualOnboarding.daxDialogHomeAddFavorite)
+        XCTAssertEqual(addFavoriteDialog?.message, UserText.Onboarding.ContextualOnboarding.daxDialogHomeAddFavorite)
     }
 
     // MARK: - Pixels
@@ -157,7 +157,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         let view = factory.createDaxDialog(for: DaxDialogs.HomeScreenSpec.final, onCompletion: { _ in }, onManualDismiss: { })
         let host = UIHostingController(rootView: view)
         window.rootViewController = host
-        let finalDialog = try XCTUnwrap(find(OnboardingFinalDialog.self, in: host))
+        let finalDialog = try XCTUnwrap(find(OnboardingRebranding.OnboardingEndOfJourneyDialog.self, in: host))
         XCTAssertFalse(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
 
         // WHEN
@@ -165,6 +165,74 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
+    }
+
+    // MARK: - Chat Path – Subsequent Dialog
+
+    func testWhenChatPathPostFireState_AndSubsequentDialogAppears_ThenFiresChatPathVisitSitePixel() {
+        // GIVEN
+        contextualOnboardingLogicMock.chatPathPhase = .visitSite
+        let spec = DaxDialogs.HomeScreenSpec.subsequent
+        let pixelEvent = Pixel.Event.onboardingChatPathTryVisitSiteUnique
+        // TEST
+        testDialogDefinedBy(spec: spec, firesEvent: pixelEvent)
+    }
+
+    func testWhenChatPathPostFireState_AndSubsequentDialogAppears_ThenSetsChatPathVisitSiteSeen() {
+        // GIVEN
+        contextualOnboardingLogicMock.chatPathPhase = .visitSite
+        XCTAssertFalse(contextualOnboardingLogicMock.didCallSetChatPathVisitSiteSeen)
+
+        // WHEN
+        waitForDialogDefinedBy(spec: .subsequent) {
+            // THEN
+            XCTAssertTrue(self.contextualOnboardingLogicMock.didCallSetChatPathVisitSiteSeen)
+            XCTAssertFalse(self.contextualOnboardingLogicMock.didCallSetTryVisitSiteMessageSeen)
+        }
+    }
+
+    func testWhenNotChatPath_AndSubsequentDialogAppears_ThenFiresStandardVisitSitePixel() {
+        // GIVEN
+        contextualOnboardingLogicMock.chatPathPhase = .none
+        let spec = DaxDialogs.HomeScreenSpec.subsequent
+        let pixelEvent = Pixel.Event.onboardingContextualTryVisitSiteUnique
+        // TEST
+        testDialogDefinedBy(spec: spec, firesEvent: pixelEvent)
+    }
+
+    func testWhenNotChatPath_AndSubsequentDialogAppears_ThenSetsStandardVisitSiteSeen() {
+        // GIVEN
+        contextualOnboardingLogicMock.chatPathPhase = .none
+        XCTAssertFalse(contextualOnboardingLogicMock.didCallSetTryVisitSiteMessageSeen)
+
+        // WHEN
+        waitForDialogDefinedBy(spec: .subsequent) {
+            // THEN
+            XCTAssertTrue(self.contextualOnboardingLogicMock.didCallSetTryVisitSiteMessageSeen)
+            XCTAssertFalse(self.contextualOnboardingLogicMock.didCallSetChatPathVisitSiteSeen)
+        }
+    }
+
+    // MARK: - Final Dialog
+
+    func testWhenFinalDialogAppears_ThenFiresStandardEOJPixel() {
+        let spec = DaxDialogs.HomeScreenSpec.final
+        let pixelEvent = Pixel.Event.daxDialogsEndOfJourneyNewTabUnique
+        testDialogDefinedBy(spec: spec, firesEvent: pixelEvent)
+    }
+
+    func testWhenFinalDialogAppears_ThenSetsFinalOnboardingDialogSeen() {
+        // GIVEN
+        contextualOnboardingLogicMock.expectation = expectation(description: "setFinalOnboardingDialogSeen called")
+
+        // WHEN
+        let view = factory.createDaxDialog(for: .final, onCompletion: { _ in }, onManualDismiss: { })
+        let host = OnboardingHostingControllerMock(rootView: AnyView(view))
+        window.rootViewController = host
+
+        // THEN
+        waitForExpectations(timeout: 2.0)
+        XCTAssertTrue(contextualOnboardingLogicMock.didCallSetFinalOnboardingDialogSeen)
     }
 
 }
@@ -176,6 +244,22 @@ private extension ContextualOnboardingNewTabDialogFactoryTests {
             // THEN
             XCTAssertTrue(self.pixelReporterMock.didCallMeasureScreenImpressionCalled)
             XCTAssertEqual(self.pixelReporterMock.capturedScreenImpression, event)
+            XCTAssertTrue(self.pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+            XCTAssertEqual(self.pixelReporterMock.capturedSharedOnboardingScreenImpression, Self.expectedSharedScreenImpression(forLegacyPixel: event))
+        }
+    }
+
+    static func expectedSharedScreenImpression(forLegacyPixel event: Pixel.Event) -> OnboardingSharedPixelEvent {
+        switch event {
+        case .onboardingContextualTrySearchUnique:
+            return .search(.shown)
+        case .onboardingContextualTryVisitSiteUnique, .onboardingChatPathTryVisitSiteUnique:
+            return .visitSite(.shown)
+        case .daxDialogsEndOfJourneyNewTabUnique:
+            return .end(.shown)
+        default:
+            XCTFail("Update expectedSharedScreenImpression mapping for \(event)")
+            return .search(.shown)
         }
     }
 
@@ -184,6 +268,8 @@ private extension ContextualOnboardingNewTabDialogFactoryTests {
         let expectation = self.expectation(description: #function)
         XCTAssertFalse(pixelReporterMock.didCallMeasureScreenImpressionCalled)
         XCTAssertNil(pixelReporterMock.capturedScreenImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+        XCTAssertNil(pixelReporterMock.capturedSharedOnboardingScreenImpression)
 
         // WHEN
         let view = factory.createDaxDialog(for: spec, onCompletion: { _ in }, onManualDismiss: { })

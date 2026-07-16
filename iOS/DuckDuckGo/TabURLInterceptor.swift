@@ -20,6 +20,7 @@
 import Foundation
 import PrivacyConfig
 import Common
+import FoundationExtensions
 import Subscription
 import AIChat
 
@@ -43,26 +44,22 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     private let canPurchase: CanPurchaseUpdater
     private let featureFlagger: FeatureFlagger
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
-    private let aichatIPadTabFeature: AIChatIPadTabFeatureProviding
 
     init(featureFlagger: FeatureFlagger,
          canPurchase: @escaping CanPurchaseUpdater,
-         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-         aichatIPadTabFeature: AIChatIPadTabFeatureProviding? = nil
+         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()
     ) {
         self.canPurchase = canPurchase
         self.featureFlagger = featureFlagger
         self.aichatFullModeFeature = aichatFullModeFeature
-        self.aichatIPadTabFeature = aichatIPadTabFeature ?? AIChatIPadTabFeature(featureFlagger: featureFlagger)
     }
 
-    static let interceptedURLs: [InterceptedURLInfo] = [
-        InterceptedURLInfo(id: .subscription, path: "/subscriptions"),
-        InterceptedURLInfo(id: .subscription, path: "/subscriptions/plans")
-    ]
+    static let interceptedURLs: [InterceptedURLInfo] = SubscriptionPurchaseFlowPath.allCases.map {
+        InterceptedURLInfo(id: .subscription, path: $0.rawValue)
+    }
     
     func allowsNavigatingTo(url: URL) -> Bool {
-        if url.isDuckAIURL && !aichatFullModeFeature.isAvailable && !aichatIPadTabFeature.isAvailable {
+        if url.isDuckAIURL && !aichatFullModeFeature.isAvailable && !DevicePlatform.isIpad {
             return handleURLInterception(interceptedURLType: .aiChat, interceptedURL: url)
         }
 
@@ -85,14 +82,14 @@ extension TabURLInterceptorDefault {
     }
     
     private func normalizeScheme(_ rawUrl: String) -> URLComponents? {
-        if !rawUrl.starts(with: URL.URLProtocol.https.scheme) &&
-           !rawUrl.starts(with: URL.URLProtocol.http.scheme) &&
+        if !rawUrl.starts(with: URL.NavigationalScheme.https.separated()) &&
+           !rawUrl.starts(with: URL.NavigationalScheme.http.separated()) &&
            rawUrl.contains("://") {
             return nil
         }
-        let noScheme = rawUrl.dropping(prefix: URL.URLProtocol.https.scheme).dropping(prefix: URL.URLProtocol.http.scheme)
-        
-        return URLComponents(string: "\(URL.URLProtocol.https.scheme)\(noScheme)")
+        let noScheme = rawUrl.dropping(prefix: URL.NavigationalScheme.https.separated()).dropping(prefix: URL.NavigationalScheme.http.separated())
+
+        return URLComponents(string: "\(URL.NavigationalScheme.https.separated())\(noScheme)")
     }
 
     private func handleURLInterception(interceptedURLType: InterceptedURLType, interceptedURLComponents: URLComponents? = nil, interceptedURL: URL? = nil) -> Bool {

@@ -32,19 +32,16 @@ public final class AIChatContextChipView: UIView {
     private enum Constants {
         static let chipWidth: CGFloat = 240
         static let cornerRadius: CGFloat = 15
-        static let borderCornerRadius: CGFloat = 13
-        static let borderWidth: CGFloat = 1.5
-        static let dashLength: CGFloat = 5
-        static let dashSpacing: CGFloat = 5
+        static let borderWidth: CGFloat = 1
 
-        static let faviconSize: CGFloat = 24
+        static let faviconSize: CGFloat = 28
         static let faviconCornerRadius: CGFloat = 4
         static let faviconLeading: CGFloat = 10
-        static let faviconVerticalPadding: CGFloat = 10
+        static let faviconVerticalPadding: CGFloat = 8
 
-        static let removeButtonSize: CGFloat = 24
+        static let removeButtonSize: CGFloat = 32
         static let removeButtonTrailing: CGFloat = 10
-        static let removeButtonVerticalPadding: CGFloat = 10
+        static let removeButtonVerticalPadding: CGFloat = 6
 
         static let contentSpacing: CGFloat = 8
         static let labelSpacing: CGFloat = 2
@@ -63,14 +60,6 @@ public final class AIChatContextChipView: UIView {
 
     /// Callback invoked when the remove button is tapped.
     public var onRemove: (() -> Void)?
-
-    /// Callback invoked when the chip is tapped in the placeholder state.
-    public var onTapToAttach: (() -> Void)?
-
-    private var borderLayer: CAShapeLayer?
-    private var isDashedBorder = false
-    private var lastBorderBounds: CGRect = .zero
-    private var tapGesture: UITapGestureRecognizer?
 
     // MARK: - UI Components
 
@@ -181,10 +170,6 @@ private extension AIChatContextChipView {
         chipContentView.addSubview(removeButton)
         mainStackView.addArrangedSubview(chipContentView)
 
-        let gesture = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
-        tapGesture = gesture
-        addGestureRecognizer(gesture)
-
         setupConstraints()
         setupAccessibility()
     }
@@ -193,62 +178,58 @@ private extension AIChatContextChipView {
         switch state {
         case .placeholder:
             titleLabel.text = UserText.attachPageContent
+            titleLabel.accessibilityIdentifier = "AIChat.ContextChip.Placeholder"
             titleLabel.textColor = UIColor(designSystemColor: .textPlaceholder)
             faviconView.image = DesignSystemImages.Glyphs.Size24.pageContentAttach.withRenderingMode(.alwaysTemplate)
             faviconView.tintColor = UIColor(designSystemColor: .textTertiary)
             faviconView.backgroundColor = .clear
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
-            backgroundColor = .clear
+            isHidden = true
+            backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
             removeButton.isHidden = true
             accessibilityLabel = UserText.attachPageContent
-            updateBorder(dashed: true)
-            isUserInteractionEnabled = true
-            tapGesture?.isEnabled = true
+            applyAttachedBorder()
+            isUserInteractionEnabled = false
 
         case .attached(let title, let favicon):
+            isHidden = false
             titleLabel.text = title
+            titleLabel.accessibilityIdentifier = "AIChat.ContextChip.AttachedTitle"
             titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
             removeButton.isHidden = false
             faviconView.image = favicon ?? placeholderFavicon()
             faviconView.backgroundColor = .clear
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
-            backgroundColor = .clear
+            backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
             accessibilityLabel = title
-            updateBorder(dashed: false)
-            tapGesture?.isEnabled = false
+            applyAttachedBorder()
+            isUserInteractionEnabled = true
         }
     }
 
-    func updateBorder(dashed: Bool) {
-        isDashedBorder = dashed
-        layer.borderWidth = 0
-        layer.borderColor = nil
+    func applyAttachedBorder() {
+        layer.borderWidth = Constants.borderWidth
+        layer.borderColor = UIColor(designSystemColor: .lines).cgColor
+        layer.cornerRadius = Constants.cornerRadius
         clipsToBounds = true
-
-        let borderLayer = makeOrReuseBorderLayer()
-        borderLayer.strokeColor = UIColor(designSystemColor: dashed ? .decorationPrimary : .decorationQuaternary).cgColor
-        borderLayer.lineWidth = Constants.borderWidth
-        borderLayer.lineDashPattern = dashed ? [NSNumber(value: Constants.dashLength), NSNumber(value: Constants.dashSpacing)] : nil
-        borderLayer.fillColor = dashed ? nil : UIColor(designSystemColor: .controlsFillPrimary).cgColor
-
-        setNeedsLayout()
-    }
-
-    func makeOrReuseBorderLayer() -> CAShapeLayer {
-        if let borderLayer = borderLayer {
-            return borderLayer
-        }
-
-        let newLayer = CAShapeLayer()
-        newLayer.contentsScale = UIScreen.main.scale
-        layer.insertSublayer(newLayer, at: 0)
-        borderLayer = newLayer
-        return newLayer
     }
 
     func setupConstraints() {
+        // The chip's host can collapse it via an external `height == 0` constraint while it's
+        // hidden. Internal top/bottom padding around the favicon/remove button would otherwise
+        // demand >= 44pt, so make them break gracefully when the host pins height to 0.
+        let faviconTop = faviconView.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.faviconVerticalPadding)
+        faviconTop.priority = .defaultHigh
+        let faviconBottom = faviconView.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.faviconVerticalPadding)
+        faviconBottom.priority = .defaultHigh
+
+        let removeTop = removeButton.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.removeButtonVerticalPadding)
+        removeTop.priority = .defaultHigh
+        let removeBottom = removeButton.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.removeButtonVerticalPadding)
+        removeBottom.priority = .defaultHigh
+
         NSLayoutConstraint.activate([
             widthAnchor.constraint(equalToConstant: Constants.chipWidth),
 
@@ -258,8 +239,8 @@ private extension AIChatContextChipView {
             mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
             faviconView.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor, constant: Constants.faviconLeading),
-            faviconView.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.faviconVerticalPadding),
-            faviconView.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.faviconVerticalPadding),
+            faviconTop,
+            faviconBottom,
             faviconView.widthAnchor.constraint(equalToConstant: Constants.faviconSize),
             faviconView.heightAnchor.constraint(equalToConstant: Constants.faviconSize),
 
@@ -268,8 +249,8 @@ private extension AIChatContextChipView {
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: removeButton.leadingAnchor, constant: -Constants.contentSpacing),
 
             removeButton.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor, constant: -Constants.removeButtonTrailing),
-            removeButton.topAnchor.constraint(equalTo: chipContentView.topAnchor, constant: Constants.removeButtonVerticalPadding),
-            removeButton.bottomAnchor.constraint(equalTo: chipContentView.bottomAnchor, constant: -Constants.removeButtonVerticalPadding),
+            removeTop,
+            removeBottom,
             removeButton.widthAnchor.constraint(equalToConstant: Constants.removeButtonSize),
             removeButton.heightAnchor.constraint(equalToConstant: Constants.removeButtonSize),
         ])
@@ -278,6 +259,7 @@ private extension AIChatContextChipView {
     func setupAccessibility() {
         isAccessibilityElement = false
         removeButton.accessibilityLabel = "Remove"
+        removeButton.accessibilityIdentifier = "AIChat.ContextChip.RemoveButton"
         removeButton.accessibilityTraits = .button
     }
 
@@ -287,33 +269,6 @@ private extension AIChatContextChipView {
 
     @objc func removeButtonTapped() {
         onRemove?()
-    }
-
-    @objc func chipTapped() {
-        if case .placeholder = currentState {
-            onTapToAttach?()
-        }
-    }
-}
-
-// MARK: - Layout
-
-extension AIChatContextChipView {
-
-    public override func layoutSubviews() {
-        super.layoutSubviews()
-
-        guard !bounds.isEmpty else { return }
-        guard let borderLayer = borderLayer else { return }
-
-        if lastBorderBounds != bounds {
-            let inset = Constants.borderWidth / 2
-            let insetBounds = CGRect(origin: .zero, size: bounds.size).insetBy(dx: inset, dy: inset)
-
-            borderLayer.frame = bounds
-            borderLayer.path = UIBezierPath(roundedRect: insetBounds, cornerRadius: Constants.borderCornerRadius).cgPath
-            lastBorderBounds = bounds
-        }
     }
 }
 
@@ -325,10 +280,8 @@ extension AIChatContextChipView {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            if let borderLayer = borderLayer {
-                borderLayer.strokeColor = UIColor(designSystemColor: isDashedBorder ? .decorationPrimary : .decorationQuaternary).cgColor
-                borderLayer.fillColor = isDashedBorder ? nil : UIColor(designSystemColor: .controlsFillPrimary).cgColor
-            }
+            layer.borderColor = UIColor(designSystemColor: .lines).cgColor
+            backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
             // Update favicon border color for dark mode (placeholder state only)
             if faviconView.layer.borderWidth > 0 {
                 faviconView.layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor

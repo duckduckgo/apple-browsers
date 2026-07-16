@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import CoreData
 import Persistence
 import os.log
@@ -79,7 +80,7 @@ public final class RemoteMessagingStore: RemoteMessagingStoring {
             .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self else { return }
-                guard fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType.allCases) != nil else {
+                guard fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType.allCases, triggerFilter: .any) != nil else {
                     return
                 }
                 Task {
@@ -213,7 +214,7 @@ extension RemoteMessagingStore {
 
 extension RemoteMessagingStore {
 
-    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType) -> RemoteMessageModel? {
+    public func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType, triggerFilter: TriggerFilter = .noTrigger) -> RemoteMessageModel? {
 
         func predicateForSurfaces(_ surfaces: RemoteMessageSurfaceType) -> NSPredicate {
             // Match any message whose surfaces bitmask overlaps with the requested surfaces
@@ -251,13 +252,25 @@ extension RemoteMessagingStore {
                     continue
                 }
 
+                if let dismissAfterDays = remoteMessage.displayConditions?.dismissAfterDaysShown,
+                   dismissAfterDays > 0,
+                   let firstShown = remoteMessageManagedObject.firstShownDate,
+                   let daysSinceFirstShown = Calendar.current.dateComponents([.day], from: firstShown, to: Date()).day,
+                   daysSinceFirstShown >= dismissAfterDays {
+                    self.dismissExpiredMessage(withID: id)
+                    continue
+                }
+
+                guard triggerFilter.matches(remoteMessage.displayConditions?.trigger) else { continue }
+
                 scheduledRemoteMessage = RemoteMessageModel(
                     id: id,
                     surfaces: remoteMessageManagedObject.surfaces.flatMap { RemoteMessageSurfaceType(rawValue: $0.int16Value) } ?? .newTabPage,
                     content: remoteMessage.content,
                     matchingRules: [],
                     exclusionRules: [],
-                    isMetricsEnabled: remoteMessage.isMetricsEnabled
+                    isMetricsEnabled: remoteMessage.isMetricsEnabled,
+                    displayConditions: remoteMessage.displayConditions
                 )
                 break
             }
@@ -381,6 +394,9 @@ extension RemoteMessagingStore {
                         return
                     }
                     message.shown = shown
+                    if shown && message.firstShownDate == nil {
+                        message.firstShownDate = Date()
+                    }
                     try context.save()
                 } catch {
                     errorEvents?.fire(.updateMessageShownFailed, error: error)
@@ -441,6 +457,12 @@ extension RemoteMessagingStore {
                 remoteMessageManagedObject.id = remoteMessage.id
                 remoteMessageManagedObject.shown = false
             }
+        }
+    }
+
+    private func dismissExpiredMessage(withID id: String) {
+        Task {
+            await dismissRemoteMessage(withID: id)
         }
     }
 

@@ -191,32 +191,43 @@ class AppUserDefaultsTests: XCTestCase {
         XCTAssertFalse(appUserDefaults.autofillCredentialsEnabled)
     }
 
-    func testDefaultAutoconsentStateIsFalse_WhenNotInRollout() {
+    func testDefaultCookiePopupPreferenceIsBlockStandard_WhenNotInRollout() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
         appUserDefaults.featureFlagger = MockFeatureFlagger()
-        XCTAssertFalse(appUserDefaults.autoconsentEnabled)
+        XCTAssertEqual(appUserDefaults.cookiePopupPreference, .default)
+        XCTAssertTrue(appUserDefaults.autoconsentEnabled)
     }
 
-    func testDefaultAutoconsentStateIsTrue_WhenInRollout() {
+    func testDefaultCookiePopupPreferenceIsBlockStandard_WhenInRollout() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
         appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .autoconsentOnByDefault)
+        XCTAssertEqual(appUserDefaults.cookiePopupPreference, .default)
         XCTAssertTrue(appUserDefaults.autoconsentEnabled)
     }
 
     func testAutoconsentReadsUserStoredValue_RegardlessOfRolloutState() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-     
+
         // When setting disabled by user and rollout enabled
         appUserDefaults.autoconsentEnabled = false
         appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .autoconsentOnByDefault)
 
+        XCTAssertEqual(appUserDefaults.cookiePopupPreference, .off)
         XCTAssertFalse(appUserDefaults.autoconsentEnabled)
 
         // When setting enabled by user and rollout disabled
         appUserDefaults.autoconsentEnabled = true
         appUserDefaults.featureFlagger = MockFeatureFlagger()
 
+        XCTAssertEqual(appUserDefaults.cookiePopupPreference, .default)
         XCTAssertTrue(appUserDefaults.autoconsentEnabled)
+    }
+
+    func testWhenMigratingFromExplicitlyDisabledAutoconsentThenPreferenceIsDoNotBlock() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        customSuite.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autoconsentEnabled.rawValue)
+
+        XCTAssertEqual(appUserDefaults.cookiePopupPreference, .off)
     }
 
     func testWhenRefreshButtonPositionIsSetThenItIsPersisted() {
@@ -243,6 +254,26 @@ class AppUserDefaultsTests: XCTestCase {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
 
         XCTAssertTrue(appUserDefaults.showTrackersBlockedAnimation)
+    }
+
+    // MARK: - Ad-blocking rollout onboarding default
+
+    func testWhenAdBlockingRolloutInactiveThenOnboardingDefaultsKeepDuckPlayerAtDefaults() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+
+        appUserDefaults.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: false)
+
+        XCTAssertEqual(appUserDefaults.duckPlayerMode, .alwaysAsk)
+        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .ask)
+    }
+
+    func testWhenAdBlockingRolloutActiveThenOnboardingDefaultsDisableDuckPlayer() {
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+
+        appUserDefaults.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: true)
+
+        XCTAssertEqual(appUserDefaults.duckPlayerMode, .disabled)
+        XCTAssertEqual(appUserDefaults.duckPlayerNativeYoutubeMode, .never)
     }
 
     // MARK: - Mock Creation

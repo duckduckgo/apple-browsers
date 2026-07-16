@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import Foundation
 import Navigation
+import os.log
 import PrivacyConfig
 import WebKit
 
@@ -43,11 +44,38 @@ final class PageContextTabExtension {
     private let tabID: TabIdentifier
     private var content: Tab.TabContent = .none
     private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let extractionPixelHandler: PageContextExtractionPixelFiring
+    private var lastMainFrameResponse: (url: URL, mimeType: String?)?
+
+    private var extractionResolver = PageContextExtractionResolver()
+
+    /// Set once an automatic (page-load) extraction outcome is reported for the current navigation,
+    /// so its overlapping navigation/signals-only collects don't each fire a pixel. Reset on new URL.
+    private var didReportExtractionForCurrentNavigation = false
+
+    /// Safety-net window for a fire-and-forget `collect()` whose result never arrives (hung JS,
+    /// torn-down page). After it, `scheduleCollectionTimeout` fires `.timeout` and drops the pending
+    /// entry so the queue can't leak.
+    ///
+    /// Kept deliberately generous: a slow collect that resolves *after* this window is still
+    /// delivered to Duck.ai via `handle`, but its pending entry is already gone, so `resolve` finds
+    /// no match and it's mis-recorded as a `.timeout` with no offsetting success pixel. A high value
+    /// makes that late-success mislabeling rare while still bounding the queue (navigation also
+    /// clears it via `extractionResolver.reset()`). Independent of `collectAndWait`'s 5s default —
+    /// that's a separate, synchronous tab-picker path.
+    private static let collectionTimeout: TimeInterval = 30
+
     private let aiChatSessionStore: AIChatSessionStoring
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let isLoadedInSidebar: Bool
     private let faviconManagement: FaviconManagement
     private var cachedPageContext: AIChatPageContextData?
+
+    /// Text selections ("Attach to Duck.ai") buffered until the sidebar chat VC exists. Lives on
+    /// its own channel, independent of the single page-context slot above — it never touches
+    /// `cachedPageContext` or triggers page collection. Once flushed, the duck.ai web app owns the list.
+    private var pendingSelectionContexts: [AIChatSelectionContextData] = []
 
     /// Tracks whether a prompt has been submitted in the current chat session.
     /// When true, navigating with auto-collect OFF will send a nil signal so the
@@ -59,6 +87,11 @@ final class PageContextTabExtension {
     /// It allows to override the AI Features setting for automatic context collection.
     /// The flag is automatically cleared after receiving a `collectionResult` message.
     private var shouldForceContextCollection: Bool = false
+
+    /// Set when we trigger a collection purely to harvest Content-Scope-Scripts page-type signals
+    /// while auto-attach is OFF. The collectionResult is then delivered as a signals-only payload
+    /// (content stripped, attached:false). Cleared when that result arrives.
+    private var pendingSignalsOnlyCollection: Bool = false
 
     /// Set when the user explicitly removes page context from the chat.
     /// Suppresses auto-collection on the current page until the next navigation.
@@ -82,6 +115,8 @@ final class PageContextTabExtension {
         contentPublisher: some Publisher<Tab.TabContent, Never>,
         tabID: TabIdentifier,
         featureFlagger: FeatureFlagger,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        extractionPixelHandler: PageContextExtractionPixelFiring,
         aiChatSessionStore: AIChatSessionStoring,
         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
         isLoadedInSidebar: Bool,
@@ -89,6 +124,8 @@ final class PageContextTabExtension {
     ) {
         self.tabID = tabID
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.extractionPixelHandler = extractionPixelHandler
         self.aiChatSessionStore = aiChatSessionStore
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.isLoadedInSidebar = isLoadedInSidebar
@@ -118,11 +155,24 @@ final class PageContextTabExtension {
                 self.content = tabContent
                 // Reset user-removed suppression when navigating to a new URL so
                 // auto-collect resumes on the next page, regardless of feature flag state.
+                // Also drop the previous page's cached context so a stale snapshot
+                // can't be re-pushed to the sidebar before the new page is collected.
                 if case .url = tabContent {
                     self.userRemovedContext = false
+                    self.cachedPageContext = nil
+                    // Selections are tied to the page they were made on — drop any not-yet-flushed ones.
+                    self.pendingSelectionContexts = []
+                    // Drop the previous page's outstanding collects so a slow or never-resolving
+                    // collect can't pair (FIFO) with this page's result and mis-attribute its
+                    // extraction telemetry (trigger/latency/outcome).
+                    self.extractionResolver.reset()
+                    self.didReportExtractionForCurrentNavigation = false
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
+                // Signals-only collection is driven from `navigationDidFinish` (post-load, parsed
+                // markup). Collecting here at didCommit too would race the post-load re-collect for
+                // the single-shot `pendingSignalsOnlyCollection` flag and let stale signals win.
             }
             .store(in: &cancellables)
 
@@ -137,16 +187,11 @@ final class PageContextTabExtension {
                 }
                 session = aiChatSessionStore?.sessions[tabID]
 
-                /// This closure is responsible for passing cached page context to the newly displayed sidebar.
-                /// It's only called when sidebar for tabID is non-nil.
-                /// Additionally, we're only calling `handle` if there's a cached page context.
-                if let cachedPageContext, isContextCollectionEnabled {
-                    Task {
-                        await self.handle(cachedPageContext)
-                    }
-                } else {
-                    sendNonAttachableContextIfNeeded()
-                }
+                // Flush any selections attached while the sidebar was opening. Deferred so the
+                // chat VC exists after `showSidebar` finishes. Independent of page context below.
+                Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
+
+                self.deliverContextToCurrentSidebar()
             }
             .store(in: &cancellables)
 
@@ -162,7 +207,7 @@ final class PageContextTabExtension {
                     if let cachedPageContext {
                         Task { await self.handle(cachedPageContext) }
                     } else {
-                        collectPageContextIfNeeded()
+                        collectPageContextIfNeeded(trigger: .auto)
                     }
                 }
             }
@@ -182,14 +227,22 @@ final class PageContextTabExtension {
                 guard let self else {
                     return
                 }
-                /// Only process the collection result when auto-collect is enabled or the user
-                /// explicitly requested context. Unsolicited results from the page script
-                /// should not overwrite previously attached context with nil.
-                guard self.isContextCollectionEnabled else {
-                    return
-                }
-                Task {
-                    await self.handle(pageContext)
+                /// Process full collection when auto-collect is enabled (or the user explicitly
+                /// requested context). When auto-collect is OFF but we requested a signals-only
+                /// collection, deliver just the page-type signals (content stripped). Otherwise
+                /// ignore unsolicited results so they can't overwrite attached context with nil.
+                if self.isContextCollectionEnabled {
+                    self.pendingSignalsOnlyCollection = false
+                    self.fireExtractionOutcome(for: pageContext)
+                    Task {
+                        await self.handle(pageContext)
+                    }
+                } else if self.pendingSignalsOnlyCollection {
+                    self.pendingSignalsOnlyCollection = false
+                    self.fireExtractionOutcome(for: pageContext)
+                    Task {
+                        await self.handleSignalsOnly(pageContext)
+                    }
                 }
             }
             .store(in: &userScriptCancellables)
@@ -202,11 +255,20 @@ final class PageContextTabExtension {
             return
         }
 
+        session.chatViewControllerPublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] chatViewController in
+                guard let self, chatViewController != nil else { return }
+                self.deliverContextToCurrentSidebar()
+            }
+            .store(in: &sidebarCancellables)
+
         session.pageContextRequestedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.shouldForceContextCollection = true
-                self?.collectPageContextIfNeeded()
+                self?.collectPageContextIfNeeded(trigger: .userRequest)
             }
             .store(in: &sidebarCancellables)
 
@@ -220,7 +282,16 @@ final class PageContextTabExtension {
         session.pageContextRemovedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.userRemovedContext = true
+                guard let self else { return }
+                // The FE fires this for both user X-click and the auto-clear after submit.
+                // After submit the context was already consumed; pushing nil back would
+                // make the FE re-show "Add page content" on the same URL.
+                guard !self.hasContextBeenConsumedByChat else { return }
+                self.userRemovedContext = true
+                self.cachedPageContext = nil
+                // Clear the stored pageContext too, so a later FE `getAIChatPageContext`
+                // returns nil and triggers a fresh collect instead of the stale snapshot.
+                self.aiChatSessionStore.sessions[self.tabID]?.chatViewController?.setPageContext(nil)
             }
             .store(in: &sidebarCancellables)
     }
@@ -234,6 +305,8 @@ final class PageContextTabExtension {
             return
         }
         shouldForceContextCollection = false
+        // Page-type signals (for duck.ai page shortcuts) ride the collected payload from
+        // Content-Scope-Scripts (includePageTypeSignals) and are preserved through favicon encoding.
         cachedPageContext = replaceFaviconURLWithEncodedData(pageContext)
         if let chatViewController = aiChatSessionStore.sessions[tabID]?.chatViewController {
             chatViewController.setPageContext(cachedPageContext)
@@ -245,11 +318,155 @@ final class PageContextTabExtension {
         }
     }
 
-    private func collectPageContextIfNeeded() {
-        guard case .url = content, isContextCollectionEnabled else {
+    private func deliverContextToCurrentSidebar() {
+        if let cachedPageContext, isContextCollectionEnabled {
+            Task { await self.handle(cachedPageContext) }
+        } else {
+            sendNonAttachableContextIfNeeded()
+            requestSignalsOnlyCollectionIfNeeded()
+        }
+    }
+
+    // MARK: - Attachability gate
+
+    private func currentAttachabilityPolicy() -> PageContextAttachabilityPolicy? {
+        let settings = privacyConfigurationManager.privacyConfig.settings(for: .pageContext)
+        guard let blocklist = PageContextBlocklistSettings(blocklist: settings["aiPageContextBlocklist"]) else {
+            return nil
+        }
+        return PageContextAttachabilityPolicy(settings: blocklist)
+    }
+
+    /// Extraction telemetry (success / failure / prevented / timeout) is only reported once the
+    /// `aiPageContextBlocklist` privacy config is present
+    private var isExtractionMeasurementEnabled: Bool {
+        currentAttachabilityPolicy() != nil
+    }
+
+    private func preventedAttachReason(for url: URL) -> String? {
+        guard let policy = currentAttachabilityPolicy() else { return nil }
+        let mimeType = lastMainFrameResponse.flatMap { $0.url == url ? $0.mimeType : nil }
+        let verdict = policy.verdict(url: url, mimeType: mimeType)
+        return verdict.isAttachable ? nil : (verdict.preventionReason ?? PageContextExtractionOutcome.internalPageCategory)
+    }
+
+    private func deliverPreventedContext(for url: URL, reason: String, trigger: PageContextExtractionTrigger) {
+        let context = AIChatPageContextData(
+            title: content.title ?? "",
+            favicon: [],
+            url: url.absoluteString,
+            content: "",
+            truncated: false,
+            fullContentLength: 0,
+            attachable: false
+        )
+        Task { await handle(context) }
+        fireExtractionPixel(.prevented(reason), trigger: trigger, latency: nil)
+    }
+
+    private func fireExtractionOutcome(for pageContext: AIChatPageContextData?) {
+        // No pending request → duplicate or a collect we didn't initiate; skip the pixel.
+        guard let resolution = extractionResolver.resolve(pageContext: pageContext) else {
             return
         }
-        pageContextUserScript?.collect()
+        fire(resolution)
+    }
+
+    private func fire(_ resolution: PageContextExtractionResolver.Resolution) {
+        fireExtractionPixel(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
+    }
+
+    private func fireExtractionPixel(_ outcome: PageContextExtractionOutcome,
+                                     trigger: PageContextExtractionTrigger,
+                                     latency: PageContextExtractionLatencyBucket?) {
+        guard isExtractionMeasurementEnabled else { return }
+        // A navigation triggers several automatic collects (navigation re-collect + signals-only);
+        // report only the first. User/setting collects (.userRequest / .auto) always report.
+        if trigger == .navigation || trigger == .tabContent {
+            guard !didReportExtractionForCurrentNavigation else { return }
+            didReportExtractionForCurrentNavigation = true
+        }
+        Logger.aiChat.debug("📊 PageContext extraction outcome: \(String(describing: outcome), privacy: .public) trigger=\(trigger.rawValue, privacy: .public) latency=\(latency?.rawValue ?? "nil", privacy: .public)")
+        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency)
+    }
+
+    /// Fires `.timeout` for any collect that hasn't produced a result within the timeout window and
+    /// clears its pending entry, so a never-resolving collect neither loses its pixel nor lets a
+    /// stale entry mis-attribute a later navigation.
+    private func scheduleCollectionTimeout() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.collectionTimeout) { [weak self] in
+            guard let self else { return }
+            self.extractionResolver.expireCollections(olderThan: Self.collectionTimeout).forEach { self.fire($0) }
+        }
+    }
+
+    private func collectPageContextIfNeeded(trigger: PageContextExtractionTrigger) {
+        guard case .url(let url, _, _) = content, isContextCollectionEnabled else {
+            return
+        }
+        if let reason = preventedAttachReason(for: url) {
+            Logger.aiChat.debug("🚫 PageContext gate: prevented attach (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
+            deliverPreventedContext(for: url, reason: reason, trigger: trigger)
+            return
+        }
+        guard let pageContextUserScript, webView != nil else {
+            Logger.aiChat.debug("⚠️ PageContext gate: no webview/user script, cannot collect host=\(url.host ?? "nil", privacy: .public)")
+            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
+            return
+        }
+        extractionResolver.requested(trigger: trigger)
+        Logger.aiChat.debug("✅ PageContext gate: attachable, collecting host=\(url.host ?? "nil", privacy: .public) trigger=\(trigger.rawValue, privacy: .public)")
+        pageContextUserScript.collect()
+        scheduleCollectionTimeout()
+    }
+
+    // MARK: - Selection Context ("Attach to Duck.ai")
+
+    /// Queues a selection item for the sidebar and flushes it. Independent of the page-context
+    /// slot — never touches `cachedPageContext` or triggers `collect()`. If the sidebar chat VC
+    /// isn't up yet, the item stays buffered and the `sessionsPublisher` sink flushes it once the
+    /// sidebar is shown.
+    @MainActor
+    func appendSelectionContext(_ selection: AIChatSelectionContextData) {
+        pendingSelectionContexts.append(selectionWithEncodedFavicon(selection))
+        // Defer so a just-revealed sidebar's chat VC exists before we push (matches page-context timing).
+        Task { @MainActor [weak self] in self?.flushPendingSelectionContexts() }
+    }
+
+    /// Stamps the source page's base64-encoded favicon onto the selection (raw favicon URLs get
+    /// CSP-blocked in the sidebar). Mirrors `replaceFaviconURLWithEncodedData`; returns the item
+    /// unchanged when no favicon is cached.
+    @MainActor
+    private func selectionWithEncodedFavicon(_ selection: AIChatSelectionContextData) -> AIChatSelectionContextData {
+        guard let pageURL = URL(string: selection.url),
+              let favicon = faviconManagement.getCachedFavicon(for: pageURL, sizeCategory: .small)?.image,
+              let base64Favicon = favicon.base64PNGDataURL else {
+            return selection
+        }
+
+        let faviconEntry = AIChatPageContextData.PageContextFavicon(href: base64Favicon, rel: "icon")
+        return AIChatSelectionContextData(
+            id: selection.id,
+            title: selection.title,
+            favicon: [faviconEntry],
+            url: selection.url,
+            content: selection.content,
+            truncated: selection.truncated,
+            fullContentLength: selection.fullContentLength,
+            wordCount: selection.wordCount
+        )
+    }
+
+    /// Pushes buffered selection items to the sidebar chat VC (if it exists) and clears the buffer.
+    @MainActor
+    private func flushPendingSelectionContexts() {
+        guard !pendingSelectionContexts.isEmpty,
+              let chatViewController = aiChatSessionStore.sessions[tabID]?.chatViewController else {
+            return
+        }
+        let items = pendingSelectionContexts
+        pendingSelectionContexts = []
+        items.forEach { chatViewController.submitSelectionContext($0) }
     }
 
     // MARK: - Multiple Page Contexts
@@ -265,10 +482,10 @@ final class PageContextTabExtension {
         case keepExistingContext
     }
 
-    private func navigationAction(autoCollectEnabled: Bool, contextConsumed: Bool) -> NavigationContextAction {
+    private func navigationAction(autoCollectEnabled: Bool, contextConsumed: Bool, fromAttachablePage: Bool = true) -> NavigationContextAction {
         if autoCollectEnabled {
             return .collectNewContext
-        } else if contextConsumed {
+        } else if contextConsumed || !fromAttachablePage {
             return .sendNavigationSignal
         } else {
             return .keepExistingContext
@@ -280,17 +497,28 @@ final class PageContextTabExtension {
     private func handleNavigationForMultipleContexts(from previousContent: Tab.TabContent?, to newContent: Tab.TabContent) {
         guard featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
               case .url(let newURL, _, _) = newContent,
-              case .url(let oldURL, _, _) = previousContent,
-              newURL != oldURL,
               let session = aiChatSessionStore.sessions[tabID],
               session.state.presentationMode != .hidden,
               session.chatViewController != nil else {
             return
         }
 
-        switch navigationAction(autoCollectEnabled: isContextCollectionEnabled, contextConsumed: hasContextBeenConsumedByChat) {
+        // When the previous page was also a URL, skip if the URL hasn't changed.
+        // When coming from a non-URL page (NTP, settings, etc.) always proceed —
+        // the attachability just changed from false to true, so the sidebar needs a signal.
+        let previousWasURL: Bool
+        if case .url(let oldURL, _, _) = previousContent {
+            guard oldURL != newURL else { return }
+            previousWasURL = true
+        } else {
+            previousWasURL = false
+        }
+
+        switch navigationAction(autoCollectEnabled: isContextCollectionEnabled,
+                                contextConsumed: hasContextBeenConsumedByChat,
+                                fromAttachablePage: previousWasURL) {
         case .collectNewContext:
-            collectPageContextIfNeeded()
+            collectPageContextIfNeeded(trigger: .navigation)
         case .sendNavigationSignal:
             session.chatViewController?.setPageContext(nil)
         case .keepExistingContext:
@@ -344,16 +572,94 @@ final class PageContextTabExtension {
             content: pageContext.content,
             truncated: pageContext.truncated,
             fullContentLength: pageContext.fullContentLength,
-            attachable: pageContext.attachable
+            attachable: pageContext.attachable,
+            tabId: pageContext.tabId,
+            pageTypeSignals: pageContext.pageTypeSignals,
+            attached: pageContext.attached
         )
+    }
+
+    // MARK: - Page Type Signals (duck.ai page shortcuts)
+
+    /// When auto-attach is OFF, trigger a page-context collection solely to harvest
+    /// Content-Scope-Scripts page-type signals; the result is delivered as a signals-only payload
+    /// (content stripped) via `handleSignalsOnly`. No-op when auto-attach is ON (the full-content
+    /// path already carries the signals) or when off a real web page.
+    private func requestSignalsOnlyCollectionIfNeeded() {
+        guard featureFlagger.isFeatureOn(.aiChatPageContext),
+              featureFlagger.isFeatureOn(.sidebarSuggestedPrompts),
+              case .url(let url, _, _) = content,
+              !isContextCollectionEnabled,
+              aiChatSessionStore.sessions[tabID]?.chatViewController != nil,
+              let pageContextUserScript else {
+            return
+        }
+        if let reason = preventedAttachReason(for: url) {
+            Logger.aiChat.debug("🚫 PageContext gate (signals-only): prevented (reason=\(reason, privacy: .public)) host=\(url.host ?? "nil", privacy: .public)")
+            deliverPreventedContext(for: url, reason: reason, trigger: .tabContent)
+            return
+        }
+        pendingSignalsOnlyCollection = true
+        extractionResolver.requested(trigger: .tabContent)
+        pageContextUserScript.collect()
+        scheduleCollectionTimeout()
+    }
+
+    /// Delivers a signals-only payload from a collected context: keeps the Content-Scope-Scripts
+    /// page-type signals + metadata, strips the page content, and marks `attached:false` /
+    /// `attachable:true` so the duck.ai web app shows page shortcuts plus the Ask-About-Page chip
+    /// without attaching content.
+    @MainActor
+    private func handleSignalsOnly(_ pageContext: AIChatPageContextData?) async {
+        guard featureFlagger.isFeatureOn(.aiChatPageContext),
+              let pageContext,
+              let session = aiChatSessionStore.sessions[tabID],
+              session.chatViewController != nil else {
+            return
+        }
+        let signalsOnly = AIChatPageContextData(
+            title: pageContext.title,
+            favicon: [],
+            url: pageContext.url,
+            content: "",
+            truncated: false,
+            fullContentLength: 0,
+            attachable: true,
+            pageTypeSignals: pageContext.pageTypeSignals,
+            attached: false
+        )
+        session.chatViewController?.setPageContext(signalsOnly)
     }
 }
 
-protocol PageContextProtocol: AnyObject {
+protocol PageContextProtocol: AnyObject, NavigationResponder {
+    /// Appends a user text selection to the sidebar's selection-context list. See the
+    /// implementation in `PageContextTabExtension` for buffering/lifecycle semantics.
+    @MainActor func appendSelectionContext(_ selection: AIChatSelectionContextData)
 }
 
 extension PageContextTabExtension: PageContextProtocol, TabExtension {
     func getPublicProtocol() -> PageContextProtocol { self }
+}
+
+extension PageContextTabExtension: NavigationResponder {
+    /// Re-collect page context once the new page has finished loading. The `Tab.$content` trigger
+    /// fires at `didCommit` — before the page's markup (JSON-LD / og:type) is parsed — so page-type
+    /// signals would otherwise reflect the previous page and the sidebar's suggestions wouldn't
+    /// update on same-tab navigation. Mirrors Windows' `NavigationCompleted` re-collect.
+    func navigationDidFinish(_ navigation: Navigation) {
+        guard !isLoadedInSidebar else { return }
+        collectPageContextIfNeeded(trigger: .navigation)
+        requestSignalsOnlyCollectionIfNeeded()
+    }
+
+    @MainActor
+    func decidePolicy(for navigationResponse: NavigationResponse) async -> NavigationResponsePolicy? {
+        guard !isLoadedInSidebar, navigationResponse.isForMainFrame else { return .next }
+        lastMainFrameResponse = (navigationResponse.url, navigationResponse.response.mimeType)
+        Logger.aiChat.debug("📄 PageContext MIME captured: \(navigationResponse.response.mimeType ?? "nil", privacy: .public) host=\(navigationResponse.url.host ?? "nil", privacy: .public)")
+        return .next
+    }
 }
 
 extension TabExtensions {

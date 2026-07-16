@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
@@ -44,6 +45,7 @@ final class RequestNewFeatureFormViewController: NSHostingController<RequestNewF
 
 struct RequestNewFeatureFormFlowView: View {
     @State private var showThankYou = false
+    let isAppRebranded: Bool
     var onClose: () -> Void
     var onSeeWhatsNew: () -> Void
     var onResize: (CGFloat, CGFloat) -> Void
@@ -65,6 +67,7 @@ struct RequestNewFeatureFormFlowView: View {
                 }
             } else {
                 RequestNewFeatureFormView(
+                    isAppRebranded: isAppRebranded,
                     onSubmit: {
                         showThankYou = true
                     },
@@ -86,6 +89,8 @@ struct RequestNewFeatureFormFlowView: View {
 
 struct RequestNewFeatureFormView: View {
     @ObservedObject var viewModel: RequestNewFeatureViewModel = .init()
+
+    let isAppRebranded: Bool
 
     var onSubmit: () -> Void
     var onClose: () -> Void
@@ -123,7 +128,8 @@ struct RequestNewFeatureFormView: View {
     private enum ComponentHeights {
         static let header: CGFloat = 72  // 24 padding + ~24 button/text + 24 padding
         static let textInputSection: CGFloat = 159  // Same as problem form
-        static let footer: CGFloat = 122  // Same as problem form structure
+        // Same as problem form structure; taller on Liquid Glass to fit the pill buttons (8/8 padding) + larger bottom inset
+        static var footer: CGFloat { AppVersion.isLiquidGlassSupported ? 137 : 133 }
     }
 
     private func calculateTotalHeight() -> CGFloat {
@@ -150,7 +156,7 @@ struct RequestNewFeatureFormView: View {
 
     private func header() -> some View {
         HStack(spacing: 12) {
-            Image(.feedbackAsk)
+            Image(isAppRebranded ? .feedbackPositive56 : .feedbackAsk)
 
             VStack(alignment: .leading, spacing: 8) {
 
@@ -163,11 +169,12 @@ struct RequestNewFeatureFormView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 20)
-        .padding([.leading, .trailing, .bottom], 24)
+        .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+        .padding(.bottom, 24)
     }
 
     private func featurePills() -> some View {
-        let horizontalPadding: CGFloat = 24
+        let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 24
         return FlexibleView(
             availableWidth: RequestNewFeatureFormViewController.Constants.width - (horizontalPadding * 2),
             data: viewModel.availableFeatures,
@@ -202,8 +209,8 @@ struct RequestNewFeatureFormView: View {
         }
 
     private func incognitoInfoSection() -> some View {
-        IncognitoInfoBox()
-            .padding([.leading, .trailing], 24)
+        IncognitoInfoBox(isAppRebranded: isAppRebranded)
+            .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
             .padding(.bottom, 16)
             .transition(.opacity)
             .background(
@@ -232,9 +239,9 @@ struct RequestNewFeatureFormView: View {
                 .frame(minHeight: 80)
                 .padding(8)
                 .background(Color(.textBackgroundColor))
-                .cornerRadius(6)
+                .cornerRadius(isAppRebranded ? 16 : 6)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: isAppRebranded ? 16 : 6)
                         .stroke(viewModel.customFeatureText.isEmpty ? Color(.separatorColor) : Color(baseColor: .blue50),
                                 lineWidth: 1)
                 )
@@ -250,27 +257,28 @@ struct RequestNewFeatureFormView: View {
                                     }
                                     Spacer()
                                 }
-                                .padding(11)
+                                .padding(.top, 8)
+                                .padding(.leading, 12)
                             }
                         }
                     }
                 )
         }
-        .padding([.leading, .trailing], 24)
+        .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
         .padding(.bottom, 8)
     }
 
     private func footer() -> some View {
         VStack(spacing: 16) {
-            Divider()
-                .background(Color.divider)
-                .frame(maxWidth: .infinity)
+            Rectangle()
+                .fill(Color(.separatorColor))
                 .frame(height: 1)
+                .frame(maxWidth: .infinity)
 
             Text(UserText.feedbackDisclaimer)
                 .caption2()
                 .multilineTextAlignment(.leading)
-                .padding([.leading, .trailing], 24)
+                .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
 
             HStack(spacing: 10) {
                 Button {
@@ -279,7 +287,7 @@ struct RequestNewFeatureFormView: View {
                     Text(UserText.cancel)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(DismissActionButtonStyle())
+                .buttonStyle(DismissActionButtonStyle(topPadding: 8, bottomPadding: 8, pillShape: true))
 
                 Button {
                     viewModel.submitFeedback()
@@ -289,15 +297,17 @@ struct RequestNewFeatureFormView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .disabled(!viewModel.shouldEnableSubmit)
-                .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit))
+                .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit, topPadding: 8, bottomPadding: 8, pillShape: true))
             }
-            .padding([.leading, .trailing], 24)
-            .padding(.bottom, 16)
+            .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
+            .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
         }
     }
 }
 
 private struct IncognitoInfoBox: View {
+    let isAppRebranded: Bool
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(nsImage: DesignSystemImages.Color.Size16.infoFeedback)
@@ -315,11 +325,11 @@ private struct IncognitoInfoBox: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: isAppRebranded ? 16 : 4)
                 .fill(Color(.controlBackgroundColor))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: isAppRebranded ? 16 : 8)
                 .stroke(Color(.toneShade), lineWidth: 1)
         )
     }

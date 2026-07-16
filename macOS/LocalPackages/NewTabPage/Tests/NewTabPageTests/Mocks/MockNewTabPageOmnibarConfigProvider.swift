@@ -18,6 +18,7 @@
 
 import Combine
 import NewTabPage
+import WebKit
 
 final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
@@ -52,5 +53,57 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isAIChatToolsEnabled: Bool = false
 
-    var selectedModelId: String?
+    var isImageGenerationEnabled: Bool = false
+
+    var isWebSearchEnabled: Bool = false
+
+    var isCustomizeResponsesEnabled: Bool = false
+
+    var customizeResponsesStateResult = NewTabPageDataModel.OmnibarCustomizeResponsesState.none
+    @MainActor
+    func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState {
+        customizeResponsesStateResult
+    }
+
+    let customizeResponsesStateSubject = PassthroughSubject<Void, Never>()
+    var customizeResponsesStatePublisher: AnyPublisher<Void, Never> {
+        customizeResponsesStateSubject.eraseToAnyPublisher()
+    }
+
+    @Published var isAttachTabsEnabled: Bool = false
+
+    var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAttachTabsEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    @Published var isVoiceChatAccessEnabled: Bool = false
+
+    /// Mirrors the real `NewTabPageOmnibarConfigProvider.isVoiceChatAccessEnabledPublisher`
+    /// shape — emits the current value on subscribe (so `NewTabPageOmnibarClient.notifyConfigUpdated`
+    /// fires on init) and then de-duplicates subsequent flag flips.
+    var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isVoiceChatAccessEnabled.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    @Published var showAskAiSuggestion: Bool = true
+
+    var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> {
+        $showAskAiSuggestion.dropFirst().eraseToAnyPublisher()
+    }
+
+    @Published var selectedModelId: String?
+
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> {
+        $selectedModelId.dropFirst().eraseToAnyPublisher()
+    }
+
+    var selectedModelShortName: String?
+
+    var isReasoningEffortEnabled: Bool = false
+
+    @Published var selectedReasoningEffort: String?
+
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
+        $selectedReasoningEffort.dropFirst().eraseToAnyPublisher()
+    }
 }

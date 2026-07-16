@@ -31,7 +31,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
     }
 
     func testWhenURLErrorIsHttp_thenCorrectPixelIsFired() {
-        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler)
+        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler, isUserSubscribed: { false })
 
         sut.firePixel(for: NSError(domain: NSURLErrorDomain, code: 404))
 
@@ -44,7 +44,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
     }
 
     func testWhenURLErrorIsNotHttp_thenCorrectPixelIsFired() {
-        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler)
+        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler, isUserSubscribed: { false })
 
         sut.firePixel(for: NSError(domain: NSURLErrorDomain, code: 100))
 
@@ -57,7 +57,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
     }
 
     func testWhenErrorIsNotURL_thenCorrectPixelIsFired() {
-        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler)
+        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler, isUserSubscribed: { false })
 
         sut.firePixel(for: NSError(domain: NSCocoaErrorDomain, code: 500))
 
@@ -70,7 +70,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
     }
 
     func testWhenSelectedURLisCustomAndLoading_thenStagingParamIsSent() {
-        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler)
+        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler, isUserSubscribed: { false })
 
         sut.firePixel(for: .custom, type: .loading)
 
@@ -87,7 +87,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
     }
 
     func testWhenSelectedURLisProductionAndLoading_thenProductionParamIsSent() {
-        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler)
+        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler, isUserSubscribed: { false })
 
         sut.firePixel(for: .production, type: .loading)
 
@@ -104,7 +104,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
     }
 
     func testWhenSelectedURLisCustomAndSuccess_thenStagingParamIsSent() {
-        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler)
+        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler, isUserSubscribed: { false })
 
         sut.firePixel(for: .custom, type: .success)
 
@@ -112,7 +112,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
 
         XCTAssertEqual(
             lastPixelFired.name,
-            DataBrokerProtectionMacOSPixels.webUILoadingSuccess(environment: "staging").name
+            DataBrokerProtectionMacOSPixels.webUILoadingSuccess(environment: "staging", subscribed: false).name
         )
         XCTAssertEqual(
             lastPixelFired.params!["environment"],
@@ -121,7 +121,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
     }
 
     func testWhenSelectedURLisProductionAndSuccess_thenProductionParamIsSent() {
-        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler)
+        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler, isUserSubscribed: { false })
 
         sut.firePixel(for: .production, type: .success)
 
@@ -129,7 +129,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
 
         XCTAssertEqual(
             lastPixelFired.name,
-            DataBrokerProtectionMacOSPixels.webUILoadingSuccess(environment: "staging").name
+            DataBrokerProtectionMacOSPixels.webUILoadingSuccess(environment: "staging", subscribed: false).name
         )
         XCTAssertEqual(
             lastPixelFired.params!["environment"],
@@ -138,7 +138,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
     }
 
     func testWhenHTTPPixelIsFired_weDoNotFireAnotherPixelRightAway() {
-        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler)
+        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler, isUserSubscribed: { false })
 
         sut.firePixel(for: NSError(domain: NSURLErrorDomain, code: 404))
         sut.firePixel(for: NSError(domain: NSCocoaErrorDomain, code: 500))
@@ -153,7 +153,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
     }
 
     func testWhenHTTPPixelIsFired_weFireTheNextErrorPixelOnTheSecondTry() {
-        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler)
+        let sut = DataBrokerProtectionWebUIPixels(pixelHandler: handler, isUserSubscribed: { false })
 
         sut.firePixel(for: NSError(domain: NSURLErrorDomain, code: 404))
         sut.firePixel(for: NSError(domain: NSCocoaErrorDomain, code: 500))

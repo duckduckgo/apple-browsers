@@ -21,6 +21,7 @@ import Core
 import Subscription
 import DataBrokerProtection_iOS
 import SwiftUI
+import UIComponents
 import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
@@ -37,6 +38,7 @@ struct SettingsSubscriptionView: View {
 
     @EnvironmentObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
+
     @State var isShowingDBP = false
     @State var isShowingITP = false
     @State var isShowingVPN = false
@@ -64,8 +66,23 @@ struct SettingsSubscriptionView: View {
         )
     }
 
+    @ViewBuilder
+    private var dataBrokerProtectionDestination: some View {
+        if let vcProvider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
+            DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                .edgesIgnoringSafeArea(.bottom)
+                // Prevent an accidental downward swipe on the web view from dismissing the
+                // whole Settings modal and losing the user's place in the free-scan flow.
+                .interactiveDismissDisabled(true)
+        }
+    }
+
     var currentStorefrontRegion: SubscriptionRegion {
         return AppDependencyProvider.shared.subscriptionManager.currentStorefrontRegion
+    }
+
+    private var shouldShowFreemiumPIRSettingsEntryPoint: Bool {
+        settingsViewModel.canShowFreemiumPIRSettingsEntryPoint
     }
     
     private var winBackURLComponents: URLComponents? {
@@ -90,7 +107,7 @@ struct SettingsSubscriptionView: View {
             SettingsCustomCell(content: {
                 Text(UserText.winBackCampaignSubscriptionSettingsMenuCTA)
                     .daxBodyRegular()
-                    .foregroundColor(Color.init(designSystemColor: .accent))
+                    .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                     .padding(.leading, 32.0)
             }, action: {
                 Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked)
@@ -137,9 +154,10 @@ struct SettingsSubscriptionView: View {
             SettingsCustomCell(content: {
                 Text(settingsViewModel.purchaseButtonText)
                     .daxBodyRegular()
-                    .foregroundColor(Color.init(designSystemColor: .accent))
+                    .foregroundColor(Color.init(designSystemColor: .accentPrimary))
                     .padding(.leading, 32.0)
             }, action: {
+                Pixel.fire(pixel: .subscriptionEntrySettingsSubscriptionClick)
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
             }, isButton: true)
 
@@ -154,6 +172,38 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
             }
         }
+        .onFirstAppear {
+            Pixel.fire(pixel: .subscriptionEntrySettingsImpression)
+        }
+    }
+
+    @ViewBuilder
+    private var freemiumPIRSettingsEntryPointRows: some View {
+        SettingsCellView(
+            label: UserText.settingsPProDBPTitle,
+            subtitle: UserText.settingsPProFreemiumDBPSubtitle,
+            image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR)
+        )
+        .disabled(true)
+
+        SettingsCustomCell(content: {
+            Text(settingsViewModel.hasCompletedFreemiumScan
+                 ? UserText.settingsPProFreemiumDBPShowResultsCTA
+                 : UserText.settingsPProFreemiumDBPFreeScanCTA)
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .accentPrimary))
+                .padding(.leading, 32.0)
+        }, action: {
+            Pixel.fire(pixel: .freemiumPIRSettingsEntryPointClicked)
+            isShowingDBP = true
+        }, isButton: true)
+        .background(
+            NavigationLink(destination: LazyView(dataBrokerProtectionDestination),
+                           isActive: $isShowingDBP) {
+                EmptyView()
+            }
+            .hidden()
+        )
     }
 
     @ViewBuilder
@@ -296,9 +346,8 @@ struct SettingsSubscriptionView: View {
 
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             let hasDBPEntitlement = userEntitlements.contains(.dataBrokerProtection)
-            let hasValidStoredProfile = settingsViewModel.dbpMeetsProfileRunPrequisite
             let shouldShowPIRNewBadge = settingsViewModel.shouldShowNewBadge(for: .personalInformationRemoval)
-            var statusIndicator: StatusIndicator = hasDBPEntitlement && hasValidStoredProfile ? .on : .off
+            var statusIndicator: StatusIndicator? = hasDBPEntitlement ? settingsViewModel.dbpProfileStatusIndicator : .off
 
             let destination: LazyView<AnyView> = {
                 if settingsViewModel.isPIREnabled, let vcProvider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
@@ -314,7 +363,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProDBPTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.identityBlockedPIR),
-                    statusIndicator: StatusIndicatorView(status: statusIndicator),
+                    statusIndicator: statusIndicator.map { StatusIndicatorView(status: $0) },
                     isGreyedOut: !hasDBPEntitlement,
                     optionalBadgeText: shouldShowPIRNewBadge ? UserText.settingsItemNewBadge : nil
                 )
@@ -371,7 +420,6 @@ struct SettingsSubscriptionView: View {
     var body: some View {
         Group {
             if isShowingSubscription {
-
                 let isSignedIn = settingsViewModel.state.subscription.isSignedIn
                 let hasSubscription = settingsViewModel.state.subscription.hasSubscription
                 let hasActiveSubscription = settingsViewModel.state.subscription.hasActiveSubscription
@@ -380,7 +428,7 @@ struct SettingsSubscriptionView: View {
 
                 let footerLink = Link(UserText.settingsPProSectionFooter,
                                       destination: ViewConstants.privacyPolicyURL)
-                    .daxFootnoteRegular().accentColor(Color.init(designSystemColor: .accent))
+                    .daxFootnoteRegular().accentColor(Color.init(designSystemColor: .accentPrimary))
 
                 Section(header: Text(UserText.settingsSubscriptionSection),
                         footer: !isSignedIn ? footerLink : nil
@@ -391,7 +439,7 @@ struct SettingsSubscriptionView: View {
                     // Signed out, Eligible for Win-back offer
                     case (false, _, _, _) where isWinBackEligible:
                         resubscribeWithWinbackOfferView
-                        
+
                     // Signed out
                     case (false, _, _, _):
                         purchaseSubscriptionView
@@ -403,7 +451,7 @@ struct SettingsSubscriptionView: View {
                     // Subscription Expired, Eligible for Win-back offer
                     case (true, true, false, _) where isWinBackEligible:
                         subscribeWithWinBackOfferView
-                        
+
                     // Signed In, Subscription Present & Not Active
                     case (true, true, false, _):
                         subscriptionExpiredView
@@ -417,12 +465,22 @@ struct SettingsSubscriptionView: View {
                         subscriptionDetailsView
                     }
                 }
-                .onReceive(subscriptionNavigationCoordinator.$shouldPopToAppSettings) { shouldDismiss in
-                    if shouldDismiss {
-                        isShowingRestoreFlow = false
-                        subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = false
-                    }
+            }
+
+            if shouldShowFreemiumPIRSettingsEntryPoint {
+                Section {
+                    freemiumPIRSettingsEntryPointRows
                 }
+                .onFirstAppear {
+                    Pixel.fire(pixel: .freemiumPIRSettingsEntryPointImpression)
+                }
+            }
+        }
+        .onReceive(subscriptionNavigationCoordinator.$shouldPopToAppSettings) { shouldDismiss in
+            if shouldDismiss {
+                isShowingRestoreFlow = false
+                isShowingDBP = false
+                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = false
             }
         }
         .onReceive(settingsViewModel.$state) { state in

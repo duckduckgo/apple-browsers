@@ -18,11 +18,13 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import NetworkExtension
 import Networking
 import os.log
 import PixelKit
+import PrivacyConfig
 import Subscription
 import VPN
 import WireGuard
@@ -176,7 +178,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                     frequency: .legacyDailyAndCount,
                     includeAppVersionParameter: true)
             }
-        case .reportConnectionAttempt(attempt: let attempt):
+        case .reportConnectionAttempt(attempt: let attempt, source: let source):
             switch attempt {
             case .connecting:
                 Logger.networkProtection.log("🔵 Connection attempt detected")
@@ -186,23 +188,28 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                 Logger.networkProtection.log("🟢 Connection attempt successful")
             }
 
+            let sourceParameters = ["source": source.rawValue]
+
             switch attempt {
             case .connecting:
                 if loopDetector.connectionLoopDetected { return }
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionEnableAttemptConnecting,
                     frequency: .legacyDailyAndCount,
+                    withAdditionalParameters: sourceParameters,
                     includeAppVersionParameter: true)
             case .success:
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionEnableAttemptSuccess,
                     frequency: .legacyDailyAndCount,
+                    withAdditionalParameters: sourceParameters,
                     includeAppVersionParameter: true)
             case .failure:
                 if loopDetector.connectionLoopDetected { return }
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionEnableAttemptFailure,
                     frequency: .legacyDailyAndCount,
+                    withAdditionalParameters: sourceParameters,
                     includeAppVersionParameter: true)
             }
         case .reportTunnelFailure(result: let result):
@@ -447,12 +454,12 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                     frequency: .legacyDailyAndCount,
                     includeAppVersionParameter: true)
             }
-        case .tunnelStartOnDemandWithoutAccessToken:
+        case .tunnelStartOnDemandWithoutAccessToken(let error):
             Logger.networkProtection.error("🔴 Starting tunnel without an auth token")
             if loopDetector.connectionLoopDetected { return }
 
             PixelKit.fire(
-                NetworkProtectionPixelEvent.networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
+                NetworkProtectionPixelEvent.networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken(error),
                 frequency: .legacyDailyAndCount,
                 includeAppVersionParameter: true)
         case .adapterEndTemporaryShutdownStateAttemptFailure(let error):
@@ -535,9 +542,11 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEventsHandler: debugEvents)
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: self.wideEvent,
+                                                                                    isFeatureEnabled: { true })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStore,
                                             authService: authService,
-                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: { true }))
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
 
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)
@@ -549,7 +558,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                pixelHandler: pixelHandler,
                                                                initForPurchase: false,
                                                                wideEvent: self.wideEvent,
-                                                               isAuthV2WideEventEnabled: { return subscriptionEnvironment.serviceEnvironment == .production })
+                                                               isAuthV2WideEventEnabled: { return subscriptionEnvironment.serviceEnvironment == .production },
+                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
             Logger.networkProtection.log("Subscription Entitlements check...")
@@ -568,7 +578,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         // MARK: -
 
-        let loopDetector = ConnectionFailureLoopDetector(store: defaults, isFeatureEnabled: true)
+        let loopDetector = ConnectionFailureLoopDetector(store: defaults)
+        let heartbeatStore = TunnelHeartbeatStore(store: defaults)
 
         let tunnelHealthStore = NetworkProtectionTunnelHealthStore(notificationCenter: notificationCenter)
         let notificationsPresenter = NetworkProtectionNotificationsPresenterFactory().make(settings: settings, defaults: defaults)
@@ -586,7 +597,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    defaults: defaults,
                    wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck,
-                   loopDetector: loopDetector)
+                   loopDetector: loopDetector,
+                   heartbeatStore: heartbeatStore)
 
         setupPixels()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")
@@ -698,11 +710,15 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         source = "vpnAppExtension"
 #endif
 
+        let internalUserDecider = DefaultInternalUserDecider(store: UserDefaults.appConfiguration)
+        let channel = StandardApplicationBuildType().channelName(isInternalUser: internalUserDecider.isInternalUser)
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
+                       session: "macos-vpn-tunnel",
+                       channel: channel,
                        defaultHeaders: defaultHeaders,
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
@@ -723,15 +739,8 @@ private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
     let settings: VPNSettings
 
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
-        switch flag {
-        case .postEndpoint:
-            let buildType = StandardApplicationBuildType()
-            if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
-                return false
-            } else {
-                return settings.wideEventPostEndpointEnabled
-            }
-        }
+        // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
+        return true
     }
 }
 

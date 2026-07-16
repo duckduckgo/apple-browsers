@@ -179,13 +179,39 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
 
     func testRedirectURLAlwaysUsesOnboardingOrigin() {
         // When
-        let components = sut.redirectURLComponents()
+        let components = sut.redirectURLComponents(featurePage: nil)
 
         // Then
         XCTAssertNotNil(components)
         XCTAssertEqual(
             components?.queryItems?.first(where: { $0.name == "origin" })?.value,
             SubscriptionFunnelOrigin.onboarding.rawValue
+        )
+    }
+
+    func testRedirectURLWithNilFeaturePageOmitsFeaturePageQueryItem() throws {
+        // Given
+        let featurePage: OnboardingSubscriptionPromotionPage? = nil
+
+        // When
+        let components = try XCTUnwrap(sut.redirectURLComponents(featurePage: featurePage))
+
+        // Then
+        // Passing nil keeps the URL at the default purchase landing page — no `featurePage` query item should be appended.
+        XCTAssertNil(components.queryItems?.first(where: { $0.name == "featurePage" }))
+    }
+
+    func testRedirectURLWithDuckAIFeaturePageIncludesFeaturePageQueryItemWithRawValue() throws {
+        // Given
+        let featurePage = OnboardingSubscriptionPromotionPage.duckAI
+
+        // When
+        let components = try XCTUnwrap(sut.redirectURLComponents(featurePage: featurePage))
+
+        // Then
+        XCTAssertEqual(
+            components.queryItems?.first(where: { $0.name == "featurePage" })?.value,
+            "duckai"
         )
     }
 }

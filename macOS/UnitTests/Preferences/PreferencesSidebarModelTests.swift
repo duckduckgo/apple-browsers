@@ -16,19 +16,21 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
+import NetworkingTestingUtils
 import PersistenceTestingUtils
 import PixelKitTestingUtilities
+import PreferencesUI_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
-import SubscriptionUI
 import SubscriptionTestingUtilities
-import PreferencesUI_macOS
+import SubscriptionUI
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
-import NetworkingTestingUtils
 
 @MainActor
 final class PreferencesSidebarModelTests: XCTestCase {
@@ -117,8 +119,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: {
@@ -160,8 +161,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: {
@@ -214,8 +214,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: {
@@ -317,6 +316,34 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertFalse(model.currentSubscriptionState.hasAnyEntitlement)
     }
 
+    func testExpiredSubscriptionCacheDoesNotSkipRemoteFetch() async throws {
+        // Regression: the outer gate in refreshSubscriptionStateAndSectionsIfNeeded must use
+        // isUserAuthenticated, not isSubscriptionPresent(). isSubscriptionPresent() is backed by
+        // a TTL cache — when the cache expires, isPresent returns false even for active
+        // subscribers. The old code treated an expired cache as "no subscription" and returned
+        // immediately without ever calling currentSubscriptionFeatures / hitting the backend.
+        // The fix: gate on isUserAuthenticated (token-based, TTL-independent) so an expired cache
+        // triggers a remote fetch rather than an immediate signed-out state.
+
+        // Given: authenticated user whose subscription cache has expired (isSubscriptionPresent = false)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
+        // resultSubscription = nil → isSubscriptionPresent() returns false (simulates expired TTL)
+        mockSubscriptionManager.resultSubscription = nil
+        XCTAssertFalse(mockSubscriptionManager.isSubscriptionPresent())
+        mockSubscriptionManager.resultFeatures = [.networkProtection]
+
+        // When
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then: currentSubscriptionFeatures must have been called — the backend fetch was attempted.
+        // (With the old isSubscriptionPresent gate it would have been skipped entirely.)
+        XCTAssertEqual(mockSubscriptionManager.currentSubscriptionFeaturesCallCount, 1,
+                       "Backend fetch must be attempted even when the subscription cache is expired")
+    }
+
     func testCurrentSubscriptionStateForAvailableSubscriptionFeatures() async throws {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
@@ -401,6 +428,39 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertFalse(model.isSidebarItemEnabled(for: .personalInformationRemoval))
         XCTAssertFalse(model.isSidebarItemEnabled(for: .identityTheftRestoration))
         XCTAssertFalse(model.isSidebarItemEnabled(for: .paidAIChat))
+    }
+
+    func testCurrentSubscriptionStateIsUnchangedOnTransientFeaturesError() async throws {
+        // Regression test: a transient currentSubscriptionFeatures error must not flip feature
+        // flags to false. The sidebar would otherwise show "Subscription Settings visible,
+        // sub-items hidden" until the next successful refresh.
+
+        // Given — model starts with a fully-featured subscription state
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Capture the known-good state
+        let stateBeforeError = model.currentSubscriptionState
+        XCTAssertTrue(stateBeforeError.hasSubscription)
+        XCTAssertTrue(stateBeforeError.isNetworkProtectionRemovalAvailable)
+        XCTAssertTrue(stateBeforeError.isPersonalInformationRemovalAvailable)
+        XCTAssertTrue(stateBeforeError.isIdentityTheftRestorationAvailable)
+
+        // When — next refresh hits a transient 500
+        mockSubscriptionManager.resultFeaturesError = URLError(.badServerResponse)
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then — state must be unchanged
+        XCTAssertEqual(model.currentSubscriptionState, stateBeforeError,
+                       "Transient error must not overwrite subscription state")
+        XCTAssertTrue(model.currentSubscriptionState.isNetworkProtectionRemovalAvailable)
+        XCTAssertTrue(model.currentSubscriptionState.isPersonalInformationRemovalAvailable)
+        XCTAssertTrue(model.currentSubscriptionState.isIdentityTheftRestorationAvailable)
     }
 
     // MARK: Tests for subscribed refresh notification triggers

@@ -19,6 +19,7 @@
 import AppKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 import FeatureFlags
 import PrivacyConfig
@@ -331,6 +332,8 @@ final class PasswordManagementItemListModel: ObservableObject {
             return autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStatePasswordsDefaultDescription : UserText.pmEmptyStatePasswordsDefaultDescriptionAutolockOff
         case .cards:
             return UserText.pmEmptyStateCardsDefaultDescription
+        case .identities:
+            return UserText.pmEmptyStateIdentitiesDefaultDescription
         default:
             return autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStateDefaultDescription : UserText.pmEmptyStateDefaultDescriptionAutolockOff
         }
@@ -362,11 +365,11 @@ final class PasswordManagementItemListModel: ObservableObject {
     }
 
     var emptyStateHideLearnMoreLink: Bool {
-        sortDescriptor.category == .cards
+        sortDescriptor.category == .cards || sortDescriptor.category == .identities
     }
 
     var emptyStateHideLockIcon: Bool {
-        sortDescriptor.category == .cards
+        sortDescriptor.category == .cards || sortDescriptor.category == .identities
     }
 
     @Published private(set) var emptyState: EmptyState = .none

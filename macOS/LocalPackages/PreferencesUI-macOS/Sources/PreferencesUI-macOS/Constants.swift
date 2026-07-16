@@ -20,13 +20,7 @@ import SwiftUI
 
 public enum Const {
 
-    public static let pickerHorizontalOffset: CGFloat = {
-        if #available(macOS 12.0, *) {
-            return -8
-        } else {
-            return 0
-        }
-    }()
+    public static let pickerHorizontalOffset: CGFloat = -8
 
     public enum Spacing {
         public static let groupedCheckboxesSeparation: CGFloat = 10

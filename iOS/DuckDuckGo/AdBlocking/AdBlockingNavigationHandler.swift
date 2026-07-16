@@ -38,14 +38,23 @@ final class AdBlockingNavigationHandler: AdBlockingNavigationHandling {
 
     private let availability: AdBlockingAvailabilityProviding
     private let onShouldShowAdBlockingAnimation: () -> Void
+    private let onShouldShowAdBlockUnavailableDialog: () -> Void
     private var lastAnimatedVideoID: String?
 
-    init(availability: AdBlockingAvailabilityProviding, onShouldShowAdBlockingAnimation: @escaping () -> Void) {
+    init(availability: AdBlockingAvailabilityProviding,
+         onShouldShowAdBlockingAnimation: @escaping () -> Void,
+         onShouldShowAdBlockUnavailableDialog: @escaping () -> Void) {
         self.availability = availability
         self.onShouldShowAdBlockingAnimation = onShouldShowAdBlockingAnimation
+        self.onShouldShowAdBlockUnavailableDialog = onShouldShowAdBlockUnavailableDialog
     }
 
     func handleURLChange(previousURL: URL?, newURL: URL?) {
+        handleAnimation(previousURL: previousURL, newURL: newURL)
+        handleUnavailableDialog(for: newURL)
+    }
+
+    private func handleAnimation(previousURL: URL?, newURL: URL?) {
         guard availability.isEnabled else { return }
         guard let newURL, newURL.isPlayableYoutubeVideoContent else { return }
         guard let newVideoID = newURL.youtubeVideoID else { return }
@@ -57,6 +66,14 @@ final class AdBlockingNavigationHandler: AdBlockingNavigationHandling {
             lastAnimatedVideoID = newVideoID
             onShouldShowAdBlockingAnimation()
         }
+    }
+
+    private func handleUnavailableDialog(for newURL: URL?) {
+        guard availability.isRemotelyDisabled,
+              availability.isEnabledByUser,
+              newURL?.isPlayableYoutubeVideoContent == true
+        else { return }
+        onShouldShowAdBlockUnavailableDialog()
     }
 
     func handleReload() {

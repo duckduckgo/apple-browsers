@@ -22,6 +22,7 @@ import Foundation
 import AppKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import LoginItems
 import NetworkProtectionProxy
 import os.log
@@ -51,6 +52,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private var databaseBrowserWindowController: NSWindowController?
     private var dataBrokerForceOptOutWindowController: NSWindowController?
     private var logMonitorWindowController: NSWindowController?
+    private var debugWebViewHandler: DataBrokerProtectionWebViewHandler?
+    private let nullCCFDelegateReference = NullCCFCommunicationDelegate()
     private let currentEndpointMenuItem = NSMenuItem(title: "Current Endpoint:")
     private let defaultEndpointMenuItem = NSMenuItem(title: "Use Default Endpoint", action: #selector(DataBrokerProtectionDebugMenu.useDBPDefaultEndpoint))
     private let customEndpointMenuItem = NSMenuItem(title: "Use Custom Endpoint...", action: #selector(DataBrokerProtectionDebugMenu.useDBPCustomEndpoint))
@@ -123,6 +126,13 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                     .targetting(self)
             }
 
+            NSMenuItem(title: "Debug Server") {
+                NSMenuItem(title: "Start", action: #selector(DataBrokerProtectionDebugMenu.startPIRDebugServer))
+                    .targetting(self)
+                NSMenuItem(title: "Stop", action: #selector(DataBrokerProtectionDebugMenu.stopPIRDebugServer))
+                    .targetting(self)
+            }
+
             NSMenuItem(title: "Operations") {
                 NSMenuItem(title: "Hidden WebView") {
                     menuItem(withTitle: "Run queued operations",
@@ -192,6 +202,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 .targetting(self)
             NSMenuItem(title: "Log Monitor", action: #selector(DataBrokerProtectionDebugMenu.openLogMonitor))
                 .targetting(self)
+            NSMenuItem(title: "Open Debug WebView with custom URL", action: #selector(DataBrokerProtectionDebugMenu.openDebugWebView))
+                .targetting(self)
             NSMenuItem(title: "Force Profile Removal", action: #selector(DataBrokerProtectionDebugMenu.showForceOptOutWindow))
                 .targetting(self)
             NSMenuItem(title: "Force broker JSON files update", action: #selector(DataBrokerProtectionDebugMenu.forceBrokerJSONFilesUpdate))
@@ -252,6 +264,54 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         Task { @MainActor in
             sheet.show()
         }
+    }
+
+    @objc private func openDebugWebView() {
+        let sheet = CustomTextEntrySheet(
+            title: "Open Debug WebView with custom URL",
+            fieldLabel: "URL",
+            placeholder: "https://duckduckgo.com",
+            content: { _, isValid in
+                if !isValid.wrappedValue {
+                    Text(verbatim: "Please enter a valid URL.")
+                        .foregroundColor(.red)
+                }
+            },
+            onApply: { [weak self] value in
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                let urlString = trimmed.hasPrefix("http") ? trimmed : "https://\(trimmed)"
+                guard let url = URL(string: urlString) else { return false }
+                Task { @MainActor [weak self] in
+                    await self?.presentDebugWebView(url: url)
+                }
+                return true
+            }
+        )
+        Task { @MainActor in
+            sheet.show()
+        }
+    }
+
+    @MainActor
+    private func presentDebugWebView(url: URL) async {
+        let privacyConfig = DBPPrivacyConfigurationManager()
+        let prefs = ContentScopeProperties.contentScopePropertiesForDBP()
+
+        guard let handler = try? DataBrokerProtectionWebViewHandler(
+            privacyConfig: privacyConfig,
+            prefs: prefs,
+            delegate: nullCCFDelegateReference,
+            executionConfig: BrokerJobExecutionConfig(),
+            shouldContinueActionHandler: { true },
+            applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent }
+        ) else {
+            assertionFailure("Failed to create webview handler")
+            return
+        }
+
+        await handler.initializeWebView(showWebView: true)
+        try? await handler.load(url: url)
+        debugWebViewHandler = handler
     }
 
     // swiftlint:disable force_try
@@ -323,17 +383,23 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func backgroundAgentRestart() {
-        LoginItemsManager().restartLoginItems([LoginItem.dbpBackgroundAgent])
+        Task {
+            await LoginItemsManager().restartLoginItems([LoginItem.dbpBackgroundAgent])
+        }
     }
 
     @objc private func backgroundAgentDisable() {
-        LoginItemsManager().disableLoginItems([LoginItem.dbpBackgroundAgent])
-        NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
+        Task {
+            await LoginItemsManager().disableLoginItems([LoginItem.dbpBackgroundAgent])
+            NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
+        }
     }
 
     @objc private func backgroundAgentEnable() {
-        LoginItemsManager().enableLoginItems([LoginItem.dbpBackgroundAgent])
-        NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
+        Task {
+            await LoginItemsManager().enableLoginItems([LoginItem.dbpBackgroundAgent])
+            NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
+        }
     }
 
     @objc private func deleteAllDataAndStopAgent() {
@@ -361,6 +427,26 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func showAgentIPAddress() {
         DataBrokerProtectionManager.shared.showAgentIPAddress()
+    }
+
+    @objc private func startPIRDebugServer() {
+        Task { @MainActor in
+            guard await DataBrokerProtectionManager.shared.loginItemInterface.startDebugServer() else {
+                Logger.dataBrokerProtection.error("Failed to start PIR debug server (is the background agent running?)")
+                return
+            }
+
+            let url = "http://127.0.0.1:\(DataBrokerProtectionDebugServerDefaults.defaultPort)/api"
+            let alert = NSAlert()
+            alert.messageText = "PIR Debug Server Started"
+            alert.informativeText = url
+            alert.addButton(withTitle: "OK")
+            await alert.runModal()
+        }
+    }
+
+    @objc private func stopPIRDebugServer() {
+        DataBrokerProtectionManager.shared.loginItemInterface.stopDebugServer()
     }
 
     @objc private func showForceOptOutWindow() {
@@ -404,7 +490,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionManager)
         let viewController = DataBrokerRunCustomJSONViewController(authenticationManager: authenticationManager,
                                                                    featureFlagger: DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger),
-                                                                   applicationNameForUserAgent: WebViewUserAgentProvider.applicationNameForUserAgent)
+                                                                   applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent })
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,
@@ -573,13 +659,17 @@ private struct CustomDBPEndpointSheet: ModalView {
         CustomTextEntrySheet(
             title: "Custom Service Root",
             fieldLabel: "Service Root",
-            placeholder: "branches/some-branch",
-            content: { serviceRoot, _ in
-                let trimmedServiceRoot = serviceRoot.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            placeholder: "branches/some-branch or full URL (DEBUG build only)",
+            content: { value, _ in
+                let trimmedValue = value.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
                 let baseURL = "https://dbp-staging.duckduckgo.com"
-                let previewURL = trimmedServiceRoot.isEmpty
-                    ? baseURL
-                    : URL(string: baseURL)!.appending(trimmedServiceRoot).absoluteString
+                let previewURL: String = if trimmedValue.isEmpty {
+                    baseURL
+                } else if trimmedValue.hasPrefix("http://") || trimmedValue.hasPrefix("https://") {
+                    trimmedValue
+                } else {
+                    URL(string: baseURL)!.appending(trimmedValue).absoluteString
+                }
 
                 Text(verbatim: "Preview: \(previewURL)")
                     .dbpSecondaryTextStyle()
@@ -608,10 +698,22 @@ private extension View {
     }
 }
 
+// No-op CCF delegate for the debug webview; broker callbacks are irrelevant here.
+private final class NullCCFCommunicationDelegate: CCFCommunicationDelegate {
+    func loadURL(url: URL) async {}
+    func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {}
+    func captchaInformation(captchaInfo: GetCaptchaInfoResponse) async {}
+    func solveCaptcha(with response: SolveCaptchaResponse) async {}
+    func success(actionId: String, actionType: ActionType) async {}
+    func conditionSuccess(actions: [Action]) async {}
+    func onError(error: Error) async {}
+}
+
 extension DataBrokerProtectionDebugMenu: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
-        databaseBrowserWindowController = nil
-        dataBrokerForceOptOutWindowController = nil
-        logMonitorWindowController = nil
+        guard let closedWindow = notification.object as? NSWindow else { return }
+        if closedWindow === databaseBrowserWindowController?.window { databaseBrowserWindowController = nil }
+        if closedWindow === dataBrokerForceOptOutWindowController?.window { dataBrokerForceOptOutWindowController = nil }
+        if closedWindow === logMonitorWindowController?.window { logMonitorWindowController = nil }
     }
 }

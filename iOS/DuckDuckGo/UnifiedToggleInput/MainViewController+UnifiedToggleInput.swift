@@ -142,7 +142,6 @@ extension MainViewController {
     private func toolbarVisibilityDecision() -> ToolbarVisibilityDecision {
         ToolbarVisibilityDecision.resolve(.init(
             isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
-            isFocusedOmnibarSession: unifiedToggleInputCoordinator?.isOmnibarSession == true,
             isLargeWidth: AppWidthObserver.shared.isLargeWidth,
             isInMinimalChromeLayout: isInMinimalChromeLayout
         ))
@@ -189,9 +188,7 @@ extension MainViewController {
         }
     }
 
-    /// Hides the toolbar on AI tabs; restores it on non-AI tabs. The focused omnibar session
-    /// opened from a Duck.ai tab counts as "tab-like" — keep the toolbar so the user has the
-    /// standard browser controls while searching. Idempotent; safe with the feature flag off.
+    /// Hides the toolbar on AI tabs; restores it on non-AI tabs. Idempotent; safe with the feature flag off.
     func reconcileToolbarVisibilityForCurrentTab() {
         applyToolbarVisibility(toolbarVisibilityDecision())
     }

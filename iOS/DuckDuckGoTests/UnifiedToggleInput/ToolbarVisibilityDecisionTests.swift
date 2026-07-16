@@ -22,15 +22,10 @@ import XCTest
 
 final class ToolbarVisibilityDecisionTests: XCTestCase {
 
-    // MARK: - Toolbar hidden on AI chrome (non-omnibar)
+    // MARK: - Toolbar hidden on AI chrome
 
-    func test_aiChrome_notOmnibarSession_hidesToolbar() {
-        XCTAssertTrue(decide(isCurrentTabUsingUnifiedInputAIChrome: true, isFocusedOmnibarSession: false).isHidden)
-    }
-
-    func test_aiChrome_omnibarSession_keepsToolbarTabLike() {
-        // Focused omnibar opened from a Duck.ai tab keeps the toolbar (standard browser controls).
-        XCTAssertFalse(decide(isCurrentTabUsingUnifiedInputAIChrome: true, isFocusedOmnibarSession: true).isHidden)
+    func test_aiChrome_hidesToolbar() {
+        XCTAssertTrue(decide(isCurrentTabUsingUnifiedInputAIChrome: true).isHidden)
     }
 
     // MARK: - Non-AI branch (iPad / minimal chrome)
@@ -51,13 +46,11 @@ final class ToolbarVisibilityDecisionTests: XCTestCase {
 
     private func decide(
         isCurrentTabUsingUnifiedInputAIChrome: Bool = false,
-        isFocusedOmnibarSession: Bool = false,
         isLargeWidth: Bool = false,
         isInMinimalChromeLayout: Bool = false
     ) -> ToolbarVisibilityDecision {
         ToolbarVisibilityDecision.resolve(.init(
             isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
-            isFocusedOmnibarSession: isFocusedOmnibarSession,
             isLargeWidth: isLargeWidth,
             isInMinimalChromeLayout: isInMinimalChromeLayout
         ))

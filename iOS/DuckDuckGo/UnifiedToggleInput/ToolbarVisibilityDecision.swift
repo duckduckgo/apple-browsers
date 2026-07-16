@@ -24,7 +24,6 @@ struct ToolbarVisibilityDecision: Equatable {
     /// Value-only inputs, so the decision is pure and its tests need no mocks.
     struct Inputs: Equatable {
         let isCurrentTabUsingUnifiedInputAIChrome: Bool
-        let isFocusedOmnibarSession: Bool
         let isLargeWidth: Bool
         let isInMinimalChromeLayout: Bool
     }
@@ -34,11 +33,9 @@ struct ToolbarVisibilityDecision: Equatable {
     }
 
     private static func shouldHide(_ inputs: Inputs) -> Bool {
-        // A Duck.ai tab hides the toolbar unless it's a focused omnibar session (tab-like).
-        if inputs.isCurrentTabUsingUnifiedInputAIChrome && !inputs.isFocusedOmnibarSession {
-            return true
-        }
-        // iPad and minimal-chrome layouts have no bottom toolbar.
-        return inputs.isLargeWidth || inputs.isInMinimalChromeLayout
+        // A Duck.ai tab has no bottom toolbar, and neither do iPad / minimal-chrome layouts.
+        inputs.isCurrentTabUsingUnifiedInputAIChrome
+            || inputs.isLargeWidth
+            || inputs.isInMinimalChromeLayout
     }
 }

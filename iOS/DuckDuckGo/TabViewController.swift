@@ -2194,24 +2194,25 @@ extension TabViewController: WKNavigationDelegate {
 
     func preparePreview(completion: @escaping (UIImage?) -> Void) {
         DispatchQueue.main.async { [weak self] in
-            guard let webView = self?.webView,
-                  webView.bounds.height > 0 && webView.bounds.width > 0 else { completion(nil); return }
-            
-            let size = CGSize(width: webView.frame.size.width,
-                              height: webView.frame.size.height - webView.scrollView.contentInset.top - webView.scrollView.contentInset.bottom)
+            completion(self?.preparePreviewSync(afterScreenUpdates: true))
+        }
+    }
 
-            guard size.width > 0, size.height > 0 else { completion(nil); return }
+    // Synchronous capture, used when we must grab the preview before the view is torn down.
+    func preparePreviewSync(afterScreenUpdates: Bool = false) -> UIImage? {
+        guard webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
 
-            let renderer = UIGraphicsImageRenderer(size: size)
-            let image = renderer.image { context in
-                context.cgContext.translateBy(x: 0, y: -webView.scrollView.contentInset.top)
-                webView.drawHierarchy(in: webView.bounds, afterScreenUpdates: true)
-                if let jsAlertView = self?.jsAlertView {
-                    jsAlertView.drawHierarchy(in: jsAlertView.bounds, afterScreenUpdates: false)
-                }
+        let size = CGSize(width: webView.frame.size.width,
+                          height: webView.frame.size.height - webView.scrollView.contentInset.top - webView.scrollView.contentInset.bottom)
+        guard size.width > 0, size.height > 0 else { return nil }
+
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            context.cgContext.translateBy(x: 0, y: -webView.scrollView.contentInset.top)
+            webView.drawHierarchy(in: webView.bounds, afterScreenUpdates: afterScreenUpdates)
+            if let jsAlertView {
+                jsAlertView.drawHierarchy(in: jsAlertView.bounds, afterScreenUpdates: false)
             }
-
-            completion(image)
         }
     }
 

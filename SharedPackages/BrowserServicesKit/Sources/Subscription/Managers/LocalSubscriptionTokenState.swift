@@ -1,5 +1,5 @@
 //
-//  LocalSubscriptionAccountSnapshot.swift
+//  LocalSubscriptionTokenState.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,21 +16,8 @@
 //  limitations under the License.
 //
 
-import Networking
-
-public struct LocalSubscriptionAccountSnapshot: Equatable {
-
-    public enum TokenState: Equatable {
-        case present
-        case missing
-        case readError
-    }
-
-    public let tokenState: TokenState
-    public let entitlements: [SubscriptionEntitlement]?
-
-    public init(tokenState: TokenState, entitlements: [SubscriptionEntitlement]?) {
-        self.tokenState = tokenState
-        self.entitlements = entitlements
-    }
+public enum LocalSubscriptionTokenState: Equatable {
+    case present
+    case missing
+    case readError
 }

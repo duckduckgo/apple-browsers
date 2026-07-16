@@ -94,33 +94,30 @@ class SubscriptionManagerTests: XCTestCase {
 
     // MARK: - Token Retrieval Tests
 
-    func testWhenLocalAccountSnapshotHasTokenThenReturnsTokenEntitlementsWithoutRefreshing() {
-        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+    func testWhenLocalTokenStateHasTokenThenReturnsPresentWithoutRefreshing() {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
 
-        let snapshot = subscriptionManager.localAccountSnapshot()
+        let tokenState = subscriptionManager.localTokenState()
 
-        XCTAssertEqual(snapshot.tokenState, .present)
-        XCTAssertEqual(snapshot.entitlements, [.networkProtection, .dataBrokerProtection, .identityTheftRestoration])
+        XCTAssertEqual(tokenState, .present)
         XCTAssertTrue(mockOAuthClient.getTokensTriggers.isEmpty)
     }
 
-    func testWhenLocalAccountSnapshotHasNoTokenThenReturnsMissingWithoutRefreshing() {
+    func testWhenLocalTokenStateHasNoTokenThenReturnsMissingWithoutRefreshing() {
         mockOAuthClient.internalCurrentTokenContainer = nil
 
-        let snapshot = subscriptionManager.localAccountSnapshot()
+        let tokenState = subscriptionManager.localTokenState()
 
-        XCTAssertEqual(snapshot.tokenState, .missing)
-        XCTAssertEqual(snapshot.entitlements, [])
+        XCTAssertEqual(tokenState, .missing)
         XCTAssertTrue(mockOAuthClient.getTokensTriggers.isEmpty)
     }
 
-    func testWhenLocalAccountSnapshotTokenCannotBeReadThenReturnsReadErrorWithoutRefreshing() {
+    func testWhenLocalTokenStateCannotBeReadThenReturnsReadErrorWithoutRefreshing() {
         mockOAuthClient.currentTokenContainerError = NSError(domain: "LocalTokenStore", code: 1)
 
-        let snapshot = subscriptionManager.localAccountSnapshot()
+        let tokenState = subscriptionManager.localTokenState()
 
-        XCTAssertEqual(snapshot.tokenState, .readError)
-        XCTAssertNil(snapshot.entitlements)
+        XCTAssertEqual(tokenState, .readError)
         XCTAssertTrue(mockOAuthClient.getTokensTriggers.isEmpty)
     }
 

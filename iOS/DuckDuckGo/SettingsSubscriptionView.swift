@@ -335,7 +335,7 @@ struct SettingsSubscriptionView: View {
             let isVPNConnected = settingsViewModel.state.networkProtectionConnected
 
             NavigationLink(
-                destination: LazyView(NetworkProtectionRootView(source: .subscriptionSettings, subscriptionIncludesVPN: .trueValue)),
+                destination: LazyView(NetworkProtectionRootView(source: .subscriptionSettings)),
                 isActive: $isShowingVPN) {
                 SettingsCellView(
                     label: UserText.settingsPProVPNTitle,

@@ -122,9 +122,7 @@ final class VPNConnectionWideEventTests: XCTestCase {
             startupMethod: .manualByMainApp,
             entryContext: .init(
                 source: .subscriptionSettings,
-                tokenState: .missing,
-                accountHasVPNEntitlement: .falseValue,
-                subscriptionIncludesVPN: .trueValue
+                tokenState: .missing
             ),
             contextData: WideEventContextData(name: "Test-Context")
         )
@@ -133,8 +131,6 @@ final class VPNConnectionWideEventTests: XCTestCase {
 
         XCTAssertEqual(parameters["feature.data.ext.vpn_screen_source"], "subscription_settings")
         XCTAssertEqual(parameters["feature.data.ext.vpn_screen_entry_token_state"], "missing")
-        XCTAssertEqual(parameters["feature.data.ext.account_has_vpn_entitlement"], "false")
-        XCTAssertEqual(parameters["feature.data.ext.subscription_includes_vpn"], "true")
     }
 
     // MARK: - Abandoned and Delayed Flows

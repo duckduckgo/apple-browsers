@@ -49,7 +49,7 @@ struct SubscriptionEmailView: View {
     var body: some View {
         // Hidden Navigation Links for Onboarding sections
         NavigationLink(destination: LazyView(
-            NetworkProtectionRootView(source: .subscriptionEmail, subscriptionIncludesVPN: .trueValue)
+            NetworkProtectionRootView(source: .subscriptionEmail)
                 .navigationViewStyle(.stack)),
                        isActive: $isShowingNetP,
                        label: { EmptyView() })

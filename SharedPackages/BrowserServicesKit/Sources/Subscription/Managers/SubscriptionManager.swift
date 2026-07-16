@@ -87,9 +87,9 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// The user email
     var userEmail: String? { get }
 
-    /// Returns a non-mutating snapshot of the locally stored account state.
+    /// Returns the state of the locally stored token without mutating account state.
     /// This does not refresh tokens, update caches, or fall back to cached authentication state.
-    func localAccountSnapshot() -> LocalSubscriptionAccountSnapshot
+    func localTokenState() -> LocalSubscriptionTokenState
 
     /// Sign out the user, clear and invalidate the access token and clear the subscription cache
     func signOut(notifyUI: Bool, userInitiated: Bool) async
@@ -542,18 +542,11 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
-    public func localAccountSnapshot() -> LocalSubscriptionAccountSnapshot {
+    public func localTokenState() -> LocalSubscriptionTokenState {
         do {
-            guard let tokenContainer = try oAuthClient.currentTokenContainer() else {
-                return LocalSubscriptionAccountSnapshot(tokenState: .missing, entitlements: [])
-            }
-
-            return LocalSubscriptionAccountSnapshot(
-                tokenState: .present,
-                entitlements: tokenContainer.decodedAccessToken.subscriptionEntitlements
-            )
+            return try oAuthClient.currentTokenContainer() == nil ? .missing : .present
         } catch {
-            return LocalSubscriptionAccountSnapshot(tokenState: .readError, entitlements: nil)
+            return .readError
         }
     }
 

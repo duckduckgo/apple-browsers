@@ -21,20 +21,17 @@ import SwiftUI
 import VPN
 import Subscription
 import Core
-import Networking
 
 struct NetworkProtectionRootView: View {
 
     @StateObject var statusViewModel: NetworkProtectionStatusViewModel
     @StateObject var feedbackFormModel: UnifiedFeedbackFormViewModel
 
-    init(source: VPNConnectionWideEventData.ScreenSource,
-         subscriptionIncludesVPN: VPNConnectionWideEventData.BooleanState = .unknown) {
+    init(source: VPNConnectionWideEventData.ScreenSource) {
         let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
         let entryContext = VPNConnectionWideEventData.EntryContext(
             source: source,
-            subscriptionIncludesVPN: subscriptionIncludesVPN,
-            accountSnapshot: subscriptionManager.localAccountSnapshot()
+            localTokenState: subscriptionManager.localTokenState()
         )
         let locationListRepository = NetworkProtectionLocationListCompositeRepository()
         let tunnelController = AppDependencyProvider.shared.networkProtectionTunnelController
@@ -71,10 +68,9 @@ struct NetworkProtectionRootView: View {
 private extension VPNConnectionWideEventData.EntryContext {
 
     init(source: VPNConnectionWideEventData.ScreenSource,
-         subscriptionIncludesVPN: VPNConnectionWideEventData.BooleanState,
-         accountSnapshot: LocalSubscriptionAccountSnapshot) {
+         localTokenState: LocalSubscriptionTokenState) {
         let tokenState: VPNConnectionWideEventData.TokenState
-        switch accountSnapshot.tokenState {
+        switch localTokenState {
         case .present:
             tokenState = .present
         case .missing:
@@ -83,18 +79,9 @@ private extension VPNConnectionWideEventData.EntryContext {
             tokenState = .readError
         }
 
-        let accountHasVPNEntitlement: VPNConnectionWideEventData.BooleanState
-        if let entitlements = accountSnapshot.entitlements {
-            accountHasVPNEntitlement = entitlements.contains(.networkProtection) ? .trueValue : .falseValue
-        } else {
-            accountHasVPNEntitlement = .unknown
-        }
-
         self.init(
             source: source,
-            tokenState: tokenState,
-            accountHasVPNEntitlement: accountHasVPNEntitlement,
-            subscriptionIncludesVPN: subscriptionIncludesVPN
+            tokenState: tokenState
         )
     }
 }

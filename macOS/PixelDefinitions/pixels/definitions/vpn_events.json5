@@ -151,18 +151,6 @@
                 "enum": ["present", "missing", "read_error", "unknown"]
             },
             {
-                "key": "feature.data.ext.account_has_vpn_entitlement",
-                "type": "string",
-                "description": "Whether the locally stored account token contained the VPN entitlement when the VPN screen opened, when available",
-                "enum": ["true", "false", "unknown"]
-            },
-            {
-                "key": "feature.data.ext.subscription_includes_vpn",
-                "type": "string",
-                "description": "Whether the route or UI state that opened the VPN screen indicated that the subscription plan included VPN, when available",
-                "enum": ["true", "false", "unknown"]
-            },
-            {
                 "key": "feature.data.ext.onboarding_status",
                 "type": "string",
                 "description": "The current onboarding status, if applicable",

@@ -59,16 +59,6 @@
                         "description": "Whether a local Privacy Pro token container was present when the VPN screen opened. `read_error` means local token storage could not be read without mutating account state.",
                         "enum": ["present", "missing", "read_error", "unknown"]
                     },
-                    "account_has_vpn_entitlement": {
-                        "type": "string",
-                        "description": "Whether the locally stored account token contained the VPN entitlement when the VPN screen opened.",
-                        "enum": ["true", "false", "unknown"]
-                    },
-                    "subscription_includes_vpn": {
-                        "type": "string",
-                        "description": "Whether the route or UI state that opened the VPN screen indicated that the subscription plan included VPN. `unknown` means the route did not check this condition.",
-                        "enum": ["true", "false", "unknown"]
-                    },
                     "latency_ms": {
                         "type": "integer",
                         "description": "Overall time taken to establish the connection, in milliseconds."

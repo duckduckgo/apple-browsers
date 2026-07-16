@@ -151,12 +151,6 @@ extension VPNConnectionWideEventData {
         case unknown
     }
 
-    public enum BooleanState: String, Codable, CaseIterable {
-        case trueValue = "true"
-        case falseValue = "false"
-        case unknown
-    }
-
     public enum ScreenSource: String, Codable, CaseIterable, Equatable {
         case appSettings = "app_settings"
         case subscriptionSettings = "subscription_settings"
@@ -182,24 +176,16 @@ extension VPNConnectionWideEventData {
     public struct EntryContext: Codable, Equatable {
         public let source: ScreenSource
         public let tokenState: TokenState
-        public let accountHasVPNEntitlement: BooleanState
-        public let subscriptionIncludesVPN: BooleanState
 
         public static let unknown = EntryContext(
             source: .unknown,
-            tokenState: .unknown,
-            accountHasVPNEntitlement: .unknown,
-            subscriptionIncludesVPN: .unknown
+            tokenState: .unknown
         )
 
         public init(source: ScreenSource,
-                    tokenState: TokenState,
-                    accountHasVPNEntitlement: BooleanState,
-                    subscriptionIncludesVPN: BooleanState) {
+                    tokenState: TokenState) {
             self.source = source
             self.tokenState = tokenState
-            self.accountHasVPNEntitlement = accountHasVPNEntitlement
-            self.subscriptionIncludesVPN = subscriptionIncludesVPN
         }
     }
 
@@ -242,8 +228,6 @@ extension VPNConnectionWideEventData {
             (WideEventParameter.VPNConnectionFeature.onboardingStatus, onboardingStatus?.rawValue),
             (WideEventParameter.VPNConnectionFeature.screenSource, entryContext?.source.rawValue),
             (WideEventParameter.VPNConnectionFeature.screenEntryTokenState, entryContext?.tokenState.rawValue),
-            (WideEventParameter.VPNConnectionFeature.accountHasVPNEntitlement, entryContext?.accountHasVPNEntitlement.rawValue),
-            (WideEventParameter.VPNConnectionFeature.subscriptionIncludesVPN, entryContext?.subscriptionIncludesVPN.rawValue),
             (WideEventParameter.VPNConnectionFeature.latency, overallDuration?.intValue(.noBucketing)),
         ])
 
@@ -310,8 +294,6 @@ extension WideEventParameter {
         static let isSetup = "feature.data.ext.is_setup"
         static let screenSource = "feature.data.ext.vpn_screen_source"
         static let screenEntryTokenState = "feature.data.ext.vpn_screen_entry_token_state"
-        static let accountHasVPNEntitlement = "feature.data.ext.account_has_vpn_entitlement"
-        static let subscriptionIncludesVPN = "feature.data.ext.subscription_includes_vpn"
         static let latency = "feature.data.ext.latency_ms"
 
         static func latency(at step: VPNConnectionWideEventData.Step) -> String {

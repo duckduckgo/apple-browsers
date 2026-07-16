@@ -921,26 +921,27 @@ class MainViewController: UIViewController {
         if !viewCoordinator.logoContainer.isHidden,
            self.tabManager.current()?.link == nil,
            let tab = self.tabManager.currentTabsModel.currentTab {
-            // Home screen with logo
+            // Preview is optional; run completion even if the snapshot fails so the switcher opens on the first tap.
             if let image = viewCoordinator.logoContainer.createImageSnapshot(inBounds: viewCoordinator.contentContainer.frame) {
                 previewsSource.update(preview: image, forTab: tab)
-                completion?()
             }
+            completion?()
 
         } else if let currentTab = self.tabManager.current(), currentTab.link != nil {
             // Web view
             currentTab.preparePreview(completion: { image in
-                guard let image else { return }
-                self.previewsSource.update(preview: image,
-                                           forTab: currentTab.tabModel)
+                if let image {
+                    self.previewsSource.update(preview: image,
+                                               forTab: currentTab.tabModel)
+                }
                 completion?()
             })
         } else if let tab = self.tabManager.currentTabsModel.currentTab {
             // Favorites, etc
             if let image = viewCoordinator.contentContainer.createImageSnapshot() {
                 previewsSource.update(preview: image, forTab: tab)
-                completion?()
             }
+            completion?()
         } else {
             completion?()
         }
@@ -2668,11 +2669,12 @@ class MainViewController: UIViewController {
         }
     }
 
-    func dismissOmniBar() {
+    /// - Parameter animated: animate the UTI collapse; pass `false` when a full-screen surface (tab switcher / new tab) immediately follows.
+    func dismissOmniBar(animated: Bool = true) {
         hideSuggestionTray()
         teardownPopoverSuggestions()
         viewCoordinator.omniBar.endEditing()
-        deactivateUnifiedToggleInputOmnibarSession()
+        deactivateUnifiedToggleInputOmnibarSession(animated: animated)
         refreshOmniBar()
     }
 
@@ -3240,8 +3242,8 @@ class MainViewController: UIViewController {
             ViewHighlighter.hideAll()
         }
         daxDialogsManager.fireButtonPulseCancelled()
-        // Reset omnibar editing state before creating a new tab.
-        dismissOmniBar()
+        // Tear down active editing before building the new tab; non-animated so its collapse doesn't race the new tab's focus animation.
+        dismissOmniBar(animated: false)
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
         currentTab?.dismiss()
@@ -4923,8 +4925,8 @@ extension MainViewController: OmniBarDelegate {
         }
     }
 
-    func performCancel() {
-        dismissOmniBar()
+    func performCancel(animated: Bool = true) {
+        dismissOmniBar(animated: animated)
         omniBar.cancel()
         hideSuggestionTray()
         themeColorManager.updateThemeColor()
@@ -4968,21 +4970,18 @@ extension MainViewController: OmniBarDelegate {
         ])
         guard !duckAIFireOnboardingFlow.controlsLocked else { return }
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
-        performCancel()
         newTab()
     }
 
     private func newFireTabLongPressMenuAction() {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
-        performCancel()
         newTab()
     }
 
     private func newNormalTabLongPressMenuAction() {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSwitcherSelected)
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
-        performCancel()
         newTab()
     }
 
@@ -6510,7 +6509,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
 
         performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatTabSwitcherOpened) }
 
-        performCancel()
+        // Snap the UTI away so its collapse doesn't overlap the tab switcher segue (non-animated dismiss restores resting layout synchronously).
+        performCancel(animated: false)
         showTabSwitcher()
     }
 

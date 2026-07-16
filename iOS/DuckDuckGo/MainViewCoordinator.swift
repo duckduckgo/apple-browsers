@@ -720,9 +720,12 @@ class MainViewCoordinator {
         }
     }
 
-    /// The UTI owns the bottom anchor whenever it's visible and not voice-mode-hidden, regardless of what a caller requests.
+    /// UTI owns the content bottom anchor only when bottom-anchored; forcing it for the top address bar collapses the UTI container.
     private func setContentContainerBottomAnchorMode(_ mode: ContentContainerBottomAnchorMode) {
-        let resolvedMode: ContentContainerBottomAnchorMode = (isUnifiedToggleInputVisible && !navigationBarContainer.isHidden) ? .unifiedToggleInput : mode
+        let utiOwnsBottomAnchor = isUnifiedToggleInputVisible
+            && !navigationBarContainer.isHidden
+            && !constraints.navigationBarContainerTop.isActive
+        let resolvedMode: ContentContainerBottomAnchorMode = utiOwnsBottomAnchor ? .unifiedToggleInput : mode
         constraints.contentContainerBottomToToolbarTop.isActive = resolvedMode == .toolbar
         constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = resolvedMode == .unifiedToggleInput
         constraints.contentContainerBottomToSafeArea.isActive = resolvedMode == .safeArea

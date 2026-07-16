@@ -1219,10 +1219,18 @@ class MainViewController: UIViewController {
         guard viewCoordinator.isNavigationBarContainerBottomKeyboardBased == pinToBottom else { return pinToBottom }
         viewCoordinator.updateMinimalChromeBottomAnchor(pinnedToScreenBottom: pinToBottom)
         if pinToBottom {
+            // Bar dropped to the screen bottom: clear the keyboard-driven layout left from omnibar editing.
             currentTab?.webView.scrollView.contentInset.bottom = 0
+            currentTab?.borderView.bottomOffset = 0
+            if appSettings.currentAddressBarPosition.isBottom,
+               let ntp = newTabPageViewController,
+               !ntp.isShowingLogo {
+                ntp.additionalSafeAreaInsets.bottom = viewCoordinator.omniBar.barView.expectedHeight
+            }
         }
         UIView.animate(withDuration: duration, delay: 0, options: curve) {
             self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
+            self.currentTab?.borderView.layoutIfNeeded()
         }
         return pinToBottom
     }

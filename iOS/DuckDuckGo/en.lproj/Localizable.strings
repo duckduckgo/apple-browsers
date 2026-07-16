@@ -4030,6 +4030,9 @@ Take back control of your personal information with the browser designed for dat
 /* The name of a settings category listing next steps */
 "settings.next.steps" = "Next Steps";
 
+/* Accessibility label / title for the button that hides the Settings Next Steps section */
+"settings.next.steps.hide" = "Hide";
+
 /* Label describing a feature which is turned off */
 "settings.off" = "Off";
 

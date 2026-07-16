@@ -27,36 +27,70 @@ struct SettingsNextStepsView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var body: some View {
-        Section(header: Text(UserText.nextSteps)) {
-            // Add App to Your Dock
-            SettingsCellView(label: UserText.settingsAddToDock,
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.addToDock),
-                             action: { viewModel.presentLegacyView(.addToDock) },
-                             isButton: true)
+        if viewModel.shouldShowNextStepsSection {
+            Section(header: header) {
+                // Add App to Your Dock — dismisses one day after the user taps it.
+                if viewModel.shouldShowAddToDockNextStep {
+                    SettingsCellView(label: UserText.settingsAddToDock,
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.addToDock),
+                                     action: {
+                                         viewModel.recordAddToDockNextStepTapped()
+                                         viewModel.presentLegacyView(.addToDock)
+                                     },
+                                     isButton: true)
+                }
 
-            // Add Widget to Home Screen
-            NavigationLink(destination: WidgetEducationView()) {
-                SettingsCellView(label: UserText.settingsAddWidget,
-                                 image: Image(uiImage: DesignSystemImages.Color.Size24.addWidget))
-            }
+                // Add Widget to Home Screen — dismisses one day after the user taps it.
+                if viewModel.shouldShowAddWidgetNextStep {
+                    NavigationLink(destination: WidgetEducationView().onAppear {
+                        viewModel.recordAddWidgetNextStepTapped()
+                    }) {
+                        SettingsCellView(label: UserText.settingsAddWidget,
+                                         image: Image(uiImage: DesignSystemImages.Color.Size24.addWidget))
+                    }
+                }
 
-            // Set Your Address Bar Position
-            if viewModel.state.addressBar.enabled {
-                NavigationLink(destination: SettingsAppearanceView().environmentObject(viewModel)) {
-                    SettingsCellView(label: UserText.setYourAddressBarPosition,
-                                     image: Image(uiImage: DesignSystemImages.Color.Size24.addressBarBottom))
+                // Set Your Address Bar Position — dismisses once the position is changed from default.
+                if viewModel.shouldShowSetAddressBarPositionNextStep {
+                    NavigationLink(destination: SettingsAppearanceView().environmentObject(viewModel)
+                        .onDisappear { viewModel.refreshNextStepsVisibility(animated: true) }) {
+                        SettingsCellView(label: UserText.setYourAddressBarPosition,
+                                         image: Image(uiImage: DesignSystemImages.Color.Size24.addressBarBottom))
+                    }
+                }
+
+                // Enable Voice Search — dismisses once voice search is enabled.
+                if viewModel.shouldShowEnableVoiceSearchNextStep {
+                    NavigationLink(destination: SettingsAccessibilityView().environmentObject(viewModel)
+                        .onDisappear { viewModel.refreshNextStepsVisibility(animated: true) }) {
+                        SettingsCellView(label: UserText.enableVoiceSearch,
+                                         image: Image(uiImage: AppRebrand.isAppRebranded()
+                                                      ? DesignSystemImages.Color.Size24.microphoneAdd
+                                                      : DesignSystemImages.Color.Size24.microphone))
+                    }
                 }
             }
+        }
+    }
 
-            // Enable Voice Search
-            NavigationLink(destination: SettingsAccessibilityView().environmentObject(viewModel)) {
-                SettingsCellView(label: UserText.enableVoiceSearch,
-                                 image: Image(uiImage: AppRebrand.isAppRebranded()
-                                              ? DesignSystemImages.Color.Size24.microphoneAdd
-                                              : DesignSystemImages.Color.Size24.microphone))
+    private var header: some View {
+        HStack(alignment: .bottom) {
+            Text(UserText.nextSteps)
+            Spacer()
+            if viewModel.shouldShowNextStepsHideButton {
+                Button {
+                    viewModel.hideNextStepsSection()
+                } label: {
+                    Text(UserText.nextStepsHide)
+                        .daxFootnoteRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .padding(.leading, 16)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .textCase(nil)
             }
         }
-
     }
 
 }

@@ -95,7 +95,7 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
-      build-active-architecture-only: true
+      include-x86-architecture: false
     secrets: inherit
 
   # This job sets up the matrix strategy arguments for the ui-tests jobs

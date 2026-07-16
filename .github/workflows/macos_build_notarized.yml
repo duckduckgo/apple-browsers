@@ -24,6 +24,10 @@ on:
         description: "Asana release task URL"
         required: false
         type: string
+      include-x86-architecture:
+        description: "Include x86_64 architecture in the build"
+        default: false
+        type: boolean
   workflow_call:
     inputs:
       release-type:
@@ -54,8 +58,8 @@ on:
         description: "Skip Mattermost notification"
         default: false
         type: boolean
-      build-active-architecture-only:
-        description: "Build only the active architecture"
+      include-x86-architecture:
+        description: "Include x86_64 architecture in the build"
         default: false
         type: boolean
     secrets:
@@ -104,7 +108,7 @@ jobs:
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
-      EXCLUDED_ARCHS: ${{ inputs.build-active-architecture-only && 'x86_64' || '' }}
+      EXCLUDED_ARCHS: ${{ inputs.include-x86-architecture && '' || 'x86_64' }}
 
     steps:
     - name: Register SSH keys for private repos

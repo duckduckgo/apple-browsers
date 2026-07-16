@@ -277,10 +277,7 @@ extension FireCoordinator {
                 FireDialogViewConfig(
                     viewModel: vm,
                     showIndividualSitesLink: [.fireButton, .mainMenuAll].contains(mode),
-                    onConfirm: { [weak self] response in
-                        if case .noAction = response {
-                            self?.pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount, doNotEnforcePrefix: true)
-                        }
+                    onConfirm: { response in
                         resumeOnce(returning: response)
                     }
                 )

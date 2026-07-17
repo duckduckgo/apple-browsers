@@ -2200,7 +2200,7 @@ extension TabViewController: WKNavigationDelegate {
 
     // Synchronous capture, used when we must grab the preview before the view is torn down.
     func preparePreviewSync(afterScreenUpdates: Bool = false) -> UIImage? {
-        guard webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
+        guard let webView, webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
 
         let size = CGSize(width: webView.frame.size.width,
                           height: webView.frame.size.height - webView.scrollView.contentInset.top - webView.scrollView.contentInset.bottom)

@@ -258,43 +258,37 @@ struct SidebarOpenExtractionMeasurementTests {
     private enum Outcome: Equatable {
         case none
         case prevented(String)
-        case success
+        case collect
     }
 
     private func sidebarOpenOutcome(isURL: Bool,
                                     preventedReason: String?,
-                                    isContextCollectionEnabled: Bool,
-                                    hasUsableCachedContext: Bool) -> Outcome {
+                                    isContextCollectionEnabled: Bool) -> Outcome {
         guard isURL else { return .prevented("internalPage") }
         if let preventedReason { return .prevented(preventedReason) }
-        if isContextCollectionEnabled, hasUsableCachedContext { return .success }
+        if isContextCollectionEnabled { return .collect }
         return .none
     }
 
     @Test("Native special page (non-URL content) reports prevented(internalPage)")
     func nativePageReportsInternalPagePrevented() {
-        #expect(sidebarOpenOutcome(isURL: false, preventedReason: nil, isContextCollectionEnabled: true, hasUsableCachedContext: false) == .prevented("internalPage"))
+        #expect(sidebarOpenOutcome(isURL: false, preventedReason: nil, isContextCollectionEnabled: true) == .prevented("internalPage"))
     }
 
     @Test("Non-attachable URL reports prevented with the blocklist category, no interaction needed")
     func nonAttachableURLReportsPrevented() {
-        #expect(sidebarOpenOutcome(isURL: true, preventedReason: "pdf", isContextCollectionEnabled: false, hasUsableCachedContext: false) == .prevented("pdf"))
-        #expect(sidebarOpenOutcome(isURL: true, preventedReason: "image", isContextCollectionEnabled: true, hasUsableCachedContext: true) == .prevented("image"))
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: "pdf", isContextCollectionEnabled: false) == .prevented("pdf"))
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: "image", isContextCollectionEnabled: true) == .prevented("image"))
     }
 
-    @Test("Attachable URL with auto-collect ON and pre-warmed cached context reports success")
-    func attachableAutoOnCachedReportsSuccess() {
-        #expect(sidebarOpenOutcome(isURL: true, preventedReason: nil, isContextCollectionEnabled: true, hasUsableCachedContext: true) == .success)
-    }
-
-    @Test("Attachable URL with auto-collect ON but no usable cache reports nothing (collect path reports)")
-    func attachableAutoOnNoCacheReportsNone() {
-        #expect(sidebarOpenOutcome(isURL: true, preventedReason: nil, isContextCollectionEnabled: true, hasUsableCachedContext: false) == .none)
+    @Test("Attachable URL with auto-collect ON re-collects so success/failure fire live")
+    func attachableAutoOnReCollects() {
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: nil, isContextCollectionEnabled: true) == .collect)
     }
 
     @Test("Attachable URL with auto-collect OFF reports nothing on open (awaits user tap / signals-only)")
     func attachableAutoOffReportsNone() {
-        #expect(sidebarOpenOutcome(isURL: true, preventedReason: nil, isContextCollectionEnabled: false, hasUsableCachedContext: true) == .none)
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: nil, isContextCollectionEnabled: false) == .none)
     }
 
     private final class Guard {

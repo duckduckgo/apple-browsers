@@ -367,8 +367,8 @@ final class PageContextTabExtension {
             fireExtractionPixel(.prevented(reason), trigger: .navigation, latency: nil)
             return
         }
-        if isContextCollectionEnabled, let cached = cachedPageContext, cached.attachable != false, !cached.isEmpty() {
-            fireExtractionPixel(.success, trigger: .auto, latency: nil)
+        if isContextCollectionEnabled, !extractionResolver.hasPendingCollections {
+            collectPageContextIfNeeded(trigger: .auto)
         }
     }
 

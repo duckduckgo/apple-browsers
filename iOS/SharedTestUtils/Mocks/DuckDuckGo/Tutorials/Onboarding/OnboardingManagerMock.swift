@@ -22,7 +22,7 @@ import Core
 import Onboarding
 @testable import DuckDuckGo
 
-final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingAddToDockVisibilityManager, OnboardingFlowManaging {
+final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingDownloadReasonHandling, OnboardingAddToDockVisibilityManager, OnboardingFlowManaging {
 
     private(set) var didCallSettingsURLPath = false
     private(set) var didCallConfigureOnboardingFlow = false
@@ -31,6 +31,10 @@ final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingAddToDockV
 
     var onboardingSteps: [DuckDuckGo.OnboardingIntroStep] = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
 
+    private(set) var didCallSelectDownloadReason = false
+    private(set) var capturedDownloadReason: OnboardingDownloadReason?
+    var stubbedRemainingSteps: [DuckDuckGo.OnboardingIntroStep] = []
+
     var userHasSeenAddToDockPromoDuringOnboarding: Bool = false
 
     var currentOnboardingFlow: OnboardingFlowType = .default
@@ -38,5 +42,11 @@ final class OnboardingManagerMock: OnboardingStepsProvider, OnboardingAddToDockV
     func configureOnboardingFlow(from url: URL?) {
         didCallConfigureOnboardingFlow = true
         capturedURL = url
+    }
+
+    func selectDownloadReason(_ reason: OnboardingDownloadReason) -> [DuckDuckGo.OnboardingIntroStep] {
+        didCallSelectDownloadReason = true
+        capturedDownloadReason = reason
+        return stubbedRemainingSteps
     }
 }

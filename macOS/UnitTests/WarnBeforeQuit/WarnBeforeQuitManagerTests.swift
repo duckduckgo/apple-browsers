@@ -2972,6 +2972,7 @@ final class WarnBeforeQuitManagerTests: XCTestCase, Sendable {
                              includeAppVersionParameter: Bool,
                              withAdditionalParameters: [String: String]?,
                              withNamePrefix: String?,
+                             doNotEnforcePrefix: Bool,
                              onComplete: @escaping PixelKit.CompletionBlock) {
                 fireExpectation.fulfill()
                 // Never call completion handler - simulates timeout

@@ -148,17 +148,6 @@ enum GeneralPixel: PixelKitEvent {
     case fireButton(option: FireButtonOption)
     case fireAnimationSetting(enabled: Bool)
 
-    /**
-     * Event Trigger: User opens the fire popover (fire button details view).
-     *
-     * > Note: This is a daily pixel.
-     *
-     * Anomaly Investigation:
-     * - May indicate changes in user awareness of privacy clearing features.
-     * - Increase could suggest browser cache is causing issues.
-     */
-    case fireButtonDetailsViewed
-
     // Duck Player
     case duckPlayerDailyUniqueView
     case duckPlayerWeeklyUniqueView
@@ -842,8 +831,6 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_fire_button_\(option)"
         case .fireAnimationSetting(let enabled):
             return "m_mac_fire_animation_\(enabled ? "on" : "off")"
-        case .fireButtonDetailsViewed:
-            return "m_mac_fire_button_details_viewed"
 
         case .duckPlayerWeeklyUniqueView:
             return "duckplayer_weekly-unique-view"
@@ -1660,7 +1647,6 @@ enum GeneralPixel: PixelKitEvent {
                 .fireButtonFirstBurn,
                 .fireButton,
                 .fireAnimationSetting,
-                .fireButtonDetailsViewed,
                 .duckPlayerDailyUniqueView,
                 .duckPlayerWeeklyUniqueView,
                 .duckPlayerViewFromYoutubeViaMainOverlay,

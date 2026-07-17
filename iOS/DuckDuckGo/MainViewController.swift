@@ -1398,6 +1398,8 @@ class MainViewController: UIViewController {
     @objc func refreshViewsBasedOnDuckPlayerPresentation(notification: Notification) {
         guard let isVisible = notification.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool else { return }
         duckPlayerEntryPointVisible = isVisible
+        // Skip the full refresh mid UTI omnibar session; it re-anchors content and hides the NTP.
+        guard unifiedToggleInputCoordinator?.isActive != true else { return }
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
     }
 

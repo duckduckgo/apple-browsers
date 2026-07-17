@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "description": "Sent at the end of a VPN setup or connection flow, capturing the startup path, account state, per-step timings, and per-step errors.",
-    "$comment": "{\"owners\":[\"hanyutang-sandra\"]}",
+    "description": "Sent at the end of a VPN connection journey, covering the browser start, controller start, OAuth, and tunnel start steps, until the connection succeeds, fails, or is orphaned by app/extension termination and resolved (or timed out) on a later launch.",
+    "$comment": "{\"owners\":[\"samsymons\"]}",
     "type": "object",
     "required": ["meta", "global", "feature", "app", "context"],
     "additionalProperties": false,
@@ -93,8 +93,8 @@
                                 },
                                 "is_setup": {
                                     "type": "string",
-                                    "description": "Whether the current flow is setup or reconnection.",
-                                    "enum": ["yes", "no", "unknown", "true", "false"]
+                                    "description": "Whether this connection is part of first-time VPN setup. `yes` = the VPN was not yet configured and this connection triggered setup (iOS: no tunnel configuration existed yet; macOS: onboarding not yet complete); `no` = the VPN was already set up before this connection began; `unknown` if it could not be determined.",
+                                    "enum": ["yes", "no", "unknown"]
                                 },
                                 "onboarding_status": {
                                     "type": "string",

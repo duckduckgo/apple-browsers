@@ -29,8 +29,6 @@ protocol IconsProviding {
     var vpnNavigationIconsProvider: IconProvider { get }
     var suggestionsIconsProvider: SuggestionsIconsProviding { get }
     var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding { get }
-
-    var fireInfoGraphic: NSImage { get }
 }
 
 struct IconsProvidingFactory {
@@ -54,7 +52,6 @@ final class LegacyIconsProvider: IconsProviding {
     var vpnNavigationIconsProvider: IconProvider = CurrentVPNNavigationBarIconProvider()
     var suggestionsIconsProvider: SuggestionsIconsProviding = CurrentSuggestionsIconsProvider()
     var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding = CurrentAddressBarPermissionButtonIconsProvider()
-    var fireInfoGraphic: NSImage = .newFireHeader
 }
 
 final class CurrentIconsProvider: IconsProviding {
@@ -67,5 +64,4 @@ final class CurrentIconsProvider: IconsProviding {
     var vpnNavigationIconsProvider: IconProvider = CurrentVPNNavigationBarIconProvider()
     var suggestionsIconsProvider: SuggestionsIconsProviding = CurrentSuggestionsIconsProvider()
     var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding = CurrentAddressBarPermissionButtonIconsProvider()
-    var fireInfoGraphic: NSImage = .newFireHeader
 }

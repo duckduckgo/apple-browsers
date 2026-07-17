@@ -265,6 +265,14 @@ extension SharedColorPaletteDefinition {
         switch singleUseColor {
         case .fireModeAccent:
             return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
+        case .fireButtonGradientStart:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)
+        case .fireButtonGradientEnd:
+            return DynamicColor(staticColor: RebrandingColor.Red.red50)
+        case .fireButtonPressedGradientStart:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin60)
+        case .fireButtonPressedGradientEnd:
+            return DynamicColor(staticColor: RebrandingColor.Red.red70)
         }
     }
 }

@@ -261,6 +261,14 @@ struct Launching: LaunchingHandling {
         )
         let subscriptionPromoPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoCoordinator)
 
+        // Subscription promo for existing users (7+ days since install) who have never seen a subscription offer
+        let subscriptionPromoExistingUserCoordinator = SubscriptionPromoExistingUserCoordinator(
+            daxDialogs: daxDialogs,
+            featureFlagger: featureFlagger,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+        )
+        let subscriptionPromoExistingUserPresenter = SubscriptionPromoPresenter(coordinator: subscriptionPromoExistingUserCoordinator)
+
         // Initialise modal prompts coordination
         let omniBarFocuser = OmniBarFocuserProvider()
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
@@ -282,6 +290,8 @@ struct Launching: LaunchingHandling {
                 winBackOfferCoordinator: winBackOfferService.coordinator,
                 subscriptionPromoPresenter: subscriptionPromoPresenter,
                 subscriptionPromoCoordinator: subscriptionPromoCoordinator,
+                subscriptionPromoExistingUserPresenter: subscriptionPromoExistingUserPresenter,
+                subscriptionPromoExistingUserCoordinator: subscriptionPromoExistingUserCoordinator,
                 userScriptsDependencies: contentBlockingService.userScriptsDependencies,
                 omniBarFocuser: omniBarFocuser
             )

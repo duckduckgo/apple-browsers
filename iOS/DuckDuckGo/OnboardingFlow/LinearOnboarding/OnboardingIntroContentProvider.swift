@@ -26,6 +26,7 @@ import PrivacyConfig
 protocol OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent { get }
     var introStepContent: OnboardingIntroStepContent { get }
+    var downloadReasonContent: OnboardingDownloadReasonContent { get }
     var setDefaultBrowserContent: OnboardingComparisonContent { get }
     var aiIntroContent: OnboardingComparisonContent { get }
     var addToDockContent: OnboardingAddToDockContent { get }
@@ -124,6 +125,42 @@ extension OnboardingIntroContentProvider {
             restorePromptStepContent: restoreOnboardingContent,
             skipFlowStepContent: skipOnboardingContent,
             daxAnimation: .thumbUp
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Download Reason (Set things up your way)
+
+struct OnboardingDownloadReasonContent: Equatable {
+    /// A selectable reason tile.
+    struct Option: Equatable {
+        let reason: OnboardingDownloadReason
+        let title: String
+    }
+
+    let title: String
+    let message: String
+    let options: [Option]
+    let primaryCTA: String
+    let daxAnimation: DaxAnimation
+}
+
+extension OnboardingIntroContentProvider {
+
+    /// Content for the Download Reason Screen.
+    var downloadReasonContent: OnboardingDownloadReasonContent {
+        OnboardingDownloadReasonContent(
+            title: UserText.Onboarding.DownloadReason.title,
+            message: UserText.Onboarding.DownloadReason.message,
+            options: [
+                .init(reason: .browserPrivately, title: UserText.Onboarding.DownloadReason.browsePrivately),
+                .init(reason: .privateAIChat, title: UserText.Onboarding.DownloadReason.chatWithAI),
+                .init(reason: .noAI, title: UserText.Onboarding.DownloadReason.removeAI),
+                .init(reason: .blockAds, title: UserText.Onboarding.DownloadReason.blockAds)
+            ],
+            primaryCTA: UserText.Onboarding.DownloadReason.cta,
+            daxAnimation: .wingBottom
         )
     }
 

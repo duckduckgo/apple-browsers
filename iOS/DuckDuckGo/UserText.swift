@@ -136,6 +136,11 @@ public struct UserText {
     public static let aiChatHistoryDownloadSwipeAccessibilityLabel = NSLocalizedString("aiChat.history.swipe.download.a11y", value: "Download chat", comment: "Accessibility label for the download action revealed by swiping a Duck.ai chat row.")
     public static let aiChatHistoryPinSwipeAccessibilityLabel = NSLocalizedString("aiChat.history.swipe.pin.a11y", value: "Pin chat", comment: "Accessibility label for the pin action revealed by leading-swiping a Duck.ai chat row in the Recent section.")
     public static let aiChatHistoryUnpinSwipeAccessibilityLabel = NSLocalizedString("aiChat.history.swipe.unpin.a11y", value: "Unpin chat", comment: "Accessibility label for the unpin action revealed by leading-swiping a Duck.ai chat row in the Pinned section.")
+    public static let aiChatHistoryMenuSelectChats = NotLocalizedString("aiChat.history.menu.selectChats", value: "Select Chats", comment: "Menu item that starts multi-selecting chats in the Duck.ai chat history list.")
+    public static let aiChatHistoryDeleteAll = NotLocalizedString("aiChat.history.selection.deleteAll", value: "Delete All", comment: "Multi-select toolbar button that deletes all chats when none are individually selected.")
+    public static let aiChatHistoryMenuChatProtection = NotLocalizedString("aiChat.history.menu.chatProtection", value: "Chat Protection", comment: "Menu item opening Duck.ai Chat Protection settings from the Duck.ai chat history list.")
+    public static let aiChatHistorySearchAccessibilityLabel = NotLocalizedString("aiChat.history.search.a11y", value: "Search", comment: "Accessibility label for the search button in the Duck.ai chat history navigation bar.")
+    public static let aiChatHistoryMenuAccessibilityLabel = NotLocalizedString("aiChat.history.menu.a11y", value: "More", comment: "Accessibility label for the overflow (three dots) menu button in the Duck.ai chat history navigation bar.")
     public static func aiChatHistoryDeleteAllConfirmationTitle(count: Int) -> String {
         let format = NSLocalizedString("aiChat.history.deleteAll.confirmation.title", comment: "Title of the confirmation shown when the user taps Fire in Duck.ai chat history to delete all chats; the number is the chat count. Do not translate - stringsdict entry")
         return String.localizedStringWithFormat(format, count)
@@ -2478,8 +2483,18 @@ public struct UserText {
             public static let skipCTA = NSLocalizedString("onboarding.intro.cta.skip", value: "I’ve been here before", comment: "Button to skip the onboarding process")
 
             enum Debug {
-                public static let skip = NotLocalizedString("onboarding.intro.debug.skip", value: "Skip", comment: "Button to skip the onboarding process")
+                public static let skip = NotLocalizedString("onboarding.intro.debug.skip", value: "Skip Onboarding", comment: "Button to skip the onboarding process")
             }
+        }
+
+        public enum DownloadReason {
+            public static let title = NotLocalizedString("onboarding.downloadReason.title", value: "Set things up your way", comment: "Title of the onboarding screen asking why the user downloaded the app.")
+            public static let message = NotLocalizedString("onboarding.downloadReason.message", value: "Choose what interests you most, and we’ll start there.", comment: "Subtitle of the onboarding screen asking why the user downloaded the app.")
+            public static let browsePrivately = NotLocalizedString("onboarding.downloadReason.browsePrivately", value: "Search and browse privately", comment: "Label for the option to set up the app for private searching and browsing.")
+            public static let chatWithAI = NotLocalizedString("onboarding.downloadReason.chatWithAI", value: "Chat with AI privately", comment: "Label for the option to set up the app for private AI chat.")
+            public static let removeAI = NotLocalizedString("onboarding.downloadReason.removeAI", value: "Remove AI from search results", comment: "Label for the option to set up the app without AI in search results.")
+            public static let blockAds = NotLocalizedString("onboarding.downloadReason.blockAds", value: "Block ads and pop-ups", comment: "Label for the option to set up the app to block ads and pop-ups.")
+            public static let cta = NotLocalizedString("onboarding.downloadReason.cta", value: "Next", comment: "Button to continue to the next onboarding screen after choosing a reason.")
         }
 
         public enum RestorePrompt {

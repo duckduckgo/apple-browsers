@@ -279,6 +279,7 @@ private final class CapturingPixelFiring: PixelFiring {
               includeAppVersionParameter: Bool,
               withAdditionalParameters: [String: String]?,
               withNamePrefix: String?,
+              doNotEnforcePrefix: Bool,
               onComplete: @escaping PixelKit.CompletionBlock) {
         firedEvents.append(event)
     }

@@ -61,9 +61,11 @@ struct StartupOnboardingDecision {
          resumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil) {
         let resumeStepStore: any KeyedStoring<OnboardingStoringKeys> = if let resumeStepStore { resumeStepStore } else { UserDefaults.app.keyedStoring() }
         switch resumeStepStore.resumeStep {
-        case .setDefaultBrowser, .aiIntro, .addToDockPromo, .appIconSelection,
+        case .downloadReasonSelection, .setDefaultBrowser, .aiIntro, .addToDockPromo, .appIconSelection,
              .addressBarPositionSelection, .searchExperienceSelection,
-             .duckAIQuerySelection, .interludeDuckAI:
+             .duckAIQuerySelection, .interludeDuckAI,
+             .searchPrivacySettingsSelection, .aiSearchSettingsSelection, .aiModelSelection,
+             .toggleInputModeSelection, .keepDuckAISelection, .duckPlayerSelection:
             shouldShowOnboarding = true
             return
         case .duckAIAnswerStep:
@@ -1570,6 +1572,7 @@ class MainViewController: UIViewController {
         adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
         var keyboardHeight = keyboardFrame.size.height
 
@@ -2830,10 +2833,12 @@ class MainViewController: UIViewController {
     }
 
     private func isMinimalChromeMode(for size: CGSize? = nil) -> Bool {
-        guard minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false) else { return false }
         let size = size ?? view.bounds.size
-        return !AppWidthObserver.shared.isPad
-            && (size.width > size.height)
+        return MinimalChromeModeDecision.isActive(
+            minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false),
+            isPad: AppWidthObserver.shared.isPad,
+            isLandscape: size.width > size.height
+        )
     }
 
     private var isApplyingWidth = false
@@ -4270,7 +4275,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     // 1.0 - full size, 0.0 - hidden
-    private func updateToolbarConstant(_ ratio: CGFloat) {
+    func updateToolbarConstant(_ ratio: CGFloat) {
         var bottomHeight = toolbarHeight
         if viewCoordinator.addressBarPosition.isBottom && !isInMinimalChromeLayout {
             // When position is set to bottom, contentContainer is pinned to top
@@ -5697,6 +5702,10 @@ extension MainViewController: NewTabPageControllerDelegate {
 
 extension MainViewController: TabDelegate {
 
+    func searchToken(for tab: TabViewController) -> String? {
+        searchTokenFetcher.retrieveToken()
+    }
+
     var isEmailProtectionSignedIn: Bool {
         emailManager.isSignedIn
     }
@@ -5830,6 +5839,7 @@ extension MainViewController: TabDelegate {
              didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration,
              for navigationAction: WKNavigationAction,
              inheritingAttribution: AdClickAttributionLogic.State?) -> WKWebView? {
+        capturePreviewForTab(tab)
         hideNotificationBarIfBrokenSitePromptShown()
         showBars()
         currentTab?.dismiss()
@@ -5951,6 +5961,12 @@ extension MainViewController: TabDelegate {
         loadUrlInNewTab(url, inheritedAttribution: attribution)
     }
 
+    func capturePreviewForTab(_ tab: TabViewController) {
+        // Capture source tab preview now; otherwise its thumbnail stays stale once we switch to the new tab.
+        guard tab.link != nil, let image = tab.preparePreviewSync() else { return }
+        previewsSource.update(preview: image, forTab: tab.tabModel)
+    }
+
     func tab(_ tab: TabViewController,
              didRequestNewTabForUrl url: URL,
              openedByPage: Bool,
@@ -5959,6 +5975,7 @@ extension MainViewController: TabDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         tab.aiChatContextualSheetCoordinator.dismissSheet()
         if openedByPage {
+            capturePreviewForTab(tab)
             showBars()
             newTabAnimation {
                 self.loadUrlInNewTab(url, inheritedAttribution: attribution)
@@ -6053,6 +6070,7 @@ extension MainViewController: TabDelegate {
         }
         let viewModel = AIChatHistoryViewModel(
             reader: reader,
+            featureFlagger: featureFlagger,
             fireExecutor: fireExecutor,
             downloader: downloader,
             pinner: pinner,
@@ -6614,7 +6632,17 @@ extension MainViewController {
                 self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
             }
 
-            self.daxDialogsManager.clearedBrowserData()
+            // The NTP's viewDidAppear may have fired during the fire animation and already called
+            // nextHomeScreenMessageNew(), setting currentHomeSpec (e.g. to .final for the "High five!"
+            // dialog). Calling clearedBrowserData() unconditionally would reset currentHomeSpec to nil,
+            // making isShowingContextualOnboardingDialog return false and allowing the subscription promo
+            // to appear on top of the pending dialog when the user backgrounds and foregrounds.
+            //
+            // When a home spec is already set, the browsing context was already cleared inside
+            // nextHomeScreenMessageNew(); skip the redundant call here.
+            if !self.daxDialogsManager.isShowingContextualOnboardingDialog {
+                self.daxDialogsManager.clearedBrowserData()
+            }
         }
     }
     

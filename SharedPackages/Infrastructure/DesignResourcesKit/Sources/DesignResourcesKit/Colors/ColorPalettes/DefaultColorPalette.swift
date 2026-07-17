@@ -393,8 +393,6 @@ private extension DefaultColorPalette {
             return DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xE5244B).opacity(0.2))
         case .controlsFillPrimary:
             return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.12))
-        case .controlBorderTertiary:
-            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.6), darkColor: RebrandingColor.GrayScale.white.opacity(0.72))
         case .decorationPrimary:
             return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.09), darkColor: RebrandingColor.GrayScale.white.opacity(0.06))
         case .decorationSecondary:

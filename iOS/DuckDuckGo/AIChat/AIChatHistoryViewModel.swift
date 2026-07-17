@@ -22,6 +22,7 @@ import Foundation
 import UIKit
 import AIChat
 import Core
+import PrivacyConfig
 import DesignResourcesKitIcons
 import os.log
 
@@ -60,12 +61,19 @@ final class AIChatHistoryViewModel: ObservableObject {
     private let mutationQueue: DispatchQueue
     private let instrumentation: AIChatHistoryInstrumentation
     private let source: AIChatHistorySource
+    private let featureFlagger: FeatureFlagger
     private var cancellables: Set<AnyCancellable> = []
+
+    /// Gates the redesigned Chats UI (overflow menu + multi-select); off keeps the original layout.
+    var isRedesignEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatHistoryMultiselect)
+    }
 
     weak var delegate: AIChatHistoryViewModelDelegate?
 
     init(
         reader: ChatHistoryReading,
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         fireExecutor: FireExecuting? = nil,
         downloader: ChatHistoryDownloading? = nil,
         pinner: ChatPinning? = nil,
@@ -74,6 +82,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         instrumentation: AIChatHistoryInstrumentation = DefaultAIChatHistoryInstrumentation()
     ) {
         self.reader = reader
+        self.featureFlagger = featureFlagger
         self.fireExecutor = fireExecutor
         self.downloader = downloader
         self.pinner = pinner

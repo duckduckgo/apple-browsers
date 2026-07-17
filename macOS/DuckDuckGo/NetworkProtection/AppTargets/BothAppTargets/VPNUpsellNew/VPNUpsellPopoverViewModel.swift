@@ -68,6 +68,8 @@ extension VPNUpsellPopoverViewModel {
 final class VPNUpsellPopoverViewModel: ObservableObject {
     @Published private(set) var featureSet: FeatureSet = FeatureSet(core: [], plus: [], isEligibleForFreeTrial: false)
 
+    let isAppRebranded: Bool
+
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
@@ -88,7 +90,8 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
             Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
          },
          onDismiss: @escaping () -> Void,
-         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) })
+         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) },
+         isAppRebranded: Bool = Application.appDelegate.themeManager.isAppRebranded)
     {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -96,6 +99,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
         self.urlOpener = urlOpener
         self.onDismiss = onDismiss
         self.pixelHandler = pixelHandler
+        self.isAppRebranded = isAppRebranded
 
         checkFeatureEligibility()
     }

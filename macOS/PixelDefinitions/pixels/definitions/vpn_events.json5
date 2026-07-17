@@ -128,7 +128,7 @@
             {
                 "key": "feature.data.ext.vpn_screen_source",
                 "type": "string",
-                "description": "The app surface that opened the VPN screen before the connection attempt, when available",
+                "description": "The app surface that opened the VPN screen before the connection attempt. Not populated on macOS (captured on iOS only).",
                 "enum": [
                     "app_settings",
                     "subscription_settings",
@@ -147,7 +147,7 @@
             {
                 "key": "feature.data.ext.vpn_screen_entry_token_state",
                 "type": "string",
-                "description": "Whether a local Privacy Pro token container was present when the VPN screen opened, when available",
+                "description": "Whether a local Privacy Pro token container was present when the VPN screen opened. Not populated on macOS (captured on iOS only).",
                 "enum": ["present", "missing", "read_error", "unknown"]
             },
             {

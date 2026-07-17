@@ -29,15 +29,14 @@ struct NetworkProtectionRootView: View {
 
     init(source: VPNConnectionWideEventData.ScreenSource) {
         let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
-        let entryContext = VPNConnectionWideEventData.EntryContext(
-            source: source,
-            localTokenState: subscriptionManager.localTokenState()
-        )
         let locationListRepository = NetworkProtectionLocationListCompositeRepository()
         let tunnelController = AppDependencyProvider.shared.networkProtectionTunnelController
         _statusViewModel = StateObject(wrappedValue: NetworkProtectionStatusViewModel(
             tunnelController: tunnelController,
-            entryContext: entryContext,
+            entryContext: VPNConnectionWideEventData.EntryContext(
+                source: source,
+                localTokenState: subscriptionManager.localTokenState()
+            ),
             settings: AppDependencyProvider.shared.vpnSettings,
             statusObserver: AppDependencyProvider.shared.connectionObserver,
             serverInfoObserver: AppDependencyProvider.shared.serverInfoObserver,

@@ -707,11 +707,11 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     /// the image (or a timeout) so the pill and its thumbnail slide in together.
     @MainActor
     private func showPillWhenReady(_ viewModel: DuckPlayerContainer.ViewModel) {
-        // Drop any prior pending reveal so a stale subscription/timeout can't fire later.
-        cancelPendingPillReveal()
-
         let ready = pendingThumbnailReady
         pendingThumbnailReady = nil
+
+        // Drop any prior pending reveal so a stale subscription/timeout can't fire later.
+        cancelPendingPillReveal()
 
         guard let ready else {
             viewModel.show()

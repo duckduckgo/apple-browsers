@@ -690,9 +690,9 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     private class func titleText(status: ConnectionStatus) -> String {
         switch status {
-        case .connected: return UserText.netPStatusHeaderTitleOn
+        case .connected, .reasserting: return UserText.netPStatusHeaderTitleOn
         case .snoozing: return UserText.netPStatusHeaderTitleSnoozed
-        case .notConfigured, .disconnected, .disconnecting, .connecting, .reasserting: return UserText.netPStatusHeaderTitleOff
+        case .notConfigured, .disconnected, .disconnecting, .connecting: return UserText.netPStatusHeaderTitleOff
         }
     }
 

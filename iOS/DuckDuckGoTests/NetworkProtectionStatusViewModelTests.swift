@@ -84,9 +84,18 @@ import Subscription
     }
 
     func testStatusUpdate_notconnected_setsHeaderTitleToOff() async {
+        let offTitleStates: [ConnectionStatus] = [.disconnected, .disconnecting, .notConfigured, .connecting]
+        for status in offTitleStates {
+            viewModel.headerTitle = ""
+            statusObserver.subject.send(status)
+            await waitFor(condition: self.viewModel.headerTitle == UserText.netPStatusHeaderTitleOff)
+        }
+    }
+
+    func testStatusUpdate_reasserting_setsHeaderTitleToOn() async {
         viewModel.headerTitle = ""
-        await whenStatusUpdate_notConnected()
-        XCTAssertEqual(self.viewModel.headerTitle, UserText.netPStatusHeaderTitleOff)
+        statusObserver.subject.send(.reasserting)
+        await waitFor(condition: self.viewModel.headerTitle == UserText.netPStatusHeaderTitleOn)
     }
 
     func testStatusUpdate_connected_setsStatusImageIDToVPN() async {

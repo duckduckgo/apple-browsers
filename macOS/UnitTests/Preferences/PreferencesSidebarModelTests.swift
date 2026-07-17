@@ -352,6 +352,27 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertNotEqual(model.selectedPane, .vpn, "Without the entitlement, selection must not stay on the inaccessible VPN pane")
     }
 
+    func testWhenVPNPaneIsSelectedBeforeStateLoadsAndResolvedStateEqualsDefaultThenItDoesNotStickOnVPN() async throws {
+        // Regression: a signed-out user on an App Store build with no products available resolves to
+        // a subscription state that equals the default `currentSubscriptionState`. The equality guard
+        // in the refresh handler used to return before setting `hasLoadedInitialSubscriptionState`,
+        // so `adjustSelectedPaneIfNeeded()` stayed suppressed forever and a pre-load `.vpn` request
+        // parked on the inaccessible pane was never corrected. The first settled load must correct it.
+        mockSubscriptionManager.resultTokenContainer = nil
+        XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.selectPane(.vpn)
+        XCTAssertEqual(model.selectedPane, .vpn)
+
+        model.onAppear() // triggers the async subscription-state load
+        try await Task.sleep(interval: 0.1)
+
+        XCTAssertFalse(model.currentSubscriptionState.isNetworkProtectionRemovalEnabled)
+        XCTAssertNotEqual(model.selectedPane, .vpn, "A pane parked on the gated VPN pane must be corrected on the first settled load even when the resolved state equals the default")
+    }
+
     // MARK: Tests for `currentSubscriptionState`
 
     func testCurrentSubscriptionStateWhenNoSubscriptionPresent() async throws {

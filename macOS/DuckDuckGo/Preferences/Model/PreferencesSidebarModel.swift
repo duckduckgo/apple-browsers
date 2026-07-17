@@ -457,8 +457,20 @@ final class PreferencesSidebarModel: ObservableObject {
                 updatedState = PreferencesSidebarSubscriptionState(shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)
             }
 
-            guard self.currentSubscriptionState != updatedState else { return }
+            let isInitialLoad = !hasLoadedInitialSubscriptionState
             hasLoadedInitialSubscriptionState = true
+
+            guard self.currentSubscriptionState != updatedState else {
+                // On the first settled load, correct any pane parked on a subscription-gated pane
+                // even when the resolved state equals the default (e.g. signed-out App Store build
+                // with no products). `adjustSelectedPaneIfNeeded()` was suppressed until now because
+                // the initial state hadn't loaded; without this it would never run for the
+                // equal-to-default case. Later equal refreshes short-circuit here and churn nothing.
+                if isInitialLoad {
+                    self.refreshSections()
+                }
+                return
+            }
 
             if self.currentSubscriptionState.isPersonalInformationRemovalEnabled != updatedState.isPersonalInformationRemovalEnabled {
                 personalInformationRemovalSubject.send(personalInformationRemovalStatus().status ?? .off)

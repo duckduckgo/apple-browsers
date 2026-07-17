@@ -181,7 +181,13 @@ final class AIChatContextualSheetCoordinator {
             }
         self.currentPageURLCancellable = tabURLPublishers.originating
             .sink { [weak self] url in
-                self?.currentPageURL = url
+                guard let self else { return }
+                self.currentPageURL = url
+                // Attachability is URL-driven. `originating` is KVO-backed on webView.url, so it fires on
+                // back/forward navigation (unlike `didFinish`), keeping the affordances in sync.
+                guard self.hasActiveSheet else { return }
+                self.sessionState.refreshForCurrentPage()
+                self.persistentUTIHost?.refreshPageContextAttachability()
             }
         self.didFinishURLCancellable = tabURLPublishers.didFinish
             .dropFirst()
@@ -262,8 +268,6 @@ final class AIChatContextualSheetCoordinator {
     func notifyPageChanged() async {
         guard hasActiveSheet else { return }
         sessionState.notifyPageChanged()
-        // Re-evaluate the attach menu/button for the new page's attachability.
-        persistentUTIHost?.refreshPageContextAttachability()
 
         if sessionState.shouldTriggerAutoCollect() {
             if sessionState.showsSuggestionsStartSurface {

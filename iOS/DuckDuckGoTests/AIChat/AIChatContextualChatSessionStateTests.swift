@@ -1369,7 +1369,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
-    func testQuickActionsClearedOnNavigationToNonAttachablePage() {
+    func testQuickActionsRefreshedForCurrentPageWhenAttachabilityChanges() {
         var attachable = true
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
@@ -1379,9 +1379,9 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         )
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
 
-        // Navigating onto a non-attachable page must refresh the quick actions, not leave them stale.
+        // A URL change to a non-attachable page must refresh the quick actions, not leave them stale.
         attachable = false
-        sessionState.notifyPageChanged()
+        sessionState.refreshForCurrentPage()
 
         XCTAssertEqual(sessionState.viewState.quickActions, [])
     }

@@ -255,6 +255,22 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPageContextHandler.reportAttachabilityMeasurementCallCount, 1)
         XCTAssertEqual(mockPageContextHandler.lastReportAttachabilityMeasurementTrigger, .auto)
     }
+
+    @MainActor
+    func testURLChangeRefreshesQuickActionsForAttachability() async {
+        // Covers back/forward navigation: the URL-change (originating) signal must refresh affordances,
+        // not just `didFinish` (which cached back-navigations may not fire).
+        await sut.presentSheet(from: mockPresentingVC)
+        XCTAssertEqual(sut.sessionState.viewState.quickActions, [.askAboutPage])
+
+        mockPageContextHandler.isCurrentPageAttachableReturnValue = false
+        originatingTabURLSubject.send(URL(string: "https://example.com/image.png"))
+        XCTAssertEqual(sut.sessionState.viewState.quickActions, [])
+
+        mockPageContextHandler.isCurrentPageAttachableReturnValue = true
+        originatingTabURLSubject.send(URL(string: "https://duckduckgo.com/?q=cats"))
+        XCTAssertEqual(sut.sessionState.viewState.quickActions, [.askAboutPage])
+    }
     
     // MARK: - clearActiveChat Tests
 

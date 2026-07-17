@@ -358,7 +358,11 @@ final class AIChatContextualChatSessionState {
             userDowngradedToPlaceholder = false
             Logger.aiChat.debug("[SessionState] Page navigation cleared temporary context removal")
         }
-        // Re-evaluate quick actions for the new page's attachability (the collect path may not run).
+    }
+
+    /// Re-evaluate the sheet view state (e.g. "Ask about page" quick action) for the current page's
+    /// attachability. Driven by the URL-change signal so it stays in sync on back/forward navigation.
+    func refreshForCurrentPage() {
         rebuildViewState()
     }
 

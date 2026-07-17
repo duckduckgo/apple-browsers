@@ -1504,6 +1504,11 @@ class MainViewController: UIViewController {
         switch position {
         case .top: break // no-op
         case .bottom:
+            // Re-assert bottom-bar spacing so the field isn't stuck in the top-glass (clear) state.
+            // A Duck Player round-trip can leave `isUsingSmallTopSpacing` stale, dropping the field's
+            // opaque fill (and its contrast) until restart.
+            viewCoordinator.omniBar.adjust(for: .bottom)
+            viewCoordinator.omniBar.barView.restoreFloatingFieldAppearance()
             // Use higher delays then refreshViewsBasedOnAddressBarPosition
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.31) {
                 if self.duckPlayerEntryPointVisible {

@@ -686,8 +686,8 @@ extension NetworkProtectionDNSSettings {
 /// interaction variant (background + foreground) per the Figma spec.
 private struct StrictRoutingPillButtonStyle: ButtonStyle {
 
-    private static let cornerRadius: CGFloat = 12
-    private static let height: CGFloat = 24
+    private static let cornerRadius: CGFloat = 44
+    private static let height: CGFloat = 28
 
     let isStrictRoutingOn: Bool
 

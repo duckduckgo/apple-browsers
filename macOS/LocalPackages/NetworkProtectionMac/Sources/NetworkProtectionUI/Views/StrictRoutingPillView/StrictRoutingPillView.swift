@@ -64,8 +64,8 @@ private struct StrictRoutingPillButtonStyle: ButtonStyle {
     let isStrictRoutingOn: Bool
     let isHovering: Bool
 
-    private static let cornerRadius: CGFloat = 12
-    private static let height: CGFloat = 24
+    private static let cornerRadius: CGFloat = 44
+    private static let height: CGFloat = 28
 
     func makeBody(configuration: Configuration) -> some View {
         let interactive = isHovering || configuration.isPressed

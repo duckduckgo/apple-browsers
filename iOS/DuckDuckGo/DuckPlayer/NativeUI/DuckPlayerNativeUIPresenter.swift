@@ -123,6 +123,7 @@ final class DuckPlayerNativeUIPresenter {
     /// consumed to gate the slide-in so the pill and its thumbnail animate in together.
     @MainActor private var pendingThumbnailReady: AnyPublisher<Bool, Never>?
     @MainActor private var thumbnailReadyCancellable: AnyCancellable?
+    @MainActor private var thumbnailReadyTimeoutWorkItem: DispatchWorkItem?
 
     // Other cancellables
     private var cancellables = Set<AnyCancellable>()
@@ -417,6 +418,7 @@ final class DuckPlayerNativeUIPresenter {
     @MainActor
     private func removePillContainer() {
         // Cancel all subscriptions first
+        cancelPendingPillReveal()
         containerCancellables.removeAll()
         
         // Remove constraints before removing from superview
@@ -705,6 +707,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     /// the image (or a timeout) so the pill and its thumbnail slide in together.
     @MainActor
     private func showPillWhenReady(_ viewModel: DuckPlayerContainer.ViewModel) {
+        // Drop any prior pending reveal so a stale subscription/timeout can't fire later.
+        cancelPendingPillReveal()
+
         let ready = pendingThumbnailReady
         pendingThumbnailReady = nil
 
@@ -718,7 +723,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         let show: () -> Void = { [weak self, weak viewModel] in
             guard !didShow, let self, let viewModel else { return }
             didShow = true
-            self.thumbnailReadyCancellable = nil
+            self.cancelPendingPillReveal()
             viewModel.show()
             self.postPillVisibilityNotification(isVisible: true)
         }
@@ -729,15 +734,29 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
             .receive(on: DispatchQueue.main)
             .sink { _ in show() }
 
-        // Timeout fallback so a slow/failed image never blocks the pill.
-        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.thumbnailReadyTimeout) {
-            show()
-        }
+        // Timeout fallback so a slow/failed image never blocks the pill. Cancellable so a dismiss
+        // mid-load doesn't later revive the pill.
+        let timeout = DispatchWorkItem { show() }
+        thumbnailReadyTimeoutWorkItem = timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.thumbnailReadyTimeout, execute: timeout)
+    }
+
+    /// Cancels a scheduled floating-pill reveal (thumbnail subscription + timeout) so it can't fire
+    /// after the pill has been dismissed or torn down.
+    @MainActor
+    private func cancelPendingPillReveal() {
+        thumbnailReadyCancellable = nil
+        thumbnailReadyTimeoutWorkItem?.cancel()
+        thumbnailReadyTimeoutWorkItem = nil
+        pendingThumbnailReady = nil
     }
 
     /// Dismisses the currently presented entry pill
     @MainActor
     func dismissPill(reset: Bool = false, animated: Bool = true, programatic: Bool = true, skipTransition: Bool = false) {
+        // Cancel any pending thumbnail-gated reveal so it can't re-show the pill after dismissal.
+        cancelPendingPillReveal()
+
         // First reset constraints immediately
         resetWebViewConstraint()
 

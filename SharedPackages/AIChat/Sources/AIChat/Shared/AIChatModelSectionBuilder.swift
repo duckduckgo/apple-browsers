@@ -71,8 +71,8 @@ public enum AIChatModelSectionBuilder {
     private static func buildSubscribedSections(models: [AIChatModel], basicSectionHeader: String) -> [AIChatModelSection] {
         // Only show models the user can actually access — hides models from higher tiers (e.g. pro-only for plus users)
         let accessible = models.filter { $0.entityHasAccess }
-        let basic = accessible.filter { $0.accessTier.contains(AIChatUserTier.free.rawValue) }
-        let advanced = accessible.filter { !$0.accessTier.contains(AIChatUserTier.free.rawValue) }
+        let basic = accessible.filter { !$0.isAdvanced }
+        let advanced = accessible.filter { $0.isAdvanced }
 
         var sections = [AIChatModelSection]()
         if !advanced.isEmpty {

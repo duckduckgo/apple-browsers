@@ -302,9 +302,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1213690148091855
     case icsCalendarLinks
 
-    /// https://app.asana.com/1/137249556945/project/1215172677539195/task/1215631408578779
-    case vcardContactLinks
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
     case walletPassDownload
 
@@ -314,12 +311,13 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215385432113040?focus=true
     case removeChatHistory
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215816968312844?focus=true
-    case staleFaviconCleanup
-
     /// NA experiment: search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperiment
+
+    /// NA Experiment: tailor the onboarding flow based on the user's download reason.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
+    case onboardingFlowByDownloadReasonExperiment
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -600,6 +598,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the macOS native "Customize Responses" UI (omnibar + New Tab Page entry points).
     case customizeResponses
+
+    /// Native Chats screen redesign: search toggle, overflow menu, and multi-select actions.
+    case historyMultiselect
+
+    /// Replaces Duck.ai's web-based chat sidebar with native UI.
+    case nativeSidebar
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -729,6 +733,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
+    case subscriptionPromoForExistingUsers
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

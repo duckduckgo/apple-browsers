@@ -21,7 +21,6 @@ import Foundation
 #if os(macOS)
 
 public typealias DesignSystemColor = SharedDesignSystemColor
-public typealias SingleUseColor = SharedSingleUseColor
 
 public enum SharedDesignSystemColor {
 
@@ -170,12 +169,6 @@ public enum SharedDesignSystemColor {
     case permissionWarningBackground
     case permissionReloadButtonBackground
     case permissionReloadButtonText
-}
-
-public enum SharedSingleUseColor {
-
-    // Fire View
-    case fireModeAccent
 }
 
 #endif

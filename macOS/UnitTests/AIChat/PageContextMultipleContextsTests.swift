@@ -250,3 +250,118 @@ struct PerNavigationExtractionPixelDedupTests {
         #expect(dedup.shouldReport(.navigation) == true)
     }
 }
+
+// MARK: - Sidebar-open extraction measurement Tests
+
+struct SidebarOpenExtractionMeasurementTests {
+
+    private enum Outcome: Equatable {
+        case none
+        case prevented(String)
+        case collect
+    }
+
+    private func sidebarOpenOutcome(isURL: Bool,
+                                    preventedReason: String?,
+                                    isContextCollectionEnabled: Bool) -> Outcome {
+        guard isURL else { return .prevented("internalPage") }
+        if let preventedReason { return .prevented(preventedReason) }
+        if isContextCollectionEnabled { return .collect }
+        return .none
+    }
+
+    @Test("Native special page (non-URL content) reports prevented(internalPage)")
+    func nativePageReportsInternalPagePrevented() {
+        #expect(sidebarOpenOutcome(isURL: false, preventedReason: nil, isContextCollectionEnabled: true) == .prevented("internalPage"))
+    }
+
+    @Test("Non-attachable URL reports prevented with the blocklist category, no interaction needed")
+    func nonAttachableURLReportsPrevented() {
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: "pdf", isContextCollectionEnabled: false) == .prevented("pdf"))
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: "image", isContextCollectionEnabled: true) == .prevented("image"))
+    }
+
+    @Test("Attachable URL with auto-collect ON re-collects so success/failure fire live")
+    func attachableAutoOnReCollects() {
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: nil, isContextCollectionEnabled: true) == .collect)
+    }
+
+    @Test("Attachable URL with auto-collect OFF reports nothing on open (awaits user tap / signals-only)")
+    func attachableAutoOffReportsNone() {
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: nil, isContextCollectionEnabled: false) == .none)
+    }
+
+    private final class Guard {
+        private var didReportExtraction = false
+        private var didReportSidebarOpen = false
+
+        func resetForNavigation() {
+            didReportExtraction = false
+            didReportSidebarOpen = false
+        }
+
+        func markCollectionReported() { didReportExtraction = true }
+
+        func shouldMeasureOnSidebarOpen(isVisible: Bool, measurementEnabled: Bool) -> Bool {
+            guard isVisible, measurementEnabled, !didReportExtraction, !didReportSidebarOpen else { return false }
+            didReportSidebarOpen = true
+            return true
+        }
+    }
+
+    @Test("First sidebar open measures; re-opening on the same page (kept session) does not")
+    func firstOpenMeasuresReopenDoesNot() {
+        let guardState = Guard()
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == true)
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == false)
+    }
+
+    @Test("A collection that already reported this navigation suppresses the sidebar-open measurement")
+    func collectionReportSuppressesMeasurement() {
+        let guardState = Guard()
+        guardState.markCollectionReported()
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == false)
+    }
+
+    @Test("Navigation to a new URL re-arms the sidebar-open measurement")
+    func navigationReArmsMeasurement() {
+        let guardState = Guard()
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == true)
+        guardState.resetForNavigation()
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == true)
+    }
+
+    @Test("A hidden sidebar or absent blocklist config never measures and never consumes the slot")
+    func hiddenOrDisabledDoesNotConsumeSlot() {
+        let guardState = Guard()
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: false, measurementEnabled: true) == false)
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: false) == false)
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == true)
+    }
+}
+
+// MARK: - Collection-result extraction measurement Tests
+
+struct CollectionResultExtractionMeasurementTests {
+
+    private func firesExtractionOutcome(isContextCollectionEnabled: Bool, pendingSignalsOnly: Bool) -> Bool {
+        if isContextCollectionEnabled { return true }
+        if pendingSignalsOnly { return false }
+        return false
+    }
+
+    @Test("Full collection (auto-attach on / user-forced) reports its extraction outcome")
+    func fullCollectionReports() {
+        #expect(firesExtractionOutcome(isContextCollectionEnabled: true, pendingSignalsOnly: false) == true)
+    }
+
+    @Test("Signals-only harvest does not report success/failed")
+    func signalsOnlyDoesNotReport() {
+        #expect(firesExtractionOutcome(isContextCollectionEnabled: false, pendingSignalsOnly: true) == false)
+    }
+
+    @Test("Unsolicited collection result reports nothing")
+    func unsolicitedReportsNothing() {
+        #expect(firesExtractionOutcome(isContextCollectionEnabled: false, pendingSignalsOnly: false) == false)
+    }
+}

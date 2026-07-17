@@ -21,6 +21,7 @@ import Foundation
 import DDGSync
 import Combine
 import CombineExtensions
+import DesignResourcesKit
 import Common
 import FoundationExtensions
 import SystemConfiguration
@@ -185,6 +186,7 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
     @Published var isAccountRecoveryAvailable: Bool = true
     @Published var isAppVersionNotSupported: Bool = true
     @Published var isAIChatSyncEnabled: Bool = false
+    @Published var isAppRebranded: Bool = false
 
     private let syncPausedStateManager: any SyncPausedStateManaging
 
@@ -241,6 +243,9 @@ final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementView
         self.managementDialogModel = managementDialogModel
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
         self.managementDialogModel.delegate = self
+
+        self.isAppRebranded = DesignSystemRebrand.isAppRebranded()
+        self.managementDialogModel.isAppRebranded = self.isAppRebranded
 
         updateSyncFeatureFlags(self.syncFeatureFlags)
         setUpObservables()

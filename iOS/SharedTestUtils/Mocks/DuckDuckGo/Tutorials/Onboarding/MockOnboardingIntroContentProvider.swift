@@ -23,6 +23,7 @@ import Foundation
 class MockOnboardingIntroContentProvider: OnboardingIntroContentProviding {
     var landingContent: OnboardingLandingContent = .mock
     var introStepContent: OnboardingIntroStepContent = .mock
+    var downloadReasonContent: OnboardingDownloadReasonContent = .mock
     var setDefaultBrowserContent: OnboardingComparisonContent = .mockBrowser
     var aiIntroContent: OnboardingComparisonContent = .mockAI
     var addToDockContent: OnboardingAddToDockContent = .mock
@@ -38,6 +39,21 @@ extension OnboardingLandingContent {
     static let mock = OnboardingLandingContent(
         title: "Landing",
         shouldShowDuckAIAnimation: false
+    )
+}
+
+extension OnboardingDownloadReasonContent {
+    static let mock = OnboardingDownloadReasonContent(
+        title: "Download Reason Title",
+        message: "Download Reason Message",
+        options: [
+            .init(reason: .browserPrivately, title: "Search and browse privately"),
+            .init(reason: .privateAIChat, title: "Chat with AI privately"),
+            .init(reason: .noAI, title: "Remove AI from search results"),
+            .init(reason: .blockAds, title: "Block ads and pop-ups")
+        ],
+        primaryCTA: "Download Reason Primary",
+        daxAnimation: .wingBottom
     )
 }
 

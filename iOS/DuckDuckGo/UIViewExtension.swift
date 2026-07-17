@@ -78,6 +78,8 @@ extension UIView {
     public func createImageSnapshot(inBounds bounds: CGRect? = nil) -> UIImage? {
         let bounds = bounds ?? self.frame
         let size = bounds.size
+        // A zero-size context makes UIGraphicsBeginImageContextWithOptions assert; bail when there's no valid layout to capture.
+        guard size.width > 0, size.height > 0 else { return nil }
         UIGraphicsBeginImageContextWithOptions(size, false, UIScreen.main.scale)
         UIGraphicsGetCurrentContext()?.translateBy(x: -bounds.origin.x, y: -bounds.origin.y)
         drawHierarchy(in: frame, afterScreenUpdates: true)

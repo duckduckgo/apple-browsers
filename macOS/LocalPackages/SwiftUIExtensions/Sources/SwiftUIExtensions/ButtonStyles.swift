@@ -182,13 +182,15 @@ public struct DismissActionButtonStyle: ButtonStyle {
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
     public let pillShape: Bool
+    public let showsBorder: Bool
 
-    public init(textColor: Color? = nil, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = false, stateColors: ButtonStateColors = .legacyDismissButton) {
+    public init(textColor: Color? = nil, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = false, showsBorder: Bool = true, stateColors: ButtonStateColors = .legacyDismissButton) {
         self.stateColors = stateColors
         self.textColor = textColor ?? stateColors.textColor
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
         self.pillShape = pillShape
+        self.showsBorder = showsBorder
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
@@ -219,22 +221,25 @@ public struct DismissActionButtonStyle: ButtonStyle {
                     }
                 }
             )
-            .overlay(
-                Group {
-                    if pillShape && AppVersion.isLiquidGlassSupported {
-                        Capsule()
-                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
-                    } else {
-                        RoundedRectangle(cornerRadius: 5)
-                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
-                    }
-                }
-            )
+            .overlay(makeBorder())
             .foregroundColor(textColor)
             .onHover { hovering in
                 isHovered = hovering
             }
 
+    }
+
+    @ViewBuilder
+    private func makeBorder() -> some View {
+        if showsBorder {
+            if pillShape && AppVersion.isLiquidGlassSupported {
+                Capsule()
+                    .stroke(Color.black.opacity(0.1), lineWidth: 1)
+            } else {
+                RoundedRectangle(cornerRadius: 5)
+                    .stroke(Color.black.opacity(0.1), lineWidth: 1)
+            }
+        }
     }
 }
 
@@ -243,8 +248,8 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
     public let enabled: Bool
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
-    public let backgroundColor: Color
-    public let backgroundPressedColor: Color
+    public let background: AnyShapeStyle
+    public let pressedBackground: AnyShapeStyle
 
     /// Applies pill shape to the button **ONLY** when Liquid Glass is supported.
     ///
@@ -252,18 +257,30 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
     /// and falls back to using a `cornerRadius` of 5.
     public let pillShape: Bool
 
+    /// Creates a destructive button style backed by solid background colors.
     public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil, pillShape: Bool = false) {
+        self.init(enabled: enabled,
+                  topPadding: topPadding,
+                  bottomPadding: bottomPadding,
+                  background: backgroundColor ?? Color(.destructiveActionButtonBackground),
+                  pressedBackground: backgroundPressedColor ?? Color(.destructiveActionButtonBackgroundPressed),
+                  pillShape: pillShape)
+    }
+
+    /// Creates a destructive button style backed by any `ShapeStyle`, allowing a gradient
+    /// (or any other shape style) to be used as the background instead of a solid color.
+    public init<Background: ShapeStyle, PressedBackground: ShapeStyle>(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, background: Background, pressedBackground: PressedBackground, pillShape: Bool = false) {
         self.enabled = enabled
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
-        self.backgroundColor = backgroundColor ?? Color(.destructiveActionButtonBackground)
-        self.backgroundPressedColor = backgroundPressedColor ?? Color(.destructiveActionButtonBackgroundPressed)
+        self.background = AnyShapeStyle(background)
+        self.pressedBackground = AnyShapeStyle(pressedBackground)
         self.pillShape = pillShape
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let enabledBackgroundColor = configuration.isPressed ? backgroundPressedColor : backgroundColor
-        let disabledBackgroundColor = Color.gray.opacity(0.1)
+        let enabledBackground = configuration.isPressed ? pressedBackground : background
+        let disabledBackground = AnyShapeStyle(Color.gray.opacity(0.1))
         let labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
 
         configuration.label
@@ -273,7 +290,7 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
             .padding(.top, topPadding)
             .padding(.bottom, bottomPadding)
             .padding(.horizontal, 7.5)
-            .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
+            .background(enabled ? enabledBackground : disabledBackground)
             .foregroundColor(labelColor)
             .if(pillShape) { $0.liquidGlassPillShape(fallbackCornerRadius: 5) }
             .if(!pillShape) { $0.cornerRadius(5) }

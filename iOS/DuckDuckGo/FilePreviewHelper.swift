@@ -33,15 +33,14 @@ struct FilePreviewHelper {
             return ZippedPassKitPreviewHelper(filePath, viewController: viewController)
         case .calendar where featureFlagger.isFeatureOn(.icsCalendarLinks):
             return CalendarEventPreviewHelper(filePath, viewController: viewController)
-        case .contact where featureFlagger.isFeatureOn(.vcardContactLinks):
+        case .contact:
             return ContactPreviewHelper(filePath, viewController: viewController)
         default:
             if featureFlagger.isFeatureOn(.icsCalendarLinks), filePath.pathExtension.lowercased() == "ics" {
                 Pixel.fire(pixel: .icsCalendarRoutedByExtension)
                 return CalendarEventPreviewHelper(filePath, viewController: viewController)
             }
-            if featureFlagger.isFeatureOn(.vcardContactLinks),
-               hasVCardFileExtension(url: filePath, filename: nil) {
+            if hasVCardFileExtension(url: filePath, filename: nil) {
                 Pixel.fire(pixel: .vcardContactRoutedByExtension)
                 return ContactPreviewHelper(filePath, viewController: viewController)
             }
@@ -73,14 +72,12 @@ struct FilePreviewHelper {
 
     /// Auto-preview .vcf/.vcard by URL or filename extension when the MIME type is wrong.
     static func canAutoPreviewVCardByExtension(url: URL?,
-                                               filename: String?,
-                                               featureFlagger: FeatureFlagger) -> Bool {
-        guard featureFlagger.isFeatureOn(.vcardContactLinks) else { return false }
-        return hasVCardFileExtension(url: url, filename: filename)
+                                               filename: String?) -> Bool {
+        hasVCardFileExtension(url: url, filename: filename)
     }
 
     /// Whether a download can be handed to a native auto-preview handler — by MIME type, or by a
-    /// flagged .ics/.vcf extension when the MIME type is wrong. Single source of truth for the
+    /// recognized .ics/.vcf extension when the MIME type is wrong. Single source of truth for the
     /// decision so callers (NavigationResponseRouter, TabViewController) stay in sync and a new
     /// previewable type is wired up in one place.
     static func canAutoPreview(mimeType: MIMEType,
@@ -89,7 +86,7 @@ struct FilePreviewHelper {
                                featureFlagger: FeatureFlagger) -> Bool {
         canAutoPreviewMIMEType(mimeType)
             || canAutoPreviewICSByExtension(url: url, filename: filename, featureFlagger: featureFlagger)
-            || canAutoPreviewVCardByExtension(url: url, filename: filename, featureFlagger: featureFlagger)
+            || canAutoPreviewVCardByExtension(url: url, filename: filename)
     }
 
     /// ICS and vCard files must persist so the user can retry from Downloads when auto-add fails.
@@ -100,7 +97,7 @@ struct FilePreviewHelper {
         if featureFlagger.isFeatureOn(.icsCalendarLinks), isICS(mimeType: mimeType, url: url, filename: filename) {
             return true
         }
-        if featureFlagger.isFeatureOn(.vcardContactLinks), isVCard(mimeType: mimeType, url: url, filename: filename) {
+        if isVCard(mimeType: mimeType, url: url, filename: filename) {
             return true
         }
         return false
@@ -114,7 +111,7 @@ struct FilePreviewHelper {
         if featureFlagger.isFeatureOn(.icsCalendarLinks), isICS(mimeType: mimeType, url: url, filename: filename) {
             return true
         }
-        if featureFlagger.isFeatureOn(.vcardContactLinks), isVCard(mimeType: mimeType, url: url, filename: filename) {
+        if isVCard(mimeType: mimeType, url: url, filename: filename) {
             return true
         }
         return false

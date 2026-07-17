@@ -146,6 +146,13 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "is_enabled"]
     },
+    "m_aichat_contextual_quick_action_ask_about_page_shown": {
+        "description": "Fired when the Ask about page quick action chip is shown to the user in the contextual sheet",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_aichat_contextual_quick_action_ask_about_page_selected": {
         "description": "Fired when the user selects the Ask about page quick action chip in the contextual sheet",
         "owners": ["SabrinaTardio"],

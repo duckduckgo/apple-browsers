@@ -21,6 +21,7 @@ import Cocoa
 import Combine
 import Common
 import ConcurrencyExtensions
+import DesignResourcesKit
 import FeatureFlags
 import FoundationExtensions
 import Lottie
@@ -101,7 +102,7 @@ final class FireViewController: NSViewController {
     private lazy var fakeFireButtonIconView: NSImageView = {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.image = .burnAlert
+        imageView.image = DesignSystemRebrand.isAppRebranded() ? .burnAlert : .burnAlertLegacy
         return imageView
     }()
 

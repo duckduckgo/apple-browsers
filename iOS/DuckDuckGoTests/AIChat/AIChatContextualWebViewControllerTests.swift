@@ -180,6 +180,7 @@ private final class StubContextualModePixelHandler: AIChatContextualModePixelFir
     func fireExpandButtonTapped() {}
     func fireNewChatButtonTapped() {}
     func fireQuickActionSummarizeSelected() {}
+    func fireQuickActionAskAboutPageShown() {}
     func fireQuickActionAskAboutPageSelected() {}
     func fireRecentChatsPopupDisplayed() {}
     func fireRecentChatSelected() {}

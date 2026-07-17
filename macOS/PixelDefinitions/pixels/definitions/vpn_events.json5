@@ -134,6 +134,7 @@
                     "subscription_settings",
                     "subscription_email",
                     "subscription_flow",
+                    "existing_user_promo",
                     "browser_menu",
                     "toolbar",
                     "address_bar",
@@ -141,6 +142,14 @@
                     "shortcut",
                     "notification",
                     "vpn_access_revoked_alert",
+                    "onboarding",
+                    "skipped_onboarding",
+                    "win_back_launch",
+                    "win_back_settings",
+                    "address_bar_model_picker",
+                    "address_bar_reasoning_picker",
+                    "duck_ai_model_picker",
+                    "duck_ai_reasoning_picker",
                     "unknown"
                 ]
             },

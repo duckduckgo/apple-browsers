@@ -151,11 +151,14 @@ extension VPNConnectionWideEventData {
         case unknown
     }
 
+    /// This exists in order to tell us how a user entered the VPN screen. This is particularly useful in cases where metrics suggest that the VPN is being started
+    /// without an auth token - this should be impossible, but this will help us detect if it ever happens.
     public enum ScreenSource: String, Codable, CaseIterable, Equatable {
         case appSettings = "app_settings"
         case subscriptionSettings = "subscription_settings"
         case subscriptionEmail = "subscription_email"
         case subscriptionFlow = "subscription_flow"
+        case existingUserPromo = "existing_user_promo"
         case browserMenu = "browser_menu"
         case toolbar
         case addressBar = "address_bar"
@@ -163,6 +166,14 @@ extension VPNConnectionWideEventData {
         case shortcut
         case notification
         case vpnAccessRevokedAlert = "vpn_access_revoked_alert"
+        case onboarding
+        case skippedOnboarding = "skipped_onboarding"
+        case winBackLaunch = "win_back_launch"
+        case winBackSettings = "win_back_settings"
+        case addressBarModelPicker = "address_bar_model_picker"
+        case addressBarReasoningPicker = "address_bar_reasoning_picker"
+        case duckAIModelPicker = "duck_ai_model_picker"
+        case duckAIReasoningPicker = "duck_ai_reasoning_picker"
         case unknown
     }
 

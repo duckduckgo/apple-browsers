@@ -702,15 +702,24 @@ extension VPNConnectionWideEventData.ScreenSource {
             self = .appSettings
         case .newTabMenu:
             self = .browserMenu
-        case .onboarding,
-             .skippedOnboarding,
-             .addressBarModelPicker,
-             .addressBarReasoningPicker,
-             .duckAIModelPicker,
-             .duckAIReasoningPicker,
-             .winBackLaunch,
-             .winBackSettings:
-            self = .unknown
+        case .existingUserPromo:
+            self = .existingUserPromo
+        case .onboarding:
+            self = .onboarding
+        case .skippedOnboarding:
+            self = .skippedOnboarding
+        case .winBackLaunch:
+            self = .winBackLaunch
+        case .winBackSettings:
+            self = .winBackSettings
+        case .addressBarModelPicker:
+            self = .addressBarModelPicker
+        case .addressBarReasoningPicker:
+            self = .addressBarReasoningPicker
+        case .duckAIModelPicker:
+            self = .duckAIModelPicker
+        case .duckAIReasoningPicker:
+            self = .duckAIReasoningPicker
         }
     }
 }

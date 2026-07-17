@@ -276,16 +276,27 @@ import Subscription
         let expectations: [(SubscriptionFunnelOrigin, VPNConnectionWideEventData.ScreenSource)] = [
             (.appSettings, .appSettings),
             (.newTabMenu, .browserMenu),
+            (.existingUserPromo, .existingUserPromo),
             (.toolbarVPN, .toolbar),
             (.addressBarVPN, .addressBar),
             (.widgetVPN, .widget),
             (.shortcutVPN, .shortcut),
             (.notificationVPN, .notification),
             (.vpnAccessRevokedAlert, .vpnAccessRevokedAlert),
+            (.onboarding, .onboarding),
+            (.skippedOnboarding, .skippedOnboarding),
+            (.winBackLaunch, .winBackLaunch),
+            (.winBackSettings, .winBackSettings),
+            (.addressBarModelPicker, .addressBarModelPicker),
+            (.addressBarReasoningPicker, .addressBarReasoningPicker),
+            (.duckAIModelPicker, .duckAIModelPicker),
+            (.duckAIReasoningPicker, .duckAIReasoningPicker),
         ]
 
         for (origin, expectedSource) in expectations {
-            XCTAssertEqual(VPNConnectionWideEventData.ScreenSource(subscriptionFunnelOrigin: origin), expectedSource)
+            let source = VPNConnectionWideEventData.ScreenSource(subscriptionFunnelOrigin: origin)
+            XCTAssertEqual(source, expectedSource)
+            XCTAssertNotEqual(source, .unknown, "\(origin) must map to a concrete VPN screen source, never .unknown")
         }
     }
 

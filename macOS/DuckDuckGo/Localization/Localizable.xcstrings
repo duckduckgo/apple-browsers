@@ -118895,8 +118895,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Es wird empfohlen, diese Option zu deaktivieren, damit dein gesamter Datenverkehr über das VPN läuft. Falls du Probleme beim Verbinden mit Onlinediensten hast, versuche, diese einzuschalten."
+            "state" : "translated",
+            "value" : "Umgehe das VPN für Mobilfunkdienste wie WLAN-Anrufe und Voicemail."
           }
         },
         "en" : {
@@ -118907,44 +118907,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Se recomienda desactivarlo para que todo tu tráfico pase por la VPN. Si tienes problemas para conectarte a los servicios en línea, prueba a activarlo."
+            "state" : "translated",
+            "value" : "Evita la VPN para servicios del operador, como las llamadas por Wi-Fi y el buzón de voz."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Désactivation recommandée pour que tout votre trafic passe par le VPN. Si vous rencontrez des problèmes pour vous connecter aux services en ligne, essayez de l'activer."
+            "state" : "translated",
+            "value" : "Contourner le VPN pour les services de l'opérateur, comme les appels Wi-Fi et la messagerie vocale."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Si consiglia di lasciare questa opzione disattivata affinché tutto il traffico passi attraverso la VPN. Se riscontri problemi di connessione ai servizi online, prova ad attivarla."
+            "state" : "translated",
+            "value" : "Bypassa la VPN per i servizi dell'operatore, come le chiamate Wi-Fi e la segreteria telefonica."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Het wordt aangeraden om deze optie uit te schakelen, zodat al je internetverkeer via de VPN loopt. Probeer deze optie in te schakelen als je problemen hebt met het verbinden met onlinediensten."
+            "state" : "translated",
+            "value" : "Omzeil de VPN voor netwerkdiensten, zoals bellen via wifi en voicemail."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Zalecamy wyłączyć, aby cały Twój ruch przechodził przez VPN. Jeśli masz problemy z połączeniem się z usługami online, spróbuj włączyć tę opcję."
+            "state" : "translated",
+            "value" : "Omijaj VPN w przypadku usług operatora, takich jak połączenia Wi-Fi i poczta głosowa."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Recomendamos desativá-la para que todo o teu tráfego passe pela VPN. Se tiveres problemas a ligar-te a serviços online, experimenta ativá-la."
+            "state" : "translated",
+            "value" : "Contorna a VPN para serviços de operador, tais como chamadas Wi-Fi e correio de voz."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Рекомендуется выключить, чтобы весь ваш трафик проходил через VPN. Если у вас возникли проблемы с подключением к онлайн-сервисам, попробуйте включить эту опцию."
+            "state" : "translated",
+            "value" : "Разрешите сервисам оператора связи, таким как звонки по Wi-Fi и голосовая почта, обходить VPN."
           }
         }
       }
@@ -119076,7 +119076,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Empfohlen in Netzwerken, denen du nicht vertraust, z. B. öffentliches WLAN in Hotels, Bars usw. Solltest du Probleme mit Funktionen (wie AirDrop, Sidecar usw.) oder der Verbindung zu anderen Geräten haben, versuche, diese zu deaktivieren. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Blockiere, dass Apps das VPN umgehen. Solltest du Probleme mit WLAN-Funktionen (wie AirDrop oder iPhone Mirroring) haben, kann es helfen, diese zu deaktivieren. Dringend empfohlen in Netzwerken, denen du nicht vertraust, z. B. in öffentlichen WLANs. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
           }
         },
         "en" : {
@@ -119088,43 +119088,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recomendado en redes en las que no confías, p. ej., Wifi público en hoteles, bares, etc. Si tienes problemas con las funciones (como AirDrop, Sidecar, etc.) o al conectarte a otros dispositivos, intenta apagarlo. [Más información](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Bloquea las aplicaciones para que no eviten la VPN. Si tienes problemas con funciones de Wi-Fi (como AirDrop o iPhone Mirroring), desactivarlo puede ayudar. Muy recomendado para redes en las que no confías, como el Wi-Fi público. [Más información](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recommandé sur les réseaux que vous jugez non fiables, comme le Wi-Fi public dans les hôtels, bars, etc. Si vous rencontrez des problèmes avec les fonctionnalités (comme AirDrop, Sidecar, etc.) ou la connexion à d'autres appareils, essayez de le désactiver. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Empêcher les applications de contourner le VPN. Si vous rencontrez des problèmes avec des fonctionnalités Wi-Fi (comme AirDrop ou Recopie de l'iPhone), essayez de le désactiver. Fortement recommandé sur les réseaux que vous jugez non fiables, comme le Wi-Fi public. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Consigliata su reti di cui non ti fidi, ad esempio reti Wi-Fi pubbliche in hotel, bar, ecc. Se riscontri problemi con alcune funzioni (come AirDrop, Sidecar, ecc.) o con la connessione ad altri dispositivi, prova a disattivarla. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Impedisci alle app di bypassare la VPN. Se riscontri problemi con alcune funzioni Wi-Fi (come AirDrop o iPhone Mirroring), disattivarla potrebbe essere utile. Fortemente consigliata su reti di cui non ti fidi, come le reti Wi-Fi pubbliche. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aanbevolen op netwerken die je niet vertrouwt, bijv. openbare wifi in hotels, cafés, enz. Als je problemen ondervindt met functies (zoals AirDrop, Sidecar, enz.) of met het verbinden met andere apparaten, probeer deze dan uit te schakelen. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Voorkom dat apps de VPN omzeilen. Als je problemen ondervindt met wifi-functies (zoals AirDrop of iPhone Mirroring), kan het helpen om deze uit te schakelen. Sterk aanbevolen op netwerken die je niet vertrouwt, zoals openbare wifi. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Polecane w sieciach, którym nie ufasz, np. publiczne wifi w hotelach, barach itd. Jeśli masz problemy z funkcjami (takimi jak AirDrop, Sidecar itp.) lub łączeniem się z innymi urządzeniami, spróbuj je wyłączyć. [Dowiedz się więcej](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Blokuj aplikacjom możliwość pomijania VPN. Jeśli masz problemy z funkcjami Wi-Fi (takimi jak AirDrop lub Klonowanie ekranu iPhone'a), wyłączenie tej opcji może pomóc. Zdecydowanie zalecane w sieciach, którym nie ufasz, takich jak publiczne Wi-Fi. [Dowiedz się więcej](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recomendado em redes em que não confias, por ex. Wi-Fi público em hotéis, bares, etc. Se tiveres problemas com funcionalidades (como AirDrop, Sidecar, etc.) ou com a ligação a outros dispositivos, experimenta desligá-lo. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Impede que as aplicações ignorem a VPN. Se tiveres problemas com funcionalidades de Wi-Fi (como AirDrop ou iPhone Mirroring), desativá-la pode ajudar. Fortemente recomendado em redes em que não confias, como Wi-Fi público. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Рекомендуется для сетей, которым вы не доверяете — например, общественный Wi-Fi в отелях, барах и т. д. Если у вас возникли проблемы с работоспособностью некоторых функций (например, AirDrop, Sidecar и т. д.) или подключением к другим устройствам, попробуйте выключить эту опцию. [Подробнее](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)"
+            "value" : "Запретить приложениям обходить VPN. Если у вас возникли проблемы с работоспособностью функций Wi-Fi (например, AirDrop или iPhone Mirroring), попробуйте выключить эту опцию. Настоятельно рекомендуется использовать в сетях, которым вы не доверяете — например, в общественных сетях Wi-Fi. [Подробнее](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack)."
           }
         }
       }
@@ -119346,7 +119346,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diensten van de provider uitsluiten"
+            "value" : "Uitsluiten van Carrier Services"
           }
         },
         "pl" : {
@@ -119555,8 +119555,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Striktes Routing"
+            "state" : "translated",
+            "value" : "Striktes Routing erzwingen (Empfohlen)"
           }
         },
         "en" : {
@@ -119567,44 +119567,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Enrutamiento estricto"
+            "state" : "translated",
+            "value" : "Forzar el enrutamiento estricto (recomendado)"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Routage strict"
+            "state" : "translated",
+            "value" : "Activer le routage strict (recommandé)"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Routing rigido"
+            "state" : "translated",
+            "value" : "Applica routing rigido (consigliato)"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Strikte routering"
+            "state" : "translated",
+            "value" : "Strikte routering inschakelen (aanbevolen)"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ścisły routing"
+            "state" : "translated",
+            "value" : "Wymuś ścisły routing (zalecane)"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Encaminhamento estrito"
+            "state" : "translated",
+            "value" : "Forçar encaminhamento estrito (recomendado)"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Строгая маршрутизация"
+            "state" : "translated",
+            "value" : "Принудительно включить строгую маршрутизацию (рекомендуется)"
           }
         }
       }
@@ -119973,10 +119973,58 @@
       "comment" : "Troubleshooting section title in VPN settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fehlerbehebung"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Troubleshooting"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solución de problemas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dépannage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Risoluzione dei problemi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problemen oplossen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozwiązywanie problemów"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resolução de problemas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Устранение неполадок"
           }
         }
       }

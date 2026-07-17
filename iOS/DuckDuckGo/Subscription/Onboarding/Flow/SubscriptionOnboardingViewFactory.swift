@@ -30,7 +30,9 @@ protocol SubscriptionOnboardingViewFactory {
 struct DefaultSubscriptionOnboardingViewFactory: SubscriptionOnboardingViewFactory {
     func makeView(for section: SubscriptionOnboardingSection) -> AnyView {
         switch section {
-        case .vpn, .duckAI:
+        case .vpn:
+            return AnyView(SubscriptionOnboardingVPNSectionView())
+        case .duckAI:
             return AnyView(placeholder(for: section))
         }
     }

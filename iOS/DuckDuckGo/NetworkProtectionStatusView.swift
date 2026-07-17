@@ -124,7 +124,7 @@ struct NetworkProtectionStatusView: View {
                             .foregroundColor(.init(designSystemColor: .textSecondary))
                     }
                 }
-                .layoutPriority(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 Toggle("", isOn: Binding(
                     get: { statusModel.isNetPEnabled },

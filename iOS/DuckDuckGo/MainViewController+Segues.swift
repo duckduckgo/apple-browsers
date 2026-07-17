@@ -31,6 +31,37 @@ import os.log
 import DataBrokerProtection_iOS
 import VPN
 
+struct VPNEntryPoint {
+    let screenSource: VPNConnectionWideEventData.ScreenSource
+    let subscriptionFunnelOrigin: SubscriptionFunnelOrigin
+
+    static let toolbar = VPNEntryPoint(
+        screenSource: .toolbar,
+        subscriptionFunnelOrigin: .toolbarVPN)
+
+    static let addressBar = VPNEntryPoint(
+        screenSource: .addressBar,
+        subscriptionFunnelOrigin: .addressBarVPN)
+
+    static let widget = VPNEntryPoint(
+        screenSource: .widget,
+        subscriptionFunnelOrigin: .widgetVPN)
+
+    static let shortcut = VPNEntryPoint(
+        screenSource: .shortcut,
+        subscriptionFunnelOrigin: .shortcutVPN)
+
+    static let notification = VPNEntryPoint(
+        screenSource: .notification,
+        subscriptionFunnelOrigin: .notificationVPN)
+
+    private init(screenSource: VPNConnectionWideEventData.ScreenSource,
+                 subscriptionFunnelOrigin: SubscriptionFunnelOrigin) {
+        self.screenSource = screenSource
+        self.subscriptionFunnelOrigin = subscriptionFunnelOrigin
+    }
+}
+
 extension MainViewController {
 
     func segueToAppearanceSettings() {

@@ -84,18 +84,12 @@ import Subscription
     }
 
     func testStatusUpdate_notconnected_setsHeaderTitleToOff() async {
-        let offTitleStates: [ConnectionStatus] = [.disconnected, .disconnecting, .notConfigured, .connecting]
+        let offTitleStates: [ConnectionStatus] = [.disconnected, .disconnecting, .notConfigured, .connecting, .reasserting]
         for status in offTitleStates {
             viewModel.headerTitle = ""
             statusObserver.subject.send(status)
             await waitFor(condition: self.viewModel.headerTitle == UserText.netPStatusHeaderTitleOff)
         }
-    }
-
-    func testStatusUpdate_reasserting_setsHeaderTitleToOn() async {
-        viewModel.headerTitle = ""
-        statusObserver.subject.send(.reasserting)
-        await waitFor(condition: self.viewModel.headerTitle == UserText.netPStatusHeaderTitleOn)
     }
 
     func testStatusUpdate_connected_setsStatusImageIDToVPN() async {
@@ -320,36 +314,20 @@ import Subscription
         XCTAssertFalse(model.showStrictRoutingPill)
     }
 
-    func testShowsStrictRoutingPillWhileReasserting() throws {
+    func testHidesStrictRoutingPillWhileReasserting() async {
         let statusObserver = MockConnectionStatusObserver()
         let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true, statusObserver: statusObserver)
 
-        statusObserver.subject.send(.reasserting)
-
-        try waitForPublisher(model.$isReasserting, toEmit: true)
+        statusObserver.subject.send(.connected(connectedDate: Date()))
+        await waitFor(condition: model.isNetPEnabled)
         XCTAssertTrue(model.showStrictRoutingPill)
-    }
 
-    func testHeaderMessageReflectsOnStateWhileReassertingWithStrictRoutingOn() throws {
-        let statusObserver = MockConnectionStatusObserver()
-        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true, statusObserver: statusObserver)
-        model.enforceRoutes = true
-
+        // Reasserting is presented as an off/connecting state, matching the rest of the status UI,
+        // so the pill and its on-state message are hidden while the tunnel reasserts.
         statusObserver.subject.send(.reasserting)
-
-        try waitForPublisher(model.$isReasserting, toEmit: true)
-        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOn)
-    }
-
-    func testHeaderMessageWarnsWhileReassertingWithStrictRoutingOff() throws {
-        let statusObserver = MockConnectionStatusObserver()
-        let model = makeStrictRoutingViewModel(isStrictRoutingAvailable: true, statusObserver: statusObserver)
-        model.enforceRoutes = false
-
-        statusObserver.subject.send(.reasserting)
-
-        try waitForPublisher(model.$isReasserting, toEmit: true)
-        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageStrictRoutingOff)
+        await waitFor(condition: !model.isNetPEnabled)
+        XCTAssertFalse(model.showStrictRoutingPill)
+        XCTAssertEqual(model.headerMessage, UserText.netPStatusHeaderMessageOff)
     }
 
     func testHeaderMessageWarnsWhenStrictRoutingOff() {

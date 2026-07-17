@@ -150,11 +150,6 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         }
     }
 
-    /// Whether the tunnel is reasserting (transiently reconnecting). Tracked separately from
-    /// `isNetPEnabled` — which stays false during `.reasserting` and gates tips/snooze — so the
-    /// Strict routing pill and notice remain visible through reassertion, matching macOS.
-    @Published public private(set) var isReasserting = false
-
     @Published public var isSnoozing = false {
         didSet {
             snoozeRequestPending = false
@@ -199,27 +194,20 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         }
     }
 
-    /// Whether the VPN is on or transitioning — connected, connecting, or reasserting. The Strict
-    /// routing pill and notice track this rather than `isNetPEnabled` so they stay visible while the
-    /// tunnel reasserts, matching macOS's `isConnectedOrConnecting`.
-    private var isVPNActiveOrReasserting: Bool {
-        isNetPEnabled || isReasserting
-    }
-
     /// Whether the Strict routing status pill should be shown under the header. It reflects the current
     /// Strict routing state whenever the VPN is on, in both the on and off positions.
     public var showStrictRoutingPill: Bool {
-        isStrictRoutingAvailable && isVPNActiveOrReasserting
+        isStrictRoutingAvailable && isNetPEnabled
     }
 
     /// The message shown under the header. While the VPN is on but Strict routing is off it warns that
     /// some traffic may bypass the VPN; otherwise it reflects the plain on/off state.
     public var headerMessage: String {
-        if isVPNActiveOrReasserting, isStrictRoutingAvailable, !enforceRoutes {
+        if isNetPEnabled, isStrictRoutingAvailable, !enforceRoutes {
             return UserText.netPStatusHeaderMessageStrictRoutingOff
         }
 
-        return isVPNActiveOrReasserting ? UserText.netPStatusHeaderMessageOn : UserText.netPStatusHeaderMessageOff
+        return isNetPEnabled ? UserText.netPStatusHeaderMessageOn : UserText.netPStatusHeaderMessageOff
     }
 
     public let enablesUnifiedFeedbackForm: Bool
@@ -424,7 +412,6 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     private func updateViewModel(withStatus connectionStatus: ConnectionStatus) {
         self.headerTitle = Self.titleText(status: connectionStatus)
         self.statusImageID = Self.statusImageID(connected: connectionStatus.isConnected)
-        self.isReasserting = connectionStatus.isReasserting
 
         if !connectionStatus.isConnected {
             self.uploadTotal = nil
@@ -690,9 +677,9 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     private class func titleText(status: ConnectionStatus) -> String {
         switch status {
-        case .connected, .reasserting: return UserText.netPStatusHeaderTitleOn
+        case .connected: return UserText.netPStatusHeaderTitleOn
         case .snoozing: return UserText.netPStatusHeaderTitleSnoozed
-        case .notConfigured, .disconnected, .disconnecting, .connecting: return UserText.netPStatusHeaderTitleOff
+        case .notConfigured, .disconnected, .disconnecting, .connecting, .reasserting: return UserText.netPStatusHeaderTitleOff
         }
     }
 
@@ -792,15 +779,6 @@ private extension ConnectionStatus {
     var isConnected: Bool {
         switch self {
         case .connected:
-            return true
-        default:
-            return false
-        }
-    }
-
-    var isReasserting: Bool {
-        switch self {
-        case .reasserting:
             return true
         default:
             return false

@@ -5455,3 +5455,8 @@
 
 /* Title of the Troubleshooting section in the VPN status screen. */
 "network.protection.status.view.troubleshooting.section.title" = "Felsökning";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Viss trafik kan kringgå VPN när Strikt routning är av. Strikt routning rekommenderas för offentliga nätverk.";
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Strikt routning är AV";

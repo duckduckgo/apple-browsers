@@ -587,7 +587,6 @@ struct OnboardingDownloadReasonExperimentTests {
             featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: cohort),
             variantManager: OnboardingManagerVariants.newUserVariantManagerMock,
             isIphone: true,
-            regionAndLanguageProvider: Locale(identifier: "en_US"),
             tutorialSettings: tutorialSettings,
             sharedPixelsStorage: sharedPixelStorage
         )
@@ -725,7 +724,7 @@ struct OnboardingDownloadReasonExperimentTests {
         #expect(result == expected)
     }
 
-    // MARK: - Eligibility (new installers, iPhone, en-US)
+    // MARK: - Eligibility (new installers, iPhone)
 
     @Test("iPad users are not enrolled even in the treatment cohort")
     func iPadUsersAreNotEnrolled() {
@@ -745,26 +744,16 @@ struct OnboardingDownloadReasonExperimentTests {
         #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true))
     }
 
-    @Test("Non en-US users are not enrolled even in the treatment cohort")
-    func nonEnglishUSUsersAreNotEnrolled() {
-        // GIVEN
-        let sut = makeManager(cohort: .treatment, locale: Locale(identifier: "en_GB"))
-
-        // THEN
-        #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false))
-    }
-
     @Test("Ineligible users report the default pixel, not the tailored one")
     func ineligibleUsersReportDefaultPixel() {
-        // GIVEN
+        // GIVEN — iPad user is ineligible even in the treatment cohort.
         let sharedPixelStorage = makePixelStore()
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
         let sut = OnboardingManager(
             appDefaults: AppSettingsMock(),
             featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: Cohort.treatment),
             variantManager: OnboardingManagerVariants.newUserVariantManagerMock,
-            isIphone: true,
-            regionAndLanguageProvider: Locale(identifier: "en_GB"),
+            isIphone: false,
             tutorialSettings: tutorialSettings,
             sharedPixelsStorage: sharedPixelStorage
         )
@@ -788,7 +777,6 @@ struct OnboardingDownloadReasonExperimentTests {
         cohort: Cohort?,
         isIphone: Bool = true,
         variantManager: VariantManager = OnboardingManagerVariants.newUserVariantManagerMock,
-        locale: Locale = Locale(identifier: "en_US"),
         tutorialSettings: MockTutorialSettings? = nil
     ) -> OnboardingManager {
         OnboardingManager(
@@ -796,7 +784,6 @@ struct OnboardingDownloadReasonExperimentTests {
             featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: cohort),
             variantManager: variantManager,
             isIphone: isIphone,
-            regionAndLanguageProvider: locale,
             tutorialSettings: tutorialSettings ?? makeTutorialSettings()
         )
     }

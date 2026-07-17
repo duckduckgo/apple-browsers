@@ -55,7 +55,8 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
 
     fileprivate func syncWithAnotherDeviceView() -> some View {
         VStack(alignment: .center, spacing: 16) {
-            Image(.syncPair96)
+            Image(model.isAppRebranded ? .syncPair96 : .syncPair96Legacy)
+
             VStack(alignment: .center, spacing: 8) {
                 SyncUIViews.TextHeader(text: UserText.beginSyncTitle)
                 SyncUIViews.TextDetailSecondary(text: model.isAIChatSyncEnabled
@@ -70,9 +71,10 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
             }
             .buttonStyle(SyncWithAnotherDeviceButtonStyle(enabled: model.isConnectingDevicesAvailable))
             .disabled(!model.isConnectingDevicesAvailable)
+            .padding(.bottom, model.isAppRebranded ? 10 : 0)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 254)
+        .frame(height: model.isAppRebranded ? 264 : 254)
         .roundedBorder()
         .padding(.top, 20)
     }

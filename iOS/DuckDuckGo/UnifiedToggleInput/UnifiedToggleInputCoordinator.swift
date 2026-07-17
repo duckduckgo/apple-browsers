@@ -1965,7 +1965,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String) {
-        if isPerformingDismissCleanup { return }
+        if UnifiedInputTextChangeGate.shouldIgnore(text: text, duringDismissCleanup: isPerformingDismissCleanup) { return }
         currentText = text
         textState = text.isEmpty ? .empty : .userTyped
         persistDraftToStore()

@@ -55,6 +55,7 @@ public enum OnboardingPixelParameter {
     public enum Flow: String {
         case `default` = "default"
         case duckAI = "duckai"
+        case tailoredByDownloadReason = "tailored_download_reason"
     }
 
     /// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.
@@ -242,7 +243,6 @@ public enum OnboardingSharedPixelEvent: PixelKitEvent, Equatable {
             case blue
             case purple
             case black
-            case white
         }
 
         case shown

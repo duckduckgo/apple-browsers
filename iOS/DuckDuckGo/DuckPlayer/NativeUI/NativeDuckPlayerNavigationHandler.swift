@@ -290,15 +290,15 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     ///   - reset: Whether to reset the DuckPlayer state
     ///   - animated: Whether to animate the dismissal
     ///   - programatic: Whether the dismissal is programmatic
+    @MainActor
     private func dismissDuckPlayerPill(reset: Bool, animated: Bool, programatic: Bool) {
         isDuckPlayerPillPresented = false
         presentedPillVideoID = nil
         // Drop any pending present so it can't fire after this dismiss.
         pendingPillPresentationCancellable?.cancel()
         pendingPillPresentationCancellable = nil
-        Task { @MainActor in
-            duckPlayer.dismissPill(reset: reset, animated: animated, programatic: programatic, skipTransition: true)
-        }
+        // Dismiss synchronously so the pill-visibility state is cleared in the same runloop turn.
+        duckPlayer.dismissPill(reset: reset, animated: animated, programatic: programatic, skipTransition: true)
     }
 }
 
@@ -312,6 +312,9 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleDuckNavigation(_ navigationAction: WKNavigationAction, webView: WKWebView) {
         lastHandledVideoID = nil
+        // Explicit navigation to Duck Player: clear the pill gate so the same-video guard doesn't
+        // suppress presenting it again.
+        presentedPillVideoID = nil
         let (videoID, _) = navigationAction.request.url?.youtubeVideoParams ?? ("", nil)
         let youtubeURL = URL.youtube(videoID)
         webView.load(URLRequest(url: youtubeURL))

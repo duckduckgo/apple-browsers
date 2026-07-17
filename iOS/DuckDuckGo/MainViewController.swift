@@ -61,9 +61,11 @@ struct StartupOnboardingDecision {
          resumeStepStore: (any KeyedStoring<OnboardingStoringKeys>)? = nil) {
         let resumeStepStore: any KeyedStoring<OnboardingStoringKeys> = if let resumeStepStore { resumeStepStore } else { UserDefaults.app.keyedStoring() }
         switch resumeStepStore.resumeStep {
-        case .setDefaultBrowser, .aiIntro, .addToDockPromo, .appIconSelection,
+        case .downloadReasonSelection, .setDefaultBrowser, .aiIntro, .addToDockPromo, .appIconSelection,
              .addressBarPositionSelection, .searchExperienceSelection,
-             .duckAIQuerySelection, .interludeDuckAI:
+             .duckAIQuerySelection, .interludeDuckAI,
+             .searchPrivacySettingsSelection, .aiSearchSettingsSelection, .aiModelSelection,
+             .toggleInputModeSelection, .keepDuckAISelection, .duckPlayerSelection:
             shouldShowOnboarding = true
             return
         case .duckAIAnswerStep:
@@ -1569,6 +1571,7 @@ class MainViewController: UIViewController {
         adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
         var keyboardHeight = keyboardFrame.size.height
 

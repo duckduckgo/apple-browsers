@@ -500,6 +500,10 @@ public enum FeatureFlag: String {
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperiment
+
+    /// NA Experiment: tailor the onboarding flow based on the user's download reason.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
+    case onboardingFlowByDownloadReasonExperiment
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -516,6 +520,12 @@ extension FeatureFlag: FeatureFlagDescribing {
     }
 
     public enum CookiePopupOptInDialogCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Cohorts for the onboarding-flow-by-download-reason experiment.
+    public enum OnboardingFlowByDownloadReasonExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -761,6 +771,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
         case .searchTokenExperiment:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperiment), cohortType: SearchTokenExperimentCohort.self)
+        case .onboardingFlowByDownloadReasonExperiment:
+            Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
         case .genericBackgroundTask:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.genericBackgroundTask))
         case .crashCollectionLimitCallStackTreeDepth:

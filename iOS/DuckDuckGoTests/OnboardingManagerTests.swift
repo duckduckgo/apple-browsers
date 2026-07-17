@@ -20,8 +20,10 @@
 import Onboarding
 import Persistence
 import PersistenceTestingUtils
+import PrivacyConfig
 import Testing
 import class UIKit.UIDevice
+import protocol BrowserServicesKit.VariantManager
 @testable import Core
 @testable import DuckDuckGo
 
@@ -54,7 +56,7 @@ struct OnboardingManagerTests {
         @Test("Check correct onboarding steps are returned for iPhone")
         func checkOnboardingSteps_iPhone() async throws {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.newUserVariantManagerMock, isIphone: true)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.newUserVariantManagerMock, isIphone: true, tutorialSettings: MockTutorialSettings(hasSeenOnboarding: false))
             let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
 
             // WHEN
@@ -67,7 +69,7 @@ struct OnboardingManagerTests {
         @Test("Check correct onboarding steps are returned for iPad")
         func checkOnboardingSteps_iPad() {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.newUserVariantManagerMock, isIphone: false)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.newUserVariantManagerMock, isIphone: false, tutorialSettings: MockTutorialSettings(hasSeenOnboarding: false))
             let expectedSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false)
 
             // WHEN
@@ -84,7 +86,7 @@ struct OnboardingManagerTests {
         @Test("Check correct onboarding steps are returned for iPhone")
         func checkOnboardingSteps_iPhone() async throws {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.returningUserVariantManagerMock, isIphone: true)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.returningUserVariantManagerMock, isIphone: true, tutorialSettings: MockTutorialSettings(hasSeenOnboarding: true))
             let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
 
             // WHEN
@@ -97,7 +99,7 @@ struct OnboardingManagerTests {
         @Test("Check correct onboarding steps are returned for iPad")
         func checkOnboardingSteps_iPad() {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.returningUserVariantManagerMock, isIphone: false)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.returningUserVariantManagerMock, isIphone: false, tutorialSettings: MockTutorialSettings(hasSeenOnboarding: true))
             let expectedSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: true)
 
             // WHEN
@@ -114,7 +116,7 @@ struct OnboardingManagerTests {
         @Test("Check correct onboarding steps are returned, new user")
         func checkOnboardingStepsNewUser() {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.newUserVariantManagerMock, isIphone: true)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.newUserVariantManagerMock, isIphone: true, tutorialSettings: MockTutorialSettings(hasSeenOnboarding: false))
             let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
 
             // WHEN
@@ -127,7 +129,7 @@ struct OnboardingManagerTests {
         @Test("Check correct onboarding steps are returned, returning user")
         func checkOnboardingStepsReturningUser() {
             // GIVEN
-            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.returningUserVariantManagerMock, isIphone: true)
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: OnboardingManagerVariants.returningUserVariantManagerMock, isIphone: true, tutorialSettings: MockTutorialSettings(hasSeenOnboarding: false))
             let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
 
             // WHEN
@@ -527,6 +529,13 @@ struct OnboardingStepsForConfiguredFlow {
     func resumeStepMappingIsCorrect() {
         #expect(OnboardingIntroStep.introDialog(isReturningUser: false).resumeStep == nil)
         #expect(OnboardingIntroStep.introDialog(isReturningUser: true).resumeStep == nil)
+        #expect(OnboardingIntroStep.downloadReasonSelection.resumeStep == .downloadReasonSelection)
+        #expect(OnboardingIntroStep.searchPrivacySettingsSelection.resumeStep == .searchPrivacySettingsSelection)
+        #expect(OnboardingIntroStep.aiSearchSettingsSelection.resumeStep == .aiSearchSettingsSelection)
+        #expect(OnboardingIntroStep.aiModelSelection.resumeStep == .aiModelSelection)
+        #expect(OnboardingIntroStep.toggleInputModeSelection.resumeStep == .toggleInputModeSelection)
+        #expect(OnboardingIntroStep.keepDuckAISelection.resumeStep == .keepDuckAISelection)
+        #expect(OnboardingIntroStep.duckPlayerSelection.resumeStep == .duckPlayerSelection)
         #expect(OnboardingIntroStep.setDefaultBrowser.resumeStep == .setDefaultBrowser)
         #expect(OnboardingIntroStep.aiIntro.resumeStep == .aiIntro)
         #expect(OnboardingIntroStep.addToDockPromo.resumeStep == .addToDockPromo)
@@ -537,4 +546,249 @@ struct OnboardingStepsForConfiguredFlow {
         #expect(OnboardingIntroStep.interlude(.duckAI).resumeStep == .interludeDuckAI)
     }
 
+    @Test("Check countsTowardProgress excludes the intro dialog, interludes, and the Download Screen")
+    func countsTowardProgressExcludesNonProgressSteps() {
+        // Steps excluded regardless of flow.
+        #expect(OnboardingIntroStep.introDialog(isReturningUser: false).countsTowardProgress(flow: .default) == false)
+        #expect(OnboardingIntroStep.interlude(.duckAI).countsTowardProgress(flow: .default) == false)
+        #expect(OnboardingIntroStep.downloadReasonSelection.countsTowardProgress(flow: .default) == false)
+
+        // Steps counted regardless of flow.
+        #expect(OnboardingIntroStep.setDefaultBrowser.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.aiIntro.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.addToDockPromo.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.appIconSelection.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.addressBarPositionSelection.countsTowardProgress(flow: .default) == true)
+        #expect(OnboardingIntroStep.searchExperienceSelection.countsTowardProgress(flow: .default) == true)
+    }
+
+    @Test("Check countsTowardProgress counts the Duck.ai query step only in the Duck.ai flow")
+    func countsTowardProgressForDuckAIQueryDependsOnFlow() {
+        #expect(OnboardingIntroStep.duckAIQuerySelection.countsTowardProgress(flow: .duckAI) == true)
+        #expect(OnboardingIntroStep.duckAIQuerySelection.countsTowardProgress(flow: .default) == false)
+    }
+
+}
+
+@Suite("Onboarding - Download Reason Experiment")
+struct OnboardingDownloadReasonExperimentTests {
+
+    typealias Cohort = FeatureFlag.OnboardingFlowByDownloadReasonExperimentCohort
+
+    // MARK: - Enrollment / pixel bucket
+
+    @Test("Experiment users keep the .default flow but report under the tailored pixel", arguments: [Cohort.control, Cohort.treatment])
+    func treatmentReportsTailoredPixel(_ cohort: Cohort) {
+        // GIVEN
+        let sharedPixelStorage = makePixelStore()
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: cohort),
+            variantManager: OnboardingManagerVariants.newUserVariantManagerMock,
+            isIphone: true,
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
+        )
+
+        // WHEN
+        sut.configureOnboardingFlow(from: nil)
+
+        // THEN
+        #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(sharedPixelStorage.onboardingFlow == .tailoredByDownloadReason)
+    }
+
+    @Test("Users not enrolled in the experiment report default flow pixel")
+    func usersNotEnrolledInExperimentReportExpectedPixel() {
+        // GIVEN
+        let sharedPixelStorage = makePixelStore()
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
+        )
+
+        // WHEN
+        sut.configureOnboardingFlow(from: nil)
+
+        // THEN
+        #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(sharedPixelStorage.onboardingFlow == .default)
+    }
+
+    @Test("Duck.ai flow users report duckAI pixel")
+    func duckAIFlowUsersReportDuckAiPixel() {
+        // GIVEN
+        let sharedPixelStorage = makePixelStore()
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: PrivacyConfig.MockFeatureFlagger(
+                featuresStub: [FeatureFlag.onboardingDuckAIFlow.rawValue: true],
+                resolveCohortStub: Cohort.treatment
+            ),
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
+        )
+
+        // WHEN
+        sut.configureOnboardingFlow(from: URL(string: "ddgCPP://duckAI"))
+
+        // THEN
+        #expect(tutorialSettings.onboardingFlowType == .duckAI)
+        #expect(sharedPixelStorage.onboardingFlow == .duckAI)
+    }
+
+    // MARK: - Steps
+
+    @Test("Treatment users start with just the intro and the Download Screen before a reason is chosen")
+    func treatmentStartsWithDownloadReasonStep() {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment)
+
+        // THEN
+        #expect(sut.onboardingSteps == [.introDialog(isReturningUser: false), .downloadReasonSelection])
+    }
+
+    @Test("Treatment rebuilds the full flow once a reason is persisted (resume)")
+    func treatmentRebuildsFullFlowAfterReason() {
+        // GIVEN
+        let tutorialSettings = makeTutorialSettings()
+        tutorialSettings.onboardingDownloadReason = .blockAds
+        let sut = makeManager(cohort: .treatment, tutorialSettings: tutorialSettings)
+        let expected: [OnboardingIntroStep] = [.introDialog(isReturningUser: false), .downloadReasonSelection] + sut.selectDownloadReason(.blockAds)
+
+        // THEN
+        #expect(sut.onboardingSteps == expected)
+    }
+
+    @Test("Control users get the standard default flow")
+    func controlGetsStandardFlow() {
+        // GIVEN
+        let sut = makeManager(cohort: .control)
+
+        // THEN
+        #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false))
+    }
+
+    @Test("Users not enrolled in the experiment get the standard default flow")
+    func unenrolledGetsStandardFlow() {
+        // GIVEN
+        let sut = makeManager(cohort: nil)
+
+        // THEN
+        #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false))
+    }
+
+    @Test("selectDownloadReason persists the reason", arguments: OnboardingDownloadReason.allCases)
+    func selectDownloadReasonPersistsReason(_ reason: OnboardingDownloadReason) {
+        // GIVEN
+        let tutorialSettings = makeTutorialSettings()
+        let sut = makeManager(cohort: .treatment, tutorialSettings: tutorialSettings)
+
+        // WHEN
+        _ = sut.selectDownloadReason(reason)
+
+        // THEN
+        #expect(tutorialSettings.onboardingDownloadReason == reason)
+    }
+
+    @Test(
+        "selectDownloadReason returns the reason-tailored steps",
+        arguments: zip(
+            [
+                .browserPrivately,
+                .privateAIChat,
+                .noAI,
+                .blockAds
+            ] as [OnboardingDownloadReason],
+            [
+                [.setDefaultBrowser, .searchPrivacySettingsSelection, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
+                [.setDefaultBrowser, .aiModelSelection, .toggleInputModeSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
+                [.setDefaultBrowser, .aiSearchSettingsSelection, .keepDuckAISelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
+                [.setDefaultBrowser, .duckPlayerSelection, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection],
+            ] as [[OnboardingIntroStep]]
+        )
+    )
+    func selectDownloadReasonReturnsTailoredSteps(_ reason: OnboardingDownloadReason, _ expected: [OnboardingIntroStep]) {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment)
+
+        // WHEN
+        let result = sut.selectDownloadReason(reason)
+
+        // THEN
+        #expect(result == expected)
+    }
+
+    // MARK: - Eligibility (new installers, iPhone)
+
+    @Test("iPad users are not enrolled even in the treatment cohort")
+    func iPadUsersAreNotEnrolled() {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment, isIphone: false)
+
+        // THEN
+        #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false))
+    }
+
+    @Test("Returning users are not enrolled even in the treatment cohort")
+    func returningUsersAreNotEnrolled() {
+        // GIVEN
+        let sut = makeManager(cohort: .treatment, variantManager: OnboardingManagerVariants.returningUserVariantManagerMock)
+
+        // THEN
+        #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true))
+    }
+
+    @Test("Ineligible users report the default pixel, not the tailored one")
+    func ineligibleUsersReportDefaultPixel() {
+        // GIVEN — iPad user is ineligible even in the treatment cohort.
+        let sharedPixelStorage = makePixelStore()
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: Cohort.treatment),
+            variantManager: OnboardingManagerVariants.newUserVariantManagerMock,
+            isIphone: false,
+            tutorialSettings: tutorialSettings,
+            sharedPixelsStorage: sharedPixelStorage
+        )
+
+        // WHEN
+        sut.configureOnboardingFlow(from: nil)
+
+        // THEN
+        #expect(sharedPixelStorage.onboardingFlow == .default)
+    }
+
+    // MARK: - Helpers
+
+    private func makeTutorialSettings() -> MockTutorialSettings {
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        tutorialSettings.onboardingFlowType = .default
+        return tutorialSettings
+    }
+
+    private func makeManager(
+        cohort: Cohort?,
+        isIphone: Bool = true,
+        variantManager: VariantManager = OnboardingManagerVariants.newUserVariantManagerMock,
+        tutorialSettings: MockTutorialSettings? = nil
+    ) -> OnboardingManager {
+        OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: PrivacyConfig.MockFeatureFlagger(resolveCohortStub: cohort),
+            variantManager: variantManager,
+            isIphone: isIphone,
+            tutorialSettings: tutorialSettings ?? makeTutorialSettings()
+        )
+    }
+
+    private func makePixelStore() -> any KeyedStoring<OnboardingSharedPixelsKeys> {
+        InMemoryKeyValueStore().keyedStoring()
+    }
 }

@@ -250,3 +250,108 @@ struct PerNavigationExtractionPixelDedupTests {
         #expect(dedup.shouldReport(.navigation) == true)
     }
 }
+
+// MARK: - Sidebar-open extraction measurement Tests
+
+/// Mirrors PageContextTabExtension.reportSidebarOpenExtractionOutcome: when the sidebar becomes
+/// visible, the current page is measured once so pixels reflect the sidebar experience rather than
+/// background collection (matching iOS, where telemetry is tied to the contextual surface).
+struct SidebarOpenExtractionMeasurementTests {
+
+    private enum Outcome: Equatable {
+        case none
+        case prevented(String)
+        case success
+    }
+
+    /// Mirrors the outcome decision (the visibility / measurement-enabled / dedup guards are applied
+    /// separately by `shouldMeasureOnSidebarOpen`).
+    private func sidebarOpenOutcome(isURL: Bool,
+                                    preventedReason: String?,
+                                    isContextCollectionEnabled: Bool,
+                                    hasUsableCachedContext: Bool) -> Outcome {
+        guard isURL else { return .prevented("internalPage") }
+        if let preventedReason { return .prevented(preventedReason) }
+        if isContextCollectionEnabled, hasUsableCachedContext { return .success }
+        return .none
+    }
+
+    @Test("Native special page (non-URL content) reports prevented(internalPage)")
+    func nativePageReportsInternalPagePrevented() {
+        #expect(sidebarOpenOutcome(isURL: false, preventedReason: nil, isContextCollectionEnabled: true, hasUsableCachedContext: false) == .prevented("internalPage"))
+    }
+
+    @Test("Non-attachable URL reports prevented with the blocklist category, no interaction needed")
+    func nonAttachableURLReportsPrevented() {
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: "pdf", isContextCollectionEnabled: false, hasUsableCachedContext: false) == .prevented("pdf"))
+        // Fires regardless of auto-collect / cache state — the attach affordance simply isn't shown.
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: "image", isContextCollectionEnabled: true, hasUsableCachedContext: true) == .prevented("image"))
+    }
+
+    @Test("Attachable URL with auto-collect ON and pre-warmed cached context reports success")
+    func attachableAutoOnCachedReportsSuccess() {
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: nil, isContextCollectionEnabled: true, hasUsableCachedContext: true) == .success)
+    }
+
+    @Test("Attachable URL with auto-collect ON but no usable cache reports nothing (collect path reports)")
+    func attachableAutoOnNoCacheReportsNone() {
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: nil, isContextCollectionEnabled: true, hasUsableCachedContext: false) == .none)
+    }
+
+    @Test("Attachable URL with auto-collect OFF reports nothing on open (awaits user tap / signals-only)")
+    func attachableAutoOffReportsNone() {
+        #expect(sidebarOpenOutcome(isURL: true, preventedReason: nil, isContextCollectionEnabled: false, hasUsableCachedContext: true) == .none)
+    }
+
+    /// Mirrors the guards on reportSidebarOpenExtractionOutcome: only fires while the sidebar is
+    /// visible and measurement is enabled, at most once per navigation, and skips when a collection
+    /// already reported for the navigation.
+    private final class Guard {
+        private var didReportExtraction = false
+        private var didReportSidebarOpen = false
+
+        func resetForNavigation() {
+            didReportExtraction = false
+            didReportSidebarOpen = false
+        }
+
+        func markCollectionReported() { didReportExtraction = true }
+
+        func shouldMeasureOnSidebarOpen(isVisible: Bool, measurementEnabled: Bool) -> Bool {
+            guard isVisible, measurementEnabled, !didReportExtraction, !didReportSidebarOpen else { return false }
+            didReportSidebarOpen = true
+            return true
+        }
+    }
+
+    @Test("First sidebar open measures; re-opening on the same page (kept session) does not")
+    func firstOpenMeasuresReopenDoesNot() {
+        let guardState = Guard()
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == true)
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == false)
+    }
+
+    @Test("A collection that already reported this navigation suppresses the sidebar-open measurement")
+    func collectionReportSuppressesMeasurement() {
+        let guardState = Guard()
+        guardState.markCollectionReported()
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == false)
+    }
+
+    @Test("Navigation to a new URL re-arms the sidebar-open measurement")
+    func navigationReArmsMeasurement() {
+        let guardState = Guard()
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == true)
+        guardState.resetForNavigation()
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == true)
+    }
+
+    @Test("A hidden sidebar or absent blocklist config never measures and never consumes the slot")
+    func hiddenOrDisabledDoesNotConsumeSlot() {
+        let guardState = Guard()
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: false, measurementEnabled: true) == false)
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: false) == false)
+        // Slot untouched, so once the sidebar is actually visible with config present it still measures.
+        #expect(guardState.shouldMeasureOnSidebarOpen(isVisible: true, measurementEnabled: true) == true)
+    }
+}

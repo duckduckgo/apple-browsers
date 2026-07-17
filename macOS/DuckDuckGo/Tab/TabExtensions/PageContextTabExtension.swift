@@ -54,6 +54,10 @@ final class PageContextTabExtension {
     /// so its overlapping navigation/signals-only collects don't each fire a pixel. Reset on new URL.
     private var didReportExtractionForCurrentNavigation = false
 
+    /// Guards the sidebar-open attachability measurement so re-opening the sidebar on the same page
+    /// (kept sessions) doesn't re-report. Reset on new URL alongside `didReportExtractionForCurrentNavigation`.
+    private var didReportSidebarOpenOutcomeForCurrentNavigation = false
+
     /// Safety-net window for a fire-and-forget `collect()` whose result never arrives (hung JS,
     /// torn-down page). After it, `scheduleCollectionTimeout` fires `.timeout` and drops the pending
     /// entry so the queue can't leak.
@@ -167,6 +171,7 @@ final class PageContextTabExtension {
                     // extraction telemetry (trigger/latency/outcome).
                     self.extractionResolver.reset()
                     self.didReportExtractionForCurrentNavigation = false
+                    self.didReportSidebarOpenOutcomeForCurrentNavigation = false
                 }
                 self.handleNavigationForMultipleContexts(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
@@ -319,6 +324,9 @@ final class PageContextTabExtension {
     }
 
     private func deliverContextToCurrentSidebar() {
+        // The sidebar just became visible for this tab — measure the current page's attachability once
+        // (mirrors iOS firing on sheet activation), before delivering context/collecting below.
+        reportSidebarOpenExtractionOutcome()
         if let cachedPageContext, isContextCollectionEnabled {
             Task { await self.handle(cachedPageContext) }
         } else {
@@ -341,6 +349,49 @@ final class PageContextTabExtension {
     /// `aiPageContextBlocklist` privacy config is present
     private var isExtractionMeasurementEnabled: Bool {
         currentAttachabilityPolicy() != nil
+    }
+
+    /// The Duck.ai sidebar is currently showing for this tab. `chatViewController` is torn down to
+    /// `nil` on close in both keep-session and non-keep modes, so this doubles as a reliable
+    /// "sidebar visible" signal without depending on presentation-mode ordering during open.
+    private var isSidebarVisibleForTab: Bool {
+        aiChatSessionStore.sessions[tabID]?.chatViewController != nil
+    }
+
+    /// Mirrors iOS's surface-activation measurement (`reportAttachabilityMeasurement`): when the
+    /// sidebar becomes visible, report the current page's extraction outcome once so pixels reflect
+    /// the sidebar experience rather than background collection.
+    ///
+    /// - Non-attachable pages (blocklisted media / native special pages) report `.prevented` with no
+    ///   user interaction — the attach affordance isn't shown.
+    /// - Attachable pages whose context auto-collect already pre-warmed (delivered from cache on open)
+    ///   report `.success`.
+    /// - Attachable pages awaiting a user tap (or a still-in-flight collect) report nothing here; the
+    ///   collection path (`.tabContent` / `.userRequest`) reports when its result arrives.
+    private func reportSidebarOpenExtractionOutcome() {
+        guard isSidebarVisibleForTab,
+              isExtractionMeasurementEnabled,
+              !didReportExtractionForCurrentNavigation,
+              !didReportSidebarOpenOutcomeForCurrentNavigation else {
+            return
+        }
+        didReportSidebarOpenOutcomeForCurrentNavigation = true
+
+        guard case .url(let url, _, _) = content else {
+            // Native special pages (NTP, settings, bookmarks…) can't be attached.
+            fireExtractionPixel(.prevented(PageContextExtractionOutcome.internalPageCategory), trigger: .navigation, latency: nil)
+            return
+        }
+        if let reason = preventedAttachReason(for: url) {
+            fireExtractionPixel(.prevented(reason), trigger: .navigation, latency: nil)
+            return
+        }
+        // Attachable page: only auto-collected context delivered on open counts as a success here.
+        // Everything else (user tap, signals-only harvest, an in-flight collect) reports via the
+        // collect path, so we don't double-count.
+        if isContextCollectionEnabled, let cached = cachedPageContext, cached.attachable != false, !cached.isEmpty() {
+            fireExtractionPixel(.success, trigger: .auto, latency: nil)
+        }
     }
 
     private func preventedAttachReason(for url: URL) -> String? {
@@ -380,6 +431,11 @@ final class PageContextTabExtension {
                                      trigger: PageContextExtractionTrigger,
                                      latency: PageContextExtractionLatencyBucket?) {
         guard isExtractionMeasurementEnabled else { return }
+        // Only report while the Duck.ai sidebar is showing for this tab. Mirrors iOS, where extraction
+        // telemetry is tied to the contextual surface being active: background/auto collects that run
+        // with the sidebar closed (page pre-warming) must not fire pixels. Placed before the dedup slot
+        // so a suppressed collect doesn't consume the per-navigation report.
+        guard isSidebarVisibleForTab else { return }
         // A navigation triggers several automatic collects (navigation re-collect + signals-only);
         // report only the first. User/setting collects (.userRequest / .auto) always report.
         if trigger == .navigation || trigger == .tabContent {

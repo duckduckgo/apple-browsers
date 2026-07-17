@@ -243,17 +243,24 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .shieldPrivacy: return shieldPrivacy
-        // Per design, the Strict routing pill uses the same colours in light and dark mode.
-        case .vpnStrictRoutingActive:
-            return DynamicColor(staticColor: RebrandingColor.Green.green50)
-        case .vpnStrictRoutingActivePressed:
-            return DynamicColor(staticColor: RebrandingColor.Green.green60)
-        case .vpnStrictRoutingInactive:
-            return DynamicColor(staticColor: Color(0xFFF0C2))
-        case .vpnStrictRoutingInactivePressed:
-            return DynamicColor(staticColor: Color(0xFFE8A3))
-        case .vpnStrictRoutingInactiveText:
-            return DynamicColor(staticColor: Color(0x92540C))
+        // VPN pill + header animation, per the Figma spec. Backgrounds and foregrounds (text/icon)
+        // vary by light/dark mode, with a darker interaction (hover/press) variant of each.
+        case .vpnGreen:
+            return DynamicColor(lightColor: RebrandingColor.Green.green20, darkColor: RebrandingColor.Green.green70)
+        case .vpnGreenPressed:
+            return DynamicColor(lightColor: RebrandingColor.Green.green30, darkColor: RebrandingColor.Green.green80)
+        case .vpnGreenForeground:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad90, darkColor: RebrandingColor.Lilypad.lilypad10)
+        case .vpnGreenForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad100, darkColor: RebrandingColor.Lilypad.lilypad0)
+        case .vpnYellow:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen30, darkColor: RebrandingColor.Pollen.pollen70)
+        case .vpnYellowPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen40, darkColor: RebrandingColor.Pollen.pollen80)
+        case .vpnYellowForeground:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen80, darkColor: RebrandingColor.Pollen.pollen20)
+        case .vpnYellowForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen90, darkColor: RebrandingColor.Pollen.pollen10)
         case .border: return border
         case .accentTextPrimary: return accentTextPrimary
         case .textPlaceholder: return textPlaceholder

@@ -89,20 +89,26 @@ extension SharedColorPaletteDefinition {
             return shieldPrivacy
 
         /// VPN
-        /// Feature-scoped, palette-invariant colours for the Strict routing status pill, resolved inline
-        /// (following the Permission Center pattern) since they don't vary by accent palette. Per design,
-        /// the pill uses the same colours in light and dark mode, so these are static across appearances:
-        /// green50 active / green60 pressed, and yellow-10 inactive / yellow-20 pressed with yellow-90 text.
-        case .vpnStrictRoutingActive:
-            return DynamicColor(staticColor: RebrandingColor.Green.green50)
-        case .vpnStrictRoutingActivePressed:
-            return DynamicColor(staticColor: RebrandingColor.Green.green60)
-        case .vpnStrictRoutingInactive:
-            return DynamicColor(staticColor: Color(0xFFF0C2))
-        case .vpnStrictRoutingInactivePressed:
-            return DynamicColor(staticColor: Color(0xFFE8A3))
-        case .vpnStrictRoutingInactiveText:
-            return DynamicColor(staticColor: Color(0x92540C))
+        /// Feature-scoped colours for the VPN status pill and header animation, resolved inline
+        /// (following the Permission Center pattern) since they don't vary by accent palette. Per the
+        /// Figma spec, backgrounds and foregrounds (text/icon) vary by light/dark mode, each with a
+        /// darker interaction (hover/press) variant.
+        case .vpnGreen:
+            return DynamicColor(lightColor: RebrandingColor.Green.green20, darkColor: RebrandingColor.Green.green70)
+        case .vpnGreenPressed:
+            return DynamicColor(lightColor: RebrandingColor.Green.green30, darkColor: RebrandingColor.Green.green80)
+        case .vpnGreenForeground:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad90, darkColor: RebrandingColor.Lilypad.lilypad10)
+        case .vpnGreenForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad100, darkColor: RebrandingColor.Lilypad.lilypad0)
+        case .vpnYellow:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen30, darkColor: RebrandingColor.Pollen.pollen70)
+        case .vpnYellowPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen40, darkColor: RebrandingColor.Pollen.pollen80)
+        case .vpnYellowForeground:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen80, darkColor: RebrandingColor.Pollen.pollen20)
+        case .vpnYellowForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen90, darkColor: RebrandingColor.Pollen.pollen10)
 
         /// Buttons/Primary
         case .buttonsPrimaryDefault:

@@ -91,11 +91,14 @@ public enum DesignSystemColor {
     case shieldPrivacy
 
     // VPN
-    case vpnStrictRoutingActive
-    case vpnStrictRoutingActivePressed
-    case vpnStrictRoutingInactive
-    case vpnStrictRoutingInactivePressed
-    case vpnStrictRoutingInactiveText
+    case vpnGreen
+    case vpnGreenPressed
+    case vpnGreenForeground
+    case vpnGreenForegroundPressed
+    case vpnYellow
+    case vpnYellowPressed
+    case vpnYellowForeground
+    case vpnYellowForegroundPressed
 
     // Icons
     case icons

@@ -17,8 +17,8 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
-import VPNUI
 
 /// A compact status pill shown under the VPN status header while the VPN is on. It reflects the current
 /// Strict routing state — green when on, amber when off — and takes the user to the relevant VPN setting
@@ -37,8 +37,9 @@ struct StrictRoutingPillView: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: isStrictRoutingOn ? 6 : 4) {
-                (isStrictRoutingOn ? VPNUIImages.strictRoutingLockOn : VPNUIImages.strictRoutingLockOff)
+            HStack(spacing: 6) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.lockSolid)
+                    .renderingMode(.template)
                     .resizable()
                     .frame(width: 12, height: 12)
 
@@ -57,7 +58,7 @@ struct StrictRoutingPillView: View {
 }
 
 /// Renders the pill as a coloured capsule. On hover or press it shows the state's interaction colour —
-/// green60 when on, yellow-20 when off.
+/// the darker background/foreground variant for the current Strict routing state.
 private struct StrictRoutingPillButtonStyle: ButtonStyle {
 
     let isStrictRoutingOn: Bool
@@ -67,28 +68,30 @@ private struct StrictRoutingPillButtonStyle: ButtonStyle {
     private static let height: CGFloat = 24
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundColor(textColor)
+        let interactive = isHovering || configuration.isPressed
+        return configuration.label
+            .foregroundColor(textColor(interactive: interactive))
             .padding(padding)
             .frame(height: Self.height)
-            .background(RoundedRectangle(cornerRadius: Self.cornerRadius).fill(fillColor(interactive: isHovering || configuration.isPressed)))
+            .background(RoundedRectangle(cornerRadius: Self.cornerRadius).fill(fillColor(interactive: interactive)))
             .contentShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
     }
 
     private var padding: EdgeInsets {
-        isStrictRoutingOn
-            ? EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 10)
-            : EdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 8)
+        EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
     }
 
-    private var textColor: Color {
-        isStrictRoutingOn ? .white : Color(designSystemColor: .vpnStrictRoutingInactiveText).opacity(0.9)
+    private func textColor(interactive: Bool) -> Color {
+        if isStrictRoutingOn {
+            return Color(designSystemColor: interactive ? .vpnGreenForegroundPressed : .vpnGreenForeground)
+        }
+        return Color(designSystemColor: interactive ? .vpnYellowForegroundPressed : .vpnYellowForeground)
     }
 
     private func fillColor(interactive: Bool) -> Color {
         if isStrictRoutingOn {
-            return Color(designSystemColor: interactive ? .vpnStrictRoutingActivePressed : .vpnStrictRoutingActive)
+            return Color(designSystemColor: interactive ? .vpnGreenPressed : .vpnGreen)
         }
-        return Color(designSystemColor: interactive ? .vpnStrictRoutingInactivePressed : .vpnStrictRoutingInactive)
+        return Color(designSystemColor: interactive ? .vpnYellowPressed : .vpnYellow)
     }
 }

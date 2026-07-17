@@ -27,7 +27,6 @@ import SwiftUI
 import TipKit
 import UIComponents
 import VPN
-import VPNUI
 
 struct NetworkProtectionStatusView: View {
 
@@ -161,7 +160,7 @@ struct NetworkProtectionStatusView: View {
     @ViewBuilder
     private func statusBadge(isConnected: Bool) -> some View {
         Circle()
-            .foregroundStyle(isConnected ? Color(designSystemColor: .alertGreen) : Color(designSystemColor: .alertYellow))
+            .foregroundStyle(isConnected ? Color(designSystemColor: .vpnGreen) : Color(designSystemColor: .vpnYellow))
             .frame(width: 8, height: 8)
     }
 
@@ -282,8 +281,9 @@ struct NetworkProtectionStatusView: View {
         Button {
             isShowingVPNSettings = true
         } label: {
-            HStack(spacing: statusModel.enforceRoutes ? 6 : 4) {
-                (statusModel.enforceRoutes ? VPNUIImages.strictRoutingLockOn : VPNUIImages.strictRoutingLockOff)
+            HStack(spacing: 6) {
+                Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)
+                    .renderingMode(.template)
                     .resizable()
                     .frame(width: 12, height: 12)
 
@@ -393,34 +393,91 @@ struct NetworkProtectionStatusView: View {
             lottieFile: animationName,
             loopMode: loopMode,
             isAnimating: $statusModel.isNetPEnabled,
-            configure: AppRebrand.isAppRebranded() ? Self.strictRoutingTint(enforceRoutes: statusModel.enforceRoutes) : nil,
+            configure: Self.strictRoutingTint(spec: AppRebrand.isAppRebranded() ? .rebranded : .legacy,
+                                              enforceRoutes: statusModel.enforceRoutes,
+                                              colorScheme: colorScheme),
             contentSize: contentSize
         )
     }
 
-    /// Tints the rebranded VPN animation's badge + arc lines to reflect strict routing:
-    /// green when routing is enforced, yellow (alert) when not — matching the strict-routing pill.
-    private static func strictRoutingTint(enforceRoutes: Bool) -> (LottieAnimationView) -> Void {
-        { animationView in
-            let black = LottieColor(r: 0, g: 0, b: 0, a: 1)
-            let token: DesignSystemColor = enforceRoutes ? .alertGreen : .alertYellow
-            let accent = UIColor(designSystemColor: token)
-                .resolvedColor(with: animationView.traitCollection)
-                .lottieColorValue
+    /// The Lottie keypaths the strict-routing tint recolors, per header animation variant.
+    ///
+    /// The legacy animation's groups and fills are unnamed in the JSON; lottie-ios decodes a
+    /// null `nm` as "Layer", which is why the legacy keypaths read `<layer>.Layer.Layer.Color`.
+    struct TintSpec {
+        /// The badge circle behind the lock. Its color is keyframed to reveal below `revealFrame`.
+        let badgeKeypath: String
+        /// The frame at which the badge reveal completes: black before, accent after.
+        let revealFrame: CGFloat
+        /// Decorative arc lines that take the accent color (rebrand only).
+        let accentLineKeypaths: [(fill: String, stroke: String)]
+        /// The lock glyph, which takes the foreground color.
+        let lockKeypaths: [String]
 
-            // Circle: its color is keyframed black->accent (the light-up reveal), so a block
-            // preserves the black off-state and swaps the accent in above the reveal.
+        static let rebranded = TintSpec(
+            badgeKeypath: "badge-fill.badge-fill.Fill 1.Color",
+            revealFrame: 14,
+            accentLineKeypaths: ["Line", "Line 2", "Line 3"].map {
+                (fill: "\($0).Shape 1.Fill 1.Color", stroke: "\($0).Shape 1.Stroke 1.Color")
+            },
+            lockKeypaths: ["lock 1.lock.Stroke 1.Color", "lock-body.lock-body.Fill 1.Color"]
+        )
+
+        static let legacy = TintSpec(
+            badgeKeypath: "bg.Layer.Layer.Color",
+            revealFrame: 35,
+            accentLineKeypaths: [],
+            lockKeypaths: ["lock-hook.Layer.Layer.Color", "lock-base.Layer.Layer.Color"]
+        )
+    }
+
+    /// Tints the VPN header animation to reflect strict routing, sharing the pill's exact background
+    /// colour so the lock circle and pill can't drift apart: the badge + arc lines use the pill's
+    /// background (green when routing is enforced, yellow when not) and the lock takes the colour Figma
+    /// shows on that badge — the green foreground when enforced, white when not.
+    private static func strictRoutingTint(spec: TintSpec, enforceRoutes: Bool, colorScheme: ColorScheme) -> (LottieAnimationView) -> Void {
+        { animationView in
+            // Resolve against the SwiftUI colour scheme rather than the view's trait collection: the
+            // latter can lag a live light/dark switch, leaving the tint on the previous mode's colours.
+            let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+            let black = LottieColor(r: 0, g: 0, b: 0, a: 1)
+            let white = LottieColor(r: 1, g: 1, b: 1, a: 1)
+            let token: DesignSystemColor = enforceRoutes ? .vpnGreen : .vpnYellow
+            let accent = UIColor(designSystemColor: token)
+                .resolvedColor(with: traits)
+                .lottieColorValue
+            // Lock colour once the badge has lit up: it matches the pill's foreground for the state —
+            // the green foreground when strict routing is on, the amber foreground when off. Before the
+            // reveal the badge is black (also the disconnected state), so the lock is white to read on it.
+            let revealedLock = enforceRoutes
+                ? UIColor(designSystemColor: .vpnGreenForeground)
+                    .resolvedColor(with: traits)
+                    .lottieColorValue
+                : UIColor(designSystemColor: .vpnYellowForeground)
+                    .resolvedColor(with: traits)
+                    .lottieColorValue
+
+            // Circle: its color is keyframed to a light-up reveal, so a block preserves the
+            // black off-state and swaps the accent in above the reveal.
             animationView.setValueProvider(
-                ColorValueProvider(block: { frame in frame < 14 ? black : accent }),
-                keypath: AnimationKeypath(keypath: "badge-fill.badge-fill.Fill 1.Color")
+                ColorValueProvider(block: { frame in frame < spec.revealFrame ? black : accent }),
+                keypath: AnimationKeypath(keypath: spec.badgeKeypath)
             )
 
             // Arc lines: static accent fill + stroke.
-            for line in ["Line", "Line 2", "Line 3"] {
+            for line in spec.accentLineKeypaths {
                 animationView.setValueProvider(ColorValueProvider(accent),
-                                               keypath: AnimationKeypath(keypath: "\(line).Shape 1.Fill 1.Color"))
+                                               keypath: AnimationKeypath(keypath: line.fill))
                 animationView.setValueProvider(ColorValueProvider(accent),
-                                               keypath: AnimationKeypath(keypath: "\(line).Shape 1.Stroke 1.Color"))
+                                               keypath: AnimationKeypath(keypath: line.stroke))
+            }
+
+            // Lock: white while the badge is still black (pre-reveal / disconnected), then the
+            // revealed colour — kept in step with the badge so it's always legible.
+            for lock in spec.lockKeypaths {
+                animationView.setValueProvider(
+                    ColorValueProvider(block: { frame in frame < spec.revealFrame ? white : revealedLock }),
+                    keypath: AnimationKeypath(keypath: lock))
             }
         }
     }
@@ -625,8 +682,8 @@ extension NetworkProtectionDNSSettings {
     }
 }
 
-/// Renders the Strict routing pill as a coloured rounded rectangle. The design treats this as a badge
-/// with no pressed state, so pressing applies a simple dim as tap feedback.
+/// Renders the Strict routing pill as a coloured rounded rectangle. Pressing shows the state's darker
+/// interaction variant (background + foreground) per the Figma spec.
 private struct StrictRoutingPillButtonStyle: ButtonStyle {
 
     private static let cornerRadius: CGFloat = 12
@@ -636,27 +693,28 @@ private struct StrictRoutingPillButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundColor(textColor)
+            .foregroundColor(textColor(isPressed: configuration.isPressed))
             .padding(padding)
             .frame(height: Self.height)
             .background(RoundedRectangle(cornerRadius: Self.cornerRadius).fill(fillColor(isPressed: configuration.isPressed)))
             .contentShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
     }
 
-    private var textColor: Color {
-        isStrictRoutingOn ? .white : Color(designSystemColor: .vpnStrictRoutingInactiveText).opacity(0.9)
+    private func textColor(isPressed: Bool) -> Color {
+        if isStrictRoutingOn {
+            return Color(designSystemColor: isPressed ? .vpnGreenForegroundPressed : .vpnGreenForeground)
+        }
+        return Color(designSystemColor: isPressed ? .vpnYellowForegroundPressed : .vpnYellowForeground)
     }
 
     private func fillColor(isPressed: Bool) -> Color {
         if isStrictRoutingOn {
-            return Color(designSystemColor: isPressed ? .vpnStrictRoutingActivePressed : .vpnStrictRoutingActive)
+            return Color(designSystemColor: isPressed ? .vpnGreenPressed : .vpnGreen)
         }
-        return Color(designSystemColor: isPressed ? .vpnStrictRoutingInactivePressed : .vpnStrictRoutingInactive)
+        return Color(designSystemColor: isPressed ? .vpnYellowPressed : .vpnYellow)
     }
 
     private var padding: EdgeInsets {
-        isStrictRoutingOn
-            ? EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 10)
-            : EdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 8)
+        EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
     }
 }

@@ -253,7 +253,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
         XCTAssertEqual(mockPageContextHandler.reportAttachabilityMeasurementCallCount, 1)
-        XCTAssertEqual(mockPageContextHandler.lastReportAttachabilityMeasurementTrigger, .auto)
+        XCTAssertEqual(mockPageContextHandler.lastReportAttachabilityMeasurementTrigger, .navigation)
     }
 
     @MainActor

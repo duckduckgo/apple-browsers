@@ -219,8 +219,8 @@ final class AIChatContextualSheetCoordinator {
             sessionState.markPendingSignalsOnlyCollection()
             pageContextHandler.triggerContextCollection(trigger: .tabContent)
         } else {
-            // No collection attempted — still measure whether this page is attachable.
-            pageContextHandler.reportAttachabilityMeasurement(trigger: .auto)
+            // No collection attempted — still measure the current page's attachability.
+            pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
         }
 
         stopSessionTimer()

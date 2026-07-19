@@ -444,6 +444,7 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     @objc private func fireButtonTapped(_ sender: UIBarButtonItem) {
+        guard viewModel.totalChatCount > 0 else { return }
         viewModel.fireAllTapped()
         presentDeleteChatsConfirmation(count: viewModel.totalChatCount, attachPopoverTo: sender) { [weak self] in
             self?.burnAllChats()

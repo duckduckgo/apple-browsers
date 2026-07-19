@@ -418,6 +418,7 @@ import Subscription
         }
 
         return NetworkProtectionStatusViewModel(tunnelController: MockTunnelController(),
+                                                entryContext: .unknown,
                                                 settings: VPNSettings(defaults: defaults),
                                                 statusObserver: statusObserver,
                                                 serverInfoObserver: MockConnectionServerInfoObserver(),

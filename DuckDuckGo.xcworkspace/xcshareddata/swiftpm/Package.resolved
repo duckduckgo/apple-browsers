@@ -1,5 +1,5 @@
 {
-  "originHash" : "32eaeaa41273d132ad6c72f55972798fbcbf248ccbcf2fc25aeaad6d3214b104",
+  "originHash" : "9ab60104bec3a3fb216dc228767ed626f4354114c4f364ab09ec6c4c1b5d1d43",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "branch" : "pr-releases/jingram/o-j/ntp-delete-chat-and-recent-search",
-        "revision" : "e02ee6140d64c405d5a3d02c8deb4e8d3869deeb"
+        "revision" : "8c3ce1be5af7ebf83fe7869bc3518a569f2e5688",
+        "version" : "15.17.0"
       }
     },
     {

@@ -1,13 +1,13 @@
 {
-  "originHash" : "66ba0bff4e08344a78c334bf9440e75badcff6f11c4cf21fca79ea523d5bee24",
+  "originHash" : "36d40913ee25f5ef0948672cd774c0ff9e2223ca520c53f4fc409e26c12dc4d1",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "dc9b1280951a22359aac33d07ffd410cbbae2b94",
-        "version" : "15.12.0"
+        "revision" : "936928ce6fe44d6606ba9045be619250229548f7",
+        "version" : "15.15.0"
       }
     },
     {
